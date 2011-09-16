@@ -117,6 +117,10 @@ if [[ ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ]]; then
   else
     check_dpkg_packages ${OS_ID}
   fi
+else
+  echo "Operating systems other than Ubuntu (>=10.04) and Debian are not"
+  echo "currently supported for automatic configuration."
+  exit 0
 fi
 
 ## Google Log macros
@@ -154,39 +158,13 @@ else
   echo_failure
   exit 1
 fi
+
+## Google unit testing library
+print_subhdr "GOOGLE TEST LIBRARY FOR C++"
+get_dep_svn "googletest" "googlecode"
+cd googletest-svn/make
+echo -n "Building googletest library..."
+RES=$(make all --quiet 2>/dev/null)
+print_succ_or_fail $RES
 cd ..
-
-# Mahout
-#wget -N <URL> 
-#if [ url-timestamp -ot <arch> ]
-#then
-#    tar -x -j -v --file=mahout-0.3.tar.bz2 mahout-0.3/mahout-core-0.3.jar mahout-0.3/mahout-math-0.3.jar mahout-0.3/mahout-collections-0.3.jar mahout-0.3/lib/commons-logging-1.1.1.jar mahout-0.3/lib/slf4j-api-1.5.8.jar mahout-0.3/lib/slf4j-jcl-1.5.8.jar mahout-0.3/lib/uncommons-maths-1.2.jar mahout-0.3/lib/gson-1.3.jar mahout-0.3/lib/hadoop-core-0.20.2.jar
-#    touch -r mahout-0.3.tar.bz2 mahout-timestamp
-#fi
-
-# RCCE
-#if [ -d rcce ]
-#then
-#	svn up rcce/
-#else
-#	mkdir -p rcce
-#	svn co http://marcbug.scc-dc.com/svn/repository/trunk/rcce/ rcce/
-#fi
-
-# iRCCE
-#wget -N http://communities.intel.com/servlet/JiveServlet/download/110482-19045/iRCCE.tar.zip
-#if [ ircce-timestamp -ot iRCCE.tar.zip ]
-#then
-#	unzip iRCCE.tar.zip
-#	tar -xf iRCCE.tar
-#	touch -r iRCCE.tar.zip icce-timestamp
-#fi
-
-# GSON
-#curl -v -z gson-timestamp -o google-gson-1.7.1-release.zip -R http://google-gson.googlecode.com/files/google-gson-1.7.1-release.zip
-#if [ gson-timestamp -ot google-gson-1.7.1-release.zip ]
-#then
-#    unzip google-gson-1.7.1-release.zip google-gson-1.7.1/gson-1.7.1.jar
-#    touch -r google-gson-1.7.1-release.zip gson-timestamp
-#fi
 

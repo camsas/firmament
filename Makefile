@@ -5,16 +5,19 @@
 SUDO ?= sudo
 export SUDO
 
-DESTDIR ?=
-export DESTDIR
+BUILD_DIR ?= build
+export BUILD_DIR
 
-#PREFIX ?= $(HOME)/
-#export PREFIX
+SRC_ROOT_DIR ?= src
+export SRC_ROOT_DIR
+
+SCRIPTS_DIR ?= scripts
+export SCRIPTS_DIR
 
 JOBS=-j 6
 export JOBS
 
-CC=clang
+CC=clang++
 
 LIBS=-lglog -lgflags -ltcmalloc -lprofiler
 
@@ -22,22 +25,24 @@ all: ext engine doc
 #	@
 
 ext:
-	@./fetch-externals.sh
+	@$(SCRIPTS_DIR)/fetch-externals.sh
 
 doc:
 
-engine:
+engine: base
+
+base:
+	@cd $(SRC_ROOT_DIR)/base && make all
 
 nonext: engine doc
 #	@
 
 test:
-	@mkdir -p build
-	@$(CC) test.cc -o build/test $(LIBS)
-	env HEAPCHECK=normal ./test
+	@mkdir -p $(BUILD_DIR)
+	@$(CC) test.cc -o $(BUILD_DIR)/test $(LIBS)
+	env HEAPCHECK=normal $(BUILD_DIR)/test
 
 install:
 
 clean:
 	@rm -rf build
-
