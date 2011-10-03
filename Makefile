@@ -1,10 +1,10 @@
-.PHONY: clean engine base
+.PHONY: clean engine base ext sim
 .DEFAULT: all
 
 # Get common build settings
 include include/Makefile.config
 
-all: ext engine doc
+all: ext engine doc sim
 
 ext:
 	@$(SCRIPTS_DIR)/fetch-externals.sh
@@ -17,6 +17,9 @@ engine: base
  
 base:
 	@cd $(SRC_ROOT_DIR)/base && make all
+
+sim: base
+	@cd $(SRC_ROOT_DIR)/sim && make all
 
 nonext: engine doc
 
