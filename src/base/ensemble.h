@@ -28,6 +28,7 @@ class Ensemble {
   void SetResourceBusy(Resource *res);
   void SetResourceIdle(Resource *res);
   bool ResourceBusy(Resource *res) { return resources_busy_[res]; }
+  string& name() { return name_; }
  protected:
   vector<Resource*> joined_resources_;
   map<Resource*, bool> resources_busy_;

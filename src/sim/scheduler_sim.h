@@ -22,6 +22,9 @@ class SchedulerSim {
   uint64_t ScheduleJob(JobSim *job, double time);
   void SubmitJob(JobSim *job, double time);
   uint64_t NumPending() { return pending_queue_.size(); }
+  pair<uint64_t, double> AttemptScheduleOnResourceSet(
+      vector<Resource*> *resources, vector<TaskSim*>::iterator task_iter,
+      EnsembleSim *ensemble, JobSim *job, double time);
  private:
   queue<pair<JobSim*, double> > pending_queue_;
   EnsembleSim *ensemble_;

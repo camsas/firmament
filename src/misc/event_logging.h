@@ -29,7 +29,8 @@ class EventLogger {
   }
   // -----------------------------------------
   // Simulator event logging
-  void LogUtilizationValues(double time, uint64_t occupied_resources,
+  void LogUtilizationValues(double time, uint64_t ensemble_uid,
+                            uint64_t occupied_resources,
                             double occupied_percent,
                             uint64_t pending_queue_length);
   void LogJobArrivalEvent(double time,

@@ -61,42 +61,34 @@ uint64_t SchedulerSim::ScheduleJob(JobSim *job, double time) {
   double max_task_runtime = 0;
   VLOG(1) << "total no tasks: " << job->NumTasks();
   if (ensemble_->NumIdleResources() < job->NumTasks())
-    return false;
+    return 0;
   else {
     // Perform the actual scheduling
     vector<TaskSim*> *tasks = job->GetTasks();
     CHECK_NOTNULL(tasks);
     vector<TaskSim*>::iterator task_iter = tasks->begin();
     VLOG(2) << "Starting to schedule...";
-    vector<Resource*> *resources = ensemble_->GetResources();
-    for (vector<Resource*>::iterator res_iter = resources->begin();
-         res_iter != resources->end();
-         ++res_iter) {
-      VLOG(2) << "Considering resource " << (*res_iter)->name();
-      while (task_iter != tasks->end() && (*task_iter)->state() == Task::RUNNING)
-        ++task_iter;
-      if (task_iter == tasks->end())
-        break;
-      VLOG(2) << *res_iter;
-      VLOG(2) << "Checking the resource's next availability, is "
-              << (*res_iter)->next_available();
-      if (!ensemble_->ResourceBusy(*res_iter)) {
-        // This resource is idle, so we can use it
-        (*res_iter)->RunTask(*task_iter);
-        (*res_iter)->set_next_available(time + (*task_iter)->runtime());
-        (*task_iter)->BindToResource(static_cast<ResourceSim*>(*res_iter));
-        (*task_iter)->set_state(Task::RUNNING);
-        global_event_queue_->AddTaskEvent(time + (*task_iter)->runtime(),
-                                          SimEvent::TASK_COMPLETED, job,
-                                          (*task_iter));
-        max_task_runtime = max(max_task_runtime, (*task_iter)->runtime());
-        VLOG(1) << "Successfully scheduled task " << (*task_iter)->name()
-                << " on resource " << (*res_iter)->name();
-        ++task_iter;
-        ++num_tasks_scheduled;
-      }
+    vector<Resource*> *own_resources = ensemble_->GetResources();
+    // First, we try to schedule on our own, directly joined resources
+    pair<uint64_t, double> schedule_result =
+        AttemptScheduleOnResourceSet(own_resources, task_iter, ensemble_,
+                                     job, time);
+    num_tasks_scheduled += schedule_result.first;
+    max_task_runtime = max(max_task_runtime, schedule_result.second);
+    // Second, we try nested ensembles, if we need to
+    vector<Ensemble*> *children = ensemble_->GetNestedEnsembles();
+    vector<Ensemble*>::iterator c_iter = children->begin();
+    while (num_tasks_scheduled < job->NumTasks()
+           && c_iter != children->end()) {
+      vector<Resource*> *c_resources = (*c_iter)->GetResources();
+      schedule_result = AttemptScheduleOnResourceSet(
+          c_resources, task_iter, static_cast<EnsembleSim*>(*c_iter),
+          job, time);
+      ++c_iter;
+      num_tasks_scheduled += schedule_result.first;
+      max_task_runtime = max(max_task_runtime, schedule_result.second);
     }
-    //CHECK(task_iter == tasks->end());
+    // Third, we try peered ensembles
   }
   if (num_tasks_scheduled > 0) {
     job->set_start_time(time);
@@ -112,6 +104,42 @@ uint64_t SchedulerSim::ScheduleJob(JobSim *job, double time) {
             << "it goes back into the pending queue.";
   }
   return num_tasks_scheduled;
+}
+
+pair<uint64_t, double> SchedulerSim::AttemptScheduleOnResourceSet(
+    vector<Resource*> *resources, vector<TaskSim*>::iterator task_iter,
+    EnsembleSim *ensemble, JobSim* job, double time) {
+  uint64_t num_tasks_scheduled = 0;
+  double max_task_runtime = 0;
+  vector<TaskSim*> *tasks = job->GetTasks();
+  for (vector<Resource*>::iterator res_iter = resources->begin();
+       res_iter != resources->end();
+       ++res_iter) {
+    VLOG(2) << "Considering resource " << (*res_iter)->name();
+    while (task_iter != tasks->end() && (*task_iter)->state() == Task::RUNNING)
+      ++task_iter;
+    if (task_iter == tasks->end())
+      break;
+    VLOG(2) << *res_iter;
+    VLOG(2) << "Checking the resource's next availability, is "
+            << (*res_iter)->next_available();
+    if (!ensemble->ResourceBusy(*res_iter)) {
+      // This resource is idle, so we can use it
+      (*res_iter)->RunTask(*task_iter);
+      (*res_iter)->set_next_available(time + (*task_iter)->runtime());
+      (*task_iter)->BindToResource(static_cast<ResourceSim*>(*res_iter));
+      (*task_iter)->set_state(Task::RUNNING);
+      global_event_queue_->AddTaskEvent(time + (*task_iter)->runtime(),
+                                        SimEvent::TASK_COMPLETED, job,
+                                        (*task_iter));
+      max_task_runtime = max(max_task_runtime, (*task_iter)->runtime());
+      VLOG(1) << "Successfully scheduled task " << (*task_iter)->name()
+              << " on resource " << (*res_iter)->name();
+      ++task_iter;
+      ++num_tasks_scheduled;
+    }
+  }
+  return pair<uint64_t, double>(num_tasks_scheduled, max_task_runtime);
 }
 
 }  // namespace firmament

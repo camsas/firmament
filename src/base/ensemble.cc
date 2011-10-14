@@ -57,7 +57,13 @@ uint64_t Ensemble::NumNestedEnsembles() {
 }
 
 uint64_t Ensemble::NumIdleResources() {
-  return num_idle_resources_;
+  // Get idle resource numbers for nested ensembles.i
+  uint64_t num_nested_idle = 0;
+  for (vector<Ensemble*>::const_iterator c_iter = children_.begin();
+       c_iter != children_.end();
+       ++c_iter)
+    num_nested_idle += (*c_iter)->NumIdleResources();
+  return num_idle_resources_ + num_nested_idle;
 }
 
 void Ensemble::SetResourceBusy(Resource *res) {

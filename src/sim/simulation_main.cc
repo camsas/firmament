@@ -27,7 +27,7 @@ EventLogger *event_logger_;
 EventQueue event_queue_;
 EnsembleSim *cluster_;
 
-const uint64_t kNumMachines = 2;
+const uint64_t kNumMachines = 1;
 const uint64_t kNumCoresPerMachine = 48;
 
 double time_;
@@ -37,7 +37,14 @@ uint64_t MakeJobUID(Job *job) {
   return hasher(job->name());
 }
 
+uint64_t MakeEnsembleUID(Ensemble *ens) {
+  boost::hash<string> hasher;
+  return hasher(ens->name());
+}
+
+
 void LogUtilizationStats(double time, EnsembleSim *ensemble) {
+  uint64_t e_uid = MakeEnsembleUID(ensemble);
   // Count number of resources in use
   double busy_resources = 0;
   vector<Resource*> *resources = ensemble->GetResources();
@@ -47,11 +54,24 @@ void LogUtilizationStats(double time, EnsembleSim *ensemble) {
     if ((*res_iter)->next_available() > time)
       ++busy_resources;
   }
-  double busy_percent = static_cast<double>(busy_resources) /
+  double busy_percent;
+  if (ensemble->NumResourcesJoinedDirectly() > 0)
+    busy_percent = static_cast<double>(busy_resources) /
       static_cast<double>(ensemble->NumResourcesJoinedDirectly());
+  else
+    busy_percent = 0;
   uint64_t pending = ensemble->NumPending();
-  event_logger_->LogUtilizationValues(time, busy_resources, busy_percent,
-                                      pending);
+  event_logger_->LogUtilizationValues(time, e_uid, busy_resources,
+                                      busy_percent, pending);
+}
+
+void LogUtilizationStatsRecursively(double time, EnsembleSim *ensemble) {
+  LogUtilizationStats(time, ensemble);
+  vector<Ensemble*> *children = ensemble->GetNestedEnsembles();
+  for (vector<Ensemble*>::const_iterator c_iter = children->begin();
+       c_iter != children->end();
+       ++c_iter)
+    LogUtilizationStatsRecursively(time, static_cast<EnsembleSim*>(*c_iter));
 }
 
 void RunSimulationUntil(double time_from, double time_until,
@@ -109,16 +129,17 @@ int main(int argc, char *argv[]) {
   cluster_ = new EnsembleSim("testcluster", &event_queue_);
 
   // Make ensembles that together form a "cluster"
-/*  for (uint32_t i = 0; i < kNumMachines; ++i) {
-    EnsembleSim *e = new EnsembleSim("testmachine" + to_string(i));*/
+  for (uint32_t i = 0; i < kNumMachines; ++i) {
+    EnsembleSim *e = new EnsembleSim("testmachine" + to_string(i),
+                                     &event_queue_);
     // Add resources to the "machine" ensembles
     for (uint32_t i = 0; i < kNumCoresPerMachine; ++i) {
       ResourceSim *r = new ResourceSim("core" + to_string(i), 1);
       simulation_resources_.push_back(r);
-      r->JoinEnsemble(cluster_);
+      r->JoinEnsemble(e);
     }
-/*    cluster->AddNestedEnsemble(e);
-  }*/
+    cluster_->AddNestedEnsemble(e);
+  }
   LOG(INFO) << "Set up an ensemble with "
             << cluster_->NumResourcesJoinedDirectly() << " resources, "
             << "and " << cluster_->NumNestedEnsembles() << " nested ensembles.";
@@ -156,7 +177,7 @@ int main(int argc, char *argv[]) {
     RunSimulationUntil(prev_time, time, &completed_tasks, &completed_jobs);
 
     // Log utilization stats
-    LogUtilizationStats(time, cluster_);
+    LogUtilizationStatsRecursively(time, cluster_);
 
     // Remove things that have completed
     for (vector<TaskSim*>::const_iterator t_iter = completed_tasks.begin();

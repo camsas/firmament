@@ -46,11 +46,12 @@ void EventLogger::LogJobArrivalEvent(double time,
   LogEvent(JOB_ARRIVED_EVENT, time, outputs);
 }
 
-void EventLogger::LogUtilizationValues(double time,
+void EventLogger::LogUtilizationValues(double time, uint64_t ensemble_uid,
                                        uint64_t occupied_resources,
                                        double occupied_percent,
                                        uint64_t pending_queue_length) {
   vector<string> outputs;
+  outputs.push_back(to_string(ensemble_uid));
   outputs.push_back(to_string(occupied_resources));
   outputs.push_back(to_string(occupied_percent));
   outputs.push_back(to_string(pending_queue_length));
