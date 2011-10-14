@@ -4,8 +4,12 @@
 
 namespace firmament {
 
-EnsembleSim::EnsembleSim() : Ensemble("hello") {
+EnsembleSim::EnsembleSim(const string& name) : Ensemble(name) {
 
+}
+
+void EnsembleSim::Join(Resource* res) {
+  AddResource(*res);
 }
 
 }  // namespace firmament

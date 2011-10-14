@@ -18,8 +18,11 @@ engine: base
 base:
 	@cd $(SRC_ROOT_DIR)/base && make all
 
-sim: base
+sim: base misc
 	@cd $(SRC_ROOT_DIR)/sim && make all
+
+misc:
+	@cd $(SRC_ROOT_DIR)/misc && make all
 
 nonext: engine doc
 

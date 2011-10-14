@@ -1,20 +1,32 @@
 // TODO
 
-#include "workload_generator.h"
+#include "sim/workload_generator.h"
+#include "sim/sim_common.h"
 
 namespace firmament {
 
-WorkloadGenerator::WorkloadGenerator() : 
+DEFINE_double(simulation_runtime, 10.0, "Total duration of simulation.");
+DEFINE_double(job_size_lambda, 1.0, "Lamda for job size distribution.");
+DEFINE_double(job_arrival_lambda, 2.0,
+              "Lambda for interarrival time distribution.");
+DEFINE_double(task_duration_scaling_factor, 30,
+              "Task duration distribution scaling factor.");
+DEFINE_double(job_arrival_scaling_factor, 1.5,
+              "Interarrival distribution scaling factor.");
+
+WorkloadGenerator::WorkloadGenerator() :
   task_duration_distribution_(1.0, 1.0),
+  job_arrival_distribution_(FLAGS_job_arrival_lambda),
+  job_size_distribution_(FLAGS_job_size_lambda),
   job_arrival_gen_(gen_, job_arrival_distribution_),
   job_size_gen_(gen_, job_size_distribution_),
-  task_duration_gen_(gen_, task_duration_distribution_) 
+  task_duration_gen_(gen_, task_duration_distribution_)
 {
   LOG(INFO) << "hello from workload generator";
 }
 
 double WorkloadGenerator::GetNextInterarrivalTime() {
-  return job_arrival_gen_();
+  return FLAGS_job_arrival_scaling_factor * job_arrival_gen_();
 }
 
 uint64_t WorkloadGenerator::GetNextJobSize() {
@@ -22,7 +34,7 @@ uint64_t WorkloadGenerator::GetNextJobSize() {
 }
 
 double WorkloadGenerator::GetNextTaskDuration() {
-  return task_duration_gen_();
+  return FLAGS_task_duration_scaling_factor * task_duration_gen_();
 }
 
 }  // namespace firmament

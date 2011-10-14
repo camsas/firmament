@@ -1,16 +1,17 @@
 include ../../include/Makefile.config
 
-all: task ensemble
-	@$(AR) rcs $(BUILD_DIR)/base/libfirmament_base.a \
-	    $(BUILD_DIR)/base/task.o
+#HDRS = "$(SRC_ROOT_DIR)/base/task.h" \
+#       "$(SRC_ROOT_DIR)/base/job.h" \
+#       "$(SRC_ROOT_DIR)/base/resource.h" \
+#       "$(SRC_ROOT_DIR)/base/ensemble.h"
 
-setup: 
+setup:
 	@mkdir -p $(BUILD_DIR)/base
 
-ensemble: setup
-	@$(CXX) -c $(SRC_ROOT_DIR)/base/ensemble.cc -I$(SRC_ROOT_DIR) \
-	   -o $(BUILD_DIR)/base/ensemble.o
+all: task.o resource.o ensemble.o job.o
+	@$(AR) rcs $(BUILD_DIR)/base/libfirmament_base.a \
+	    $(BUILD_DIR)/base/task.o $(BUILD_DIR)/base/resource.o \
+	    $(BUILD_DIR)/base/ensemble.o $(BUILD_DIR)/base/job.o
 
-task: setup
-	@$(CXX) -c $(SRC_ROOT_DIR)/base/task.cc -I$(SRC_ROOT_DIR) \
-	   -o $(BUILD_DIR)/base/task.o
+%.o: %.cc %.h setup
+	@$(CXX) -c $(SRC_ROOT_DIR)/base/$< -I$(SRC_ROOT_DIR) -o $(BUILD_DIR)/base/$@

@@ -25,11 +25,11 @@ class WorkloadGenerator {
   base_generator_type gen_;
 
   boost::exponential_distribution<> job_arrival_distribution_;
-  boost::variate_generator<base_generator_type&, 
+  boost::variate_generator<base_generator_type&,
       job_arrival_dist_type> job_arrival_gen_;
 
   boost::exponential_distribution<> job_size_distribution_;
-  boost::variate_generator<base_generator_type&, 
+  boost::variate_generator<base_generator_type&,
       job_size_dist_type> job_size_gen_;
 
   boost::lognormal_distribution<> task_duration_distribution_;
@@ -39,5 +39,4 @@ class WorkloadGenerator {
 
 }  // namespace firmament
 
-#endif // FIRMAMENT_SIM_WORKLOAD_GENERATOR_H
-
+#endif  // FIRMAMENT_SIM_WORKLOAD_GENERATOR_H
