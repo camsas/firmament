@@ -5,8 +5,8 @@
 
 namespace firmament {
 
-SchedulerSim::SchedulerSim(EnsembleSim *ensemble) :
-  ensemble_(ensemble) {
+SchedulerSim::SchedulerSim(EnsembleSim *ensemble, EventQueue *event_queue) :
+  ensemble_(ensemble), global_event_queue_(event_queue) {
 }
 
 void SchedulerSim::SubmitJob(JobSim *job, double time) {
@@ -14,7 +14,7 @@ void SchedulerSim::SubmitJob(JobSim *job, double time) {
   pending_queue_.push(pair<JobSim*, double>(job, time));
 }
 
-void SchedulerSim::ScheduleAllPending(EventQueue *event_queue) {
+void SchedulerSim::ScheduleAllPending() {
   if (pending_queue_.empty())
     return;
 
@@ -35,7 +35,7 @@ void SchedulerSim::ScheduleAllPending(EventQueue *event_queue) {
       ignore = false;
     }
     VLOG(1) << "Trying to schedule next job: " << job->name() << " at time " << next.second;
-    uint64_t tasks_scheduled = ScheduleJob(job, next.second, event_queue);
+    uint64_t tasks_scheduled = ScheduleJob(job, next.second);
     if (tasks_scheduled > 0) {
       pending_queue_.pop();
       job->set_state(Job::RUNNING);
@@ -45,7 +45,7 @@ void SchedulerSim::ScheduleAllPending(EventQueue *event_queue) {
         ++(next.second);
         pending_queue_.push(next);
       } else {
-        event_queue->AddJobEvent(job->finish_time(), SimEvent::JOB_COMPLETED, job);
+        global_event_queue_->AddJobEvent(job->finish_time(), SimEvent::JOB_COMPLETED, job);
       }
     } else {
       ++(pending_queue_.front().second);
@@ -53,8 +53,7 @@ void SchedulerSim::ScheduleAllPending(EventQueue *event_queue) {
   }
 }
 
-uint64_t SchedulerSim::ScheduleJob(JobSim *job, double time,
-                                   EventQueue *event_queue) {
+uint64_t SchedulerSim::ScheduleJob(JobSim *job, double time) {
   VLOG(1) << "In ScheduleJob for job " << job->name();
   VLOG(1) << "Ensemble has " << ensemble_->NumIdleResources()
           << " idle resources";
@@ -87,9 +86,9 @@ uint64_t SchedulerSim::ScheduleJob(JobSim *job, double time,
         (*res_iter)->set_next_available(time + (*task_iter)->runtime());
         (*task_iter)->BindToResource(static_cast<ResourceSim*>(*res_iter));
         (*task_iter)->set_state(Task::RUNNING);
-        event_queue->AddTaskEvent(time + (*task_iter)->runtime(),
-                                    SimEvent::TASK_COMPLETED, job,
-                                    (*task_iter));
+        global_event_queue_->AddTaskEvent(time + (*task_iter)->runtime(),
+                                          SimEvent::TASK_COMPLETED, job,
+                                          (*task_iter));
         max_task_runtime = max(max_task_runtime, (*task_iter)->runtime());
         VLOG(1) << "Successfully scheduled task " << (*task_iter)->name()
                 << " on resource " << (*res_iter)->name();

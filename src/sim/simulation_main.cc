@@ -23,9 +23,9 @@
 using namespace firmament;
 
 vector<Resource*> simulation_resources_;
-SchedulerSim *scheduler_;
 EventLogger *event_logger_;
 EventQueue event_queue_;
+EnsembleSim *cluster_;
 
 const uint64_t kNumMachines = 2;
 const uint64_t kNumCoresPerMachine = 48;
@@ -37,7 +37,7 @@ uint64_t MakeJobUID(Job *job) {
   return hasher(job->name());
 }
 
-void LogUtilizationStats(double time, Ensemble *ensemble) {
+void LogUtilizationStats(double time, EnsembleSim *ensemble) {
   // Count number of resources in use
   double busy_resources = 0;
   vector<Resource*> *resources = ensemble->GetResources();
@@ -49,7 +49,7 @@ void LogUtilizationStats(double time, Ensemble *ensemble) {
   }
   double busy_percent = static_cast<double>(busy_resources) /
       static_cast<double>(ensemble->NumResourcesJoinedDirectly());
-  uint64_t pending = scheduler_->NumPending();
+  uint64_t pending = ensemble->NumPending();
   event_logger_->LogUtilizationValues(time, busy_resources, busy_percent,
                                       pending);
 }
@@ -68,7 +68,7 @@ void RunSimulationUntil(double time_from, double time_until,
                 << MakeJobUID(evt->job()) << "!";
         event_logger_->LogJobArrivalEvent(evt->time(), MakeJobUID(evt->job()),
                                           evt->job()->NumTasks());
-        scheduler_->SubmitJob(evt->job(), evt->time());
+        cluster_->SubmitJob(evt->job(), evt->time());
         break;
       case SimEvent::JOB_COMPLETED:
         // Remove job from simulator and log completion
@@ -91,7 +91,7 @@ void RunSimulationUntil(double time_from, double time_until,
     event_queue_.PopEvent();
     delete evt;
     // Handling events changes the cluster, so we try to schedule.
-    scheduler_->ScheduleAllPending(&event_queue_);
+    cluster_->RunScheduler();
     // Get next event
     evt = event_queue_.GetNextEvent();
   }
@@ -106,8 +106,7 @@ int main(int argc, char *argv[]) {
   event_logger_ =  new EventLogger("test.log");
 
   // Our simulated "cluster"
-  EnsembleSim *cluster = new EnsembleSim("testcluster");
-  scheduler_ = new SchedulerSim(cluster);
+  cluster_ = new EnsembleSim("testcluster", &event_queue_);
 
   // Make ensembles that together form a "cluster"
 /*  for (uint32_t i = 0; i < kNumMachines; ++i) {
@@ -116,13 +115,13 @@ int main(int argc, char *argv[]) {
     for (uint32_t i = 0; i < kNumCoresPerMachine; ++i) {
       ResourceSim *r = new ResourceSim("core" + to_string(i), 1);
       simulation_resources_.push_back(r);
-      r->JoinEnsemble(cluster);
+      r->JoinEnsemble(cluster_);
     }
 /*    cluster->AddNestedEnsemble(e);
   }*/
   LOG(INFO) << "Set up an ensemble with "
-            << cluster->NumResourcesJoinedDirectly() << " resources, "
-            << "and " << cluster->NumNestedEnsembles() << " nested ensembles.";
+            << cluster_->NumResourcesJoinedDirectly() << " resources, "
+            << "and " << cluster_->NumNestedEnsembles() << " nested ensembles.";
 
   LOG(INFO) << "Running for a total simulation time of "
             << FLAGS_simulation_runtime;
@@ -157,7 +156,7 @@ int main(int argc, char *argv[]) {
     RunSimulationUntil(prev_time, time, &completed_tasks, &completed_jobs);
 
     // Log utilization stats
-    LogUtilizationStats(time, cluster);
+    LogUtilizationStats(time, cluster_);
 
     // Remove things that have completed
     for (vector<TaskSim*>::const_iterator t_iter = completed_tasks.begin();

@@ -13,18 +13,20 @@
 
 namespace firmament {
 
+class EnsembleSim;
+
 class SchedulerSim {
  public:
-  SchedulerSim(EnsembleSim *ensemble);
-  void ScheduleAllPending(EventQueue *event_queue);
-  uint64_t ScheduleJob(JobSim *job, double time,
-                 EventQueue *event_queue);
+  SchedulerSim(EnsembleSim *ensemble, EventQueue *event_queue);
+  void ScheduleAllPending();
+  uint64_t ScheduleJob(JobSim *job, double time);
   void SubmitJob(JobSim *job, double time);
   uint64_t NumPending() { return pending_queue_.size(); }
  private:
   queue<pair<JobSim*, double> > pending_queue_;
   EnsembleSim *ensemble_;
   double time_;
+  EventQueue *global_event_queue_;
 };
 
 }
