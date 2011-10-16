@@ -1,4 +1,4 @@
-.PHONY: clean engine base ext sim
+.PHONY: clean
 .DEFAULT: all
 
 # Get common build settings
