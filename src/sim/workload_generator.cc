@@ -18,8 +18,10 @@ WorkloadGenerator::WorkloadGenerator() :
   task_duration_distribution_(1.0, 1.0),
   job_arrival_distribution_(FLAGS_job_arrival_lambda),
   job_size_distribution_(FLAGS_job_size_lambda),
+  job_type_distribution_(0, 1),
   job_arrival_gen_(gen_, job_arrival_distribution_),
   job_size_gen_(gen_, job_size_distribution_),
+  job_type_gen_(gen_, job_type_distribution_),
   task_duration_gen_(gen_, task_duration_distribution_)
 {
   LOG(INFO) << "hello from workload generator";
@@ -31,6 +33,10 @@ double WorkloadGenerator::GetNextInterarrivalTime() {
 
 uint64_t WorkloadGenerator::GetNextJobSize() {
   return static_cast<uint64_t>(1 + job_size_gen_());
+}
+
+uint32_t WorkloadGenerator::GetNextJobType() {
+  return job_type_gen_();
 }
 
 double WorkloadGenerator::GetNextTaskDuration() {

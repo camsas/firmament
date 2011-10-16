@@ -22,13 +22,26 @@
 
 using namespace firmament;
 
+namespace firmament {
+
+DEFINE_bool(use_prefs, false, "");
+DEFINE_bool(peer_adjacent, true, "");
+DEFINE_bool(schedule_use_nested, true,
+            "Allow scheduling tasks on nested ensembles.");
+DEFINE_bool(schedule_use_peered, true,
+            "Allow hand-off of tasks to peered ensembles.");
+DEFINE_double(non_preferred_penalty_factor, 2.0,
+              "Penalty imposed on jobs running on non-prefered ensembles");
+DEFINE_string(output, "output.csv", "Output file name and path");
+
 vector<Resource*> simulation_resources_;
 EventLogger *event_logger_;
 EventQueue event_queue_;
 EnsembleSim *cluster_;
+map<uint32_t, vector<EnsembleSim*> > preferences_;
 
-const uint64_t kNumMachines = 1;
-const uint64_t kNumCoresPerMachine = 48;
+const uint64_t kNumMachines = 2;
+const uint64_t kNumCoresPerMachine = 24;
 
 double time_;
 
@@ -41,7 +54,6 @@ uint64_t MakeEnsembleUID(Ensemble *ens) {
   boost::hash<string> hasher;
   return hasher(ens->name());
 }
-
 
 void LogUtilizationStats(double time, EnsembleSim *ensemble) {
   uint64_t e_uid = MakeEnsembleUID(ensemble);
@@ -81,41 +93,58 @@ void RunSimulationUntil(double time_from, double time_until,
   SimEvent *evt = event_queue_.GetNextEvent();
   while (evt != NULL && evt->time() <= time_until) {
     // Process event
+//    CHECK_NOTNULL(evt->ensemble());
     switch (evt->type()) {
       case SimEvent::JOB_ARRIVED:
+        {
         // Add job to pending queue and set flag to run scheduler
+        SimJobEvent *jaevt = static_cast<SimJobEvent*>(evt);
         VLOG(1) << "Handling JOB_ARRIVED event "
-                << MakeJobUID(evt->job()) << "!";
-        event_logger_->LogJobArrivalEvent(evt->time(), MakeJobUID(evt->job()),
-                                          evt->job()->NumTasks());
-        cluster_->SubmitJob(evt->job(), evt->time());
+                << MakeJobUID(jaevt->job()) << "!";
+        event_logger_->LogJobArrivalEvent(jaevt->time(),
+                                          MakeJobUID(jaevt->job()),
+                                          jaevt->job()->NumTasks());
+        jaevt->ensemble()->SubmitJob(jaevt->job(), jaevt->time());
         break;
+        }
       case SimEvent::JOB_COMPLETED:
+        {
         // Remove job from simulator and log completion
+        SimJobEvent *jcevt = static_cast<SimJobEvent*>(evt);
         VLOG(1) << "Handling JOB_COMPLETED event for job with UID "
-                << MakeJobUID(evt->job()) << "!";
-        event_logger_->LogJobCompletionEvent(evt->time(),
-                                             MakeJobUID(evt->job()),
-                                             evt->job()->runtime());
+                << MakeJobUID(jcevt->job()) << "!";
+        event_logger_->LogJobCompletionEvent(jcevt->time(),
+                                             MakeJobUID(jcevt->job()),
+                                             jcevt->job()->runtime());
         break;
+        }
       case SimEvent::TASK_COMPLETED:
+        {
         // Task has finished, free up the resource it used
+        SimTaskEvent *tevt = static_cast<SimTaskEvent*>(evt);
         VLOG(1) << "Handling TASK_COMPLETED event for job with UID "
-                << MakeJobUID(evt->job()) << " and task " << evt->task() << "!";
-        evt->task()->RelinquishBoundResource();
+                << MakeJobUID(tevt->job()) << " and task " << tevt->task()
+                << "!";
+        tevt->task()->RelinquishBoundResource();
         break;
+        }
       default:
         LOG(FATAL) << "Encountered unrecognized event type " << evt->type();
     }
     // Remove this event as we have handled it.
     event_queue_.PopEvent();
+    // Handling events changes the cluster, so we try to schedule in the
+    // relevant ensemble.
+    CHECK_NOTNULL(evt->ensemble());
+    evt->ensemble()->RunScheduler();
+    // After this, we can now delete the event, as we have finished dealing with
+    // it.
     delete evt;
-    // Handling events changes the cluster, so we try to schedule.
-    cluster_->RunScheduler();
     // Get next event
     evt = event_queue_.GetNextEvent();
   }
-//  scheduler_->ScheduleAllPending(&event_queue_);
+}
+
 }
 
 int main(int argc, char *argv[]) {
@@ -123,26 +152,47 @@ int main(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
 
   WorkloadGenerator wl_gen;
-  event_logger_ =  new EventLogger("test.log");
+  event_logger_ =  new EventLogger(FLAGS_output);
 
   // Our simulated "cluster"
-  cluster_ = new EnsembleSim("testcluster", &event_queue_);
+  cluster_ = new EnsembleSim("testcluster");
 
   // Make ensembles that together form a "cluster"
   for (uint32_t i = 0; i < kNumMachines; ++i) {
-    EnsembleSim *e = new EnsembleSim("testmachine" + to_string(i),
-                                     &event_queue_);
+    EnsembleSim *e = new EnsembleSim("testmachine" + to_string(i));
     // Add resources to the "machine" ensembles
     for (uint32_t i = 0; i < kNumCoresPerMachine; ++i) {
       ResourceSim *r = new ResourceSim("core" + to_string(i), 1);
       simulation_resources_.push_back(r);
       r->JoinEnsemble(e);
     }
+    e->AddPreferredJobType(i % 2);
+    preferences_[i % 2].push_back(e);
+    string prefs;
+    for (set<uint32_t>::const_iterator p_iter =
+         e->preferred_jobtypes()->begin();
+         p_iter != e->preferred_jobtypes()->end();
+         ++p_iter)
+      prefs += to_string(*p_iter) + ", ";
+    VLOG(1) << "Ensemble prefers job types " << prefs;
     cluster_->AddNestedEnsemble(e);
   }
   LOG(INFO) << "Set up an ensemble with "
             << cluster_->NumResourcesJoinedDirectly() << " resources, "
             << "and " << cluster_->NumNestedEnsembles() << " nested ensembles.";
+
+  // Cross-peer the existing ensembles.
+  if (FLAGS_peer_adjacent) {
+    vector<Ensemble*> *ens = cluster_->GetNestedEnsembles();
+    for (uint64_t i = 0; i < ens->size(); ++i) {
+      if (i > 0) {
+        VLOG(1) << "Peering ensemble " << (*ens)[i-1]->name() << " with "
+                << (*ens)[i]->name();
+        (*ens)[i]->AddPeeredEnsemble((*ens)[i-1]);
+        (*ens)[i-1]->AddPeeredEnsemble((*ens)[i]);
+      }
+    }
+  }
 
   LOG(INFO) << "Running for a total simulation time of "
             << FLAGS_simulation_runtime;
@@ -154,11 +204,12 @@ int main(int argc, char *argv[]) {
   while (time < FLAGS_simulation_runtime) {
     double time_to_next_arrival = wl_gen.GetNextInterarrivalTime();
     uint64_t job_size = wl_gen.GetNextJobSize();
+    uint32_t job_type = wl_gen.GetNextJobType();
     VLOG(1) << "New job arriving at " << (time + time_to_next_arrival) << ", "
-            << "containing " << job_size << " tasks.";
+            << "containing " << job_size << " tasks, job type: " << job_type;
     // Create the job
     JobSim *j = new JobSim("job_at_t_" + to_string(time + time_to_next_arrival),
-                           job_size);
+                           job_size, job_type);
     for (uint64_t i = 0; i < job_size; ++i) {
       TaskSim *t = new TaskSim("t" + to_string(i),
                                wl_gen.GetNextTaskDuration());
@@ -166,8 +217,16 @@ int main(int argc, char *argv[]) {
       j->AddTask(t);
     }
     // Add job to cluster
-    event_queue_.AddJobEvent(time + time_to_next_arrival,
-                             SimEvent::JOB_ARRIVED, j);
+    if (FLAGS_use_prefs) {
+      EnsembleSim *e = preferences_[j->type()][0];
+      VLOG(1) << "Preference-based assignment, choosing ensemble " << e->name()
+              << " for job type " << j->type();
+      event_queue_.AddJobEvent(time + time_to_next_arrival,
+                               SimEvent::JOB_ARRIVED, j, e);
+    } else {
+      event_queue_.AddJobEvent(time + time_to_next_arrival,
+                               SimEvent::JOB_ARRIVED, j, cluster_);
+    }
     // Update timer
     double prev_time = time;
     time += time_to_next_arrival;

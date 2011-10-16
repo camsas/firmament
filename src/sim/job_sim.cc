@@ -4,16 +4,17 @@
 
 namespace firmament {
 
-JobSim::JobSim(const string& name, uint64_t num_tasks)
+JobSim::JobSim(const string& name, uint64_t num_tasks, uint32_t job_type)
   : Job(name),
     start_time_(-numeric_limits<double>::max()),
-    finish_time_(-numeric_limits<double>::max()) {
+    finish_time_(-numeric_limits<double>::max()),
+    type_(job_type) {
   VLOG(1) << "Creating sim job " << name;
 }
 
 bool JobSim::AddTask(TaskSim *const t) {
   tasks_.push_back(t);
-  Job::AddTask(static_cast<Task *const>(t));
+  Job::AddTask(t);
   return true;
 }
 

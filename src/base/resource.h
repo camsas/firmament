@@ -24,12 +24,15 @@ class Resource {
   }
 
   const string& name() { return name_; }
+  bool busy() const { return busy_; }
+  void set_busy(bool b) { busy_ = b; }
  private:
   string name_;
   uint64_t task_capacity_;
   Ensemble *current_ensemble_;
   Task *current_task_;
   double next_available_;
+  bool busy_;
 };
 
 }  // namespace firmament

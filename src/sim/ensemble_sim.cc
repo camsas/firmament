@@ -1,12 +1,17 @@
 // TODO: header
 
 #include "sim/ensemble_sim.h"
+#include "sim/scheduler_sim.h"
 
 namespace firmament {
 
-EnsembleSim::EnsembleSim(const string& name, EventQueue *event_queue)
-    : Ensemble(name), scheduler_(new SchedulerSim(this, event_queue)) {
+EnsembleSim::EnsembleSim(const string& name)
+    : Ensemble(name), scheduler_(new SchedulerSim(this)) {
 
+}
+
+EnsembleSim::~EnsembleSim() {
+  delete scheduler_;
 }
 
 void EnsembleSim::Join(ResourceSim* res) {
@@ -14,6 +19,7 @@ void EnsembleSim::Join(ResourceSim* res) {
 }
 
 void EnsembleSim::SubmitJob(JobSim* job, double time) {
+  CHECK_NOTNULL(job);
   scheduler_->SubmitJob(job, time);
 }
 

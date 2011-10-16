@@ -10,7 +10,7 @@ namespace firmament {
 
 class JobSim : public Job {
  public:
-  JobSim(const string& name, uint64_t num_tasks);
+  JobSim(const string& name, uint64_t num_tasks, uint32_t job_type);
   vector<TaskSim*> *GetTasks() { return &tasks_; }
   uint64_t NumTasks() { return tasks_.size(); }
   bool AddTask(TaskSim *const t);
@@ -27,6 +27,7 @@ class JobSim : public Job {
     CHECK_GE(finish_time_, start_time_);
     return finish_time_ - start_time_;
   }
+  uint32_t type() const { return type_; }
   void set_start_time(double time) {
     CHECK_GE(time, 0);
     start_time_ = time;
@@ -39,6 +40,7 @@ class JobSim : public Job {
   vector<TaskSim*> tasks_;
   double start_time_;
   double finish_time_;
+  uint32_t type_;
 };
 
 }

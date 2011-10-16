@@ -12,6 +12,9 @@ DECLARE_double(job_size_lambda);
 DECLARE_double(job_arrival_lambda);
 DECLARE_double(task_duration_scaling_factor);
 DECLARE_double(job_arrival_scaling_factor);
+DECLARE_bool(schedule_use_nested);
+DECLARE_bool(schedule_use_peered);
+DECLARE_double(non_preferred_penalty_factor);
 
 }
 

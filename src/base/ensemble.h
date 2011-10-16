@@ -20,19 +20,20 @@ class Ensemble {
   void AddResource(Resource& resource);
   void AddTask(Task& task);
   bool AddNestedEnsemble(Ensemble *ensemble);
+  bool AddPeeredEnsemble(Ensemble *ensemble);
   vector<Ensemble*> *GetNestedEnsembles() { return &children_; }
+  vector<Ensemble*> *GetPeeredEnsembles() { return &peered_ensembles_; }
   vector<Resource*> *GetResources() { return &joined_resources_; }
   uint64_t NumResourcesJoinedDirectly();
   uint64_t NumNestedEnsembles();
-  uint64_t NumIdleResources();
+  uint64_t NumIdleResources(bool include_peers);
   void SetResourceBusy(Resource *res);
   void SetResourceIdle(Resource *res);
-  bool ResourceBusy(Resource *res) { return resources_busy_[res]; }
   string& name() { return name_; }
  protected:
   vector<Resource*> joined_resources_;
-  map<Resource*, bool> resources_busy_;
   vector<Ensemble*> children_;
+  vector<Ensemble*> peered_ensembles_;  // TODO: we may need more detail here
   string name_;
 
   static const uint64_t nested_ensemble_capacity_ = 64;

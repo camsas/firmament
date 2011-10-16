@@ -4,26 +4,36 @@
 #define FIRMAMENT_SIM_ENSEMBLE_SIM_H
 
 #include "base/common.h"
+#include "sim/sim_common.h"
 #include "base/ensemble.h"
-#include "base/resource.h"
-#include "sim/scheduler_sim.h"
-#include "sim/event_queue.h"
+#include "sim/resource_sim.h"
+#include "sim/job_sim.h"
+//#include "sim/scheduler_sim.h"
+
+#include <set>
 
 namespace firmament {
 
 class SchedulerSim;
+class EventQueue;
 
 class EnsembleSim : public Ensemble {
  public:
-  EnsembleSim(const string& name, EventQueue *event_queue);
+  EnsembleSim(const string& name);
+  ~EnsembleSim();
   void Join(ResourceSim *res);
   void SubmitJob(JobSim *job, double time);
   void RunScheduler();
   uint64_t NumPending();
+  void AddPreferredJobType(uint32_t jobtype) {
+    preferred_jobtypes_.insert(jobtype);
+  }
+  set<uint32_t> *preferred_jobtypes() { return &preferred_jobtypes_; }
  private:
-  vector<Ensemble*> peered_ensembles_;  // TODO: we may need more detail here
   SchedulerSim *scheduler_;
+  set<uint32_t> preferred_jobtypes_;
 };
+
 
 }  // namespace firmament
 
