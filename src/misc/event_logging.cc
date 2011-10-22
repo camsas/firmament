@@ -49,12 +49,14 @@ void EventLogger::LogJobArrivalEvent(double time,
 void EventLogger::LogUtilizationValues(double time, uint64_t ensemble_uid,
                                        uint64_t occupied_resources,
                                        double occupied_percent,
-                                       uint64_t pending_queue_length) {
+                                       uint64_t pending_queue_length,
+                                       uint64_t unscheduled_tasks) {
   vector<string> outputs;
   outputs.push_back(to_string(ensemble_uid));
   outputs.push_back(to_string(occupied_resources));
   outputs.push_back(to_string(occupied_percent));
   outputs.push_back(to_string(pending_queue_length));
+  outputs.push_back(to_string(unscheduled_tasks));
   LogEvent(RESOURCE_UTILIZATION_SAMPLE, time, outputs);
 }
 
@@ -65,6 +67,17 @@ void EventLogger::LogJobCompletionEvent(double time,
   outputs.push_back(to_string(c_uid));
   outputs.push_back(to_string(duration));
   LogEvent(JOB_COMPLETED_EVENT, time, outputs);
+}
+
+void EventLogger::LogHandoffToPeersEvent(double time,
+                                         uint64_t job_uid,
+                                         uint64_t ensemble_uid,
+                                         uint64_t num_tasks) {
+  vector<string> outputs;
+  outputs.push_back(to_string(job_uid));
+  outputs.push_back(to_string(ensemble_uid));
+  outputs.push_back(to_string(num_tasks));
+  LogEvent(JOB_HANDOFF_TO_PEERS_EVENT, time, outputs);
 }
 
 }  // namespace firmament

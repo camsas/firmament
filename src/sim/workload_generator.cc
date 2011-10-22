@@ -6,7 +6,7 @@
 namespace firmament {
 
 DEFINE_double(simulation_runtime, 10.0, "Total duration of simulation.");
-DEFINE_double(job_size_lambda, 1.0, "Lamda for job size distribution.");
+DEFINE_double(job_size_lambda, 0.05, "Lamda for job size distribution.");
 DEFINE_double(job_arrival_lambda, 2.0,
               "Lambda for interarrival time distribution.");
 DEFINE_double(task_duration_scaling_factor, 30,

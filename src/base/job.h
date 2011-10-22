@@ -36,6 +36,10 @@ class Job {
   }
   bool AddTask(Task *const t);
   uint64_t NumTasks() { return tasks_.size(); }
+  uint64_t num_tasks_running() { return num_tasks_running_; }
+  void set_num_tasks_running(uint64_t num_tasks) {
+    num_tasks_running_ = num_tasks;
+  }
   vector<Task*> *GetTasks() { return &tasks_; }
 
  protected:
@@ -43,6 +47,7 @@ class Job {
   uint64_t job_uid_;  // Set automatically by constructor
   uint32_t state_;
   vector<Task*> tasks_;
+  uint64_t num_tasks_running_;
  private:
 };
 

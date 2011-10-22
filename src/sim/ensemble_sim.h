@@ -23,8 +23,9 @@ class EnsembleSim : public Ensemble {
   ~EnsembleSim();
   void Join(ResourceSim *res);
   void SubmitJob(JobSim *job, double time);
-  void RunScheduler();
-  uint64_t NumPending();
+  void RunScheduler(double time);
+  uint64_t NumPendingJobs();
+  uint64_t NumPendingTasks();
   void AddPreferredJobType(uint32_t jobtype) {
     preferred_jobtypes_.insert(jobtype);
   }

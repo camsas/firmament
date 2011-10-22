@@ -6,7 +6,7 @@ namespace firmament {
 
 Resource::Resource(const string& name, uint32_t task_capacity) :
     name_(name), task_capacity_(task_capacity), current_task_(NULL),
-    next_available_(0), current_ensemble_(NULL) {
+    next_available_(0), current_ensemble_(NULL), busy_(false) {
 }
 
 bool Resource::RunTask(Task *task) {

@@ -23,13 +23,18 @@ void EnsembleSim::SubmitJob(JobSim* job, double time) {
   scheduler_->SubmitJob(job, time);
 }
 
-void EnsembleSim::RunScheduler() {
-  scheduler_->ScheduleAllPending();
+void EnsembleSim::RunScheduler(double time) {
+  scheduler_->ScheduleAllPending(time);
 }
 
-uint64_t EnsembleSim::NumPending() {
+uint64_t EnsembleSim::NumPendingJobs() {
   CHECK_NOTNULL(scheduler_);
-  return scheduler_->NumPending();
+  return scheduler_->NumPendingJobs();
+}
+
+uint64_t EnsembleSim::NumPendingTasks() {
+  CHECK_NOTNULL(scheduler_);
+  return scheduler_->NumPendingTasks();
 }
 
 }  // namespace firmament

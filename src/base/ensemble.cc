@@ -22,7 +22,8 @@ void Ensemble::AddResource(Resource& resource) {
   CHECK_GE(joined_resources_.size(), 0);
   VLOG(1) << "Adding resource " << resource.name() << " at " << &resource;
   joined_resources_.push_back(&resource);
-  ++num_idle_resources_;
+  if (!resource.busy())
+    ++num_idle_resources_;
 }
 
 void Ensemble::AddTask(Task& task) {

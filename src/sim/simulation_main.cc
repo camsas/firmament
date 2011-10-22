@@ -6,11 +6,9 @@
 
 #include <glog/logging.h>
 #include <gflags/gflags.h>
-
-#include <boost/functional/hash.hpp>
-
 #include "base/common.h"
 #include "misc/event_logging.h"
+#include "misc/utils.h"
 #include "sim/workload_generator.h"
 #include "sim/ensemble_sim.h"
 #include "sim/task_sim.h"
@@ -41,19 +39,9 @@ EnsembleSim *cluster_;
 map<uint32_t, vector<EnsembleSim*> > preferences_;
 
 const uint64_t kNumMachines = 2;
-const uint64_t kNumCoresPerMachine = 24;
+const uint64_t kNumCoresPerMachine = 48;
 
 double time_;
-
-uint64_t MakeJobUID(Job *job) {
-  boost::hash<string> hasher;
-  return hasher(job->name());
-}
-
-uint64_t MakeEnsembleUID(Ensemble *ens) {
-  boost::hash<string> hasher;
-  return hasher(ens->name());
-}
 
 void LogUtilizationStats(double time, EnsembleSim *ensemble) {
   uint64_t e_uid = MakeEnsembleUID(ensemble);
@@ -72,9 +60,11 @@ void LogUtilizationStats(double time, EnsembleSim *ensemble) {
       static_cast<double>(ensemble->NumResourcesJoinedDirectly());
   else
     busy_percent = 0;
-  uint64_t pending = ensemble->NumPending();
+  uint64_t pending_jobs = ensemble->NumPendingJobs();
+  uint64_t pending_tasks = ensemble->NumPendingTasks();
   event_logger_->LogUtilizationValues(time, e_uid, busy_resources,
-                                      busy_percent, pending);
+                                      busy_percent, pending_jobs,
+                                      pending_tasks);
 }
 
 void LogUtilizationStatsRecursively(double time, EnsembleSim *ensemble) {
@@ -136,7 +126,7 @@ void RunSimulationUntil(double time_from, double time_until,
     // Handling events changes the cluster, so we try to schedule in the
     // relevant ensemble.
     CHECK_NOTNULL(evt->ensemble());
-    evt->ensemble()->RunScheduler();
+    evt->ensemble()->RunScheduler(evt->time());
     // After this, we can now delete the event, as we have finished dealing with
     // it.
     delete evt;

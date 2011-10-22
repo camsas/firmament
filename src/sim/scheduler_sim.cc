@@ -1,20 +1,23 @@
 // TODO: header
 
+#include "misc/utils.h"
 #include "sim/scheduler_sim.h"
 #include "sim/task_sim.h"
 
 namespace firmament {
 
 SchedulerSim::SchedulerSim(EnsembleSim *ensemble) :
-  ensemble_(ensemble) {
+  ensemble_(ensemble),
+  num_pending_tasks_(0) {
 }
 
 void SchedulerSim::SubmitJob(JobSim *job, double time) {
   CHECK_NOTNULL(job);
   pending_queue_.push(pair<JobSim*, double>(job, time));
+  num_pending_tasks_ += job->NumTasks();
 }
 
-void SchedulerSim::ScheduleAllPending() {
+void SchedulerSim::ScheduleAllPending(double time) {
   if (pending_queue_.empty())
     return;
 
@@ -26,7 +29,7 @@ void SchedulerSim::ScheduleAllPending() {
   pair<JobSim*, double> next;
   VLOG(1) << "In ScheduleAllPending, pending queue size is "
           << pending_queue_.size();
-  while (!pending_queue_.empty()) {
+  while (!pending_queue_.empty() && pending_queue_.front().second <= time) {
     next = pending_queue_.front();
     JobSim *job = next.first;
     if (job == head.first && !ignore)
@@ -36,12 +39,12 @@ void SchedulerSim::ScheduleAllPending() {
     }
     VLOG(1) << "Trying to schedule next job: " << job->name() << " at time " << next.second;
     uint64_t tasks_scheduled = ScheduleJob(job, next.second);
-    if (tasks_scheduled > 0) {
+    if (job->num_tasks_running() > 0) {
       pending_queue_.pop();
       job->set_state(Job::RUNNING);
       head = pending_queue_.front();
       ignore = true;
-      if (tasks_scheduled < job->NumTasks()) {
+      if (job->num_tasks_running() < job->NumTasks()) {
         ++(next.second);
         pending_queue_.push(next);
       } else {
@@ -49,7 +52,6 @@ void SchedulerSim::ScheduleAllPending() {
                                          ensemble_);
       }
     } else {
-      ++(pending_queue_.front().second);
       head = pending_queue_.front();
     }
   }
@@ -62,9 +64,9 @@ uint64_t SchedulerSim::ScheduleJob(JobSim *job, double time) {
   uint64_t num_tasks_scheduled = 0;
   double max_task_runtime = 0;
   VLOG(1) << "total no tasks: " << job->NumTasks();
-  if (ensemble_->NumIdleResources(true) < job->NumTasks())
+/*  if (ensemble_->NumIdleResources(true) < job->NumTasks())
     return 0;
-  else {
+  else*/ {
     // Perform the actual scheduling
     vector<TaskSim*> *tasks = job->GetTasks();
     CHECK_NOTNULL(tasks);
@@ -95,6 +97,7 @@ uint64_t SchedulerSim::ScheduleJob(JobSim *job, double time) {
     }
     // Third, we try peered ensembles
     if (FLAGS_schedule_use_peered) {
+      uint64_t num_handed_off_to_peers = 0;
       VLOG(2) << "Trying peered ensembles...";
       vector<Ensemble*> *peers = ensemble_->GetPeeredEnsembles();
       VLOG(2) << "We have " << peers->size() << " peers!";
@@ -106,19 +109,25 @@ uint64_t SchedulerSim::ScheduleJob(JobSim *job, double time) {
         schedule_result = AttemptScheduleOnResourceSet(
             p_resources, static_cast<EnsembleSim*>(*p_iter),
             job, time);
-        ++p_iter;
         num_tasks_scheduled += schedule_result.first;
+        num_handed_off_to_peers += schedule_result.first;
         max_task_runtime = max(max_task_runtime, schedule_result.second);
+        event_logger_->LogHandoffToPeersEvent(time, MakeJobUID(job),
+                                              MakeEnsembleUID(*p_iter),
+                                              num_handed_off_to_peers);
+        ++p_iter;
       }
     }
   }
   if (num_tasks_scheduled > 0) {
+    num_pending_tasks_ -= num_tasks_scheduled;
+    job->set_num_tasks_running(job->num_tasks_running() + num_tasks_scheduled);
     job->set_start_time(time);
     job->set_finish_time(time + max_task_runtime);
     if (num_tasks_scheduled < job->NumTasks())
       VLOG(1) << "Successfully scheduled parts of job " << job->name()
               << "(" << num_tasks_scheduled << " tasks of " << job->NumTasks()
-              << " scheduled, " << (job->NumTasks() - num_tasks_scheduled)
+              << " scheduled, " << (job->NumTasks() - job->num_tasks_running())
               << " remain pending.)";
     else
       VLOG(1) << "Successfully scheduled all tasks in job " << job->name();
@@ -146,11 +155,13 @@ pair<uint64_t, double> SchedulerSim::AttemptScheduleOnResourceSet(
             << (*res_iter)->name();
     while (task_iter != tasks->end() && (*task_iter)->state() == Task::RUNNING)
       ++task_iter;
-    if (task_iter == tasks->end())
+    if (task_iter == tasks->end()) {
+      VLOG(2) << "No more tasks to schedule.";
       break;
+    }
     CHECK_NOTNULL(*task_iter);
     VLOG(2) << "Checking the resource's next availability, is "
-            << (*res_iter)->next_available();
+            << (*res_iter)->next_available() << ", current: " << time;
     if (!(*res_iter)->busy()) {
       CHECK_NOTNULL(*task_iter);
       // This resource is idle, so we can use it
@@ -182,6 +193,8 @@ pair<uint64_t, double> SchedulerSim::AttemptScheduleOnResourceSet(
               << " on resource " << (*res_iter)->name()
               << ", num_tasks_scheduled is now " << num_tasks_scheduled;
       ++task_iter;
+    } else {
+      VLOG(2) << "The resource is flagged as busy.";
     }
   }
   return pair<uint64_t, double>(num_tasks_scheduled, max_task_runtime);
