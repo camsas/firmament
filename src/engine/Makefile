@@ -17,4 +17,4 @@ worker-tests: worker-lib
 	@mkdir -p $(BUILD_DIR)/tests/engine
 	@$(CXX) $(CPPFLAGS) $(SRC_ROOT_DIR)/engine/worker_test.cc \
 	   $(GTEST_LIB) $(BUILD_DIR)/engine/worker.o $(CXXFLAGS) \
-	   -o $(BUILD_DIR)/tests/engine/worker $(GTEST_FLAGS)
+	   $(LIBS) -o $(BUILD_DIR)/tests/engine/worker $(GTEST_FLAGS)

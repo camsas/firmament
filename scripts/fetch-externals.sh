@@ -17,7 +17,7 @@ GFLAGS_VER="1.6-1"
 function get_arch() {
   if [[ $1 == "i368" || $1 == "i468" || $1 == "i568" || $1 == "i686" || $1 == "IA-32" ]]; then
     echo "i386"
-  elif [[ $1 == "amd64" ]]; then
+  elif [[ $1 == "amd64" || $1 == "x86_64" ]]; then
     echo "amd64"
   else
     echo "unknown"
@@ -27,7 +27,7 @@ function get_arch() {
 function get_archx {
   if [[ $1 == "i368" || $1 == "i468" || $1 == "i568" || $1 == "i686" || $1 == "IA-32" ]]; then
     echo "x86"
-  elif [[ $1 == "amd64" ]]; then
+  elif [[ $1 == "amd64" || $1 == "x86_64" ]]; then
     echo "x86_64"
   else
     echo "unknown"
@@ -164,7 +164,8 @@ print_subhdr "GOOGLE TEST LIBRARY FOR C++"
 get_dep_svn "googletest" "googlecode"
 cd googletest-svn/make
 echo -n "Building googletest library..."
-RES=$(make all --quiet 2>/dev/null)
+#RES=$(make all --quiet 2>/dev/null)
+RES=$(make all)
 print_succ_or_fail $RES
 cd ..
 
