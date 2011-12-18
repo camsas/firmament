@@ -1,2 +1,15 @@
 Wonderous things are bound to appear here in the future.
 
+
+SYSTEM REQUIREMENTS
+-------------------
+
+Wonderous things are currently known to work on Ubuntu 10.10 (maverick) and
+11.10 (oneric); they are known to NOT work on 10.04 and 11.04.
+
+Other configurations are untested - YMMV.
+
+Reasons for known breakage:
+* Ubuntu 10.04 - clang/LLVM version too old.
+* Ubuntu 11.04 - broken dependency on /usr/include/linux/errno.h;
+                 see http://pad.lv/774215 for a possible workaround
