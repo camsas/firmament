@@ -1,14 +1,9 @@
+SUFFIX=misc
+
 include ../../include/Makefile.config
-
-HDRS = "$(SRC_ROOT_DIR)/misc/event_logging.h"
-
-setup:
-	@mkdir -p $(BUILD_DIR)/misc
+include ../../include/Makefile.common
 
 all: event_logging.o utils.o
 	@$(AR) rcs $(BUILD_DIR)/misc/libfirmament_misc.a \
 	    $(BUILD_DIR)/misc/event_logging.o \
 	    $(BUILD_DIR)/misc/utils.o
-
-%.o: %.cc %.h setup
-	@$(CXX) -c $(SRC_ROOT_DIR)/misc/$< -I$(SRC_ROOT_DIR) -o $(BUILD_DIR)/misc/$@

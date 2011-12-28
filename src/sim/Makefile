@@ -1,9 +1,9 @@
+SUFFIX=sim
+
 include ../../include/Makefile.config
+include ../../include/Makefile.common
 
 all: main
-
-setup:
-	@mkdir -p $(BUILD_DIR)/sim/
 
 main: workload_generator.o ensemble_sim.o task_sim.o job_sim.o scheduler_sim.o \
 	event_queue.o resource_sim.o
@@ -17,6 +17,3 @@ main: workload_generator.o ensemble_sim.o task_sim.o job_sim.o scheduler_sim.o \
 	   $(BUILD_DIR)/misc/libfirmament_misc.a \
 	   -I$(SRC_ROOT_DIR) $(LIBS) \
 	   -o $(BUILD_DIR)/sim/simulation
-
-%.o: %.cc setup
-	@$(CXX) -c $(SRC_ROOT_DIR)/sim/$< -I$(SRC_ROOT_DIR) -o $(BUILD_DIR)/sim/$@

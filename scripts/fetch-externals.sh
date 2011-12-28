@@ -7,8 +7,8 @@ cd ext
 # If we are running on a Debian-based system, a couple of dependencies 
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
-UBUNTU_PKGS="clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev"
-DEBIAN_PKGS="clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev"
+UBUNTU_PKGS="clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libprotobuf-dev protobuf-compiler"
+DEBIAN_PKGS="clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libprotobuf-dev protobuf-compiler"
 
 GFLAGS_VER="1.6-1"
 

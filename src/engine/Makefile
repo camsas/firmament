@@ -1,6 +1,12 @@
+SUFFIX=engine
+
 include ../../include/Makefile.config
+include ../../include/Makefile.common
 
 all: worker worker-tests
+
+# TODO: check if any of the below targets can make use of a generic
+# build rule from Makefile.common, or can be converted to do so.
 
 worker: worker-lib
 	@mkdir -p $(BUILD_DIR)/engine

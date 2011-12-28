@@ -1,0 +1,51 @@
+######
+# This file contains generic make rules. It assumes that the $SUFFIX
+# variable has been pre-set with the relative path within the source
+# tree that we are currently building in (i.e. the working directory
+# for this make invocation).
+#
+# It also assumes that Makefile.config has been previously included.
+# (We cannot include it here as we do not know the relative path to
+# it from this generic file.)
+
+##############
+# Check for required variables
+ifeq ($(PBC),)
+$(error PBC not set; rule from Makefile.common used without including \
+	Makefile.config first?)
+endif
+
+ifeq ($(BUILD_DIR),)
+$(error BUILD_DIR not set; rule from Makefile.common used without \
+	including Makefile.config first?)
+endif
+
+ifeq ($(SRC_GEN_DIR),)
+$(error SRC_GEN_DIR not set; rule from Makefile.common used without \
+	including Makefile.config first?)
+endif
+
+ifeq ($(SRC_ROOT_DIR),)
+$(error SRC_ROOT_DIR not set; rule from Makefile.common used without \
+	including Makefile.config first?)
+endif
+
+ifeq ($(SUFFIX),)
+$(warning SUFFIX not set, will default to root of source tree!)
+endif
+
+# end variable checking
+#############
+
+setup:
+	@mkdir -p $(BUILD_DIR)/$(SUFFIX)
+
+%.pb.h: %.proto
+	@mkdir -p $(SRC_GEN_DIR)/$(SUFFIX)
+	@$(PBC) --cpp_out=$(SRC_GEN_DIR)/$(SUFFIX)/ \
+		--proto_path=$(SRC_ROOT_DIR)/$(SUFFIX)/ \
+		$(SRC_ROOT_DIR)/$(SUFFIX)/$<
+
+%.o: %.cc %.h setup
+	@$(CXX) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< -I$(SRC_ROOT_DIR) \
+		-o $(BUILD_DIR)/$(SUFFIX)/$@
