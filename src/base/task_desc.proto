@@ -1,0 +1,14 @@
+package firmament;
+
+enum TaskState {
+  RUNNING = 0;
+  ASSIGNED = 1;
+  // TODO: + others
+}
+
+message TaskDescriptor {
+  required uint64 id = 1;
+  required string name = 2;
+  required TaskState state = 3;
+}
+

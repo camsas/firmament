@@ -1,0 +1,11 @@
+package firmament;
+
+import "task_desc.proto";
+
+message ResourceDescriptor {
+  required string uuid = 1;
+  repeated TaskDescriptor task_queue = 2;
+  // ensemble(s)
+  // state
+  // optional ResourceStatsDescriptor stats = X
+}

@@ -40,12 +40,18 @@ endif
 setup:
 	@mkdir -p $(BUILD_DIR)/$(SUFFIX)
 
-%.pb.h: %.proto
+%.pb.cc %.pb.h: %.proto
 	@mkdir -p $(SRC_GEN_DIR)/$(SUFFIX)
 	@$(PBC) --cpp_out=$(SRC_GEN_DIR)/$(SUFFIX)/ \
 		--proto_path=$(SRC_ROOT_DIR)/$(SUFFIX)/ \
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$<
 
+%.pb.o: %.pb.cc %.pb.h
+	@$(CXX) -c $(SRC_GEN_DIR)/$(SUFFIX)/$< -I$(SRC_ROOT_DIR) \
+		-I$(SRC_GEN_DIR)/$(SUFFIX)/ \
+		-o $(BUILD_DIR)/$(SUFFIX)/$@
+
 %.o: %.cc %.h setup
 	@$(CXX) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< -I$(SRC_ROOT_DIR) \
+		-I$(SRC_GEN_DIR)/$(SUFFIX)/ \
 		-o $(BUILD_DIR)/$(SUFFIX)/$@
