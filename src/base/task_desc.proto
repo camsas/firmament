@@ -1,9 +1,13 @@
 package firmament;
 
 enum TaskState {
-  RUNNING = 0;
-  ASSIGNED = 1;
-  // TODO: + others
+  CREATED = 0;
+  RUNNING = 1;
+  PENDING = 2;
+  COMPLETED = 3;
+  ASSIGNED = 4;
+  MIGRATED = 5;
+  UNKNOWN = 6;
 }
 
 message TaskDescriptor {
