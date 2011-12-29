@@ -36,6 +36,55 @@ function get_archx {
 
 ##################################
 
+function check_os_release_compatibility() {
+  print_subhdr "OS COMPATIBILITY CHECK ($1 $2)"
+  if [[ $1 == "Ubuntu" ]]; then
+    if [[ $2 == "10.04" || $2 == "11.04" ]]; then
+      echo_failure
+      echo "There are known issues running Firmament with your version " \
+        "of Ubuntu ($2). See README for details and possible workarounds."
+      ask_continue
+    else
+      echo -n "$1 $2 is compatible."
+      echo_success
+      echo
+    fi
+  elif [[ $1 == "Debian" ]]; then
+    echo -n "$1 $2 is compatible."
+    echo_success
+    echo
+    echo "WARNING: Running Firmament on Debian is currently not well tested." \
+      "YMMV!"
+    ask_continue
+  else
+    echo_failure
+    echo "Unsupported OS! Proceed at your own risk..."
+    ask_continue
+  fi
+}
+
+##################################
+
+function ask_continue() {
+  while [[ $response != "n" && $response != "N" \
+    && $response != "y" && $response != "Y" ]]
+  do
+    echo -n  "Do you want to continue? [yN] "
+    read response
+    if [[ $response == "" ]]; then
+      break
+    fi
+  done
+  # if we have seen an "n", "N" or a blank response (defaults to N),
+  # we exit here
+  if [[ $response == "n" || $response == "N" || $response == "" ]]
+  then
+    exit 1
+  fi
+}
+
+##################################
+
 function check_dpkg_packages() {
   print_subhdr "$1 PACKAGE CHECK"
   if [[ $1 == "Ubuntu" ]]; then
@@ -63,7 +112,7 @@ function check_dpkg_packages() {
   else
     echo -n "All required Ubuntu packages are installed."
     echo_success
-    echo 
+    echo
     touch .$1-ok
   fi
 }
@@ -104,13 +153,15 @@ function get_dep_deb {
 
 print_hdr "FETCHING & INSTALLING EXTERNAL DEPENDENCIES"
 
-OS_ID=$(lsb_release -i -s) 
+OS_ID=$(lsb_release -i -s)
+OS_RELEASE=$(lsb_release -r -s)
 ARCH_UNAME=$(uname -m)
 ARCH=$(get_arch "${ARCH_UNAME}")
 ARCHX=$(get_archx "${ARCH_UNAME}")
 
 if [[ ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ]]; then
   echo "Detected $OS_ID..."
+  check_os_release_compatibility ${OS_ID} ${OS_RELEASE}
   if [ -f "${OS_ID}-ok" ]; then
     echo -n "${OS_ID} package check previously ran successfully; skipping. "
     echo "Delete .${OS_ID}-ok file if you want to re-run it."
