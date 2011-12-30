@@ -4,7 +4,10 @@
 # Get common build settings
 include include/Makefile.config
 
-all: ext engine doc sim
+all: info ext engine doc sim
+
+info:
+	@echo "Build using $(CXX)"
 
 ext:
 	@$(SCRIPTS_DIR)/fetch-externals.sh
@@ -14,7 +17,7 @@ doc:
 
 engine: base
 	@cd $(SRC_ROOT_DIR)/engine && make all
- 
+
 base:
 	@cd $(SRC_ROOT_DIR)/base && make all
 
