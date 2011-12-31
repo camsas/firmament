@@ -1,0 +1,108 @@
+########################################
+# DIRECTORIES
+########################################
+
+# Define the root directory
+ROOT_DIR ?= $(shell pwd)
+export ROOT_DIR
+
+# Directory for the output binaries
+BUILD_DIR ?= $(ROOT_DIR)/build
+export BUILD_DIR
+
+# Source code root directory
+SRC_ROOT_DIR ?= $(ROOT_DIR)/src
+export SRC_ROOT_DIR
+
+# Generated source code root directory
+SRC_GEN_DIR ?= $(ROOT_DIR)/src/generated
+export SRC_GEN_DIR
+
+# Helper scripts directory
+SCRIPTS_DIR ?= $(ROOT_DIR)/scripts
+export SCRIPTS_DIR
+
+# Externals (libraries) directory
+EXT_DIR ?= $(ROOT_DIR)/ext
+export EXT_DIR
+
+#######################################
+# glog-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for googletest
+GLOG_INC_DIR ?= $(EXT_DIR)/google-glog-build/include
+export GLOG_INC_DIR
+
+# Path to the compiled googletest library (usually under
+# "make" in the googletest directory in "ext").
+GLOG_LIB ?= $(EXT_DIR)/google-glog-build/lib
+export GLOG_LIB
+
+
+#######################################
+# glog-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for googletest
+GFLAGS_INC_DIR ?= $(EXT_DIR)/gflags-build/include
+export GFLAGS_INC_DIR
+
+# Path to the compiled googletest library (usually under
+# "make" in the googletest directory in "ext").
+GFLAGS_LIB ?= $(EXT_DIR)/gflags-build/lib
+export GFLAGS_LIB
+
+
+#######################################
+# googletest-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for googletest
+GTEST_INC_DIR ?= $(EXT_DIR)/googletest-svn/include
+export GTEST_INC_DIR
+
+# Path to the compiled googletest library (usually under
+# "make" in the googletest directory in "ext").
+GTEST_LIB ?= $(EXT_DIR)/googletest-svn/make/gtest_main.a
+export GTEST_LIB
+
+# This is necessary to work around a compilation issue with googletest when
+# using clang and (presumably) libstdc++4.4
+GTEST_FLAGS=-DGTEST_HAS_TR1_TUPLE=0
+
+
+#######################################
+# INCLUDES
+#######################################
+
+INCLUDES = -I$(SRC_ROOT_DIR) -I$(GTEST_INC_DIR) -I$(GLOG_INC_DIR) -I$(GFLAGS_INC_DIR)
+export INCLUDES
+
+#######################################
+# LIBRARIES
+#######################################
+
+# TODO(ms705): Temporarily disable -lprofiler and -ltcmalloc due to known
+# issues with Ubuntu's libunwind
+#LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf
+LIBS = -pthread -lgflags -lglog
+
+
+#######################################
+# COMPILER
+#######################################
+
+CXX = g++
+
+CPPFLAGS = -DSCC -march=pentium $(INCLUDES)
+
+CXXFLAGS = -L$(GLOG_LIB) -L$(GFLAGS_LIB) $(LIBS) -Wall -Wextra -Werror -g -O0
+
+#######################################
+# PROTOBUF COMPILER
+#######################################
+
+PBC = protoc
+
+PBCFLAGS =

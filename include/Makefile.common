@@ -47,11 +47,11 @@ setup:
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$<
 
 %.pb.o: %.pb.cc %.pb.h
-	@$(CXX) -c $(SRC_GEN_DIR)/$(SUFFIX)/$< -I$(SRC_ROOT_DIR) \
+	@$(CXX) $(CPPFLAGS) -c $(SRC_GEN_DIR)/$(SUFFIX)/$< \
 		-I$(SRC_GEN_DIR)/$(SUFFIX)/ \
 		-o $(BUILD_DIR)/$(SUFFIX)/$@
 
 %.o: %.cc %.h setup
-	@$(CXX) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< -I$(SRC_ROOT_DIR) \
+	@$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		-I$(SRC_GEN_DIR)/$(SUFFIX)/ \
 		-o $(BUILD_DIR)/$(SUFFIX)/$@
