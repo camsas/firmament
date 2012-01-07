@@ -12,18 +12,43 @@
 #include <limits>
 
 #include <glog/logging.h>
+#include <gflags/gflags.h>
 
 using namespace std;
 
 namespace firmament {
 
-// Helper function to convert an arbitrary object to a string via the stringstream
-// standard library class.
-template <class T> inline std::string to_string (const T& t) {
+typedef enum kPlatformID {
+  UNIX = 0,
+  SCC = 1,
+} PlatformID;
+
+// Helper function to convert an arbitrary object to a string via thei
+// stringstream standard library class.
+template <class T> inline string to_string (const T& t) {
   std::stringstream ss;
   ss << t;
   return ss.str();
 }
+
+namespace common {
+
+// Helper function to perform common init tasks for user-facing Firmament
+// binaries.
+inline void InitFirmament(int argc, char *argv[]) {
+  // Use gflags to parse command line flags
+  google::ParseCommandLineFlags(&argc, &argv, true);
+
+  // Set up glog for logging output
+  google::InitGoogleLogging(argv[0]);
+}
+
+inline PlatformID GetPlatformID(const string &platform_name) {
+  VLOG(1) << platform_name;
+  return UNIX;
+}
+
+}  // namespace firmament::common
 
 }
 

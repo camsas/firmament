@@ -138,8 +138,9 @@ void RunSimulationUntil(double time_from, double time_until,
 }
 
 int main(int argc, char *argv[]) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
+//  google::ParseCommandLineFlags(&argc, &argv, true);
+//  google::InitGoogleLogging(argv[0]);
+  common::InitFirmament(argc, argv);
 
   WorkloadGenerator wl_gen;
   event_logger_ =  new EventLogger(FLAGS_output);
