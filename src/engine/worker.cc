@@ -12,8 +12,8 @@ namespace firmament {
 Worker::Worker(PlatformID platform_id)
   : platform_id_(platform_id) {
   // Start up a worker according to the platform parameter
-  platform_ = platform::GetByID(platform_id);
-  string hostname = platform_.GetHostname();
+  //platform_ = platform::GetByID(platform_id);
+  string hostname = ""; //platform_.GetHostname();
   VLOG(1) << "Worker starting on host " << hostname << ", platform "
           << platform_id;
 }
