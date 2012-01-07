@@ -16,6 +16,7 @@ class Worker {
   }
  protected:
   PlatformID platform_id_;
+  //Platform platform_;
 };
 
 }  // namespace firmament
