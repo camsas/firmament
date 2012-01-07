@@ -42,12 +42,17 @@ class WorkerTest : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests in the test case for Worker.
-  Worker w_;
+  //Worker w_;
 };
 
-// Tests that the Foo::Bar() method does Abc.
-TEST_F(WorkerTest, TestMethod) {
-  EXPECT_EQ(0, w_.Test());
+// Tests that the platform gets set correctly when instantiating a worker.
+TEST_F(WorkerTest, PlatformSetTest) {
+  FLAGS_platform = "unix";
+  FLAGS_v = 1;
+  Worker unix_worker(common::GetPlatformID(FLAGS_platform));
+  EXPECT_EQ(1, unix_worker.Test());
+  // We expect this worker to have been configured as a UNIX worker.
+  EXPECT_EQ(unix_worker.platform_id(), UNIX);
 }
 
 }  // namespace
@@ -56,4 +61,3 @@ int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-
