@@ -3,19 +3,23 @@
 #include <stdint.h>
 #include <iostream>
 
-#include <glog/logging.h>
-#include <gflags/gflags.h>
-
+#include "base/common.h"
 #include "engine/worker.h"
 
 using namespace firmament;
 
+DECLARE_string(platform);
+
 int main(int argc, char *argv[]) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
- 
-  LOG(INFO) << "Hello from Firmament worker (LOG)!";
-  Worker worker;
+  VLOG(1) << "Calling common::InitFirmament";
+  common::InitFirmament(argc, argv);
+
+  // TODO(malte): support for automatic platform detection?
+  // TODO(malte): validation of FLAGS_platform
+  PlatformID platform_id =  common::GetPlatformID(FLAGS_platform);
+
+  LOG(INFO) << "Firmament worker starting (Platform: " << platform_id
+            << ") ...";
+  Worker worker(platform_id);
   worker.Test();
-  LOG(INFO) << "set up worker object";
 }

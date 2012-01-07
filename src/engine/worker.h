@@ -3,14 +3,19 @@
 #ifndef FIRMAMENT_ENGINE_WORKER_H
 #define FIRMAMENT_ENGINE_WORKER_H
 
-#include <glog/logging.h>
+#include "base/common.h"
 
 namespace firmament {
 
 class Worker {
  public:
-  Worker();
+  Worker(PlatformID platform_id);
   int64_t Test();
+  inline PlatformID platform_id() {
+    return platform_id_;
+  }
+ protected:
+  PlatformID platform_id_;
 };
 
 }  // namespace firmament

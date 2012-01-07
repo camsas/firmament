@@ -3,13 +3,14 @@
 #include <stdint.h>
 #include <iostream>
 
-#include <glog/logging.h>
-#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
+#include "base/common.h"
 #include "engine/worker.h"
 
 using namespace firmament;
+
+DECLARE_string(platform);
 
 namespace {
 
