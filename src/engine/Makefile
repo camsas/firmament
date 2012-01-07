@@ -14,10 +14,7 @@ worker: worker-lib
 	   $(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a $(BUILD_DIR)/engine/worker.o \
 	   -o $(BUILD_DIR)/engine/worker
 
-worker-lib:
-	@mkdir -p $(BUILD_DIR)/engine
-	@$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/engine/worker.cc \
-	   -o $(BUILD_DIR)/engine/worker.o
+worker-lib: worker.o
 
 worker-tests: worker-lib
 	@mkdir -p $(BUILD_DIR)/tests/engine
