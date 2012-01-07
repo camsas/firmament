@@ -6,7 +6,7 @@
 #include "base/common.h"
 #include "base/job.h"
 
-//#include "generated/base/task_desc.pb.h"
+#include "generated/base/task_desc.pb.h"
 
 namespace firmament {
 
@@ -45,7 +45,7 @@ class Task {
 
  protected:
   string name_;
-  //TaskDescriptor descriptor_;
+  TaskDescriptor descriptor_;
  private:
   uint64_t task_uid_;  // Set automatically by constructor
   uint64_t index_in_job_;
