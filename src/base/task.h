@@ -30,7 +30,7 @@ class Task {
   void set_index_in_job(const uint64_t idx) { index_in_job_ = idx; }
   const string& name() { return name_; }
   void set_name(const string& name) { name_ = name; }
-  const TaskState state() { return static_cast<TaskState>(state_); }
+  TaskState state() { return static_cast<TaskState>(state_); }
   void set_state(TaskState state) {
     state_ = static_cast<TaskState>(state);
   }

@@ -24,11 +24,11 @@ class Job {
   Job(const string& name);
   const string& name() { return name_; }
   void set_name(const string& name) { name_ = name; }
-  const JobState state() { return static_cast<JobState>(state_); }
+  JobState state() { return static_cast<JobState>(state_); }
   void set_state(JobState state) {
     state_ = static_cast<JobState>(state);
   }
-  const uint32_t TaskState(uint64_t task_id) {   // TODO: type
+  uint32_t TaskState(uint64_t task_id) {   // TODO: type
     CHECK_LE(task_id, tasks_.size());
     //return static_cast<Task::TaskState>(tasks_[task_id]->state());
     //return tasks_[task_id]->state();

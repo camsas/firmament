@@ -46,7 +46,7 @@ double time_;
 void LogUtilizationStats(double time, EnsembleSim *ensemble) {
   uint64_t e_uid = MakeEnsembleUID(ensemble);
   // Count number of resources in use
-  double busy_resources = 0;
+  uint64_t busy_resources = 0;
   vector<Resource*> *resources = ensemble->GetResources();
   for (vector<Resource*>::iterator res_iter = resources->begin();
        res_iter != resources->end();
@@ -79,9 +79,12 @@ void LogUtilizationStatsRecursively(double time, EnsembleSim *ensemble) {
 void RunSimulationUntil(double time_from, double time_until,
                         vector<TaskSim*> *completed_tasks,
                         vector<JobSim*> *completed_jobs) {
+  CHECK_NOTNULL(completed_tasks);
+  CHECK_NOTNULL(completed_jobs);
   // Process all relevant events in the time frame between now and time_util
   SimEvent *evt = event_queue_.GetNextEvent();
-  while (evt != NULL && evt->time() <= time_until) {
+  while (evt != NULL && evt->time() >= time_from
+         && evt->time() <= time_until) {
     // Process event
 //    CHECK_NOTNULL(evt->ensemble());
     switch (evt->type()) {
@@ -152,8 +155,8 @@ int main(int argc, char *argv[]) {
   for (uint32_t i = 0; i < kNumMachines; ++i) {
     EnsembleSim *e = new EnsembleSim("testmachine" + to_string(i));
     // Add resources to the "machine" ensembles
-    for (uint32_t i = 0; i < kNumCoresPerMachine; ++i) {
-      ResourceSim *r = new ResourceSim("core" + to_string(i), 1);
+    for (uint32_t j = 0; j < kNumCoresPerMachine; ++j) {
+      ResourceSim *r = new ResourceSim("core" + to_string(j), 1);
       simulation_resources_.push_back(r);
       r->JoinEnsemble(e);
     }
