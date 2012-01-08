@@ -1,0 +1,9 @@
+package firmament;
+
+enum PlatformID {
+  UNKNOWN = 0;
+  UNIX = 1;
+  SCC = 2;
+  EC2 = 3;
+}
+

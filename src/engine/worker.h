@@ -4,6 +4,7 @@
 #define FIRMAMENT_ENGINE_WORKER_H
 
 #include "base/common.h"
+#include "platforms/common.h"
 
 namespace firmament {
 

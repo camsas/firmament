@@ -4,7 +4,7 @@
 # Get common build settings
 include include/Makefile.config
 
-all: info ext engine doc sim
+all: info ext platforms engine doc sim
 
 info:
 	@echo "Build using $(CXX)"

@@ -49,7 +49,7 @@ class WorkerTest : public ::testing::Test {
 TEST_F(WorkerTest, PlatformSetTest) {
   FLAGS_platform = "unix";
   FLAGS_v = 1;
-  Worker unix_worker(common::GetPlatformID(FLAGS_platform));
+  Worker unix_worker(GetPlatformID(FLAGS_platform));
   EXPECT_EQ(1, unix_worker.Test());
   // We expect this worker to have been configured as a UNIX worker.
   EXPECT_EQ(unix_worker.platform_id(), UNIX);

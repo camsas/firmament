@@ -5,6 +5,9 @@
 
 #include "base/common.h"
 #include "engine/worker.h"
+#include "platforms/common.h"
+
+#include "platforms/common.pb.h"
 
 using namespace firmament;
 
@@ -16,7 +19,7 @@ int main(int argc, char *argv[]) {
 
   // TODO(malte): support for automatic platform detection?
   // TODO(malte): validation of FLAGS_platform
-  PlatformID platform_id =  common::GetPlatformID(FLAGS_platform);
+  PlatformID platform_id = GetPlatformID(FLAGS_platform);
 
   LOG(INFO) << "Firmament worker starting (Platform: " << platform_id
             << ") ...";

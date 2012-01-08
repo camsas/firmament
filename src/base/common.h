@@ -18,11 +18,6 @@ using namespace std;
 
 namespace firmament {
 
-typedef enum kPlatformID {
-  UNIX = 0,
-  SCC = 1,
-} PlatformID;
-
 // Helper function to convert an arbitrary object to a string via thei
 // stringstream standard library class.
 template <class T> inline string to_string (const T& t) {
@@ -41,11 +36,6 @@ inline void InitFirmament(int argc, char *argv[]) {
 
   // Set up glog for logging output
   google::InitGoogleLogging(argv[0]);
-}
-
-inline PlatformID GetPlatformID(const string &platform_name) {
-  VLOG(1) << platform_name;
-  return UNIX;
 }
 
 }  // namespace firmament::common
