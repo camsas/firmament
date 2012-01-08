@@ -36,3 +36,4 @@ test:
 
 clean:
 	@rm -rf build
+	@rm -rf src/generated/*

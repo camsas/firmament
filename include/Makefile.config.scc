@@ -26,32 +26,62 @@ export SCRIPTS_DIR
 EXT_DIR ?= $(ROOT_DIR)/ext
 export EXT_DIR
 
+
+#######################################
+# boost-SPECIFIC DEFINITIONS
+#######################################
+
+# Directory where Boost files are installed (i.e. the --prefix argument
+# to the Boost bootstrap script).
+BOOST_INSTALL_DIR ?= $(EXT_DIR)/boost-build
+
+# Header directory for Boost libraries
+BOOST_INC_DIR ?= $(BOOST_INSTALL_DIR)/include
+export BOOST_INC_DIR
+
+# Path to the compiled boost library files. This will
+# be passed to the linker as a -L argument.
+# N.B.: We do not currently use any non-header libraries from Boost,
+#       but this exists to ensure forward-compatibility in case we will
+#       do so in the future.
+BOOST_LIB_DIR ?= $(BOOST_INSTALL_DIR)/lib
+export BOOST_LIB_DIR
+
+
 #######################################
 # glog-SPECIFIC DEFINITIONS
 #######################################
 
-# Header directory for googletest
-GLOG_INC_DIR ?= $(EXT_DIR)/google-glog-build/include
+# Directory where gflags library files are installed (i.e. the --prefix 
+# argument to the configure script in gflags).
+GLOG_INSTALL_DIR ?= $(EXT_DIR)/google-glog-build
+
+# Header directory for google-glog
+GLOG_INC_DIR ?= $(GLOG_INSTALL_DIR)/include
 export GLOG_INC_DIR
 
-# Path to the compiled googletest library (usually under
-# "make" in the googletest directory in "ext").
-GLOG_LIB ?= $(EXT_DIR)/google-glog-build/lib
-export GLOG_LIB
+# Path to the compiled google-glog library files. This will
+# be passed to the linker as a -L argument.
+GLOG_LIB_DIR ?= $(GLOG_INSTALL_DIR)/lib
+export GLOG_LIB_DIR
 
 
 #######################################
-# glog-SPECIFIC DEFINITIONS
+# gflags-SPECIFIC DEFINITIONS
 #######################################
 
-# Header directory for googletest
-GFLAGS_INC_DIR ?= $(EXT_DIR)/gflags-build/include
+# Directory where gflags library files are installed (i.e. the --prefix 
+# argument to the configure script in gflags).
+GFLAGS_INSTALL_DIR ?= $(EXT_DIR)/gflags-build
+
+# Header directory for gflags.
+GFLAGS_INC_DIR ?= $(GFLAGS_INSTALL_DIR)/include
 export GFLAGS_INC_DIR
 
-# Path to the compiled googletest library (usually under
-# "make" in the googletest directory in "ext").
-GFLAGS_LIB ?= $(EXT_DIR)/gflags-build/lib
-export GFLAGS_LIB
+# Path to the compiled gflags library files. This will be passed to the
+# linker as a -L argument.
+GFLAGS_LIB_DIR ?= $(GFLAGS_INSTALL_DIR)/lib
+export GFLAGS_LIB_DIR
 
 
 #######################################
@@ -73,11 +103,30 @@ GTEST_FLAGS=-DGTEST_HAS_TR1_TUPLE=0
 
 
 #######################################
+# protobuf-SPECIFIC DEFINITIONS
+#######################################
+
+# Directory where protobuf files are installed (i.e. the --prefix argument
+# to the protobuf configure script).
+PROTOBUF_INSTALL_DIR ?= $(EXT_DIR)/protobuf-build
+
+# Header directory for Boost libraries
+PROTOBUF_INC_DIR ?= $(PROTOBUF_INSTALL_DIR)/include
+export PROTOBUF_INC_DIR
+
+# Path to the compiled protobuf library files. This will
+# be passed to the linker as a -L argument.
+PROTOBUF_LIB_DIR ?= $(PROTOBUF_INSTALL_DIR)/lib
+export PROTOBUF_LIB_DIR
+
+
+#######################################
 # INCLUDES
 #######################################
 
-INCLUDES = -I$(SRC_ROOT_DIR) -I$(GTEST_INC_DIR) -I$(GLOG_INC_DIR) -I$(GFLAGS_INC_DIR)
+INCLUDES = -I$(SRC_ROOT_DIR) -I$(GTEST_INC_DIR) -I$(GLOG_INC_DIR) -I$(GFLAGS_INC_DIR) -I$(PROTOBUF_INC_DIR) -I$(BOOST_INC_DIR)
 export INCLUDES
+
 
 #######################################
 # LIBRARIES
@@ -86,7 +135,7 @@ export INCLUDES
 # TODO(ms705): Temporarily disable -lprofiler and -ltcmalloc due to known
 # issues with Ubuntu's libunwind
 #LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf
-LIBS = -pthread -lgflags -lglog
+LIBS = -pthread -lgflags -lglog -lprotobuf
 
 
 #######################################
@@ -95,14 +144,16 @@ LIBS = -pthread -lgflags -lglog
 
 CXX = g++
 
+# N.B.: -DSCC and -march=pentium are specific to compiling for the SCC's P54C
 CPPFLAGS = -DSCC -march=pentium $(INCLUDES)
 
-CXXFLAGS = -L$(GLOG_LIB) -L$(GFLAGS_LIB) $(LIBS) -Wall -Wextra -Werror -g -O0
+CXXFLAGS = -L$(BOOST_LIB_DIR) -L$(GLOG_LIB_DIR) -L$(GFLAGS_LIB_DIR) -L$(PROTOBUF_LIB_DIR) $(LIBS) -Wall -Wextra -Werror -g -O0
+
 
 #######################################
 # PROTOBUF COMPILER
 #######################################
 
-PBC = protoc
+PBC = $(EXT_DIR)/protobuf-build/bin/protoc
 
 PBCFLAGS =
