@@ -27,12 +27,16 @@ sim: base misc
 misc:
 	@cd $(SRC_ROOT_DIR)/misc && make all
 
+# N.B.: This currently builds *all* platforms; we probably want a configure
+#       script to decide which ones to build!
+platforms:
+	@cd $(SRC_ROOT_DIR)/platforms && make all
+
 nonext: engine doc
 
-test:
-	@mkdir -p $(BUILD_DIR)
-	@$(CC) test.cc -o $(BUILD_DIR)/test $(LIBS)
-	env HEAPCHECK=normal $(BUILD_DIR)/test
+tests:
+	@cd $(SRC_ROOT_DIR)/tests && make all
+	env HEAPCHECK=normal $(BUILD_DIR)/all_tests
 
 clean:
 	@rm -rf build
