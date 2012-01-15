@@ -65,26 +65,6 @@ function check_os_release_compatibility() {
 
 ##################################
 
-function ask_continue() {
-  while [[ $response != "n" && $response != "N" \
-    && $response != "y" && $response != "Y" ]]
-  do
-    echo -n  "Do you want to continue? [yN] "
-    read response
-    if [[ $response == "" ]]; then
-      break
-    fi
-  done
-  # if we have seen an "n", "N" or a blank response (defaults to N),
-  # we exit here
-  if [[ $response == "n" || $response == "N" || $response == "" ]]
-  then
-    exit 1
-  fi
-}
-
-##################################
-
 function check_dpkg_packages() {
   print_subhdr "$1 PACKAGE CHECK"
   if [[ $1 == "Ubuntu" ]]; then

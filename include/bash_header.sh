@@ -24,7 +24,7 @@ SETCOLOR_SUCCESS="echo -en \\033[1;32m"
 SETCOLOR_FAILURE="echo -en \\033[1;31m"
 # Command to set the color back to normal
 SETCOLOR_NORMAL="echo -en \\033[0;39m"
- 
+
 # Function to print the SUCCESS status
 echo_success() {
   $MOVE_TO_COL
@@ -36,7 +36,7 @@ echo_success() {
   echo -ne "\r"
   return 0
 }
- 
+
 # Function to print the FAILED status message
 echo_failure() {
   $MOVE_TO_COL
@@ -57,3 +57,25 @@ print_succ_or_fail() {
   fi
   echo
 }
+
+# Function to ask the user whether he/she would like to continue.
+# Valid responses are "Y", "y", "N" and "n".
+function ask_continue() {
+  while [[ $response != "n" && $response != "N" \
+    && $response != "y" && $response != "Y" ]]
+  do
+    echo -n  "Do you want to continue? [yN] "
+    read response
+    if [[ $response == "" ]]; then
+      break
+    fi
+  done
+  # if we have seen an "n", "N" or a blank response (defaults to N),
+  # we exit here
+  if [[ $response == "n" || $response == "N" || $response == "" ]]
+  then
+    exit 1
+  fi
+}
+
+
