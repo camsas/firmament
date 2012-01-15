@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "engine/worker.h"
-#include "platforms/common.h"
+//#include "platforms/common.h"
 
 DEFINE_string(platform, "asdf", "unix");
 
