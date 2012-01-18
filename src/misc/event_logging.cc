@@ -1,4 +1,7 @@
-// TODO: header
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Event logging helper class.
 
 #include "misc/event_logging.h"
 

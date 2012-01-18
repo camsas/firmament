@@ -1,4 +1,9 @@
-// TODO(header)
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Common job functionality and data structures.
+// TODO(malte): Refactor this to become more shallow and introduce a separate
+//              interface class.
 
 #ifndef FIRMAMENT_BASE_JOB_H
 #define FIRMAMENT_BASE_JOB_H
@@ -12,6 +17,7 @@ class Task;
 
 class Job {
  public:
+  // TODO(malte): Deprecated in favour of protobuf.
   enum JobState {
     RUNNING = 0,
     PENDING = 1,

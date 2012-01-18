@@ -1,4 +1,7 @@
-// TODO
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Common resource functionality.
 
 #include "base/resource.h"
 

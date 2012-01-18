@@ -1,4 +1,9 @@
-// TODO: header
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Common ensemble functionality.
+// N.B.: Much of the code in this class is subject to change in the near
+// future.
 
 #include <glog/logging.h>
 

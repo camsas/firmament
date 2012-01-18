@@ -1,4 +1,9 @@
-// TODO: header
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Common ensemble functionality.
+// TODO(malte): Refactor this to become more shallow and introduce a separate
+//              interface class.
 
 #ifndef FIRMAMENT_BASE_ENSEMBLE_H
 #define FIRMAMENT_BASE_ENSEMBLE_H
@@ -10,6 +15,7 @@
 
 namespace firmament {
 
+// Forward-declaration to avoid cyclic dependency.
 class Resource;
 
 class Ensemble {

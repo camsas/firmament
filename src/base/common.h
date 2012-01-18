@@ -1,4 +1,7 @@
-// TODO: header
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Common static data structures and methods.
 
 #ifndef FIRMAMENT_BASE_COMMON_H
 #define FIRMAMENT_BASE_COMMON_H
@@ -18,7 +21,7 @@ using namespace std;
 
 namespace firmament {
 
-// Helper function to convert an arbitrary object to a string via thei
+// Helper function to convert an arbitrary object to a string via the
 // stringstream standard library class.
 template <class T> inline string to_string (const T& t) {
   std::stringstream ss;

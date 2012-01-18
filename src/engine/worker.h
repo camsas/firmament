@@ -1,4 +1,8 @@
-// TODO:header
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Platform-independent worker class definition. This is subclassed by the
+// platform-specific worker classes.
 
 #ifndef FIRMAMENT_ENGINE_WORKER_H
 #define FIRMAMENT_ENGINE_WORKER_H
