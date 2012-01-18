@@ -1,4 +1,8 @@
-// TODO:header
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Platform-independent worker class implementation. This is subclassed by the
+// platform-specific worker classes.
 
 #include <iostream>
 

@@ -1,4 +1,9 @@
-// TODO(header)
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Common task representation.
+// TODO(malte): Refactor this to become more shallow and introduce a separate
+//              interface class.
 
 #ifndef FIRMAMENT_BASE_TASK_H
 #define FIRMAMENT_BASE_TASK_H

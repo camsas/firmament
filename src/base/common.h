@@ -1,4 +1,7 @@
-// TODO: header
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Common static data structures and methods.
 
 #ifndef FIRMAMENT_BASE_COMMON_H
 #define FIRMAMENT_BASE_COMMON_H
@@ -18,12 +21,13 @@ using namespace std;
 
 namespace firmament {
 
+// TODO(malte): Deprecated in favour of protobuf.
 typedef enum kPlatformID {
   UNIX = 0,
   SCC = 1,
 } PlatformID;
 
-// Helper function to convert an arbitrary object to a string via thei
+// Helper function to convert an arbitrary object to a string via the
 // stringstream standard library class.
 template <class T> inline string to_string (const T& t) {
   std::stringstream ss;
@@ -43,6 +47,7 @@ inline void InitFirmament(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
 }
 
+// TODO(malte): Deprecated in favour of an implementation in platforms.
 inline PlatformID GetPlatformID(const string &platform_name) {
   VLOG(1) << platform_name;
   return UNIX;

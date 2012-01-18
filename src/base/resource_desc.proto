@@ -1,3 +1,8 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Resource descriptor protobuf.
+
 package firmament;
 
 import "task_desc.proto";

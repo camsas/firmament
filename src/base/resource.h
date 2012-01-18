@@ -1,4 +1,9 @@
-// TODO
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Common resource functionality and data structures.
+// TODO(malte): Refactor this to become more shallow and introduce a separate
+//              interface class.
 
 #ifndef FIRMAMENT_BASE_RESOURCE_H
 #define FIRMAMENT_BASE_RESOURCE_H
@@ -9,6 +14,7 @@
 
 namespace firmament {
 
+// Forward-declaration to break cyclic dependency.
 class Ensemble;
 
 class Resource {
