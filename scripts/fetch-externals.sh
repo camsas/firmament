@@ -1,16 +1,23 @@
 #!/bin/bash
 source include/bash_header.sh
 
+# Valid targets: unix, scc
+TARGET="unix"
+
 mkdir -p ext
 cd ext
+EXT_DIR=${PWD}
 
-# If we are running on a Debian-based system, a couple of dependencies 
+# If we are running on a Debian-based system, a couple of dependencies
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
-UBUNTU_PKGS="clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libprotobuf-dev protobuf-compiler"
-DEBIAN_PKGS="clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libprotobuf-dev protobuf-compiler"
+UBUNTU_PKGS="wget clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libprotobuf-dev protobuf-compiler"
+DEBIAN_PKGS="wget clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libprotobuf-dev protobuf-compiler"
 
-GFLAGS_VER="1.6-1"
+GFLAGS_VER="1.7"
+GLOG_VER="HEAD"
+PROTOBUF_VER="2.4.1"
+BOOST_VER="1.48.0"
 
 #################################
 
@@ -60,26 +67,6 @@ function check_os_release_compatibility() {
     echo_failure
     echo "Unsupported OS! Proceed at your own risk..."
     ask_continue
-  fi
-}
-
-##################################
-
-function ask_continue() {
-  while [[ $response != "n" && $response != "N" \
-    && $response != "y" && $response != "Y" ]]
-  do
-    echo -n  "Do you want to continue? [yN] "
-    read response
-    if [[ $response == "" ]]; then
-      break
-    fi
-  done
-  # if we have seen an "n", "N" or a blank response (defaults to N),
-  # we exit here
-  if [[ $response == "n" || $response == "N" || $response == "" ]]
-  then
-    exit 1
   fi
 }
 
@@ -149,6 +136,21 @@ function get_dep_deb {
   fi
 }
 
+##################################
+
+function get_dep_arch {
+  URL=$2
+  NAME=$1
+  FILE=$(basename ${URL})
+  wget -q -N ${URL}
+  tar -xzf ${FILE}
+  if [ ${NAME}-timestamp -ot ${FILE} ]
+  then
+    touch -r ${FILE} ${NAME}-timestamp
+  fi
+}
+
+
 ###############################################################################
 
 print_hdr "FETCHING & INSTALLING EXTERNAL DEPENDENCIES"
@@ -159,7 +161,13 @@ ARCH_UNAME=$(uname -m)
 ARCH=$(get_arch "${ARCH_UNAME}")
 ARCHX=$(get_archx "${ARCH_UNAME}")
 
-if [[ ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ]]; then
+SCC_CC_SCRIPT="/opt/compilerSetupFiles/crosscompile.sh"
+
+# N.B.: We explicitly exclude the SCC here since we need to build on the MCPC
+# in the case of the SCC. The MCPC runs 64-bit Ubuntu, but the SCC cores run
+# some custom stripped-down thing that does not have packages.
+if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) ]];
+then
   echo "Detected $OS_ID..."
   check_os_release_compatibility ${OS_ID} ${OS_RELEASE}
   if [ -f "${OS_ID}-ok" ]; then
@@ -168,6 +176,10 @@ if [[ ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ]]; then
   else
     check_dpkg_packages ${OS_ID}
   fi
+elif [[ ${TARGET} == "scc" ]]; then
+  echo "Building for the SCC. Note that you MUST build on the MCPC, and "
+  echo "that ${SCC_CC_SCRIPT} MUST exist and be accessible."
+  ask_continue
 else
   echo "Operating systems other than Ubuntu (>=10.04) and Debian are not"
   echo "currently supported for automatic configuration."
@@ -176,16 +188,19 @@ fi
 
 ## Google Log macros
 print_subhdr "GOOGLE GLOG LIBRARY"
+GLOG_BUILD_DIR=${EXT_DIR}/google-glog-build
+mkdir -p ${GLOG_BUILD_DIR}
 get_dep_svn "google-glog" "googlecode"
 cd google-glog-svn
 echo -n "Building google-glog library..."
-RES=$(./configure && make --quiet 2>/dev/null)
+RES=$(./configure --prefix=${GLOG_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
 print_succ_or_fail $RES
-cd ..
+cd ${EXT_DIR}
 
 ## Google Gflags command line flag library
 print_subhdr "GOOGLE GFLAGS LIBRARY"
-if [[ ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ]]; then
+if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) ]];
+then
   PKG_RES1=$(dpkg-query -l | grep "libgflags0" 2>/dev/null)
   PKG_RES2=$(dpkg-query -l | grep "libgflags-dev" 2>/dev/null)
   if [[ $PKG_RES1 != "" && $PKG_RES2 != "" ]]; then
@@ -193,8 +208,8 @@ if [[ ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ]]; then
     echo_success
     echo
   else
-    get_dep_deb "google-gflags" "http://google-gflags.googlecode.com/files/libgflags0_${GFLAGS_VER}_${ARCH}.deb"
-    get_dep_deb "google-gflags" "http://google-gflags.googlecode.com/files/libgflags-dev_${GFLAGS_VER}_${ARCH}.deb"
+    get_dep_deb "google-gflags" "http://google-gflags.googlecode.com/files/libgflags0_${GFLAGS_VER}-1_${ARCH}.deb"
+    get_dep_deb "google-gflags" "http://google-gflags.googlecode.com/files/libgflags-dev_${GFLAGS_VER}-1_${ARCH}.deb"
     echo -n "libgflags not installed."
     echo_failure
     echo "Please install libgflags0_${GFLAGS_VER}_${ARCH}.deb "
@@ -205,9 +220,15 @@ if [[ ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ]]; then
  fi
 else
   # non-deb OS -- need to get tarball and extract, config, make & install
-  echo "Non-Debian OS support missing from fetch-externals.sh for: google-gflags"
-  echo_failure
-  exit 1
+  echo "Downloading and extracting release tarball for Google gflags library..."
+  GFLAGS_BUILD_DIR=${EXT_DIR}/google-gflags-build
+  mkdir -p ${GFLAGS_BUILD_DIR}
+  get_dep_arch "google-gflags" "http://google-gflags.googlecode.com/files/gflags-${GFLAGS_VER}.tar.gz"
+  cd gflags-${GFLAGS_VER}
+  echo -n "Building google-gflags library..."
+  RES=$(./configure --prefix=${GFLAGS_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
+  print_succ_or_fail $RES
+  cd ${EXT_DIR}
 fi
 
 ## Google unit testing library
@@ -218,5 +239,57 @@ echo -n "Building googletest library..."
 #RES=$(make all --quiet 2>/dev/null)
 RES=$(make all)
 print_succ_or_fail $RES
-cd ..
+cd ${EXT_DIR}
 
+## Boost
+print_subhdr "BOOST C++ LIBRARIES"
+if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) ]];
+then
+  PKG_RES=$(dpkg-query -l | grep "libboost-dev" 2>/dev/null)
+  if [[ ${PKG_RES} != "" ]]; then
+    echo -n "Already installed."
+    echo_success
+    echo
+  fi
+else
+  BOOST_VER_US=$(echo ${BOOST_VER} | sed 's/\./_/g')
+  # Get Boost release archive
+  echo "Downloading and extracting Boost ${BOOST_VER}..."
+  get_dep_arch "boost" "http://downloads.sourceforge.net/project/boost/boost/${BOOST_VER}/boost_${BOOST_VER_US}.tar.gz"
+  mkdir -p ${EXT_DIR}/boost-build
+  BOOST_EXTRACT_DIR=${EXT_DIR}/boost_${BOOST_VER_US}
+  cd ${BOOST_EXTRACT_DIR}
+  echo "Building..."
+  BOOST_BUILD_DIR=${EXT_DIR}/boost-build
+  ${BOOST_EXTRACT_DIR}/bootstrap.sh --prefix=${BOOST_BUILD_DIR}
+  echo "Installing... (This may take a long time!)"
+  echo
+  ${BOOST_EXTRACT_DIR}/b2 -d0 install
+  echo_success
+  echo
+fi
+
+## Protocol buffers
+print_subhdr "GOOGLE PROTOCOL BUFFERS"
+if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) ]];
+then
+  PKG_RES1=$(dpkg-query -l | grep "libprotobuf" 2>/dev/null)
+  PKG_RES2=$(dpkg-query -l | grep "protobuf-compiler" 2>/dev/null)
+  if [[ ${PKG_RES1} != "" && ${PKG_RES2} != "" ]]; then
+    echo -n "Already installed."
+    echo_success
+    echo
+  fi
+else
+  # Get protobufs release archive
+  echo "Downloading and extracting Google protocol buffers ${PROTOBUF_VER}..."
+  get_dep_arch "protobuf" "http://protobuf.googlecode.com/files/protobuf-${PROTOBUF_VER}.tar.gz"
+  mkdir -p ${EXT_DIR}/protobuf-build
+  PROTOBUF_EXTRACT_DIR=${EXT_DIR}/protobuf-${PROTOBUF_VER}
+  cd ${PROTOBUF_EXTRACT_DIR}
+  PROTOBUF_BUILD_DIR=${EXT_DIR}/protobuf-build
+  echo -n "Building..."
+  RES=$(./configure --prefix=${PROTOBUF_BUILD_DIR} && make --quiet && make --quiet check && make --quiet install 2>/dev/null)
+  print_succ_or_fail $RES
+  cd ${EXT_DIR}
+fi
