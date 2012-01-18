@@ -1,4 +1,7 @@
-// TODO: header
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Common header file for platform-specific implementations.
 
 #ifndef FIRMAMENT_PLATFORMS_COMMON_H
 #define FIRMAMENT_PLATFORMS_COMMON_H
@@ -7,9 +10,11 @@
 
 namespace firmament {
 
+// Converts a platform name string to a PlatformID.
 inline PlatformID GetPlatformID(const string &platform_name) {
-  VLOG(1) << platform_name;
-  return UNIX; // TODO: fix
+  PlatformID platform_id;
+  CHECK(PlatformID_Parse(platform_name, &platform_id));
+  return platform_id;
 }
 
 }  // namespace firmament
