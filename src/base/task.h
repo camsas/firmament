@@ -2,8 +2,10 @@
 // Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
 // Common task representation.
-// TODO(malte): Refactor this to become more shallow and introduce a separate
-//              interface class.
+//
+// To avoid platform-specific task types (which may cause havoc in the future),
+// we make the logic to actually run a task part ofthe resource implementation
+// and keep Task entirely cross-platform.
 
 #ifndef FIRMAMENT_BASE_TASK_H
 #define FIRMAMENT_BASE_TASK_H
@@ -15,47 +17,22 @@
 
 namespace firmament {
 
-class Job;
-
 class Task {
  public:
-  enum TaskState {
-    CREATED = 0,
-    RUNNING = 1,
-    PENDING = 2,
-    COMPLETED = 3,
-    ASSIGNED = 4,
-    MIGRATED = 5,
-    UNKNOWN = 6,
-  };
-
   Task(const string& name);
-  uint64_t uid() { return task_uid_; }
-  uint64_t index_in_job() { return index_in_job_; }
-  void set_index_in_job(const uint64_t idx) { index_in_job_ = idx; }
-  const string& name() { return name_; }
-  void set_name(const string& name) { name_ = name; }
-  TaskState state() { return static_cast<TaskState>(state_); }
+  uint64_t uid() { return descriptor_.uid(); }
+  uint64_t index_in_job() { return descriptor_.index(); }
+  void set_index_in_job(const uint64_t idx) { descriptor_.set_index(idx); }
+  const string& name() { return descriptor_.name(); }
+  void set_name(const string& name) { descriptor_.set_name(name); }
+  TaskState state() { return static_cast<TaskState>(descriptor_.state()); }
   void set_state(TaskState state) {
-    state_ = static_cast<TaskState>(state);
-  }
-  Job *job() {
-    CHECK_NOTNULL(job_);
-    return job_;
-  }
-  void set_job(Job *job) {
-    CHECK_NOTNULL(job);
-    job_ = job;
+    descriptor_.set_state(static_cast<TaskState>(state));
   }
 
  protected:
-  string name_;
   TaskDescriptor descriptor_;
  private:
-  uint64_t task_uid_;  // Set automatically by constructor
-  uint64_t index_in_job_;
-  TaskState state_;
-  Job *job_;
 };
 
 }  // namespace firmament

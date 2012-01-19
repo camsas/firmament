@@ -7,10 +7,12 @@
 
 namespace firmament {
 
-Task::Task(const string& name)
-  : name_(name),
-    task_uid_(0),
-    state_(Task::CREATED) {
+Task::Task(const string& name) {
+  // Set up the task descriptor.
+  set_name(name);
+  set_state(CREATED);
+
+  // TODO(malte): Compute and set a UID for this task.
 }
 
 }  // namespace firmament

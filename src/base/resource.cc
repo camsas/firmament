@@ -8,25 +8,22 @@
 namespace firmament {
 
 Resource::Resource(const string& name, uint32_t task_capacity) :
-    name_(name), task_capacity_(task_capacity), current_task_(NULL),
-    next_available_(0), current_ensemble_(NULL), busy_(false) {
+    current_ensemble_(NULL), busy_(false) {
+  descriptor_.set_name(name);
+  descriptor_.set_task_capacity(task_capacity);
 }
 
 bool Resource::RunTask(Task *task) {
-  VLOG(1) << "Resource " << name_ << " running task " << task->name();
+  VLOG(1) << "Resource " << descriptor_.name() << " running task " << task->name();
   CHECK_NOTNULL(task);
 //  set_busy(true);
   current_ensemble_->SetResourceBusy(this);
-  current_task_ = task;
   return false;
 }
 
 void Resource::TaskExited() {
-  VLOG(1) << "current_task_ is " << current_task_ << " on resource " << name_;
-  CHECK_NOTNULL(current_task_);
 //  set_busy(false);
   current_ensemble_->SetResourceIdle(this);
-  current_task_ = NULL;
 }
 
 bool Resource::JoinEnsemble(Ensemble *ensemble) {

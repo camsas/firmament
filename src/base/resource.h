@@ -12,6 +12,8 @@
 #include "base/task.h"
 #include "base/ensemble.h"
 
+#include "base/resource_desc.pb.h"
+
 namespace firmament {
 
 // Forward-declaration to break cyclic dependency.
@@ -20,24 +22,17 @@ class Ensemble;
 class Resource {
  public:
   Resource(const string& name, uint32_t task_capacity);
-  bool RunTask(Task *task);
   bool JoinEnsemble(Ensemble *ensemble);
+  bool RunTask(Task *task);
   void TaskExited();
 
-  double next_available() { return next_available_; }
-  void set_next_available(double next_available) {
-    next_available_ = next_available;
-  }
-
-  const string& name() { return name_; }
+  const string& name() { return descriptor_.name(); }
   bool busy() const { return busy_; }
   void set_busy(bool b) { busy_ = b; }
+ protected:
+  ResourceDescriptor descriptor_;
  private:
-  string name_;
-  uint64_t task_capacity_;
   Ensemble *current_ensemble_;
-  Task *current_task_;
-  double next_available_;
   bool busy_;
 };
 

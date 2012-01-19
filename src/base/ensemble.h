@@ -8,10 +8,12 @@
 #ifndef FIRMAMENT_BASE_ENSEMBLE_H
 #define FIRMAMENT_BASE_ENSEMBLE_H
 
+#include <map>
+
 #include "base/common.h"
 #include "base/resource.h"
 
-#include <map>
+#include "base/ensemble_desc.pb.h"
 
 namespace firmament {
 

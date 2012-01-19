@@ -9,7 +9,9 @@ import "task_desc.proto";
 
 message ResourceDescriptor {
   required string uuid = 1;
-  repeated TaskDescriptor task_queue = 2;
+  required string name = 2;
+  optional uint64 task_capacity = 3;
+  //repeated TaskDescriptor task_queue = 2;
   // ensemble(s)
   // state
   // optional ResourceStatsDescriptor stats = X

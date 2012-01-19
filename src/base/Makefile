@@ -10,4 +10,4 @@ all: protobufs task.o resource.o job.o ensemble.o
 	    $(BUILD_DIR)/base/task_desc.pb.o \
 	    $(BUILD_DIR)/base/resource_desc.pb.o
 
-protobufs: task_desc.pb.o resource_desc.pb.o
+protobufs: task_desc.pb.o resource_desc.pb.o ensemble_desc.pb.o
