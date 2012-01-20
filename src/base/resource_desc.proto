@@ -8,9 +8,16 @@ package firmament;
 import "task_desc.proto";
 
 message ResourceDescriptor {
+  enum ResourceState {
+    RESOURCE_UNKNOWN = 0;
+    RESOURCE_IDLE = 1;
+    RESOURCE_BUSY = 2;
+  }
+
   required string uuid = 1;
   required string name = 2;
-  optional uint64 task_capacity = 3;
+  required ResourceState state = 3;
+  optional uint64 task_capacity = 4;
   //repeated TaskDescriptor task_queue = 2;
   // ensemble(s)
   // state

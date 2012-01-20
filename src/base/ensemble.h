@@ -9,11 +9,14 @@
 #define FIRMAMENT_BASE_ENSEMBLE_H
 
 #include <map>
+#include <google/protobuf/repeated_field.h>
 
 #include "base/common.h"
 #include "base/resource.h"
 
 #include "base/ensemble_desc.pb.h"
+
+using namespace google::protobuf;
 
 namespace firmament {
 
@@ -25,25 +28,30 @@ class Ensemble {
   Ensemble(const string& name);
   ~Ensemble();
   bool AddJob(Job *const job);
-  void AddResource(Resource& resource);
+  void AddResource(ResourceDescriptor& resource);
   void AddTask(Task& task);
-  bool AddNestedEnsemble(Ensemble *ensemble);
-  bool AddPeeredEnsemble(Ensemble *ensemble);
-  vector<Ensemble*> *GetNestedEnsembles() { return &children_; }
-  vector<Ensemble*> *GetPeeredEnsembles() { return &peered_ensembles_; }
-  vector<Resource*> *GetResources() { return &joined_resources_; }
+  bool AddNestedEnsemble(EnsembleDescriptor *ensemble);
+  bool AddPeeredEnsemble(EnsembleDescriptor *ensemble);
+  RepeatedPtrField<EnsembleDescriptor> *GetNestedEnsembles() {
+    return descriptor_.mutable_nested_ensembles();
+  }
+  RepeatedPtrField<EnsembleDescriptor> *GetPeeredEnsembles() {
+    return descriptor_.mutable_peered_ensembles();
+  }
+  RepeatedPtrField<ResourceDescriptor> *GetResources() {
+    return descriptor_.mutable_joined_resources();
+  }
   uint64_t NumResourcesJoinedDirectly();
   uint64_t NumNestedEnsembles();
   uint64_t NumIdleResources(bool include_peers);
-  void SetResourceBusy(Resource *res);
-  void SetResourceIdle(Resource *res);
-  string& name() { return name_; }
+  void SetResourceBusy(ResourceDescriptor *res);
+  void SetResourceIdle(ResourceDescriptor *res);
+  const string& name() { return descriptor_.name(); }
+  void set_name(const string& name) {
+    descriptor_.set_name(name);
+  }
  protected:
-  vector<Resource*> joined_resources_;
-  vector<Ensemble*> children_;
-  vector<Ensemble*> peered_ensembles_;  // TODO: we may need more detail here
-  string name_;
-
+  EnsembleDescriptor descriptor_;
   static const uint64_t nested_ensemble_capacity_ = 64;
   uint64_t num_idle_resources_;
 };

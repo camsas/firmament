@@ -17,18 +17,18 @@ bool Resource::RunTask(Task *task) {
   VLOG(1) << "Resource " << descriptor_.name() << " running task " << task->name();
   CHECK_NOTNULL(task);
 //  set_busy(true);
-  current_ensemble_->SetResourceBusy(this);
+  current_ensemble_->SetResourceBusy(&descriptor_);
   return false;
 }
 
 void Resource::TaskExited() {
 //  set_busy(false);
-  current_ensemble_->SetResourceIdle(this);
+  current_ensemble_->SetResourceIdle(&descriptor_);
 }
 
 bool Resource::JoinEnsemble(Ensemble *ensemble) {
   CHECK_NOTNULL(ensemble);
-  ensemble->AddResource(*this);
+  ensemble->AddResource(descriptor_);
   current_ensemble_ = ensemble;
   return true;
 }

@@ -12,22 +12,34 @@
 namespace firmament {
 
 Ensemble::Ensemble(const string& name) :
-  name_(name), num_idle_resources_(0) {
-  LOG(INFO) << "Ensemble \"" << name_ << "\" constructed.";
+  num_idle_resources_(0) {
+  descriptor_.set_name(name);
+  LOG(INFO) << "Ensemble \"" << name << "\" constructed.";
 }
 
 Ensemble::~Ensemble() {
-  joined_resources_.clear();
-  children_.clear();
+  // TODO(malte): Use machinery to disassociate resources, rather than just
+  // dropping their descriptors!
+  descriptor_.clear_joined_resources();
+  descriptor_.clear_nested_ensembles();
   // TODO: check if we still have running tasks
-  LOG(INFO) << "Ensemble \"" << name_ << "\" destroyed.";
+  LOG(INFO) << "Ensemble \"" << descriptor_.name() << "\" destroyed.";
+  // N.B.: The ensemble descriptor gets deallocated automaticallywith the
+  // object.
 }
 
-void Ensemble::AddResource(Resource& resource) {
-  CHECK_GE(joined_resources_.size(), 0);
+void Ensemble::AddResource(ResourceDescriptor& resource) {
+  CHECK_GE(descriptor_.joined_resources_size(), 0);
   VLOG(1) << "Adding resource " << resource.name() << " at " << &resource;
-  joined_resources_.push_back(&resource);
-  if (!resource.busy())
+  // TODO(malte): This is somewhat ugly; the protobuf API only allows us to add
+  // a new element to a repeated field by first obtaining a pointer and then
+  // manipulating it. However, in this case, we already have an ensemble
+  // descriptor, so we'd like to insert it directly. Currently, we perform a
+  // deep copy.
+  ResourceDescriptor* new_resource_descriptor =
+      descriptor_.add_joined_resources();
+  *new_resource_descriptor = resource;  // copy!
+  if (resource.state() == ResourceDescriptor::RESOURCE_IDLE)
     ++num_idle_resources_;
 }
 
@@ -37,14 +49,15 @@ void Ensemble::AddTask(Task& task) {
 }
 
 bool Ensemble::AddJob(Job *const job) {
-  // TODO:
+  // TODO: currently a stub
   return true;
 }
 
-bool Ensemble::AddNestedEnsemble(Ensemble *ensemble) {
+bool Ensemble::AddNestedEnsemble(EnsembleDescriptor *ensemble) {
   // Adds a child ensemble
-  if (children_.size() < nested_ensemble_capacity_) {
-    children_.push_back(ensemble);
+  if (descriptor_.nested_ensembles_size() < nested_ensemble_capacity_) {
+    EnsembleDescriptor* new_ensemble_desc = descriptor_.add_nested_ensembles();
+    *new_ensemble_desc = *ensemble;  // copy!
     return true;
   } else {
     LOG(INFO) << "Failed to add nested ensemble: capacity ("
@@ -53,50 +66,54 @@ bool Ensemble::AddNestedEnsemble(Ensemble *ensemble) {
   }
 }
 
-bool Ensemble::AddPeeredEnsemble(Ensemble *ensemble) {
+bool Ensemble::AddPeeredEnsemble(EnsembleDescriptor *ensemble) {
   // Adds a peered ensemble
   // TODO: this is obviously a massive simplification of the actual peering
   // process.
-  peered_ensembles_.push_back(ensemble);
+  EnsembleDescriptor* new_ensemble_desc = descriptor_.add_peered_ensembles();
+  *new_ensemble_desc = *ensemble;  // copy!
   return true;
 }
 
 uint64_t Ensemble::NumResourcesJoinedDirectly() {
-  return joined_resources_.size();
+  return descriptor_.joined_resources_size();
 }
 
 uint64_t Ensemble::NumNestedEnsembles() {
-  return children_.size();
+  return descriptor_.nested_ensembles_size();
 }
 
 uint64_t Ensemble::NumIdleResources(bool include_peers) {
   // Get idle resource numbers for nested ensembles.i
   uint64_t num_nested_idle = 0;
   uint64_t num_peered_idle = 0;
-  for (vector<Ensemble*>::const_iterator c_iter = children_.begin();
-       c_iter != children_.end();
-       ++c_iter)
-    num_nested_idle += (*c_iter)->NumIdleResources(false);
+  for (RepeatedPtrField<EnsembleDescriptor>::const_iterator ne_iter =
+       descriptor_.nested_ensembles().begin();
+       ne_iter != descriptor_.nested_ensembles().end();
+       ++ne_iter)
+    //num_nested_idle += (*ne_iter)->NumIdleResources(false);
 
   if (include_peers) {
-    for (vector<Ensemble*>::const_iterator p_iter = peered_ensembles_.begin();
-         p_iter != peered_ensembles_.end();
+    for (RepeatedPtrField<EnsembleDescriptor>::const_iterator p_iter =
+         descriptor_.peered_ensembles().begin();
+         p_iter != descriptor_.peered_ensembles().end();
          ++p_iter)
-      num_peered_idle += (*p_iter)->NumIdleResources(false);
+      num_peered_idle += 0;  // XXX(malte): broken, need to redesign!
+      //num_peered_idle += (*p_iter)->NumIdleResources(false);
   }
 
   return num_idle_resources_ + num_nested_idle + num_peered_idle;
 }
 
-void Ensemble::SetResourceBusy(Resource *res) {
+void Ensemble::SetResourceBusy(ResourceDescriptor *res) {
 //  CHECK_LE(idle_resources_.size(), joined_resources_.size());
-  res->set_busy(true);
+  res->set_state(ResourceDescriptor::RESOURCE_BUSY);
   --num_idle_resources_;
 }
 
-void Ensemble::SetResourceIdle(Resource *res) {
+void Ensemble::SetResourceIdle(ResourceDescriptor *res) {
 //  CHECK_LT(idle_resources_.size(), joined_resources_.size());
-  res->set_busy(false);
+  res->set_state(ResourceDescriptor::RESOURCE_IDLE);
   ++num_idle_resources_;
 }
 
