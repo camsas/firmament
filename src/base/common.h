@@ -43,6 +43,6 @@ inline void InitFirmament(int argc, char *argv[]) {
 
 }  // namespace firmament::common
 
-}
+}  // namespace firmament
 
 #endif  // FIRMAMENT_BASE_COMMON_H
