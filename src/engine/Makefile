@@ -1,7 +1,8 @@
+ROOT_DIR=../..
 SUFFIX=engine
 
-include ../../include/Makefile.config
-include ../../include/Makefile.common
+include $(ROOT_DIR)/include/Makefile.config
+include $(ROOT_DIR)/include/Makefile.common
 
 all: worker worker-tests
 
@@ -17,9 +18,12 @@ worker: worker-lib
 
 worker-lib: worker.o
 
+tests: worker-tests
+
 worker-tests: worker-lib
 	@mkdir -p $(BUILD_DIR)/tests/engine
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/engine/worker_test.cc \
-	   $(GTEST_LIB) $(BUILD_DIR)/engine/worker.o $(CXXFLAGS) \
+	   $(GTEST_LIB) $(BUILD_DIR)/engine/worker.o \
 	   $(BUILD_DIR)/platforms/common.pb.o \
 	   $(LIBS) -o $(BUILD_DIR)/tests/engine/worker $(GTEST_FLAGS)
+	@echo "$(BUILD_DIR)/tests/engine/worker" >> $(BUILD_DIR)/tests/all_tests.sh

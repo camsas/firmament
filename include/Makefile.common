@@ -55,3 +55,10 @@ setup:
 	@$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		-I$(SRC_GEN_DIR)/$(SUFFIX)/ \
 		-o $(BUILD_DIR)/$(SUFFIX)/$@
+
+%-tests: %_test.cc %.o
+	@mkdir -p $(BUILD_DIR)/tests/$(SUFFIX)
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+	   $(GTEST_LIB) $(BUILD_DIR)/$(SUFFIX)/$*.o \
+	   $(LIBS) -o $(BUILD_DIR)/tests/$(SUFFIX)/$@ $(GTEST_FLAGS)
+	@echo "$(BUILD_DIR)/tests/$(SUFFIX)/$@" >> $(BUILD_DIR)/tests/all_tests.sh

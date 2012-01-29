@@ -1,7 +1,8 @@
+ROOT_DIR=../..
 SUFFIX=platforms
 
-include ../../include/Makefile.config
-include ../../include/Makefile.common
+include $(ROOT_DIR)/include/Makefile.config
+include $(ROOT_DIR)/include/Makefile.common
 
 all: setup protobufs
 
