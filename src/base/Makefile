@@ -4,8 +4,6 @@ SUFFIX=base
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-LIBS += -L$(BUILD_DIR)/$(SUFFIX)
-
 all: base-lib
 
 base-lib: protobufs task.o resource.o job.o ensemble.o data_object.o
