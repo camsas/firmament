@@ -56,9 +56,10 @@ setup:
 		-I$(SRC_GEN_DIR)/$(SUFFIX)/ \
 		-o $(BUILD_DIR)/$(SUFFIX)/$@
 
-%-tests: %_test.cc %.o
+%-tests: %_test.cc %.o $(TEST_LD_DEPS)
 	@mkdir -p $(BUILD_DIR)/tests/$(SUFFIX)
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 	   $(GTEST_LIB) $(BUILD_DIR)/$(SUFFIX)/$*.o \
-	   $(LIBS) -o $(BUILD_DIR)/tests/$(SUFFIX)/$@ $(GTEST_FLAGS)
+	   $(TEST_LD_DEPS) $(LIBS) \
+	   -o $(BUILD_DIR)/tests/$(SUFFIX)/$@ $(GTEST_FLAGS)
 	@echo "$(BUILD_DIR)/tests/$(SUFFIX)/$@" >> $(BUILD_DIR)/tests/all_tests.sh
