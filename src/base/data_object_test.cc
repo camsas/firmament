@@ -51,26 +51,38 @@ TEST_F(DataObjectTest, CreateDOTest) {
   // Check all members are set to what we expect.
   EXPECT_EQ(test_do.buffer(), buf);
   EXPECT_EQ(test_do.size(), len);
-  EXPECT_TRUE(test_do.valid());
+  EXPECT_TRUE(test_do.resident());
 
   // Clean up buffer.
   delete static_cast<char*>(buf);
 }
 
-// Test that verifies that setting up an invalid data object fails.
-TEST_F(DataObjectTest, CreateInvalidDOTest) {
+// Test that verifies that setting up a non-resident data object fails.
+TEST_F(DataObjectTest, CreateNonResidentDOTest) {
   uint64_t len = 4096;
   void *buf = NULL;
-  DataObject invalid_do1(buf, len);
-  EXPECT_FALSE(invalid_do1.valid());
+  DataObject nonres_do1(buf, len);
+  EXPECT_FALSE(nonres_do1.resident());
 
   buf = new char[len];
-  DataObject invalid_do2(buf, 0);
-  EXPECT_FALSE(invalid_do2.valid());
+  DataObject nonres_do2(buf, 0);
+  EXPECT_FALSE(nonres_do2.resident());
 
   // Clean up buffer.
   delete static_cast<char*>(buf);
 }
+
+// Test making a data object resident.
+TEST_F(DataObjectTest, MakeDOResidentTest) {
+  DataObject nonres_do(NULL, 0);
+  EXPECT_FALSE(nonres_do.resident());
+  uint64_t len = 4096;
+  void *buf = new char[len];
+  nonres_do.set_buffer(buf, len);
+  EXPECT_TRUE(nonres_do.resident());
+  EXPECT_EQ(nonres_do.size(), len);
+}
+
 
 }  // namespace
 

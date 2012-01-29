@@ -1,0 +1,9 @@
+package firmament;
+
+message DataObjectName {
+  required string generating_task = 1;
+  required uint64 sequence_no = 2;
+  required uint64 version = 3;
+  repeated string inputs = 4;
+}
+
