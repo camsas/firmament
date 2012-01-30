@@ -15,13 +15,20 @@ namespace firmament {
 class Worker {
  public:
   Worker(PlatformID platform_id);
-  int64_t Test();
+  void Run();
+  void AwaitNextMessage() {};
+  bool RunCoordinatorDiscovery(string *coordinator_uri) {
+    VLOG(1) << coordinator_uri;
+    return true;
+  }
+
   inline PlatformID platform_id() {
     return platform_id_;
   }
  protected:
   PlatformID platform_id_;
-  //Platform platform_;
+  bool exit_;
+  string coordinator_uri_;
 };
 
 }  // namespace firmament

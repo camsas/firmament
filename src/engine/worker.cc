@@ -4,12 +4,10 @@
 // Platform-independent worker class implementation. This is subclassed by the
 // platform-specific worker classes.
 
-#include <iostream>
-
 #include "engine/worker.h"
-//#include "platforms/common.h"
 
-DEFINE_string(platform, "asdf", "unix");
+DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
+              "attempting automatic discovery.");
 
 namespace firmament {
 
@@ -22,9 +20,23 @@ Worker::Worker(PlatformID platform_id)
           << platform_id;
 }
 
-int64_t Worker::Test() {
-  std::cout << "test" << std::endl;
-  return 1;
+void Worker::Run() {
+  // Worker starting -- first need to find a coordinator and connect to it.
+  if (coordinator_uri_.empty()) {
+    if (!RunCoordinatorDiscovery(&coordinator_uri_)) {
+      LOG(FATAL) << "No coordinator URI set, and automatic coordinator "
+                 << "discovery failed! Exiting...";
+    }
+  }
+
+  while (!exit_) {  // main loop
+    // Wait for events
+    AwaitNextMessage();
+  }
+
+  // We have dropped out of the main loop and are exiting
+  // TODO(malte): any cleanup we need to do; terminate running
+  // tasks etc.
 }
 
 }  // namespace firmament

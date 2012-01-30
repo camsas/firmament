@@ -31,5 +31,6 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "Firmament worker starting (Platform: " << platform_id
             << ") ...";
   Worker worker(platform_id);
-  worker.Test();
+
+  worker.Run();
 }
