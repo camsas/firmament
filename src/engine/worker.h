@@ -17,7 +17,11 @@ class Worker {
   Worker(PlatformID platform_id);
   void Run();
   void AwaitNextMessage() {};
-  bool RunCoordinatorDiscovery(string *coordinator_uri) {
+  bool RunCoordinatorDiscovery(const string &coordinator_uri) {
+    VLOG(1) << coordinator_uri;
+    return true;
+  }
+  bool ConnectToCoordinator(const string& coordinator_uri) {
     VLOG(1) << coordinator_uri;
     return true;
   }

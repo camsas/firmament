@@ -8,11 +8,13 @@
 
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
               "attempting automatic discovery.");
+DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 
 namespace firmament {
 
 Worker::Worker(PlatformID platform_id)
-  : platform_id_(platform_id) {
+  : platform_id_(platform_id),
+    coordinator_uri_(FLAGS_coordinator_uri) {
   // Start up a worker according to the platform parameter
   //platform_ = platform::GetByID(platform_id);
   string hostname = ""; //platform_.GetHostname();
@@ -23,11 +25,15 @@ Worker::Worker(PlatformID platform_id)
 void Worker::Run() {
   // Worker starting -- first need to find a coordinator and connect to it.
   if (coordinator_uri_.empty()) {
-    if (!RunCoordinatorDiscovery(&coordinator_uri_)) {
+    if (!RunCoordinatorDiscovery(coordinator_uri_)) {
       LOG(FATAL) << "No coordinator URI set, and automatic coordinator "
                  << "discovery failed! Exiting...";
     }
   }
+
+  // We now know where the coordinator is. Establish a connection to it.
+  CHECK(ConnectToCoordinator(coordinator_uri_))
+      << "Failed to connect to the coordinator at " + coordinator_uri_;
 
   while (!exit_) {  // main loop
     // Wait for events
