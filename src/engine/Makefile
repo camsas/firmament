@@ -19,4 +19,4 @@ worker: worker-lib
 worker-lib: worker.o
 
 TEST_LD_DEPS=$(BUILD_DIR)/platforms/common.pb.o
-tests: worker-tests
+tests: worker-tests coordinator-tests

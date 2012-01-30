@@ -62,4 +62,4 @@ setup:
 	   $(GTEST_LIB) $(BUILD_DIR)/$(SUFFIX)/$*.o \
 	   $(TEST_LD_DEPS) $(LIBS) \
 	   -o $(BUILD_DIR)/tests/$(SUFFIX)/$@ $(GTEST_FLAGS)
-	@echo "$(BUILD_DIR)/tests/$(SUFFIX)/$@" >> $(BUILD_DIR)/tests/all_tests.sh
+	@echo "$(BUILD_DIR)/tests/$(SUFFIX)/$@" >> $(BUILD_DIR)/tests/all_tests.txt
