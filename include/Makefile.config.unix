@@ -68,9 +68,9 @@ LIBS = -lgflags -lglog -lpthread -lprotobuf -lprofiler -ltcmalloc
 
 CXX = clang++
 
-CPPFLAGS = $(INCLUDES)
+CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0
 
-CXXFLAGS = $(LIBS) -Wall -Wextra -Werror -g -O0
+CXXFLAGS = $(LIBS)
 
 #######################################
 # PROTOBUF COMPILER
