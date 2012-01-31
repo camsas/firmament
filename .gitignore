@@ -1,5 +1,8 @@
+build
 build/*.
+ext
 ext/*.
+src/generated
 src/generated/*.
 *.swp
 *.INFO
