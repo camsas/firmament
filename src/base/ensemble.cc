@@ -45,17 +45,19 @@ void Ensemble::AddResource(ResourceDescriptor& resource) {
 
 void Ensemble::AddTask(Task& task) {
   // TODO: Schedule the task
-  CHECK(false);
+  LOG(FATAL) << "Unimplemented, task: " << &task;
 }
 
 bool Ensemble::AddJob(Job *const job) {
   // TODO: currently a stub
+  LOG(WARNING) << "Unimplemented, job: " << job;
   return true;
 }
 
 bool Ensemble::AddNestedEnsemble(EnsembleDescriptor *ensemble) {
   // Adds a child ensemble
-  if (descriptor_.nested_ensembles_size() < nested_ensemble_capacity_) {
+  if (static_cast<uint64_t>(descriptor_.nested_ensembles_size())
+      < nested_ensemble_capacity_) {
     EnsembleDescriptor* new_ensemble_desc = descriptor_.add_nested_ensembles();
     *new_ensemble_desc = *ensemble;  // copy!
     return true;
