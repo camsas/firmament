@@ -8,6 +8,7 @@
 #define FIRMAMENT_ENGINE_COORDINATOR_H
 
 #include "base/common.h"
+#include "misc/messaging_interface.h"
 #include "platforms/common.h"
 
 namespace firmament {
