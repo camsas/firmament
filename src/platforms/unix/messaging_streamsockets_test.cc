@@ -50,14 +50,22 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 
 // Tests channel establishment.
 TEST_F(StreamSocketsMessagingTest, TCPChannelEstablish) {
-  FLAGS_v = 1;
-  StreamSocketsChannel<TestMessage>* channel;
-  adapter_.EstablishChannel("tcp://localhost", channel);
+  FLAGS_v = 2;
+  uint32_t port = 9998;
+  string uri = "127.0.0.1";
+  StreamSocketsChannel<TestMessage> channel(StreamSocketsChannel<TestMessage>::SS_TCP);
+  VLOG(1) << "Calling Listen";
+  channel.Listen(port);
+  VLOG(1) << "Calling EstablishChannel";
+  channel.EstablishChannel(uri, port);
+  VLOG(1) << "Calling RecvS";
+  channel.RecvS();
 }
 
 }  // namespace
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  common::InitFirmament(argc, argv);
   return RUN_ALL_TESTS();
 }
