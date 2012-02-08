@@ -68,7 +68,7 @@ LIBS = -lgflags -lglog -lpthread -lprotobuf -lboost_system -lboost_thread
 
 CXX = clang++
 
-CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0
+CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros
 
 CXXFLAGS = $(LIBS)
 

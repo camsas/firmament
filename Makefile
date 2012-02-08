@@ -15,7 +15,7 @@ ext:
 doc:
 #	@doxygen
 
-engine: tests-clean base
+engine: tests-clean base platforms
 	@make -C $(SRC_ROOT_DIR)/engine all
 
 base: tests-clean
