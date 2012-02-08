@@ -1,4 +1,4 @@
-.PHONY: clean
+.PHONY: clean test
 .DEFAULT: all
 
 # Get common build settings

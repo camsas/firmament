@@ -11,8 +11,8 @@ EXT_DIR=${PWD}
 # If we are running on a Debian-based system, a couple of dependencies
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
-UBUNTU_PKGS="wget clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libprotobuf-dev protobuf-compiler"
-DEBIAN_PKGS="wget clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libprotobuf-dev protobuf-compiler"
+UBUNTU_PKGS="wget clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libboost-system-dev libboost-thread-dev libprotobuf-dev protobuf-compiler"
+DEBIAN_PKGS="wget clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libboost-system-dev libboost-thread-dev libprotobuf-dev protobuf-compiler"
 
 GFLAGS_VER="1.7"
 GLOG_VER="HEAD"
