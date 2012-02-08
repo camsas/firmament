@@ -10,27 +10,27 @@ info:
 	@echo "Build using $(CXX)"
 
 ext:
-	@$(SCRIPTS_DIR)/fetch-externals.sh
+	$(SCRIPTS_DIR)/fetch-externals.sh
 
 doc:
 #	@doxygen
 
 engine: tests-clean base
-	@make -C $(SRC_ROOT_DIR)/engine all
+	make -C $(SRC_ROOT_DIR)/engine all
 
 base: tests-clean
-	@make -C $(SRC_ROOT_DIR)/base all
+	make -C $(SRC_ROOT_DIR)/base all
 
 sim: base misc
-	@make -C $(SRC_ROOT_DIR)/sim all
+	make -C $(SRC_ROOT_DIR)/sim all
 
 misc:
-	@make -C $(SRC_ROOT_DIR)/misc all
+	make -C $(SRC_ROOT_DIR)/misc all
 
 # N.B.: This currently builds *all* platforms; we probably want a configure
 #       script to decide which ones to build!
 platforms:
-	@make -C $(SRC_ROOT_DIR)/platforms all
+	make -C $(SRC_ROOT_DIR)/platforms all
 
 nonext: engine doc
 
@@ -40,10 +40,10 @@ tests:
 	$(BUILD_DIR)/tests/all_tests.sh
 
 tests-clean:
-	@rm -f build/tests/all_tests.sh
-	@echo "#!/bin/bash" > build/tests/all_tests.sh
-	@chmod +x build/tests/all_tests.sh
+	rm -f build/tests/all_tests.sh
+	echo "#!/bin/bash" > build/tests/all_tests.sh
+	chmod +x build/tests/all_tests.sh
 
 clean: tests-clean
-	@rm -rf build
-	@rm -rf src/generated/*
+	rm -rf build
+	rm -rf src/generated/*

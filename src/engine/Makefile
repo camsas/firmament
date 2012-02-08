@@ -10,8 +10,8 @@ all: worker worker-tests
 # build rule from Makefile.common, or can be converted to do so.
 
 worker: worker-lib
-	@mkdir -p $(BUILD_DIR)/engine
-	@$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/engine/worker_main.cc \
+	mkdir -p $(BUILD_DIR)/engine
+	$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/engine/worker_main.cc \
 	   $(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a $(BUILD_DIR)/engine/worker.o \
 	   $(BUILD_DIR)/platforms/common.pb.o \
 	   -o $(BUILD_DIR)/engine/worker

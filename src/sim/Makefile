@@ -1,3 +1,4 @@
+ROOT_DIR=../..
 SUFFIX=sim
 
 include ../../include/Makefile.config
@@ -7,7 +8,7 @@ all: main
 
 main: workload_generator.o ensemble_sim.o task_sim.o job_sim.o scheduler_sim.o \
 	event_queue.o resource_sim.o
-	@$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/sim/simulation_main.cc \
+	$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/sim/simulation_main.cc \
 	   $(CXXFLAGS) \
 	   $(BUILD_DIR)/sim/workload_generator.o \
 	   $(BUILD_DIR)/sim/ensemble_sim.o \

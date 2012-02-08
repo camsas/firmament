@@ -38,28 +38,28 @@ endif
 #############
 
 setup:
-	@mkdir -p $(BUILD_DIR)/$(SUFFIX)
+	mkdir -p $(BUILD_DIR)/$(SUFFIX)
 
 %.pb.cc %.pb.h: %.proto
-	@mkdir -p $(SRC_GEN_DIR)/$(SUFFIX)
-	@$(PBC) --cpp_out=$(SRC_GEN_DIR)/$(SUFFIX)/ \
+	mkdir -p $(SRC_GEN_DIR)/$(SUFFIX)
+	$(PBC) --cpp_out=$(SRC_GEN_DIR)/$(SUFFIX)/ \
 		--proto_path=$(SRC_ROOT_DIR)/$(SUFFIX)/ \
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$<
 
 %.pb.o: %.pb.cc %.pb.h
-	@$(CXX) $(CPPFLAGS) -c $(SRC_GEN_DIR)/$(SUFFIX)/$< \
+	$(CXX) $(CPPFLAGS) -c $(SRC_GEN_DIR)/$(SUFFIX)/$< \
 		-I$(SRC_GEN_DIR)/$(SUFFIX)/ \
 		-o $(BUILD_DIR)/$(SUFFIX)/$@
 
 %.o: %.cc %.h setup
-	@$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+	$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		-I$(SRC_GEN_DIR)/$(SUFFIX)/ \
 		-o $(BUILD_DIR)/$(SUFFIX)/$@
 
 %-tests: %_test.cc %.o $(TEST_LD_DEPS)
-	@mkdir -p $(BUILD_DIR)/tests/$(SUFFIX)
-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+	mkdir -p $(BUILD_DIR)/tests/$(SUFFIX)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 	   $(GTEST_LIB) $(BUILD_DIR)/$(SUFFIX)/$*.o \
 	   $(TEST_LD_DEPS) $(LIBS) \
 	   -o $(BUILD_DIR)/tests/$(SUFFIX)/$@ $(GTEST_FLAGS)
-	@echo "$(BUILD_DIR)/tests/$(SUFFIX)/$@" >> $(BUILD_DIR)/tests/all_tests.sh
+	echo "$(BUILD_DIR)/tests/$(SUFFIX)/$@" >> $(BUILD_DIR)/tests/all_tests.sh
