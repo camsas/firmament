@@ -4,7 +4,7 @@ SUFFIX=base
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-all: $(BUILD_DIR)/base/libfirmament_base.a
+all: $(BUILD_DIR)/base/libfirmament_base.a tests
 
 $(BUILD_DIR)/base/libfirmament_base.a: protobufs $(BUILD_DIR)/base/task.o $(BUILD_DIR)/base/resource.o $(BUILD_DIR)/base/job.o $(BUILD_DIR)/base/ensemble.o $(BUILD_DIR)/base/data_object.o
 	$(AR) rcs $(BUILD_DIR)/base/libfirmament_base.a \

@@ -1,14 +1,14 @@
 // The Firmament project
 // Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// Initialization code for worker binary. This delegates to the Worker class
-// almost immediately after launching.
+// Initialization code for coordinator binary. This delegates to the
+// Coordinator class almost immediately after launching.
 
 #include <stdint.h>
 #include <iostream>
 
 #include "base/common.h"
-#include "engine/worker.h"
+#include "engine/coordinator.h"
 #include "platforms/common.h"
 
 #include "platforms/common.pb.h"
@@ -28,9 +28,9 @@ int main(int argc, char *argv[]) {
   // TODO(malte): validation of FLAGS_platform
   PlatformID platform_id = GetPlatformID(FLAGS_platform);
 
-  LOG(INFO) << "Firmament worker starting (Platform: " << platform_id
+  LOG(INFO) << "Firmament coordinator starting (Platform: " << platform_id
             << ") ...";
-  Worker worker(platform_id);
+  Coordinator coordinator(platform_id);
 
-  worker.Run();
+  coordinator.Run();
 }

@@ -9,25 +9,25 @@
 #include <gtest/gtest.h>
 
 #include "base/common.h"
-#include "engine/worker.h"
+#include "misc/messaging_interface.h"
+#include "platforms/common.pb.h"
+#include "platforms/unix/messaging_streamsockets.h"
 
 using namespace firmament;
 
-DECLARE_string(platform);
-
 namespace {
 
-// The fixture for testing class Worker.
-class WorkerTest : public ::testing::Test {
+// The fixture for testing the stream socket messaging adapter.
+class StreamSocketsMessagingTest : public ::testing::Test {
  protected:
   // You can remove any or all of the following functions if its body
   // is empty.
 
-  WorkerTest() {
+  StreamSocketsMessagingTest() {
     // You can do set-up work for each test here.
   }
 
-  virtual ~WorkerTest() {
+  virtual ~StreamSocketsMessagingTest() {
     // You can do clean-up work that doesn't throw exceptions here.
   }
 
@@ -45,21 +45,27 @@ class WorkerTest : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests in the test case for Worker.
-  //Worker w_;
+  StreamSocketsMessaging adapter_;
 };
 
-// Tests that the platform gets set correctly when instantiating a worker.
-TEST_F(WorkerTest, PlatformSetTest) {
-  FLAGS_platform = "UNIX";
-  FLAGS_v = 1;
-  Worker unix_worker(GetPlatformID(FLAGS_platform));
-  // We expect this worker to have been configured as a UNIX worker.
-  EXPECT_EQ(unix_worker.platform_id(), UNIX);
+// Tests channel establishment.
+TEST_F(StreamSocketsMessagingTest, TCPChannelEstablish) {
+  FLAGS_v = 2;
+  uint32_t port = 9998;
+  string uri = "127.0.0.1";
+  StreamSocketsChannel<TestMessage> channel(StreamSocketsChannel<TestMessage>::SS_TCP);
+  VLOG(1) << "Calling Listen";
+  channel.Listen(port);
+  VLOG(1) << "Calling EstablishChannel";
+  channel.EstablishChannel(uri, port);
+  VLOG(1) << "Calling RecvS";
+  channel.RecvS();
 }
 
 }  // namespace
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  common::InitFirmament(argc, argv);
   return RUN_ALL_TESTS();
 }

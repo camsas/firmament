@@ -13,7 +13,8 @@ namespace firmament {
 // Converts a platform name string to a PlatformID.
 inline PlatformID GetPlatformID(const string &platform_name) {
   PlatformID platform_id;
-  CHECK(PlatformID_Parse(platform_name, &platform_id));
+  CHECK(PlatformID_Parse(platform_name, &platform_id))
+      << "Invalid or unknown platform specified: " << platform_name;
   return platform_id;
 }
 

@@ -135,7 +135,7 @@ export INCLUDES
 # TODO(ms705): Temporarily disable -lprofiler and -ltcmalloc due to known
 # issues with Ubuntu's libunwind
 #LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf
-LIBS = -pthread -lgflags -lglog -lprotobuf
+LIBS = -pthread -lgflags -lglog -lprotobuf -lboost_system
 
 
 #######################################

@@ -49,7 +49,7 @@ GTEST_FLAGS=-DGTEST_HAS_TR1_TUPLE=0
 # INCLUDES
 #######################################
 
-INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR)
+INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) -I$(BOOST_INC_DIR)
 
 
 #######################################
@@ -59,7 +59,7 @@ INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR)
 # TODO(ms705): Temporarily disable -lprofiler and -ltcmalloc due to known
 # issues with Ubuntu's libunwind
 #LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf
-LIBS = -lgflags -lglog -lpthread -lprotobuf -lprofiler -ltcmalloc
+LIBS = -lgflags -lglog -lpthread -lprotobuf -lboost_system -lboost_thread
 
 
 #######################################
@@ -68,9 +68,9 @@ LIBS = -lgflags -lglog -lpthread -lprotobuf -lprofiler -ltcmalloc
 
 CXX = clang++
 
-CPPFLAGS = $(INCLUDES)
+CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros
 
-CXXFLAGS = $(LIBS) -Wall -Wextra -Werror -g -O0
+CXXFLAGS = $(LIBS)
 
 #######################################
 # PROTOBUF COMPILER

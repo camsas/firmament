@@ -8,6 +8,7 @@
 #define FIRMAMENT_ENGINE_WORKER_H
 
 #include "base/common.h"
+#include "misc/messaging_interface.h"
 #include "platforms/common.h"
 
 namespace firmament {
@@ -15,13 +16,24 @@ namespace firmament {
 class Worker {
  public:
   Worker(PlatformID platform_id);
-  int64_t Test();
+  void Run();
+  void AwaitNextMessage() {};
+  bool RunCoordinatorDiscovery(const string &coordinator_uri) {
+    VLOG(1) << coordinator_uri;
+    return true;
+  }
+  bool ConnectToCoordinator(const string& coordinator_uri) {
+    VLOG(1) << coordinator_uri;
+    return true;
+  }
+
   inline PlatformID platform_id() {
     return platform_id_;
   }
  protected:
   PlatformID platform_id_;
-  //Platform platform_;
+  bool exit_;
+  string coordinator_uri_;
 };
 
 }  // namespace firmament

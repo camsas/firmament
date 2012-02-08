@@ -15,7 +15,7 @@ ext:
 doc:
 #	@doxygen
 
-engine: tests-clean base
+engine: tests-clean base platforms
 	make -C $(SRC_ROOT_DIR)/engine all
 
 base: tests-clean
@@ -34,15 +34,12 @@ platforms:
 
 nonext: engine doc
 
-tests:
-	#@cd $(SRC_ROOT_DIR)/tests && make all
-	#env HEAPCHECK=normal $(BUILD_DIR)/tests/all_tests.sh
-	$(BUILD_DIR)/tests/all_tests.sh
+test:
+	make -C tests run
 
 tests-clean:
-	rm -f build/tests/all_tests.sh
-	echo "#!/bin/bash" > build/tests/all_tests.sh
-	chmod +x build/tests/all_tests.sh
+	rm -f build/tests/all_tests.txt
+	touch build/tests/all_tests.txt
 
 clean: tests-clean
 	rm -rf build

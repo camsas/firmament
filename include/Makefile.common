@@ -60,6 +60,6 @@ setup:
 	mkdir -p $(BUILD_DIR)/tests/$(SUFFIX)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 	   $(GTEST_LIB) $(BUILD_DIR)/$(SUFFIX)/$*.o \
-	   $(TEST_LD_DEPS) $(LIBS) \
-	   -o $(BUILD_DIR)/tests/$(SUFFIX)/$@ $(GTEST_FLAGS)
-	echo "$(BUILD_DIR)/tests/$(SUFFIX)/$@" >> $(BUILD_DIR)/tests/all_tests.sh
+	   $(TEST_LD_DEPS) \
+	   -o $(BUILD_DIR)/tests/$(SUFFIX)/$@ $(GTEST_FLAGS) $(LIBS)
+	echo "$(BUILD_DIR)/tests/$(SUFFIX)/$@" >> $(BUILD_DIR)/tests/all_tests.txt

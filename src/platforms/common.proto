@@ -7,3 +7,6 @@ enum PlatformID {
   EC2 = 3;
 }
 
+message TestMessage {
+  optional int64 test = 1 [default = 42];
+}
