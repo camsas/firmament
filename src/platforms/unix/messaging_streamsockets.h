@@ -36,7 +36,7 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
     return socket_;
   }
   void start() {
-    message_ = "Hello world!";
+    message_ = "Hello world!\n";
     VLOG(1) << "Sending message in server...";
     boost::asio::async_write(
         socket_, boost::asio::buffer(message_),

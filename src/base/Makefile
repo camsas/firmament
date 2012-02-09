@@ -4,19 +4,20 @@ SUFFIX=base
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-all: $(BUILD_DIR)/base/libfirmament_base.a tests
+LIB = libfirmament_base.a
+OBJS = task.o resource.o job.o ensemble.o data_object.o
+PBS = task_desc.pb.o resource_desc.pb.o ensemble_desc.pb.o \
+      data_object_name.pb.o
+TESTS = data_object_test
+TESTS_DEPS = $(OBJ_DIR)/data_object_name.pb.o
 
-$(BUILD_DIR)/base/libfirmament_base.a: protobufs $(BUILD_DIR)/base/task.o $(BUILD_DIR)/base/resource.o $(BUILD_DIR)/base/job.o $(BUILD_DIR)/base/ensemble.o $(BUILD_DIR)/base/data_object.o
-	$(AR) rcs $(BUILD_DIR)/base/libfirmament_base.a \
-	    $(BUILD_DIR)/base/task.o $(BUILD_DIR)/base/resource.o \
-	    $(BUILD_DIR)/base/ensemble.o $(BUILD_DIR)/base/job.o \
-	    $(BUILD_DIR)/base/task_desc.pb.o \
-	    $(BUILD_DIR)/base/resource_desc.pb.o \
-	    $(BUILD_DIR)/base/data_object_name.pb.o \
-	    $(BUILD_DIR)/base/data_object.o
+OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
+#TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
+TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
-TEST_LD_DEPS=$(BUILD_DIR)/base/data_object_name.pb.o
-tests: data_object-tests
+all: protobufs $(OBJ_LIB) $(TESTS_BIN) .setup
 
-protobufs: task_desc.pb.o resource_desc.pb.o ensemble_desc.pb.o \
-	   data_object_name.pb.o
+protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
+
+$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS)) $(addprefix $(OBJ_DIR)/, $(PBS))
+	$(AR) rcs $@ $^

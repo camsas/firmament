@@ -4,9 +4,17 @@ SUFFIX=platforms
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-all: setup protobufs libfirmament_unix.a
+PBS = common.pb.o
+# TODO(malte): This is a temporary hack to force building of the unix platform
+# in all cases. In the long run, we would like to be able to specify the
+# platform, or auto-detect it.
+LIB = libfirmament_unix.a
+OBJ_LIB = $(addprefix $(OBJ_DIR)/unix/, $(LIB))
 
-protobufs: common.pb.o
+all: protobufs $(OBJ_LIB) .setup
 
-libfirmament_unix.a:
+protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
+
+# TODO(malte): Hack; see note above.
+$(OBJ_LIB):
 	make -C unix all

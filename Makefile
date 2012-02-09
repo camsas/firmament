@@ -15,10 +15,10 @@ ext:
 doc:
 #	@doxygen
 
-engine: tests-clean base platforms
+engine: base platforms
 	make -C $(SRC_ROOT_DIR)/engine all
 
-base: tests-clean
+base:
 	make -C $(SRC_ROOT_DIR)/base all
 
 sim: base misc
@@ -41,6 +41,7 @@ tests-clean:
 	rm -f build/tests/all_tests.txt
 	touch build/tests/all_tests.txt
 
-clean: tests-clean
+clean:
 	rm -rf build
 	rm -rf src/generated/*
+	find src/ -depth -name .setup -type f -delete

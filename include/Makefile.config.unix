@@ -70,7 +70,7 @@ CXX = clang++
 
 CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros
 
-CXXFLAGS = $(LIBS)
+CXXFLAGS =
 
 #######################################
 # PROTOBUF COMPILER

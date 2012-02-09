@@ -4,34 +4,31 @@ SUFFIX=engine
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-all: coordinator-all worker-all
+BINS = coordinator worker
+OBJS = coordinator.o worker.o
+PBS =
+TESTS = coordinator_test worker_test
+TESTS_DEPS = $(BUILD_DIR)/platforms/common.pb.o
 
-coordinator-all: coordinator coordinator-tests
+OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
+#TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
+TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
-worker-all: worker worker-tests
+all: $(OBJ_BIN) $(TESTS_BIN) .setup
 
-coordinator: coordinator-lib
-	@mkdir -p $(BUILD_DIR)/engine
-	@$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/engine/coordinator_main.cc \
+$(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS))
+	$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/engine/coordinator_main.cc \
 	   $(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
 	   $(BUILD_DIR)/engine/coordinator.o \
 	   $(BUILD_DIR)/platforms/common.pb.o \
-	   -o $(BUILD_DIR)/engine/coordinator
-
-coordinator-lib: coordinator.o
+	   $(LIBS) -o $(BUILD_DIR)/engine/coordinator
 
 # TODO: check if any of the below targets can make use of a generic
 # build rule from Makefile.common, or can be converted to do so.
 
-worker: worker-lib
-	mkdir -p $(BUILD_DIR)/engine
+$(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS))
 	$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/engine/worker_main.cc \
 	   $(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
 	   $(BUILD_DIR)/engine/worker.o \
 	   $(BUILD_DIR)/platforms/common.pb.o \
-	   -o $(BUILD_DIR)/engine/worker
-
-worker-lib: worker.o
-
-TEST_LD_DEPS=$(BUILD_DIR)/platforms/common.pb.o
-tests: worker-tests coordinator-tests
+	   $(LIBS) -o $(BUILD_DIR)/engine/worker

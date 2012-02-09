@@ -4,11 +4,16 @@ SUFFIX=platforms/unix
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-all: setup libfirmament_unix.a tests
+LIB = libfirmament_unix.a
+OBJS = messaging_streamsockets.o
+TESTS = messaging_streamsockets_test
+TESTS_DEPS = $(OBJ_DIR)/../common.pb.o
 
-libfirmament_unix.a: messaging_streamsockets.o
-	@$(AR) rcs $(BUILD_DIR)/$(SUFFIX)/libfirmament_unix.a \
-	    $(BUILD_DIR)/$(SUFFIX)/messaging_streamsockets.o
+OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
+#TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
+TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
-TEST_LD_DEPS=$(BUILD_DIR)/platforms/common.pb.o
-tests: messaging_streamsockets-tests
+all: $(TESTS_BIN) $(OBJ_LIB) .setup
+
+$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS))
+	$(AR) rcs $@ $^
