@@ -16,4 +16,3 @@ TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 all: $(TESTS_BIN) $(OBJ_LIB) .setup
 
 $(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS))
-	$(AR) rcs $@ $^

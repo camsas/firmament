@@ -20,4 +20,3 @@ all: protobufs $(OBJ_LIB) $(TESTS_BIN) .setup
 protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 
 $(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS)) $(addprefix $(OBJ_DIR)/, $(PBS))
-	$(AR) rcs $@ $^

@@ -16,19 +16,24 @@ TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
 all: $(OBJ_BIN) $(TESTS_BIN) .setup
 
-$(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS))
-	$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/engine/coordinator_main.cc \
-	   $(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
-	   $(BUILD_DIR)/engine/coordinator.o \
-	   $(BUILD_DIR)/platforms/common.pb.o \
-	   $(LIBS) -o $(BUILD_DIR)/engine/coordinator
-
 # TODO: check if any of the below targets can make use of a generic
 # build rule from Makefile.common, or can be converted to do so.
 
+$(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS))
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) \
+		-static $(SRC_ROOT_DIR)/engine/coordinator_main.cc \
+		$(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
+		$(BUILD_DIR)/engine/coordinator.o \
+		$(BUILD_DIR)/platforms/common.pb.o \
+		$(LIBS) -o $(BUILD_DIR)/engine/coordinator, \
+		"  STATLNK $(BUILD_DIR)/engine/coordinator")
+
 $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS))
-	$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/engine/worker_main.cc \
-	   $(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
-	   $(BUILD_DIR)/engine/worker.o \
-	   $(BUILD_DIR)/platforms/common.pb.o \
-	   $(LIBS) -o $(BUILD_DIR)/engine/worker
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/engine/worker_main.cc \
+		$(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
+		$(BUILD_DIR)/engine/worker.o \
+		$(BUILD_DIR)/platforms/common.pb.o \
+		$(LIBS) -o $(BUILD_DIR)/engine/worker, \
+		"  STATLNK $(BUILD_DIR)/engine/worker")

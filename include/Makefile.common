@@ -40,31 +40,60 @@ endif
 OBJ_DIR=$(BUILD_DIR)/$(SUFFIX)
 TEST_OBJ_DIR=$(BUILD_DIR)/tests/$(SUFFIX)
 
+# Magic command to enable silent building.
+# USAGE: $(call quiet-command, <command>, <message to print>)
+quiet-command = $(if $(V),$1,$(if $(2),@echo $2 && $1, @$1))
+
+# Create output directories.
 .setup:
-	mkdir -p $(BUILD_DIR)/$(SUFFIX)
-	mkdir -p $(BUILD_DIR)/tests/$(SUFFIX)
-	mkdir -p $(SRC_GEN_DIR)/$(SUFFIX)
-	touch .setup
+	$(call quiet-command, \
+		mkdir -p $(BUILD_DIR)/$(SUFFIX); \
+		mkdir -p $(BUILD_DIR)/tests/$(SUFFIX); \
+		mkdir -p $(SRC_GEN_DIR)/$(SUFFIX); \
+		touch .setup, \
+		"  SETUP   $(BUILD_DIR)/$(SUFFIX)")
 
+# Generate protobuf source.
 $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.h: %.proto .setup
-	$(PBC) --cpp_out=$(SRC_GEN_DIR)/$(SUFFIX)/ \
+	$(call quiet-command,$(PBC) --cpp_out=$(SRC_GEN_DIR)/$(SUFFIX)/ \
 		--proto_path=$(SRC_ROOT_DIR)/$(SUFFIX)/ \
-		$(SRC_ROOT_DIR)/$(SUFFIX)/$<
+		$(SRC_ROOT_DIR)/$(SUFFIX)/$<, \
+		"  GEN     $@")
 
+# Build protobuf object.
 $(OBJ_DIR)/%.pb.o: $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc \
 	           $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.h
-	$(CXX) $(CPPFLAGS) -c $< -I$(SRC_GEN_DIR)/$(SUFFIX)/ -o $@
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) -c $< -I$(SRC_GEN_DIR)/$(SUFFIX)/ -o $@, \
+		"  PBC     $@")
 
+# Make unit test object file (special case).
 $(TEST_OBJ_DIR)/%_test.o: %_test.cc .setup
-	$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
-		-I$(SRC_GEN_DIR)/$(SUFFIX)/ -o $@
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+		-I$(SRC_GEN_DIR)/$(SUFFIX)/ -o $@, \
+		"  TESTC   $@")
 
+# Make object file (generic).
 $(OBJ_DIR)/%.o: %.cc %.h .setup
-	$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
-		-I$(SRC_GEN_DIR)/$(SUFFIX)/ -o $@
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+		-I$(SRC_GEN_DIR)/$(SUFFIX)/ -o $@, \
+		"  CXX     $@")
 
+# Make unit test binary and add it to the test list run by global "make test".
 $(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_DEPS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
-	   $(GTEST_LIB) $(BUILD_DIR)/$(SUFFIX)/$*.o \
-	   $(TESTS_DEPS) -o $@ $(GTEST_FLAGS) $(LIBS)
-	echo "$@" >> $(BUILD_DIR)/tests/all_tests.txt
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+		$(GTEST_LIB) $(BUILD_DIR)/$(SUFFIX)/$*.o \
+		$(TESTS_DEPS) -o $@ $(GTEST_FLAGS) $(LIBS); \
+		echo "$@" >> $(BUILD_DIR)/tests/all_tests.txt, \
+		"  TESTLNK $@")
+
+# Generic rule to make a statically linked library using AR. No dependencies,
+# add those by writing a more specific rule with the exact .a file as its
+# target.
+%.a:
+	$(call quiet-command, \
+		$(AR) rcs $@ $^, \
+		"  AR      $@"
