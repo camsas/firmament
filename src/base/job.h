@@ -24,7 +24,7 @@ class Job {
     COMPLETED = 2,
     FAILED = 3,
     MIGRATED = 4,
-    UNKNOWN = 5,
+    UNKNOWN = 5
   };
 
   Job(const string& name);
