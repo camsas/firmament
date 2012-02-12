@@ -96,4 +96,4 @@ $(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_DEPS)
 %.a:
 	$(call quiet-command, \
 		$(AR) rcs $@ $^, \
-		"  AR      $@"
+		"  AR      $@")
