@@ -35,20 +35,10 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
   tcp::socket& socket() {
     return socket_;
   }
-  void start() {
-    message_ = "Hello world!\n";
-    VLOG(1) << "Sending message in server...";
-    boost::asio::async_write(
-        socket_, boost::asio::buffer(message_),
-        boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
-                    boost::asio::placeholders::error,
-                    boost::asio::placeholders::bytes_transferred));
-  }
+  void Start();
  private:
   void HandleWrite(const boost::system::error_code& error,
-                   size_t bytes_transferred) {
-    VLOG(1) << "HandleWrite!";
-  }
+                   size_t bytes_transferred);
   tcp::socket socket_;
   std::string message_;
 };
@@ -58,7 +48,7 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
 // http://www.boost.org/doc/html/boost_asio/example/http/server3/server.hpp.
 class AsyncTCPServer : private boost::noncopyable {
  public:
-  explicit AsyncTCPServer(uint32_t port);
+  explicit AsyncTCPServer(string endpoint_addr, uint32_t port);
   void Run();
   void Stop();
  private:
@@ -116,9 +106,9 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
       VLOG(2) << "we appear to have connected successfully...";
   }
 
-  void Listen(uint64_t port) {
+  void Listen(string endpoint_addr, uint64_t port) {
     VLOG(1) << "Creating an async TCP server on port " << port;
-    tcp_server_ = new AsyncTCPServer(port);
+    tcp_server_ = new AsyncTCPServer(endpoint_addr, port);
     boost::thread t(boost::bind(&AsyncTCPServer::Run, tcp_server_));
   }
 

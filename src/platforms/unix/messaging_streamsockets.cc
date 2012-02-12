@@ -27,13 +27,34 @@ Message* StreamSocketsMessaging::AwaitNextMessage() {
 }
 
 
-AsyncTCPServer::AsyncTCPServer(uint32_t port)
+void TCPConnection::Start() {
+  // XXX: this needs to change, of course
+  message_ = "Hello world!\n";
+  VLOG(3) << "Sending message in server...";
+  boost::asio::async_write(
+      socket_, boost::asio::buffer(message_),
+      boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
+                  boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));
+}
+
+void TCPConnection::HandleWrite(const boost::system::error_code& error,
+                                size_t bytes_transferred) {
+  VLOG(3) << "In HandleWrite, transferred " << bytes_transferred << " bytes.";
+}
+
+
+
+AsyncTCPServer::AsyncTCPServer(string endpoint_addr, uint32_t port)
     : acceptor_(io_service_), new_connection_(new TCPConnection(io_service_)) {
   VLOG(2) << "AsyncTCPServer starting!";
   tcp::resolver resolver(io_service_);
   stringstream port_ss;
   port_ss << port;
-  tcp::resolver::query query("127.0.0.1", port_ss.str());
+  if (endpoint_addr == "") {
+    LOG(FATAL) << "No endpoint address specified to listen on!";
+  }
+  tcp::resolver::query query(endpoint_addr, port_ss.str());
   tcp::endpoint endpoint = *resolver.resolve(query);
 
   acceptor_.open(endpoint.protocol());
@@ -65,8 +86,8 @@ void AsyncTCPServer::Stop() {
 
 void AsyncTCPServer::HandleAccept(const boost::system::error_code& error) {
   if (!error) {
-    VLOG(2) << "starting connection, sending hello message";
-    new_connection_->start();
+    VLOG(2) << "In HandleAccept -- starting connection";
+    new_connection_->Start();
     new_connection_.reset(new TCPConnection(io_service_));
     StartAccept();
   } else {
