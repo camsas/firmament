@@ -20,6 +20,7 @@
 
 #include "base/common.h"
 #include "misc/messaging_interface.h"
+#include "misc/uri_tools.h"
 #include "platforms/common.h"
 
 using boost::asio::ip::tcp;
