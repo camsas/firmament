@@ -1,10 +1,10 @@
 package firmament;
 
 enum PlatformID {
-  UNKNOWN = 0;
-  UNIX = 1;
-  SCC = 2;
-  EC2 = 3;
+  PL_UNKNOWN = 0;
+  PL_UNIX = 1;
+  PL_SCC = 2;
+  PL_EC2 = 3;
 }
 
 message TestMessage {

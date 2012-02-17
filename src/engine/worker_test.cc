@@ -50,11 +50,11 @@ class WorkerTest : public ::testing::Test {
 
 // Tests that the platform gets set correctly when instantiating a worker.
 TEST_F(WorkerTest, PlatformSetTest) {
-  FLAGS_platform = "UNIX";
+  FLAGS_platform = "PL_UNIX";
   FLAGS_v = 1;
   Worker unix_worker(GetPlatformID(FLAGS_platform));
   // We expect this worker to have been configured as a UNIX worker.
-  EXPECT_EQ(unix_worker.platform_id(), UNIX);
+  EXPECT_EQ(unix_worker.platform_id(), PL_UNIX);
 }
 
 }  // namespace

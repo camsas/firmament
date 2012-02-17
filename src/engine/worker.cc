@@ -23,7 +23,7 @@ Worker::Worker(PlatformID platform_id)
           << platform_id;
   // Start up a worker according to the platform parameter
   switch (platform_id) {
-    case UNIX: {
+    case PL_UNIX: {
       // Initiate UNIX worker.
       //worker_ = new UnixWorker();
       break;

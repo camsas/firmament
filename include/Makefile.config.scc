@@ -124,7 +124,7 @@ export PROTOBUF_LIB_DIR
 # INCLUDES
 #######################################
 
-INCLUDES = -I$(SRC_ROOT_DIR) -I$(GTEST_INC_DIR) -I$(GLOG_INC_DIR) -I$(GFLAGS_INC_DIR) -I$(PROTOBUF_INC_DIR) -I$(BOOST_INC_DIR)
+INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) -I$(GLOG_INC_DIR) -I$(GFLAGS_INC_DIR) -I$(PROTOBUF_INC_DIR) -I$(BOOST_INC_DIR)
 export INCLUDES
 
 
@@ -135,7 +135,7 @@ export INCLUDES
 # TODO(ms705): Temporarily disable -lprofiler and -ltcmalloc due to known
 # issues with Ubuntu's libunwind
 #LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf
-LIBS = -pthread -lgflags -lglog -lprotobuf -lboost_system
+LIBS = -pthread -lgflags -lglog -lprotobuf -lboost_system -lboost_thread -lboost_regex
 
 
 #######################################
@@ -157,3 +157,11 @@ CXXFLAGS = -L$(BOOST_LIB_DIR) -L$(GLOG_LIB_DIR) -L$(GFLAGS_LIB_DIR) -L$(PROTOBUF
 PBC = $(EXT_DIR)/protobuf-build/bin/protoc
 
 PBCFLAGS =
+
+#######################################
+# MAKE
+#######################################
+
+MAKE = make
+
+MAKEFLAGS = --no-print-directory

@@ -22,7 +22,7 @@ Coordinator::Coordinator(PlatformID platform_id)
           << ", platform " << platform_id;
 
   switch (platform_id) {
-    case UNIX: {
+    case PL_UNIX: {
       m_adapter_ = new StreamSocketsMessaging();
       break;
     }

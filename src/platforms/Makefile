@@ -17,4 +17,4 @@ protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 
 # TODO(malte): Hack; see note above.
 $(OBJ_LIB):
-	make -C unix all
+	$(MAKE) $(MAKEFLAGS) -C unix all
