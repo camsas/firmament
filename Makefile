@@ -16,26 +16,26 @@ doc:
 #	@doxygen
 
 engine: base platforms
-	make -C $(SRC_ROOT_DIR)/engine all
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
 base:
-	make -C $(SRC_ROOT_DIR)/base all
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/base all
 
 sim: base misc
-	make -C $(SRC_ROOT_DIR)/sim all
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim all
 
 misc:
-	make -C $(SRC_ROOT_DIR)/misc all
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/misc all
 
 # N.B.: This currently builds *all* platforms; we probably want a configure
 #       script to decide which ones to build!
 platforms:
-	make -C $(SRC_ROOT_DIR)/platforms all
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/platforms all
 
 nonext: engine doc
 
 test:
-	make -C tests run
+	$(MAKE) $(MAKEFLAGS) -C tests run
 
 tests-clean:
 	rm -f build/tests/all_tests.txt

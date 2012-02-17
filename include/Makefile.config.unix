@@ -79,3 +79,11 @@ CXXFLAGS =
 PBC = protoc
 
 PBCFLAGS =
+
+#######################################
+# MAKE
+#######################################
+
+MAKE = make
+
+MAKEFLAGS = --no-print-directory

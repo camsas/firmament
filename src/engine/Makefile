@@ -8,7 +8,7 @@ BINS = coordinator worker
 OBJS = coordinator.o worker.o
 PBS =
 TESTS = coordinator_test worker_test
-TESTS_DEPS = $(BUILD_DIR)/platforms/common.pb.o
+TESTS_DEPS = $(BUILD_DIR)/platforms/common.pb.o $(BUILD_DIR)/platforms/unix/messaging_streamsockets.o
 
 OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
@@ -22,18 +22,20 @@ all: $(OBJ_BIN) $(TESTS_BIN) .setup
 $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS))
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
-		-static $(SRC_ROOT_DIR)/engine/coordinator_main.cc \
+		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
 		$(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/engine/coordinator.o \
 		$(BUILD_DIR)/platforms/common.pb.o \
+		$(BUILD_DIR)/platforms/unix/messaging_streamsockets.o \
 		$(LIBS) -o $(BUILD_DIR)/engine/coordinator, \
-		"  STATLNK $(BUILD_DIR)/engine/coordinator")
+		"  DYNLNK  $(BUILD_DIR)/engine/coordinator")
 
 $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS))
 	$(call quiet-command, \
-		$(CXX) $(CPPFLAGS) -static $(SRC_ROOT_DIR)/engine/worker_main.cc \
+		$(CXX) $(CPPFLAGS) $(SRC_ROOT_DIR)/engine/worker_main.cc \
 		$(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/engine/worker.o \
 		$(BUILD_DIR)/platforms/common.pb.o \
+		$(BUILD_DIR)/platforms/unix/messaging_streamsockets.o \
 		$(LIBS) -o $(BUILD_DIR)/engine/worker, \
-		"  STATLNK $(BUILD_DIR)/engine/worker")
+		"  DYNLNK  $(BUILD_DIR)/engine/worker")
