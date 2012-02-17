@@ -7,9 +7,14 @@
 #ifndef FIRMAMENT_ENGINE_COORDINATOR_H
 #define FIRMAMENT_ENGINE_COORDINATOR_H
 
+#include <boost/thread.hpp>
+
 #include "base/common.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
+#include "platforms/unix/messaging_streamsockets.h"
+
+using namespace boost::posix_time;
 
 namespace firmament {
 
@@ -17,7 +22,11 @@ class Coordinator {
  public:
   Coordinator(PlatformID platform_id);
   void Run();
-  void AwaitNextMessage() {};
+  void AwaitNextMessage() {
+    VLOG_EVERY_N(2, 1) << "Waiting for next message...";
+    ptime t(second_clock::local_time() + seconds(10));
+    boost::thread::sleep(t);
+  };
   inline PlatformID platform_id() {
     return platform_id_;
   }
@@ -25,6 +34,7 @@ class Coordinator {
   PlatformID platform_id_;
   bool exit_;
   string coordinator_uri_;
+  StreamSocketsMessaging* m_adapter_;
 };
 
 }  // namespace firmament

@@ -16,12 +16,16 @@ typedef ::google::protobuf::Message Message;
 template <class T>
 class MessagingChannelInterface {
  public:
+  // Establish.
+  virtual void Establish(const string& endpoint_uri) = 0;
   // Send (sync?)
   virtual void Send(const T& message) = 0;
   // Synchronous receive -- blocks until the next message is received.
   virtual T* RecvS() = 0;
   // Asynchronous receive -- does not block.
   virtual T* RecvA() = 0;
+  //
+  virtual void Close() = 0;
 };
 
 class MessagingInterface {

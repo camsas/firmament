@@ -13,24 +13,22 @@ using boost::asio::ip::tcp;
 
 namespace firmament {
 
-/*template <class T>
-void StreamSocketsMessaging::EstablishChannel(
-    const string& endpoint_uri,
-    MessagingChannelInterface<T>* chan) {
-  VLOG(1) << "got here, endpoint is " << endpoint_uri << ", chan: " << chan
-          << "!";
-}*/
-
 Message* StreamSocketsMessaging::AwaitNextMessage() {
   LOG(FATAL) << "Unimplemented!";
   return NULL;
 }
 
+TCPConnection::~TCPConnection() {
+  VLOG(2) << "Connection is being destroyed!";
+}
 
 void TCPConnection::Start() {
+}
+
+void TCPConnection::Send() {
   // XXX: this needs to change, of course
   message_ = "Hello world!\n";
-  VLOG(3) << "Sending message in server...";
+  VLOG(2) << "Sending message in server...";
   boost::asio::async_write(
       socket_, boost::asio::buffer(message_),
       boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
@@ -40,13 +38,17 @@ void TCPConnection::Start() {
 
 void TCPConnection::HandleWrite(const boost::system::error_code& error,
                                 size_t bytes_transferred) {
-  VLOG(3) << "In HandleWrite, transferred " << bytes_transferred << " bytes.";
+  if (error) {
+    VLOG(2) << "Error: " << error;
+  } else {
+    VLOG(2) << "In HandleWrite, transferred " << bytes_transferred << " bytes.";
+  }
 }
 
 
 
 AsyncTCPServer::AsyncTCPServer(string endpoint_addr, uint32_t port)
-    : acceptor_(io_service_), new_connection_(new TCPConnection(io_service_)) {
+    : acceptor_(io_service_) {
   VLOG(2) << "AsyncTCPServer starting!";
   tcp::resolver resolver(io_service_);
   stringstream port_ss;
@@ -66,8 +68,11 @@ AsyncTCPServer::AsyncTCPServer(string endpoint_addr, uint32_t port)
 
 void AsyncTCPServer::StartAccept() {
   VLOG(2) << "In StartAccept()";
-  acceptor_.async_accept(new_connection_->socket(),
+  TCPConnection::connection_ptr new_connection(new TCPConnection(io_service_));
+  active_connections_.push_back(new_connection);
+  acceptor_.async_accept(new_connection->socket(),
                          boost::bind(&AsyncTCPServer::HandleAccept, this,
+                                     new_connection,
                                      boost::asio::placeholders::error));
 }
 
@@ -76,7 +81,7 @@ void AsyncTCPServer::Run() {
   boost::shared_ptr<boost::thread> thread(new boost::thread(
       boost::bind(&boost::asio::io_service::run, &io_service_)));
   // Wait for thread to exit
-  VLOG(2) << "Waiting for join...";
+  VLOG(2) << "Server thread running -- Waiting for join...";
   thread->join();
 }
 
@@ -84,11 +89,11 @@ void AsyncTCPServer::Stop() {
   io_service_.stop();
 }
 
-void AsyncTCPServer::HandleAccept(const boost::system::error_code& error) {
+void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
+                                  const boost::system::error_code& error) {
   if (!error) {
-    VLOG(2) << "In HandleAccept -- starting connection";
-    new_connection_->Start();
-    new_connection_.reset(new TCPConnection(io_service_));
+    VLOG(2) << "In HandleAccept -- starting connection at " << connection;
+    connection->Start();
     StartAccept();
   } else {
     VLOG(1) << "Error: " << error;

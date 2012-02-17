@@ -50,15 +50,22 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 
 // Tests channel establishment.
 TEST_F(StreamSocketsMessagingTest, TCPChannelEstablish) {
+  FLAGS_v = 2;
   uint32_t port = 9998;
-  string uri = "localhost";
+  string uri = "tcp://localhost:9998";
+  string host = "localhost";
+  StreamSocketsMessaging mess_adapter;
   StreamSocketsChannel<TestMessage> channel(StreamSocketsChannel<TestMessage>::SS_TCP);
   VLOG(1) << "Calling Listen";
-  channel.Listen(uri, port);
+  mess_adapter.Listen(host, port);
   VLOG(1) << "Calling EstablishChannel";
-  channel.EstablishChannel(uri, port);
+  mess_adapter.EstablishChannel(uri, &channel);
+  VLOG(1) << "Calling SendS";
+  mess_adapter.SendOnConnection(0);
   VLOG(1) << "Calling RecvS";
   channel.RecvS();
+  VLOG(1) << "closing channel";
+  channel.Close();
 }
 
 }  // namespace

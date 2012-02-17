@@ -6,6 +6,9 @@
 
 #include "engine/worker.h"
 
+#include "platforms/common.pb.h"
+#include "platforms/unix/messaging_streamsockets.h"
+
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
               "attempting automatic discovery.");
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
@@ -15,11 +18,19 @@ namespace firmament {
 Worker::Worker(PlatformID platform_id)
   : platform_id_(platform_id),
     coordinator_uri_(FLAGS_coordinator_uri) {
-  // Start up a worker according to the platform parameter
-  //platform_ = platform::GetByID(platform_id);
-  string hostname = ""; //platform_.GetHostname();
+  string hostname = ""; //pilatform_.GetHostname();
   VLOG(1) << "Worker starting on host " << hostname << ", platform "
           << platform_id;
+  // Start up a worker according to the platform parameter
+  switch (platform_id) {
+    case UNIX: {
+      // Initiate UNIX worker.
+      //worker_ = new UnixWorker();
+      break;
+    }
+    default:
+      LOG(FATAL) << "Unimplemented!";
+  }
 }
 
 void Worker::Run() {

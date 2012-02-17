@@ -27,16 +27,19 @@ using boost::asio::ip::tcp;
 
 namespace firmament {
 
+// TCP connection class using boost primitives.
 class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
                       private boost::noncopyable {
  public:
   typedef boost::shared_ptr<TCPConnection> connection_ptr;
   explicit TCPConnection(boost::asio::io_service& io_service)
       : socket_(io_service) { }
+  virtual ~TCPConnection();
   tcp::socket& socket() {
     return socket_;
   }
   void Start();
+  void Send();
  private:
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
@@ -52,14 +55,20 @@ class AsyncTCPServer : private boost::noncopyable {
   explicit AsyncTCPServer(string endpoint_addr, uint32_t port);
   void Run();
   void Stop();
+  TCPConnection::connection_ptr connection(uint64_t connection_id) {
+    CHECK_LT(connection_id, active_connections_.size());
+    return active_connections_[connection_id];
+  }
  private:
   void StartAccept();
-  void HandleAccept(const boost::system::error_code& error);
+  void HandleAccept(TCPConnection::connection_ptr connection,
+                    const boost::system::error_code& error);
   boost::asio::io_service io_service_;
   tcp::acceptor acceptor_;
-  TCPConnection::connection_ptr new_connection_;
+  vector<TCPConnection::connection_ptr> active_connections_;
 };
 
+// Messaging adapter.
 class StreamSocketsMessaging : public MessagingInterface {
  public:
   template <class T>
@@ -67,17 +76,35 @@ class StreamSocketsMessaging : public MessagingInterface {
                         MessagingChannelInterface<T>* chan) {
     VLOG(1) << "got here, endpoint is " << endpoint_uri << ", chan: " << chan
             << "!";
-
+    chan->Establish(endpoint_uri);
   }
-  void Listen(uint64_t port) {
-    VLOG(1) << "Listening on port " << port;
+
+  void Listen(string endpoint_uri, uint64_t port) {
+    VLOG(1) << "Creating an async TCP server on port " << port
+            << " on endpoint " << endpoint_uri;
+    tcp_server_ = new AsyncTCPServer(endpoint_uri, port);
+    boost::thread t(boost::bind(&AsyncTCPServer::Run, tcp_server_));
+  }
+
+  void SendOnConnection(uint64_t connection_id) {
+    VLOG(2) << "Messaging adapter sending on connection " << connection_id;
+    tcp_server_->connection(connection_id)->Send();
+  }
+
+  void StopListen() {
+    // t.stop()
+    // t.join()
   }
 
   template <class T>
   void CloseChannel(MessagingChannelInterface<T>* chan);
   Message* AwaitNextMessage();
+
+ private:
+  AsyncTCPServer* tcp_server_;
 };
 
+// Channel.
 template <class T>
 class StreamSocketsChannel : public MessagingChannelInterface<T> {
  public:
@@ -86,12 +113,17 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
     SS_UNIX = 1
   } StreamSocketType;
 
-  void EstablishChannel(const string& endpoint_uri, uint32_t port) {
+  void Establish(const string& endpoint_uri) {
+    // Parse endpoint URI into hostname and port
+    string hostname;
+    string port;
+    hostname = URITools::GetHostnameFromURI(endpoint_uri);
+    port = URITools::GetPortFromURI(endpoint_uri);
+
+    // Now make the connection
     VLOG(1) << "got here, endpoint is " << endpoint_uri;
     tcp::resolver resolver(client_io_service_);
-    stringstream port_ss;
-    port_ss << port;
-    tcp::resolver::query query(endpoint_uri, port_ss.str());
+    tcp::resolver::query query(hostname, port);
     tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
     tcp::resolver::iterator end;
 
@@ -104,13 +136,7 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
     if (error)
       throw boost::system::system_error(error);
     else
-      VLOG(2) << "we appear to have connected successfully...";
-  }
-
-  void Listen(string endpoint_addr, uint64_t port) {
-    VLOG(1) << "Creating an async TCP server on port " << port;
-    tcp_server_ = new AsyncTCPServer(endpoint_addr, port);
-    boost::thread t(boost::bind(&AsyncTCPServer::Run, tcp_server_));
+      VLOG(2) << "Client: we appear to have connected successfully...";
   }
 
   StreamSocketsChannel(StreamSocketType type) : client_socket_(NULL) {
@@ -138,11 +164,12 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
   // Synchronous receive -- blocks until the next message is received.
   T* RecvS() {
     VLOG(2) << "In RecvS, polling for data";
-    for (;;) {
-      boost::array<char, 128> buf;
+    boost::array<char, 1024> buf;
+    size_t len;
+    do {
       boost::system::error_code error;
-      VLOG(2) << "calling read_some";
-      size_t len = client_socket_->read_some(boost::asio::buffer(buf), error);
+      VLOG(3) << "calling read_some";
+      len = client_socket_->read_some(boost::asio::buffer(buf), error);
       VLOG(2) << "Read " << len << " bytes...";
 
       if (error == boost::asio::error::eof) {
@@ -152,15 +179,20 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
         throw boost::system::system_error(error);
       }
 
+      // DEBUG
       cout.write(buf.data(), len);
-    }
-    return NULL;
+    } while (client_socket_->available() > 0);
+    //static_cast<void*>(buffer) = buf.data();
+    return static_cast<T*>(static_cast<void*>(buf.data()));
   }
   // Asynchronous receive -- does not block.
   T* RecvA() { return NULL; }
+  void Close() {
+    //
+    client_socket_->close();
+  }
  private:
   boost::asio::io_service client_io_service_;
-  AsyncTCPServer* tcp_server_;
   tcp::socket* client_socket_;
 };
 
