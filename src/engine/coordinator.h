@@ -22,11 +22,7 @@ class Coordinator {
  public:
   Coordinator(PlatformID platform_id);
   void Run();
-  void AwaitNextMessage() {
-    VLOG_EVERY_N(2, 1) << "Waiting for next message...";
-    ptime t(second_clock::local_time() + seconds(10));
-    boost::thread::sleep(t);
-  };
+  void AwaitNextMessage();
   inline PlatformID platform_id() {
     return platform_id_;
   }
@@ -34,7 +30,7 @@ class Coordinator {
   PlatformID platform_id_;
   bool exit_;
   string coordinator_uri_;
-  StreamSocketsMessaging* m_adapter_;
+  MessagingInterface* m_adapter_;
 };
 
 }  // namespace firmament

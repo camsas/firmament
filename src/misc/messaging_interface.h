@@ -16,7 +16,7 @@ typedef ::google::protobuf::Message Message;
 template <class T>
 class MessagingChannelInterface {
  public:
-  // Establish.
+  // Establish a communication channel.
   virtual void Establish(const string& endpoint_uri) = 0;
   // Send (sync?)
   virtual void Send(const T& message) = 0;
@@ -24,12 +24,13 @@ class MessagingChannelInterface {
   virtual T* RecvS() = 0;
   // Asynchronous receive -- does not block.
   virtual T* RecvA() = 0;
-  //
+  // Tear down the channel.
   virtual void Close() = 0;
 };
 
 class MessagingInterface {
  public:
+  // Set up a messaging channel to a remote endpoint.
   template <class T>
   void EstablishChannel(const string& endpoint_uri,
                         MessagingChannelInterface<T>* chan);
@@ -39,7 +40,10 @@ class MessagingInterface {
   // invalidates the reference to it.
   template <class T>
   void CloseChannel(MessagingChannelInterface<T>* chan);
+  // Blocking wait for a new message to arrive.
   virtual Message* AwaitNextMessage() = 0;
+  // Listen for incoming channel establishment requests.
+  virtual void Listen(const string& endpoint_uri) = 0;
 };
 
 }  // namespace firmament

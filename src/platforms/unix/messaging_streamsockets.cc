@@ -47,16 +47,14 @@ void TCPConnection::HandleWrite(const boost::system::error_code& error,
 
 
 
-AsyncTCPServer::AsyncTCPServer(string endpoint_addr, uint32_t port)
+AsyncTCPServer::AsyncTCPServer(const string& endpoint_addr, const string& port)
     : acceptor_(io_service_) {
   VLOG(2) << "AsyncTCPServer starting!";
   tcp::resolver resolver(io_service_);
-  stringstream port_ss;
-  port_ss << port;
   if (endpoint_addr == "") {
     LOG(FATAL) << "No endpoint address specified to listen on!";
   }
-  tcp::resolver::query query(endpoint_addr, port_ss.str());
+  tcp::resolver::query query(endpoint_addr, port);
   tcp::endpoint endpoint = *resolver.resolve(query);
 
   acceptor_.open(endpoint.protocol());

@@ -52,7 +52,7 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
 // http://www.boost.org/doc/html/boost_asio/example/http/server3/server.hpp.
 class AsyncTCPServer : private boost::noncopyable {
  public:
-  explicit AsyncTCPServer(string endpoint_addr, uint32_t port);
+  explicit AsyncTCPServer(const string& endpoint_addr, const string& port);
   void Run();
   void Stop();
   TCPConnection::connection_ptr connection(uint64_t connection_id) {
@@ -79,10 +79,14 @@ class StreamSocketsMessaging : public MessagingInterface {
     chan->Establish(endpoint_uri);
   }
 
-  void Listen(string endpoint_uri, uint64_t port) {
+  void Listen(const string& endpoint_uri) {
+    // Parse endpoint URI into hostname and port
+    string hostname = URITools::GetHostnameFromURI(endpoint_uri);
+    string port = URITools::GetPortFromURI(endpoint_uri);
+
     VLOG(1) << "Creating an async TCP server on port " << port
-            << " on endpoint " << endpoint_uri;
-    tcp_server_ = new AsyncTCPServer(endpoint_uri, port);
+            << " on endpoint " << hostname << "(" << endpoint_uri << ")";
+    tcp_server_ = new AsyncTCPServer(hostname, port);
     boost::thread t(boost::bind(&AsyncTCPServer::Run, tcp_server_));
   }
 
@@ -98,6 +102,7 @@ class StreamSocketsMessaging : public MessagingInterface {
 
   template <class T>
   void CloseChannel(MessagingChannelInterface<T>* chan);
+
   Message* AwaitNextMessage();
 
  private:
@@ -115,10 +120,8 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
 
   void Establish(const string& endpoint_uri) {
     // Parse endpoint URI into hostname and port
-    string hostname;
-    string port;
-    hostname = URITools::GetHostnameFromURI(endpoint_uri);
-    port = URITools::GetPortFromURI(endpoint_uri);
+    string hostname = URITools::GetHostnameFromURI(endpoint_uri);
+    string port = URITools::GetPortFromURI(endpoint_uri);
 
     // Now make the connection
     VLOG(1) << "got here, endpoint is " << endpoint_uri;

@@ -51,13 +51,11 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 // Tests channel establishment.
 TEST_F(StreamSocketsMessagingTest, TCPChannelEstablish) {
   FLAGS_v = 2;
-  uint32_t port = 9998;
   string uri = "tcp://localhost:9998";
-  string host = "localhost";
   StreamSocketsMessaging mess_adapter;
   StreamSocketsChannel<TestMessage> channel(StreamSocketsChannel<TestMessage>::SS_TCP);
   VLOG(1) << "Calling Listen";
-  mess_adapter.Listen(host, port);
+  mess_adapter.Listen(uri);
   VLOG(1) << "Calling EstablishChannel";
   mess_adapter.EstablishChannel(uri, &channel);
   VLOG(1) << "Calling SendS";
