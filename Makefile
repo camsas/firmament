@@ -39,6 +39,7 @@ test:
 
 tests-clean:
 	rm -f build/tests/all_tests.txt
+	mkdir -p build/tests
 	touch build/tests/all_tests.txt
 
 clean:
