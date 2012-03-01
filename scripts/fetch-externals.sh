@@ -11,8 +11,8 @@ EXT_DIR=${PWD}
 # If we are running on a Debian-based system, a couple of dependencies
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
-UBUNTU_PKGS="wget clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libboost-system-dev libboost-thread-dev libprotobuf-dev protobuf-compiler"
-DEBIAN_PKGS="wget clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libboost-system-dev libboost-thread-dev libprotobuf-dev protobuf-compiler"
+UBUNTU_PKGS="wget clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libboost-system-dev libboost-thread-dev libprotobuf-dev protobuf-compiler subversion"
+DEBIAN_PKGS="wget clang libgoogle-perftools0 libgoogle-perftools-dev libboost-math-dev libboost-system-dev libboost-thread-dev libprotobuf-dev protobuf-compiler subversion"
 
 GFLAGS_VER="1.7"
 GLOG_VER="HEAD"
@@ -80,7 +80,7 @@ function check_dpkg_packages() {
     OS_PKGS=${DEBIAN_PKGS}
   fi
   for i in ${OS_PKGS}; do
-    PKG_RES=$(dpkg-query -W -f='${Package}\n' ${i} 2>/dev/null)
+    PKG_RES=$(dpkg-query -W -f='${Status}\n' ${i} | grep -E "^install" 2>/dev/null)
     if [[ $PKG_RES == "" ]]; then
 #    if [ $(echo $PKG_RES | grep "No package") ]; then
       MISSING_PKGS="${MISSING_PKGS} ${i}"
