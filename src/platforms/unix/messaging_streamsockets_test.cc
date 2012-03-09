@@ -44,7 +44,7 @@ class StreamSocketsMessagingTest : public ::testing::Test {
     // before the destructor).
   }
 
-  // Objects declared here can be used by all tests in the test case for Worker.
+  // Objects declared here can be used by all tests.
   StreamSocketsMessaging adapter_;
 };
 
@@ -53,11 +53,20 @@ TEST_F(StreamSocketsMessagingTest, TCPChannelEstablish) {
   FLAGS_v = 2;
   string uri = "tcp://localhost:9998";
   StreamSocketsMessaging mess_adapter;
-  StreamSocketsChannel<TestMessage> channel(StreamSocketsChannel<TestMessage>::SS_TCP);
+  StreamSocketsChannel<TestMessage>
+      channel(StreamSocketsChannel<TestMessage>::SS_TCP);
   VLOG(1) << "Calling Listen";
   mess_adapter.Listen(uri);
+  // Need to block and wait for the socket to become ready, otherwise race
+  // ensues.
+  VLOG(1) << "Waiting for server to be ready...";
+  while (!mess_adapter.ListenReady()) {
+    VLOG(1) << "Waiting...";
+  }
   VLOG(1) << "Calling EstablishChannel";
   mess_adapter.EstablishChannel(uri, &channel);
+  // Need to block and wait until the connection is ready, too.
+  // XXX(malte) need to fix
   VLOG(1) << "Calling SendS";
   mess_adapter.SendOnConnection(0);
   VLOG(1) << "Calling RecvS";

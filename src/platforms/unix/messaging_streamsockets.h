@@ -59,7 +59,9 @@ class AsyncTCPServer : private boost::noncopyable {
     CHECK_LT(connection_id, active_connections_.size());
     return active_connections_[connection_id];
   }
+  inline bool listening() { return listening_; }
  private:
+  bool listening_;
   void StartAccept();
   void HandleAccept(TCPConnection::connection_ptr connection,
                     const boost::system::error_code& error);
@@ -88,6 +90,13 @@ class StreamSocketsMessaging : public MessagingInterface {
             << " on endpoint " << hostname << "(" << endpoint_uri << ")";
     tcp_server_ = new AsyncTCPServer(hostname, port);
     boost::thread t(boost::bind(&AsyncTCPServer::Run, tcp_server_));
+  }
+
+  bool ListenReady() {
+    if (tcp_server_ != NULL)
+      return tcp_server_->listening();
+    else
+      return false;
   }
 
   void SendOnConnection(uint64_t connection_id) {

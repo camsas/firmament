@@ -44,6 +44,8 @@ class MessagingInterface {
   virtual Message* AwaitNextMessage() = 0;
   // Listen for incoming channel establishment requests.
   virtual void Listen(const string& endpoint_uri) = 0;
+  // Check if we are ready to accept connections.
+  virtual bool ListenReady() = 0;
 };
 
 }  // namespace firmament

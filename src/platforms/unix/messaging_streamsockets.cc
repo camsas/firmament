@@ -48,7 +48,7 @@ void TCPConnection::HandleWrite(const boost::system::error_code& error,
 
 
 AsyncTCPServer::AsyncTCPServer(const string& endpoint_addr, const string& port)
-    : acceptor_(io_service_) {
+    : acceptor_(io_service_), listening_(false) {
   VLOG(2) << "AsyncTCPServer starting!";
   tcp::resolver resolver(io_service_);
   if (endpoint_addr == "") {
@@ -72,6 +72,7 @@ void AsyncTCPServer::StartAccept() {
                          boost::bind(&AsyncTCPServer::HandleAccept, this,
                                      new_connection,
                                      boost::asio::placeholders::error));
+  listening_ = true;
 }
 
 void AsyncTCPServer::Run() {
@@ -84,6 +85,7 @@ void AsyncTCPServer::Run() {
 }
 
 void AsyncTCPServer::Stop() {
+  listening_ = false;
   io_service_.stop();
 }
 
