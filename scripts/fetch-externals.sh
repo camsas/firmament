@@ -293,3 +293,5 @@ else
   print_succ_or_fail $RES
   cd ${EXT_DIR}
 fi
+
+touch ${EXT_DIR}/.ext-ok

@@ -1,4 +1,4 @@
-.PHONY: clean test
+.PHONY: clean test ext
 .DEFAULT: all
 
 # Get common build settings
@@ -9,7 +9,7 @@ all: tests-clean info ext platforms engine doc sim
 info:
 	@echo "Build using $(CXX)"
 
-ext:
+ext/.ext-ok:
 	$(SCRIPTS_DIR)/fetch-externals.sh
 
 doc:
@@ -18,13 +18,13 @@ doc:
 engine: base platforms
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
-base:
+base: ext/.ext-ok
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/base all
 
 sim: base misc
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim all
 
-misc:
+misc: ext/.ext-ok
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/misc all
 
 # N.B.: This currently builds *all* platforms; we probably want a configure
@@ -34,7 +34,7 @@ platforms:
 
 nonext: engine doc
 
-test:
+test: ext/.ext-ok
 	$(MAKE) $(MAKEFLAGS) -C tests run
 
 tests-clean:
