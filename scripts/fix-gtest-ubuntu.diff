@@ -1,0 +1,10 @@
+Index: Makefile
+===================================================================
+--- Makefile	(revision 616)
++++ Makefile	(working copy)
+@@ -77,4 +77,4 @@
+ 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/sample1_unittest.cc
+ 
+ sample1_unittest : sample1.o sample1_unittest.o gtest_main.a
+-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
++	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -lpthread -o $@
