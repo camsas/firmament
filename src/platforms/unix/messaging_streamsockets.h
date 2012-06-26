@@ -26,6 +26,8 @@
 using boost::asio::ip::tcp;
 
 namespace firmament {
+namespace platform_unix {
+namespace streamsockets {
 
 // TCP connection class using boost primitives.
 class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
@@ -33,11 +35,12 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
  public:
   typedef boost::shared_ptr<TCPConnection> connection_ptr;
   explicit TCPConnection(boost::asio::io_service& io_service)
-      : socket_(io_service) { }
+      : socket_(io_service), ready_(false) { }
   virtual ~TCPConnection();
   tcp::socket& socket() {
     return socket_;
   }
+  bool Ready() { return ready_; }
   void Start();
   void Send();
  private:
@@ -45,6 +48,7 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
                    size_t bytes_transferred);
   tcp::socket socket_;
   std::string message_;
+  bool ready_;
 };
 
 // Asynchronous, multi-threaded TCP server.
@@ -71,8 +75,9 @@ class AsyncTCPServer : private boost::noncopyable {
 };
 
 // Messaging adapter.
-class StreamSocketsMessaging : public MessagingInterface {
+class StreamSocketsMessaging : public firmament::MessagingInterface {
  public:
+  virtual ~StreamSocketsMessaging() {};
   template <class T>
   void EstablishChannel(const string& endpoint_uri,
                         MessagingChannelInterface<T>* chan) {
@@ -101,6 +106,15 @@ class StreamSocketsMessaging : public MessagingInterface {
 
   void SendOnConnection(uint64_t connection_id) {
     VLOG(2) << "Messaging adapter sending on connection " << connection_id;
+    // TODO(malte): Hack -- we spin until the connection is ready. This is
+    // required to avoid race conditions where a messaging adapter is trying to
+    // send on a connection before it is ready. This can occur due to the
+    // asynchronous, multi-threaded nature of the TCP server.
+    while (!tcp_server_->connection(connection_id)->Ready()) {
+      VLOG(2) << "Waiting for connection " << connection_id
+              << " to be ready to send...";
+    }
+    // Actually send the data on the (now ready) TCP connection
     tcp_server_->connection(connection_id)->Send();
   }
 
@@ -145,13 +159,16 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
       client_socket_->close();
       client_socket_->connect(*endpoint_iterator++, error);
     }
-    if (error)
+    if (error) {
       throw boost::system::system_error(error);
-    else
+    } else {
       VLOG(2) << "Client: we appear to have connected successfully...";
+      channel_ready_ = true;
+    }
   }
 
-  StreamSocketsChannel(StreamSocketType type) : client_socket_(NULL) {
+  StreamSocketsChannel(StreamSocketType type) : client_socket_(NULL),
+                                                channel_ready_(false) {
     switch (type) {
       case SS_TCP: {
         // Set up two TCP endpoints (?)
@@ -168,6 +185,11 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
   virtual ~StreamSocketsChannel() {
     if (client_socket_ != NULL)
       delete client_socket_;
+  }
+  // Ready check
+  bool Ready() {
+    VLOG(2) << "check if channel ready: is " << channel_ready_;
+    return channel_ready_;
   }
   // Send (sync?)
   void Send(const T& message) {
@@ -200,14 +222,18 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
   // Asynchronous receive -- does not block.
   T* RecvA() { return NULL; }
   void Close() {
-    //
+    // end the connection
     client_socket_->close();
+    channel_ready_ = false;
   }
  private:
   boost::asio::io_service client_io_service_;
   tcp::socket* client_socket_;
+  bool channel_ready_;
 };
 
+}  // namespace streamsockets
+}  // namespace platform_unix
 }  // namespace firmament
 
 #endif  // FIRMAMENT_PLATFORMS_UNIX_MESSAGING_STREAMSOCKETS_H
