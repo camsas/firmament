@@ -27,7 +27,7 @@ except subprocess.CalledProcessError as e:
       "===========\n"
 except Exception as e:
   print "Failed to run all tests. Check the following: \n" \
-        "1) Does all_tests.txt in $BUILD_DIR/tests/ exist?" \
+        "1) Does all_tests.txt in $BUILD_DIR/tests/ exist?\n" \
         "2) Do all test binaries listed in all_tests.txt exist and are they " \
         "executable?"
   print e

@@ -16,7 +16,7 @@ COMPILER_PKGS="clang libprotobuf-dev protobuf-compiler"
 GOOGLE_PKGS="libgoogle-perftools0 libgoogle-perftools-dev "
 BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev " \
            "libprotobuf-dev"
-MISC_PKGS="hwloc-nox libhwloc-dev"
+MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev"
 
 UBUNTU_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS}" \
             "${MISC_PKGS}"

@@ -31,8 +31,8 @@ class Worker {
     return false;
   }
   bool ConnectToCoordinator(const string& coordinator_uri) {
-    StreamSocketsChannel<TestMessage>
-        chan(StreamSocketsChannel<TestMessage>::SS_TCP);
+    platform_unix::streamsockets::StreamSocketsChannel<TestMessage>
+        chan(platform_unix::streamsockets::StreamSocketsChannel<TestMessage>::SS_TCP);
     m_adapter_.EstablishChannel(coordinator_uri, &chan);
     return true;
   }
@@ -42,7 +42,7 @@ class Worker {
   }
  protected:
   PlatformID platform_id_;
-  StreamSocketsMessaging m_adapter_;
+  platform_unix::streamsockets::StreamSocketsMessaging m_adapter_;
   bool exit_;
   string coordinator_uri_;
 };

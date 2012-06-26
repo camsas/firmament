@@ -7,14 +7,19 @@
 #ifndef FIRMAMENT_ENGINE_COORDINATOR_H
 #define FIRMAMENT_ENGINE_COORDINATOR_H
 
+#include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
+#include <boost/date_time/gregorian/gregorian.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "base/common.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/messaging_streamsockets.h"
+#include "engine/coordinator_http_ui.h"
 
 using namespace boost::posix_time;
+using namespace boost::gregorian;
 
 namespace firmament {
 
@@ -31,6 +36,7 @@ class Coordinator {
   bool exit_;
   string coordinator_uri_;
   MessagingInterface* m_adapter_;
+  CoordinatorHTTPUI* c_http_ui_;
 };
 
 }  // namespace firmament

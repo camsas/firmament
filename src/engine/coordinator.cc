@@ -14,7 +14,8 @@ DEFINE_string(listen_uri, "tcp://localhost:9998",
 namespace firmament {
 
 Coordinator::Coordinator(PlatformID platform_id)
-  : platform_id_(platform_id) {
+  : platform_id_(platform_id),
+    c_http_ui_(new CoordinatorHTTPUI(8080)) {
   // Start up a coordinator ccording to the platform parameter
   //platform_ = platform::GetByID(platform_id);
   string hostname = ""; //platform_.GetHostname();
@@ -23,13 +24,15 @@ Coordinator::Coordinator(PlatformID platform_id)
 
   switch (platform_id) {
     case PL_UNIX: {
-      m_adapter_ = new StreamSocketsMessaging();
+      m_adapter_ = new platform_unix::streamsockets::StreamSocketsMessaging();
       break;
     }
     default:
       LOG(FATAL) << "Unimplemented!";
   }
 
+  // Start up HTTP interface
+  c_http_ui_->init();
 }
 
 void Coordinator::Run() {
@@ -37,6 +40,7 @@ void Coordinator::Run() {
   m_adapter_->Listen(FLAGS_listen_uri);
   while (!exit_) {  // main loop
     // Wait for events
+    VLOG(2) << "Hello from main loop!";
     AwaitNextMessage();
   }
 
@@ -48,6 +52,7 @@ void Coordinator::Run() {
 void Coordinator::AwaitNextMessage() {
   VLOG_EVERY_N(2, 1) << "Waiting for next message...";
   ptime t(second_clock::local_time() + seconds(10));
+  VLOG(2) << "t: " << to_simple_string(t);
   boost::thread::sleep(t);
 }
 
