@@ -12,6 +12,8 @@
 using boost::asio::ip::tcp;
 
 namespace firmament {
+namespace platform_unix {
+namespace streamsockets {
 
 Message* StreamSocketsMessaging::AwaitNextMessage() {
   LOG(FATAL) << "Unimplemented!";
@@ -23,6 +25,7 @@ TCPConnection::~TCPConnection() {
 }
 
 void TCPConnection::Start() {
+  ready_ = true;
 }
 
 void TCPConnection::Send() {
@@ -39,7 +42,7 @@ void TCPConnection::Send() {
 void TCPConnection::HandleWrite(const boost::system::error_code& error,
                                 size_t bytes_transferred) {
   if (error) {
-    VLOG(2) << "Error: " << error;
+    LOG(ERROR) << "Failed to write to socket. Error reported: " << error;
   } else {
     VLOG(2) << "In HandleWrite, transferred " << bytes_transferred << " bytes.";
   }
@@ -96,9 +99,11 @@ void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
     connection->Start();
     StartAccept();
   } else {
-    VLOG(1) << "Error: " << error;
+    LOG(ERROR) << "Error accepting socket connection. Error reported: " << error;
     return;
   }
 }
 
+}  // namespace streamsockets
+}  // namespace platform_unix
 }  // namespace firmament

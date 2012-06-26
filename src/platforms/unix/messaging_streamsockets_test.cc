@@ -14,6 +14,7 @@
 #include "platforms/unix/messaging_streamsockets.h"
 
 using namespace firmament;
+using namespace firmament::platform_unix::streamsockets;
 
 namespace {
 
@@ -61,12 +62,14 @@ TEST_F(StreamSocketsMessagingTest, TCPChannelEstablish) {
   // ensues.
   VLOG(1) << "Waiting for server to be ready...";
   while (!mess_adapter.ListenReady()) {
-    VLOG(1) << "Waiting...";
+    VLOG(1) << "Waiting until ready to listen in server...";
   }
   VLOG(1) << "Calling EstablishChannel";
   mess_adapter.EstablishChannel(uri, &channel);
   // Need to block and wait until the connection is ready, too.
-  // XXX(malte) need to fix
+  while (!channel.Ready()) {
+    VLOG(1) << "Waiting until channel established...";
+  }
   VLOG(1) << "Calling SendS";
   mess_adapter.SendOnConnection(0);
   VLOG(1) << "Calling RecvS";
