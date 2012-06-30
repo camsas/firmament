@@ -5,12 +5,13 @@ include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
 BINS = coordinator worker
-OBJS = coordinator.o coordinator_http_ui.o worker.o
+OBJS = coordinator.o coordinator_http_ui.o worker.o topology_manager.o
 PBS =
 TESTS = coordinator_test worker_test
 TESTS_DEPS = $(BUILD_DIR)/platforms/common.pb.o \
 	     $(BUILD_DIR)/platforms/unix/messaging_streamsockets.o \
-	     $(BUILD_DIR)/engine/coordinator_http_ui.o
+	     $(BUILD_DIR)/engine/coordinator_http_ui.o \
+	     $(BUILD_DIR)/engine/topology_manager.o
 
 OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
@@ -28,6 +29,7 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS))
 		$(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/engine/coordinator.o \
 		$(BUILD_DIR)/engine/coordinator_http_ui.o \
+		$(BUILD_DIR)/engine/topology_manager.o \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/platforms/unix/messaging_streamsockets.o \
 		$(LIBS) -o $(BUILD_DIR)/engine/coordinator, \

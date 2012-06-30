@@ -6,19 +6,25 @@
 
 #include "engine/coordinator.h"
 
+#include <boost/uuid/uuid_generators.hpp>
+#include <string>
+
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
               "attempting automatic discovery.");
 DEFINE_string(listen_uri, "tcp://localhost:9998",
               "The name/address/port to listen on.");
+DEFINE_int32(http_ui_port, 8080,
+             "The port that the HTTP UI will be served on; -1 to disable.");
 
 namespace firmament {
 
 Coordinator::Coordinator(PlatformID platform_id)
   : platform_id_(platform_id),
-    c_http_ui_(new CoordinatorHTTPUI(8080)) {
+    uuid_(GenerateUUID()),
+    topology_manager_(new TopologyManager()) {
   // Start up a coordinator ccording to the platform parameter
-  //platform_ = platform::GetByID(platform_id);
-  string hostname = ""; //platform_.GetHostname();
+  // platform_ = platform::GetByID(platform_id);
+  string hostname = "";  // platform_.GetHostname();
   VLOG(1) << "Coordinator starting on host " << FLAGS_listen_uri
           << ", platform " << platform_id;
 
@@ -32,7 +38,13 @@ Coordinator::Coordinator(PlatformID platform_id)
   }
 
   // Start up HTTP interface
-  c_http_ui_->init();
+  if (FLAGS_http_ui_port > 0) {
+    c_http_ui_.reset(new CoordinatorHTTPUI(this));
+    c_http_ui_->init(FLAGS_http_ui_port);
+  }
+
+  // test topology detection
+  topology_manager_->DebugPrintRawTopology();
 }
 
 void Coordinator::Run() {
@@ -54,6 +66,11 @@ void Coordinator::AwaitNextMessage() {
   ptime t(second_clock::local_time() + seconds(10));
   VLOG(2) << "t: " << to_simple_string(t);
   boost::thread::sleep(t);
+}
+
+ResourceID_t Coordinator::GenerateUUID() {
+  boost::uuids::random_generator gen;
+  return gen();
 }
 
 }  // namespace firmament

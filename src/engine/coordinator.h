@@ -11,32 +11,45 @@
 #include <boost/thread.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/uuid/uuid.hpp>
 
 #include "base/common.h"
+#include "base/types.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/messaging_streamsockets.h"
 #include "engine/coordinator_http_ui.h"
+#include "engine/topology_manager.h"
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
+using boost::scoped_ptr;
+using firmament::machine::topology::TopologyManager;
 
 namespace firmament {
 
+// Forward declaration
+class CoordinatorHTTPUI;
+
 class Coordinator {
  public:
-  Coordinator(PlatformID platform_id);
+  explicit Coordinator(PlatformID platform_id);
   void Run();
   void AwaitNextMessage();
   inline PlatformID platform_id() {
     return platform_id_;
   }
+  inline ResourceID_t get_uuid() { return uuid_; }
  protected:
+  ResourceID_t GenerateUUID();
+
   PlatformID platform_id_;
   bool exit_;
   string coordinator_uri_;
   MessagingInterface* m_adapter_;
-  CoordinatorHTTPUI* c_http_ui_;
+  ResourceID_t uuid_;
+  scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
+  scoped_ptr<TopologyManager> topology_manager_;
 };
 
 }  // namespace firmament
