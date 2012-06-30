@@ -11,17 +11,14 @@ EXT_DIR=${PWD}
 # If we are running on a Debian-based system, a couple of dependencies
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
-BASE_PKGS="wget subversion"
+BASE_PKGS="wget subversion autoconf"
 COMPILER_PKGS="clang libprotobuf-dev protobuf-compiler"
-GOOGLE_PKGS="libgoogle-perftools0 libgoogle-perftools-dev "
-BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev " \
-           "libprotobuf-dev"
+GOOGLE_PKGS="libgoogle-perftools0 libgoogle-perftools-dev libprotobuf-dev"
+BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
 MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev"
 
-UBUNTU_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS}" \
-            "${MISC_PKGS}"
-DEBIAN_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS}" \
-            "${MISC_PKGS}"
+UBUNTU_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
+DEBIAN_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 
 GFLAGS_VER="1.7"
 GLOG_VER="HEAD"
