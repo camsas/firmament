@@ -5,14 +5,14 @@ include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
 LIB = libfirmament_unix.a
-OBJS = messaging_streamsockets.o
+OBJS = async_tcp_server.o messaging_streamsockets.o tcp_connection.o
 TESTS = messaging_streamsockets_test
-TESTS_DEPS = $(OBJ_DIR)/../common.pb.o
+TESTS_DEPS = $(OBJ_DIR)/../common.pb.o $(OBJ_DIR)/libfirmament_unix.a
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
-all: $(TESTS_BIN) $(OBJ_LIB) .setup
+all: $(OBJ_LIB) $(TESTS_BIN) .setup
 
 $(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS))

@@ -3,9 +3,6 @@
 //
 // Worker class unit tests.
 
-#include <stdint.h>
-#include <iostream>
-
 #include <gtest/gtest.h>
 
 #include "base/common.h"
@@ -13,8 +10,10 @@
 #include "platforms/common.pb.h"
 #include "platforms/unix/messaging_streamsockets.h"
 
-using namespace firmament;
-using namespace firmament::platform_unix::streamsockets;
+using firmament::platform_unix::streamsockets::StreamSocketsMessaging;
+using firmament::platform_unix::streamsockets::StreamSocketsChannel;
+using firmament::common::InitFirmament;
+using firmament::TestMessage;
 
 namespace {
 
@@ -82,6 +81,6 @@ TEST_F(StreamSocketsMessagingTest, TCPChannelEstablish) {
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  common::InitFirmament(argc, argv);
+  InitFirmament(argc, argv);
   return RUN_ALL_TESTS();
 }

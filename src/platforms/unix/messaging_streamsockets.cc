@@ -15,93 +15,53 @@ namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
 
+// ----------------------------
+// StreamSocketsMessaging
+// ----------------------------
+
+StreamSocketsMessaging::~StreamSocketsMessaging() {
+}
+
 Message* StreamSocketsMessaging::AwaitNextMessage() {
   LOG(FATAL) << "Unimplemented!";
   return NULL;
 }
 
-TCPConnection::~TCPConnection() {
-  VLOG(2) << "Connection is being destroyed!";
+void StreamSocketsMessaging::Listen(const string& endpoint_uri) {
+  // Parse endpoint URI into hostname and port
+  string hostname = URITools::GetHostnameFromURI(endpoint_uri);
+  string port = URITools::GetPortFromURI(endpoint_uri);
+
+  VLOG(1) << "Creating an async TCP server on port " << port
+          << " on endpoint " << hostname << "(" << endpoint_uri << ")";
+  tcp_server_ = new AsyncTCPServer(hostname, port);
+  boost::thread t(boost::bind(&AsyncTCPServer::Run, tcp_server_));
 }
 
-void TCPConnection::Start() {
-  ready_ = true;
+bool StreamSocketsMessaging::ListenReady() {
+  if (tcp_server_ != NULL)
+    return tcp_server_->listening();
+  else
+    return false;
 }
 
-void TCPConnection::Send() {
-  // XXX: this needs to change, of course
-  message_ = "Hello world!\n";
-  VLOG(2) << "Sending message in server...";
-  boost::asio::async_write(
-      socket_, boost::asio::buffer(message_),
-      boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
-                  boost::asio::placeholders::error,
-                  boost::asio::placeholders::bytes_transferred));
-}
-
-void TCPConnection::HandleWrite(const boost::system::error_code& error,
-                                size_t bytes_transferred) {
-  if (error) {
-    LOG(ERROR) << "Failed to write to socket. Error reported: " << error;
-  } else {
-    VLOG(2) << "In HandleWrite, transferred " << bytes_transferred << " bytes.";
+void StreamSocketsMessaging::SendOnConnection(uint64_t connection_id) {
+  VLOG(2) << "Messaging adapter sending on connection " << connection_id;
+  // TODO(malte): Hack -- we spin until the connection is ready. This is
+  // required to avoid race conditions where a messaging adapter is trying to
+  // send on a connection before it is ready. This can occur due to the
+  // asynchronous, multi-threaded nature of the TCP server.
+  while (!tcp_server_->connection(connection_id)->Ready()) {
+    VLOG(2) << "Waiting for connection " << connection_id
+            << " to be ready to send...";
   }
+  // Actually send the data on the (now ready) TCP connection
+  tcp_server_->connection(connection_id)->Send();
 }
 
-
-
-AsyncTCPServer::AsyncTCPServer(const string& endpoint_addr, const string& port)
-    : acceptor_(io_service_), listening_(false) {
-  VLOG(2) << "AsyncTCPServer starting!";
-  tcp::resolver resolver(io_service_);
-  if (endpoint_addr == "") {
-    LOG(FATAL) << "No endpoint address specified to listen on!";
-  }
-  tcp::resolver::query query(endpoint_addr, port);
-  tcp::endpoint endpoint = *resolver.resolve(query);
-
-  acceptor_.open(endpoint.protocol());
-  acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-  acceptor_.bind(endpoint);
-  acceptor_.listen();
-  StartAccept();
-}
-
-void AsyncTCPServer::StartAccept() {
-  VLOG(2) << "In StartAccept()";
-  TCPConnection::connection_ptr new_connection(new TCPConnection(io_service_));
-  active_connections_.push_back(new_connection);
-  acceptor_.async_accept(new_connection->socket(),
-                         boost::bind(&AsyncTCPServer::HandleAccept, this,
-                                     new_connection,
-                                     boost::asio::placeholders::error));
-  listening_ = true;
-}
-
-void AsyncTCPServer::Run() {
-  VLOG(2) << "Creating TCP server thread";
-  boost::shared_ptr<boost::thread> thread(new boost::thread(
-      boost::bind(&boost::asio::io_service::run, &io_service_)));
-  // Wait for thread to exit
-  VLOG(2) << "Server thread running -- Waiting for join...";
-  thread->join();
-}
-
-void AsyncTCPServer::Stop() {
-  listening_ = false;
-  io_service_.stop();
-}
-
-void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
-                                  const boost::system::error_code& error) {
-  if (!error) {
-    VLOG(2) << "In HandleAccept -- starting connection at " << connection;
-    connection->Start();
-    StartAccept();
-  } else {
-    LOG(ERROR) << "Error accepting socket connection. Error reported: " << error;
-    return;
-  }
+void StreamSocketsMessaging::StopListen() {
+  // t.stop()
+  // t.join()
 }
 
 }  // namespace streamsockets
