@@ -14,6 +14,7 @@ using firmament::platform_unix::streamsockets::StreamSocketsMessaging;
 using firmament::platform_unix::streamsockets::StreamSocketsChannel;
 using firmament::common::InitFirmament;
 using firmament::TestMessage;
+using ::google::protobuf::Message;
 
 namespace {
 
@@ -51,7 +52,7 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 // Tests channel establishment.
 TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
   FLAGS_v = 2;
-  string uri = "tcp://localhost:9998";
+  string uri = "tcp://localhost:7777";
   StreamSocketsMessaging mess_adapter;
   StreamSocketsChannel<TestMessage>
       channel(StreamSocketsChannel<TestMessage>::SS_TCP);
@@ -82,7 +83,37 @@ TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
   VLOG(1) << tm.test();
   VLOG(1) << "closing channel";
   channel.Close();
+  mess_adapter.StopListen();
 }
+
+// Tests send and receive of arbitrary protobufs.
+TEST_F(StreamSocketsMessagingTest, ArbitraryProtobufSendRecv) {
+  FLAGS_v = 2;
+  string uri = "tcp://localhost:7778";
+  StreamSocketsMessaging mess_adapter;
+  StreamSocketsChannel<Message>
+      channel(StreamSocketsChannel<Message>::SS_TCP);
+  mess_adapter.Listen(uri);
+  // Need to block and wait for the socket to become ready, otherwise race
+  // ensues.
+  while (!mess_adapter.ListenReady()) { }
+  mess_adapter.EstablishChannel(uri, &channel);
+  // Need to block and wait until the connection is ready, too.
+  while (!channel.Ready()) {  }
+  // Send a test protobuf message through the channel
+  TestMessage tm1;
+  tm1.set_test(43);
+  mess_adapter.SendOnConnection(0);
+  // Receive the protobuf at the other end of the channel
+  TestMessage tm2;
+  CHECK(channel.RecvS(&tm2));
+  // The received message should have the "test" field set to 43 (instead of the
+  // default 42).
+  CHECK_EQ(tm2.test(), tm1.test());
+  VLOG(1) << tm2.test();
+  channel.Close();
+}
+
 
 }  // namespace
 
