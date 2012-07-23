@@ -27,6 +27,7 @@
 
 using boost::asio::ip::tcp;
 using boost::asio::io_service;
+using boost::asio::socket_base;
 
 namespace firmament {
 namespace platform_unix {
@@ -77,6 +78,16 @@ StreamSocketsChannel<T>::~StreamSocketsChannel() {
 
 template <class T>
 void StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
+  // If this channel already has an active socket, issue a warning and close it
+  // down before establishing a new one.
+  if (client_socket_.get() != NULL && client_socket_->is_open()) {
+    LOG(WARNING) << "Establishing a new connection on channel " << this
+                 << ", despite already having one established. The previous "
+                 << "connection will be terminated.";
+    client_socket_->shutdown(socket_base::shutdown_both);
+    channel_ready_ = false;
+  }
+
   // Parse endpoint URI into hostname and port
   string hostname = URITools::GetHostnameFromURI(endpoint_uri);
   string port = URITools::GetPortFromURI(endpoint_uri);
@@ -106,8 +117,7 @@ void StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
 // Ready check
 template <class T>
 bool StreamSocketsChannel<T>::Ready() {
-  VLOG(2) << "check if channel ready: is " << channel_ready_;
-  return channel_ready_;
+  return (channel_ready_ && client_socket_->is_open());
 }
 
 // Synchronous send
@@ -129,7 +139,11 @@ bool StreamSocketsChannel<T>::SendA(const T& message) {
 // Synchronous recieve -- blocks until the next message is received.
 template <class T>
 bool StreamSocketsChannel<T>::RecvS(T* message) {
-  VLOG(2) << "In RecvS, polling for data";
+  if (!Ready()) {
+    LOG(WARNING) << "Tried to read from channel " << this << ", which is not ready; read failed.";
+    return false;
+  }
+  VLOG(2) << "In RecvS, polling for next message";
   size_t len;
   vector<char> size_buf(sizeof(size_t));
   boost::asio::mutable_buffers_1 size_m_buf(reinterpret_cast<char*>(&size_buf[0]), sizeof(size_t));
@@ -179,7 +193,7 @@ template <class T>
 void StreamSocketsChannel<T>::Close() {
   // end the connection
   VLOG(2) << "Shutting down channel's socket...";
-  client_socket_->shutdown(boost::asio::socket_base::shutdown_both);
+  client_socket_->shutdown(socket_base::shutdown_both);
   channel_ready_ = false;
 }
 
