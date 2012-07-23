@@ -11,10 +11,11 @@ PBS = common.pb.o
 LIB = libfirmament_unix.a
 OBJ_LIB = $(addprefix $(OBJ_DIR)/unix/, $(LIB))
 
-all: protobufs $(OBJ_LIB) .setup
+#all: protobufs $(OBJ_LIB) .setup
 
 protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 
 # TODO(malte): Hack; see note above.
-$(OBJ_LIB):
+#$(OBJ_LIB):
+all: protobufs .setup
 	$(MAKE) $(MAKEFLAGS) -C unix all

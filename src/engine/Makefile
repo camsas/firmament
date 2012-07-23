@@ -22,7 +22,8 @@ all: $(OBJ_BIN) $(TESTS_BIN) .setup
 # TODO: check if any of the below targets can make use of a generic
 # build rule from Makefile.common, or can be converted to do so.
 
-$(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS))
+$(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
+	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
@@ -35,7 +36,8 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS))
 		$(LIBS) -o $(BUILD_DIR)/engine/coordinator, \
 		"  DYNLNK  $(BUILD_DIR)/engine/coordinator")
 
-$(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS))
+$(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
+	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) $(SRC_ROOT_DIR)/engine/worker_main.cc \
 		$(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \

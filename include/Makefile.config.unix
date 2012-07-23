@@ -59,7 +59,7 @@ INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) -I$(BOOST_INC_D
 # TODO(ms705): Temporarily disable -lprofiler and -ltcmalloc due to known
 # issues with Ubuntu's libunwind
 #LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf
-LIBS = -lgflags -lglog -lpthread -lprotobuf -lboost_system -lboost_thread -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc
+LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf -lboost_system -lboost_thread -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc
 
 
 #######################################
