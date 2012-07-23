@@ -26,6 +26,7 @@
 #include "platforms/unix/async_tcp_server.h"
 
 using boost::asio::ip::tcp;
+using boost::asio::io_service;
 
 namespace firmament {
 namespace platform_unix {
@@ -37,8 +38,9 @@ namespace streamsockets {
 
 template <class T>
 StreamSocketsChannel<T>::StreamSocketsChannel(StreamSocketType type)
-  : client_socket_(NULL),
-    channel_ready_(false) {
+  : client_io_service_(new io_service),
+    channel_ready_(false),
+    type_(type) {
   switch (type) {
     case SS_TCP: {
       // Set up two TCP endpoints (?)
@@ -50,6 +52,17 @@ StreamSocketsChannel<T>::StreamSocketsChannel(StreamSocketType type)
       break;
     default:
       LOG(FATAL) << "Unknown stream socket type!";
+  }
+}
+
+template <class T>
+StreamSocketsChannel<T>::StreamSocketsChannel(shared_ptr<tcp::socket> socket)
+  : client_io_service_(&(socket->get_io_service())),
+    client_socket_(socket),
+    channel_ready_(false),
+    type_(SS_TCP) {
+  if (client_socket_->is_open()) {
+    channel_ready_ = true;
   }
 }
 
@@ -69,13 +82,14 @@ void StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
   string port = URITools::GetPortFromURI(endpoint_uri);
 
   // Now make the connection
-  VLOG(1) << "got here, endpoint is " << endpoint_uri;
-  tcp::resolver resolver(client_io_service_);
+  VLOG(1) << "Establishing a new channel (TCP connection), "
+          << "remote endpoint is " << endpoint_uri;
+  tcp::resolver resolver(*client_io_service_);
   tcp::resolver::query query(hostname, port);
   tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
   tcp::resolver::iterator end;
 
-  client_socket_ = new tcp::socket(client_io_service_);
+  client_socket_.reset(new tcp::socket(*client_io_service_));
   boost::system::error_code error = boost::asio::error::host_not_found;
   while (error && endpoint_iterator != end) {
     client_socket_->close();
@@ -96,10 +110,20 @@ bool StreamSocketsChannel<T>::Ready() {
   return channel_ready_;
 }
 
-// Send (sync?)
+// Synchronous send
 template <class T>
-void StreamSocketsChannel<T>::Send(const T& message) {
+bool StreamSocketsChannel<T>::SendS(const T& message) {
   VLOG(1) << "Trying to send message: " << &message;
+  LOG(FATAL) << "Unimplemented!";
+  return false;
+}
+
+// Asynchronous send
+template <class T>
+bool StreamSocketsChannel<T>::SendA(const T& message) {
+  VLOG(1) << "Trying to send message: " << &message;
+  LOG(FATAL) << "Unimplemented!";
+  return false;
 }
 
 // Synchronous recieve -- blocks until the next message is received.
@@ -145,9 +169,10 @@ bool StreamSocketsChannel<T>::RecvS(T* message) {
 
 // Asynchronous receive -- does not block.
 template <class T>
-T* StreamSocketsChannel<T>::RecvA() {
+bool StreamSocketsChannel<T>::RecvA(T* message) {
+  VLOG(1) << "Receiving into " << message;
   LOG(FATAL) << "Unimplemented!";
-  return NULL;
+  return false;
 }
 
 template <class T>

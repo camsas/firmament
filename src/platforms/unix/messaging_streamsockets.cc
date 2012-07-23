@@ -53,8 +53,9 @@ void StreamSocketsMessaging::SendOnConnection(uint64_t connection_id) {
   // send on a connection before it is ready. This can occur due to the
   // asynchronous, multi-threaded nature of the TCP server.
   while (!tcp_server_->connection(connection_id)->Ready()) {
-    VLOG(2) << "Waiting for connection " << connection_id
-            << " to be ready to send...";
+    VLOG_EVERY_N(2, 1000) << "Waiting for connection " << connection_id
+                          << " to be ready to send...";
+    boost::this_thread::yield();
   }
   // Actually send the data on the (now ready) TCP connection
   tcp_server_->connection(connection_id)->Send();

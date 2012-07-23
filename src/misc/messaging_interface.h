@@ -15,18 +15,22 @@ namespace firmament {
 typedef ::google::protobuf::Message Message;
 
 template <class T>
-class MessagingChannelInterface {
+class MessagingChannelInterface : public PrintableInterface {
  public:
   // Establish a communication channel.
   virtual void Establish(const string& endpoint_uri) = 0;
-  // Send (sync?)
-  virtual void Send(const T& message) = 0;
+  // Send (synchronous)
+  virtual bool SendS(const T& message) = 0;
+  // Send (asynchronous)
+  virtual bool SendA(const T& message) = 0;
   // Synchronous receive -- blocks until the next message is received.
   virtual bool RecvS(T* message) = 0;
   // Asynchronous receive -- does not block.
-  virtual T* RecvA() = 0;
+  virtual bool RecvA(T* message) = 0;
   // Tear down the channel.
   virtual void Close() = 0;
+  // Debug output generating method.
+  virtual ostream& ToString(ostream& stream) const = 0;
 };
 
 class MessagingInterface {

@@ -21,7 +21,9 @@
 #include "platforms/unix/tcp_connection.h"
 #include "platforms/unix/async_tcp_server.h"
 
+using boost::shared_ptr;
 using boost::asio::ip::tcp;
+using boost::asio::io_service;
 
 namespace firmament {
 namespace platform_unix {
@@ -36,18 +38,22 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
     SS_UNIX = 1
   } StreamSocketType;
   explicit StreamSocketsChannel(StreamSocketType type);
+  explicit StreamSocketsChannel(shared_ptr<tcp::socket> socket);
   virtual ~StreamSocketsChannel();
   void Close();
   void Establish(const string& endpoint_uri);
   bool Ready();
-  T* RecvA();
+  bool RecvA(T* message);
   bool RecvS(T* message);
-  void Send(const T& message);
+  bool SendS(const T& message);
+  bool SendA(const T& message);
+  virtual ostream& ToString(ostream& stream) const;
 
  private:
-  boost::asio::io_service client_io_service_;
-  tcp::socket* client_socket_;
+  shared_ptr<io_service> client_io_service_;
+  shared_ptr<tcp::socket> client_socket_;
   bool channel_ready_;
+  StreamSocketType type_;
 };
 
 }  // namespace streamsockets

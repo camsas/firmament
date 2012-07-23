@@ -58,6 +58,8 @@ void AsyncTCPServer::Run() {
 void AsyncTCPServer::Stop() {
   listening_ = false;
   io_service_.stop();
+  //while (!io_service_.stopped()) { }  // spin until stopped
+  io_service_.~io_service();
 }
 
 void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
