@@ -7,6 +7,7 @@
 #define FIRMAMENT_MISC_MESSAGING_INTERFACE_H
 
 #include "base/common.h"
+#include "misc/printable_interface.h"
 #include "platforms/common.h"
 
 namespace firmament {

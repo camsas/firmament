@@ -37,8 +37,8 @@ class StreamSocketsMessaging : public firmament::MessagingInterface {
   template <class T>
   void EstablishChannel(const string& endpoint_uri,
                         MessagingChannelInterface<T>* chan) {
-    VLOG(1) << "got here, endpoint is " << endpoint_uri << ", chan: " << chan
-            << "!";
+    VLOG(1) << "Establishing channel from endpoint " << endpoint_uri
+            << ", chan: " << *chan << "!";
     chan->Establish(endpoint_uri);
   }
   void Listen(const string& endpoint_uri);

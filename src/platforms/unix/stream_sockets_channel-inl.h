@@ -158,6 +158,12 @@ void StreamSocketsChannel<T>::Close() {
   channel_ready_ = false;
 }
 
+template <class T>
+ostream& StreamSocketsChannel<T>::ToString(ostream& stream) const {
+  return stream << "(StreamSocket,type=" << type_ << ",at=" << this << ")";
+}
+
+
 }  // namespace streamsockets
 }  // namespace platform_unix
 }  // namespace firmament
