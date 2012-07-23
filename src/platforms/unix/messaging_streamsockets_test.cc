@@ -49,7 +49,7 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 };
 
 // Tests channel establishment.
-TEST_F(StreamSocketsMessagingTest, TCPChannelEstablish) {
+TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
   FLAGS_v = 2;
   string uri = "tcp://localhost:9998";
   StreamSocketsMessaging mess_adapter;
@@ -69,10 +69,17 @@ TEST_F(StreamSocketsMessagingTest, TCPChannelEstablish) {
   while (!channel.Ready()) {
     VLOG(1) << "Waiting until channel established...";
   }
+  // Send a test protobuf message through the channel
   VLOG(1) << "Calling SendS";
   mess_adapter.SendOnConnection(0);
+  // Receive the protobuf at the other end of the channel
+  TestMessage tm;
   VLOG(1) << "Calling RecvS";
-  channel.RecvS();
+  CHECK(channel.RecvS(&tm));
+  // The received message should have the "test" field set to 43 (instead of the
+  // default 42).
+  CHECK_EQ(tm.test(), 43);
+  VLOG(1) << tm.test();
   VLOG(1) << "closing channel";
   channel.Close();
 }

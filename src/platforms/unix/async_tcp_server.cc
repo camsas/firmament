@@ -50,8 +50,9 @@ void AsyncTCPServer::Run() {
   boost::shared_ptr<boost::thread> thread(new boost::thread(
       boost::bind(&boost::asio::io_service::run, &io_service_)));
   // Wait for thread to exit
-  VLOG(2) << "Server thread running -- Waiting for join...";
-  thread->join();
+  VLOG(2) << "Server thread (" << thread->get_id()
+          << ") running -- Waiting for join...";
+  //thread->join();
 }
 
 void AsyncTCPServer::Stop() {

@@ -55,8 +55,11 @@ StreamSocketsChannel<T>::StreamSocketsChannel(StreamSocketType type)
 
 template <class T>
 StreamSocketsChannel<T>::~StreamSocketsChannel() {
-  if (client_socket_ != NULL)
-    delete client_socket_;
+  // The user may already have manually cleaned up. If not, we do so now.
+  if (Ready()) {
+    channel_ready_ = false;
+    Close();
+  }
 }
 
 template <class T>
@@ -101,28 +104,43 @@ void StreamSocketsChannel<T>::Send(const T& message) {
 
 // Synchronous recieve -- blocks until the next message is received.
 template <class T>
-T* StreamSocketsChannel<T>::RecvS() {
+bool StreamSocketsChannel<T>::RecvS(T* message) {
   VLOG(2) << "In RecvS, polling for data";
-  boost::array<char, 1024> buf;
   size_t len;
+  vector<char> size_buf(sizeof(size_t));
+  boost::asio::mutable_buffers_1 size_m_buf(reinterpret_cast<char*>(&size_buf[0]), sizeof(size_t));
+  boost::system::error_code error;
+  // Read the incoming protobuf message length
+  // N.B.: read() blocks until the buffer has been filled, i.e. an entire size_t
+  // has been read.
+  len = read(*client_socket_, size_m_buf);
+  // ... we can get away with a simple CHECK here and assume that we have some
+  // incoming data available.
+  CHECK_EQ(sizeof(size_t), len);
+  size_t msg_size = *reinterpret_cast<size_t*>(&size_buf[0]);
+  CHECK_GT(msg_size, 0);
+  VLOG(2) << "Size of incoming protobuf is " << msg_size << " bytes.";
+  vector<char> buf(msg_size);
+  size_t total = 0;
   do {
-    boost::system::error_code error;
     VLOG(3) << "calling read_some";
-    len = client_socket_->read_some(boost::asio::buffer(buf), error);
-    VLOG(2) << "Read " << len << " bytes...";
+    //CHECK_LE(total, size_buf);
+    len = client_socket_->read_some(boost::asio::mutable_buffers_1(&buf[0], msg_size), error);
 
     if (error == boost::asio::error::eof) {
       VLOG(2) << "Received EOF, connection terminating!";
       break;
     } else if (error) {
       throw boost::system::system_error(error);
+    } else {
+      VLOG(2) << "Read " << len << " bytes of protobuf data...";
+      total += len;
     }
-
-    // DEBUG
-    cout.write(buf.data(), len);
   } while (client_socket_->available() > 0);
-  //static_cast<void*>(buffer) = buf.data();
-  return static_cast<T*>(static_cast<void*>(buf.data()));
+  VLOG(2) << "Read a total of " << total << " protobuf data bytes.";
+  CHECK_GT(total, 0);
+  CHECK_EQ(total, msg_size);
+  return (message->ParseFromArray(&buf[0], total));
 }
 
 // Asynchronous receive -- does not block.
@@ -135,7 +153,8 @@ T* StreamSocketsChannel<T>::RecvA() {
 template <class T>
 void StreamSocketsChannel<T>::Close() {
   // end the connection
-  client_socket_->close();
+  VLOG(2) << "Shutting down channel's socket...";
+  client_socket_->shutdown(boost::asio::socket_base::shutdown_both);
   channel_ready_ = false;
 }
 

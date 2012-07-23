@@ -45,7 +45,7 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
   tcp::socket socket_;
-  std::string message_;
+  TestMessage message_;
   bool ready_;
 };
 

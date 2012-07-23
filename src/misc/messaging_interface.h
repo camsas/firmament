@@ -21,7 +21,7 @@ class MessagingChannelInterface {
   // Send (sync?)
   virtual void Send(const T& message) = 0;
   // Synchronous receive -- blocks until the next message is received.
-  virtual T* RecvS() = 0;
+  virtual bool RecvS(T* message) = 0;
   // Asynchronous receive -- does not block.
   virtual T* RecvA() = 0;
   // Tear down the channel.

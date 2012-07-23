@@ -32,6 +32,7 @@ class StreamSocketsMessaging : public firmament::MessagingInterface {
   template <class T>
   void CloseChannel(MessagingChannelInterface<T>* chan) {
     VLOG(1) << "Shutting down channel " << chan;
+    chan->Close();
   }
   template <class T>
   void EstablishChannel(const string& endpoint_uri,

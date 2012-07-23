@@ -41,7 +41,7 @@ class StreamSocketsChannel : public MessagingChannelInterface<T> {
   void Establish(const string& endpoint_uri);
   bool Ready();
   T* RecvA();
-  T* RecvS();
+  bool RecvS(T* message);
   void Send(const T& message);
 
  private:
