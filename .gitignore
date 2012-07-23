@@ -4,6 +4,7 @@ ext
 ext/*.
 src/generated
 src/generated/*.
+.setup
 *.swp
 *.INFO
 *.ERROR
