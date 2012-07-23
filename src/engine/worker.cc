@@ -17,7 +17,9 @@ namespace firmament {
 
 Worker::Worker(PlatformID platform_id)
   : platform_id_(platform_id),
-    coordinator_uri_(FLAGS_coordinator_uri) {
+    coordinator_uri_(FLAGS_coordinator_uri),
+    chan_(platform_unix::streamsockets::
+          StreamSocketsChannel<TestMessage>::SS_TCP) {
   string hostname = ""; //pilatform_.GetHostname();
   VLOG(1) << "Worker starting on host " << hostname << ", platform "
           << platform_id;

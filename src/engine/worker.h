@@ -21,6 +21,9 @@ class Worker {
   Worker(PlatformID platform_id);
   void Run();
   void AwaitNextMessage() {
+    TestMessage tm;
+    VLOG_EVERY_N(2, 1) << "Receiving (sync)...";
+    chan_.RecvS(&tm);
     VLOG_EVERY_N(2, 1) << "Waiting for next message...";
     ptime t(second_clock::local_time() + seconds(10));
     boost::thread::sleep(t);
@@ -31,9 +34,7 @@ class Worker {
     return false;
   }
   bool ConnectToCoordinator(const string& coordinator_uri) {
-    platform_unix::streamsockets::StreamSocketsChannel<TestMessage>
-        chan(platform_unix::streamsockets::StreamSocketsChannel<TestMessage>::SS_TCP);
-    m_adapter_.EstablishChannel(coordinator_uri, &chan);
+    m_adapter_.EstablishChannel(coordinator_uri, &chan_);
     return true;
   }
 
@@ -43,6 +44,7 @@ class Worker {
  protected:
   PlatformID platform_id_;
   platform_unix::streamsockets::StreamSocketsMessaging m_adapter_;
+  platform_unix::streamsockets::StreamSocketsChannel<TestMessage> chan_;
   bool exit_;
   string coordinator_uri_;
 };

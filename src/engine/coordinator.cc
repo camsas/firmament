@@ -51,7 +51,9 @@ void Coordinator::Run() {
   // Coordinator starting -- set up and wait for workers to connect.
   m_adapter_->Listen(FLAGS_listen_uri);
   while (!exit_) {  // main loop
-    // Wait for events
+    // Wait for events (i.e. messages from workers)
+    // TODO(malte): we need to think about any actions that the coordinator
+    // itself might need to take, and how they can be triggered
     VLOG(2) << "Hello from main loop!";
     AwaitNextMessage();
   }
