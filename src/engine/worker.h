@@ -12,7 +12,9 @@
 #include "platforms/common.h"
 #include "platforms/unix/messaging_streamsockets.h"
 
-using namespace boost::posix_time;
+using boost::posix_time::ptime;
+using boost::posix_time::second_clock;
+using boost::posix_time::seconds;
 
 namespace firmament {
 
@@ -35,6 +37,7 @@ class Worker {
   }
   bool ConnectToCoordinator(const string& coordinator_uri) {
     m_adapter_.EstablishChannel(coordinator_uri, &chan_);
+    // Send registration message
     return true;
   }
 
