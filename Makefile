@@ -4,7 +4,7 @@
 # Get common build settings
 include include/Makefile.config
 
-all: tests-clean info ext platforms engine doc sim
+all: tests-clean info ext platforms engine doc
 
 info:
 	@echo "Build using $(CXX)"
