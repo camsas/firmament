@@ -9,10 +9,13 @@
 #include <string>
 
 #include <boost/asio.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 #include "base/common.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
+#include "platforms/unix/common.h"
 #include "platforms/unix/tcp_connection.h"
 #include "platforms/unix/async_tcp_server.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
@@ -25,7 +28,10 @@ class TCPConnection;  // forward declaration
 class AsyncTCPServer;  // forward declaration
 
 // Messaging adapter.
-class StreamSocketsMessaging : public firmament::MessagingInterface {
+class StreamSocketsMessaging :
+  public firmament::MessagingInterface,
+  public boost::enable_shared_from_this<StreamSocketsMessaging>,
+  private boost::noncopyable {
  public:
   virtual ~StreamSocketsMessaging();
   Message* AwaitNextMessage();

@@ -7,7 +7,6 @@
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "platforms/unix/tcp_connection.h"
 
@@ -17,10 +16,10 @@ namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
 
-using boost::shared_ptr;
-
-AsyncTCPServer::AsyncTCPServer(const string& endpoint_addr, const string& port)
-    : acceptor_(io_service_), listening_(false) {
+AsyncTCPServer::AsyncTCPServer(const string& endpoint_addr, const string& port,
+                               shared_ptr<MessagingInterface> messaging_adapter)
+    : acceptor_(io_service_), listening_(false),
+      owning_adapter_(messaging_adapter) {
   VLOG(2) << "AsyncTCPServer starting!";
   tcp::resolver resolver(io_service_);
   if (endpoint_addr == "") {
@@ -69,6 +68,9 @@ void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
   if (!error) {
     VLOG(2) << "In HandleAccept -- starting connection at " << connection;
     connection->Start();
+    // Once the connection is up, we wrap it into a channel.
+    //owning_adapter_->InitiateBackchannel(connection->socket());
+    // Call StartAccept again to accept further connections.
     StartAccept();
   } else {
     LOG(ERROR) << "Error accepting socket connection. Error reported: " << error;

@@ -11,16 +11,15 @@
 #include <string>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include <boost/bind.hpp>
+#include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
 
 #include "base/common.h"
 #include "misc/messaging_interface.h"
 #include "misc/uri_tools.h"
 #include "platforms/common.h"
+#include "platforms/unix/common.h"
 #include "platforms/unix/tcp_connection.h"
 
 namespace firmament {
@@ -32,7 +31,8 @@ namespace streamsockets {
 // http://www.boost.org/doc/html/boost_asio/example/http/server3/server.hpp.
 class AsyncTCPServer : private boost::noncopyable {
  public:
-  explicit AsyncTCPServer(const string& endpoint_addr, const string& port);
+  explicit AsyncTCPServer(const string& endpoint_addr, const string& port,
+                          shared_ptr<MessagingInterface> messaging_adapter);
   void Run();
   void Stop();
   TCPConnection::connection_ptr connection(uint64_t connection_id) {
@@ -48,6 +48,7 @@ class AsyncTCPServer : private boost::noncopyable {
   boost::asio::io_service io_service_;
   tcp::acceptor acceptor_;
   vector<TCPConnection::connection_ptr> active_connections_;
+  shared_ptr<MessagingInterface> owning_adapter_;
 };
 
 }  // namespace streamsockets

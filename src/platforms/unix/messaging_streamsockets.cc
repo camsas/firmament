@@ -7,7 +7,7 @@
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 using boost::asio::ip::tcp;
 
@@ -34,7 +34,8 @@ void StreamSocketsMessaging::Listen(const string& endpoint_uri) {
 
   VLOG(1) << "Creating an async TCP server on port " << port
           << " on endpoint " << hostname << "(" << endpoint_uri << ")";
-  tcp_server_ = new AsyncTCPServer(hostname, port);
+  tcp_server_ = new AsyncTCPServer(hostname, port,
+                                   shared_from_this());
   boost::thread t(boost::bind(&AsyncTCPServer::Run, tcp_server_));
   VLOG(1) << "AsyncTCPServer's main thread running as " << t.get_id();
 }
