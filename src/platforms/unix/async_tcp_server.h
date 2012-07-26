@@ -31,8 +31,8 @@ namespace streamsockets {
 // http://www.boost.org/doc/html/boost_asio/example/http/server3/server.hpp.
 class AsyncTCPServer : private boost::noncopyable {
  public:
-  explicit AsyncTCPServer(const string& endpoint_addr, const string& port,
-                          shared_ptr<MessagingInterface> messaging_adapter);
+  AsyncTCPServer(const string& endpoint_addr, const string& port,
+                 shared_ptr<MessagingInterface> messaging_adapter);
   void Run();
   void Stop();
   TCPConnection::connection_ptr connection(uint64_t connection_id) {

@@ -53,26 +53,28 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
   FLAGS_v = 2;
   string uri = "tcp://localhost:7777";
-  StreamSocketsMessaging mess_adapter;
+  // We need to hold at least one shared pointer to the messaging adapter before
+  // it can use shared_from_this().
+  shared_ptr<StreamSocketsMessaging> mess_adapter(new StreamSocketsMessaging());
   StreamSocketsChannel<TestMessage>
       channel(StreamSocketsChannel<TestMessage>::SS_TCP);
   VLOG(1) << "Calling Listen";
-  mess_adapter.Listen(uri);
+  mess_adapter->Listen(uri);
   // Need to block and wait for the socket to become ready, otherwise race
   // ensues.
   VLOG(1) << "Waiting for server to be ready...";
-  while (!mess_adapter.ListenReady()) {
+  while (!mess_adapter->ListenReady()) {
     VLOG(1) << "Waiting until ready to listen in server...";
   }
   VLOG(1) << "Calling EstablishChannel";
-  mess_adapter.EstablishChannel(uri, &channel);
+  mess_adapter->EstablishChannel(uri, &channel);
   // Need to block and wait until the connection is ready, too.
   while (!channel.Ready()) {
     VLOG(1) << "Waiting until channel established...";
   }
   // Send a test protobuf message through the channel
   VLOG(1) << "Calling SendS";
-  mess_adapter.SendOnConnection(0);
+  mess_adapter->SendOnConnection(0);
   // Receive the protobuf at the other end of the channel
   TestMessage tm;
   VLOG(1) << "Calling RecvS";
@@ -83,27 +85,29 @@ TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
   VLOG(1) << tm.test();
   VLOG(1) << "closing channel";
   channel.Close();
-  mess_adapter.StopListen();
+  mess_adapter->StopListen();
 }
 
 // Tests send and receive of arbitrary protobufs.
 TEST_F(StreamSocketsMessagingTest, ArbitraryProtobufSendRecv) {
   FLAGS_v = 2;
   string uri = "tcp://localhost:7778";
-  StreamSocketsMessaging mess_adapter;
+  // We need to hold at least one shared pointer to the messaging adapter before
+  // it can use shared_from_this().
+  shared_ptr<StreamSocketsMessaging> mess_adapter(new StreamSocketsMessaging());
   StreamSocketsChannel<Message>
       channel(StreamSocketsChannel<Message>::SS_TCP);
-  mess_adapter.Listen(uri);
+  mess_adapter->Listen(uri);
   // Need to block and wait for the socket to become ready, otherwise race
   // ensues.
-  while (!mess_adapter.ListenReady()) { }
-  mess_adapter.EstablishChannel(uri, &channel);
+  while (!mess_adapter->ListenReady()) { }
+  mess_adapter->EstablishChannel(uri, &channel);
   // Need to block and wait until the connection is ready, too.
   while (!channel.Ready()) {  }
   // Send a test protobuf message through the channel
   TestMessage tm1;
   tm1.set_test(43);
-  mess_adapter.SendOnConnection(0);
+  mess_adapter->SendOnConnection(0);
   // Receive the protobuf at the other end of the channel
   TestMessage tm2;
   CHECK(channel.RecvS(&tm2));
@@ -112,6 +116,12 @@ TEST_F(StreamSocketsMessagingTest, ArbitraryProtobufSendRecv) {
   CHECK_EQ(tm2.test(), tm1.test());
   VLOG(1) << tm2.test();
   channel.Close();
+}
+
+
+// Tests backchannel establishment.
+TEST_F(StreamSocketsMessagingTest, BackchannelEstablishment) {
+  FLAGS_v = 2;
 }
 
 

@@ -10,10 +10,12 @@
 #include "platforms/common.pb.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 
 namespace firmament {
 
 using boost::shared_ptr;
+using boost::scoped_ptr;
 
 }  // namespace firmament
 

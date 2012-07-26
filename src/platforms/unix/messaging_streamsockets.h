@@ -53,7 +53,7 @@ class StreamSocketsMessaging :
   void StopListen();
 
  private:
-  AsyncTCPServer* tcp_server_;
+  scoped_ptr<AsyncTCPServer> tcp_server_;
 };
 
 }  // namespace streamsockets
