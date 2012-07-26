@@ -1,15 +1,31 @@
-Wonderous things are bound to appear here in the future.
+Firmament is -- or rather, hopefully will be -- a multi-scale execution engine
+for cluster computing.
 
 
 SYSTEM REQUIREMENTS
 -------------------
 
-Wonderous things are currently known to work on Ubuntu 10.10 (maverick) and
-11.10 (oneric); they are known to NOT work on 10.04 and 11.04.
+Firmament is currently known to work on Ubuntu 10.10 (maverick) and
+11.10 (oneric); it does NOT work without extra actions on 10.04 and 11.04.
 
 Other configurations are untested - YMMV.
 
 Reasons for known breakage:
-* Ubuntu 10.04 - clang/LLVM version too old.
+* Ubuntu 10.04 - packaged clang/LLVM version too old.
 * Ubuntu 11.04 - broken dependency on /usr/include/linux/errno.h;
                  see http://pad.lv/774215 for a possible workaround
+
+
+BUILDING & RUNNING
+--------------------
+
+$ make all
+
+will fetch dependencies are necessary, and may ask you to install required
+packages.
+
+$ make test
+
+will run unit tests.
+
+Binaries are in the build/ subdirectory of the project root.
