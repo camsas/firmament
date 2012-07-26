@@ -28,4 +28,5 @@ $ make test
 
 will run unit tests.
 
-Binaries are in the build/ subdirectory of the project root.
+Binaries are in the build/ subdirectory of the project root, and all accept the
+--helpshort argument to show their command line options.
