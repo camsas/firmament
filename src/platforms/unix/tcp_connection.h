@@ -35,8 +35,8 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
   explicit TCPConnection(boost::asio::io_service& io_service)
       : socket_(io_service), ready_(false) { }
   virtual ~TCPConnection();
-  tcp::socket& socket() {
-    return socket_;
+  tcp::socket* socket() {
+    return &socket_;
   }
   bool Ready() { return ready_; }
   void Start();
