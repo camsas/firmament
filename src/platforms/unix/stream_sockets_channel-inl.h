@@ -56,7 +56,7 @@ StreamSocketsChannel<T>::StreamSocketsChannel(StreamSocketType type)
 }
 
 template <class T>
-StreamSocketsChannel<T>::StreamSocketsChannel(shared_ptr<tcp::socket> socket)
+StreamSocketsChannel<T>::StreamSocketsChannel(tcp::socket* socket)
   : client_io_service_(&(socket->get_io_service())),
     client_socket_(socket),
     channel_ready_(false),
@@ -122,9 +122,25 @@ bool StreamSocketsChannel<T>::Ready() {
 // Synchronous send
 template <class T>
 bool StreamSocketsChannel<T>::SendS(const T& message) {
-  VLOG(1) << "Trying to send message: " << &message;
-  LOG(FATAL) << "Unimplemented!";
-  return false;
+  VLOG(1) << "Trying to send message of size " << message.ByteSize()
+          << " on channel " << *this;
+  size_t msg_size = message.ByteSize();
+  vector<char> buf(msg_size);
+  CHECK(message.SerializeToArray(&buf[0], message.ByteSize()));
+  // Send data size
+  boost::asio::write(
+      *client_socket_, boost::asio::buffer(
+          reinterpret_cast<char*>(&msg_size), sizeof(msg_size)));
+          /*boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
+                      boost::asio::placeholders::error,
+                      boost::asio::placeholders::bytes_transferred));*/
+  // Send the data
+  boost::asio::write(
+      *client_socket_, boost::asio::buffer(buf, msg_size));
+      /*boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
+                  boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));*/
+  return true;
 }
 
 // Asynchronous send
@@ -191,7 +207,7 @@ bool StreamSocketsChannel<T>::RecvA(T* message) {
 template <class T>
 void StreamSocketsChannel<T>::Close() {
   // end the connection
-  VLOG(2) << "Shutting down channel's socket...";
+  VLOG(2) << "Shutting down channel " << *this << "'s socket...";
   client_socket_->shutdown(socket_base::shutdown_both);
   channel_ready_ = false;
 }

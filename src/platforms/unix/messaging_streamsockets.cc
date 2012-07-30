@@ -34,9 +34,8 @@ void StreamSocketsMessaging::Listen(const string& endpoint_uri) {
 
   VLOG(1) << "Creating an async TCP server on port " << port
           << " on endpoint " << hostname << "(" << endpoint_uri << ")";
-  tcp_server_.reset(new AsyncTCPServer(hostname, port,
-                                       shared_from_this()));
-  boost::thread t(boost::bind(&AsyncTCPServer::Run, tcp_server_.get()));
+  tcp_server_ = new AsyncTCPServer(hostname, port, shared_from_this());
+  boost::thread t(boost::bind(&AsyncTCPServer::Run, tcp_server_));
   VLOG(1) << "AsyncTCPServer's main thread running as " << t.get_id();
 }
 

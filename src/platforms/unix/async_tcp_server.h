@@ -16,15 +16,18 @@
 #include <boost/thread.hpp>
 
 #include "base/common.h"
-#include "misc/messaging_interface.h"
 #include "misc/uri_tools.h"
 #include "platforms/common.h"
 #include "platforms/unix/common.h"
+#include "platforms/unix/messaging_streamsockets.h"
 #include "platforms/unix/tcp_connection.h"
 
 namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
+
+// Forward declaration
+class StreamSocketsMessaging;
 
 // Asynchronous, multi-threaded TCP server.
 // Design inspired by
@@ -32,7 +35,7 @@ namespace streamsockets {
 class AsyncTCPServer : private boost::noncopyable {
  public:
   AsyncTCPServer(const string& endpoint_addr, const string& port,
-                 shared_ptr<MessagingInterface> messaging_adapter);
+                 shared_ptr<StreamSocketsMessaging> messaging_adapter);
   void Run();
   void Stop();
   TCPConnection::connection_ptr connection(uint64_t connection_id) {
@@ -48,7 +51,7 @@ class AsyncTCPServer : private boost::noncopyable {
   boost::asio::io_service io_service_;
   tcp::acceptor acceptor_;
   vector<TCPConnection::connection_ptr> active_connections_;
-  shared_ptr<MessagingInterface> owning_adapter_;
+  shared_ptr<StreamSocketsMessaging> owning_adapter_;
 };
 
 }  // namespace streamsockets

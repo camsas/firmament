@@ -38,7 +38,7 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
     SS_UNIX = 1
   } StreamSocketType;
   explicit StreamSocketsChannel(StreamSocketType type);
-  explicit StreamSocketsChannel(shared_ptr<tcp::socket> socket);
+  explicit StreamSocketsChannel(tcp::socket* socket);
   virtual ~StreamSocketsChannel();
   void Close();
   void Establish(const string& endpoint_uri);

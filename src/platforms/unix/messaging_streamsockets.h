@@ -35,6 +35,13 @@ class StreamSocketsMessaging :
  public:
   virtual ~StreamSocketsMessaging();
   Message* AwaitNextMessage();
+  void AddChannelForConnection(TCPConnection::connection_ptr connection) {
+    shared_ptr<StreamSocketsChannel<Message> > channel(
+            new StreamSocketsChannel<Message>(connection->socket()));
+    VLOG(1) << "Adding back-channel for connection at " << connection
+            << ", channel is " << *channel;
+    active_channels_.push_back(channel);
+  }
   template <class T>
   void CloseChannel(MessagingChannelInterface<T>* chan) {
     VLOG(1) << "Shutting down channel " << chan;
@@ -47,13 +54,19 @@ class StreamSocketsMessaging :
             << ", chan: " << *chan << "!";
     chan->Establish(endpoint_uri);
   }
+  shared_ptr<StreamSocketsChannel<Message> > GetChannelForConnection(
+      uint64_t connection_id) {
+    CHECK_LT(connection_id, active_channels_.size());
+    return active_channels_[connection_id];
+  }
   void Listen(const string& endpoint_uri);
   bool ListenReady();
   void SendOnConnection(uint64_t connection_id);
   void StopListen();
 
  private:
-  scoped_ptr<AsyncTCPServer> tcp_server_;
+  AsyncTCPServer* tcp_server_;
+  vector<shared_ptr<StreamSocketsChannel<Message> > > active_channels_;
 };
 
 }  // namespace streamsockets

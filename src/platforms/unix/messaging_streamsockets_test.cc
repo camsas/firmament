@@ -51,7 +51,7 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 
 // Tests channel establishment.
 TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
-  FLAGS_v = 2;
+  //FLAGS_v = 2;
   string uri = "tcp://localhost:7777";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
@@ -90,7 +90,7 @@ TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
 
 // Tests send and receive of arbitrary protobufs.
 TEST_F(StreamSocketsMessagingTest, ArbitraryProtobufSendRecv) {
-  FLAGS_v = 2;
+  //FLAGS_v = 2;
   string uri = "tcp://localhost:7778";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
@@ -122,6 +122,42 @@ TEST_F(StreamSocketsMessagingTest, ArbitraryProtobufSendRecv) {
 // Tests backchannel establishment.
 TEST_F(StreamSocketsMessagingTest, BackchannelEstablishment) {
   FLAGS_v = 2;
+  string uri1 = "tcp://localhost:7779";
+  // We need to hold at least one shared pointer to the messaging adapter before
+  // it can use shared_from_this().
+  shared_ptr<StreamSocketsMessaging> mess_adapter1(
+      new StreamSocketsMessaging());
+  shared_ptr<StreamSocketsMessaging> mess_adapter2(
+      new StreamSocketsMessaging());
+  StreamSocketsChannel<Message>
+      channel(StreamSocketsChannel<Message>::SS_TCP);
+  mess_adapter1->Listen(uri1);
+  // Need to block and wait for the socket to become ready, otherwise race
+  // ensues.
+  while (!mess_adapter1->ListenReady()) { }
+  // Make a channel MA2 -> MA1
+  mess_adapter2->EstablishChannel(uri1, &channel);
+  // Need to block and wait until the connection is ready, too.
+  while (!channel.Ready()) {  }
+  VLOG(1) << "channel is ready; getting backchannel...";
+  // Send a message through the explicitly established channel.
+  mess_adapter1->SendOnConnection(0);
+  // Check if we have a backchannel MA1 -> MA2
+  shared_ptr<StreamSocketsChannel<Message> > backchannel =
+      mess_adapter1->GetChannelForConnection(0);
+  while (!backchannel->Ready()) {  }
+  // Send a test message through the backchannel (MA2 -> MA1), and check if we
+  // have received it.
+  TestMessage s_tm;
+  s_tm.set_test(44);
+  TestMessage r_tm;
+  channel.SendS(s_tm);
+  CHECK(backchannel->RecvS(&r_tm));
+  CHECK_EQ(s_tm.test(), r_tm.test());
+  CHECK_EQ(r_tm.test(), 44);
+  // Clean up the channels.
+  backchannel->Close();
+  channel.Close();
 }
 
 
