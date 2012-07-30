@@ -4,6 +4,7 @@
 // Implementation of streaming sockets-based messaging adapter.
 
 #include "platforms/unix/messaging_streamsockets.h"
+#include "platforms/unix/messaging_streamsockets-inl.h"
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
@@ -25,6 +26,22 @@ StreamSocketsMessaging::~StreamSocketsMessaging() {
 Message* StreamSocketsMessaging::AwaitNextMessage() {
   LOG(FATAL) << "Unimplemented!";
   return NULL;
+}
+
+void StreamSocketsMessaging::AddChannelForConnection(
+    TCPConnection::connection_ptr connection) {
+  shared_ptr<StreamSocketsChannel<Message> > channel(
+          new StreamSocketsChannel<Message>(connection->socket()));
+  VLOG(1) << "Adding back-channel for connection at " << connection
+          << ", channel is " << *channel;
+  active_channels_.push_back(channel);
+}
+
+shared_ptr<StreamSocketsChannel<Message> >
+StreamSocketsMessaging::GetChannelForConnection(
+    uint64_t connection_id) {
+  CHECK_LT(connection_id, active_channels_.size());
+  return active_channels_[connection_id];
 }
 
 void StreamSocketsMessaging::Listen(const string& endpoint_uri) {

@@ -9,6 +9,7 @@
 #include "misc/messaging_interface.h"
 #include "platforms/common.pb.h"
 #include "platforms/unix/messaging_streamsockets.h"
+#include "platforms/unix/messaging_streamsockets-inl.h"
 
 using firmament::platform_unix::streamsockets::StreamSocketsMessaging;
 using firmament::platform_unix::streamsockets::StreamSocketsChannel;

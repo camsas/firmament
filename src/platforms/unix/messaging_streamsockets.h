@@ -35,30 +35,14 @@ class StreamSocketsMessaging :
  public:
   virtual ~StreamSocketsMessaging();
   Message* AwaitNextMessage();
-  void AddChannelForConnection(TCPConnection::connection_ptr connection) {
-    shared_ptr<StreamSocketsChannel<Message> > channel(
-            new StreamSocketsChannel<Message>(connection->socket()));
-    VLOG(1) << "Adding back-channel for connection at " << connection
-            << ", channel is " << *channel;
-    active_channels_.push_back(channel);
-  }
+  void AddChannelForConnection(TCPConnection::connection_ptr connection);
   template <class T>
-  void CloseChannel(MessagingChannelInterface<T>* chan) {
-    VLOG(1) << "Shutting down channel " << chan;
-    chan->Close();
-  }
+  void CloseChannel(MessagingChannelInterface<T>* chan);
   template <class T>
   void EstablishChannel(const string& endpoint_uri,
-                        MessagingChannelInterface<T>* chan) {
-    VLOG(1) << "Establishing channel from endpoint " << endpoint_uri
-            << ", chan: " << *chan << "!";
-    chan->Establish(endpoint_uri);
-  }
+                        MessagingChannelInterface<T>* chan);
   shared_ptr<StreamSocketsChannel<Message> > GetChannelForConnection(
-      uint64_t connection_id) {
-    CHECK_LT(connection_id, active_channels_.size());
-    return active_channels_[connection_id];
-  }
+      uint64_t connection_id);
   void Listen(const string& endpoint_uri);
   bool ListenReady();
   void SendOnConnection(uint64_t connection_id);

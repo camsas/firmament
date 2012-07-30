@@ -11,6 +11,7 @@
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/messaging_streamsockets.h"
+#include "platforms/unix/messaging_streamsockets-inl.h"
 
 using boost::posix_time::ptime;
 using boost::posix_time::second_clock;
