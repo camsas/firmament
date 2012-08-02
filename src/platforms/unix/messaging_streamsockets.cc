@@ -4,11 +4,12 @@
 // Implementation of streaming sockets-based messaging adapter.
 
 #include "platforms/unix/messaging_streamsockets.h"
-#include "platforms/unix/messaging_streamsockets-inl.h"
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/enable_shared_from_this.hpp>
+
+#include "platforms/unix/stream_sockets_channel-inl.h"
 
 using boost::asio::ip::tcp;
 
@@ -79,8 +80,12 @@ void StreamSocketsMessaging::SendOnConnection(uint64_t connection_id) {
 }
 
 void StreamSocketsMessaging::StopListen() {
-  tcp_server_->Stop();
-  // t.join()
+  if (tcp_server_ != NULL) {
+    VLOG(2) << "Stopping async TCP server at " << tcp_server_
+            << "...";
+    tcp_server_->Stop();
+  }
+  //t.join()
 }
 
 }  // namespace streamsockets

@@ -5,12 +5,16 @@
 
 #include "platforms/unix/async_tcp_server.h"
 
+#include <boost/version.hpp>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 
 #include "platforms/unix/tcp_connection.h"
 
 using boost::asio::ip::tcp;
+using boost::posix_time::ptime;
+using boost::posix_time::second_clock;
+using boost::posix_time::seconds;
 
 namespace firmament {
 namespace platform_unix {
@@ -58,8 +62,24 @@ void AsyncTCPServer::Run() {
 
 void AsyncTCPServer::Stop() {
   listening_ = false;
+  VLOG(2) << "Terminating " << active_connections_.size()
+          << " active TCP connections.";
+  active_connections_.clear();
+  /*for (vector<TCPConnection::connection_ptr>::const_iterator conn_iter =
+       active_connections_.begin();
+       conn_iter < active_connections_.end();
+       ++conn_iter) {
+  }*/
+  acceptor_.close();
   io_service_.stop();
-  //while (!io_service_.stopped()) { }  // spin until stopped
+#if (BOOST_VERSION >= 104700)
+  while (!io_service_.stopped()) { }  // spin until stopped
+#else
+  uint32_t wait_seconds = 2;
+  VLOG(1) << "Waiting " << wait_seconds
+          << " seconds for io_service to shut down...";
+  boost::this_thread::sleep(boost::posix_time::seconds(wait_seconds));
+#endif
   io_service_.~io_service();
 }
 
@@ -73,7 +93,8 @@ void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
     // Call StartAccept again to accept further connections.
     StartAccept();
   } else {
-    LOG(ERROR) << "Error accepting socket connection. Error reported: " << error;
+    LOG(FATAL) << "Error accepting socket connection. Error reported: "
+               << error.message();
     return;
   }
 }

@@ -7,15 +7,19 @@
 
 #include "base/common.h"
 #include "misc/messaging_interface.h"
+#include "misc/protobuf_envelope.h"
 #include "platforms/common.pb.h"
-#include "platforms/unix/messaging_streamsockets.h"
+#include "platforms/unix/common.h"
 #include "platforms/unix/messaging_streamsockets-inl.h"
+#include "platforms/unix/stream_sockets_channel-inl.h"
 
 using firmament::platform_unix::streamsockets::StreamSocketsMessaging;
 using firmament::platform_unix::streamsockets::StreamSocketsChannel;
 using firmament::common::InitFirmament;
+using firmament::misc::Envelope;
 using firmament::TestMessage;
 using ::google::protobuf::Message;
+using boost::shared_ptr;
 
 namespace {
 
@@ -52,13 +56,13 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 
 // Tests channel establishment.
 TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
-  //FLAGS_v = 2;
+  FLAGS_v = 2;
   string uri = "tcp://localhost:7777";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
   shared_ptr<StreamSocketsMessaging> mess_adapter(new StreamSocketsMessaging());
-  StreamSocketsChannel<TestMessage>
-      channel(StreamSocketsChannel<TestMessage>::SS_TCP);
+  StreamSocketsChannel<Message>
+      channel(StreamSocketsChannel<Message>::SS_TCP);
   VLOG(1) << "Calling Listen";
   mess_adapter->Listen(uri);
   // Need to block and wait for the socket to become ready, otherwise race
@@ -78,8 +82,9 @@ TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
   mess_adapter->SendOnConnection(0);
   // Receive the protobuf at the other end of the channel
   TestMessage tm;
+  Envelope<Message> envelope(&tm);
   VLOG(1) << "Calling RecvS";
-  CHECK(channel.RecvS(&tm));
+  CHECK(channel.RecvS(&envelope));
   // The received message should have the "test" field set to 43 (instead of the
   // default 42).
   CHECK_EQ(tm.test(), 43);
@@ -107,11 +112,13 @@ TEST_F(StreamSocketsMessagingTest, ArbitraryProtobufSendRecv) {
   while (!channel.Ready()) {  }
   // Send a test protobuf message through the channel
   TestMessage tm1;
+  Envelope<Message> envelope1(&tm1);
   tm1.set_test(43);
   mess_adapter->SendOnConnection(0);
   // Receive the protobuf at the other end of the channel
   TestMessage tm2;
-  CHECK(channel.RecvS(&tm2));
+  Envelope<Message> envelope2(&tm2);
+  CHECK(channel.RecvS(&envelope2));
   // The received message should have the "test" field set to 43 (instead of the
   // default 42).
   CHECK_EQ(tm2.test(), tm1.test());
@@ -120,7 +127,8 @@ TEST_F(StreamSocketsMessagingTest, ArbitraryProtobufSendRecv) {
 }
 
 
-// Tests backchannel establishment.
+// Tests backchannel establishment by sending a protobuf through the
+// backchannel.
 TEST_F(StreamSocketsMessagingTest, BackchannelEstablishment) {
   FLAGS_v = 2;
   string uri1 = "tcp://localhost:7779";
@@ -150,10 +158,12 @@ TEST_F(StreamSocketsMessagingTest, BackchannelEstablishment) {
   // Send a test message through the backchannel (MA2 -> MA1), and check if we
   // have received it.
   TestMessage s_tm;
+  Envelope<Message> s_envelope(&s_tm);
   s_tm.set_test(44);
   TestMessage r_tm;
-  channel.SendS(s_tm);
-  CHECK(backchannel->RecvS(&r_tm));
+  Envelope<Message> r_envelope(&r_tm);
+  channel.SendS(s_envelope);
+  CHECK(backchannel->RecvS(&r_envelope));
   CHECK_EQ(s_tm.test(), r_tm.test());
   CHECK_EQ(r_tm.test(), 44);
   // Clean up the channels.

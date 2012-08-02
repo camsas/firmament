@@ -17,6 +17,7 @@ namespace streamsockets {
 
 TCPConnection::~TCPConnection() {
   VLOG(2) << "Connection is being destroyed!";
+  socket_.close();
 }
 
 void TCPConnection::Start() {

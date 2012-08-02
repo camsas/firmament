@@ -76,7 +76,7 @@ StreamSocketsChannel<T>::~StreamSocketsChannel() {
 }
 
 template <class T>
-void StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
+bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
   // If this channel already has an active socket, issue a warning and close it
   // down before establishing a new one.
   if (client_socket_.get() != NULL && client_socket_->is_open()) {
@@ -106,10 +106,14 @@ void StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
     client_socket_->connect(*endpoint_iterator++, error);
   }
   if (error) {
-    throw boost::system::system_error(error);
+    LOG(ERROR) << "Failed to establish a stream socket channel to remote "
+               << "endpoint " << endpoint_uri << ". Error: "
+               << error.message();
+    return false;
   } else {
     VLOG(2) << "Client: we appear to have connected successfully...";
     channel_ready_ = true;
+    return true;
   }
 }
 
@@ -121,13 +125,14 @@ bool StreamSocketsChannel<T>::Ready() {
 
 // Synchronous send
 template <class T>
-bool StreamSocketsChannel<T>::SendS(const T& message) {
-  VLOG(1) << "Trying to send message of size " << message.ByteSize()
+bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
+  VLOG(1) << "Trying to send message of size " << message.size()
           << " on channel " << *this;
-  size_t msg_size = message.ByteSize();
+  size_t msg_size = message.size();
   vector<char> buf(msg_size);
-  CHECK(message.SerializeToArray(&buf[0], message.ByteSize()));
+  CHECK(message.Serialize(&buf[0], message.size()));
   // Send data size
+  // XXX(malte): error handling!
   boost::asio::write(
       *client_socket_, boost::asio::buffer(
           reinterpret_cast<char*>(&msg_size), sizeof(msg_size)));
@@ -145,7 +150,7 @@ bool StreamSocketsChannel<T>::SendS(const T& message) {
 
 // Asynchronous send
 template <class T>
-bool StreamSocketsChannel<T>::SendA(const T& message) {
+bool StreamSocketsChannel<T>::SendA(const Envelope<T>& message) {
   VLOG(1) << "Trying to send message: " << &message;
   LOG(FATAL) << "Unimplemented!";
   return false;
@@ -153,20 +158,27 @@ bool StreamSocketsChannel<T>::SendA(const T& message) {
 
 // Synchronous recieve -- blocks until the next message is received.
 template <class T>
-bool StreamSocketsChannel<T>::RecvS(T* message) {
+bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   if (!Ready()) {
-    LOG(WARNING) << "Tried to read from channel " << this << ", which is not ready; read failed.";
+    LOG(WARNING) << "Tried to read from channel " << this
+                 << ", which is not ready; read failed.";
     return false;
   }
   VLOG(2) << "In RecvS, polling for next message";
   size_t len;
   vector<char> size_buf(sizeof(size_t));
-  boost::asio::mutable_buffers_1 size_m_buf(reinterpret_cast<char*>(&size_buf[0]), sizeof(size_t));
+  boost::asio::mutable_buffers_1 size_m_buf(
+      reinterpret_cast<char*>(&size_buf[0]), sizeof(size_t));
   boost::system::error_code error;
   // Read the incoming protobuf message length
   // N.B.: read() blocks until the buffer has been filled, i.e. an entire size_t
   // has been read.
-  len = read(*client_socket_, size_m_buf);
+  len = read(*client_socket_, size_m_buf,
+             boost::asio::transfer_at_least(sizeof(size_t)), error);
+  if (error || len != sizeof(size_t)) {
+    VLOG(2) << "Error reading from connection: " << error.message();
+    return false;
+  }
   // ... we can get away with a simple CHECK here and assume that we have some
   // incoming data available.
   CHECK_EQ(sizeof(size_t), len);
@@ -176,15 +188,18 @@ bool StreamSocketsChannel<T>::RecvS(T* message) {
   vector<char> buf(msg_size);
   size_t total = 0;
   do {
-    VLOG(3) << "calling read_some";
     //CHECK_LE(total, size_buf);
-    len = client_socket_->read_some(boost::asio::mutable_buffers_1(&buf[0], msg_size), error);
+    len = client_socket_->read_some(
+        boost::asio::mutable_buffers_1(&buf[0], msg_size), error);
+    VLOG(2) << "read_some return " << len;
 
     if (error == boost::asio::error::eof) {
       VLOG(2) << "Received EOF, connection terminating!";
       break;
     } else if (error) {
-      throw boost::system::system_error(error);
+      VLOG(2) << "Error reading from connection: "
+              << error.message();
+      return false;
     } else {
       VLOG(2) << "Read " << len << " bytes of protobuf data...";
       total += len;
@@ -193,12 +208,12 @@ bool StreamSocketsChannel<T>::RecvS(T* message) {
   VLOG(2) << "Read a total of " << total << " protobuf data bytes.";
   CHECK_GT(total, 0);
   CHECK_EQ(total, msg_size);
-  return (message->ParseFromArray(&buf[0], total));
+  return (message->Parse(&buf[0], total));
 }
 
 // Asynchronous receive -- does not block.
 template <class T>
-bool StreamSocketsChannel<T>::RecvA(T* message) {
+bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message) {
   VLOG(1) << "Receiving into " << message;
   LOG(FATAL) << "Unimplemented!";
   return false;

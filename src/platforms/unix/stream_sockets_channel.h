@@ -13,16 +13,14 @@
 #include <boost/noncopyable.hpp>
 
 #include "base/common.h"
+#include "misc/envelope.h"
+#include "misc/protobuf_envelope.h"
 #include "misc/messaging_interface.h"
 #include "misc/uri_tools.h"
 #include "platforms/common.h"
 #include "platforms/unix/common.h"
 #include "platforms/unix/tcp_connection.h"
 #include "platforms/unix/async_tcp_server.h"
-
-using boost::shared_ptr;
-using boost::asio::ip::tcp;
-using boost::asio::io_service;
 
 namespace firmament {
 namespace platform_unix {
@@ -41,17 +39,17 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
   explicit StreamSocketsChannel(tcp::socket* socket);
   virtual ~StreamSocketsChannel();
   void Close();
-  void Establish(const string& endpoint_uri);
+  bool Establish(const string& endpoint_uri);
   bool Ready();
-  bool RecvA(T* message);
-  bool RecvS(T* message);
-  bool SendS(const T& message);
-  bool SendA(const T& message);
+  bool RecvA(misc::Envelope<T>* message);
+  bool RecvS(misc::Envelope<T>* message);
+  bool SendS(const misc::Envelope<T>& message);
+  bool SendA(const misc::Envelope<T>& message);
   virtual ostream& ToString(ostream& stream) const;
 
  private:
-  shared_ptr<io_service> client_io_service_;
-  shared_ptr<tcp::socket> client_socket_;
+  boost::shared_ptr<boost::asio::io_service> client_io_service_;
+  boost::shared_ptr<boost::asio::ip::tcp::socket> client_socket_;
   bool channel_ready_;
   StreamSocketType type_;
 };

@@ -13,10 +13,12 @@
 #include <boost/scoped_ptr.hpp>
 
 namespace firmament {
+namespace platform_unix {
 
 using boost::shared_ptr;
 using boost::scoped_ptr;
 
+}  // namespace platform_unix
 }  // namespace firmament
 
 #endif  // FIRMAMENT_PLATFORMS_UNIX_COMMON_H

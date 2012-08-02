@@ -18,7 +18,7 @@
 #include "platforms/unix/common.h"
 #include "platforms/unix/tcp_connection.h"
 #include "platforms/unix/async_tcp_server.h"
-#include "platforms/unix/stream_sockets_channel-inl.h"
+#include "platforms/unix/stream_sockets_channel.h"
 
 namespace firmament {
 namespace platform_unix {
@@ -26,6 +26,8 @@ namespace streamsockets {
 
 class TCPConnection;  // forward declaration
 class AsyncTCPServer;  // forward declaration
+template <class T>
+class StreamSocketsChannel;  // forward declaration
 
 // Messaging adapter.
 class StreamSocketsMessaging :
@@ -33,15 +35,19 @@ class StreamSocketsMessaging :
   public boost::enable_shared_from_this<StreamSocketsMessaging>,
   private boost::noncopyable {
  public:
+  const vector<boost::shared_ptr<StreamSocketsChannel<Message> > >&
+      active_channels() {
+    return active_channels_;
+  }
   virtual ~StreamSocketsMessaging();
   Message* AwaitNextMessage();
   void AddChannelForConnection(TCPConnection::connection_ptr connection);
   template <class T>
   void CloseChannel(MessagingChannelInterface<T>* chan);
   template <class T>
-  void EstablishChannel(const string& endpoint_uri,
+  bool EstablishChannel(const string& endpoint_uri,
                         MessagingChannelInterface<T>* chan);
-  shared_ptr<StreamSocketsChannel<Message> > GetChannelForConnection(
+  boost::shared_ptr<StreamSocketsChannel<Message> > GetChannelForConnection(
       uint64_t connection_id);
   void Listen(const string& endpoint_uri);
   bool ListenReady();
@@ -50,7 +56,7 @@ class StreamSocketsMessaging :
 
  private:
   AsyncTCPServer* tcp_server_;
-  vector<shared_ptr<StreamSocketsChannel<Message> > > active_channels_;
+  vector<boost::shared_ptr<StreamSocketsChannel<Message> > > active_channels_;
 };
 
 }  // namespace streamsockets
