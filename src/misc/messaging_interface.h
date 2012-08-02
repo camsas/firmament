@@ -7,26 +7,28 @@
 #define FIRMAMENT_MISC_MESSAGING_INTERFACE_H
 
 #include "base/common.h"
+#include "misc/envelope.h"
 #include "misc/printable_interface.h"
 #include "platforms/common.h"
 
 namespace firmament {
 
 typedef ::google::protobuf::Message Message;
+using firmament::misc::Envelope;
 
 template <class T>
 class MessagingChannelInterface : public PrintableInterface {
  public:
   // Establish a communication channel.
-  virtual void Establish(const string& endpoint_uri) = 0;
+  virtual bool Establish(const string& endpoint_uri) = 0;
   // Send (synchronous)
-  virtual bool SendS(const T& message) = 0;
+  virtual bool SendS(const Envelope<T>& message) = 0;
   // Send (asynchronous)
-  virtual bool SendA(const T& message) = 0;
+  virtual bool SendA(const Envelope<T>& message) = 0;
   // Synchronous receive -- blocks until the next message is received.
-  virtual bool RecvS(T* message) = 0;
+  virtual bool RecvS(Envelope<T>* message) = 0;
   // Asynchronous receive -- does not block.
-  virtual bool RecvA(T* message) = 0;
+  virtual bool RecvA(Envelope<T>* message) = 0;
   // Tear down the channel.
   virtual void Close() = 0;
   // Debug output generating method.
@@ -37,7 +39,7 @@ class MessagingInterface {
  public:
   // Set up a messaging channel to a remote endpoint.
   template <class T>
-  void EstablishChannel(const string& endpoint_uri,
+  bool EstablishChannel(const string& endpoint_uri,
                         MessagingChannelInterface<T>* chan);
   // TODO(malte): Do we actually want to do this, or should we leave it to the
   // system to close channels when no longer needed? Alternative might be a
