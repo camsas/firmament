@@ -9,9 +9,10 @@
 
 #include "base/common.h"
 #include "misc/messaging_interface.h"
+#include "misc/protobuf_envelope.h"
 #include "platforms/common.h"
-#include "platforms/unix/messaging_streamsockets.h"
 #include "platforms/unix/messaging_streamsockets-inl.h"
+#include "platforms/unix/stream_sockets_channel-inl.h"
 
 using boost::posix_time::ptime;
 using boost::posix_time::second_clock;
@@ -19,17 +20,21 @@ using boost::posix_time::seconds;
 
 namespace firmament {
 
+using platform_unix::streamsockets::StreamSocketsMessaging;
+using platform_unix::streamsockets::StreamSocketsChannel;
+
 class Worker {
  public:
   Worker(PlatformID platform_id);
   void Run();
   void AwaitNextMessage() {
     TestMessage tm;
-    VLOG_EVERY_N(2, 1) << "Receiving (sync)...";
-    chan_.RecvS(&tm);
+    tm.set_test(444);
+    Envelope<Message> envelope(&tm);
+    VLOG_EVERY_N(2, 1) << "Sending (sync)...";
+    chan_.SendS(envelope);
     VLOG_EVERY_N(2, 1) << "Waiting for next message...";
-    ptime t(second_clock::local_time() + seconds(10));
-    boost::thread::sleep(t);
+    boost::this_thread::sleep(seconds(10));
   };
   bool RunCoordinatorDiscovery(const string &coordinator_uri) {
     LOG(FATAL) << "Coordinator auto-discovery is not implemented yet. "
@@ -37,9 +42,8 @@ class Worker {
     return false;
   }
   bool ConnectToCoordinator(const string& coordinator_uri) {
-    m_adapter_.EstablishChannel(coordinator_uri, &chan_);
-    // Send registration message
-    return true;
+    return m_adapter_->EstablishChannel(coordinator_uri, &chan_);
+    // TODO(malte): Send registration message
   }
 
   inline PlatformID platform_id() {
@@ -47,8 +51,8 @@ class Worker {
   }
  protected:
   PlatformID platform_id_;
-  platform_unix::streamsockets::StreamSocketsMessaging m_adapter_;
-  platform_unix::streamsockets::StreamSocketsChannel<TestMessage> chan_;
+  boost::shared_ptr<StreamSocketsMessaging> m_adapter_;
+  StreamSocketsChannel<Message> chan_;
   bool exit_;
   string coordinator_uri_;
 };

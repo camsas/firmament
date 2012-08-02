@@ -33,4 +33,6 @@ int main(int argc, char *argv[]) {
   Coordinator coordinator(platform_id);
 
   coordinator.Run();
+
+  LOG(INFO) << "Coordinator's Run() method returned; terminating...";
 }

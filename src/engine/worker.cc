@@ -18,8 +18,9 @@ namespace firmament {
 Worker::Worker(PlatformID platform_id)
   : platform_id_(platform_id),
     coordinator_uri_(FLAGS_coordinator_uri),
-    chan_(platform_unix::streamsockets::
-          StreamSocketsChannel<TestMessage>::SS_TCP) {
+    m_adapter_(new StreamSocketsMessaging()),
+    chan_(StreamSocketsChannel<Message>::SS_TCP),
+    exit_(false) {
   string hostname = ""; //pilatform_.GetHostname();
   VLOG(1) << "Worker starting on host " << hostname << ", platform "
           << platform_id;
@@ -56,6 +57,7 @@ void Worker::Run() {
   // We have dropped out of the main loop and are exiting
   // TODO(malte): any cleanup we need to do; terminate running
   // tasks etc.
+  VLOG(1) << "Dropped out of main loop -- cleaning up...";
 }
 
 }  // namespace firmament

@@ -9,6 +9,8 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <string>
 
+#include "misc/protobuf_envelope.h"
+
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
               "attempting automatic discovery.");
 DEFINE_string(listen_uri, "tcp://localhost:9998",
@@ -18,10 +20,13 @@ DEFINE_int32(http_ui_port, 8080,
 
 namespace firmament {
 
+using boost::shared_ptr;  // XXX(malte): think about this dependency
+
 Coordinator::Coordinator(PlatformID platform_id)
   : platform_id_(platform_id),
     uuid_(GenerateUUID()),
-    topology_manager_(new TopologyManager()) {
+    topology_manager_(new TopologyManager()),
+    exit_(false) {
   // Start up a coordinator ccording to the platform parameter
   // platform_ = platform::GetByID(platform_id);
   string hostname = "";  // platform_.GetHostname();
@@ -30,7 +35,7 @@ Coordinator::Coordinator(PlatformID platform_id)
 
   switch (platform_id) {
     case PL_UNIX: {
-      m_adapter_ = new platform_unix::streamsockets::StreamSocketsMessaging();
+      m_adapter_.reset(new platform_unix::streamsockets::StreamSocketsMessaging());
       break;
     }
     default:
@@ -54,7 +59,7 @@ void Coordinator::Run() {
     // Wait for events (i.e. messages from workers)
     // TODO(malte): we need to think about any actions that the coordinator
     // itself might need to take, and how they can be triggered
-    VLOG(2) << "Hello from main loop!";
+    VLOG(3) << "Hello from main loop!";
     AwaitNextMessage();
   }
 
@@ -64,10 +69,24 @@ void Coordinator::Run() {
 }
 
 void Coordinator::AwaitNextMessage() {
-  VLOG_EVERY_N(2, 1) << "Waiting for next message...";
-  ptime t(second_clock::local_time() + seconds(10));
-  VLOG(2) << "t: " << to_simple_string(t);
-  boost::thread::sleep(t);
+  //VLOG_EVERY_N(2, 1000) << "Waiting for next message...";
+  uint64_t i = 0;
+  for (vector<shared_ptr<StreamSocketsChannel<Message> > >::const_iterator chan_iter =
+       m_adapter_->active_channels().begin();
+       chan_iter < m_adapter_->active_channels().end();
+       ++chan_iter) {
+    VLOG(1) << "Trying to receive on channel " << i;
+    TestMessage tm;
+    Envelope<google::protobuf::Message> envelope(&tm);
+    (*chan_iter)->RecvS(&envelope);
+    VLOG(1) << "Received message of size " << tm.ByteSize()
+            << ", type " << tm.GetTypeName()
+            << ", contents: " << tm.DebugString();
+    ++i;
+  }
+  VLOG(2) << "Looped over " << i << " channels.";
+  //boost::thread::yield();
+  boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 
 ResourceID_t Coordinator::GenerateUUID() {

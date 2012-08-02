@@ -24,9 +24,13 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 using boost::scoped_ptr;
+using boost::shared_ptr;
 using firmament::machine::topology::TopologyManager;
 
 namespace firmament {
+
+using platform_unix::streamsockets::StreamSocketsChannel;
+using platform_unix::streamsockets::StreamSocketsMessaging;
 
 // Forward declaration
 class CoordinatorHTTPUI;
@@ -46,7 +50,7 @@ class Coordinator {
   PlatformID platform_id_;
   bool exit_;
   string coordinator_uri_;
-  MessagingInterface* m_adapter_;
+  shared_ptr<StreamSocketsMessaging> m_adapter_;
   ResourceID_t uuid_;
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
   scoped_ptr<TopologyManager> topology_manager_;
