@@ -156,6 +156,19 @@ function get_dep_arch {
   fi
 }
 
+##################################
+
+function get_dep_wget {
+  URL=$2
+  NAME=$1
+  FILE=$(basename ${URL})
+  wget -q -N ${URL}
+  if [ ${NAME}-timestamp -ot ${FILE} ]
+  then
+    touch -r ${FILE} ${NAME}-timestamp
+  fi
+}
+
 
 ###############################################################################
 
@@ -303,5 +316,9 @@ else
   print_succ_or_fail $RES
   cd ${EXT_DIR}
 fi
+
+## cpplint.py (linter script)
+print_subhdr "CPPLINT HELPER SCRIPT"
+get_dep_wget "cpplint" "http://google-styleguide.googlecode.com/svn/trunk/cpplint/cpplint.py"
 
 touch ${EXT_DIR}/.ext-ok
