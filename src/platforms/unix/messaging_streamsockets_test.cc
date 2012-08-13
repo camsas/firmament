@@ -152,6 +152,7 @@ TEST_F(StreamSocketsMessagingTest, BackchannelEstablishment) {
   // Send a message through the explicitly established channel.
   mess_adapter1->SendOnConnection(0);
   // Check if we have a backchannel MA1 -> MA2
+  while (mess_adapter1->active_channels().size() == 0) {}
   shared_ptr<StreamSocketsChannel<Message> > backchannel =
       mess_adapter1->GetChannelForConnection(0);
   while (!backchannel->Ready()) {  }

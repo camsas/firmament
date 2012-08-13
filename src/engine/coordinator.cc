@@ -70,21 +70,24 @@ void Coordinator::Run() {
 
 void Coordinator::AwaitNextMessage() {
   //VLOG_EVERY_N(2, 1000) << "Waiting for next message...";
-  uint64_t i = 0;
-  for (vector<shared_ptr<StreamSocketsChannel<Message> > >::const_iterator chan_iter =
+  uint64_t num_channels = m_adapter_->active_channels().size();
+  for (uint64_t i = 0; i < num_channels; ++i) {
+  /*for (vector<shared_ptr<StreamSocketsChannel<Message> > >::const_iterator chan_iter =
        m_adapter_->active_channels().begin();
        chan_iter < m_adapter_->active_channels().end();
-       ++chan_iter) {
-    VLOG(1) << "Trying to receive on channel " << i;
-    TestMessage tm;
-    Envelope<google::protobuf::Message> envelope(&tm);
-    (*chan_iter)->RecvS(&envelope);
-    VLOG(1) << "Received message of size " << tm.ByteSize()
-            << ", type " << tm.GetTypeName()
-            << ", contents: " << tm.DebugString();
-    ++i;
+       ++chan_iter) {*/
+    boost::shared_ptr<StreamSocketsChannel<Message> > chan =
+        m_adapter_->GetChannelForConnection(i);
+    VLOG(1) << "Trying to receive on channel " << i << " at " << *chan;
+    firmament::ResourceDescriptor rd;
+    Envelope<google::protobuf::Message> envelope(&rd);
+    VLOG(2) << "Calling RecvS, envelope is " << envelope;
+    chan->RecvS(&envelope);
+    VLOG(1) << "Received message of size " << rd.ByteSize()
+            << ", type " << rd.GetTypeName()
+            << ", contents: " << endl << rd.DebugString();
   }
-  VLOG(2) << "Looped over " << i << " channels.";
+  VLOG(2) << "Looped over " << num_channels << " channels.";
   //boost::thread::yield();
   boost::this_thread::sleep(boost::posix_time::seconds(1));
 }

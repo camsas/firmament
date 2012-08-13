@@ -86,10 +86,10 @@ void AsyncTCPServer::Stop() {
 void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
                                   const boost::system::error_code& error) {
   if (!error) {
-    // Once the connection is up, we wrap it into a channel.
-    owning_adapter_->AddChannelForConnection(connection);
     VLOG(2) << "In HandleAccept -- starting connection at " << connection;
     connection->Start();
+    // Once the connection is up, we wrap it into a channel.
+    owning_adapter_->AddChannelForConnection(connection);
     // Call StartAccept again to accept further connections.
     StartAccept();
   } else {

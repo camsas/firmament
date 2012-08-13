@@ -112,6 +112,35 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceive) {
   CHECK_EQ(r_tm.test(), 5);
 }
 
+// Tests synchronous send of multiple subsequent protobufs.
+TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
+  FLAGS_v = 2;
+  TestMessage tm;
+  tm.set_test(5);
+  Envelope<Message> envelope(&tm);
+  while (!channel_->Ready()) {  }
+  // send first time
+  channel_->SendS(envelope);
+  // send second time
+  channel_->SendS(envelope);
+  // Spin-wait for backchannel to become available
+  while (remote_adapter_->active_channels().size() == 0) { }
+  shared_ptr<StreamSocketsChannel<Message> > backchannel =
+      remote_adapter_->GetChannelForConnection(0);
+  TestMessage r_tm;
+  Envelope<Message> recv_env(&r_tm);
+  while (!backchannel->Ready()) {  }
+  // first receive
+  backchannel->RecvS(&recv_env);
+  CHECK_EQ(r_tm.test(), tm.test());
+  CHECK_EQ(r_tm.test(), 5);
+  // second receive
+  backchannel->RecvS(&recv_env);
+  CHECK_EQ(r_tm.test(), tm.test());
+  CHECK_EQ(r_tm.test(), 5);
+}
+
+
 // Tests asynchronous send (and synchronous receive) of a protobuf.
 /*TEST_F(StreamSocketsChannelTest, TCPAsyncProtobufSend) {
   FLAGS_v = 2;

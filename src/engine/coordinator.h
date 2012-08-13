@@ -9,12 +9,12 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
-#include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/uuid/uuid.hpp>
 
 #include "base/common.h"
 #include "base/types.h"
+#include "base/resource_desc.pb.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/messaging_streamsockets.h"
@@ -43,7 +43,7 @@ class Coordinator {
   inline PlatformID platform_id() {
     return platform_id_;
   }
-  inline ResourceID_t get_uuid() { return uuid_; }
+  inline ResourceID_t uuid() { return uuid_; }
  protected:
   ResourceID_t GenerateUUID();
 
@@ -54,6 +54,7 @@ class Coordinator {
   ResourceID_t uuid_;
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
   scoped_ptr<TopologyManager> topology_manager_;
+  ResourceDescriptor resource_desc_;
 };
 
 }  // namespace firmament

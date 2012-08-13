@@ -6,22 +6,34 @@
 
 #include "engine/worker.h"
 
+#ifdef __PLATFORM_HAS_BOOST__
+#include <boost/uuid/uuid_generators.hpp>
+#endif
+
 #include "platforms/common.pb.h"
 #include "platforms/unix/messaging_streamsockets.h"
 
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
               "attempting automatic discovery.");
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
+DEFINE_string(name, "", "A friendly name for this worker.");
 
 namespace firmament {
+
+#ifdef __PLATFORM_HAS_BOOST__
+using boost::posix_time::ptime;
+using boost::posix_time::second_clock;
+using boost::posix_time::seconds;
+#endif
 
 Worker::Worker(PlatformID platform_id)
   : platform_id_(platform_id),
     coordinator_uri_(FLAGS_coordinator_uri),
     m_adapter_(new StreamSocketsMessaging()),
     chan_(StreamSocketsChannel<Message>::SS_TCP),
-    exit_(false) {
-  string hostname = ""; //pilatform_.GetHostname();
+    exit_(false),
+    uuid_(GenerateUUID()) {
+  string hostname = ""; //platform_.GetHostname();
   VLOG(1) << "Worker starting on host " << hostname << ", platform "
           << platform_id;
   // Start up a worker according to the platform parameter
@@ -34,6 +46,32 @@ Worker::Worker(PlatformID platform_id)
     default:
       LOG(FATAL) << "Unimplemented!";
   }
+
+  // TODO(malte): fix this!
+  resource_desc_.set_uuid(boost::uuids::to_string(uuid_));
+
+  if (!FLAGS_name.empty())
+    resource_desc_.set_name(FLAGS_name);
+
+  resource_desc_.set_task_capacity(1);
+}
+
+void Worker::AwaitNextMessage() {
+  Envelope<Message> envelope(&resource_desc_);
+  VLOG_EVERY_N(2, 1) << "Sending (sync)...";
+  chan_.SendS(envelope);
+  VLOG_EVERY_N(2, 1) << "Waiting for next message...";
+  boost::this_thread::sleep(seconds(10));
+}
+
+bool Worker::ConnectToCoordinator(const string& coordinator_uri) {
+  return m_adapter_->EstablishChannel(coordinator_uri, &chan_);
+  // TODO(malte): Send registration message
+}
+
+ResourceID_t Worker::GenerateUUID() {
+  boost::uuids::random_generator gen;
+  return gen();
 }
 
 void Worker::Run() {

@@ -61,6 +61,7 @@ StreamSocketsChannel<T>::StreamSocketsChannel(tcp::socket* socket)
     client_socket_(socket),
     channel_ready_(false),
     type_(SS_TCP) {
+  VLOG(2) << "Creating new channel around socket at " << socket;
   if (client_socket_->is_open()) {
     channel_ready_ = true;
   }
@@ -73,6 +74,7 @@ StreamSocketsChannel<T>::~StreamSocketsChannel() {
     channel_ready_ = false;
     Close();
   }
+  VLOG(2) << "Channel at " << this << " destroyed.";
 }
 
 template <class T>
@@ -159,12 +161,12 @@ bool StreamSocketsChannel<T>::SendA(const Envelope<T>& message) {
 // Synchronous recieve -- blocks until the next message is received.
 template <class T>
 bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
+  VLOG(2) << "In RecvS, polling for next message";
   if (!Ready()) {
     LOG(WARNING) << "Tried to read from channel " << this
                  << ", which is not ready; read failed.";
     return false;
   }
-  VLOG(2) << "In RecvS, polling for next message";
   size_t len;
   vector<char> size_buf(sizeof(size_t));
   boost::asio::mutable_buffers_1 size_m_buf(
@@ -186,29 +188,24 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   CHECK_GT(msg_size, 0);
   VLOG(2) << "Size of incoming protobuf is " << msg_size << " bytes.";
   vector<char> buf(msg_size);
-  size_t total = 0;
-  do {
-    //CHECK_LE(total, size_buf);
-    len = client_socket_->read_some(
-        boost::asio::mutable_buffers_1(&buf[0], msg_size), error);
-    VLOG(2) << "read_some return " << len;
+  len = read(*client_socket_,
+             boost::asio::mutable_buffers_1(&buf[0], msg_size),
+             boost::asio::transfer_at_least(msg_size), error);
+  VLOG(2) << "Read " << len << " bytes.";
 
-    if (error == boost::asio::error::eof) {
-      VLOG(2) << "Received EOF, connection terminating!";
-      break;
-    } else if (error) {
-      VLOG(2) << "Error reading from connection: "
-              << error.message();
-      return false;
-    } else {
-      VLOG(2) << "Read " << len << " bytes of protobuf data...";
-      total += len;
-    }
-  } while (client_socket_->available() > 0);
-  VLOG(2) << "Read a total of " << total << " protobuf data bytes.";
-  CHECK_GT(total, 0);
-  CHECK_EQ(total, msg_size);
-  return (message->Parse(&buf[0], total));
+  if (error == boost::asio::error::eof) {
+    VLOG(2) << "Received EOF, connection terminating!";
+    return false;
+  } else if (error) {
+    VLOG(2) << "Error reading from connection: "
+            << error.message();
+    return false;
+  } else {
+    VLOG(2) << "Read " << len << " bytes of protobuf data...";
+  }
+  CHECK_GT(len, 0);
+  CHECK_EQ(len, msg_size);
+  return (message->Parse(&buf[0], len));
 }
 
 // Asynchronous receive -- does not block.

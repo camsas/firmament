@@ -8,6 +8,8 @@
 #define FIRMAMENT_ENGINE_WORKER_H
 
 #include "base/common.h"
+#include "base/types.h"
+#include "base/resource_desc.pb.h"
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
 #include "platforms/common.h"
@@ -27,25 +29,9 @@ class Worker {
  public:
   Worker(PlatformID platform_id);
   void Run();
-  void AwaitNextMessage() {
-    TestMessage tm;
-    tm.set_test(444);
-    Envelope<Message> envelope(&tm);
-    VLOG_EVERY_N(2, 1) << "Sending (sync)...";
-    chan_.SendS(envelope);
-    VLOG_EVERY_N(2, 1) << "Waiting for next message...";
-    boost::this_thread::sleep(seconds(10));
-  };
-  bool RunCoordinatorDiscovery(const string &coordinator_uri) {
-    LOG(FATAL) << "Coordinator auto-discovery is not implemented yet. "
-               << "coordinator_uri given was: " << coordinator_uri;
-    return false;
-  }
-  bool ConnectToCoordinator(const string& coordinator_uri) {
-    return m_adapter_->EstablishChannel(coordinator_uri, &chan_);
-    // TODO(malte): Send registration message
-  }
-
+  void AwaitNextMessage();
+  bool RunCoordinatorDiscovery(const string &coordinator_uri);
+  bool ConnectToCoordinator(const string& coordinator_uri);
   inline PlatformID platform_id() {
     return platform_id_;
   }
@@ -55,6 +41,10 @@ class Worker {
   StreamSocketsChannel<Message> chan_;
   bool exit_;
   string coordinator_uri_;
+  ResourceDescriptor resource_desc_;
+  ResourceID_t uuid_;
+
+  ResourceID_t GenerateUUID();
 };
 
 }  // namespace firmament

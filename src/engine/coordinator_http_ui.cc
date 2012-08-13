@@ -35,7 +35,7 @@ void CoordinatorHTTPUI::handleRootURI(HTTPRequestPtr& http_request,
   HTTPTypes::QueryParams& params = http_request->getQueryParams();
 
   writer->writeNoCopy(kHTMLStart);
-  writer->write(coordinator_->get_uuid());
+  writer->write(coordinator_->uuid());
   //writer->write(http_request->getResource());
 
 /*  if (params.size() > 0) {

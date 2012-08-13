@@ -33,4 +33,6 @@ int main(int argc, char *argv[]) {
   Worker worker(platform_id);
 
   worker.Run();
+
+  LOG(INFO) << "Worker's Run() method returned; terminating...";
 }
