@@ -20,8 +20,9 @@ namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
 
-AsyncTCPServer::AsyncTCPServer(const string& endpoint_addr, const string& port,
-                               shared_ptr<StreamSocketsMessaging> messaging_adapter)
+AsyncTCPServer::AsyncTCPServer(
+    const string& endpoint_addr, const string& port,
+    shared_ptr<StreamSocketsMessaging> messaging_adapter)
     : acceptor_(io_service_), listening_(false),
       owning_adapter_(messaging_adapter) {
   VLOG(2) << "AsyncTCPServer starting!";
@@ -57,7 +58,7 @@ void AsyncTCPServer::Run() {
   // Wait for thread to exit
   VLOG(2) << "IO service thread (" << thread->get_id()
           << ") running -- Waiting for join...";
-  //thread->join();
+  // thread->join();
 }
 
 void AsyncTCPServer::Stop() {

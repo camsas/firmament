@@ -32,7 +32,7 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
                       private boost::noncopyable {
  public:
   typedef boost::shared_ptr<TCPConnection> connection_ptr;
-  explicit TCPConnection(boost::asio::io_service& io_service)
+  explicit TCPConnection(boost::asio::io_service& io_service)  // NOLINT
       : socket_(io_service), ready_(false) { }
   virtual ~TCPConnection();
   tcp::socket* socket() {

@@ -9,6 +9,8 @@
 
 #include "platforms/unix/messaging_streamsockets.h"
 
+#include <string>
+
 namespace firmament {
 namespace platform_unix {
 namespace streamsockets {

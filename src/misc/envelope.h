@@ -36,11 +36,12 @@ class Envelope : public PrintableInterface {
     memcpy(buffer, static_cast<void*>(data_), length);
     return true;
   }
-  virtual ostream& ToString(ostream& stream) const {
+  virtual ostream& ToString(ostream* stream) const {
     // TODO(malte): Print the first few bytes of the data here
-    return stream << "(Envelope,size=" << size() << ",at=" << this
-                  << ",data=)";
+    return *stream << "(Envelope,size=" << size() << ",at=" << this
+                   << ",data=)";
   }
+
  private:
   T *data_;
 };

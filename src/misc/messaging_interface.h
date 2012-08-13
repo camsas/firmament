@@ -32,7 +32,7 @@ class MessagingChannelInterface : public PrintableInterface {
   // Tear down the channel.
   virtual void Close() = 0;
   // Debug output generating method.
-  virtual ostream& ToString(ostream& stream) const = 0;
+  virtual ostream& ToString(ostream* stream) const = 0;
 };
 
 class MessagingInterface {

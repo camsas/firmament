@@ -8,11 +8,17 @@
 
 #include <stdint.h>
 
+#ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid.hpp>
+#endif
 
 namespace firmament {
 
+#ifdef __PLATFORM_HAS_BOOST__
 typedef boost::uuids::uuid ResourceID_t;
+#else
+typedef uint64_t ResourceID_t;
+#endif
 
 }  // namespace firmament
 

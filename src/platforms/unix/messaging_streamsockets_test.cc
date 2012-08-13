@@ -96,7 +96,6 @@ TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
 
 // Tests send and receive of arbitrary protobufs.
 TEST_F(StreamSocketsMessagingTest, ArbitraryProtobufSendRecv) {
-  //FLAGS_v = 2;
   string uri = "tcp://localhost:7778";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().

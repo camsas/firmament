@@ -56,9 +56,8 @@ INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) -I$(BOOST_INC_D
 # LIBRARIES
 #######################################
 
-# TODO(ms705): Temporarily disable -lprofiler and -ltcmalloc due to known
-# issues with Ubuntu's libunwind
-#LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf
+# XXX(malte): Factor these out into the individual Makefiles to avoid linking
+# every binary to the whole world.
 LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf -lboost_system -lboost_thread -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc
 
 
@@ -70,7 +69,7 @@ CXX = clang++
 
 CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros
 
-CXXFLAGS =
+CXXFLAGS = -D__PLATFORM_HAS_BOOST__
 
 #######################################
 # PROTOBUF COMPILER

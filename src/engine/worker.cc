@@ -98,4 +98,10 @@ void Worker::Run() {
   VLOG(1) << "Dropped out of main loop -- cleaning up...";
 }
 
+bool Worker::RunCoordinatorDiscovery(const string& coordinator_uri) {
+  LOG(FATAL) << "Coordinator auto-discovery is not implemented yet. "
+             << "coordinator_uri given was: " << coordinator_uri;
+  return false;
+}
+
 }  // namespace firmament

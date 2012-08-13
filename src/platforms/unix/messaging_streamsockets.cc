@@ -85,7 +85,7 @@ void StreamSocketsMessaging::StopListen() {
             << "...";
     tcp_server_->Stop();
   }
-  //t.join()
+  // t.join()
 }
 
 }  // namespace streamsockets

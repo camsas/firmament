@@ -45,7 +45,7 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
   bool RecvS(misc::Envelope<T>* message);
   bool SendS(const misc::Envelope<T>& message);
   bool SendA(const misc::Envelope<T>& message);
-  virtual ostream& ToString(ostream& stream) const;
+  virtual ostream& ToString(ostream* stream) const;
 
  private:
   boost::shared_ptr<boost::asio::io_service> client_io_service_;

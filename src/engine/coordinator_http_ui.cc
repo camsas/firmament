@@ -9,6 +9,13 @@
 
 namespace firmament {
 
+using pion::net::HTTPResponseWriter;
+using pion::net::HTTPResponseWriterPtr;
+using pion::net::HTTPResponse;
+using pion::net::HTTPTypes;
+using pion::net::HTTPServer;
+using pion::net::TCPConnection;
+
 CoordinatorHTTPUI::CoordinatorHTTPUI(Coordinator *coordinator) {
   coordinator_ = coordinator;
 }

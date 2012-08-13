@@ -7,6 +7,8 @@
 
 #include "misc/utils.h"
 
+#include <string>
+
 namespace firmament {
 
 uint64_t MakeJobUID(Job *job) {

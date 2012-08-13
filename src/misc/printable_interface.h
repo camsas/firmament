@@ -13,14 +13,15 @@ namespace firmament {
 
 class PrintableInterface {
  public:
-  virtual ostream& ToString(ostream& stream) const = 0;
+  virtual ~PrintableInterface() {}
+  virtual ostream& ToString(ostream* stream) const = 0;
 };
 
 template <typename CharT, typename Traits>
 basic_ostream<CharT, Traits>& operator<<(
     basic_ostream<CharT, Traits>& stream,
     const PrintableInterface& p) {
-  return p.ToString(stream);
+  return p.ToString(&stream);
 }
 
 }  // namespace firmament

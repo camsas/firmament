@@ -7,6 +7,7 @@
 #define FIRMAMENT_PLATFORMS_UNIX_MESSAGING_STREAMSOCKETS_H
 
 #include <string>
+#include <vector>
 
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
@@ -30,8 +31,7 @@ template <class T>
 class StreamSocketsChannel;  // forward declaration
 
 // Messaging adapter.
-class StreamSocketsMessaging :
-  public firmament::MessagingInterface,
+class StreamSocketsMessaging : public firmament::MessagingInterface,
   public boost::enable_shared_from_this<StreamSocketsMessaging>,
   private boost::noncopyable {
  public:

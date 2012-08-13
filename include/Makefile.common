@@ -70,14 +70,16 @@ $(OBJ_DIR)/%.pb.o: $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc \
 # Make unit test object file (special case).
 $(TEST_OBJ_DIR)/%_test.o: %_test.cc .setup
 	$(call quiet-command, \
-		$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+		$(CXX) $(CPPFLAGS) $(CXXFLAGS) \
+		-c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		-I$(SRC_GEN_DIR)/$(SUFFIX)/ -o $@, \
 		"  TESTC   $@")
 
 # Make object file (generic).
 $(OBJ_DIR)/%.o: %.cc %.h .setup
 	$(call quiet-command, \
-		$(CXX) $(CPPFLAGS) -c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+		$(CXX) $(CPPFLAGS) $(CXXFLAGS) \
+		-c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		-I$(SRC_GEN_DIR)/$(SUFFIX)/ -o $@, \
 		"  CXX     $@")
 

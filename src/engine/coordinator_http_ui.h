@@ -18,15 +18,16 @@
 
 namespace firmament {
 
-using namespace pion;
-using namespace pion::net;
+using pion::net::HTTPServerPtr;
+using pion::net::HTTPRequestPtr;
+using pion::net::TCPConnectionPtr;
 
 // Forward declaration
 class Coordinator;
 
 class CoordinatorHTTPUI {
  public:
-  CoordinatorHTTPUI(Coordinator *coordinator);
+  explicit CoordinatorHTTPUI(Coordinator *coordinator);
   virtual ~CoordinatorHTTPUI();
   void init(uint32_t port);
   void handleRootURI(HTTPRequestPtr& http_request, TCPConnectionPtr& tcp_conn);

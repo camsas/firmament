@@ -6,9 +6,12 @@
 
 #include "engine/coordinator.h"
 
-#include <boost/uuid/uuid_generators.hpp>
 #include <string>
+#ifdef __PLATFORM_HAS_BOOST__
+#include <boost/uuid/uuid_generators.hpp>
+#endif
 
+#include "base/resource_desc.pb.h"
 #include "misc/protobuf_envelope.h"
 
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "

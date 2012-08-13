@@ -7,10 +7,18 @@
 #ifndef FIRMAMENT_ENGINE_COORDINATOR_H
 #define FIRMAMENT_ENGINE_COORDINATOR_H
 
+#include <string>
+
+// XXX(malte): Think about the Boost dependency!
+#ifdef __PLATFORM_HAS_BOOST__
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/uuid/uuid.hpp>
+#else
+// Currently this won't build if __PLATFORM_HAS_BOOST__ is not defined.
+#error __PLATFORM_HAS_BOOST__ not set, so cannot build coordinator!
+#endif
 
 #include "base/common.h"
 #include "base/types.h"
@@ -21,14 +29,13 @@
 #include "engine/coordinator_http_ui.h"
 #include "engine/topology_manager.h"
 
-using namespace boost::posix_time;
-using namespace boost::gregorian;
-using boost::scoped_ptr;
-using boost::shared_ptr;
-using firmament::machine::topology::TopologyManager;
-
 namespace firmament {
 
+#ifdef __PLATFORM_HAS_BOOST__
+using boost::scoped_ptr;
+using boost::shared_ptr;
+#endif
+using machine::topology::TopologyManager;
 using platform_unix::streamsockets::StreamSocketsChannel;
 using platform_unix::streamsockets::StreamSocketsMessaging;
 

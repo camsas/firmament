@@ -15,7 +15,7 @@ typedef ::google::protobuf::Message Message;
 
 // Message envelope.
 template <>
-class Envelope<Message> {
+class Envelope<Message> : public PrintableInterface {
  public:
   explicit Envelope(Message *data) : data_(data) {}
   virtual size_t size() const {
@@ -26,6 +26,10 @@ class Envelope<Message> {
   }
   virtual bool Serialize(void *buffer, size_t length) const {
     return data_->SerializeToArray(buffer, length);
+  }
+  virtual ostream& ToString(ostream* stream) const {
+    return *stream << "(Envelope,size=" << size() << ",at=" << this
+                   << ",data=" << data_->DebugString() << ")";
   }
  private:
   Message* data_;

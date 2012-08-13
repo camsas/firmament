@@ -5,6 +5,8 @@
 
 #include "platforms/unix/tcp_connection.h"
 
+#include <vector>
+
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>

@@ -44,6 +44,9 @@ tests-clean:
 	mkdir -p build/tests
 	touch build/tests/all_tests.txt
 
+lint:
+	python tests/all_lint.py src/
+
 clean:
 	rm -rf build
 	rm -rf src/generated/*

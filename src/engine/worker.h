@@ -7,6 +7,17 @@
 #ifndef FIRMAMENT_ENGINE_WORKER_H
 #define FIRMAMENT_ENGINE_WORKER_H
 
+#include <string>
+
+// XXX(malte): Think about the Boost dependency!
+#ifdef __PLATFORM_HAS_BOOST__
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#else
+// Currently this won't build if __PLATFORM_HAS_BOOST__ is not defined.
+#error __PLATFORM_HAS_BOOST__ not set, so cannot build worker!
+#endif
+
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
@@ -16,10 +27,6 @@
 #include "platforms/unix/messaging_streamsockets-inl.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
 
-using boost::posix_time::ptime;
-using boost::posix_time::second_clock;
-using boost::posix_time::seconds;
-
 namespace firmament {
 
 using platform_unix::streamsockets::StreamSocketsMessaging;
@@ -27,7 +34,7 @@ using platform_unix::streamsockets::StreamSocketsChannel;
 
 class Worker {
  public:
-  Worker(PlatformID platform_id);
+  explicit Worker(PlatformID platform_id);
   void Run();
   void AwaitNextMessage();
   bool RunCoordinatorDiscovery(const string &coordinator_uri);
@@ -37,7 +44,11 @@ class Worker {
   }
  protected:
   PlatformID platform_id_;
+#ifdef __PLATFORM_HAS_BOOST__
   boost::shared_ptr<StreamSocketsMessaging> m_adapter_;
+#else
+  StreamSocketsMessaging *m_adapter_;
+#endif
   StreamSocketsChannel<Message> chan_;
   bool exit_;
   string coordinator_uri_;

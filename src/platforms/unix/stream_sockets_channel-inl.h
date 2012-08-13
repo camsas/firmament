@@ -8,10 +8,10 @@
 
 #include "platforms/unix/stream_sockets_channel.h"
 
-#include <boost/asio.hpp>
-
+#include <vector>
 #include <string>
 
+#include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
@@ -225,8 +225,8 @@ void StreamSocketsChannel<T>::Close() {
 }
 
 template <class T>
-ostream& StreamSocketsChannel<T>::ToString(ostream& stream) const {
-  return stream << "(StreamSocket,type=" << type_ << ",at=" << this << ")";
+ostream& StreamSocketsChannel<T>::ToString(ostream* stream) const {
+  return *stream << "(StreamSocket,type=" << type_ << ",at=" << this << ")";
 }
 
 

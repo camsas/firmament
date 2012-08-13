@@ -6,6 +6,8 @@
 #ifndef FIRMAMENT_PLATFORMS_COMMON_H
 #define FIRMAMENT_PLATFORMS_COMMON_H
 
+#include <string>
+
 #include "platforms/common.pb.h"
 
 namespace firmament {
