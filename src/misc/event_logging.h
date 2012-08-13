@@ -14,8 +14,9 @@
 #define FIRMAMENT_MISC_EVENT_LOGGING_H_
 
 #include <string>
-#include <iostream>
-#include <fstream>
+#include <vector>
+#include <iostream>  // NOLINT
+#include <fstream>  // NOLINT
 
 #include "base/common.h"
 
@@ -56,6 +57,7 @@ class EventLogger {
                               uint64_t job_uid,
                               uint64_t ensemble_uid,
                               uint64_t num_tasks);
+
  private:
   // Stream buffer used for outputting the log events.
   ofstream *buffer_;

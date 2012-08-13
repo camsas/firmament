@@ -4,16 +4,13 @@
 // Initialization code for worker binary. This delegates to the Worker class
 // almost immediately after launching.
 
-#include <stdint.h>
-#include <iostream>
-
 #include "base/common.h"
 #include "engine/worker.h"
 #include "platforms/common.h"
 
 #include "platforms/common.pb.h"
 
-using namespace firmament;
+using namespace firmament;  // NOLINT
 
 // --platform argument: string matching members of the <PlatformID> enum
 DECLARE_string(platform);

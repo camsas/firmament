@@ -11,11 +11,13 @@
 #include "base/common.h"
 #include "engine/coordinator.h"
 
-using namespace firmament;
-
 DECLARE_string(platform);
 
 namespace {
+
+using firmament::Coordinator;
+using firmament::GetPlatformID;
+using firmament::PlatformID;
 
 // The fixture for testing class Coordinator.
 class CoordinatorTest : public ::testing::Test {
@@ -44,8 +46,8 @@ class CoordinatorTest : public ::testing::Test {
     // before the destructor).
   }
 
-  // Objects declared here can be used by all tests in the test case for Coordinator.
-  //Coordinator w_;
+  // Objects declared here can be used by all tests in the test case for
+  // Coordinator.
 };
 
 // Tests that the platform gets set correctly when instantiating a worker.
@@ -54,7 +56,7 @@ TEST_F(CoordinatorTest, PlatformSetTest) {
   FLAGS_v = 1;
   Coordinator test_coordinator(GetPlatformID(FLAGS_platform));
   // We expect this worker to have been configured as a UNIX worker.
-  EXPECT_EQ(test_coordinator.platform_id(), PL_UNIX);
+  EXPECT_EQ(test_coordinator.platform_id(), firmament::PL_UNIX);
 }
 
 }  // namespace

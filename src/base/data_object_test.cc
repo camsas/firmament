@@ -11,9 +11,9 @@
 #include "base/common.h"
 #include "base/data_object.h"
 
-using namespace firmament;
-
 namespace {
+
+using firmament::DataObject;
 
 class DataObjectTest : public ::testing::Test {
  protected:

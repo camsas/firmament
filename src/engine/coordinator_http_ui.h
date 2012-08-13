@@ -30,7 +30,8 @@ class CoordinatorHTTPUI {
   explicit CoordinatorHTTPUI(Coordinator *coordinator);
   virtual ~CoordinatorHTTPUI();
   void init(uint32_t port);
-  void handleRootURI(HTTPRequestPtr& http_request, TCPConnectionPtr& tcp_conn);
+  void handleRootURI(HTTPRequestPtr& http_request,  // NOLINT
+                     TCPConnectionPtr& tcp_conn);
  protected:
   HTTPServerPtr coordinator_http_server_;
   Coordinator *coordinator_;

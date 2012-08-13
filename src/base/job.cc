@@ -5,6 +5,8 @@
 
 #include "base/job.h"
 
+#include <string>
+
 namespace firmament {
 
 Job::Job(const string& name)

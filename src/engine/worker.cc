@@ -33,14 +33,14 @@ Worker::Worker(PlatformID platform_id)
     chan_(StreamSocketsChannel<Message>::SS_TCP),
     exit_(false),
     uuid_(GenerateUUID()) {
-  string hostname = ""; //platform_.GetHostname();
+  string hostname = "";  // platform_.GetHostname();
   VLOG(1) << "Worker starting on host " << hostname << ", platform "
           << platform_id;
   // Start up a worker according to the platform parameter
   switch (platform_id) {
     case PL_UNIX: {
       // Initiate UNIX worker.
-      //worker_ = new UnixWorker();
+      // worker_ = new UnixWorker();
       break;
     }
     default:

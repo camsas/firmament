@@ -8,6 +8,8 @@
 #ifndef FIRMAMENT_BASE_RESOURCE_H
 #define FIRMAMENT_BASE_RESOURCE_H
 
+#include <string>
+
 #include "base/common.h"
 #include "base/task.h"
 #include "base/ensemble.h"

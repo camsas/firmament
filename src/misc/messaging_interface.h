@@ -6,6 +6,8 @@
 #ifndef FIRMAMENT_MISC_MESSAGING_INTERFACE_H
 #define FIRMAMENT_MISC_MESSAGING_INTERFACE_H
 
+#include <string>
+
 #include "base/common.h"
 #include "misc/envelope.h"
 #include "misc/printable_interface.h"
@@ -37,6 +39,8 @@ class MessagingChannelInterface : public PrintableInterface {
 
 class MessagingInterface {
  public:
+  // Virtual destructor (mandated by having virtual methods).
+  virtual ~MessagingInterface() {}
   // Set up a messaging channel to a remote endpoint.
   template <class T>
   bool EstablishChannel(const string& endpoint_uri,

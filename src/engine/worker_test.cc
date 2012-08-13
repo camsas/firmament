@@ -11,11 +11,12 @@
 #include "base/common.h"
 #include "engine/worker.h"
 
-using namespace firmament;
-
 DECLARE_string(platform);
 
 namespace {
+
+using firmament::Worker;
+using firmament::GetPlatformID;
 
 // The fixture for testing class Worker.
 class WorkerTest : public ::testing::Test {
@@ -45,7 +46,6 @@ class WorkerTest : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests in the test case for Worker.
-  //Worker w_;
 };
 
 // Tests that the platform gets set correctly when instantiating a worker.
@@ -54,7 +54,7 @@ TEST_F(WorkerTest, PlatformSetTest) {
   FLAGS_v = 1;
   Worker unix_worker(GetPlatformID(FLAGS_platform));
   // We expect this worker to have been configured as a UNIX worker.
-  EXPECT_EQ(unix_worker.platform_id(), PL_UNIX);
+  EXPECT_EQ(unix_worker.platform_id(), firmament::PL_UNIX);
 }
 
 }  // namespace

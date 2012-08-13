@@ -38,7 +38,8 @@ Coordinator::Coordinator(PlatformID platform_id)
 
   switch (platform_id) {
     case PL_UNIX: {
-      m_adapter_.reset(new platform_unix::streamsockets::StreamSocketsMessaging());
+      m_adapter_.reset(
+          new platform_unix::streamsockets::StreamSocketsMessaging());
       break;
     }
     default:
@@ -72,13 +73,9 @@ void Coordinator::Run() {
 }
 
 void Coordinator::AwaitNextMessage() {
-  //VLOG_EVERY_N(2, 1000) << "Waiting for next message...";
+  // VLOG_EVERY_N(2, 1000) << "Waiting for next message...";
   uint64_t num_channels = m_adapter_->active_channels().size();
   for (uint64_t i = 0; i < num_channels; ++i) {
-  /*for (vector<shared_ptr<StreamSocketsChannel<Message> > >::const_iterator chan_iter =
-       m_adapter_->active_channels().begin();
-       chan_iter < m_adapter_->active_channels().end();
-       ++chan_iter) {*/
     boost::shared_ptr<StreamSocketsChannel<Message> > chan =
         m_adapter_->GetChannelForConnection(i);
     VLOG(1) << "Trying to receive on channel " << i << " at " << *chan;
@@ -91,7 +88,6 @@ void Coordinator::AwaitNextMessage() {
             << ", contents: " << endl << rd.DebugString();
   }
   VLOG(2) << "Looped over " << num_channels << " channels.";
-  //boost::thread::yield();
   boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 

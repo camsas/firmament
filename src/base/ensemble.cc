@@ -5,14 +5,14 @@
 // N.B.: Much of the code in this class is subject to change in the near
 // future.
 
-#include <glog/logging.h>
-
 #include "base/ensemble.h"
+
+#include <string>
 
 namespace firmament {
 
-Ensemble::Ensemble(const string& name) :
-  num_idle_resources_(0) {
+Ensemble::Ensemble(const string& name)
+    : num_idle_resources_(0) {
   descriptor_.set_name(name);
   LOG(INFO) << "Ensemble \"" << name << "\" constructed.";
 }
@@ -22,13 +22,13 @@ Ensemble::~Ensemble() {
   // dropping their descriptors!
   descriptor_.clear_joined_resources();
   descriptor_.clear_nested_ensembles();
-  // TODO: check if we still have running tasks
+  // TODO(malte): check if we still have running tasks
   LOG(INFO) << "Ensemble \"" << descriptor_.name() << "\" destroyed.";
   // N.B.: The ensemble descriptor gets deallocated automaticallywith the
   // object.
 }
 
-void Ensemble::AddResource(ResourceDescriptor& resource) {
+void Ensemble::AddResource(const ResourceDescriptor& resource) {
   CHECK_GE(descriptor_.joined_resources_size(), 0);
   VLOG(1) << "Adding resource " << resource.name() << " at " << &resource;
   // TODO(malte): This is somewhat ugly; the protobuf API only allows us to add
@@ -43,13 +43,13 @@ void Ensemble::AddResource(ResourceDescriptor& resource) {
     ++num_idle_resources_;
 }
 
-void Ensemble::AddTask(Task& task) {
-  // TODO: Schedule the task
+void Ensemble::AddTask(const Task& task) {
+  // TODO(malte): Schedule the task
   LOG(FATAL) << "Unimplemented, task: " << &task;
 }
 
 bool Ensemble::AddJob(Job *const job) {
-  // TODO: currently a stub
+  // TODO(malte): currently a stub
   LOG(WARNING) << "Unimplemented, job: " << job;
   return true;
 }
@@ -70,8 +70,8 @@ bool Ensemble::AddNestedEnsemble(EnsembleDescriptor *ensemble) {
 
 bool Ensemble::AddPeeredEnsemble(EnsembleDescriptor *ensemble) {
   // Adds a peered ensemble
-  // TODO: this is obviously a massive simplification of the actual peering
-  // process.
+  // TODO(malte): this is obviously a massive simplification of the actual
+  // peering process.
   EnsembleDescriptor* new_ensemble_desc = descriptor_.add_peered_ensembles();
   *new_ensemble_desc = *ensemble;  // copy!
   return true;
@@ -93,7 +93,7 @@ uint64_t Ensemble::NumIdleResources(bool include_peers) {
        descriptor_.nested_ensembles().begin();
        ne_iter != descriptor_.nested_ensembles().end();
        ++ne_iter)
-    //num_nested_idle += (*ne_iter)->NumIdleResources(false);
+    // num_nested_idle += (*ne_iter)->NumIdleResources(false);
 
   if (include_peers) {
     for (RepeatedPtrField<EnsembleDescriptor>::const_iterator p_iter =
@@ -101,7 +101,7 @@ uint64_t Ensemble::NumIdleResources(bool include_peers) {
          p_iter != descriptor_.peered_ensembles().end();
          ++p_iter)
       num_peered_idle += 0;  // XXX(malte): broken, need to redesign!
-      //num_peered_idle += (*p_iter)->NumIdleResources(false);
+      // num_peered_idle += (*p_iter)->NumIdleResources(false);
   }
 
   return num_idle_resources_ + num_nested_idle + num_peered_idle;

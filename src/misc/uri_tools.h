@@ -6,6 +6,7 @@
 #ifndef FIRMAMENT_MISC_URI_TOOLS_H
 #define FIRMAMENT_MISC_URI_TOOLS_H
 
+#include <string>
 #include <boost/regex.hpp>
 
 namespace firmament {
@@ -24,8 +25,8 @@ class URITools {
       VLOG(3) << "Parsed hostname: " << m[2];
       return m[2];  // hostname component of match
     } else {
-      LOG(WARNING) << "No hostname could be matched in URI " << uri << "! (" << m.size()
-                   << " matches).";
+      LOG(WARNING) << "No hostname could be matched in URI " << uri << "! ("
+                   << m.size() << " matches).";
       return "";
     }
   }

@@ -4,6 +4,7 @@
 
 #include "engine/coordinator_http_ui.h"
 
+#include <string>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/bind.hpp>
 
@@ -24,8 +25,8 @@ CoordinatorHTTPUI::~CoordinatorHTTPUI() {
   LOG(INFO) << "Coordinator HTTP UI server shut down.";
 }
 
-void CoordinatorHTTPUI::handleRootURI(HTTPRequestPtr& http_request,
-                                      TCPConnectionPtr& tcp_conn) {
+void CoordinatorHTTPUI::handleRootURI(HTTPRequestPtr& http_request,  // NOLINT
+                                      TCPConnectionPtr& tcp_conn) {  // NOLINT
   VLOG(2) << "[HTTPREQ] Serving " << http_request->getResource();
   static const std::string kHTMLStart("<html><body>\n");
   static const std::string kHTMLEnd("</body></html>\n");
@@ -43,7 +44,7 @@ void CoordinatorHTTPUI::handleRootURI(HTTPRequestPtr& http_request,
 
   writer->writeNoCopy(kHTMLStart);
   writer->write(coordinator_->uuid());
-  //writer->write(http_request->getResource());
+  /*writer->write(http_request->getResource());*/
 
 /*  if (params.size() > 0) {
     writer->write(" has the following parameters: <br>");
@@ -70,11 +71,13 @@ void CoordinatorHTTPUI::init(uint32_t port) {
     }
     // Otherwise, make such an object and store it.
     coordinator_http_server_.reset(new HTTPServer(port));
-    coordinator_http_server_->addResource("/", boost::bind(&CoordinatorHTTPUI::handleRootURI, this, _1, _2));
+    coordinator_http_server_->addResource("/", boost::bind(
+        &CoordinatorHTTPUI::handleRootURI, this, _1, _2));
     coordinator_http_server_->start();  // spawns a thread!
     LOG(INFO) << "Coordinator HTTP interface up!";
-  } catch (std::exception& e) {
-    LOG(ERROR) << "Failed running the coordinator's HTTP UI due to " <<  e.what();
+  } catch(const std::exception& e) {
+    LOG(ERROR) << "Failed running the coordinator's HTTP UI due to "
+               << e.what();
   }
 }
 

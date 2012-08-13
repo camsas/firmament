@@ -8,8 +8,7 @@
 
 #include <stdint.h>
 
-#include <sstream>
-#include <iostream>
+#include <sstream>  // NOLINT
 #include <vector>
 #include <string>
 #include <limits>
@@ -17,14 +16,14 @@
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 
-using namespace std;
+using namespace std;  // NOLINT
 
 namespace firmament {
 
 // Helper function to convert an arbitrary object to a string via the
 // stringstream standard library class.
-template <class T> inline string to_string (const T& t) {
-  std::stringstream ss;
+template <class T> inline string to_string(const T& t) {
+  stringstream ss;
   ss << t;
   return ss.str();
 }

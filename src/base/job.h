@@ -8,6 +8,9 @@
 #ifndef FIRMAMENT_BASE_JOB_H
 #define FIRMAMENT_BASE_JOB_H
 
+#include <vector>
+#include <string>
+
 #include "base/common.h"
 #include "base/task.h"
 
@@ -27,17 +30,17 @@ class Job {
     UNKNOWN = 5
   };
 
-  Job(const string& name);
+  explicit Job(const string& name);
   const string& name() { return name_; }
   void set_name(const string& name) { name_ = name; }
   JobState state() { return static_cast<JobState>(state_); }
   void set_state(JobState state) {
     state_ = static_cast<JobState>(state);
   }
-  uint32_t TaskState(uint64_t task_id) {   // TODO: type
+  uint32_t TaskState(uint64_t task_id) {   // TODO(malte): type
     CHECK_LE(task_id, tasks_.size());
-    //return static_cast<Task::TaskState>(tasks_[task_id]->state());
-    //return tasks_[task_id]->state();
+    // return static_cast<Task::TaskState>(tasks_[task_id]->state());
+    // return tasks_[task_id]->state();
     return 0;
   }
   bool AddTask(Task *const t);
@@ -54,9 +57,7 @@ class Job {
   uint32_t state_;
   vector<Task*> tasks_;
   uint64_t num_tasks_running_;
- private:
 };
-
-}
+}  // namespace firmament
 
 #endif  // FIRMAMENT_BASE_JOB_H

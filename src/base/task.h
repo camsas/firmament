@@ -10,6 +10,8 @@
 #ifndef FIRMAMENT_BASE_TASK_H
 #define FIRMAMENT_BASE_TASK_H
 
+#include <string>
+
 #include "base/common.h"
 #include "base/job.h"
 
@@ -19,7 +21,7 @@ namespace firmament {
 
 class Task {
  public:
-  Task(const string& name);
+  explicit Task(const string& name);
   uint64_t uid() { return descriptor_.uid(); }
   uint64_t index_in_job() { return descriptor_.index(); }
   void set_index_in_job(const uint64_t idx) { descriptor_.set_index(idx); }

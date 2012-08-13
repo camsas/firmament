@@ -4,16 +4,13 @@
 // Initialization code for coordinator binary. This delegates to the
 // Coordinator class almost immediately after launching.
 
-#include <stdint.h>
-#include <iostream>
-
 #include "base/common.h"
 #include "engine/coordinator.h"
 #include "platforms/common.h"
 
 #include "platforms/common.pb.h"
 
-using namespace firmament;
+using namespace firmament;  // NOLINT
 
 // --platform argument: string matching members of the <PlatformID> enum
 DECLARE_string(platform);
