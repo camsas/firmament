@@ -128,25 +128,34 @@ bool StreamSocketsChannel<T>::Ready() {
 // Synchronous send
 template <class T>
 bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
-  VLOG(1) << "Trying to send message of size " << message.size()
+  VLOG(2) << "Trying to send message of size " << message.size()
           << " on channel " << *this;
   size_t msg_size = message.size();
   vector<char> buf(msg_size);
   CHECK(message.Serialize(&buf[0], message.size()));
   // Send data size
-  // XXX(malte): error handling!
-  boost::asio::write(
+  boost::system::error_code error;
+  size_t len;
+  len = boost::asio::write(
       *client_socket_, boost::asio::buffer(
-          reinterpret_cast<char*>(&msg_size), sizeof(msg_size)));
-          /*boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
-                      boost::asio::placeholders::error,
-                      boost::asio::placeholders::bytes_transferred));*/
+          reinterpret_cast<char*>(&msg_size), sizeof(msg_size)),
+             boost::asio::transfer_at_least(sizeof(size_t)), error);
+  if (error || len != sizeof(size_t)) {
+    VLOG(1) << "Error sending size preamble on connection: "
+            << error.message();
+    return false;
+  }
   // Send the data
-  boost::asio::write(
-      *client_socket_, boost::asio::buffer(buf, msg_size));
-      /*boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
-                  boost::asio::placeholders::error,
-                  boost::asio::placeholders::bytes_transferred));*/
+  len = boost::asio::write(
+      *client_socket_, boost::asio::buffer(buf, msg_size),
+             boost::asio::transfer_at_least(msg_size), error);
+  if (error || len != msg_size) {
+    VLOG(1) << "Error sending message on connection: "
+            << error.message();
+    return false;
+  } else {
+    VLOG(2) << "Sent " << len << " bytes of protobuf data...";
+  }
   return true;
 }
 
@@ -178,7 +187,7 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   len = read(*client_socket_, size_m_buf,
              boost::asio::transfer_at_least(sizeof(size_t)), error);
   if (error || len != sizeof(size_t)) {
-    VLOG(2) << "Error reading from connection: " << error.message();
+    VLOG(1) << "Error reading from connection: " << error.message();
     return false;
   }
   // ... we can get away with a simple CHECK here and assume that we have some
@@ -194,10 +203,10 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   VLOG(2) << "Read " << len << " bytes.";
 
   if (error == boost::asio::error::eof) {
-    VLOG(2) << "Received EOF, connection terminating!";
+    VLOG(1) << "Received EOF, connection terminating!";
     return false;
   } else if (error) {
-    VLOG(2) << "Error reading from connection: "
+    VLOG(1) << "Error reading from connection: "
             << error.message();
     return false;
   } else {
