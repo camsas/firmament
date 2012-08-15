@@ -29,7 +29,7 @@ sim: base misc
 misc: messages ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/misc all
 
-messages: ext
+messages: base ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/messages all
 
 # N.B.: This currently builds *all* platforms; we probably want a configure

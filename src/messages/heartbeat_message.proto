@@ -1,0 +1,19 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// HeartbeatMessage is a simple keep-alive message that reports on a live
+// resource. It also implicitly triggers registration.
+
+package firmament;
+
+import "messages/base_message.proto";
+import "base/resource_desc.proto";
+
+extend BaseMessage {
+  optional HeartbeatMessage heartbeat_extn = 102;
+}
+
+message HeartbeatMessage {
+  required string uuid = 1;
+  optional ResourceDescriptor res_desc = 2;
+}
