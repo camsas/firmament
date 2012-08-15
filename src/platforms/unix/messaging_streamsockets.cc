@@ -24,21 +24,21 @@ namespace streamsockets {
 StreamSocketsMessaging::~StreamSocketsMessaging() {
 }
 
-Message* StreamSocketsMessaging::AwaitNextMessage() {
+BaseMessage* StreamSocketsMessaging::AwaitNextMessage() {
   LOG(FATAL) << "Unimplemented!";
   return NULL;
 }
 
 void StreamSocketsMessaging::AddChannelForConnection(
     TCPConnection::connection_ptr connection) {
-  shared_ptr<StreamSocketsChannel<Message> > channel(
-          new StreamSocketsChannel<Message>(connection->socket()));
+  shared_ptr<StreamSocketsChannel<BaseMessage> > channel(
+          new StreamSocketsChannel<BaseMessage>(connection->socket()));
   VLOG(1) << "Adding back-channel for connection at " << connection
           << ", channel is " << *channel;
   active_channels_.push_back(channel);
 }
 
-shared_ptr<StreamSocketsChannel<Message> >
+shared_ptr<StreamSocketsChannel<BaseMessage> >
 StreamSocketsMessaging::GetChannelForConnection(
     uint64_t connection_id) {
   CHECK_LT(connection_id, active_channels_.size());
@@ -76,7 +76,8 @@ void StreamSocketsMessaging::SendOnConnection(uint64_t connection_id) {
     boost::this_thread::yield();
   }
   // Actually send the data on the (now ready) TCP connection
-  tcp_server_->connection(connection_id)->Send();
+  //tcp_server_->connection(connection_id)->Send();
+  LOG(FATAL) << "Unimplemented!";
 }
 
 void StreamSocketsMessaging::StopListen() {

@@ -1,6 +1,6 @@
 package firmament;
 
-import "resource_desc.proto";
+import "base/resource_desc.proto";
 
 message EnsembleDescriptor {
   required uint64 uid = 1;

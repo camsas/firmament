@@ -162,7 +162,25 @@ bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
 // Asynchronous send
 template <class T>
 bool StreamSocketsChannel<T>::SendA(const Envelope<T>& message) {
-  VLOG(1) << "Trying to send message: " << &message;
+  VLOG(2) << "Trying to asynchronously send message: " << message;
+  size_t msg_size = message.size();
+  vector<char> buf(msg_size);
+  CHECK(message.Serialize(&buf[0], message.size()));
+  // XXX(malte): error handling!
+  // Synchronously send data size first
+/*  boost::asio::write(
+      *client_socket_, boost::asio::buffer(
+          reinterpret_cast<char*>(&msg_size), sizeof(msg_size)),
+          boost::bind(&StreamSocketsChannel::AsyncWriteSecondStage,
+                      shared_from_this(),
+                      boost::asio::placeholders::error,
+                      boost::asio::placeholders::bytes_transferred));*/
+  // Send the data
+/*  boost::asio::async_write(
+      *client_socket_, boost::asio::buffer(buf, msg_size));*/
+      /*boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
+                  boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));*/
   LOG(FATAL) << "Unimplemented!";
   return false;
 }

@@ -40,13 +40,11 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
   }
   bool Ready() { return ready_; }
   void Start();
-  void Send();
+  //void Send();
  private:
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
   tcp::socket socket_;
-  // XXX(malte): get rid of this
-  TestMessage message_;
   bool ready_;
 };
 

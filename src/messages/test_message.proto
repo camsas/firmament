@@ -1,0 +1,16 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// TestMessage is a simple test protobuf message used mainly in unit tests.
+
+package firmament;
+
+import "messages/base_message.proto";
+
+extend BaseMessage {
+  optional TestMessage test_extn = 101;
+}
+
+message TestMessage {
+  optional int64 test = 1 [default = 42];
+}

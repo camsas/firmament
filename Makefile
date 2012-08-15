@@ -4,7 +4,7 @@
 # Get common build settings
 include include/Makefile.config
 
-all: tests-clean info ext platforms engine doc
+all: tests-clean info ext platforms misc engine doc
 
 info:
 	@echo "Build using $(CXX)"
@@ -26,12 +26,15 @@ base: ext
 sim: base misc
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim all
 
-misc: ext
+misc: messages ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/misc all
+
+messages: ext
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/messages all
 
 # N.B.: This currently builds *all* platforms; we probably want a configure
 #       script to decide which ones to build!
-platforms:
+platforms: messages
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/platforms all
 
 nonext: engine doc

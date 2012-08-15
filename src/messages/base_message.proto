@@ -1,0 +1,28 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// BaseMessage is the root element of Firmament's message hierarchy. Any message
+// can be treated as a BaseMessage, and this is the type used for transmission
+// channels. Subordinate messages are implemented as protobuf extensions, and
+// need to be registered in the comment below.
+//
+// **Note:** Protobuf message extensions have no formal inheritance relationship
+// to their containers; thus, "subordinate" here is conceptual, rather than in
+// terms of C++ inheritance. In particular, a subordinate message CANNOT be
+// passed around or otherwise treated as a BaseMessage, including referencing it
+// by BaseMessage pointers or references.
+
+package firmament;
+
+// Extension registry:
+// -------------------
+// 101  - TestMessage
+// 102  - <free>
+// ...
+// 1000 - <free>
+
+message BaseMessage {
+  // TODO(malte): Think about having a type identifier in here, and use a
+  // special "batch message" type to indicate presence of multiple extensions.
+  extensions 100 to 1000;
+}

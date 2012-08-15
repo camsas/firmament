@@ -29,7 +29,7 @@ void EventLogger::LogEvent(LogEventType type, double time,
                            const vector<string> &parameters) {
   // <event_type_id> <timestamp> <parameters...>
   string s = to_string(type) + " " + to_string(time);
-  for (int i = 0; i < parameters.size(); ++i) {
+  for (uint64_t i = 0; i < parameters.size(); ++i) {
     s += (" " + parameters[i]);
   }
   // Write out the line

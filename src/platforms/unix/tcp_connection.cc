@@ -23,11 +23,10 @@ TCPConnection::~TCPConnection() {
 }
 
 void TCPConnection::Start() {
-  message_.set_test(43);
   ready_ = true;
 }
 
-void TCPConnection::Send() {
+/*void TCPConnection::Send() {
   // XXX: this needs to change, of course
   VLOG(2) << "Sending message of length " << message_.ByteSize()
           << " in server...";
@@ -47,7 +46,7 @@ void TCPConnection::Send() {
       boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
                   boost::asio::placeholders::error,
                   boost::asio::placeholders::bytes_transferred));
-}
+}*/
 
 void TCPConnection::HandleWrite(const boost::system::error_code& error,
                                 size_t bytes_transferred) {

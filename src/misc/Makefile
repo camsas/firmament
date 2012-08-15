@@ -1,12 +1,19 @@
 ROOT_DIR=../..
 SUFFIX=misc
 
-include ../../include/Makefile.config
-include ../../include/Makefile.common
+include $(ROOT_DIR)/include/Makefile.config
+include $(ROOT_DIR)/include/Makefile.common
 
-all: libfirmamemnt_misc.a
+LIB = libfirmament_misc.a
+OBJS = event_logging.o utils.o
+PBS =
+TESTS = envelope_test
+TESTS_DEPS = $(OBJ_DIR)/../messages/libfirmament_messages.a
 
-libfirmament_misc.a: event_logging.o utils.o
-	$(AR) rcs $(BUILD_DIR)/misc/libfirmament_misc.a \
-	    $(BUILD_DIR)/misc/event_logging.o \
-	    $(BUILD_DIR)/misc/utils.o
+TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
+
+protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
+
+all: protobufs .setup $(OBJ_LIB) $(TESTS_BIN)
+
+$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS)) $(addprefix $(OBJ_DIR)/, $(PBS))

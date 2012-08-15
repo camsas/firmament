@@ -6,6 +6,8 @@
 #include <gtest/gtest.h>
 
 #include "base/common.h"
+#include "messages/base_message.pb.h"
+#include "messages/test_message.pb.h"
 #include "misc/envelope.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.pb.h"
@@ -17,11 +19,11 @@ using firmament::platform_unix::streamsockets::StreamSocketsMessaging;
 using firmament::platform_unix::streamsockets::StreamSocketsChannel;
 using firmament::common::InitFirmament;
 using firmament::misc::Envelope;
-using firmament::TestMessage;
 using ::google::protobuf::Message;
 using boost::shared_ptr;
 
-namespace {
+namespace firmament {
+namespace platform_unix {
 
 // The fixture for testing the stream socket messaging adapter.
 class StreamSocketsChannelTest : public ::testing::Test {
@@ -55,8 +57,8 @@ class StreamSocketsChannelTest : public ::testing::Test {
     while (!remote_adapter_->ListenReady()) {
       VLOG(1) << "Waiting until ready to listen on remote adapter...";
     }
-    channel_.reset(new StreamSocketsChannel<Message>(
-        StreamSocketsChannel<Message>::SS_TCP));
+    channel_.reset(new StreamSocketsChannel<BaseMessage>(
+        StreamSocketsChannel<BaseMessage>::SS_TCP));
     VLOG(1) << "Establishing channel";
     local_adapter_->EstablishChannel(remote_uri_, channel_.get());
   }
@@ -74,7 +76,7 @@ class StreamSocketsChannelTest : public ::testing::Test {
   shared_ptr<StreamSocketsMessaging> remote_adapter_;
   const string local_uri_;
   const string remote_uri_;
-  shared_ptr<StreamSocketsChannel<Message> > channel_;
+  shared_ptr<StreamSocketsChannel<BaseMessage> > channel_;
 };
 
 // Tests synchronous send of an integer.
@@ -95,29 +97,29 @@ class StreamSocketsChannelTest : public ::testing::Test {
 // Tests synchronous send of a protobuf.
 TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceive) {
   FLAGS_v = 2;
-  TestMessage tm;
-  tm.set_test(5);
-  Envelope<Message> envelope(&tm);
+  BaseMessage tm;
+  tm.MutableExtension(test_extn)->set_test(5);
+  Envelope<BaseMessage> envelope(&tm);
   while (!channel_->Ready()) {  }
   channel_->SendS(envelope);
   // Spin-wait for backchannel to become available
   while (remote_adapter_->active_channels().size() == 0) { }
-  shared_ptr<StreamSocketsChannel<Message> > backchannel =
+  shared_ptr<StreamSocketsChannel<BaseMessage> > backchannel =
       remote_adapter_->GetChannelForConnection(0);
-  TestMessage r_tm;
-  Envelope<Message> recv_env(&r_tm);
+  BaseMessage r_tm;
+  Envelope<BaseMessage> recv_env(&r_tm);
   while (!backchannel->Ready()) {  }
   backchannel->RecvS(&recv_env);
-  CHECK_EQ(r_tm.test(), tm.test());
-  CHECK_EQ(r_tm.test(), 5);
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm, test, test));
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
 }
 
 // Tests synchronous send of multiple subsequent protobufs.
 TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   FLAGS_v = 2;
-  TestMessage tm;
-  tm.set_test(5);
-  Envelope<Message> envelope(&tm);
+  BaseMessage tm;
+  SUBMSG_WRITE(tm, test, test, 5);
+  Envelope<BaseMessage> envelope(&tm);
   while (!channel_->Ready()) {  }
   // send first time
   channel_->SendS(envelope);
@@ -125,41 +127,41 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   channel_->SendS(envelope);
   // Spin-wait for backchannel to become available
   while (remote_adapter_->active_channels().size() == 0) { }
-  shared_ptr<StreamSocketsChannel<Message> > backchannel =
+  shared_ptr<StreamSocketsChannel<BaseMessage> > backchannel =
       remote_adapter_->GetChannelForConnection(0);
-  TestMessage r_tm;
-  Envelope<Message> recv_env(&r_tm);
+  BaseMessage r_tm;
+  Envelope<BaseMessage> recv_env(&r_tm);
   while (!backchannel->Ready()) {  }
   // first receive
   backchannel->RecvS(&recv_env);
-  CHECK_EQ(r_tm.test(), tm.test());
-  CHECK_EQ(r_tm.test(), 5);
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm, test, test));
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
   // second receive
   backchannel->RecvS(&recv_env);
-  CHECK_EQ(r_tm.test(), tm.test());
-  CHECK_EQ(r_tm.test(), 5);
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm, test, test));
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
 }
 
 
 // Tests asynchronous send (and synchronous receive) of a protobuf.
 /*TEST_F(StreamSocketsChannelTest, TCPAsyncProtobufSend) {
   FLAGS_v = 2;
-  TestMessage tm;
-  tm.set_test(5);
-  Envelope<Message> envelope(&tm);
+  BaseMessage tm;
+  SUBMSG_WRITE(tm, test, test, 5);
+  Envelope<BaseMessage> envelope(&tm);
   channel_->SendA(envelope);
-  shared_ptr<StreamSocketsChannel<Message> > backchannel =
+  shared_ptr<StreamSocketsChannel<BaseMessage> > backchannel =
       remote_adapter_->GetChannelForConnection(0);
-  TestMessage r_tm;
-  Envelope<Message> recv_env(&r_tm);
+  BaseMessage r_tm;
+  Envelope<BaseMessage> recv_env(&r_tm);
   backchannel->RecvS(&recv_env);
-  CHECK_EQ(r_tm.test(), tm.test());
-  CHECK_EQ(r_tm.test(), 5);
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm, test, test));
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
 }*/
 
 
-
-}  // namespace
+}  // namespace platform_unix
+}  // namespace firmament
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

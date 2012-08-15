@@ -55,8 +55,8 @@ quiet-command = $(if $(V),$1,$(if $(2),@echo $2 && $1, @$1))
 
 # Generate protobuf source.
 $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.h: %.proto .setup
-	$(call quiet-command,$(PBC) --cpp_out=$(SRC_GEN_DIR)/$(SUFFIX)/ \
-		--proto_path=$(SRC_ROOT_DIR)/$(SUFFIX)/ \
+	$(call quiet-command,$(PBC) --cpp_out=$(SRC_GEN_DIR)/ \
+		--proto_path=$(SRC_ROOT_DIR)/ \
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$<, \
 		"  GEN     $@")
 

@@ -5,7 +5,7 @@
 
 package firmament;
 
-import "task_desc.proto";
+import "base/task_desc.proto";
 
 message ResourceDescriptor {
   enum ResourceState {
