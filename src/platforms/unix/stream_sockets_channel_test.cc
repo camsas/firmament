@@ -24,6 +24,7 @@ using boost::shared_ptr;
 
 namespace firmament {
 namespace platform_unix {
+namespace streamsockets {
 
 // The fixture for testing the stream socket messaging adapter.
 class StreamSocketsChannelTest : public ::testing::Test {
@@ -159,7 +160,7 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
 }*/
 
-
+}  // namespace streamsockets
 }  // namespace platform_unix
 }  // namespace firmament
 

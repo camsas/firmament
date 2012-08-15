@@ -23,6 +23,7 @@ using boost::shared_ptr;
 
 namespace firmament {
 namespace platform_unix {
+namespace streamsockets {
 
 // The fixture for testing the stream socket messaging adapter.
 class StreamSocketsMessagingTest : public ::testing::Test {
@@ -170,7 +171,7 @@ TEST_F(StreamSocketsMessagingTest, BackchannelEstablishment) {
   channel.Close();
 }
 
-
+}  // namespace streamsockets
 }  // namespace platform_unix
 }  // namespace firmament
 
