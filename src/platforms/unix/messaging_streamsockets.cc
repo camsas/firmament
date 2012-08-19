@@ -32,7 +32,7 @@ BaseMessage* StreamSocketsMessaging::AwaitNextMessage() {
 void StreamSocketsMessaging::AddChannelForConnection(
     TCPConnection::connection_ptr connection) {
   shared_ptr<StreamSocketsChannel<BaseMessage> > channel(
-          new StreamSocketsChannel<BaseMessage>(connection->socket()));
+          new StreamSocketsChannel<BaseMessage>(connection));
   VLOG(1) << "Adding back-channel for connection at " << connection
           << ", channel is " << *channel;
   active_channels_.push_back(channel);

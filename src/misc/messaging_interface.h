@@ -11,9 +11,17 @@
 #include "base/common.h"
 #include "misc/envelope.h"
 #include "misc/printable_interface.h"
-#include "platforms/common.h"
 
 namespace firmament {
+
+#ifdef __PLATFORM_UNIX__
+#include "platforms/unix/common.h"
+typedef platform_unix::AsyncSendHandler GenericAsyncSendHandler;
+typedef platform_unix::AsyncRecvHandler GenericAsyncRecvHandler;
+#else
+typedef void(*GenericAsyncSendHandler)(void*, void*);
+typedef void(*GenericAsyncRecvHandler)(void*, void*);
+#endif
 
 typedef ::google::protobuf::Message Message;
 using firmament::misc::Envelope;
@@ -26,11 +34,13 @@ class MessagingChannelInterface : public PrintableInterface {
   // Send (synchronous)
   virtual bool SendS(const Envelope<T>& message) = 0;
   // Send (asynchronous)
-  virtual bool SendA(const Envelope<T>& message) = 0;
+  virtual bool SendA(const Envelope<T>& message,
+                     GenericAsyncSendHandler callback) = 0;
   // Synchronous receive -- blocks until the next message is received.
   virtual bool RecvS(Envelope<T>* message) = 0;
   // Asynchronous receive -- does not block.
-  virtual bool RecvA(Envelope<T>* message) = 0;
+  virtual bool RecvA(Envelope<T>* message,
+                     GenericAsyncRecvHandler callback) = 0;
   // Tear down the channel.
   virtual void Close() = 0;
   // Debug output generating method.

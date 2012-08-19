@@ -16,6 +16,7 @@
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 #include <gtest/gtest_prod.h>
+#include <google/protobuf/message.h>
 
 using namespace std;  // NOLINT
 

@@ -24,13 +24,13 @@
 #include "platforms/unix/tcp_connection.h"
 #include "platforms/unix/async_tcp_server.h"
 
-using boost::asio::ip::tcp;
-using boost::asio::io_service;
-using boost::asio::socket_base;
-
 namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
+
+using boost::asio::ip::tcp;
+using boost::asio::io_service;
+using boost::asio::socket_base;
 
 // ----------------------------
 // StreamSocketsChannel
@@ -56,9 +56,12 @@ StreamSocketsChannel<T>::StreamSocketsChannel(StreamSocketType type)
 }
 
 template <class T>
-StreamSocketsChannel<T>::StreamSocketsChannel(tcp::socket* socket)
-  : client_io_service_(&(socket->get_io_service())),
-    client_socket_(socket),
+StreamSocketsChannel<T>::StreamSocketsChannel(
+    TCPConnection::connection_ptr connection)
+  : client_io_service_(&(connection->socket()->get_io_service())),
+    io_service_work_(new io_service::work(*client_io_service_)),
+    client_connection_(connection),
+    client_socket_(connection->socket()),
     channel_ready_(false),
     type_(SS_TCP) {
   VLOG(2) << "Creating new channel around socket at " << socket;
@@ -113,7 +116,11 @@ bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
                << error.message();
     return false;
   } else {
+    io_service_work_.reset(new io_service::work(*client_io_service_));
     VLOG(2) << "Client: we appear to have connected successfully...";
+    boost::shared_ptr<boost::thread> thread(new boost::thread(
+        boost::bind(&boost::asio::io_service::run, client_io_service_)));
+    VLOG(2) << "Created IO service thread " << thread->get_id();
     channel_ready_ = true;
     return true;
   }
@@ -160,29 +167,24 @@ bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
 }
 
 // Asynchronous send
+// N.B.: error handling is deferred to the callback handler, which takes a
+// boost::system:error_code.
 template <class T>
-bool StreamSocketsChannel<T>::SendA(const Envelope<T>& message) {
+bool StreamSocketsChannel<T>::SendA(const Envelope<T>& message,
+                                    GenericAsyncSendHandler callback) {
   VLOG(2) << "Trying to asynchronously send message: " << message;
   size_t msg_size = message.size();
   vector<char> buf(msg_size);
   CHECK(message.Serialize(&buf[0], message.size()));
-  // XXX(malte): error handling!
   // Synchronously send data size first
-/*  boost::asio::write(
+  boost::asio::async_write(
       *client_socket_, boost::asio::buffer(
           reinterpret_cast<char*>(&msg_size), sizeof(msg_size)),
-          boost::bind(&StreamSocketsChannel::AsyncWriteSecondStage,
-                      shared_from_this(),
-                      boost::asio::placeholders::error,
-                      boost::asio::placeholders::bytes_transferred));*/
+      callback);
   // Send the data
-/*  boost::asio::async_write(
-      *client_socket_, boost::asio::buffer(buf, msg_size));*/
-      /*boost::bind(&TCPConnection::HandleWrite, shared_from_this(),
-                  boost::asio::placeholders::error,
-                  boost::asio::placeholders::bytes_transferred));*/
-  LOG(FATAL) << "Unimplemented!";
-  return false;
+  boost::asio::async_write(
+      *client_socket_, boost::asio::buffer(buf, msg_size), callback);
+  return true;
 }
 
 // Synchronous recieve -- blocks until the next message is received.
@@ -232,15 +234,103 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   }
   CHECK_GT(len, 0);
   CHECK_EQ(len, msg_size);
+  // XXX(malte): data copy here -- optimize away if possible.
   return (message->Parse(&buf[0], len));
 }
 
 // Asynchronous receive -- does not block.
 template <class T>
-bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message) {
-  VLOG(1) << "Receiving into " << message;
-  LOG(FATAL) << "Unimplemented!";
-  return false;
+bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message,
+                                    GenericAsyncRecvHandler callback) {
+  VLOG(2) << "In RecvA, waiting for next message";
+  if (!Ready()) {
+    LOG(WARNING) << "Tried to read from channel " << this
+                 << ", which is not ready; read failed.";
+    return false;
+  }
+  size_t len;
+  // Obtain the lock on the async receive buffer.
+  async_recv_lock_.lock();
+  async_recv_message_ptr_ = message;
+  async_recv_callback_ = callback;
+  async_recv_buffer_vec_.reset(new vector<char>(sizeof(size_t)));
+  async_recv_buffer_.reset(new boost::asio::mutable_buffers_1(
+      reinterpret_cast<char*>(&(*async_recv_buffer_vec_)[0]), sizeof(size_t)));
+  // Asynchronously read the incoming protobuf message length and invoke the
+  // second stage of the receive call once we have it.
+  async_read(*client_socket_, *async_recv_buffer_,
+             boost::asio::transfer_at_least(sizeof(size_t)),
+             boost::bind(&StreamSocketsChannel<T>::RecvASecondStage, this,
+                         boost::asio::placeholders::error,
+                         boost::asio::placeholders::bytes_transferred));
+  // First stage of RecvA always succeeds.
+  return true;
+}
+
+// Second stage of asynchronous receive, which calls async_recv again in order
+// to get the actual message data.
+// Called with the async_recv_lock_ mutex held. It is either released before
+// returning (error path) or maintained for RecvAThirdStage to release.
+template <class T>
+void StreamSocketsChannel<T>::RecvASecondStage(const boost::system::error_code& error,
+                                               const size_t bytes_read) {
+  if (error || bytes_read != sizeof(size_t)) {
+    VLOG(1) << "Error reading from connection: " << error.message();
+    async_recv_lock_.unlock();
+    return;
+  }
+  // ... we can get away with a simple CHECK here and assume that we have some
+  // incoming data available.
+  CHECK_EQ(sizeof(size_t), bytes_read);
+  size_t msg_size = *reinterpret_cast<size_t*>(&(*async_recv_buffer_vec_)[0]);
+  CHECK_GT(msg_size, 0);
+  VLOG(2) << "Size of incoming protobuf is " << msg_size << " bytes.";
+  // We still hold the async_recv_lock_ mutex here.
+  async_recv_buffer_vec_.reset(new vector<char>(msg_size));
+  async_recv_buffer_.reset(new boost::asio::mutable_buffers_1(
+      reinterpret_cast<char*>(&(*async_recv_buffer_vec_)[0]), msg_size));
+  async_read(*client_socket_, *async_recv_buffer_,
+             boost::asio::transfer_at_least(msg_size),
+             boost::bind(&StreamSocketsChannel<T>::RecvAThirdStage, this,
+                         boost::asio::placeholders::error,
+                         boost::asio::placeholders::bytes_transferred));
+  // Second stage done.
+}
+
+// Third stage of asynchronous receive, which finalizes the message reception by
+// parsing the received data.
+// Called with the async_recv_lock_ mutex held, but releases it before
+// returning.
+template <class T>
+void StreamSocketsChannel<T>::RecvAThirdStage(const boost::system::error_code& error,
+                                              const size_t bytes_read) {
+  VLOG(2) << "Read " << bytes_read << " bytes.";
+  if (error == boost::asio::error::eof) {
+    VLOG(1) << "Received EOF, connection terminating!";
+    async_recv_lock_.unlock();
+    return;
+  } else if (error) {
+    VLOG(1) << "Error reading from connection: "
+            << error.message();
+    async_recv_lock_.unlock();
+    return;
+  } else {
+    VLOG(2) << "Read " << bytes_read << " bytes of protobuf data...";
+  }
+  CHECK_GT(bytes_read, 0);
+  //CHECK_EQ(bytes_read, msg_size);
+  VLOG(2) << "About to parse message";
+  async_recv_message_ptr_->Parse(&(*async_recv_buffer_vec_)[0],
+                                 bytes_read);
+  // Drop the lock
+  VLOG(2) << "Unlocking mutex";
+  async_recv_lock_.unlock();
+  // Invoke the original callback
+  // XXX(malte): potential race condition -- if someone else overwrites the
+  // callback before we invoke it (but after we atomically unlock the mutex), we
+  // lose. Put in a local mutex?
+  VLOG(2) << "About to invoke final async recv callback!";
+  //async_recv_callback_(error, bytes_read);
 }
 
 template <class T>

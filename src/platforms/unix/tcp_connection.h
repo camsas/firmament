@@ -16,6 +16,9 @@
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 
+// This needs to go above other includes as it defines __PLATFORM_UNIX__
+#include "platforms/unix/common.h"
+
 #include "base/common.h"
 #include "misc/messaging_interface.h"
 #include "misc/uri_tools.h"

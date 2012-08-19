@@ -9,6 +9,7 @@ OBJS = coordinator.o coordinator_http_ui.o worker.o topology_manager.o
 PBS =
 TESTS = coordinator_test worker_test
 TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \
+	     $(BUILD_DIR)/messages/libfirmament_messages.a \
 	     $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 	     $(BUILD_DIR)/platforms/common.pb.o \
 	     $(BUILD_DIR)/engine/coordinator_http_ui.o \
@@ -31,6 +32,7 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
 		$(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/engine/coordinator.o \
+		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(BUILD_DIR)/engine/coordinator_http_ui.o \
@@ -46,6 +48,7 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(SRC_ROOT_DIR)/engine/worker_main.cc \
 		$(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/engine/worker.o \
+		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(LIBS) -o $(BUILD_DIR)/engine/worker, \

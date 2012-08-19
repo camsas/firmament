@@ -8,10 +8,12 @@
 #include "base/common.h"
 #include "messages/base_message.pb.h"
 #include "messages/test_message.pb.h"
+// N.B. this needs to go above messaging_interface.h due to the #define for
+// __PLATFORM_UNIX__
+#include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
 #include "platforms/common.pb.h"
-#include "platforms/unix/common.h"
 #include "platforms/unix/messaging_streamsockets-inl.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
 

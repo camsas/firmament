@@ -12,6 +12,7 @@
 #endif
 
 #include "base/resource_desc.pb.h"
+#include "messages/base_message.pb.h"
 #include "misc/protobuf_envelope.h"
 
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
@@ -74,21 +75,29 @@ void Coordinator::Run() {
 
 void Coordinator::AwaitNextMessage() {
   // VLOG_EVERY_N(2, 1000) << "Waiting for next message...";
+  BaseMessage bm;
+  Envelope<BaseMessage> envelope(&bm);
   uint64_t num_channels = m_adapter_->active_channels().size();
   for (uint64_t i = 0; i < num_channels; ++i) {
-    boost::shared_ptr<StreamSocketsChannel<Message> > chan =
+    boost::shared_ptr<StreamSocketsChannel<BaseMessage> > chan =
         m_adapter_->GetChannelForConnection(i);
     VLOG(1) << "Trying to receive on channel " << i << " at " << *chan;
-    firmament::ResourceDescriptor rd;
-    Envelope<google::protobuf::Message> envelope(&rd);
     VLOG(2) << "Calling RecvS, envelope is " << envelope;
-    chan->RecvS(&envelope);
-    VLOG(1) << "Received message of size " << rd.ByteSize()
-            << ", type " << rd.GetTypeName()
-            << ", contents: " << endl << rd.DebugString();
+    chan->RecvA(&envelope,
+                boost::bind(&Coordinator::HandleRecv, this,
+                            boost::asio::placeholders::error,
+                            boost::asio::placeholders::bytes_transferred));
+    VLOG(1) << "Received message of size " << bm.ByteSize()
+            << ", type " << bm.GetTypeName()
+            << ", contents: " << endl << bm.DebugString();
   }
   VLOG(2) << "Looped over " << num_channels << " channels.";
   boost::this_thread::sleep(boost::posix_time::seconds(1));
+}
+
+void Coordinator::HandleRecv(const boost::system::error_code& error,
+                             size_t bytes_transferred) {
+  VLOG(1) << "Received " << bytes_transferred << " bytes asynchronously!";
 }
 
 ResourceID_t Coordinator::GenerateUUID() {

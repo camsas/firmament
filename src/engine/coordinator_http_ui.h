@@ -6,6 +6,7 @@
 #define FIRMAMENT_ENGINE_COORDINATOR_HTTP_UI_H
 
 #include "base/common.h"
+#include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
 #include "engine/coordinator.h"
 #include "platforms/common.h"

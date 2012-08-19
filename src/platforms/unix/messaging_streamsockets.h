@@ -13,11 +13,13 @@
 #include <boost/noncopyable.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
+// This needs to go above other includes as it defines __PLATFORM_UNIX__
+#include "platforms/unix/common.h"
+
 #include "base/common.h"
 #include "messages/base_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
-#include "platforms/unix/common.h"
 #include "platforms/unix/tcp_connection.h"
 #include "platforms/unix/async_tcp_server.h"
 #include "platforms/unix/stream_sockets_channel.h"

@@ -8,8 +8,10 @@
 
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #endif
 
+#include "messages/heartbeat_message.pb.h"
 #include "platforms/common.pb.h"
 #include "platforms/unix/messaging_streamsockets.h"
 
@@ -30,7 +32,7 @@ Worker::Worker(PlatformID platform_id)
   : platform_id_(platform_id),
     coordinator_uri_(FLAGS_coordinator_uri),
     m_adapter_(new StreamSocketsMessaging()),
-    chan_(StreamSocketsChannel<Message>::SS_TCP),
+    chan_(StreamSocketsChannel<BaseMessage>::SS_TCP),
     exit_(false),
     uuid_(GenerateUUID()) {
   string hostname = "";  // platform_.GetHostname();
@@ -53,13 +55,25 @@ Worker::Worker(PlatformID platform_id)
   if (!FLAGS_name.empty())
     resource_desc_.set_name(FLAGS_name);
 
-  resource_desc_.set_task_capacity(1);
+  resource_desc_.set_task_capacity(0);
 }
 
 void Worker::AwaitNextMessage() {
-  Envelope<Message> envelope(&resource_desc_);
-  VLOG_EVERY_N(2, 1) << "Sending (sync)...";
-  chan_.SendS(envelope);
+  BaseMessage bm;
+  ResourceDescriptor* rd = bm.MutableExtension(
+      heartbeat_extn)->mutable_res_desc();
+  resource_desc_.set_task_capacity(resource_desc_.task_capacity() + 1);
+  *rd = resource_desc_;  // copy!
+  bm.MutableExtension(heartbeat_extn)->set_uuid(
+      boost::uuids::to_string(uuid_));
+  Envelope<BaseMessage> envelope(&bm);
+  VLOG_EVERY_N(2, 1) << "Sending (async)...";
+  chan_.SendA(envelope,
+              boost::bind(&Worker::HandleWrite,
+                          this,
+                          boost::asio::placeholders::error,
+                          boost::asio::placeholders::bytes_transferred));
+
   VLOG_EVERY_N(2, 1) << "Waiting for next message...";
   boost::this_thread::sleep(seconds(10));
 }
@@ -72,6 +86,15 @@ bool Worker::ConnectToCoordinator(const string& coordinator_uri) {
 ResourceID_t Worker::GenerateUUID() {
   boost::uuids::random_generator gen;
   return gen();
+}
+
+void Worker::HandleWrite(const boost::system::error_code& error,
+                         size_t bytes_transferred) {
+  VLOG(1) << "In HandleWrite, thread is " << boost::this_thread::get_id();
+  if (error)
+    VLOG(1) << "Error returned from async write: " << error.message();
+  else
+    VLOG(1) << "bytes_transferred: " << bytes_transferred;
 }
 
 void Worker::Run() {

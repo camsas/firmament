@@ -23,6 +23,7 @@ TCPConnection::~TCPConnection() {
 }
 
 void TCPConnection::Start() {
+  VLOG(2) << "TCP connection starting!";
   ready_ = true;
 }
 

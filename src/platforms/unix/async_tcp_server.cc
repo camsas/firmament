@@ -58,7 +58,7 @@ void AsyncTCPServer::Run() {
   // Wait for thread to exit
   VLOG(2) << "IO service thread (" << thread->get_id()
           << ") running -- Waiting for join...";
-  // thread->join();
+  thread->join();
 }
 
 void AsyncTCPServer::Stop() {
@@ -87,7 +87,8 @@ void AsyncTCPServer::Stop() {
 void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
                                   const boost::system::error_code& error) {
   if (!error) {
-    VLOG(2) << "In HandleAccept -- starting connection at " << connection;
+    VLOG(2) << "In HandleAccept, thread is " << boost::this_thread::get_id()
+            << ", starting connection";
     connection->Start();
     // Once the connection is up, we wrap it into a channel.
     owning_adapter_->AddChannelForConnection(connection);

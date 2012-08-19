@@ -23,6 +23,8 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
+// XXX(malte): include order dependency
+#include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/messaging_streamsockets.h"
@@ -51,8 +53,12 @@ class Coordinator {
     return platform_id_;
   }
   inline ResourceID_t uuid() { return uuid_; }
+
  protected:
   ResourceID_t GenerateUUID();
+  void HandleRecv(const boost::system::error_code& error,
+                  size_t bytes_transferred);
+
 
   PlatformID platform_id_;
   bool exit_;

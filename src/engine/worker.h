@@ -21,6 +21,9 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
+#include "messages/base_message.pb.h"
+// XXX(malte): include order dependency
+#include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
 #include "platforms/common.h"
@@ -49,13 +52,15 @@ class Worker {
 #else
   StreamSocketsMessaging *m_adapter_;
 #endif
-  StreamSocketsChannel<Message> chan_;
+  StreamSocketsChannel<BaseMessage> chan_;
   bool exit_;
   string coordinator_uri_;
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;
 
   ResourceID_t GenerateUUID();
+  void HandleWrite(const boost::system::error_code& error,
+                   size_t bytes_transferred);
 };
 
 }  // namespace firmament

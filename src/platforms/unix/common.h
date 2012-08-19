@@ -9,14 +9,24 @@
 
 #include "platforms/common.pb.h"
 
+#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/system/error_code.hpp>
 
 namespace firmament {
 namespace platform_unix {
 
+#define __PLATFORM_UNIX__
+
 using boost::shared_ptr;
 using boost::scoped_ptr;
+
+typedef boost::function<void(const boost::system::error_code &,
+                             size_t)> AsyncSendHandler;
+typedef boost::function<void(const boost::system::error_code &,
+                             size_t)> AsyncRecvHandler;
+
 
 }  // namespace platform_unix
 }  // namespace firmament
