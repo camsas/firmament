@@ -45,6 +45,7 @@ class Worker {
   inline PlatformID platform_id() {
     return platform_id_;
   }
+
  protected:
   PlatformID platform_id_;
 #ifdef __PLATFORM_HAS_BOOST__

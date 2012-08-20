@@ -10,7 +10,8 @@ class bcolors:
     RED = '\033[91m'
     ENDC = '\033[0m'
 
-ignore_warnings = ["build/header_guard", "build/include_order"]
+ignore_warnings = ["build/header_guard", "build/include_order",
+                   "whitespace/comments"]
 
 source_dir = sys.argv[1]
 filter_string = "-" + ",-".join(ignore_warnings)

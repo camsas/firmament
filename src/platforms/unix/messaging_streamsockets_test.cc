@@ -166,7 +166,8 @@ TEST_F(StreamSocketsMessagingTest, BackchannelEstablishment) {
   Envelope<BaseMessage> r_envelope(&r_tm);
   channel.SendS(s_envelope);
   CHECK(backchannel->RecvS(&r_envelope));
-  CHECK_EQ(s_tm.GetExtension(test_extn).test(), r_tm.GetExtension(test_extn).test());
+  CHECK_EQ(s_tm.GetExtension(test_extn).test(),
+           r_tm.GetExtension(test_extn).test());
   CHECK_EQ(r_tm.GetExtension(test_extn).test(), 44);
   // Clean up the channels.
   backchannel->Close();

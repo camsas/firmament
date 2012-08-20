@@ -272,8 +272,9 @@ bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message,
 // Called with the async_recv_lock_ mutex held. It is either released before
 // returning (error path) or maintained for RecvAThirdStage to release.
 template <class T>
-void StreamSocketsChannel<T>::RecvASecondStage(const boost::system::error_code& error,
-                                               const size_t bytes_read) {
+void StreamSocketsChannel<T>::RecvASecondStage(
+    const boost::system::error_code& error,
+    const size_t bytes_read) {
   if (error || bytes_read != sizeof(size_t)) {
     VLOG(1) << "Error reading from connection: " << error.message();
     async_recv_lock_.unlock();
@@ -302,8 +303,9 @@ void StreamSocketsChannel<T>::RecvASecondStage(const boost::system::error_code& 
 // Called with the async_recv_lock_ mutex held, but releases it before
 // returning.
 template <class T>
-void StreamSocketsChannel<T>::RecvAThirdStage(const boost::system::error_code& error,
-                                              const size_t bytes_read) {
+void StreamSocketsChannel<T>::RecvAThirdStage(
+    const boost::system::error_code& error,
+    const size_t bytes_read) {
   VLOG(2) << "Read " << bytes_read << " bytes.";
   if (error == boost::asio::error::eof) {
     VLOG(1) << "Received EOF, connection terminating!";
@@ -330,7 +332,7 @@ void StreamSocketsChannel<T>::RecvAThirdStage(const boost::system::error_code& e
   // callback before we invoke it (but after we atomically unlock the mutex), we
   // lose. Put in a local mutex?
   VLOG(2) << "About to invoke final async recv callback!";
-  //async_recv_callback_(error, bytes_read);
+  async_recv_callback_(error, bytes_read);
 }
 
 template <class T>

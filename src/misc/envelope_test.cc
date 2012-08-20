@@ -5,6 +5,8 @@
 
 #include <gtest/gtest.h>
 
+#include <vector>
+
 #include "base/common.h"
 #include "messages/base_message.pb.h"
 #include "messages/test_message.pb.h"
@@ -119,6 +121,5 @@ TEST_F(EnvelopeTest, StashProtobuf) {
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  //InitFirmament(argc, argv);
   return RUN_ALL_TESTS();
 }

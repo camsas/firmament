@@ -43,7 +43,6 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
   }
   bool Ready() { return ready_; }
   void Start();
-  //void Send();
  private:
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);

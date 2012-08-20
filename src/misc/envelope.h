@@ -67,7 +67,7 @@ class Envelope : public PrintableInterface {
   virtual ostream& ToString(ostream* stream) const {
     // TODO(malte): Print only the first few bytes of the data here
     return *stream << "(Envelope: size=" << size() << ", at=" << this
-                   << ", data=" << (data_ ? to_string(*data_) : "NULL" ) << ")";
+                   << ", data=" << (data_ ? to_string(*data_) : "NULL") << ")";
   }
 
  private:

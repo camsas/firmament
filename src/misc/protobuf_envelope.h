@@ -6,6 +6,8 @@
 #ifndef FIRMAMENT_MISC_PROTOBUF_ENVELOPE_H
 #define FIRMAMENT_MISC_PROTOBUF_ENVELOPE_H
 
+#include <vector>
+
 #include "messages/base_message.pb.h"
 #include "misc/envelope.h"
 
@@ -50,6 +52,7 @@ class Envelope<BaseMessage> : public PrintableInterface {
     return *stream << "(PB Envelope, size=" << size() << ", at=" << this
                    << ", data=" << data_->DebugString() << ")";
   }
+
  private:
   // unit tests
   FRIEND_TEST(EnvelopeTest, EmptyParseProtobuf);
