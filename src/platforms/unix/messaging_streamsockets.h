@@ -43,7 +43,8 @@ class StreamSocketsMessaging : public firmament::MessagingInterface,
     return active_channels_;
   }
   virtual ~StreamSocketsMessaging();
-  BaseMessage* AwaitNextMessage();
+  template <typename T>
+  void AwaitNextMessage(Envelope<T>* envelope);
   void AddChannelForConnection(TCPConnection::connection_ptr connection);
   template <class T>
   void CloseChannel(MessagingChannelInterface<T>* chan);

@@ -24,11 +24,6 @@ namespace streamsockets {
 StreamSocketsMessaging::~StreamSocketsMessaging() {
 }
 
-BaseMessage* StreamSocketsMessaging::AwaitNextMessage() {
-  LOG(FATAL) << "Unimplemented!";
-  return NULL;
-}
-
 void StreamSocketsMessaging::AddChannelForConnection(
     TCPConnection::connection_ptr connection) {
   shared_ptr<StreamSocketsChannel<BaseMessage> > channel(

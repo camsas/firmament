@@ -25,7 +25,6 @@ using platform_unix::AsyncRecvHandler;
   typedef void(*AsyncRecvHandler)(void*, void*);
 #endif
 
-typedef ::google::protobuf::Message Message;
 using firmament::misc::Envelope;
 
 template <typename T>
@@ -64,7 +63,8 @@ class MessagingInterface {
   template <class T>
   void CloseChannel(MessagingChannelInterface<T>* chan);
   // Blocking wait for a new message to arrive.
-  virtual Message* AwaitNextMessage() = 0;
+  template <typename T>
+  void AwaitNextMessage(Envelope<T>* envelope);
   // Listen for incoming channel establishment requests.
   virtual void Listen(const string& endpoint_uri) = 0;
   // Check if we are ready to accept connections.
