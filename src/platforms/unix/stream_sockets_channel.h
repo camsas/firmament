@@ -52,19 +52,23 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
 
  protected:
   void RecvASecondStage(const boost::system::error_code& error,
-                        const size_t bytes_read);
+                        const size_t bytes_read,
+                        Envelope<T>* final_envelope,
+                        GenericAsyncRecvHandler final_callback);
   void RecvAThirdStage(const boost::system::error_code& error,
-                       const size_t bytes_read);
+                       const size_t bytes_read, size_t message_size,
+                       Envelope<T>* final_envelope,
+                       GenericAsyncRecvHandler final_callback);
 
  private:
+  // Async receive buffer data structures and lock
+  boost::mutex async_recv_lock_;
+  boost::scoped_ptr<boost::asio::mutable_buffers_1> async_recv_buffer_;
+  boost::scoped_ptr<vector<char> > async_recv_buffer_vec_;
+  // TCP and io_service data structures
   boost::shared_ptr<boost::asio::io_service> client_io_service_;
   boost::scoped_ptr<boost::asio::io_service::work> io_service_work_;
   boost::shared_ptr<boost::asio::ip::tcp::socket> client_socket_;
-  boost::scoped_ptr<boost::asio::mutable_buffers_1> async_recv_buffer_;
-  boost::scoped_ptr<vector<char> > async_recv_buffer_vec_;
-  Envelope<T>* async_recv_message_ptr_;
-  boost::mutex async_recv_lock_;
-  AsyncRecvHandler async_recv_callback_;
   TCPConnection::connection_ptr client_connection_;
   bool channel_ready_;
   StreamSocketType type_;

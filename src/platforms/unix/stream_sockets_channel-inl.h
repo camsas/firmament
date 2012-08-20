@@ -251,8 +251,6 @@ bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message,
   size_t len;
   // Obtain the lock on the async receive buffer.
   async_recv_lock_.lock();
-  async_recv_message_ptr_ = message;
-  async_recv_callback_ = callback;
   async_recv_buffer_vec_.reset(new vector<char>(sizeof(size_t)));
   async_recv_buffer_.reset(new boost::asio::mutable_buffers_1(
       reinterpret_cast<char*>(&(*async_recv_buffer_vec_)[0]), sizeof(size_t)));
@@ -262,7 +260,8 @@ bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message,
              boost::asio::transfer_at_least(sizeof(size_t)),
              boost::bind(&StreamSocketsChannel<T>::RecvASecondStage, this,
                          boost::asio::placeholders::error,
-                         boost::asio::placeholders::bytes_transferred));
+                         boost::asio::placeholders::bytes_transferred,
+                         message, callback));
   // First stage of RecvA always succeeds.
   return true;
 }
@@ -273,8 +272,8 @@ bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message,
 // returning (error path) or maintained for RecvAThirdStage to release.
 template <class T>
 void StreamSocketsChannel<T>::RecvASecondStage(
-    const boost::system::error_code& error,
-    const size_t bytes_read) {
+    const boost::system::error_code& error, const size_t bytes_read,
+    Envelope<T>* final_envelope, GenericAsyncRecvHandler final_callback) {
   if (error || bytes_read != sizeof(size_t)) {
     VLOG(1) << "Error reading from connection: " << error.message();
     async_recv_lock_.unlock();
@@ -294,7 +293,8 @@ void StreamSocketsChannel<T>::RecvASecondStage(
              boost::asio::transfer_at_least(msg_size),
              boost::bind(&StreamSocketsChannel<T>::RecvAThirdStage, this,
                          boost::asio::placeholders::error,
-                         boost::asio::placeholders::bytes_transferred));
+                         boost::asio::placeholders::bytes_transferred,
+                         msg_size, final_envelope, final_callback));
   // Second stage done.
 }
 
@@ -305,7 +305,8 @@ void StreamSocketsChannel<T>::RecvASecondStage(
 template <class T>
 void StreamSocketsChannel<T>::RecvAThirdStage(
     const boost::system::error_code& error,
-    const size_t bytes_read) {
+    const size_t bytes_read, size_t message_size,
+    Envelope<T>* final_envelope, AsyncRecvHandler final_callback) {
   VLOG(2) << "Read " << bytes_read << " bytes.";
   if (error == boost::asio::error::eof) {
     VLOG(1) << "Received EOF, connection terminating!";
@@ -320,19 +321,17 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
     VLOG(2) << "Read " << bytes_read << " bytes of protobuf data...";
   }
   CHECK_GT(bytes_read, 0);
-  //CHECK_EQ(bytes_read, msg_size);
+  CHECK_EQ(bytes_read, message_size);
   VLOG(2) << "About to parse message";
-  async_recv_message_ptr_->Parse(&(*async_recv_buffer_vec_)[0],
-                                 bytes_read);
+  final_envelope->Parse(&(*async_recv_buffer_vec_)[0], bytes_read);
   // Drop the lock
   VLOG(2) << "Unlocking mutex";
   async_recv_lock_.unlock();
   // Invoke the original callback
-  // XXX(malte): potential race condition -- if someone else overwrites the
-  // callback before we invoke it (but after we atomically unlock the mutex), we
-  // lose. Put in a local mutex?
+  // XXX(malte): potential race condition -- someone else may finish and invoke
+  // the callback before we do (although this is very unlikely).
   VLOG(2) << "About to invoke final async recv callback!";
-  async_recv_callback_(error, bytes_read);
+  final_callback(error, bytes_read);
 }
 
 template <class T>
