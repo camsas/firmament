@@ -7,12 +7,13 @@
 #ifndef FIRMAMENT_PLATFORMS_UNIX_COMMON_H
 #define FIRMAMENT_PLATFORMS_UNIX_COMMON_H
 
-#include "platforms/common.pb.h"
-
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/system/error_code.hpp>
+
+#include "misc/envelope.h"
+#include "platforms/common.pb.h"
 
 namespace firmament {
 namespace platform_unix {
@@ -22,11 +23,16 @@ namespace platform_unix {
 using boost::shared_ptr;
 using boost::scoped_ptr;
 
-typedef boost::function<void(const boost::system::error_code &,
-                             size_t)> AsyncSendHandler;
-typedef boost::function<void(const boost::system::error_code &,
-                             size_t)> AsyncRecvHandler;
+template <typename T>
+struct AsyncSendHandler {
+  typedef boost::function<void(const boost::system::error_code &, size_t)> type;
+};
 
+template <typename T>
+struct AsyncRecvHandler {
+  typedef boost::function<void(const boost::system::error_code &, size_t,
+                               misc::Envelope<T>*)> type;
+};
 
 }  // namespace platform_unix
 }  // namespace firmament

@@ -43,22 +43,22 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
   bool Establish(const string& endpoint_uri);
   bool Ready();
   bool RecvA(misc::Envelope<T>* message,
-             GenericAsyncRecvHandler);
+             typename AsyncRecvHandler<T>::type callback);
   bool RecvS(misc::Envelope<T>* message);
   bool SendS(const misc::Envelope<T>& message);
   bool SendA(const misc::Envelope<T>& message,
-             GenericAsyncSendHandler callback);
+             typename AsyncSendHandler<T>::type callback);
   virtual ostream& ToString(ostream* stream) const;
 
  protected:
   void RecvASecondStage(const boost::system::error_code& error,
                         const size_t bytes_read,
                         Envelope<T>* final_envelope,
-                        GenericAsyncRecvHandler final_callback);
+                        typename AsyncRecvHandler<T>::type final_callback);
   void RecvAThirdStage(const boost::system::error_code& error,
                        const size_t bytes_read, size_t message_size,
                        Envelope<T>* final_envelope,
-                       GenericAsyncRecvHandler final_callback);
+                       typename AsyncRecvHandler<T>::type final_callback);
 
  private:
   // Async receive buffer data structures and lock

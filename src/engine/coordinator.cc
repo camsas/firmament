@@ -86,18 +86,24 @@ void Coordinator::AwaitNextMessage() {
     chan->RecvA(&envelope,
                 boost::bind(&Coordinator::HandleRecv, this,
                             boost::asio::placeholders::error,
-                            boost::asio::placeholders::bytes_transferred));
-    VLOG(1) << "Received message of size " << bm.ByteSize()
-            << ", type " << bm.GetTypeName()
-            << ", contents: " << endl << bm.DebugString();
+                            boost::asio::placeholders::bytes_transferred,
+                            &envelope));
   }
   VLOG(2) << "Looped over " << num_channels << " channels.";
   boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 
 void Coordinator::HandleRecv(const boost::system::error_code& error,
-                             size_t bytes_transferred) {
-  VLOG(1) << "Received " << bytes_transferred << " bytes asynchronously!";
+                             size_t bytes_transferred,
+                             Envelope<BaseMessage>* env) {
+  if (error) {
+    LOG(WARNING) << "Asynchronous receive call returned an error: "
+                 << error.message();
+    return;
+  }
+  BaseMessage* bm = env->data();
+  VLOG(1) << "Received " << bytes_transferred << " bytes asynchronously, "
+          << "representing message " << *env;
 }
 
 ResourceID_t Coordinator::GenerateUUID() {

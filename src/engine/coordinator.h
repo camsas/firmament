@@ -57,8 +57,8 @@ class Coordinator {
  protected:
   ResourceID_t GenerateUUID();
   void HandleRecv(const boost::system::error_code& error,
-                  size_t bytes_transferred);
-
+                  size_t bytes_transferred,
+                  Envelope<BaseMessage>* env);
 
   PlatformID platform_id_;
   bool exit_;

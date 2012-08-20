@@ -170,8 +170,9 @@ bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
 // N.B.: error handling is deferred to the callback handler, which takes a
 // boost::system:error_code.
 template <class T>
-bool StreamSocketsChannel<T>::SendA(const Envelope<T>& message,
-                                    GenericAsyncSendHandler callback) {
+bool StreamSocketsChannel<T>::SendA(
+    const Envelope<T>& message,
+    typename AsyncSendHandler<T>::type callback) {
   VLOG(2) << "Trying to asynchronously send message: " << message;
   size_t msg_size = message.size();
   vector<char> buf(msg_size);
@@ -241,7 +242,7 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
 // Asynchronous receive -- does not block.
 template <class T>
 bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message,
-                                    GenericAsyncRecvHandler callback) {
+                                    typename AsyncRecvHandler<T>::type callback) {
   VLOG(2) << "In RecvA, waiting for next message";
   if (!Ready()) {
     LOG(WARNING) << "Tried to read from channel " << this
@@ -273,10 +274,12 @@ bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message,
 template <class T>
 void StreamSocketsChannel<T>::RecvASecondStage(
     const boost::system::error_code& error, const size_t bytes_read,
-    Envelope<T>* final_envelope, GenericAsyncRecvHandler final_callback) {
+    Envelope<T>* final_envelope,
+    typename AsyncRecvHandler<T>::type final_callback) {
   if (error || bytes_read != sizeof(size_t)) {
     VLOG(1) << "Error reading from connection: " << error.message();
     async_recv_lock_.unlock();
+    final_callback(error, bytes_read, final_envelope);
     return;
   }
   // ... we can get away with a simple CHECK here and assume that we have some
@@ -306,16 +309,19 @@ template <class T>
 void StreamSocketsChannel<T>::RecvAThirdStage(
     const boost::system::error_code& error,
     const size_t bytes_read, size_t message_size,
-    Envelope<T>* final_envelope, AsyncRecvHandler final_callback) {
+    Envelope<T>* final_envelope,
+    typename AsyncRecvHandler<T>::type final_callback) {
   VLOG(2) << "Read " << bytes_read << " bytes.";
   if (error == boost::asio::error::eof) {
     VLOG(1) << "Received EOF, connection terminating!";
     async_recv_lock_.unlock();
+    final_callback(error, bytes_read, final_envelope);
     return;
   } else if (error) {
     VLOG(1) << "Error reading from connection: "
             << error.message();
     async_recv_lock_.unlock();
+    final_callback(error, bytes_read, final_envelope);
     return;
   } else {
     VLOG(2) << "Read " << bytes_read << " bytes of protobuf data...";
@@ -331,7 +337,7 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
   // XXX(malte): potential race condition -- someone else may finish and invoke
   // the callback before we do (although this is very unlikely).
   VLOG(2) << "About to invoke final async recv callback!";
-  final_callback(error, bytes_read);
+  final_callback(error, bytes_read, final_envelope);
 }
 
 template <class T>
