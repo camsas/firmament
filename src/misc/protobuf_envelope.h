@@ -21,6 +21,7 @@ class Envelope<BaseMessage> : public PrintableInterface {
   Envelope() : data_(NULL), is_owner_(false) {}
   explicit Envelope(BaseMessage *data) : data_(data), is_owner_(false) {}
   virtual ~Envelope() {
+    VLOG(2) << "Envelope at " << this << " is being destroyed.";
     if (is_owner_)
       // de-allocate buffer
       delete data_;
@@ -35,9 +36,9 @@ class Envelope<BaseMessage> : public PrintableInterface {
     return data_;
   }
   virtual bool Parse(void *buffer, size_t length) {
-    vector<char>* internal_buf = new vector<char>(length);
     if (!data_) {
       // XXX(malte): check if we can use smart pointers instead here.
+      VLOG(2) << "Allocating new message inside envelope at " << this;
       data_ = new BaseMessage();
       is_owner_ = true;
     }

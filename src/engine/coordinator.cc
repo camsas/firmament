@@ -74,20 +74,19 @@ void Coordinator::Run() {
 }
 
 void Coordinator::AwaitNextMessage() {
-  // VLOG_EVERY_N(2, 1000) << "Waiting for next message...";
-  BaseMessage bm;
-  Envelope<BaseMessage> envelope(&bm);
+  //VLOG_EVERY_N(2, 1000) << "Waiting for next message...";
   uint64_t num_channels = m_adapter_->active_channels().size();
   for (uint64_t i = 0; i < num_channels; ++i) {
     boost::shared_ptr<StreamSocketsChannel<BaseMessage> > chan =
         m_adapter_->GetChannelForConnection(i);
+    Envelope<BaseMessage>* envelope = new Envelope<BaseMessage>();
     VLOG(1) << "Trying to receive on channel " << i << " at " << *chan;
-    VLOG(2) << "Calling RecvS, envelope is " << envelope;
-    chan->RecvA(&envelope,
+    VLOG(2) << "Calling RecvS, envelope at " << envelope;
+    chan->RecvA(envelope,
                 boost::bind(&Coordinator::HandleRecv, this,
                             boost::asio::placeholders::error,
                             boost::asio::placeholders::bytes_transferred,
-                            &envelope));
+                            envelope));
   }
   VLOG(2) << "Looped over " << num_channels << " channels.";
   boost::this_thread::sleep(boost::posix_time::seconds(1));
@@ -101,9 +100,9 @@ void Coordinator::HandleRecv(const boost::system::error_code& error,
                  << error.message();
     return;
   }
-  BaseMessage* bm = env->data();
   VLOG(1) << "Received " << bytes_transferred << " bytes asynchronously, "
-          << "representing message " << *env;
+          << "in envelope at " << env << ", representing message " << *env;
+  delete env;
 }
 
 ResourceID_t Coordinator::GenerateUUID() {
