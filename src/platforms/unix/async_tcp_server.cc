@@ -42,12 +42,14 @@ AsyncTCPServer::AsyncTCPServer(
 
 void AsyncTCPServer::StartAccept() {
   VLOG(2) << "In StartAccept()";
+  shared_ptr<tcp::endpoint> remote_endpoint(new tcp::endpoint());
   TCPConnection::connection_ptr new_connection(new TCPConnection(io_service_));
-  active_connections_.push_back(new_connection);
   acceptor_.async_accept(*new_connection->socket(),
+                         *remote_endpoint,
                          boost::bind(&AsyncTCPServer::HandleAccept, this,
                                      new_connection,
-                                     boost::asio::placeholders::error));
+                                     boost::asio::placeholders::error,
+                                     remote_endpoint));
   listening_ = true;
 }
 
@@ -63,14 +65,9 @@ void AsyncTCPServer::Run() {
 
 void AsyncTCPServer::Stop() {
   listening_ = false;
-  VLOG(2) << "Terminating " << active_connections_.size()
+  VLOG(2) << "Terminating " << endpoint_connection_map_.size()
           << " active TCP connections.";
-  active_connections_.clear();
-  /*for (vector<TCPConnection::connection_ptr>::const_iterator conn_iter =
-       active_connections_.begin();
-       conn_iter < active_connections_.end();
-       ++conn_iter) {
-  }*/
+  endpoint_connection_map_.clear();
   acceptor_.close();
   io_service_.stop();
 #if (BOOST_VERSION >= 104700)
@@ -85,11 +82,18 @@ void AsyncTCPServer::Stop() {
 }
 
 void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
-                                  const boost::system::error_code& error) {
+                                  const boost::system::error_code& error,
+                                  shared_ptr<tcp::endpoint>& remote_endpoint) {
   if (!error) {
     VLOG(2) << "In HandleAccept, thread is " << boost::this_thread::get_id()
-            << ", starting connection";
+            << ", starting connection with IP " << remote_endpoint->address();
     connection->Start();
+    // Check we do not already have a connection for this endpoint
+    CHECK(!endpoint_connection_map_.count(*remote_endpoint));
+    // Record a mapping for the connection's endpoint
+    endpoint_connection_map_.insert(
+        pair<tcp::endpoint, TCPConnection::connection_ptr>(
+            *remote_endpoint, connection));
     // Once the connection is up, we wrap it into a channel.
     owning_adapter_->AddChannelForConnection(connection);
     // Call StartAccept again to accept further connections.

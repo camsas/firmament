@@ -15,5 +15,6 @@ extend BaseMessage {
 
 message HeartbeatMessage {
   required string uuid = 1;
-  optional ResourceDescriptor res_desc = 2;
+  optional string remote_endpoint = 2;
+  optional ResourceDescriptor res_desc = 3;
 }

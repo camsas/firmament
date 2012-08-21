@@ -331,7 +331,7 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
   VLOG(2) << "About to parse message";
   final_envelope->Parse(&(*async_recv_buffer_vec_)[0], bytes_read);
   // Drop the lock
-  VLOG(2) << "Unlocking mutex";
+  VLOG(2) << "Unlocking async receive buffer";
   async_recv_lock_.unlock();
   // Invoke the original callback
   // XXX(malte): potential race condition -- someone else may finish and invoke

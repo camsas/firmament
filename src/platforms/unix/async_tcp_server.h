@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include <boost/bind.hpp>
 #include <boost/noncopyable.hpp>
@@ -38,19 +39,20 @@ class AsyncTCPServer : private boost::noncopyable {
                  shared_ptr<StreamSocketsMessaging> messaging_adapter);
   void Run();
   void Stop();
-  TCPConnection::connection_ptr connection(uint64_t connection_id) {
-    CHECK_LT(connection_id, active_connections_.size());
-    return active_connections_[connection_id];
+  TCPConnection::connection_ptr connection(const tcp::endpoint& endpoint) {
+    CHECK_EQ(endpoint_connection_map_.count(endpoint), 1);
+    return endpoint_connection_map_[endpoint];
   }
   inline bool listening() { return listening_; }
  private:
   bool listening_;
   void StartAccept();
   void HandleAccept(TCPConnection::connection_ptr connection,
-                    const boost::system::error_code& error);
+                    const boost::system::error_code& error,
+                    shared_ptr<tcp::endpoint>& remote_endpoint);
   boost::asio::io_service io_service_;
   tcp::acceptor acceptor_;
-  vector<TCPConnection::connection_ptr> active_connections_;
+  map<tcp::endpoint, TCPConnection::connection_ptr> endpoint_connection_map_;
   shared_ptr<StreamSocketsMessaging> owning_adapter_;
 };
 

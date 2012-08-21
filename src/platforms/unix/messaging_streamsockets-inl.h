@@ -16,19 +16,13 @@ namespace platform_unix {
 namespace streamsockets {
 
 template <typename T>
-void StreamSocketsMessaging::AwaitNextMessage(Envelope<T>* envelope) {
-  VLOG(2) << "Receiving into envelope at " << envelope;
-  LOG(FATAL) << "Unimplemented!";
-}
-
-template <class T>
 void StreamSocketsMessaging::CloseChannel(
     MessagingChannelInterface<T>* chan) {
   VLOG(1) << "Shutting down channel " << chan;
   chan->Close();
 }
 
-template <class T>
+template <typename T>
 bool StreamSocketsMessaging::EstablishChannel(
     const string& endpoint_uri,
     MessagingChannelInterface<T>* chan) {

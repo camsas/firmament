@@ -40,6 +40,74 @@ StreamSocketsMessaging::GetChannelForConnection(
   return active_channels_[connection_id];
 }
 
+void StreamSocketsMessaging::AwaitNextMessage() {
+  // If we have no active channels, we cannot receive any messages, so we return
+  // immediately.
+  if (active_channels_.size() == 0)
+    return;
+  // Otherwise, let's make sure we have an outstanding async receive request for
+  // each fo them.
+  for (vector<boost::shared_ptr<StreamSocketsChannel<BaseMessage> > >::
+       const_iterator chan_iter = active_channels_.begin();
+       chan_iter != active_channels_.end();
+       ++chan_iter) {
+    boost::shared_ptr<StreamSocketsChannel<BaseMessage> > chan =
+        *chan_iter;
+    if (!channel_recv_envelopes_.count(chan)) {
+      // No outstanding receive request for this channel, so create one
+      Envelope<BaseMessage>* envelope = new Envelope<BaseMessage>();
+      channel_recv_envelopes_.insert(
+          pair<boost::shared_ptr<StreamSocketsChannel<BaseMessage> >,
+          Envelope<BaseMessage>*>(chan, envelope));
+      VLOG(2) << "MA replenishing envelope for channel " << chan
+              << " at " << envelope;
+      chan->RecvA(envelope,
+                  boost::bind(&StreamSocketsMessaging::HandleAsyncMessageRecv,
+                              this, boost::asio::placeholders::error,
+                              boost::asio::placeholders::bytes_transferred,
+                              chan));
+    }
+  }
+  // Block until we receive a message somewhere
+  VLOG(3) << "About to lock mutex...";
+  boost::unique_lock<boost::mutex> lock(message_wait_mutex_);
+  VLOG(3) << "Locked!...";
+  while (!message_wait_ready_) {
+    VLOG(3) << "Waiting for condvar...";
+    message_wait_condvar_.wait(lock);
+  }
+  VLOG(3) << "Message arrived, condvar signalled!";
+  message_wait_ready_ = false;
+}
+
+void StreamSocketsMessaging::HandleAsyncMessageRecv(
+    const boost::system::error_code& error,
+    size_t bytes_transferred,
+    shared_ptr<StreamSocketsChannel<BaseMessage> > chan) {
+  if (error) {
+    LOG(WARNING) << "Error receiving in MA";
+    // TODO(malte): think about clearing up state here. Should we consider the
+    // envelope as having been consumed?
+    // XXX(malte): Do we need to unlock/signal here?
+    return;
+  }
+  CHECK(channel_recv_envelopes_.count(chan));
+  Envelope<BaseMessage>* envelope = channel_recv_envelopes_[chan];
+  VLOG(2) << "Received in MA: " << *envelope << " ("
+          << bytes_transferred << ")";
+  channel_recv_envelopes_.erase(chan);
+  delete envelope;
+  {
+    boost::lock_guard<boost::mutex> lock(message_wait_mutex_);
+    message_wait_ready_ = true;
+  }
+  // TODO(malte): Not sure if we want notify_all here. So far, we assume that
+  // there is only one call to AwaitNextMessage() processing at any time; but
+  // this is not enforced. In fact, the below may work in that it gives us what
+  // is essentially broadcast semantics if multiple threads are waiting.
+  message_wait_condvar_.notify_all();
+}
+
 void StreamSocketsMessaging::Listen(const string& endpoint_uri) {
   // Parse endpoint URI into hostname and port
   string hostname = URITools::GetHostnameFromURI(endpoint_uri);
@@ -59,7 +127,7 @@ bool StreamSocketsMessaging::ListenReady() {
     return false;
 }
 
-void StreamSocketsMessaging::SendOnConnection(uint64_t connection_id) {
+/*void StreamSocketsMessaging::SendOnConnection(uint64_t connection_id) {
   VLOG(2) << "Messaging adapter sending on connection " << connection_id;
   // TODO(malte): Hack -- we spin until the connection is ready. This is
   // required to avoid race conditions where a messaging adapter is trying to
@@ -73,7 +141,7 @@ void StreamSocketsMessaging::SendOnConnection(uint64_t connection_id) {
   // Actually send the data on the (now ready) TCP connection
   //tcp_server_->connection(connection_id)->Send();
   LOG(FATAL) << "Unimplemented!";
-}
+}*/
 
 void StreamSocketsMessaging::StopListen() {
   if (tcp_server_ != NULL) {

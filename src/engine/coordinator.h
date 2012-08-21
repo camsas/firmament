@@ -8,6 +8,7 @@
 #define FIRMAMENT_ENGINE_COORDINATOR_H
 
 #include <string>
+#include <ext/hash_map>
 
 // XXX(malte): Think about the Boost dependency!
 #ifdef __PLATFORM_HAS_BOOST__
@@ -33,6 +34,8 @@
 
 namespace firmament {
 
+using __gnu_cxx::hash_map;
+
 #ifdef __PLATFORM_HAS_BOOST__
 using boost::scoped_ptr;
 using boost::shared_ptr;
@@ -56,6 +59,7 @@ class Coordinator {
 
  protected:
   ResourceID_t GenerateUUID();
+  void HandleIncomingMessage(BaseMessage *bm);
   void HandleRecv(const boost::system::error_code& error,
                   size_t bytes_transferred,
                   Envelope<BaseMessage>* env);
@@ -64,10 +68,13 @@ class Coordinator {
   bool exit_;
   string coordinator_uri_;
   shared_ptr<StreamSocketsMessaging> m_adapter_;
-  ResourceID_t uuid_;
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
   scoped_ptr<TopologyManager> topology_manager_;
+  // A map of resources associated with this coordinator.
+  hash_map<ResourceID_t, ResourceDescriptor> associated_resources_;
+  // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
+  ResourceID_t uuid_;
 };
 
 }  // namespace firmament

@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include <boost/asio.hpp>
 #include <boost/noncopyable.hpp>
@@ -28,6 +29,8 @@ namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
 
+using boost::shared_ptr;
+
 class TCPConnection;  // forward declaration
 class AsyncTCPServer;  // forward declaration
 template <class T>
@@ -38,30 +41,42 @@ class StreamSocketsMessaging : public firmament::MessagingInterface,
   public boost::enable_shared_from_this<StreamSocketsMessaging>,
   private boost::noncopyable {
  public:
-  const vector<boost::shared_ptr<StreamSocketsChannel<BaseMessage> > >&
-      active_channels() {
-    return active_channels_;
-  }
+  StreamSocketsMessaging() : message_wait_ready_(false), tcp_server_(NULL) { }
   virtual ~StreamSocketsMessaging();
-  template <typename T>
-  void AwaitNextMessage(Envelope<T>* envelope);
+  void AwaitNextMessage();
   void AddChannelForConnection(TCPConnection::connection_ptr connection);
-  template <class T>
+  template <typename T>
   void CloseChannel(MessagingChannelInterface<T>* chan);
-  template <class T>
+  template <typename T>
   bool EstablishChannel(const string& endpoint_uri,
                         MessagingChannelInterface<T>* chan);
-  boost::shared_ptr<StreamSocketsChannel<BaseMessage> > GetChannelForConnection(
+  //template <typename T>
+  shared_ptr<StreamSocketsChannel<BaseMessage> > GetChannelForConnection(
       uint64_t connection_id);
   void Listen(const string& endpoint_uri);
   bool ListenReady();
-  void SendOnConnection(uint64_t connection_id);
+  //void SendOnConnection(uint64_t connection_id);
   void StopListen();
 
+  //template <typename T>
+  const vector<shared_ptr<StreamSocketsChannel<BaseMessage> > >&
+      active_channels() {
+    return active_channels_;
+  }
+
  private:
+  void HandleAsyncMessageRecv(
+      const boost::system::error_code& error, size_t bytes_transferred,
+      shared_ptr<StreamSocketsChannel<BaseMessage> > chan);
+
   AsyncTCPServer* tcp_server_;
-  vector<boost::shared_ptr<StreamSocketsChannel<BaseMessage> > >
-      active_channels_;
+  vector<shared_ptr<StreamSocketsChannel<BaseMessage> > > active_channels_;
+  map<shared_ptr<StreamSocketsChannel<BaseMessage> >, Envelope<BaseMessage>* >
+      channel_recv_envelopes_;
+  // Synchronization variables, locks tec.
+  boost::mutex message_wait_mutex_;
+  boost::condition_variable message_wait_condvar_;
+  bool message_wait_ready_;
 };
 
 }  // namespace streamsockets

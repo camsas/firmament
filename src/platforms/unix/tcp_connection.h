@@ -24,11 +24,11 @@
 #include "misc/uri_tools.h"
 #include "platforms/common.h"
 
-using boost::asio::ip::tcp;
-
 namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
+
+using boost::asio::ip::tcp;
 
 // TCP connection class using boost primitives.
 class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
@@ -43,6 +43,7 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
   }
   bool Ready() { return ready_; }
   void Start();
+
  private:
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);

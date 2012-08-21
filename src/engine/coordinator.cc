@@ -13,6 +13,7 @@
 
 #include "base/resource_desc.pb.h"
 #include "messages/base_message.pb.h"
+#include "messages/heartbeat_message.pb.h"
 #include "misc/protobuf_envelope.h"
 
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
@@ -64,7 +65,7 @@ void Coordinator::Run() {
     // Wait for events (i.e. messages from workers)
     // TODO(malte): we need to think about any actions that the coordinator
     // itself might need to take, and how they can be triggered
-    VLOG(3) << "Hello from main loop!";
+    VLOG(2) << "Hello from main loop!";
     AwaitNextMessage();
   }
 
@@ -74,21 +75,8 @@ void Coordinator::Run() {
 }
 
 void Coordinator::AwaitNextMessage() {
-  //VLOG_EVERY_N(2, 1000) << "Waiting for next message...";
-  uint64_t num_channels = m_adapter_->active_channels().size();
-  for (uint64_t i = 0; i < num_channels; ++i) {
-    boost::shared_ptr<StreamSocketsChannel<BaseMessage> > chan =
-        m_adapter_->GetChannelForConnection(i);
-    Envelope<BaseMessage>* envelope = new Envelope<BaseMessage>();
-    VLOG(1) << "Trying to receive on channel " << i << " at " << *chan;
-    VLOG(2) << "Calling RecvS, envelope at " << envelope;
-    chan->RecvA(envelope,
-                boost::bind(&Coordinator::HandleRecv, this,
-                            boost::asio::placeholders::error,
-                            boost::asio::placeholders::bytes_transferred,
-                            envelope));
-  }
-  VLOG(2) << "Looped over " << num_channels << " channels.";
+  VLOG(2) << "Waiting for next message from adapter...";
+  m_adapter_->AwaitNextMessage();
   boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 
@@ -100,9 +88,19 @@ void Coordinator::HandleRecv(const boost::system::error_code& error,
                  << error.message();
     return;
   }
-  VLOG(1) << "Received " << bytes_transferred << " bytes asynchronously, "
+  VLOG(2) << "Received " << bytes_transferred << " bytes asynchronously, "
           << "in envelope at " << env << ", representing message " << *env;
+  BaseMessage *bm = env->data();
+  HandleIncomingMessage(bm);
   delete env;
+}
+
+void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
+  // Heartbeat message
+  if (bm->HasExtension(heartbeat_extn)) {
+    const HeartbeatMessage& msg = bm->GetExtension(heartbeat_extn);
+    LOG(INFO) << "HEARTBEAT from worker " << msg.uuid();
+  }
 }
 
 ResourceID_t Coordinator::GenerateUUID() {

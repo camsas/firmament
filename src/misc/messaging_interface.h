@@ -64,7 +64,7 @@ class MessagingInterface {
   void CloseChannel(MessagingChannelInterface<T>* chan);
   // Blocking wait for a new message to arrive.
   template <typename T>
-  void AwaitNextMessage(Envelope<T>* envelope);
+  void AwaitNextMessage();
   // Listen for incoming channel establishment requests.
   virtual void Listen(const string& endpoint_uri) = 0;
   // Check if we are ready to accept connections.
