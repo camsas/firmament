@@ -1,5 +1,6 @@
 ROOT_DIR=../..
 SUFFIX=engine
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc
 
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
