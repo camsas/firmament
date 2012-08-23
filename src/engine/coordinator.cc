@@ -48,11 +48,13 @@ Coordinator::Coordinator(PlatformID platform_id)
       LOG(FATAL) << "Unimplemented!";
   }
 
+#if 0
   // Start up HTTP interface
   if (FLAGS_http_ui_port > 0) {
     c_http_ui_.reset(new CoordinatorHTTPUI(this));
     c_http_ui_->init(FLAGS_http_ui_port);
   }
+#endif
 
   // test topology detection
   topology_manager_->DebugPrintRawTopology();

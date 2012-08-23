@@ -68,7 +68,11 @@ LIBS += -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf
 
 CXX = clang++
 
-CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros
+# for clang++, uncomment this line
+CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-language-extension-token -Wno-deprecated
+
+# for gcc/g++, uncomment this line
+#CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-deprecated
 
 CXXFLAGS = -D__PLATFORM_HAS_BOOST__
 

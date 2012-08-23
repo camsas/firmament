@@ -29,7 +29,8 @@
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/messaging_streamsockets.h"
-#include "engine/coordinator_http_ui.h"
+#include "platforms/unix/messaging_streamsockets-inl.h"
+//#include "engine/coordinator_http_ui.h"
 #include "engine/topology_manager.h"
 
 namespace firmament {
