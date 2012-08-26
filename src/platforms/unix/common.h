@@ -23,6 +23,14 @@ namespace platform_unix {
 using boost::shared_ptr;
 using boost::scoped_ptr;
 
+namespace streamsockets {
+class TCPConnection;  // Forward declaration
+}  // namespace streamsockets
+
+struct AcceptHandler {
+  typedef boost::function<void(shared_ptr<streamsockets::TCPConnection>)> type;
+};
+
 template <typename T>
 struct AsyncSendHandler {
   typedef boost::function<void(const boost::system::error_code &, size_t)> type;

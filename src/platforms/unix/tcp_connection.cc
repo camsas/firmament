@@ -11,20 +11,37 @@
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 
-using boost::asio::ip::tcp;
-
 namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
 
+using boost::asio::ip::tcp;
+
 TCPConnection::~TCPConnection() {
+  if (Ready())
+    Close();
+  CHECK(!Ready());
   VLOG(2) << "Connection is being destroyed!";
-  socket_.close();
+}
+
+void TCPConnection::Close() {
+  VLOG(2) << "Closing TCP connection at " << this;
+  ready_ = false;
+  boost::system::error_code ec;
+  socket_.shutdown(tcp::socket::shutdown_both, ec);
+  if (ec)
+    LOG(WARNING) << "Error shutting down connections on socket for "
+                 << "connection at " << this << ": " << ec.message();
+  /*socket_.close(ec);
+  if (ec)
+    LOG(WARNING) << "Error closing socket for "
+                 << "connection at " << this << ": " << ec.message();*/
 }
 
 void TCPConnection::Start() {
   VLOG(2) << "TCP connection starting!";
   ready_ = true;
+  CHECK(socket_.is_open());
 }
 
 /*void TCPConnection::Send() {

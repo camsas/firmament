@@ -48,23 +48,21 @@ class MessagingChannelInterface : public PrintableInterface {
   virtual ostream& ToString(ostream* stream) const = 0;
 };
 
+template <typename T>
 class MessagingInterface {
  public:
   // Virtual destructor (mandated by having virtual methods).
-  virtual ~MessagingInterface() {}
+  //virtual ~MessagingInterface() {}
   // Set up a messaging channel to a remote endpoint.
-  template <class T>
-  bool EstablishChannel(const string& endpoint_uri,
-                        MessagingChannelInterface<T>* chan);
+  virtual bool EstablishChannel(const string& endpoint_uri,
+                                MessagingChannelInterface<T>* chan) = 0;
   // TODO(malte): Do we actually want to do this, or should we leave it to the
   // system to close channels when no longer needed? Alternative might be a
   // DetachChannel call, which leaves the channel open for potential reuse, but
   // invalidates the reference to it.
-  template <class T>
-  void CloseChannel(MessagingChannelInterface<T>* chan);
+  virtual void CloseChannel(MessagingChannelInterface<T>* chan) = 0;
   // Blocking wait for a new message to arrive.
-  template <typename T>
-  void AwaitNextMessage();
+  virtual void AwaitNextMessage() = 0;
   // Listen for incoming channel establishment requests.
   virtual void Listen(const string& endpoint_uri) = 0;
   // Check if we are ready to accept connections.

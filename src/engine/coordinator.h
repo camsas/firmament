@@ -68,8 +68,10 @@ class Coordinator {
   PlatformID platform_id_;
   bool exit_;
   string coordinator_uri_;
-  shared_ptr<StreamSocketsMessaging> m_adapter_;
+  shared_ptr<StreamSocketsMessaging<BaseMessage> > m_adapter_;
+#if 0
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
+#endif
   scoped_ptr<TopologyManager> topology_manager_;
   // A map of resources associated with this coordinator.
   hash_map<ResourceID_t, ResourceDescriptor> associated_resources_;

@@ -31,7 +31,7 @@ using boost::posix_time::seconds;
 Worker::Worker(PlatformID platform_id)
   : platform_id_(platform_id),
     coordinator_uri_(FLAGS_coordinator_uri),
-    m_adapter_(new StreamSocketsMessaging()),
+    m_adapter_(new StreamSocketsMessaging<BaseMessage>()),
     chan_(StreamSocketsChannel<BaseMessage>::SS_TCP),
     exit_(false),
     uuid_(GenerateUUID()) {

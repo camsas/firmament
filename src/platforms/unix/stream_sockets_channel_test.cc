@@ -37,13 +37,14 @@ class StreamSocketsChannelTest : public ::testing::Test {
   StreamSocketsChannelTest()
     : local_uri_("tcp://localhost:7777"),
       remote_uri_("tcp://localhost:7778"),
-      local_adapter_(new StreamSocketsMessaging()),
-      remote_adapter_(new StreamSocketsMessaging()) {
+      local_adapter_(new StreamSocketsMessaging<BaseMessage>()),
+      remote_adapter_(new StreamSocketsMessaging<BaseMessage>()) {
     // You can do set-up work for each test here.
   }
 
   virtual ~StreamSocketsChannelTest() {
     // You can do clean-up work that doesn't throw exceptions here.
+    VLOG(2) << "Now in destructor.";
   }
 
   // If the constructor and destructor are not enough for setting up
@@ -51,6 +52,8 @@ class StreamSocketsChannelTest : public ::testing::Test {
 
   virtual void SetUp() {
     FLAGS_v = 2;
+    // Wait briefly in order for sockets to close down
+    boost::this_thread::sleep(boost::posix_time::seconds(1));
     // Code here will be called immediately after the constructor (right
     // before each test).
     remote_adapter_->Listen(remote_uri_);
@@ -75,11 +78,11 @@ class StreamSocketsChannelTest : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests.
-  shared_ptr<StreamSocketsMessaging> local_adapter_;
-  shared_ptr<StreamSocketsMessaging> remote_adapter_;
+  shared_ptr<StreamSocketsMessaging<BaseMessage> > local_adapter_;
+  shared_ptr<StreamSocketsMessaging<BaseMessage> > remote_adapter_;
   const string local_uri_;
   const string remote_uri_;
-  shared_ptr<StreamSocketsChannel<BaseMessage> > channel_;
+  scoped_ptr<StreamSocketsChannel<BaseMessage> > channel_;
 };
 
 // Tests synchronous send of an integer.
@@ -90,6 +93,7 @@ class StreamSocketsChannelTest : public ::testing::Test {
   channel_->SendS(envelope);
   shared_ptr<StreamSocketsChannel<uint64_t> > backchannel =
       remote_adapter_->GetChannelForConnection(0);
+  while (remote_adapter_->active_channels().size() == 0) { }
   uint64_t recvdInteger = 0;
   Envelope<uint64_t> recv_env(&recvdInteger);
   backchannel.RecvS(recv_env);
@@ -120,14 +124,17 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceive) {
 // Tests synchronous send of multiple subsequent protobufs.
 TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   FLAGS_v = 2;
-  BaseMessage tm;
-  SUBMSG_WRITE(tm, test, test, 5);
-  Envelope<BaseMessage> envelope(&tm);
+  BaseMessage tm1;
+  SUBMSG_WRITE(tm1, test, test, 5);
+  Envelope<BaseMessage> envelope1(&tm1);
   while (!channel_->Ready()) {  }
   // send first time
-  channel_->SendS(envelope);
+  channel_->SendS(envelope1);
   // send second time
-  channel_->SendS(envelope);
+  BaseMessage tm2;
+  SUBMSG_WRITE(tm2, test, test, 7);
+  Envelope<BaseMessage> envelope2(&tm2);
+  channel_->SendS(envelope2);
   // Spin-wait for backchannel to become available
   while (remote_adapter_->active_channels().size() == 0) { }
   shared_ptr<StreamSocketsChannel<BaseMessage> > backchannel =
@@ -137,30 +144,33 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   while (!backchannel->Ready()) {  }
   // first receive
   backchannel->RecvS(&recv_env);
-  CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm, test, test));
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm1, test, test));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
   // second receive
   backchannel->RecvS(&recv_env);
-  CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm, test, test));
-  CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm2, test, test));
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), 7);
 }
 
 
 // Tests asynchronous send (and synchronous receive) of a protobuf.
-/*TEST_F(StreamSocketsChannelTest, TCPAsyncProtobufSend) {
+TEST_F(StreamSocketsChannelTest, TCPAsyncProtobufSend) {
   FLAGS_v = 2;
   BaseMessage tm;
   SUBMSG_WRITE(tm, test, test, 5);
   Envelope<BaseMessage> envelope(&tm);
-  channel_->SendA(envelope);
+  channel_->SendS(envelope);
+  //channel_->SendA(envelope, boost::bind(std::plus<int>(), 0, 0));
+  while (remote_adapter_->active_channels().size() == 0) { }
   shared_ptr<StreamSocketsChannel<BaseMessage> > backchannel =
       remote_adapter_->GetChannelForConnection(0);
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);
+  while (!backchannel->Ready()) {  }
   backchannel->RecvS(&recv_env);
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm, test, test));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
-}*/
+}
 
 }  // namespace streamsockets
 }  // namespace platform_unix

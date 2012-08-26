@@ -30,7 +30,6 @@ namespace streamsockets {
 
 using boost::asio::ip::tcp;
 using boost::asio::io_service;
-using boost::asio::socket_base;
 
 // ----------------------------
 // StreamSocketsChannel
@@ -58,13 +57,12 @@ StreamSocketsChannel<T>::StreamSocketsChannel(StreamSocketType type)
 template <class T>
 StreamSocketsChannel<T>::StreamSocketsChannel(
     TCPConnection::connection_ptr connection)
-  : client_io_service_(&(connection->socket()->get_io_service())),
-    io_service_work_(new io_service::work(*client_io_service_)),
+  : //client_io_service_(&(connection->socket()->get_io_service())),
     client_connection_(connection),
     client_socket_(connection->socket()),
     channel_ready_(false),
     type_(SS_TCP) {
-  VLOG(2) << "Creating new channel around socket at " << socket;
+  VLOG(2) << "Creating new channel around socket at " << client_socket_;
   if (client_socket_->is_open()) {
     channel_ready_ = true;
   }
@@ -75,22 +73,46 @@ StreamSocketsChannel<T>::~StreamSocketsChannel() {
   // The user may already have manually cleaned up. If not, we do so now.
   if (Ready()) {
     channel_ready_ = false;
+    if (io_service_work_)
+      io_service_work_.reset(); // ~work();
     Close();
   }
   VLOG(2) << "Channel at " << this << " destroyed.";
 }
 
 template <class T>
+void StreamSocketsChannel<T>::Close() {
+  // end the connection
+  VLOG(2) << "Shutting down channel " << *this << "'s socket...";
+  channel_ready_ = false;
+  if (!client_connection_) {
+    // The channel has ownership of the client socket
+    client_socket_->shutdown(tcp::socket::shutdown_both);
+  } else {
+    // The channel was constructed around an existing connection, so it does not
+    // have ownership of the socket. Ask the connection to terminate instead.
+    client_connection_->Close();
+  }
+  //VLOG(2) << "Stopping client IO service from thread "
+  //        << boost::this_thread::get_id();
+  CHECK(!(client_connection_ && client_io_service_));
+  if (client_io_service_)
+    client_io_service_->stop();
+}
+
+template <class T>
 bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
   // If this channel already has an active socket, issue a warning and close it
   // down before establishing a new one.
-  if (client_socket_.get() != NULL && client_socket_->is_open()) {
+  if (!client_connection_ && client_socket_ && client_socket_->is_open()) {
     LOG(WARNING) << "Establishing a new connection on channel " << this
                  << ", despite already having one established. The previous "
                  << "connection will be terminated.";
-    client_socket_->shutdown(socket_base::shutdown_both);
+    //client_socket_->shutdown(tcp::socket::shutdown_both);
+    client_connection_->Close();
     channel_ready_ = false;
   }
+  CHECK(!(client_connection_ && client_io_service_));
 
   // Parse endpoint URI into hostname and port
   string hostname = URITools::GetHostnameFromURI(endpoint_uri);
@@ -208,7 +230,8 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   len = read(*client_socket_, size_m_buf,
              boost::asio::transfer_at_least(sizeof(size_t)), error);
   if (error || len != sizeof(size_t)) {
-    VLOG(1) << "Error reading from connection: " << error.message();
+    VLOG(1) << "Error reading from connection on channel " << *this
+            << ": " << error.message();
     return false;
   }
   // ... we can get away with a simple CHECK here and assume that we have some
@@ -259,7 +282,8 @@ bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message,
   // second stage of the receive call once we have it.
   async_read(*client_socket_, *async_recv_buffer_,
              boost::asio::transfer_at_least(sizeof(size_t)),
-             boost::bind(&StreamSocketsChannel<T>::RecvASecondStage, this,
+             boost::bind(&StreamSocketsChannel<T>::RecvASecondStage,
+                         this->shared_from_this(),
                          boost::asio::placeholders::error,
                          boost::asio::placeholders::bytes_transferred,
                          message, callback));
@@ -294,7 +318,8 @@ void StreamSocketsChannel<T>::RecvASecondStage(
       reinterpret_cast<char*>(&(*async_recv_buffer_vec_)[0]), msg_size));
   async_read(*client_socket_, *async_recv_buffer_,
              boost::asio::transfer_at_least(msg_size),
-             boost::bind(&StreamSocketsChannel<T>::RecvAThirdStage, this,
+             boost::bind(&StreamSocketsChannel<T>::RecvAThirdStage,
+                         this->shared_from_this(),
                          boost::asio::placeholders::error,
                          boost::asio::placeholders::bytes_transferred,
                          msg_size, final_envelope, final_callback));
@@ -338,14 +363,6 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
   // the callback before we do (although this is very unlikely).
   VLOG(2) << "About to invoke final async recv callback!";
   final_callback(error, bytes_read, final_envelope);
-}
-
-template <class T>
-void StreamSocketsChannel<T>::Close() {
-  // end the connection
-  VLOG(2) << "Shutting down channel " << *this << "'s socket...";
-  client_socket_->shutdown(socket_base::shutdown_both);
-  channel_ready_ = false;
 }
 
 template <class T>

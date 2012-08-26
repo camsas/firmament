@@ -28,18 +28,22 @@ namespace platform_unix {
 namespace streamsockets {
 
 // Forward declaration
+template <typename T>
 class StreamSocketsMessaging;
 
 // Asynchronous, multi-threaded TCP server.
 // Design inspired by
 // http://www.boost.org/doc/html/boost_asio/example/http/server3/server.hpp.
-class AsyncTCPServer : private boost::noncopyable {
+class AsyncTCPServer : public boost::enable_shared_from_this<AsyncTCPServer>,
+  private boost::noncopyable {
  public:
   AsyncTCPServer(const string& endpoint_addr, const string& port,
-                 shared_ptr<StreamSocketsMessaging> messaging_adapter);
+                 AcceptHandler::type accept_callback);
+  ~AsyncTCPServer();
   void Run();
   void Stop();
-  TCPConnection::connection_ptr connection(const tcp::endpoint& endpoint) {
+  TCPConnection::connection_ptr connection(
+      const shared_ptr<tcp::endpoint> endpoint) {
     CHECK_EQ(endpoint_connection_map_.count(endpoint), 1);
     return endpoint_connection_map_[endpoint];
   }
@@ -49,11 +53,16 @@ class AsyncTCPServer : private boost::noncopyable {
   void StartAccept();
   void HandleAccept(TCPConnection::connection_ptr connection,
                     const boost::system::error_code& error,
-                    shared_ptr<tcp::endpoint>& remote_endpoint);
-  boost::asio::io_service io_service_;
+                    shared_ptr<tcp::endpoint> remote_endpoint);
+
+  map<boost::shared_ptr<tcp::endpoint>, TCPConnection::connection_ptr>
+      endpoint_connection_map_;
+  AcceptHandler::type accept_handler_;
+  scoped_ptr<boost::thread> thread_;
+  //boost::asio::io_service io_service_;
+  scoped_ptr<boost::asio::io_service::work> io_service_work_;
+  shared_ptr<boost::asio::io_service> io_service_;
   tcp::acceptor acceptor_;
-  map<tcp::endpoint, TCPConnection::connection_ptr> endpoint_connection_map_;
-  shared_ptr<StreamSocketsMessaging> owning_adapter_;
 };
 
 }  // namespace streamsockets

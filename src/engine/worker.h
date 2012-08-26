@@ -49,9 +49,9 @@ class Worker {
  protected:
   PlatformID platform_id_;
 #ifdef __PLATFORM_HAS_BOOST__
-  boost::shared_ptr<StreamSocketsMessaging> m_adapter_;
+  boost::shared_ptr<StreamSocketsMessaging<BaseMessage> > m_adapter_;
 #else
-  StreamSocketsMessaging *m_adapter_;
+  StreamSocketsMessaging<BaseMessage> *m_adapter_;
 #endif
   StreamSocketsChannel<BaseMessage> chan_;
   bool exit_;

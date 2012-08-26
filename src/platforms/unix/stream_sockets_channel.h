@@ -30,12 +30,16 @@ namespace streamsockets {
 // Channel.
 template <class T>
 class StreamSocketsChannel : public MessagingChannelInterface<T>,
-                             private boost::noncopyable {
+  public boost::enable_shared_from_this<StreamSocketsChannel<T> >,
+  private boost::noncopyable {
  public:
   typedef enum {
     SS_TCP = 0,
     SS_UNIX = 1
   } StreamSocketType;
+  typedef StreamSocketsChannel<T> type;
+  typedef boost::shared_ptr<type> ptr_type;
+
   explicit StreamSocketsChannel(StreamSocketType type);
   explicit StreamSocketsChannel(TCPConnection::connection_ptr connection);
   virtual ~StreamSocketsChannel();

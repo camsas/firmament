@@ -55,7 +55,6 @@ class StreamSocketsMessagingTest : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests.
-  StreamSocketsMessaging adapter_;
 };
 
 // Tests channel establishment.
@@ -135,10 +134,10 @@ TEST_F(StreamSocketsMessagingTest, BackchannelEstablishment) {
   string uri1 = "tcp://localhost:7779";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
-  shared_ptr<StreamSocketsMessaging> mess_adapter1(
-      new StreamSocketsMessaging());
-  shared_ptr<StreamSocketsMessaging> mess_adapter2(
-      new StreamSocketsMessaging());
+  shared_ptr<StreamSocketsMessaging<BaseMessage> > mess_adapter1(
+      new StreamSocketsMessaging<BaseMessage>());
+  shared_ptr<StreamSocketsMessaging<BaseMessage> > mess_adapter2(
+      new StreamSocketsMessaging<BaseMessage>());
   StreamSocketsChannel<BaseMessage>
       channel(StreamSocketsChannel<BaseMessage>::SS_TCP);
   mess_adapter1->Listen(uri1);

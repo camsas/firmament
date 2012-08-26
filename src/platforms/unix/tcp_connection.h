@@ -28,26 +28,29 @@ namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
 
+using boost::asio::io_service;
 using boost::asio::ip::tcp;
 
 // TCP connection class using boost primitives.
 class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
                       private boost::noncopyable {
  public:
-  typedef boost::shared_ptr<TCPConnection> connection_ptr;
-  explicit TCPConnection(boost::asio::io_service& io_service)  // NOLINT
-      : socket_(io_service), ready_(false) { }
+  typedef shared_ptr<TCPConnection> connection_ptr;
+  explicit TCPConnection(shared_ptr<io_service> io_service)  // NOLINT
+      : io_service_(io_service), socket_(*io_service), ready_(false) { }
   virtual ~TCPConnection();
   tcp::socket* socket() {
     return &socket_;
   }
   bool Ready() { return ready_; }
   void Start();
+  void Close();
 
  private:
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
   tcp::socket socket_;
+  shared_ptr<io_service> io_service_;
   bool ready_;
 };
 
