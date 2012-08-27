@@ -3,7 +3,7 @@
 //
 // Implementation of streaming sockets-based messaging adapter.
 
-#include "platforms/unix/messaging_streamsockets.h"
+#include "platforms/unix/stream_sockets_adapter.h"
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
@@ -18,7 +18,7 @@ namespace platform_unix {
 namespace streamsockets {
 
 // ----------------------------
-// StreamSocketsMessaging
+// StreamSocketsAdapter
 // ----------------------------
 
 }  // namespace streamsockets

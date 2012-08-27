@@ -14,10 +14,10 @@
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
 #include "platforms/common.pb.h"
-#include "platforms/unix/messaging_streamsockets-inl.h"
+#include "platforms/unix/stream_sockets_adapter-inl.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
 
-using firmament::platform_unix::streamsockets::StreamSocketsMessaging;
+using firmament::platform_unix::streamsockets::StreamSocketsAdapter;
 using firmament::platform_unix::streamsockets::StreamSocketsChannel;
 using firmament::common::InitFirmament;
 using firmament::misc::Envelope;
@@ -27,16 +27,16 @@ namespace platform_unix {
 namespace streamsockets {
 
 // The fixture for testing the stream socket messaging adapter.
-class StreamSocketsMessagingTest : public ::testing::Test {
+class StreamSocketsAdapterTest : public ::testing::Test {
  protected:
   // You can remove any or all of the following functions if its body
   // is empty.
 
-  StreamSocketsMessagingTest() {
+  StreamSocketsAdapterTest() {
     // You can do set-up work for each test here.
   }
 
-  virtual ~StreamSocketsMessagingTest() {
+  virtual ~StreamSocketsAdapterTest() {
     // You can do clean-up work that doesn't throw exceptions here.
   }
 
@@ -57,12 +57,12 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 };
 
 // Tests channel establishment.
-/*TEST_F(StreamSocketsMessagingTest, TCPChannelEstablishAndSendTestMessage) {
+/*TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
   FLAGS_v = 2;
   string uri = "tcp://localhost:7777";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
-  shared_ptr<StreamSocketsMessaging> mess_adapter(new StreamSocketsMessaging());
+  shared_ptr<StreamSocketsAdapter> mess_adapter(new StreamSocketsAdapter());
   StreamSocketsChannel<BaseMessage>
       channel(StreamSocketsChannel<BaseMessage>::SS_TCP);
   VLOG(1) << "Calling Listen";
@@ -96,11 +96,11 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 }*/
 
 // Tests send and receive of arbitrary protobufs.
-/*TEST_F(StreamSocketsMessagingTest, ArbitraryProtobufSendRecv) {
+/*TEST_F(StreamSocketsAdapterTest, ArbitraryProtobufSendRecv) {
   string uri = "tcp://localhost:7778";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
-  shared_ptr<StreamSocketsMessaging> mess_adapter(new StreamSocketsMessaging());
+  shared_ptr<StreamSocketsAdapter> mess_adapter(new StreamSocketsAdapter());
   StreamSocketsChannel<BaseMessage>
       channel(StreamSocketsChannel<BaseMessage>::SS_TCP);
   mess_adapter->Listen(uri);
@@ -128,15 +128,15 @@ class StreamSocketsMessagingTest : public ::testing::Test {
 
 // Tests backchannel establishment by sending a protobuf through the
 // backchannel.
-TEST_F(StreamSocketsMessagingTest, BackchannelEstablishment) {
+TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
   FLAGS_v = 2;
   string uri1 = "tcp://localhost:7779";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
-  shared_ptr<StreamSocketsMessaging<BaseMessage> > mess_adapter1(
-      new StreamSocketsMessaging<BaseMessage>());
-  shared_ptr<StreamSocketsMessaging<BaseMessage> > mess_adapter2(
-      new StreamSocketsMessaging<BaseMessage>());
+  shared_ptr<StreamSocketsAdapter<BaseMessage> > mess_adapter1(
+      new StreamSocketsAdapter<BaseMessage>());
+  shared_ptr<StreamSocketsAdapter<BaseMessage> > mess_adapter2(
+      new StreamSocketsAdapter<BaseMessage>());
   StreamSocketsChannel<BaseMessage>
       channel(StreamSocketsChannel<BaseMessage>::SS_TCP);
   mess_adapter1->Listen(uri1);

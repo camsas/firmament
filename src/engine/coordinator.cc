@@ -40,7 +40,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     case PL_UNIX: {
       m_adapter_.reset(
           new platform_unix::streamsockets::
-          StreamSocketsMessaging<BaseMessage>());
+          StreamSocketsAdapter<BaseMessage>());
       break;
     }
     default:

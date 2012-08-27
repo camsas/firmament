@@ -27,12 +27,12 @@
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
 #include "platforms/common.h"
-#include "platforms/unix/messaging_streamsockets-inl.h"
+#include "platforms/unix/stream_sockets_adapter-inl.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
 
 namespace firmament {
 
-using platform_unix::streamsockets::StreamSocketsMessaging;
+using platform_unix::streamsockets::StreamSocketsAdapter;
 using platform_unix::streamsockets::StreamSocketsChannel;
 
 class Worker {
@@ -48,7 +48,7 @@ class Worker {
 
  protected:
   PlatformID platform_id_;
-  shared_ptr<StreamSocketsMessaging<BaseMessage> > m_adapter_;
+  shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
   StreamSocketsChannel<BaseMessage> chan_;
   bool exit_;
   string coordinator_uri_;

@@ -7,7 +7,7 @@
 #ifndef FIRMAMENT_PLATFORMS_UNIX_MESSAGING_STREAMSOCKETS_INL_H
 #define FIRMAMENT_PLATFORMS_UNIX_MESSAGING_STREAMSOCKETS_INL_H
 
-#include "platforms/unix/messaging_streamsockets.h"
+#include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
 
 #include <string>
@@ -18,14 +18,14 @@ namespace platform_unix {
 namespace streamsockets {
 
 template <typename T>
-void StreamSocketsMessaging<T>::CloseChannel(
+void StreamSocketsAdapter<T>::CloseChannel(
     MessagingChannelInterface<T>* chan) {
   VLOG(1) << "Shutting down channel " << chan;
   chan->Close();
 }
 
 template <typename T>
-bool StreamSocketsMessaging<T>::EstablishChannel(
+bool StreamSocketsAdapter<T>::EstablishChannel(
     const string& endpoint_uri,
     MessagingChannelInterface<T>* chan) {
   VLOG(1) << "Establishing channel from endpoint " << endpoint_uri
@@ -34,13 +34,13 @@ bool StreamSocketsMessaging<T>::EstablishChannel(
 }
 
 template <typename T>
-StreamSocketsMessaging<T>::~StreamSocketsMessaging() {
+StreamSocketsAdapter<T>::~StreamSocketsAdapter() {
   VLOG(2) << "Messaging adapter is being destroyed.";
   StopListen();
 }
 
 template <typename T>
-void StreamSocketsMessaging<T>::AddChannelForConnection(
+void StreamSocketsAdapter<T>::AddChannelForConnection(
     TCPConnection::connection_ptr connection) {
   shared_ptr<StreamSocketsChannel<T> > channel(
           new StreamSocketsChannel<T>(connection));
@@ -51,14 +51,14 @@ void StreamSocketsMessaging<T>::AddChannelForConnection(
 
 template <typename T>
 shared_ptr<StreamSocketsChannel<T> >
-StreamSocketsMessaging<T>::GetChannelForConnection(
+StreamSocketsAdapter<T>::GetChannelForConnection(
     uint64_t connection_id) {
   CHECK_LT(connection_id, active_channels_.size());
   return *active_channels_.rbegin();
 }
 
 template <typename T>
-void StreamSocketsMessaging<T>::AwaitNextMessage() {
+void StreamSocketsAdapter<T>::AwaitNextMessage() {
   // If we have no active channels, we cannot receive any messages, so we return
   // immediately.
   if (active_channels_.size() == 0)
@@ -81,7 +81,7 @@ void StreamSocketsMessaging<T>::AwaitNextMessage() {
       VLOG(2) << "MA replenishing envelope for channel " << chan
               << " at " << envelope;
       chan->RecvA(envelope,
-                  boost::bind(&StreamSocketsMessaging::HandleAsyncMessageRecv,
+                  boost::bind(&StreamSocketsAdapter::HandleAsyncMessageRecv,
                               this->shared_from_this(),
                               boost::asio::placeholders::error,
                               boost::asio::placeholders::bytes_transferred,
@@ -104,7 +104,7 @@ void StreamSocketsMessaging<T>::AwaitNextMessage() {
 }
 
 template <typename T>
-void StreamSocketsMessaging<T>::HandleAsyncMessageRecv(
+void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     const boost::system::error_code& error,
     size_t bytes_transferred,
     shared_ptr<StreamSocketsChannel<T> > chan) {
@@ -138,7 +138,7 @@ void StreamSocketsMessaging<T>::HandleAsyncMessageRecv(
 }
 
 template <typename T>
-void StreamSocketsMessaging<T>::Listen(const string& endpoint_uri) {
+void StreamSocketsAdapter<T>::Listen(const string& endpoint_uri) {
   // no-op if we are already listening
   /*if (ListenReady())
     return;*/
@@ -156,7 +156,7 @@ void StreamSocketsMessaging<T>::Listen(const string& endpoint_uri) {
           << " on endpoint " << hostname << "(" << endpoint_uri << ")";
   tcp_server_.reset(new AsyncTCPServer(
       hostname, port, boost::bind(
-          &StreamSocketsMessaging::AddChannelForConnection,
+          &StreamSocketsAdapter::AddChannelForConnection,
           this->shared_from_this(),
           _1)));
   tcp_server_thread_.reset(
@@ -166,14 +166,14 @@ void StreamSocketsMessaging<T>::Listen(const string& endpoint_uri) {
 }
 
 template <typename T>
-bool StreamSocketsMessaging<T>::ListenReady() {
+bool StreamSocketsAdapter<T>::ListenReady() {
   if (tcp_server_)
     return tcp_server_->listening();
   else
     return false;
 }
 
-/*void StreamSocketsMessaging::SendOnConnection(uint64_t connection_id) {
+/*void StreamSocketsAdapter::SendOnConnection(uint64_t connection_id) {
   VLOG(2) << "Messaging adapter sending on connection " << connection_id;
   // TODO(malte): Hack -- we spin until the connection is ready. This is
   // required to avoid race conditions where a messaging adapter is trying to
@@ -190,7 +190,7 @@ bool StreamSocketsMessaging<T>::ListenReady() {
 }*/
 
 template <typename T>
-void StreamSocketsMessaging<T>::StopListen() {
+void StreamSocketsAdapter<T>::StopListen() {
   if (tcp_server_) {
     for (typeof(active_channels_.begin()) chan_iter = active_channels_.begin();
          chan_iter != active_channels_.end();
@@ -211,7 +211,7 @@ void StreamSocketsMessaging<T>::StopListen() {
 }
 
 template <class T>
-ostream& StreamSocketsMessaging<T>::ToString(ostream* stream) const {
+ostream& StreamSocketsAdapter<T>::ToString(ostream* stream) const {
   return *stream << "(MessagingAdapter,type=StreamSockets,at=" << this << ")";
 }
 

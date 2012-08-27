@@ -13,7 +13,7 @@
 
 #include "messages/heartbeat_message.pb.h"
 #include "platforms/common.pb.h"
-#include "platforms/unix/messaging_streamsockets.h"
+#include "platforms/unix/stream_sockets_adapter.h"
 
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
               "attempting automatic discovery.");
@@ -31,7 +31,7 @@ using boost::posix_time::seconds;
 Worker::Worker(PlatformID platform_id)
   : platform_id_(platform_id),
     coordinator_uri_(FLAGS_coordinator_uri),
-    m_adapter_(new StreamSocketsMessaging<BaseMessage>()),
+    m_adapter_(new StreamSocketsAdapter<BaseMessage>()),
     chan_(StreamSocketsChannel<BaseMessage>::SS_TCP),
     exit_(false),
     uuid_(GenerateUUID()) {

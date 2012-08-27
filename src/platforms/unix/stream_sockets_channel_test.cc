@@ -14,10 +14,10 @@
 #include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.pb.h"
-#include "platforms/unix/messaging_streamsockets-inl.h"
+#include "platforms/unix/stream_sockets_adapter-inl.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
 
-using firmament::platform_unix::streamsockets::StreamSocketsMessaging;
+using firmament::platform_unix::streamsockets::StreamSocketsAdapter;
 using firmament::platform_unix::streamsockets::StreamSocketsChannel;
 using firmament::common::InitFirmament;
 using firmament::misc::Envelope;
@@ -36,8 +36,8 @@ class StreamSocketsChannelTest : public ::testing::Test {
   StreamSocketsChannelTest()
     : local_uri_("tcp://localhost:7777"),
       remote_uri_("tcp://localhost:7778"),
-      local_adapter_(new StreamSocketsMessaging<BaseMessage>()),
-      remote_adapter_(new StreamSocketsMessaging<BaseMessage>()) {
+      local_adapter_(new StreamSocketsAdapter<BaseMessage>()),
+      remote_adapter_(new StreamSocketsAdapter<BaseMessage>()) {
     // You can do set-up work for each test here.
   }
 
@@ -77,8 +77,8 @@ class StreamSocketsChannelTest : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests.
-  shared_ptr<StreamSocketsMessaging<BaseMessage> > local_adapter_;
-  shared_ptr<StreamSocketsMessaging<BaseMessage> > remote_adapter_;
+  shared_ptr<StreamSocketsAdapter<BaseMessage> > local_adapter_;
+  shared_ptr<StreamSocketsAdapter<BaseMessage> > remote_adapter_;
   const string local_uri_;
   const string remote_uri_;
   scoped_ptr<StreamSocketsChannel<BaseMessage> > channel_;
@@ -89,10 +89,10 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
   FLAGS_v = 2;
   // TODO(malte): tidy this test up and add some commentary as to how it is
   // different from others.
-  shared_ptr<StreamSocketsMessaging<uint64_t> > local_uint_adapter(
-      new StreamSocketsMessaging<uint64_t>());
-  shared_ptr<StreamSocketsMessaging<uint64_t> > remote_uint_adapter(
-      new StreamSocketsMessaging<uint64_t>());
+  shared_ptr<StreamSocketsAdapter<uint64_t> > local_uint_adapter(
+      new StreamSocketsAdapter<uint64_t>());
+  shared_ptr<StreamSocketsAdapter<uint64_t> > remote_uint_adapter(
+      new StreamSocketsAdapter<uint64_t>());
   remote_uint_adapter->Listen("tcp://localhost:7788");
   while (!remote_uint_adapter->ListenReady()) { }
   shared_ptr<StreamSocketsChannel<uint64_t> > uint_channel(

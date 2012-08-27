@@ -49,7 +49,7 @@ class MessagingChannelInterface : public PrintableInterface {
 };
 
 template <typename T>
-class MessagingInterface : public PrintableInterface {
+class MessagingAdapterInterface : public PrintableInterface {
  public:
   // Set up a messaging channel to a remote endpoint.
   virtual bool EstablishChannel(const string& endpoint_uri,

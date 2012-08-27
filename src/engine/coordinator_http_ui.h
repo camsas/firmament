@@ -10,7 +10,7 @@
 #include "misc/messaging_interface.h"
 #include "engine/coordinator.h"
 #include "platforms/common.h"
-#include "platforms/unix/messaging_streamsockets.h"
+#include "platforms/unix/stream_sockets_adapter.h"
 
 #include <pion/net/HTTPServer.hpp>
 #include <pion/net/HTTPTypes.hpp>

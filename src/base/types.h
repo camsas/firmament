@@ -47,7 +47,7 @@ using boost::weak_ptr;
 #else
 // Neither C++11 support nor Boost available; fall back to Yasper wrapped with
 // home-brew classes.
-#include "yasper.h"
+#include "ext/yasper/yasper.h"
 
 namespace firmament {
 

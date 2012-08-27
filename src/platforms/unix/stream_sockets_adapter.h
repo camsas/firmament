@@ -37,12 +37,12 @@ class StreamSocketsChannel;  // forward declaration
 
 // Messaging adapter.
 template <typename T>
-class StreamSocketsMessaging : public firmament::MessagingInterface<T>,
-  public boost::enable_shared_from_this<StreamSocketsMessaging<T> >,
+class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
+  public boost::enable_shared_from_this<StreamSocketsAdapter<T> >,
   private boost::noncopyable {
  public:
-  StreamSocketsMessaging() : message_wait_ready_(false) { }
-  virtual ~StreamSocketsMessaging();
+  StreamSocketsAdapter() : message_wait_ready_(false) { }
+  virtual ~StreamSocketsAdapter();
   void AwaitNextMessage();
   void AddChannelForConnection(TCPConnection::connection_ptr connection);
   void CloseChannel(MessagingChannelInterface<T>* chan);

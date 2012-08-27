@@ -27,8 +27,8 @@
 #include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
-#include "platforms/unix/messaging_streamsockets.h"
-#include "platforms/unix/messaging_streamsockets-inl.h"
+#include "platforms/unix/stream_sockets_adapter.h"
+#include "platforms/unix/stream_sockets_adapter-inl.h"
 //#include "engine/coordinator_http_ui.h"
 #include "engine/topology_manager.h"
 
@@ -38,7 +38,7 @@ using __gnu_cxx::hash_map;
 
 using machine::topology::TopologyManager;
 using platform_unix::streamsockets::StreamSocketsChannel;
-using platform_unix::streamsockets::StreamSocketsMessaging;
+using platform_unix::streamsockets::StreamSocketsAdapter;
 
 // Forward declaration
 class CoordinatorHTTPUI;
@@ -63,7 +63,7 @@ class Coordinator {
   PlatformID platform_id_;
   bool exit_;
   string coordinator_uri_;
-  shared_ptr<StreamSocketsMessaging<BaseMessage> > m_adapter_;
+  shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
 #if 0
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
 #endif
