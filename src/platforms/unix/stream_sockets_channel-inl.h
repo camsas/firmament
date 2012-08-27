@@ -264,8 +264,9 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
 
 // Asynchronous receive -- does not block.
 template <class T>
-bool StreamSocketsChannel<T>::RecvA(Envelope<T>* message,
-                                    typename AsyncRecvHandler<T>::type callback) {
+bool StreamSocketsChannel<T>::RecvA(
+    Envelope<T>* message,
+    typename AsyncRecvHandler<T>::type callback) {
   VLOG(2) << "In RecvA, waiting for next message";
   if (!Ready()) {
     LOG(WARNING) << "Tried to read from channel " << this

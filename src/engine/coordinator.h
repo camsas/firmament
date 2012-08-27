@@ -8,7 +8,7 @@
 #define FIRMAMENT_ENGINE_COORDINATOR_H
 
 #include <string>
-#include <ext/hash_map>
+#include <hash_map>
 
 // XXX(malte): Think about the Boost dependency!
 #ifdef __PLATFORM_HAS_BOOST__

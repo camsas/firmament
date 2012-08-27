@@ -5,6 +5,7 @@
 
 #include "platforms/unix/async_tcp_server.h"
 
+#include <utility>
 #include <boost/version.hpp>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
@@ -94,7 +95,8 @@ void AsyncTCPServer::Stop() {
   }
   if (io_service_) {
     io_service_work_.reset();
-    VLOG(2) << "Calling io_service.stop() from thread " << boost::this_thread::get_id();
+    VLOG(2) << "Calling io_service.stop() from thread "
+            << boost::this_thread::get_id();
     io_service_->stop();
     //io_service_.reset();
   }

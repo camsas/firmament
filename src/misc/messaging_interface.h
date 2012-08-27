@@ -49,10 +49,8 @@ class MessagingChannelInterface : public PrintableInterface {
 };
 
 template <typename T>
-class MessagingInterface {
+class MessagingInterface : public PrintableInterface {
  public:
-  // Virtual destructor (mandated by having virtual methods).
-  //virtual ~MessagingInterface() {}
   // Set up a messaging channel to a remote endpoint.
   virtual bool EstablishChannel(const string& endpoint_uri,
                                 MessagingChannelInterface<T>* chan) = 0;

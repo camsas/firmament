@@ -11,6 +11,7 @@
 #include "platforms/unix/stream_sockets_channel-inl.h"
 
 #include <string>
+#include <utility>
 
 namespace firmament {
 namespace platform_unix {
@@ -67,7 +68,6 @@ void StreamSocketsMessaging<T>::AwaitNextMessage() {
   uint64_t num_channels = active_channels_.size();
   bool any_outstanding = false;
   for (typeof(active_channels_.begin()) chan_iter = active_channels_.begin();
-  //for (decltype(active_channels_)::iterator chan_iter = active_channels_.begin();
        chan_iter != active_channels_.end();
        ++chan_iter) {
   //for (uint64_t i = 0; i < num_channels; ++i) {
