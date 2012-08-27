@@ -59,7 +59,6 @@ class AsyncTCPServer : public boost::enable_shared_from_this<AsyncTCPServer>,
       endpoint_connection_map_;
   AcceptHandler::type accept_handler_;
   scoped_ptr<boost::thread> thread_;
-  //boost::asio::io_service io_service_;
   scoped_ptr<boost::asio::io_service::work> io_service_work_;
   shared_ptr<boost::asio::io_service> io_service_;
   tcp::acceptor acceptor_;

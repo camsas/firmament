@@ -70,7 +70,6 @@ void StreamSocketsMessaging<T>::AwaitNextMessage() {
   for (typeof(active_channels_.begin()) chan_iter = active_channels_.begin();
        chan_iter != active_channels_.end();
        ++chan_iter) {
-  //for (uint64_t i = 0; i < num_channels; ++i) {
     boost::shared_ptr<StreamSocketsChannel<T> > chan =
         *chan_iter; //active_channels_.at(i);
     if (!channel_recv_envelopes_.count(chan)) {
@@ -156,14 +155,12 @@ void StreamSocketsMessaging<T>::Listen(const string& endpoint_uri) {
   VLOG(1) << "Creating an async TCP server on port " << port
           << " on endpoint " << hostname << "(" << endpoint_uri << ")";
   tcp_server_.reset(new AsyncTCPServer(
-  //tcp_server_ = new AsyncTCPServer(
       hostname, port, boost::bind(
           &StreamSocketsMessaging::AddChannelForConnection,
           this->shared_from_this(),
           _1)));
-  //boost::thread t(boost::bind(&AsyncTCPServer::Run, tcp_server_.get()));
-  tcp_server_thread_.reset(new boost::thread(boost::bind(&AsyncTCPServer::Run,
-                                                         tcp_server_)));
+  tcp_server_thread_.reset(
+      new boost::thread(boost::bind(&AsyncTCPServer::Run, tcp_server_)));
   VLOG(1) << "AsyncTCPServer's main thread running as "
           << tcp_server_thread_->get_id();
 }

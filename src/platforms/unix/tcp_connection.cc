@@ -32,10 +32,9 @@ void TCPConnection::Close() {
   if (ec)
     LOG(WARNING) << "Error shutting down connections on socket for "
                  << "connection at " << this << ": " << ec.message();
-  /*socket_.close(ec);
-  if (ec)
-    LOG(WARNING) << "Error closing socket for "
-                 << "connection at " << this << ": " << ec.message();*/
+  // We do not currently call socket_.close() here, as this appears to happen
+  // implicitly, and causes trouble if we do and then do not destroy the TCP
+  // connection, which cannot recover from the closed socket currently.
 }
 
 void TCPConnection::Start() {

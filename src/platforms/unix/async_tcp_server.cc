@@ -57,14 +57,12 @@ void AsyncTCPServer::StartAccept() {
 }
 
 void AsyncTCPServer::Run() {
+  // TODO(malte): Figure out if we need to reset the io_service itself here,
+  // given that it may have been stopped beforehand.
   VLOG(2) << "Creating IO service thread";
-  /*if (!io_service_) {
-    io_service_.reset(new boost::asio::io_service);
-  }*/
   io_service_work_.reset(new boost::asio::io_service::work(*io_service_));
   thread_.reset(new boost::thread(
       boost::bind(&boost::asio::io_service::run, io_service_.get())));
-  //boost::thread t(boost::bind(&boost::asio::io_service::run, &io_service_));
   // Wait for thread to exit
   VLOG(2) << "IO service thread (" << thread_->get_id()
           << ") running -- Waiting for join...";
@@ -79,7 +77,7 @@ AsyncTCPServer::~AsyncTCPServer() {
 }
 
 void AsyncTCPServer::Stop() {
-  //CHECK(listening_);
+  // no-op if we are not listening -- there is nothing to stop
   if (!listening())
     return;
 
@@ -98,18 +96,7 @@ void AsyncTCPServer::Stop() {
     VLOG(2) << "Calling io_service.stop() from thread "
             << boost::this_thread::get_id();
     io_service_->stop();
-    //io_service_.reset();
   }
-#if 0
-#if (BOOST_VERSION >= 104700)
-  while (!io_service_.stopped()) { }  // spin until stopped
-#else
-/*  uint32_t wait_seconds = 2;
-  VLOG(1) << "Waiting " << wait_seconds
-          << " seconds for io_service to shut down...";
-  boost::this_thread::sleep(boost::posix_time::seconds(wait_seconds));*/
-#endif
-#endif
 }
 
 void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,

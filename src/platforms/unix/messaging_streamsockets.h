@@ -50,15 +50,12 @@ class StreamSocketsMessaging : public firmament::MessagingInterface<T>,
   void CloseChannel(MessagingChannelInterface<T>* chan);
   bool EstablishChannel(const string& endpoint_uri,
                         MessagingChannelInterface<T>* chan);
-  //template <typename T>
   shared_ptr<StreamSocketsChannel<T> > GetChannelForConnection(
       uint64_t connection_id);
   void Listen(const string& endpoint_uri);
   bool ListenReady();
-  //void SendOnConnection(uint64_t connection_id);
   void StopListen();
 
-  //template <typename T>
   const set<shared_ptr<StreamSocketsChannel<T> > >&
       active_channels() {
     return active_channels_;

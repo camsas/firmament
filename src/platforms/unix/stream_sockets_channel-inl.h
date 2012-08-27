@@ -93,11 +93,12 @@ void StreamSocketsChannel<T>::Close() {
     // have ownership of the socket. Ask the connection to terminate instead.
     client_connection_->Close();
   }
-  //VLOG(2) << "Stopping client IO service from thread "
-  //        << boost::this_thread::get_id();
   CHECK(!(client_connection_ && client_io_service_));
-  if (client_io_service_)
+  if (client_io_service_) {
+    VLOG(2) << "Stopping client IO service from thread "
+            << boost::this_thread::get_id();
     client_io_service_->stop();
+  }
 }
 
 template <class T>
@@ -108,7 +109,6 @@ bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
     LOG(WARNING) << "Establishing a new connection on channel " << this
                  << ", despite already having one established. The previous "
                  << "connection will be terminated.";
-    //client_socket_->shutdown(tcp::socket::shutdown_both);
     client_connection_->Close();
     channel_ready_ = false;
   }
