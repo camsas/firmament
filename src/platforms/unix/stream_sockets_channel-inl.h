@@ -140,7 +140,7 @@ bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
   } else {
     io_service_work_.reset(new io_service::work(*client_io_service_));
     VLOG(2) << "Client: we appear to have connected successfully...";
-    boost::shared_ptr<boost::thread> thread(new boost::thread(
+    shared_ptr<boost::thread> thread(new boost::thread(
         boost::bind(&boost::asio::io_service::run, client_io_service_)));
     VLOG(2) << "Created IO service thread " << thread->get_id();
     channel_ready_ = true;

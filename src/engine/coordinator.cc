@@ -25,8 +25,6 @@ DEFINE_int32(http_ui_port, 8080,
 
 namespace firmament {
 
-using boost::shared_ptr;  // XXX(malte): think about this dependency
-
 Coordinator::Coordinator(PlatformID platform_id)
   : platform_id_(platform_id),
     uuid_(GenerateUUID()),

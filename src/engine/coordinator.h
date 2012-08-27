@@ -12,7 +12,6 @@
 
 // XXX(malte): Think about the Boost dependency!
 #ifdef __PLATFORM_HAS_BOOST__
-#include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -37,10 +36,6 @@ namespace firmament {
 
 using __gnu_cxx::hash_map;
 
-#ifdef __PLATFORM_HAS_BOOST__
-using boost::scoped_ptr;
-using boost::shared_ptr;
-#endif
 using machine::topology::TopologyManager;
 using platform_unix::streamsockets::StreamSocketsChannel;
 using platform_unix::streamsockets::StreamSocketsMessaging;

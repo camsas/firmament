@@ -55,7 +55,7 @@ class AsyncTCPServer : public boost::enable_shared_from_this<AsyncTCPServer>,
                     const boost::system::error_code& error,
                     shared_ptr<tcp::endpoint> remote_endpoint);
 
-  map<boost::shared_ptr<tcp::endpoint>, TCPConnection::connection_ptr>
+  map<shared_ptr<tcp::endpoint>, TCPConnection::connection_ptr>
       endpoint_connection_map_;
   AcceptHandler::type accept_handler_;
   scoped_ptr<boost::thread> thread_;

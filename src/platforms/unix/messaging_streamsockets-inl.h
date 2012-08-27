@@ -70,13 +70,13 @@ void StreamSocketsMessaging<T>::AwaitNextMessage() {
   for (typeof(active_channels_.begin()) chan_iter = active_channels_.begin();
        chan_iter != active_channels_.end();
        ++chan_iter) {
-    boost::shared_ptr<StreamSocketsChannel<T> > chan =
+    shared_ptr<StreamSocketsChannel<T> > chan =
         *chan_iter; //active_channels_.at(i);
     if (!channel_recv_envelopes_.count(chan)) {
       // No outstanding receive request for this channel, so create one
       Envelope<T>* envelope = new Envelope<T>();
       channel_recv_envelopes_.insert(
-          pair<boost::shared_ptr<StreamSocketsChannel<T> >,
+          pair<shared_ptr<StreamSocketsChannel<T> >,
           Envelope<T>*>(chan, envelope));
       VLOG(2) << "MA replenishing envelope for channel " << chan
               << " at " << envelope;
@@ -208,6 +208,11 @@ void StreamSocketsMessaging<T>::StopListen() {
   // for the moment, this is a sledgehammer approach.
   active_channels_.clear();
   channel_recv_envelopes_.clear();
+}
+
+template <class T>
+ostream& StreamSocketsMessaging<T>::ToString(ostream* stream) const {
+  return *stream << "(MessagingAdapter,type=StreamSockets,at=" << this << ")";
 }
 
 

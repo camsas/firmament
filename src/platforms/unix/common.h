@@ -8,10 +8,9 @@
 #define FIRMAMENT_PLATFORMS_UNIX_COMMON_H
 
 #include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/system/error_code.hpp>
 
+#include "base/types.h"
 #include "misc/envelope.h"
 #include "platforms/common.pb.h"
 
@@ -19,9 +18,6 @@ namespace firmament {
 namespace platform_unix {
 
 #define __PLATFORM_UNIX__
-
-using boost::shared_ptr;
-using boost::scoped_ptr;
 
 namespace streamsockets {
 class TCPConnection;  // Forward declaration

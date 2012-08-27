@@ -22,7 +22,6 @@ using firmament::platform_unix::streamsockets::StreamSocketsChannel;
 using firmament::common::InitFirmament;
 using firmament::misc::Envelope;
 using ::google::protobuf::Message;
-using boost::shared_ptr;
 
 namespace firmament {
 namespace platform_unix {

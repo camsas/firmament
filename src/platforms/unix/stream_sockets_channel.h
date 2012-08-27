@@ -38,7 +38,7 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
     SS_UNIX = 1
   } StreamSocketType;
   typedef StreamSocketsChannel<T> type;
-  typedef boost::shared_ptr<type> ptr_type;
+  typedef shared_ptr<type> ptr_type;
 
   explicit StreamSocketsChannel(StreamSocketType type);
   explicit StreamSocketsChannel(TCPConnection::connection_ptr connection);
@@ -67,12 +67,12 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
  private:
   // Async receive buffer data structures and lock
   boost::mutex async_recv_lock_;
-  boost::scoped_ptr<boost::asio::mutable_buffers_1> async_recv_buffer_;
-  boost::scoped_ptr<vector<char> > async_recv_buffer_vec_;
+  scoped_ptr<boost::asio::mutable_buffers_1> async_recv_buffer_;
+  scoped_ptr<vector<char> > async_recv_buffer_vec_;
   // TCP and io_service data structures
-  boost::shared_ptr<boost::asio::io_service> client_io_service_;
-  boost::scoped_ptr<boost::asio::io_service::work> io_service_work_;
-  boost::shared_ptr<boost::asio::ip::tcp::socket> client_socket_;
+  shared_ptr<boost::asio::io_service> client_io_service_;
+  scoped_ptr<boost::asio::io_service::work> io_service_work_;
+  shared_ptr<boost::asio::ip::tcp::socket> client_socket_;
   TCPConnection::connection_ptr client_connection_;
   bool channel_ready_;
   StreamSocketType type_;

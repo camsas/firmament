@@ -110,7 +110,7 @@ void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
     CHECK(!endpoint_connection_map_.count(remote_endpoint));
     // Record a mapping for the connection's endpoint
     endpoint_connection_map_.insert(
-        pair<boost::shared_ptr<tcp::endpoint>, TCPConnection::connection_ptr>(
+        pair<shared_ptr<tcp::endpoint>, TCPConnection::connection_ptr>(
             remote_endpoint, connection));
     // Once the connection is up, we invoke the callback to notify the messaging
     // adapter (which will wrap the connection into a channel).

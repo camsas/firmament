@@ -21,7 +21,6 @@ using firmament::platform_unix::streamsockets::StreamSocketsMessaging;
 using firmament::platform_unix::streamsockets::StreamSocketsChannel;
 using firmament::common::InitFirmament;
 using firmament::misc::Envelope;
-using boost::shared_ptr;
 
 namespace firmament {
 namespace platform_unix {

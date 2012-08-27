@@ -30,8 +30,6 @@ namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
 
-using boost::shared_ptr;
-
 class TCPConnection;  // forward declaration
 class AsyncTCPServer;  // forward declaration
 template <typename T>
@@ -55,6 +53,7 @@ class StreamSocketsMessaging : public firmament::MessagingInterface<T>,
   void Listen(const string& endpoint_uri);
   bool ListenReady();
   void StopListen();
+  virtual ostream& ToString(ostream* stream) const;
 
   const set<shared_ptr<StreamSocketsChannel<T> > >&
       active_channels() {
