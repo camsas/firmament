@@ -86,20 +86,35 @@ class StreamSocketsChannelTest : public ::testing::Test {
 };
 
 // Tests synchronous send of an integer.
-/*TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
+TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
   FLAGS_v = 2;
+  // TODO(malte): tidy this test up and add some commentary as to how it is
+  // different from others.
+  shared_ptr<StreamSocketsMessaging<uint64_t> > local_uint_adapter(
+      new StreamSocketsMessaging<uint64_t>());
+  shared_ptr<StreamSocketsMessaging<uint64_t> > remote_uint_adapter(
+      new StreamSocketsMessaging<uint64_t>());
+  remote_uint_adapter->Listen("tcp://localhost:7788");
+  while (!remote_uint_adapter->ListenReady()) { }
+  shared_ptr<StreamSocketsChannel<uint64_t> > uint_channel(
+      new StreamSocketsChannel<uint64_t>(
+          StreamSocketsChannel<uint64_t>::SS_TCP));
+  local_uint_adapter->EstablishChannel("tcp://localhost:7788",
+                                       uint_channel.get());
+  while (!uint_channel->Ready()) {  }
   uint64_t testInteger = 5;
   Envelope<uint64_t> envelope(&testInteger);
-  channel_->SendS(envelope);
+  uint_channel->SendS(envelope);
+  while (remote_uint_adapter->active_channels().size() == 0) { }
   shared_ptr<StreamSocketsChannel<uint64_t> > backchannel =
-      remote_adapter_->GetChannelForConnection(0);
-  while (remote_adapter_->active_channels().size() == 0) { }
+      remote_uint_adapter->GetChannelForConnection(0);
   uint64_t recvdInteger = 0;
   Envelope<uint64_t> recv_env(&recvdInteger);
-  backchannel.RecvS(recv_env);
+  while (!backchannel->Ready()) { }
+  backchannel->RecvS(&recv_env);
   CHECK_EQ(recvdInteger, testInteger);
   CHECK_EQ(recvdInteger, 5);
-}*/
+}
 
 // Tests synchronous send of a protobuf.
 TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceive) {
