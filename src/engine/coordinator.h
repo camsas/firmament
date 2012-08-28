@@ -30,7 +30,9 @@
 #include "platforms/common.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_adapter-inl.h"
-//#include "engine/coordinator_http_ui.h"
+#ifdef __HTTP_UI__
+#include "engine/coordinator_http_ui.h"
+#endif
 #include "engine/topology_manager.h"
 
 namespace firmament {
@@ -41,8 +43,10 @@ using machine::topology::TopologyManager;
 using platform_unix::streamsockets::StreamSocketsChannel;
 using platform_unix::streamsockets::StreamSocketsAdapter;
 
+#ifdef __HTTP_UI__
 // Forward declaration
 class CoordinatorHTTPUI;
+#endif
 
 class Coordinator {
  public:
@@ -66,7 +70,7 @@ class Coordinator {
   bool exit_;
   string coordinator_uri_;
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
-#if 0
+#ifdef __HTTP_UI__
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
 #endif
   scoped_ptr<TopologyManager> topology_manager_;

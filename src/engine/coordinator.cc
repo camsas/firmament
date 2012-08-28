@@ -21,8 +21,10 @@ DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
               "attempting automatic discovery.");
 DEFINE_string(listen_uri, "tcp://localhost:9998",
               "The name/address/port to listen on.");
+#ifdef __HTTP_UI__
 DEFINE_int32(http_ui_port, 8080,
              "The port that the HTTP UI will be served on; -1 to disable.");
+#endif
 
 namespace firmament {
 
@@ -48,7 +50,7 @@ Coordinator::Coordinator(PlatformID platform_id)
       LOG(FATAL) << "Unimplemented!";
   }
 
-#if 0
+#ifdef __HTTP_UI__
   // Start up HTTP interface
   if (FLAGS_http_ui_port > 0) {
     c_http_ui_.reset(new CoordinatorHTTPUI(this));

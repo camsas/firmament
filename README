@@ -1,19 +1,27 @@
-Firmament is -- or rather, hopefully will be -- a multi-scale execution engine
-for cluster computing.
+Firmament is a multi-scale execution engine for cluster computing under
+development at the University of Cambridge Computer Laboratory.
+
+It is currently in early alpha stage, with much of the high-level functionality
+still missing, and interfaces frequently changing.
 
 
 SYSTEM REQUIREMENTS
 -------------------
 
-Firmament is currently known to work on Ubuntu 10.10 (maverick) and
-11.10 (oneric); it does NOT work without extra actions on 10.04 and 11.04.
+Firmament is currently known to work on Ubuntu 10.10 (maverick), 11.10 (oneric),
+with caveats (see below) on 12.04 (precise); it does NOT work without extra
+actions on 10.04 and 11.04.
 
 Other configurations are untested - YMMV.
 
 Reasons for known breakage:
-* Ubuntu 10.04 - packaged clang/LLVM version too old.
+* Ubuntu 10.04 - packaged clang/LLVM version too old (requires Clang >=2.9).
 * Ubuntu 11.04 - broken dependency on /usr/include/linux/errno.h;
                  see http://pad.lv/774215 for a possible workaround
+* Ubuntu 12.04 - when using Boost v1.48, the HTTP interface does not compile
+                 due to libpion-net relying on a deprecated (and removed) Boost
+                 feature. As a workaround, disable -D__HTTP_UI__ in
+                 include/Makefile.config.unix
 
 
 BUILDING & RUNNING
