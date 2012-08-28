@@ -87,6 +87,11 @@ class MessagingAdapterInterface : public PrintableInterface {
   // Register error callback
   virtual void RegisterAsyncErrorPathCallback(
       typename AsyncErrorPathHandler<T>::type callback) = 0;
+  // Send a message to a remote endpoint. If the resource is not associated
+  // (i.e. there is no channel to it, or it has failed), the boolean return
+  // value will be false.
+  virtual bool SendMessageToEndpoint(const string& endpoint_uri,
+                                     T& message) = 0;
 };
 
 }  // namespace firmament

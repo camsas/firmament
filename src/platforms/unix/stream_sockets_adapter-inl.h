@@ -7,6 +7,7 @@
 #ifndef FIRMAMENT_PLATFORMS_UNIX_MESSAGING_STREAMSOCKETS_INL_H
 #define FIRMAMENT_PLATFORMS_UNIX_MESSAGING_STREAMSOCKETS_INL_H
 
+#include "misc/map-util.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
 
@@ -199,21 +200,19 @@ void StreamSocketsAdapter<T>::RegisterAsyncErrorPathCallback(
   error_path_handler_ = callback;
 }
 
-/*void StreamSocketsAdapter::SendOnConnection(uint64_t connection_id) {
-  VLOG(2) << "Messaging adapter sending on connection " << connection_id;
-  // TODO(malte): Hack -- we spin until the connection is ready. This is
-  // required to avoid race conditions where a messaging adapter is trying to
-  // send on a connection before it is ready. This can occur due to the
-  // asynchronous, multi-threaded nature of the TCP server.
-  while (!tcp_server_->connection(connection_id)->Ready()) {
-    VLOG_EVERY_N(2, 1000) << "Waiting for connection " << connection_id
-                          << " to be ready to send...";
-    boost::this_thread::yield();
-  }
-  // Actually send the data on the (now ready) TCP connection
-  //tcp_server_->connection(connection_id)->Send();
-  LOG(FATAL) << "Unimplemented!";
-}*/
+template <typename T>
+bool StreamSocketsAdapter<T>::SendMessageToEndpoint(
+    const string& endpoint_uri, T& message) {
+  shared_ptr<StreamSocketsChannel<T> >* chan =
+      FindOrNull(endpoint_channel_map_, endpoint_uri);
+  if (!chan)
+    return false;
+  // N.B.: Synchronous send here means that it's okay to stack-allocate the
+  // Envelope; if we ever switch to async or provide such a facility, this needs
+  // to be dynamically allocated.
+  Envelope<T> envelope(&message);
+  return (*chan)->SendS(envelope);
+}
 
 template <typename T>
 void StreamSocketsAdapter<T>::StopListen() {

@@ -57,12 +57,13 @@ class StreamSocketsAdapterTest : public ::testing::Test {
 };
 
 // Tests channel establishment.
-/*TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
+TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
   FLAGS_v = 2;
   string uri = "tcp://localhost:7777";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
-  shared_ptr<StreamSocketsAdapter> mess_adapter(new StreamSocketsAdapter());
+  shared_ptr<StreamSocketsAdapter<BaseMessage> > mess_adapter(
+      new StreamSocketsAdapter<BaseMessage>());
   StreamSocketsChannel<BaseMessage>
       channel(StreamSocketsChannel<BaseMessage>::SS_TCP);
   VLOG(1) << "Calling Listen";
@@ -80,20 +81,23 @@ class StreamSocketsAdapterTest : public ::testing::Test {
     VLOG(1) << "Waiting until channel established...";
   }
   // Send a test protobuf message through the channel
+  BaseMessage s_tm;
+  s_tm.MutableExtension(test_extn)->set_test(43);
   VLOG(1) << "Calling SendS";
-  mess_adapter->SendOnConnection(0);
+  CHECK(mess_adapter->SendMessageToEndpoint(
+      channel.LocalEndpointString(), s_tm));
   // Receive the protobuf at the other end of the channel
-  BaseMessage tm;
-  Envelope<BaseMessage> envelope(&tm);
+  BaseMessage r_tm;
+  Envelope<BaseMessage> envelope(&r_tm);
   VLOG(1) << "Calling RecvS";
   CHECK(channel.RecvS(&envelope));
   // The received message should have the "test" field set to 43 (instead of the
   // default 42).
-  CHECK_EQ(tm.GetExtension(test_extn).test(), 43);
+  CHECK_EQ(r_tm.GetExtension(test_extn).test(), 43);
   VLOG(1) << "closing channel";
   channel.Close();
   mess_adapter->StopListen();
-}*/
+}
 
 // Tests send and receive of arbitrary protobufs.
 /*TEST_F(StreamSocketsAdapterTest, ArbitraryProtobufSendRecv) {
