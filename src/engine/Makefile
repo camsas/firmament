@@ -13,8 +13,8 @@ TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \
 	     $(BUILD_DIR)/messages/libfirmament_messages.a \
 	     $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 	     $(BUILD_DIR)/platforms/common.pb.o \
-	     $(BUILD_DIR)/engine/coordinator_http_ui.o \
-	     $(BUILD_DIR)/engine/topology_manager.o
+	     $(BUILD_DIR)/engine/topology_manager.o \
+	     $(BUILD_DIR)/engine/coordinator_http_ui.o
 
 OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))

@@ -56,7 +56,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   explicit Coordinator(PlatformID platform_id);
   void Run();
   void AwaitNextMessage();
-  void Shutdown();
+  void Shutdown(const string& reason);
 
   inline PlatformID platform_id() {
     return platform_id_;

@@ -130,8 +130,8 @@ ResourceID_t Coordinator::GenerateUUID() {
   return gen();
 }
 
-void Coordinator::Shutdown() {
-  LOG(INFO) << "Coordinator shutting down!";
+void Coordinator::Shutdown(const string& reason) {
+  LOG(INFO) << "Coordinator shutting down; reason: " << reason;
 }
 
 }  // namespace firmament

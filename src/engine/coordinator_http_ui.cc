@@ -3,6 +3,7 @@
 //
 
 #include "engine/coordinator_http_ui.h"
+#include "engine/coordinator.h"
 
 #include <string>
 #include <boost/uuid/uuid_io.hpp>
@@ -58,7 +59,12 @@ void CoordinatorHTTPUI::HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
   HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
 
   // Individual to this request
-  writer->write("ok");
+  if (http_request->getMethod() != "POST") {
+    // return an error
+    writer->write("POST a message to this URL to inject it.");
+  } else {
+    writer->write("ok");
+  }
 
   FinishOkResponse(writer);
 }
@@ -70,7 +76,8 @@ void CoordinatorHTTPUI::HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLI
   HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
 
   // Individual to this request
-  coordinator_->Shutdown();
+  string reason = "HTTP request from " + tcp_conn->getRemoteIp().to_string();
+  coordinator_->Shutdown(reason);
   writer->write("Shutdown for coordinator initiated.");
 
   FinishOkResponse(writer);
