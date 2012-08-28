@@ -71,7 +71,7 @@ class Coordinator {
 #endif
   scoped_ptr<TopologyManager> topology_manager_;
   // A map of resources associated with this coordinator.
-  map<const string, ResourceDescriptor> associated_resources_;
+  map<ResourceID_t, ResourceDescriptor> associated_resources_;
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;

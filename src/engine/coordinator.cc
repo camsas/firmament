@@ -108,13 +108,13 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
 }
 
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
-  //boost::uuids::string_generator gen;
-  //boost::uuids::uuid uuid = gen(msg.uuid());
-  ResourceDescriptor* rd = FindOrNull(associated_resources_, msg.uuid());
+  boost::uuids::string_generator gen;
+  boost::uuids::uuid uuid = gen(msg.uuid());
+  ResourceDescriptor* rd = FindOrNull(associated_resources_, uuid);
   if (!rd) {
     LOG(INFO) << "NEW RESOURCE (uuid: " << msg.uuid() << ")";
     // N.B.: below will copy the resource descriptor
-    CHECK(InsertIfNotPresent(&associated_resources_, msg.uuid(),
+    CHECK(InsertIfNotPresent(&associated_resources_, uuid,
                              msg.res_desc()));
   } else {
     LOG(INFO) << "HEARTBEAT from resource " << msg.uuid();
