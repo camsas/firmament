@@ -104,9 +104,10 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
   uint64_t testInteger = 5;
   Envelope<uint64_t> envelope(&testInteger);
   uint_channel->SendS(envelope);
-  while (remote_uint_adapter->active_channels().size() == 0) { }
-  shared_ptr<StreamSocketsChannel<uint64_t> > backchannel =
-      remote_uint_adapter->GetChannelForConnection(0);
+  while (remote_uint_adapter->NumActiveChannels() == 0) { }
+  shared_ptr<MessagingChannelInterface<uint64_t> > backchannel =
+      remote_uint_adapter->GetChannelForEndpoint(
+          uint_channel->LocalEndpointString());
   uint64_t recvdInteger = 0;
   Envelope<uint64_t> recv_env(&recvdInteger);
   while (!backchannel->Ready()) { }
@@ -124,9 +125,9 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceive) {
   while (!channel_->Ready()) {  }
   channel_->SendS(envelope);
   // Spin-wait for backchannel to become available
-  while (remote_adapter_->active_channels().size() == 0) { }
-  shared_ptr<StreamSocketsChannel<BaseMessage> > backchannel =
-      remote_adapter_->GetChannelForConnection(0);
+  while (remote_adapter_->NumActiveChannels() == 0) { }
+  shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
+      remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);
   while (!backchannel->Ready()) {  }
@@ -150,9 +151,9 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   Envelope<BaseMessage> envelope2(&tm2);
   channel_->SendS(envelope2);
   // Spin-wait for backchannel to become available
-  while (remote_adapter_->active_channels().size() == 0) { }
-  shared_ptr<StreamSocketsChannel<BaseMessage> > backchannel =
-      remote_adapter_->GetChannelForConnection(0);
+  while (remote_adapter_->NumActiveChannels() == 0) { }
+  shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
+      remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);
   while (!backchannel->Ready()) {  }
@@ -175,9 +176,9 @@ TEST_F(StreamSocketsChannelTest, TCPAsyncProtobufSend) {
   Envelope<BaseMessage> envelope(&tm);
   channel_->SendS(envelope);
   //channel_->SendA(envelope, boost::bind(std::plus<int>(), 0, 0));
-  while (remote_adapter_->active_channels().size() == 0) { }
-  shared_ptr<StreamSocketsChannel<BaseMessage> > backchannel =
-      remote_adapter_->GetChannelForConnection(0);
+  while (remote_adapter_->NumActiveChannels() == 0) { }
+  shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
+      remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);
   while (!backchannel->Ready()) {  }

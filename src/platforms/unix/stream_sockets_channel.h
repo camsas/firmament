@@ -45,10 +45,12 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
   virtual ~StreamSocketsChannel();
   void Close();
   bool Establish(const string& endpoint_uri);
+  const string LocalEndpointString();
   bool Ready();
   bool RecvA(misc::Envelope<T>* message,
              typename AsyncRecvHandler<T>::type callback);
   bool RecvS(misc::Envelope<T>* message);
+  const string RemoteEndpointString();
   bool SendS(const misc::Envelope<T>& message);
   bool SendA(const misc::Envelope<T>& message,
              typename AsyncSendHandler<T>::type callback);

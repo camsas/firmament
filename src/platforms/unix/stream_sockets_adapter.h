@@ -48,16 +48,15 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
   void CloseChannel(MessagingChannelInterface<T>* chan);
   bool EstablishChannel(const string& endpoint_uri,
                         MessagingChannelInterface<T>* chan);
-  shared_ptr<StreamSocketsChannel<T> > GetChannelForConnection(
-      uint64_t connection_id);
+  shared_ptr<MessagingChannelInterface<T> > GetChannelForEndpoint(
+      const string& endpoint);
   void Listen(const string& endpoint_uri);
   bool ListenReady();
   void StopListen();
   virtual ostream& ToString(ostream* stream) const;
 
-  const set<shared_ptr<StreamSocketsChannel<T> > >&
-      active_channels() {
-    return active_channels_;
+  size_t NumActiveChannels() {
+    return endpoint_channel_map_.size();
   }
 
  private:
@@ -67,7 +66,9 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
 
   shared_ptr<AsyncTCPServer> tcp_server_;
   scoped_ptr<boost::thread> tcp_server_thread_;
-  set<shared_ptr<StreamSocketsChannel<T> > > active_channels_;
+  //set<shared_ptr<StreamSocketsChannel<T> > > active_channels_;
+  map<const string, shared_ptr<StreamSocketsChannel<T> > >
+      endpoint_channel_map_;
   map<shared_ptr<StreamSocketsChannel<T> >, Envelope<T>* >
       channel_recv_envelopes_;
   // Synchronization variables, locks tec.

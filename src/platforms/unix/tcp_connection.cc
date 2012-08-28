@@ -36,6 +36,24 @@ void TCPConnection::Close() {
   // connection, which cannot recover from the closed socket currently.
 }
 
+const string TCPConnection::LocalEndpointString() {
+  if (!ready_)
+    return NULL;
+  string ip_address = socket_.local_endpoint().address().to_string();
+  string port = to_string<uint16_t>(socket_.local_endpoint().port());
+  string endpoint = "tcp://" + ip_address + ":" + port;
+  return endpoint;
+}
+
+const string TCPConnection::RemoteEndpointString() {
+  if (!ready_)
+    return NULL;
+  string ip_address = socket_.remote_endpoint().address().to_string();
+  string port = to_string<uint16_t>(socket_.remote_endpoint().port());
+  string endpoint = "tcp://" + ip_address + ":" + port;
+  return endpoint;
+}
+
 void TCPConnection::Start() {
   VLOG(2) << "TCP connection starting!";
   ready_ = true;

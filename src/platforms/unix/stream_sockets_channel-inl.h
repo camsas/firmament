@@ -148,10 +148,28 @@ bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
   }
 }
 
+template <typename T>
+const string StreamSocketsChannel<T>::LocalEndpointString() {
+  if (client_connection_)
+    return client_connection_->LocalEndpointString();
+  string ip_address = client_socket_->local_endpoint().address().to_string();
+  string port = to_string<uint64_t>(client_socket_->local_endpoint().port());
+  return "tcp://" + ip_address + ":" + port;
+}
+
 // Ready check
 template <class T>
 bool StreamSocketsChannel<T>::Ready() {
   return (channel_ready_ && client_socket_->is_open());
+}
+
+template <typename T>
+const string StreamSocketsChannel<T>::RemoteEndpointString() {
+  if (client_connection_)
+    return client_connection_->RemoteEndpointString();
+  string ip_address = client_socket_->remote_endpoint().address().to_string();
+  string port = to_string<uint64_t>(client_socket_->remote_endpoint().port());
+  return "tcp://" + ip_address + ":" + port;
 }
 
 // Synchronous send

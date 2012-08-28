@@ -44,34 +44,45 @@ void StreamSocketsAdapter<T>::AddChannelForConnection(
     TCPConnection::connection_ptr connection) {
   shared_ptr<StreamSocketsChannel<T> > channel(
           new StreamSocketsChannel<T>(connection));
+  const string endpoint_name = connection->RemoteEndpointString();
   VLOG(1) << "Adding back-channel for connection at " << connection
-          << ", channel is " << *channel;
-  active_channels_.insert(channel);
+          << ", channel is " << *channel << ", remote endpoint: "
+          << endpoint_name;
+  pair<const string, shared_ptr<StreamSocketsChannel<T> > > val(
+      endpoint_name, channel);
+  endpoint_channel_map_.insert(val);
 }
 
 template <typename T>
-shared_ptr<StreamSocketsChannel<T> >
-StreamSocketsAdapter<T>::GetChannelForConnection(
-    uint64_t connection_id) {
-  CHECK_LT(connection_id, active_channels_.size());
-  return *active_channels_.rbegin();
+shared_ptr<MessagingChannelInterface<T> >
+StreamSocketsAdapter<T>::GetChannelForEndpoint(
+    const string& endpoint) {
+  CHECK_NE(endpoint, "");
+  typeof(endpoint_channel_map_.begin()) it =
+      endpoint_channel_map_.find(endpoint);
+  if (it == endpoint_channel_map_.end())
+    // No channel found
+    return shared_ptr<StreamSocketsChannel<T> >();
+  // Return channel pointer
+  return it->second;
 }
 
 template <typename T>
 void StreamSocketsAdapter<T>::AwaitNextMessage() {
   // If we have no active channels, we cannot receive any messages, so we return
   // immediately.
-  if (active_channels_.size() == 0)
+  if (endpoint_channel_map_.size() == 0)
     return;
   // Otherwise, let's make sure we have an outstanding async receive request for
   // each fo them.
-  uint64_t num_channels = active_channels_.size();
+  uint64_t num_channels = endpoint_channel_map_.size();
   bool any_outstanding = false;
-  for (typeof(active_channels_.begin()) chan_iter = active_channels_.begin();
-       chan_iter != active_channels_.end();
+  for (typeof(endpoint_channel_map_.begin()) chan_iter =
+       endpoint_channel_map_.begin();
+       chan_iter != endpoint_channel_map_.end();
        ++chan_iter) {
     shared_ptr<StreamSocketsChannel<T> > chan =
-        *chan_iter; //active_channels_.at(i);
+        chan_iter->second;
     if (!channel_recv_envelopes_.count(chan)) {
       // No outstanding receive request for this channel, so create one
       Envelope<T>* envelope = new Envelope<T>();
@@ -113,7 +124,7 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     // TODO(malte): think about clearing up state here. Should we consider the
     // envelope as having been consumed? Currently we do so.
     // XXX(malte): hack, not safe (offset may have changed!)
-    active_channels_.erase(chan);
+    endpoint_channel_map_.erase("");
     channel_recv_envelopes_.erase(chan);
     //chan->Close();
     // XXX(malte): Do we need to unlock/signal here?
@@ -143,7 +154,7 @@ void StreamSocketsAdapter<T>::Listen(const string& endpoint_uri) {
   /*if (ListenReady())
     return;*/
   CHECK(!ListenReady());
-  CHECK_EQ(active_channels_.size(), 0);
+  CHECK_EQ(endpoint_channel_map_.size(), 0);
   CHECK_EQ(channel_recv_envelopes_.size(), 0);
   message_wait_mutex_.lock();
   message_wait_ready_ = false;
@@ -192,11 +203,12 @@ bool StreamSocketsAdapter<T>::ListenReady() {
 template <typename T>
 void StreamSocketsAdapter<T>::StopListen() {
   if (tcp_server_) {
-    for (typeof(active_channels_.begin()) chan_iter = active_channels_.begin();
-         chan_iter != active_channels_.end();
+    for (typeof(endpoint_channel_map_.begin()) chan_iter =
+         endpoint_channel_map_.begin();
+         chan_iter != endpoint_channel_map_.end();
          ++chan_iter) {
-      VLOG(2) << "Closing associated channel at " << *chan_iter;
-      (*chan_iter)->Close();
+      VLOG(2) << "Closing associated channel at " << chan_iter->second;
+      chan_iter->second->Close();
     }
     VLOG(2) << "Stopping async TCP server at " << tcp_server_
             << "...";
@@ -206,7 +218,7 @@ void StreamSocketsAdapter<T>::StopListen() {
   }
   // XXX(malte): We would prefer if channels cleared up after themselves, but
   // for the moment, this is a sledgehammer approach.
-  active_channels_.clear();
+  endpoint_channel_map_.clear();
   channel_recv_envelopes_.clear();
 }
 

@@ -39,10 +39,13 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
   explicit TCPConnection(shared_ptr<io_service> io_service)  // NOLINT
       : io_service_(io_service), socket_(*io_service), ready_(false) { }
   virtual ~TCPConnection();
+  // XXX(malte): unsafe raw pointer, fix this
   tcp::socket* socket() {
     return &socket_;
   }
+  const string LocalEndpointString();
   bool Ready() { return ready_; }
+  const string RemoteEndpointString();
   void Start();
   void Close();
 
