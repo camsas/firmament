@@ -135,6 +135,9 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
   Envelope<T>* envelope = channel_recv_envelopes_[chan];
   VLOG(2) << "Received in MA: " << *envelope << " ("
           << bytes_transferred << ")";
+  // Invoke message receipt callback, if any registered
+  message_recv_handler_(envelope->data());
+  // We've finished dealing with this message, so clean up now.
   channel_recv_envelopes_.erase(chan);
   delete envelope;
   {
@@ -182,6 +185,18 @@ bool StreamSocketsAdapter<T>::ListenReady() {
     return tcp_server_->listening();
   else
     return false;
+}
+
+template <typename T>
+void StreamSocketsAdapter<T>::RegisterAsyncMessageReceiptCallback(
+    typename AsyncMessageRecvHandler<T>::type callback) {
+  message_recv_handler_ = callback;
+}
+
+template <typename T>
+void StreamSocketsAdapter<T>::RegisterAsyncErrorPathCallback(
+    typename AsyncErrorPathHandler<T>::type callback) {
+  error_path_handler_ = callback;
 }
 
 /*void StreamSocketsAdapter::SendOnConnection(uint64_t connection_id) {

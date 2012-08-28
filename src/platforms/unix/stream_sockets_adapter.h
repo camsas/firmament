@@ -52,6 +52,10 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
       const string& endpoint);
   void Listen(const string& endpoint_uri);
   bool ListenReady();
+  void RegisterAsyncMessageReceiptCallback(
+      typename AsyncMessageRecvHandler<T>::type callback);
+  void RegisterAsyncErrorPathCallback(
+      typename AsyncErrorPathHandler<T>::type callback);
   void StopListen();
   virtual ostream& ToString(ostream* stream) const;
 
@@ -64,6 +68,8 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
       const boost::system::error_code& error, size_t bytes_transferred,
       shared_ptr<StreamSocketsChannel<T> > chan);
 
+  typename AsyncMessageRecvHandler<T>::type message_recv_handler_;
+  typename AsyncErrorPathHandler<T>::type error_path_handler_;
   shared_ptr<AsyncTCPServer> tcp_server_;
   scoped_ptr<boost::thread> tcp_server_thread_;
   //set<shared_ptr<StreamSocketsChannel<T> > > active_channels_;

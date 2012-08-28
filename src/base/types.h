@@ -33,6 +33,7 @@ using std::weak_ptr;
 
 #elif __PLATFORM_HAS_BOOST__
 // No C++11 support, but Boost is present
+#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 
@@ -55,6 +56,9 @@ namespace firmament {
 class shared_ptr<T> : public yasper::ptr<T> {
 };
 
+// TODO(malte): consider using Google's scoped_ptr implementation here (Apache
+// 2.0 license).
+
 // TODO(malte): Add support for scoped and weak pointers
 #error "No current support for scoped_ptr and weak_ptr using yasper " \
     "Smart pointers not available on this platform; this needs fixing before " \
@@ -69,6 +73,22 @@ namespace firmament {
 typedef boost::uuids::uuid ResourceID_t;
 #else
 typedef uint64_t ResourceID_t;
+#endif
+
+#ifdef __PLATFORM_HAS_BOOST__
+// Message handler callback type definition
+template <typename T>
+struct AsyncMessageRecvHandler {
+  typedef boost::function<void(T* message)> type;
+};
+
+// Error handler callback type definition
+template <typename T>
+struct AsyncErrorPathHandler {
+  typedef boost::function<void()> type;
+};
+#else
+#error "Handler types do not currently have non-Boost versions."
 #endif
 
 }  // namespace firmament

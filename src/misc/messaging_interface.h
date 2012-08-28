@@ -82,9 +82,11 @@ class MessagingAdapterInterface : public PrintableInterface {
   // Start asynchronous receive loop
   //virtual void StartAsyncRecvLoop() = 0;
   // Register message receipt callback
-  //virtual void RegisterAsyncMessageReceiptCallback() = 0;
+  virtual void RegisterAsyncMessageReceiptCallback(
+      typename AsyncMessageRecvHandler<T>::type callback) = 0;
   // Register error callback
-  //virtual void RegisterAsyncErrorPathCallback() = 0;
+  virtual void RegisterAsyncErrorPathCallback(
+      typename AsyncErrorPathHandler<T>::type callback) = 0;
 };
 
 }  // namespace firmament

@@ -8,7 +8,7 @@
 #define FIRMAMENT_ENGINE_COORDINATOR_H
 
 #include <string>
-#include <hash_map>
+#include <map>
 
 // XXX(malte): Think about the Boost dependency!
 #ifdef __PLATFORM_HAS_BOOST__
@@ -25,6 +25,7 @@
 #include "base/resource_desc.pb.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
+#include "messages/heartbeat_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/stream_sockets_adapter.h"
@@ -34,7 +35,7 @@
 
 namespace firmament {
 
-using __gnu_cxx::hash_map;
+//using __gnu_cxx::hash_map;
 
 using machine::topology::TopologyManager;
 using platform_unix::streamsockets::StreamSocketsChannel;
@@ -56,6 +57,7 @@ class Coordinator {
  protected:
   ResourceID_t GenerateUUID();
   void HandleIncomingMessage(BaseMessage *bm);
+  void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleRecv(const boost::system::error_code& error,
                   size_t bytes_transferred,
                   Envelope<BaseMessage>* env);
@@ -69,7 +71,7 @@ class Coordinator {
 #endif
   scoped_ptr<TopologyManager> topology_manager_;
   // A map of resources associated with this coordinator.
-  hash_map<ResourceID_t, ResourceDescriptor> associated_resources_;
+  map<const string, ResourceDescriptor> associated_resources_;
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;

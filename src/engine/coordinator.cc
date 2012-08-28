@@ -15,6 +15,7 @@
 #include "messages/base_message.pb.h"
 #include "messages/heartbeat_message.pb.h"
 #include "misc/protobuf_envelope.h"
+#include "misc/map-util.h"
 
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
               "attempting automatic discovery.");
@@ -62,6 +63,8 @@ Coordinator::Coordinator(PlatformID platform_id)
 void Coordinator::Run() {
   // Coordinator starting -- set up and wait for workers to connect.
   m_adapter_->Listen(FLAGS_listen_uri);
+  m_adapter_->RegisterAsyncMessageReceiptCallback(
+      boost::bind(&Coordinator::HandleIncomingMessage, this, _1));
   while (!exit_) {  // main loop
     // Wait for events (i.e. messages from workers)
     // TODO(malte): we need to think about any actions that the coordinator
@@ -100,7 +103,21 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
   // Heartbeat message
   if (bm->HasExtension(heartbeat_extn)) {
     const HeartbeatMessage& msg = bm->GetExtension(heartbeat_extn);
-    LOG(INFO) << "HEARTBEAT from worker " << msg.uuid();
+    HandleHeartbeat(msg);
+  }
+}
+
+void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
+  //boost::uuids::string_generator gen;
+  //boost::uuids::uuid uuid = gen(msg.uuid());
+  ResourceDescriptor* rd = FindOrNull(associated_resources_, msg.uuid());
+  if (!rd) {
+    LOG(INFO) << "NEW RESOURCE (uuid: " << msg.uuid() << ")";
+    // N.B.: below will copy the resource descriptor
+    CHECK(InsertIfNotPresent(&associated_resources_, msg.uuid(),
+                             msg.res_desc()));
+  } else {
+    LOG(INFO) << "HEARTBEAT from resource " << msg.uuid();
   }
 }
 
