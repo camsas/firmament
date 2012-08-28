@@ -152,9 +152,29 @@ template <typename T>
 const string StreamSocketsChannel<T>::LocalEndpointString() {
   if (client_connection_)
     return client_connection_->LocalEndpointString();
-  string ip_address = client_socket_->local_endpoint().address().to_string();
-  string port = to_string<uint64_t>(client_socket_->local_endpoint().port());
-  return "tcp://" + ip_address + ":" + port;
+  string address;
+  string port;
+  string protocol;
+  string endpoint;
+  switch (type_) {
+    case SS_TCP:
+      protocol = "tcp://";
+      address = client_socket_->local_endpoint().address().to_string();
+      port = to_string<uint64_t>(client_socket_->local_endpoint().port());
+      return protocol + address + ":" + port;
+    case SS_UNIX:
+      // XXX(malte): This does not actually work (I think), because ASIO's UNIX
+      // socket representation does not have an address() member. We need to
+      // figure out how to deal with this when implementing something other than
+      // TCP. path() in local::stream_protocol::endpoint seems like a good
+      // choice.
+      protocol = "unix://";
+      //address = client_socket_->remote_endpoint().path();
+      return protocol + address;
+    default:
+      LOG(FATAL) << "Unknown stream socket type " << type_;
+  }
+
 }
 
 // Ready check
@@ -167,9 +187,28 @@ template <typename T>
 const string StreamSocketsChannel<T>::RemoteEndpointString() {
   if (client_connection_)
     return client_connection_->RemoteEndpointString();
-  string ip_address = client_socket_->remote_endpoint().address().to_string();
-  string port = to_string<uint64_t>(client_socket_->remote_endpoint().port());
-  return "tcp://" + ip_address + ":" + port;
+  string address;
+  string port;
+  string protocol;
+  string endpoint;
+  switch (type_) {
+    case SS_TCP:
+      protocol = "tcp://";
+      address = client_socket_->remote_endpoint().address().to_string();
+      port = to_string<uint64_t>(client_socket_->remote_endpoint().port());
+      return protocol + address + ":" + port;
+    case SS_UNIX:
+      // XXX(malte): This does not actually work (I think), because ASIO's UNIX
+      // socket representation does not have an address() member. We need to
+      // figure out how to deal with this when implementing something other than
+      // TCP. path() in local::stream_protocol::endpoint seems like a good
+      // choice.
+      protocol = "unix://";
+      //address = client_socket_->remote_endpoint().path();
+      return protocol + address;
+    default:
+      LOG(FATAL) << "Unknown stream socket type " << type_;
+  }
 }
 
 // Synchronous send
