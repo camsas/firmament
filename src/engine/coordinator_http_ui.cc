@@ -9,6 +9,7 @@
 #include <boost/bind.hpp>
 
 namespace firmament {
+namespace webui {
 
 using pion::net::HTTPResponseWriter;
 using pion::net::HTTPResponseWriterPtr;
@@ -17,7 +18,7 @@ using pion::net::HTTPTypes;
 using pion::net::HTTPServer;
 using pion::net::TCPConnection;
 
-CoordinatorHTTPUI::CoordinatorHTTPUI(Coordinator *coordinator) {
+CoordinatorHTTPUI::CoordinatorHTTPUI(shared_ptr<Coordinator> coordinator) {
   coordinator_ = coordinator;
 }
 
@@ -25,44 +26,80 @@ CoordinatorHTTPUI::~CoordinatorHTTPUI() {
   LOG(INFO) << "Coordinator HTTP UI server shut down.";
 }
 
-void CoordinatorHTTPUI::handleRootURI(HTTPRequestPtr& http_request,  // NOLINT
+void CoordinatorHTTPUI::HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
                                       TCPConnectionPtr& tcp_conn) {  // NOLINT
-  VLOG(2) << "[HTTPREQ] Serving " << http_request->getResource();
-  static const std::string kHTMLStart("<html><body>\n");
-  static const std::string kHTMLEnd("</body></html>\n");
+  LogRequest(http_request);
 
-  HTTPResponseWriterPtr
-    writer(HTTPResponseWriter::create(tcp_conn,
-                                      *http_request,
-                                      boost::bind(&TCPConnection::finish,
-                                                  tcp_conn)));
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+
+  // Individual to this request
+  HTTPTypes::QueryParams& params = http_request->getQueryParams();
+  writer->write(coordinator_->uuid());
+
+  FinishOkResponse(writer);
+}
+
+void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOLINT
+                                           TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+
+  // Individual to this request
+  writer->write("test");
+
+  FinishOkResponse(writer);
+}
+
+void CoordinatorHTTPUI::HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
+                                        TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+
+  // Individual to this request
+  writer->write("ok");
+
+  FinishOkResponse(writer);
+}
+
+void CoordinatorHTTPUI::HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLINT
+                                          TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+
+  // Individual to this request
+  coordinator_->Shutdown();
+  writer->write("Shutdown for coordinator initiated.");
+
+  FinishOkResponse(writer);
+}
+
+HTTPResponseWriterPtr CoordinatorHTTPUI::InitOkResponse(
+    HTTPRequestPtr http_request,
+    TCPConnectionPtr tcp_conn) {
+  HTTPResponseWriterPtr writer = HTTPResponseWriter::create(
+      tcp_conn, *http_request, boost::bind(&TCPConnection::finish,
+                                           tcp_conn));
   HTTPResponse& r = writer->getResponse();
   r.setStatusCode(HTTPTypes::RESPONSE_CODE_OK);
   r.setStatusMessage(HTTPTypes::RESPONSE_MESSAGE_OK);
-
-  HTTPTypes::QueryParams& params = http_request->getQueryParams();
-
+  // Header
   writer->writeNoCopy(kHTMLStart);
-  writer->write(coordinator_->uuid());
-  /*writer->write(http_request->getResource());*/
+  return writer;
+}
 
-/*  if (params.size() > 0) {
-    writer->write(" has the following parameters: <br>");
-    for (HTTPTypes::QueryParams::const_iterator i = params.begin();
-         i != params.end(); ++i) {
-      writer->write(i->first);
-      writer->write("=");
-      writer->write(i->second);
-      writer->write("<br>");
-    }
-  } else {
-    writer->write(" has no parameter.");
-  }*/
+void CoordinatorHTTPUI::FinishOkResponse(HTTPResponseWriterPtr writer) {
   writer->writeNoCopy(kHTMLEnd);
   writer->send();
 }
 
-void CoordinatorHTTPUI::init(uint32_t port) {
+void CoordinatorHTTPUI::LogRequest(HTTPRequestPtr& http_request) {
+  LOG(INFO) << "[HTTPREQ] Serving " << http_request->getResource();
+}
+
+void CoordinatorHTTPUI::Init(uint16_t port) {
   try {
     // Fail if we are not assured that no existing server object is stored.
     if (coordinator_http_server_ != NULL) {
@@ -71,8 +108,20 @@ void CoordinatorHTTPUI::init(uint32_t port) {
     }
     // Otherwise, make such an object and store it.
     coordinator_http_server_.reset(new HTTPServer(port));
+    // Bind handlers for different kinds of entry points
+    // Root URI
     coordinator_http_server_->addResource("/", boost::bind(
-        &CoordinatorHTTPUI::handleRootURI, this, _1, _2));
+        &CoordinatorHTTPUI::HandleRootURI, this, _1, _2));
+    // Resource page
+    coordinator_http_server_->addResource("/resources/", boost::bind(
+        &CoordinatorHTTPUI::HandleResourcesURI, this, _1, _2));
+    // Message injection
+    coordinator_http_server_->addResource("/inject/", boost::bind(
+        &CoordinatorHTTPUI::HandleInjectURI, this, _1, _2));
+    // Shutdown request
+    coordinator_http_server_->addResource("/shutdown/", boost::bind(
+        &CoordinatorHTTPUI::HandleShutdownURI, this, _1, _2));
+    // Start the HTTP server
     coordinator_http_server_->start();  // spawns a thread!
     LOG(INFO) << "Coordinator HTTP interface up!";
   } catch(const std::exception& e) {
@@ -81,4 +130,5 @@ void CoordinatorHTTPUI::init(uint32_t port) {
   }
 }
 
+}  // namespace webui
 }  // namespace firmament

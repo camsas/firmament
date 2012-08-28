@@ -45,14 +45,19 @@ using platform_unix::streamsockets::StreamSocketsAdapter;
 
 #ifdef __HTTP_UI__
 // Forward declaration
+namespace webui {
 class CoordinatorHTTPUI;
+}  // namespace webui
+using webui::CoordinatorHTTPUI;
 #endif
 
-class Coordinator {
+class Coordinator : public boost::enable_shared_from_this<Coordinator> {
  public:
   explicit Coordinator(PlatformID platform_id);
   void Run();
   void AwaitNextMessage();
+  void Shutdown();
+
   inline PlatformID platform_id() {
     return platform_id_;
   }

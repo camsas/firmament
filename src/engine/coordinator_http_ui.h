@@ -19,25 +19,43 @@
 
 namespace firmament {
 
-using pion::net::HTTPServerPtr;
-using pion::net::HTTPRequestPtr;
-using pion::net::TCPConnectionPtr;
-
 // Forward declaration
 class Coordinator;
 
+namespace webui {
+
+using pion::net::HTTPServerPtr;
+using pion::net::HTTPRequestPtr;
+using pion::net::TCPConnectionPtr;
+using pion::net::HTTPResponseWriterPtr;
+
+const string kHTMLStart = "<html><body>\n";
+const string kHTMLEnd = "</body></html>\n";
+
 class CoordinatorHTTPUI {
  public:
-  explicit CoordinatorHTTPUI(Coordinator *coordinator);
+  explicit CoordinatorHTTPUI(shared_ptr<Coordinator> coordinator);
   virtual ~CoordinatorHTTPUI();
-  void init(uint32_t port);
-  void handleRootURI(HTTPRequestPtr& http_request,  // NOLINT
+  void FinishOkResponse(HTTPResponseWriterPtr writer);
+  void Init(uint16_t port);
+  HTTPResponseWriterPtr InitOkResponse(HTTPRequestPtr http_request,
+                                       TCPConnectionPtr tcp_conn);
+  void LogRequest(HTTPRequestPtr& http_request);
+  void HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
                      TCPConnectionPtr& tcp_conn);
+  void HandleResourcesURI(HTTPRequestPtr& http_request,  // NOLINT
+                          TCPConnectionPtr& tcp_conn);
+  void HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
+                       TCPConnectionPtr& tcp_conn);
+  void HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLINT
+                         TCPConnectionPtr& tcp_conn);
+
  protected:
   HTTPServerPtr coordinator_http_server_;
-  Coordinator *coordinator_;
+  shared_ptr<Coordinator> coordinator_;
 };
 
+}  // namespace webui
 }  // namespace firmament
 
 #endif  // FIRMAMENT_ENGINE_COORDINATOR_HTTP_UI_H

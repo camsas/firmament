@@ -6,7 +6,7 @@ include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
 BINS = coordinator worker
-OBJS = coordinator.o coordinator_http_ui.o worker.o topology_manager.o
+OBJS = coordinator_http_ui.o coordinator.o worker.o topology_manager.o
 PBS =
 TESTS = coordinator_test worker_test
 TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \

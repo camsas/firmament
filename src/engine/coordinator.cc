@@ -9,6 +9,7 @@
 #include <string>
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #endif
 
 #include "base/resource_desc.pb.h"
@@ -37,7 +38,7 @@ Coordinator::Coordinator(PlatformID platform_id)
   // platform_ = platform::GetByID(platform_id);
   string hostname = "";  // platform_.GetHostname();
   VLOG(1) << "Coordinator starting on host " << FLAGS_listen_uri
-          << ", platform " << platform_id;
+          << ", platform " << platform_id << ", uuid " << uuid_;
 
   switch (platform_id) {
     case PL_UNIX: {
@@ -53,8 +54,9 @@ Coordinator::Coordinator(PlatformID platform_id)
 #ifdef __HTTP_UI__
   // Start up HTTP interface
   if (FLAGS_http_ui_port > 0) {
-    c_http_ui_.reset(new CoordinatorHTTPUI(this));
-    c_http_ui_->init(FLAGS_http_ui_port);
+    shared_ptr<Coordinator> dummy(this);
+    c_http_ui_.reset(new CoordinatorHTTPUI(shared_from_this()));
+    c_http_ui_->Init(FLAGS_http_ui_port);
   }
 #endif
 
@@ -126,6 +128,10 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
 ResourceID_t Coordinator::GenerateUUID() {
   boost::uuids::random_generator gen;
   return gen();
+}
+
+void Coordinator::Shutdown() {
+  LOG(INFO) << "Coordinator shutting down!";
 }
 
 }  // namespace firmament
