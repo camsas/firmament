@@ -30,7 +30,7 @@ class EventLogger {
     RESOURCE_UTILIZATION_SAMPLE = 0,
     JOB_ARRIVED_EVENT = 1,
     JOB_COMPLETED_EVENT = 2,
-    JOB_HANDOFF_TO_PEERS_EVENT = 3,
+    JOB_HANDOFF_TO_PEERS_EVENT = 3
   };
 
   // Creates an EventLogger writing to <out_filename>.

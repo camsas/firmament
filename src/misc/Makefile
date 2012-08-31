@@ -10,6 +10,7 @@ PBS =
 TESTS = envelope_test
 TESTS_DEPS = $(OBJ_DIR)/../messages/libfirmament_messages.a
 
+OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
 protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))

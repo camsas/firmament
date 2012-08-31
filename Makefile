@@ -17,7 +17,7 @@ ext/.ext-ok:
 doc:
 #	@doxygen
 
-engine: base platforms
+engine: base platforms misc
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
 base: ext

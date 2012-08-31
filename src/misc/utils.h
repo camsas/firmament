@@ -11,6 +11,11 @@
 
 namespace firmament {
 
+// Returns the current epoch timestamp in µ-seconds as an integer.
+// Uses gettimeofday() under the hood, so does not make any guarantees w.r.t.
+// time zones etc.
+uint64_t GetCurrentTimestamp();
+
 // Computes a UID for a job as a uint64 by hashing the job name.
 // TODO(malte): This may become deprecated in the future, as the job descriptor
 //              may carry this information.

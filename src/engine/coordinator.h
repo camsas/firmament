@@ -80,7 +80,11 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
 #endif
   scoped_ptr<TopologyManager> topology_manager_;
   // A map of resources associated with this coordinator.
-  map<ResourceID_t, ResourceDescriptor> associated_resources_;
+  // The first component of the pair is the resource descriptor, the second is
+  // the timestamp when the latest heartbeat or message was received from this
+  // resource..
+  map<ResourceID_t, pair<ResourceDescriptor, uint64_t> >
+      associated_resources_;
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;

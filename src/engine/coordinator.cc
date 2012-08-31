@@ -17,6 +17,7 @@
 #include "messages/heartbeat_message.pb.h"
 #include "misc/protobuf_envelope.h"
 #include "misc/map-util.h"
+#include "misc/utils.h"
 
 DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
               "attempting automatic discovery.");
@@ -114,14 +115,20 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
   boost::uuids::string_generator gen;
   boost::uuids::uuid uuid = gen(msg.uuid());
-  ResourceDescriptor* rd = FindOrNull(associated_resources_, uuid);
-  if (!rd) {
+  pair<ResourceDescriptor, uint64_t>* rdp =
+      FindOrNull(associated_resources_, uuid);
+  if (!rdp) {
     LOG(INFO) << "NEW RESOURCE (uuid: " << msg.uuid() << ")";
     // N.B.: below will copy the resource descriptor
     CHECK(InsertIfNotPresent(&associated_resources_, uuid,
-                             msg.res_desc()));
+                             pair<ResourceDescriptor, uint64_t>(
+                                 msg.res_desc(),
+                                 GetCurrentTimestamp())));
   } else {
-    LOG(INFO) << "HEARTBEAT from resource " << msg.uuid();
+    LOG(INFO) << "HEARTBEAT from resource " << msg.uuid()
+              << " (last seen at " << rdp->second << ")";
+    // Update timestamp
+    rdp->second = GetCurrentTimestamp();
   }
 }
 
