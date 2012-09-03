@@ -11,6 +11,9 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #endif
+#if (BOOST_VERSION < 104700)
+#include <csignal>
+#endif
 
 #include "base/resource_desc.pb.h"
 #include "messages/base_message.pb.h"
@@ -30,22 +33,38 @@ DEFINE_int32(http_ui_port, 8080,
 
 namespace firmament {
 
+// Initial value of exit_ toggle
+bool Coordinator::exit_ = false;
+
 Coordinator::Coordinator(PlatformID platform_id)
   : platform_id_(platform_id),
     uuid_(GenerateUUID()),
-    topology_manager_(new TopologyManager()),
-    exit_(false) {
+    topology_manager_(new TopologyManager())
+#if (BOOST_VERSION >= 104700)
+    , signal_set_(signal_set(signal_io_service_)) {
+#else
+    {
+#endif
   // Start up a coordinator ccording to the platform parameter
   // platform_ = platform::GetByID(platform_id);
   string hostname = "";  // platform_.GetHostname();
   VLOG(1) << "Coordinator starting on host " << FLAGS_listen_uri
           << ", platform " << platform_id << ", uuid " << uuid_;
+  resource_desc_.set_uuid(to_string(uuid_));
 
   switch (platform_id) {
     case PL_UNIX: {
       m_adapter_.reset(
           new platform_unix::streamsockets::
           StreamSocketsAdapter<BaseMessage>());
+#if (BOOST_VERSION >= 104700)
+      signals_.add(SIGINT);
+      signals_.add(SIGTERM);
+      signals_.async_wait(boost::bind(&Cooordinator::HandleSignal, this));
+#else
+      signal(SIGINT, Coordinator::HandleSignal);
+      signal(SIGTERM, Coordinator::HandleSignal);
+#endif
       break;
     }
     default:
@@ -55,6 +74,10 @@ Coordinator::Coordinator(PlatformID platform_id)
 #ifdef __HTTP_UI__
   // Start up HTTP interface
   if (FLAGS_http_ui_port > 0) {
+    // TODO(malte): This is a hack to avoid failure of shared_from_this()
+    // because we do not have a shared_ptr to this object yet. Not sure if this
+    // is safe, though.... (I think it is, as long as the Coordinator's main()
+    // still holds a shared_ptr to the Coordinator).
     shared_ptr<Coordinator> dummy(this);
     c_http_ui_.reset(new CoordinatorHTTPUI(shared_from_this()));
     c_http_ui_->Init(FLAGS_http_ui_port);
@@ -81,6 +104,7 @@ void Coordinator::Run() {
   // We have dropped out of the main loop and are exiting
   // TODO(malte): any cleanup we need to do; hand-over to another coordinator if
   // possible?
+  Shutdown("dropped out of main loop");
 }
 
 void Coordinator::AwaitNextMessage() {
@@ -132,6 +156,15 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
   }
 }
 
+#if (BOOST_VERSION < 104700)
+void Coordinator::HandleSignal(int) {
+#else
+void Coordinator::HandleSignal() {
+#endif
+  // XXX(malte): stub
+  exit_ = true;
+}
+
 ResourceID_t Coordinator::GenerateUUID() {
   boost::uuids::random_generator gen;
   return gen();
@@ -139,6 +172,12 @@ ResourceID_t Coordinator::GenerateUUID() {
 
 void Coordinator::Shutdown(const string& reason) {
   LOG(INFO) << "Coordinator shutting down; reason: " << reason;
+#ifdef __HTTP_UI__
+  //c_http_ui_->Shutdown();
+#endif
+  m_adapter_->StopListen();
+  // Toggling the exit flag will make the Coordinator drop out of its main loop.
+  exit_ = true;
 }
 
 }  // namespace firmament

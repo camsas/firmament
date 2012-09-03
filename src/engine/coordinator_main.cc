@@ -27,9 +27,9 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << "Firmament coordinator starting (Platform: " << platform_id
             << ") ...";
-  Coordinator coordinator(platform_id);
+  shared_ptr<Coordinator> coordinator(new Coordinator(platform_id));
 
-  coordinator.Run();
+  coordinator->Run();
 
   LOG(INFO) << "Coordinator's Run() method returned; terminating...";
 }

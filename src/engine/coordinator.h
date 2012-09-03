@@ -70,9 +70,16 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   void HandleRecv(const boost::system::error_code& error,
                   size_t bytes_transferred,
                   Envelope<BaseMessage>* env);
+#if (BOOST_VERSION < 104700)
+  // compatible with C-style signal handler setup
+  static void HandleSignal(int);
+#else
+  // Boost ASIO signal handler setup
+  void HandleSignal();
+#endif
 
   PlatformID platform_id_;
-  bool exit_;
+  static bool exit_;
   string coordinator_uri_;
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
 #ifdef __HTTP_UI__
@@ -88,6 +95,11 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;
+#if (BOOST_VERSION >= 104700)
+  // Signal set from Boost ASIO; used to catch and handle UNIX signals
+  boost::asio::signal_set signals_;
+  boost::asio::io_service signal_io_service_;
+#endif
 };
 
 }  // namespace firmament
