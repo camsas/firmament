@@ -154,15 +154,16 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   while (remote_adapter_->NumActiveChannels() == 0) { }
   shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
       remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
+  CHECK(backchannel);
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);
   while (!backchannel->Ready()) {  }
   // first receive
-  backchannel->RecvS(&recv_env);
+  CHECK(backchannel->RecvS(&recv_env));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm1, test, test));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
   // second receive
-  backchannel->RecvS(&recv_env);
+  CHECK(backchannel->RecvS(&recv_env));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm2, test, test));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), 7);
 }

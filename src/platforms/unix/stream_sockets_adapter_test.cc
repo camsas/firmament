@@ -83,6 +83,11 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
   // Send a test protobuf message through the channel
   BaseMessage s_tm;
   s_tm.MutableExtension(test_extn)->set_test(43);
+  while (!mess_adapter->GetChannelForEndpoint(
+      channel.LocalEndpointString())) {
+    VLOG(3) << "Waiting for channel with endpoint "
+            << channel.LocalEndpointString();
+  }
   VLOG(1) << "Calling SendS";
   CHECK(mess_adapter->SendMessageToEndpoint(
       channel.LocalEndpointString(), s_tm));

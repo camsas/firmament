@@ -170,6 +170,11 @@ ResourceID_t Coordinator::GenerateUUID() {
   return gen();
 }
 
+const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
+  LOG(INFO) << "NEW JOB: " << job_descriptor.DebugString();
+  return "test1234";
+}
+
 void Coordinator::Shutdown(const string& reason) {
   LOG(INFO) << "Coordinator shutting down; reason: " << reason;
 #ifdef __HTTP_UI__

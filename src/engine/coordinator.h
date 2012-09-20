@@ -22,6 +22,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "base/job_desc.pb.h"
 #include "base/resource_desc.pb.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
@@ -57,11 +58,22 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   void Run();
   void AwaitNextMessage();
   void Shutdown(const string& reason);
+  const string SubmitJob(const JobDescriptor& job_descriptor);
 
   inline PlatformID platform_id() {
     return platform_id_;
   }
   inline ResourceID_t uuid() { return uuid_; }
+  vector<ResourceDescriptor> associated_resources() {
+    vector<ResourceDescriptor> ref_vec;
+    for (ResourceMap_t::const_iterator res_iter =
+         associated_resources_.begin();
+         res_iter != associated_resources_.end();
+         ++res_iter) {
+      ref_vec.push_back(res_iter->second.first);
+    }
+    return ref_vec;
+  };
 
  protected:
   ResourceID_t GenerateUUID();
@@ -90,8 +102,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   // The first component of the pair is the resource descriptor, the second is
   // the timestamp when the latest heartbeat or message was received from this
   // resource..
-  map<ResourceID_t, pair<ResourceDescriptor, uint64_t> >
-      associated_resources_;
+  ResourceMap_t associated_resources_;
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;

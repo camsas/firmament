@@ -7,7 +7,7 @@ include $(ROOT_DIR)/include/Makefile.common
 LIB = libfirmament_base.a
 OBJS = task.o resource.o job.o ensemble.o data_object.o
 PBS = task_desc.pb.o resource_desc.pb.o ensemble_desc.pb.o \
-      data_object_name.pb.o
+      data_object_name.pb.o job_desc.pb.o
 TESTS = data_object_test
 TESTS_DEPS = $(OBJ_DIR)/data_object_name.pb.o
 

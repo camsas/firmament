@@ -59,13 +59,15 @@ shared_ptr<MessagingChannelInterface<T> >
 StreamSocketsAdapter<T>::GetChannelForEndpoint(
     const string& endpoint) {
   CHECK_NE(endpoint, "");
-  typeof(endpoint_channel_map_.begin()) it =
-      endpoint_channel_map_.find(endpoint);
-  if (it == endpoint_channel_map_.end())
+/*  typeof(endpoint_channel_map_.begin()) it =
+      endpoint_channel_map_.find(endpoint);*/
+  shared_ptr<StreamSocketsChannel<T> >* chan =
+      FindOrNull(endpoint_channel_map_, endpoint);
+  if (!chan)
     // No channel found
     return shared_ptr<StreamSocketsChannel<T> >();
   // Return channel pointer
-  return it->second;
+  return *chan;
 }
 
 template <typename T>
@@ -205,8 +207,10 @@ bool StreamSocketsAdapter<T>::SendMessageToEndpoint(
     const string& endpoint_uri, T& message) {
   shared_ptr<StreamSocketsChannel<T> >* chan =
       FindOrNull(endpoint_channel_map_, endpoint_uri);
-  if (!chan)
+  if (!chan) {
+    LOG(ERROR) << "Failed to find channel for endpoint " << endpoint_uri;
     return false;
+  }
   // N.B.: Synchronous send here means that it's okay to stack-allocate the
   // Envelope; if we ever switch to async or provide such a facility, this needs
   // to be dynamically allocated.

@@ -7,11 +7,17 @@
 #define FIRMAMENT_BASE_TYPES_H
 
 #include <stdint.h>
+#include <map>
+#include <utility>
 
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid.hpp>
 #endif
 
+#include "base/resource_desc.pb.h"
+
+using std::map;
+using std::pair;
 
 // Smart pointers
 // Depending on compiler support and library available, we use the following, in
@@ -74,6 +80,7 @@ typedef boost::uuids::uuid ResourceID_t;
 #else
 typedef uint64_t ResourceID_t;
 #endif
+typedef map<ResourceID_t, pair<ResourceDescriptor, uint64_t> > ResourceMap_t;
 
 #ifdef __PLATFORM_HAS_BOOST__
 // Message handler callback type definition
