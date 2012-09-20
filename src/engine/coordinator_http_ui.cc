@@ -65,7 +65,12 @@ void CoordinatorHTTPUI::HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
 
   // Individual to this request
   HTTPTypes::QueryParams& params = http_request->getQueryParams();
+  writer->write("<h1>");
   writer->write(coordinator_->uuid());
+  writer->write("</h1>");
+  writer->write("<a href=\"/resources\">Resources</a><br />");
+  writer->write("<a href=\"/jobs\">Jobs</a><br />");
+  writer->write("<a href=\"/shutdown\">Shutdown</a>");
 
   FinishOkResponse(writer);
 }
@@ -79,6 +84,9 @@ void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOL
   // Get resource information from coordinator
   vector<ResourceDescriptor> resources = coordinator_->associated_resources();
   uint64_t i = 0;
+  writer->write("<h1>");
+  writer->write(coordinator_->uuid());
+  writer->write("</h1>");
   writer->write("<table border=\"1\"><tr><th></th><th>Resource ID</th><th>Friendly name</th><th>State</th></tr>");
   for (vector<ResourceDescriptor>::const_iterator rd_iter =
        resources.begin();
@@ -154,7 +162,7 @@ void CoordinatorHTTPUI::ErrorResponse(
                                            tcp_conn));
   HTTPResponse& r = writer->getResponse();
   r.setStatusCode(error_code);
-  r.setStatusMessage("test");
+  //r.setStatusMessage("test");
   writer->send();
 }
 
