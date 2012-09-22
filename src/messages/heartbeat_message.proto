@@ -2,7 +2,8 @@
 // Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
 // HeartbeatMessage is a simple keep-alive message that reports on a live
-// resource. It also implicitly triggers registration.
+// resource. It may also trigger registration and fault recovery, although
+// initial registration is triggered explicitly using RegistrationMessage.
 
 package firmament;
 
@@ -15,6 +16,7 @@ extend BaseMessage {
 
 message HeartbeatMessage {
   required string uuid = 1;
-  optional string remote_endpoint = 2;
-  optional ResourceDescriptor res_desc = 3;
+  optional string location = 2;
+  optional uint64 sequence_number = 3;
+  optional ResourceDescriptor res_desc = 4;
 }

@@ -51,6 +51,7 @@ class Worker {
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
   StreamSocketsChannel<BaseMessage> chan_;
   bool exit_;
+  // TODO(malte): transform this into a better representation
   string coordinator_uri_;
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;
@@ -58,6 +59,9 @@ class Worker {
   ResourceID_t GenerateUUID();
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
+  bool RegisterWithCoordinator();
+  void SendHeartbeat();
+  bool SendMessageToCoordinator(BaseMessage* msg);
 };
 
 }  // namespace firmament

@@ -10,12 +10,15 @@ message ResourceDescriptor {
     RESOURCE_UNKNOWN = 0;
     RESOURCE_IDLE = 1;
     RESOURCE_BUSY = 2;
+    RESOURCE_LOST = 3;
   }
 
   required string uuid = 1;
-  optional string name = 2;
-  optional ResourceState state = 3 [default = RESOURCE_UNKNOWN];
-  optional uint64 task_capacity = 4 [default = 0];
+  optional string friendly_name = 2;
+  optional string descriptive_name = 3;
+  optional ResourceState state = 4 [default = RESOURCE_UNKNOWN];
+  optional uint64 task_capacity = 5 [default = 1];
+  optional uint64 last_heartbeat = 6;
   //repeated TaskDescriptor task_queue = 2;
   // ensemble(s)
   // state

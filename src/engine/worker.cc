@@ -11,7 +11,9 @@
 #include <boost/enable_shared_from_this.hpp>
 #endif
 
+#include "base/common.h"
 #include "messages/heartbeat_message.pb.h"
+#include "messages/registration_message.pb.h"
 #include "platforms/common.pb.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 
@@ -53,34 +55,53 @@ Worker::Worker(PlatformID platform_id)
   resource_desc_.set_uuid(boost::uuids::to_string(uuid_));
 
   if (!FLAGS_name.empty())
-    resource_desc_.set_name(FLAGS_name);
+    resource_desc_.set_friendly_name(FLAGS_name);
 
   resource_desc_.set_task_capacity(0);
 }
 
 void Worker::AwaitNextMessage() {
+}
+
+bool Worker::RegisterWithCoordinator() {
   BaseMessage bm;
   ResourceDescriptor* rd = bm.MutableExtension(
-      heartbeat_extn)->mutable_res_desc();
-  resource_desc_.set_task_capacity(resource_desc_.task_capacity() + 1);
-  *rd = resource_desc_;  // copy!
+      register_extn)->mutable_res_desc();
+  *rd = resource_desc_;  // copies current local RD!
+  bm.MutableExtension(register_extn)->set_uuid(
+      boost::uuids::to_string(uuid_));
+  // wrap in envelope
+  VLOG_EVERY_N(2, 1) << "Sending heartbeat (async)...";
+  // send heartbeat message
+  return SendMessageToCoordinator(&bm);
+}
+
+void Worker::SendHeartbeat() {
+  BaseMessage bm;
   bm.MutableExtension(heartbeat_extn)->set_uuid(
       boost::uuids::to_string(uuid_));
-  Envelope<BaseMessage> envelope(&bm);
-  VLOG_EVERY_N(2, 1) << "Sending (async)...";
-  chan_.SendA(envelope,
-              boost::bind(&Worker::HandleWrite,
-                          this,
-                          boost::asio::placeholders::error,
-                          boost::asio::placeholders::bytes_transferred));
+  // TODO(malte): we do not always need to send the location string; it
+  // sufficies to send it if our location changed (which should be rare).
+  SUBMSG_WRITE(bm, heartbeat, location, chan_.LocalEndpointString());
+  SUBMSG_WRITE(bm, heartbeat, sequence_number, 1);
+  VLOG(1) << "Sending registration message!";
+  SendMessageToCoordinator(&bm);
+}
 
-  VLOG_EVERY_N(2, 1) << "Waiting for next message...";
-  boost::this_thread::sleep(seconds(10));
+bool Worker::SendMessageToCoordinator(BaseMessage* msg) {
+  Envelope<BaseMessage> envelope(msg);
+  return chan_.SendA(
+      envelope, boost::bind(&Worker::HandleWrite,
+                            this,
+                            boost::asio::placeholders::error,
+                            boost::asio::placeholders::bytes_transferred));
 }
 
 bool Worker::ConnectToCoordinator(const string& coordinator_uri) {
-  return m_adapter_->EstablishChannel(coordinator_uri, &chan_);
+  if (!m_adapter_->EstablishChannel(coordinator_uri, &chan_))
+    return false;
   // TODO(malte): Send registration message
+  return RegisterWithCoordinator();
 }
 
 ResourceID_t Worker::GenerateUUID() {
@@ -92,7 +113,7 @@ void Worker::HandleWrite(const boost::system::error_code& error,
                          size_t bytes_transferred) {
   VLOG(1) << "In HandleWrite, thread is " << boost::this_thread::get_id();
   if (error)
-    VLOG(1) << "Error returned from async write: " << error.message();
+    LOG(ERROR) << "Error returned from async write: " << error.message();
   else
     VLOG(1) << "bytes_transferred: " << bytes_transferred;
 }
@@ -112,7 +133,9 @@ void Worker::Run() {
 
   while (!exit_) {  // main loop
     // Wait for events
-    AwaitNextMessage();
+    SendHeartbeat();
+    //AwaitNextMessage();
+    boost::this_thread::sleep(seconds(10));
   }
 
   // We have dropped out of the main loop and are exiting

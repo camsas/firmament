@@ -1,0 +1,23 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Job descriptor protobuf.
+
+package firmament;
+
+message JobDescriptor {
+  enum JobState {
+    NEW = 0;
+    CREATED = 1;
+    RUNNING = 2;
+    COMPLETED = 3;
+    FAILED = 4;
+    UNKNOWN = 5;
+  }
+
+  optional string uuid = 1;
+  optional string name = 2;
+  optional JobState state = 3;
+  optional string binary = 4;
+}
+

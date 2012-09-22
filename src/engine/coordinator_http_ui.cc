@@ -97,7 +97,7 @@ void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOL
     writer->write("</td><td>");
     writer->write(rd_iter->uuid());
     writer->write("</td><td>");
-    writer->write(rd_iter->name());
+    writer->write(rd_iter->friendly_name());
     writer->write("</td><td>");
     writer->write(rd_iter->state());
     writer->write("</td></tr>");

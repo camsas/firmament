@@ -30,7 +30,8 @@ Ensemble::~Ensemble() {
 
 void Ensemble::AddResource(const ResourceDescriptor& resource) {
   CHECK_GE(descriptor_.joined_resources_size(), 0);
-  VLOG(1) << "Adding resource " << resource.name() << " at " << &resource;
+  VLOG(1) << "Adding resource " << resource.descriptive_name()
+          << " at " << &resource;
   // TODO(malte): This is somewhat ugly; the protobuf API only allows us to add
   // a new element to a repeated field by first obtaining a pointer and then
   // manipulating it. However, in this case, we already have an ensemble

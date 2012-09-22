@@ -1,0 +1,19 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// RegistrationMessage informs about the existence of a resource.
+
+package firmament;
+
+import "messages/base_message.proto";
+import "base/resource_desc.proto";
+
+extend BaseMessage {
+  optional RegistrationMessage register_extn = 103;
+}
+
+message RegistrationMessage {
+  required string uuid = 1;
+  optional string location = 2;
+  optional ResourceDescriptor res_desc = 3;
+}

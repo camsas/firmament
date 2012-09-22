@@ -9,13 +9,13 @@ namespace firmament {
 
 Resource::Resource(const string& name, uint32_t task_capacity)
     : current_ensemble_(NULL), busy_(false) {
-  descriptor_.set_name(name);
+  descriptor_.set_descriptive_name(name);
   descriptor_.set_task_capacity(task_capacity);
 }
 
 bool Resource::RunTask(Task *task) {
-  VLOG(1) << "Resource " << descriptor_.name() << " running task "
-          << task->name();
+  VLOG(1) << "Resource " << descriptor_.descriptive_name()
+          << " running task " << task->name();
   CHECK_NOTNULL(task);
 //  set_busy(true);
   current_ensemble_->SetResourceBusy(&descriptor_);

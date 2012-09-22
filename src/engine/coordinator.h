@@ -27,6 +27,7 @@
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
 #include "messages/heartbeat_message.pb.h"
+#include "messages/registration_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/stream_sockets_adapter.h"
@@ -79,6 +80,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   ResourceID_t GenerateUUID();
   void HandleIncomingMessage(BaseMessage *bm);
   void HandleHeartbeat(const HeartbeatMessage& msg);
+  void HandleRegistrationRequest(const RegistrationMessage& msg);
   void HandleRecv(const boost::system::error_code& error,
                   size_t bytes_transferred,
                   Envelope<BaseMessage>* env);

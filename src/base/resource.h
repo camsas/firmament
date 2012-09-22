@@ -23,12 +23,12 @@ class Ensemble;
 
 class Resource {
  public:
-  Resource(const string& name, uint32_t task_capacity);
+  Resource(const string& descriptive_name, uint32_t task_capacity);
   bool JoinEnsemble(Ensemble *ensemble);
   bool RunTask(Task *task);
   void TaskExited();
 
-  const string& name() { return descriptor_.name(); }
+  const string& name() { return descriptor_.descriptive_name(); }
   bool busy() const { return busy_; }
   void set_busy(bool b) { busy_ = b; }
  protected:

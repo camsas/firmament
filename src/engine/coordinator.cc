@@ -18,6 +18,7 @@
 #include "base/resource_desc.pb.h"
 #include "messages/base_message.pb.h"
 #include "messages/heartbeat_message.pb.h"
+#include "messages/registration_message.pb.h"
 #include "misc/protobuf_envelope.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
@@ -47,10 +48,12 @@ Coordinator::Coordinator(PlatformID platform_id)
 #endif
   // Start up a coordinator ccording to the platform parameter
   // platform_ = platform::GetByID(platform_id);
-  string hostname = "";  // platform_.GetHostname();
-  VLOG(1) << "Coordinator starting on host " << FLAGS_listen_uri
-          << ", platform " << platform_id << ", uuid " << uuid_;
+  string desc_name = "";  // platform_.GetDescriptiveName();
   resource_desc_.set_uuid(to_string(uuid_));
+
+  // Log information
+  LOG(INFO) << "Coordinator starting on host " << FLAGS_listen_uri
+            << ", platform " << platform_id << ", uuid " << uuid_;
 
   switch (platform_id) {
     case PL_UNIX: {
@@ -129,6 +132,11 @@ void Coordinator::HandleRecv(const boost::system::error_code& error,
 }
 
 void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
+  // Registration message
+  if (bm->HasExtension(register_extn)) {
+    const RegistrationMessage& msg = bm->GetExtension(register_extn);
+    HandleRegistrationRequest(msg);
+  }
   // Heartbeat message
   if (bm->HasExtension(heartbeat_extn)) {
     const HeartbeatMessage& msg = bm->GetExtension(heartbeat_extn);
@@ -142,12 +150,8 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
   pair<ResourceDescriptor, uint64_t>* rdp =
       FindOrNull(associated_resources_, uuid);
   if (!rdp) {
-    LOG(INFO) << "NEW RESOURCE (uuid: " << msg.uuid() << ")";
-    // N.B.: below will copy the resource descriptor
-    CHECK(InsertIfNotPresent(&associated_resources_, uuid,
-                             pair<ResourceDescriptor, uint64_t>(
-                                 msg.res_desc(),
-                                 GetCurrentTimestamp())));
+    LOG(WARNING) << "HEARTBEAT from UNKNOWN resource (uuid: "
+                 << msg.uuid() << ")!";
   } else {
     LOG(INFO) << "HEARTBEAT from resource " << msg.uuid()
               << " (last seen at " << rdp->second << ")";
@@ -155,6 +159,30 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
     rdp->second = GetCurrentTimestamp();
   }
 }
+
+void Coordinator::HandleRegistrationRequest(
+    const RegistrationMessage& msg) {
+  boost::uuids::string_generator gen;
+  boost::uuids::uuid uuid = gen(msg.uuid());
+  pair<ResourceDescriptor, uint64_t>* rdp =
+      FindOrNull(associated_resources_, uuid);
+  if (!rdp) {
+    LOG(INFO) << "REGISTERING NEW RESOURCE (uuid: " << msg.uuid() << ")";
+    // N.B.: below will copy the resource descriptor
+    CHECK(InsertIfNotPresent(&associated_resources_, uuid,
+                             pair<ResourceDescriptor, uint64_t>(
+                                 msg.res_desc(),
+                                 GetCurrentTimestamp())));
+  } else {
+    LOG(INFO) << "REGISTRATION request from resource " << msg.uuid()
+              << " that we already know about. "
+              << "Checking if this is a recovery.";
+    // TODO(malte): Implement checking logic, deal with recovery case
+    // Update timestamp (registration request is an implicit heartbeat)
+    rdp->second = GetCurrentTimestamp();
+  }
+}
+
 
 #if (BOOST_VERSION < 104700)
 void Coordinator::HandleSignal(int) {
