@@ -1,0 +1,32 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Reference description protobuf. This is used to serialize and pass around
+// references.
+
+package firmament;
+
+message ReferenceDescriptor {
+  enum ReferenceType {
+    TOMBSTONE = 0;
+    FUTURE = 1;
+    CONCRETE = 2;
+    STREAM = 3;
+    VALUE = 4;
+    ERROR = 5;
+  }
+  enum ReferenceScope {
+    // TODO(malte): really encode like this?
+    PUBLIC = 0;
+    PRIVATE = 1;
+  }
+
+  required uint64 id = 1;
+  required ReferenceType type = 2;
+  required ReferenceScope scope = 3;
+  required bool non_deterministic = 4;
+  optional uint64 size = 5;
+  repeated string location = 6;
+  optional bytes inline_data = 7;
+}
+
