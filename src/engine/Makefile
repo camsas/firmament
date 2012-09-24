@@ -10,13 +10,18 @@ BINS = coordinator worker
 OBJS = coordinator_http_ui.o coordinator.o worker.o topology_manager.o
 PBS =
 TESTS = coordinator_test worker_test
-TESTS_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
-	     $(BUILD_DIR)/base/libfirmament_base.a \
+TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \
 	     $(BUILD_DIR)/misc/libfirmament_misc.a \
 	     $(BUILD_DIR)/messages/libfirmament_messages.a \
 	     $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 	     $(BUILD_DIR)/platforms/common.pb.o \
 	     $(BUILD_DIR)/engine/topology_manager.o
+# Test-specific dependencies; we keep these separate from the others in order
+# to avoid cyclic dependencies that will break test compilation.
+# E.g. worker_test would depend on coordinator.o if it had coordinator_http_ui.o
+# as a dependency.
+TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
+			 $(BUILD_DIR)/base/job_desc.pb.o
 
 OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))

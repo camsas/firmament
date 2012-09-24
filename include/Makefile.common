@@ -84,11 +84,12 @@ $(OBJ_DIR)/%.o: %.cc %.h .setup
 		"  CXX     $@")
 
 # Make unit test binary and add it to the test list run by global "make test".
-$(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_DEPS)
+$(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_DEPS) $(TESTS_%_DEPS)
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		$(GTEST_LIB) $(BUILD_DIR)/$(SUFFIX)/$*.o \
-		$(TESTS_DEPS) -o $@ $(GTEST_FLAGS) $(LIBS); \
+		$(TESTS_DEPS) $($(subst x,$*,TESTS_x_DEPS)) \
+		-o $@ $(GTEST_FLAGS) $(LIBS); \
 		echo "$@" >> $(BUILD_DIR)/tests/all_tests.txt, \
 		"  TESTLNK $@")
 
@@ -96,11 +97,12 @@ $(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_DEPS)
 # have an -inl.h file, no .cc file).
 # TODO(malte): We may get rid of this in favour of supplying empty/skeleton
 # .cc files for such cases.
-$(TEST_OBJ_DIR)/%_test: %_test.cc $(TESTS_DEPS)
+$(TEST_OBJ_DIR)/%_test: %_test.cc $(TESTS_DEPS) $(TESTS_%_DEPS)
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		$(GTEST_LIB) \
-		$(TESTS_DEPS) -o $@ $(GTEST_FLAGS) $(LIBS); \
+		$(TESTS_DEPS) $($(subst x,$*,TESTS_x_DEPS)) \
+		-o $@ $(GTEST_FLAGS) $(LIBS); \
 		echo "$@" >> $(BUILD_DIR)/tests/all_tests.txt, \
 		"  TESTLNK $@")
 
