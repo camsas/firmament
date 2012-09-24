@@ -1,0 +1,21 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Task-related messages, convering task creation and task completion.
+
+package firmament;
+
+import "messages/base_message.proto";
+
+extend BaseMessage {
+  optional TaskAssignMessage task_assign_extn = 103;
+  optional TaskCompleteMessage task_complete_extn = 104;
+}
+
+message TaskAssignMessage {
+  required string uuid = 1;
+}
+
+message TaskCompleteMessage {
+  required string uuid = 1;
+}
