@@ -46,10 +46,25 @@ GTEST_FLAGS=-DGTEST_HAS_TR1_TUPLE=0
 
 
 #######################################
+# google-perftools-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for googletest
+#GPERFTOOLS_INC_DIR ?= $(EXT_DIR)/google-perftools-build/include
+#export GPERFTOOLS_INC_DIR
+
+# Path to the compiled googletest library (usually under
+# "make" in the googletest directory in "ext").
+#GPERFTOOLS_LIB ?= $(EXT_DIR)/google-perftools-build/lib/libtcmalloc_and_profiler.so
+#export GPERFTOOLS_LIB
+
+
+#######################################
 # INCLUDES
 #######################################
 
-INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) -I$(BOOST_INC_DIR)
+INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) \
+	   -I$(BOOST_INC_DIR) #-I$(GPERFTOOLS_INC_DIR)
 
 
 #######################################
@@ -59,7 +74,8 @@ INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) -I$(BOOST_INC_D
 # XXX(malte): Factor these out into the individual Makefiles to avoid linking
 # every binary to the whole world.
 #LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf -lboost_system -lboost_thread -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc
-LIBS += -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf
+#LIBS += $(GPERFTOOLS_LIB) -lgflags -lglog -lpthread -lprotobuf
+LIBS += -ltcmalloc -lgflags -lglog -lpthread -lprotobuf
 
 
 #######################################
