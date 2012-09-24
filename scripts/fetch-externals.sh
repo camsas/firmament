@@ -236,6 +236,7 @@ then
     echo
     echo "$ sudo dpkg -i libgflags0_${GFLAGS_VER}_${ARCH}.deb"
     echo "$ sudo dpkg -i libgflags-dev_${GFLAGS_VER}_${ARCH}.deb"
+    exit 1
  fi
 else
   # non-deb OS -- need to get tarball and extract, config, make & install
