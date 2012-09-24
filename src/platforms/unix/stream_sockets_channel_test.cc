@@ -142,7 +142,14 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   BaseMessage tm1;
   SUBMSG_WRITE(tm1, test, test, 5);
   Envelope<BaseMessage> envelope1(&tm1);
+  // Spin-wait for channel to become available
   while (!channel_->Ready()) {  }
+  // Spin-wait for backchannel to become available
+  while (remote_adapter_->NumActiveChannels() == 0) { }
+  shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
+      remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
+  CHECK(backchannel);
+  while (!backchannel->Ready()) {  }
   // send first time
   channel_->SendS(envelope1);
   // send second time
@@ -150,14 +157,8 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   SUBMSG_WRITE(tm2, test, test, 7);
   Envelope<BaseMessage> envelope2(&tm2);
   channel_->SendS(envelope2);
-  // Spin-wait for backchannel to become available
-  while (remote_adapter_->NumActiveChannels() == 0) { }
-  shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
-      remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
-  CHECK(backchannel);
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);
-  while (!backchannel->Ready()) {  }
   // first receive
   CHECK(backchannel->RecvS(&recv_env));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm1, test, test));
