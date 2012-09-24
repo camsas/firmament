@@ -12,6 +12,7 @@
 #include "engine/coordinator.h"
 
 DECLARE_string(platform);
+DECLARE_bool(http_ui);
 
 namespace {
 
@@ -53,11 +54,24 @@ class CoordinatorTest : public ::testing::Test {
 // Tests that the platform gets set correctly when instantiating a worker.
 TEST_F(CoordinatorTest, PlatformSetTest) {
   FLAGS_platform = "PL_UNIX";
-  FLAGS_v = 1;
+  FLAGS_http_ui = false;
   Coordinator test_coordinator(GetPlatformID(FLAGS_platform));
   // We expect this worker to have been configured as a UNIX worker.
   EXPECT_EQ(test_coordinator.platform_id(), firmament::PL_UNIX);
+  test_coordinator.Shutdown("test end");
 }
+
+// Tests that the platform gets set correctly when instantiating a worker.
+TEST_F(CoordinatorTest, HTTPUIStartStopTest) {
+  FLAGS_platform = "PL_UNIX";
+  FLAGS_http_ui = true;
+  FLAGS_v = 2;
+  Coordinator test_coordinator(GetPlatformID(FLAGS_platform));
+  // Hold on for 1 second
+  boost::this_thread::sleep(boost::posix_time::seconds(1));
+  test_coordinator.Shutdown("test end");
+}
+
 
 }  // namespace
 

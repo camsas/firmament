@@ -25,6 +25,7 @@ DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
 DEFINE_string(listen_uri, "tcp://localhost:9998",
               "The name/address/port to listen on.");
 #ifdef __HTTP_UI__
+DEFINE_bool(http_ui, true, "Enable HTTP interface");
 DEFINE_int32(http_ui_port, 8080,
              "The port that the HTTP UI will be served on; -1 to disable.");
 #endif
@@ -63,7 +64,7 @@ Coordinator::Coordinator(PlatformID platform_id)
 
 #ifdef __HTTP_UI__
   // Start up HTTP interface
-  if (FLAGS_http_ui_port > 0) {
+  if (FLAGS_http_ui && FLAGS_http_ui_port > 0) {
     // TODO(malte): This is a hack to avoid failure of shared_from_this()
     // because we do not have a shared_ptr to this object yet. Not sure if this
     // is safe, though.... (I think it is, as long as the Coordinator's main()
@@ -74,8 +75,18 @@ Coordinator::Coordinator(PlatformID platform_id)
   }
 #endif
 
-  // test topology detection
+  // Test topology detection
+  LOG(INFO) << "Resource topology detected:";
   topology_manager_->DebugPrintRawTopology();
+}
+
+Coordinator::~Coordinator() {
+  // TODO(malte): check destruction order in C++; c_http_ui_ may already have
+  // been destructed when we get here.
+/*#ifdef __HTTP_UI__
+  if (FLAGS_http_ui && c_http_ui_)
+    c_http_ui_->Shutdown(false);
+#endif*/
 }
 
 void Coordinator::Run() {
@@ -190,7 +201,8 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
 void Coordinator::Shutdown(const string& reason) {
   LOG(INFO) << "Coordinator shutting down; reason: " << reason;
 #ifdef __HTTP_UI__
-  //c_http_ui_->Shutdown();
+  if (FLAGS_http_ui && c_http_ui_)
+    c_http_ui_->Shutdown(true);
 #endif
   m_adapter_->StopListen();
   // Toggling the exit flag will make the Coordinator drop out of its main loop.

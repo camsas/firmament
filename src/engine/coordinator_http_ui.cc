@@ -27,7 +27,13 @@ CoordinatorHTTPUI::CoordinatorHTTPUI(shared_ptr<Coordinator> coordinator) {
 }
 
 CoordinatorHTTPUI::~CoordinatorHTTPUI() {
-  LOG(INFO) << "Coordinator HTTP UI server shut down.";
+  // Kill the server without waiting for connections to terminate
+  if (coordinator_http_server_->isListening()) {
+    coordinator_http_server_->stop(false);
+    coordinator_http_server_->join();
+    LOG(INFO) << "Coordinator HTTP UI server stopped.";
+  }
+  LOG(INFO) << "Coordinator HTTP UI server destroyed.";
 }
 
 void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOLINT
@@ -64,7 +70,7 @@ void CoordinatorHTTPUI::HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
   HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
 
   // Individual to this request
-  HTTPTypes::QueryParams& params = http_request->getQueryParams();
+  //HTTPTypes::QueryParams& params = http_request->getQueryParams();
   writer->write("<h1>");
   writer->write(coordinator_->uuid());
   writer->write("</h1>");
@@ -207,6 +213,11 @@ void CoordinatorHTTPUI::Init(uint16_t port) {
     LOG(ERROR) << "Failed running the coordinator's HTTP UI due to "
                << e.what();
   }
+}
+
+void CoordinatorHTTPUI::Shutdown(bool block) {
+  LOG(INFO) << "Coordinator HTTP UI server shutting down on request.";
+  coordinator_http_server_->stop(block);
 }
 
 }  // namespace webui

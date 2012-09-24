@@ -58,6 +58,7 @@ using webui::CoordinatorHTTPUI;
 class Coordinator : public boost::enable_shared_from_this<Coordinator> {
  public:
   explicit Coordinator(PlatformID platform_id);
+  virtual ~Coordinator();
   void Run();
   void AwaitNextMessage();
   void Shutdown(const string& reason);

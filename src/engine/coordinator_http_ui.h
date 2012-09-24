@@ -54,6 +54,7 @@ class CoordinatorHTTPUI {
                        TCPConnectionPtr& tcp_conn);
   void HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLINT
                          TCPConnectionPtr& tcp_conn);
+  void Shutdown(bool block);
 
  protected:
   HTTPServerPtr coordinator_http_server_;
