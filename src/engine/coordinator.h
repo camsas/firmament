@@ -30,6 +30,7 @@
 #include "messages/registration_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
+#include "platforms/unix/signal_handler.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_adapter-inl.h"
 #ifdef __HTTP_UI__
@@ -42,6 +43,7 @@ namespace firmament {
 //using __gnu_cxx::hash_map;
 
 using machine::topology::TopologyManager;
+using platform_unix::SignalHandler;
 using platform_unix::streamsockets::StreamSocketsChannel;
 using platform_unix::streamsockets::StreamSocketsAdapter;
 
@@ -86,10 +88,10 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
                   Envelope<BaseMessage>* env);
 #if (BOOST_VERSION < 104700)
   // compatible with C-style signal handler setup
-  static void HandleSignal(int);
+  static void HandleSignal(int signum);
 #else
   // Boost ASIO signal handler setup
-  void HandleSignal();
+  void HandleSignal(int signum);
 #endif
 
   PlatformID platform_id_;
@@ -108,11 +110,6 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;
-#if (BOOST_VERSION >= 104700)
-  // Signal set from Boost ASIO; used to catch and handle UNIX signals
-  boost::asio::signal_set signals_;
-  boost::asio::io_service signal_io_service_;
-#endif
 };
 
 }  // namespace firmament

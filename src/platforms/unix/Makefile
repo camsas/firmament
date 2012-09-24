@@ -6,7 +6,8 @@ include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
 LIB = libfirmament_unix.a
-OBJS = async_tcp_server.o stream_sockets_adapter.o tcp_connection.o
+OBJS = async_tcp_server.o signal_handler.o stream_sockets_adapter.o \
+       tcp_connection.o
 TESTS = stream_sockets_adapter_test stream_sockets_channel_test
 TESTS_DEPS = $(OBJ_DIR)/../common.pb.o \
 	     $(OBJ_DIR)/../../messages/libfirmament_messages.a \

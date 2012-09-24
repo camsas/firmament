@@ -11,9 +11,6 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #endif
-#if (BOOST_VERSION < 104700)
-#include <csignal>
-#endif
 
 #include "base/resource_desc.pb.h"
 #include "messages/base_message.pb.h"
@@ -39,13 +36,8 @@ bool Coordinator::exit_ = false;
 
 Coordinator::Coordinator(PlatformID platform_id)
   : platform_id_(platform_id),
-    uuid_(GenerateUUID()),
-    topology_manager_(new TopologyManager())
-#if (BOOST_VERSION >= 104700)
-    , signal_set_(signal_set(signal_io_service_)) {
-#else
-    {
-#endif
+    topology_manager_(new TopologyManager()),
+    uuid_(GenerateUUID()) {
   // Start up a coordinator ccording to the platform parameter
   // platform_ = platform::GetByID(platform_id);
   string desc_name = "";  // platform_.GetDescriptiveName();
@@ -60,14 +52,9 @@ Coordinator::Coordinator(PlatformID platform_id)
       m_adapter_.reset(
           new platform_unix::streamsockets::
           StreamSocketsAdapter<BaseMessage>());
-#if (BOOST_VERSION >= 104700)
-      signals_.add(SIGINT);
-      signals_.add(SIGTERM);
-      signals_.async_wait(boost::bind(&Cooordinator::HandleSignal, this));
-#else
-      signal(SIGINT, Coordinator::HandleSignal);
-      signal(SIGTERM, Coordinator::HandleSignal);
-#endif
+        SignalHandler handler;
+        handler.ConfigureSignal(SIGINT, Coordinator::HandleSignal, this);
+        handler.ConfigureSignal(SIGTERM, Coordinator::HandleSignal, this);
       break;
     }
     default:
@@ -184,13 +171,10 @@ void Coordinator::HandleRegistrationRequest(
 }
 
 
-#if (BOOST_VERSION < 104700)
-void Coordinator::HandleSignal(int) {
-#else
-void Coordinator::HandleSignal() {
-#endif
-  // XXX(malte): stub
-  exit_ = true;
+void Coordinator::HandleSignal(int signum) {
+  // TODO(malte): stub
+  if (signum == SIGTERM || signum == SIGINT)
+    exit_ = true;
 }
 
 ResourceID_t Coordinator::GenerateUUID() {
