@@ -61,24 +61,8 @@ Coordinator::Coordinator(PlatformID platform_id)
     default:
       LOG(FATAL) << "Unimplemented!";
   }
-
-#ifdef __HTTP_UI__
-  // Start up HTTP interface
-  if (FLAGS_http_ui && FLAGS_http_ui_port > 0) {
-    // TODO(malte): This is a hack to avoid failure of shared_from_this()
-    // because we do not have a shared_ptr to this object yet. Not sure if this
-    // is safe, though.... (I think it is, as long as the Coordinator's main()
-    // still holds a shared_ptr to the Coordinator).
-    shared_ptr<Coordinator> dummy(this);
-    c_http_ui_.reset(new CoordinatorHTTPUI(shared_from_this()));
-    c_http_ui_->Init(FLAGS_http_ui_port);
-  }
-#endif
-
-  // Test topology detection
-  LOG(INFO) << "Resource topology detected:";
-  topology_manager_->DebugPrintRawTopology();
 }
+
 
 Coordinator::~Coordinator() {
   // TODO(malte): check destruction order in C++; c_http_ui_ may already have
@@ -90,12 +74,22 @@ Coordinator::~Coordinator() {
 }
 
 void Coordinator::Run() {
+  // Test topology detection
+  LOG(INFO) << "Resource topology detected:";
+  topology_manager_->DebugPrintRawTopology();
+
   // Coordinator starting -- set up and wait for workers to connect.
   m_adapter_->Listen(FLAGS_listen_uri);
   m_adapter_->RegisterAsyncMessageReceiptCallback(
       boost::bind(&Coordinator::HandleIncomingMessage, this, _1));
-  while (!exit_) {  // main loop
-    // Wait for events (i.e. messages from workers)
+
+#ifdef __HTTP_UI__
+  InitHTTPUI();
+#endif
+
+  // Main loop
+  while (!exit_) {
+    // Wait for events (i.e. messages from workers.
     // TODO(malte): we need to think about any actions that the coordinator
     // itself might need to take, and how they can be triggered
     VLOG(2) << "Hello from main loop!";
@@ -192,6 +186,21 @@ ResourceID_t Coordinator::GenerateUUID() {
   boost::uuids::random_generator gen;
   return gen();
 }
+
+#ifdef __HTTP_UI__
+void Coordinator::InitHTTPUI() {
+  // Start up HTTP interface
+  if (FLAGS_http_ui && FLAGS_http_ui_port > 0) {
+    // TODO(malte): This is a hack to avoid failure of shared_from_this()
+    // because we do not have a shared_ptr to this object yet. Not sure if this
+    // is safe, though.... (I think it is, as long as the Coordinator's main()
+    // still holds a shared_ptr to the Coordinator).
+    //shared_ptr<Coordinator> dummy(this);
+    c_http_ui_.reset(new CoordinatorHTTPUI(shared_from_this()));
+    c_http_ui_->Init(FLAGS_http_ui_port);
+  }
+}
+#endif
 
 const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   LOG(INFO) << "NEW JOB: " << job_descriptor.DebugString();

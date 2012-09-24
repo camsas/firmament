@@ -94,6 +94,9 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   // Boost ASIO signal handler setup
   void HandleSignal(int signum);
 #endif
+#ifdef __HTTP_UI__
+  void InitHTTPUI();
+#endif
 
   PlatformID platform_id_;
   static bool exit_;
