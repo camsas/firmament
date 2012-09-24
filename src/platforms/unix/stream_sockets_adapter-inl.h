@@ -78,7 +78,6 @@ void StreamSocketsAdapter<T>::AwaitNextMessage() {
     return;
   // Otherwise, let's make sure we have an outstanding async receive request for
   // each fo them.
-  uint64_t num_channels = endpoint_channel_map_.size();
   bool any_outstanding = false;
   for (typeof(endpoint_channel_map_.begin()) chan_iter =
        endpoint_channel_map_.begin();

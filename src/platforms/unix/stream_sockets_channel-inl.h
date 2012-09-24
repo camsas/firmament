@@ -58,8 +58,8 @@ template <class T>
 StreamSocketsChannel<T>::StreamSocketsChannel(
     TCPConnection::connection_ptr connection)
   : //client_io_service_(&(connection->socket()->get_io_service())),
-    client_connection_(connection),
     client_socket_(connection->socket()),
+    client_connection_(connection),
     channel_ready_(false),
     type_(SS_TCP) {
   VLOG(2) << "Creating new channel around socket at " << client_socket_;
@@ -330,7 +330,6 @@ bool StreamSocketsChannel<T>::RecvA(
                  << ", which is not ready; read failed.";
     return false;
   }
-  size_t len;
   // Obtain the lock on the async receive buffer.
   async_recv_lock_.lock();
   async_recv_buffer_vec_.reset(new vector<char>(sizeof(size_t)));

@@ -24,9 +24,10 @@ namespace streamsockets {
 AsyncTCPServer::AsyncTCPServer(
     const string& endpoint_addr, const string& port,
     AcceptHandler::type accept_callback)
-    : io_service_(new boost::asio::io_service),
-      acceptor_(*io_service_), listening_(false),
-      accept_handler_(accept_callback) {
+    : listening_(false),
+      accept_handler_(accept_callback),
+      io_service_(new boost::asio::io_service),
+      acceptor_(*io_service_) {
   VLOG(2) << "AsyncTCPServer starting!";
   tcp::resolver resolver(*io_service_);
   if (endpoint_addr == "") {

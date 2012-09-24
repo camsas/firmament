@@ -34,10 +34,10 @@ class StreamSocketsChannelTest : public ::testing::Test {
   // is empty.
 
   StreamSocketsChannelTest()
-    : local_uri_("tcp://localhost:7777"),
-      remote_uri_("tcp://localhost:7778"),
-      local_adapter_(new StreamSocketsAdapter<BaseMessage>()),
-      remote_adapter_(new StreamSocketsAdapter<BaseMessage>()) {
+    : local_adapter_(new StreamSocketsAdapter<BaseMessage>()),
+      remote_adapter_(new StreamSocketsAdapter<BaseMessage>()),
+      local_uri_("tcp://localhost:7777"),
+      remote_uri_("tcp://localhost:7778") {
     // You can do set-up work for each test here.
   }
 
