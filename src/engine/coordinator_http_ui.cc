@@ -39,7 +39,6 @@ CoordinatorHTTPUI::~CoordinatorHTTPUI() {
 void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOLINT
                                            TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-
   // Check if we have a JobDescriptor as part of the POST parameters
   HTTPTypes::QueryParams& params = http_request->getQueryParams();
   string* job_descriptor_param = FindOrNull(params, "test");
@@ -49,8 +48,7 @@ void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOL
     return;
   }
   // We're okay to continue
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
-
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
   // Submit the JD to the coordinator
   JobDescriptor job_descriptor;
   google::protobuf::TextFormat::ParseFromString(*job_descriptor_param,
@@ -59,34 +57,28 @@ void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOL
   string job_id = coordinator_->SubmitJob(job_descriptor);
   // Return the job ID to the client
   writer->write(job_id);
-
-  FinishOkResponse(writer);
+  FinishOkResponse(writer, true);
 }
 
 void CoordinatorHTTPUI::HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
                                       TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
-
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
   // Individual to this request
-  //HTTPTypes::QueryParams& params = http_request->getQueryParams();
+  //HTTPTypes::QueryParams &params = http_request->getQueryParams();
   writer->write("<h1>");
   writer->write(coordinator_->uuid());
   writer->write("</h1>");
   writer->write("<a href=\"/resources\">Resources</a><br />");
   writer->write("<a href=\"/jobs\">Jobs</a><br />");
   writer->write("<a href=\"/shutdown\">Shutdown</a>");
-
-  FinishOkResponse(writer);
+  FinishOkResponse(writer, true);
 }
 
 void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOLINT
                                            TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
-
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
   // Get resource information from coordinator
   vector<ResourceDescriptor> resources = coordinator_->associated_resources();
   uint64_t i = 0;
@@ -110,16 +102,13 @@ void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOL
     ++i;
   }
   writer->write("</table>");
-
-  FinishOkResponse(writer);
+  FinishOkResponse(writer, true);
 }
 
 void CoordinatorHTTPUI::HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
                                         TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
-
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
   // Individual to this request
   if (http_request->getMethod() != "POST") {
     // return an error
@@ -127,27 +116,58 @@ void CoordinatorHTTPUI::HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
   } else {
     writer->write("ok");
   }
+  FinishOkResponse(writer, true);
+}
 
-  FinishOkResponse(writer);
+void CoordinatorHTTPUI::HandleJobStatusURI(HTTPRequestPtr& http_request,  // NOLINT
+                                           TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
+  HTTPTypes::QueryParams &params = http_request->getQueryParams();
+  string* job_id = FindOrNull(params, "id");
+  if (job_id) {
+    writer->write(*job_id);
+  } else {
+    writer->write("Please specify a job ID parameter.");
+  }
+  FinishOkResponse(writer, true);
+}
+
+void CoordinatorHTTPUI::HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
+                                        TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+
+  HTTPTypes::QueryParams &params = http_request->getQueryParams();
+  string* job_id = FindOrNull(params, "id");
+  if (job_id) {
+    HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, false);
+    // TODO(malte): Get DTG from coordinator
+    JobDescriptor jd = coordinator_->DescriptorForJob(*job_id);
+    string serialized_dtg(jd.ByteSize(), '\n');
+    jd.SerializeToString(&serialized_dtg);
+    writer->write(serialized_dtg);
+    FinishOkResponse(writer, false);
+  } else {
+    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
 }
 
 void CoordinatorHTTPUI::HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLINT
                                           TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
-
-  // Individual to this request
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
   string reason = "HTTP request from " + tcp_conn->getRemoteIp().to_string();
   coordinator_->Shutdown(reason);
   writer->write("Shutdown for coordinator initiated.");
-
-  FinishOkResponse(writer);
+  FinishOkResponse(writer, true);
 }
 
 HTTPResponseWriterPtr CoordinatorHTTPUI::InitOkResponse(
     HTTPRequestPtr http_request,
-    TCPConnectionPtr tcp_conn) {
+    TCPConnectionPtr tcp_conn,
+    bool html_header) {
   HTTPResponseWriterPtr writer = HTTPResponseWriter::create(
       tcp_conn, *http_request, boost::bind(&TCPConnection::finish,
                                            tcp_conn));
@@ -155,7 +175,8 @@ HTTPResponseWriterPtr CoordinatorHTTPUI::InitOkResponse(
   r.setStatusCode(HTTPTypes::RESPONSE_CODE_OK);
   r.setStatusMessage(HTTPTypes::RESPONSE_MESSAGE_OK);
   // Header
-  writer->writeNoCopy(kHTMLStart);
+  if (html_header)
+    writer->writeNoCopy(kHTMLStart);
   return writer;
 }
 
@@ -172,8 +193,10 @@ void CoordinatorHTTPUI::ErrorResponse(
   writer->send();
 }
 
-void CoordinatorHTTPUI::FinishOkResponse(HTTPResponseWriterPtr writer) {
-  writer->writeNoCopy(kHTMLEnd);
+void CoordinatorHTTPUI::FinishOkResponse(HTTPResponseWriterPtr writer,
+                                         bool html_footer) {
+  if (html_footer)
+    writer->writeNoCopy(kHTMLEnd);
   writer->send();
 }
 
@@ -197,6 +220,12 @@ void CoordinatorHTTPUI::Init(uint16_t port) {
     // Job submission
     coordinator_http_server_->addResource("/job/submit/", boost::bind(
         &CoordinatorHTTPUI::HandleJobSubmitURI, this, _1, _2));
+    // Job status
+    coordinator_http_server_->addResource("/job/status/", boost::bind(
+        &CoordinatorHTTPUI::HandleJobStatusURI, this, _1, _2));
+    // Job task graph
+    coordinator_http_server_->addResource("/job/dtg/", boost::bind(
+        &CoordinatorHTTPUI::HandleJobDTGURI, this, _1, _2));
     // Resource page
     coordinator_http_server_->addResource("/resources/", boost::bind(
         &CoordinatorHTTPUI::HandleResourcesURI, this, _1, _2));

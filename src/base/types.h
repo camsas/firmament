@@ -77,8 +77,10 @@ namespace firmament {
 // Various utility typedefs
 #ifdef __PLATFORM_HAS_BOOST__
 typedef boost::uuids::uuid ResourceID_t;
+typedef boost::uuids::uuid JobID_t;
 #else
 typedef uint64_t ResourceID_t;
+typedef uint64_t JobID_t;
 #endif
 typedef map<ResourceID_t, pair<ResourceDescriptor, uint64_t> > ResourceMap_t;
 

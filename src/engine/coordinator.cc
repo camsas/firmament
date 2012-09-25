@@ -123,6 +123,17 @@ void Coordinator::HandleRecv(const boost::system::error_code& error,
   delete env;
 }
 
+
+const JobDescriptor& Coordinator::DescriptorForJob(const string& job_id) {
+  JobDescriptor *foo = new JobDescriptor();
+  foo->set_uuid(job_id);
+  TaskDescriptor *td = foo->mutable_root_task();
+  td->set_uid(1234);
+  td->set_name("asdftest");
+  td->set_state(CREATED);
+  return *foo;
+}
+
 void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
   // Registration message
   if (bm->HasExtension(register_extn)) {
@@ -187,6 +198,11 @@ ResourceID_t Coordinator::GenerateUUID() {
   return gen();
 }
 
+JobID_t Coordinator::GenerateJobID() {
+  boost::uuids::random_generator gen;
+  return gen();
+}
+
 #ifdef __HTTP_UI__
 void Coordinator::InitHTTPUI() {
   // Start up HTTP interface
@@ -204,7 +220,12 @@ void Coordinator::InitHTTPUI() {
 
 const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   LOG(INFO) << "NEW JOB: " << job_descriptor.DebugString();
-  return "test1234";
+  // Generate a job ID
+  // TODO(malte): This should become deterministic, and based on the
+  // inputs/outputs somehow, maybe.
+  JobID_t new_job_id = GenerateJobID();
+  // Add job to local job table
+  return to_string(new_job_id);
 }
 
 void Coordinator::Shutdown(const string& reason) {

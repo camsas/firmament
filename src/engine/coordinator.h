@@ -23,6 +23,8 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/job_desc.pb.h"
+#include "base/task_desc.pb.h"
+#include "base/reference_desc.pb.h"
 #include "base/resource_desc.pb.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
@@ -61,6 +63,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   virtual ~Coordinator();
   void Run();
   void AwaitNextMessage();
+  const JobDescriptor& DescriptorForJob(const string& job_id);
   void Shutdown(const string& reason);
   const string SubmitJob(const JobDescriptor& job_descriptor);
 
@@ -81,6 +84,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
 
  protected:
   ResourceID_t GenerateUUID();
+  JobID_t GenerateJobID();
   void HandleIncomingMessage(BaseMessage *bm);
   void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
