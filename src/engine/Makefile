@@ -20,8 +20,7 @@ TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \
 # to avoid cyclic dependencies that will break test compilation.
 # E.g. worker_test would depend on coordinator.o if it had coordinator_http_ui.o
 # as a dependency.
-TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
-			 $(BUILD_DIR)/base/job_desc.pb.o
+TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o
 
 OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
