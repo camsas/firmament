@@ -140,11 +140,18 @@ void CoordinatorHTTPUI::HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
   HTTPTypes::QueryParams &params = http_request->getQueryParams();
   string* job_id = FindOrNull(params, "id");
   if (job_id) {
+    // Get DTG from coordinator
+    const JobDescriptor* jd = coordinator_->DescriptorForJob(*job_id);
+    if (!jd) {
+      // Job not found here
+      VLOG(1) << "Requested DTG for non-existent job " << *job_id;
+      ErrorResponse(HTTPTypes::RESPONSE_CODE_NOT_FOUND, http_request, tcp_conn);
+      return;
+    }
+    // Return serialized DTG
     HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, false);
-    // TODO(malte): Get DTG from coordinator
-    JobDescriptor jd = coordinator_->DescriptorForJob(*job_id);
-    string serialized_dtg(jd.ByteSize(), '\n');
-    jd.SerializeToString(&serialized_dtg);
+    string serialized_dtg(jd->ByteSize(), '\n');
+    jd->SerializeToString(&serialized_dtg);
     writer->write(serialized_dtg);
     FinishOkResponse(writer, false);
   } else {
@@ -174,6 +181,8 @@ HTTPResponseWriterPtr CoordinatorHTTPUI::InitOkResponse(
   HTTPResponse& r = writer->getResponse();
   r.setStatusCode(HTTPTypes::RESPONSE_CODE_OK);
   r.setStatusMessage(HTTPTypes::RESPONSE_MESSAGE_OK);
+  // Hack to allow file:// access
+  r.addHeader("Access-Control-Allow-Origin", "*");
   // Header
   if (html_header)
     writer->writeNoCopy(kHTMLStart);

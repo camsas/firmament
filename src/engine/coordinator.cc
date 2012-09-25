@@ -124,14 +124,13 @@ void Coordinator::HandleRecv(const boost::system::error_code& error,
 }
 
 
-const JobDescriptor& Coordinator::DescriptorForJob(const string& job_id) {
-  JobDescriptor *foo = new JobDescriptor();
-  foo->set_uuid(job_id);
-  TaskDescriptor *td = foo->mutable_root_task();
-  td->set_uid(1234);
-  td->set_name("asdftest");
-  td->set_state(CREATED);
-  return *foo;
+const JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
+  // XXX(malte): This makes assumptions about JobID_t being a Boost UUID. We
+  // should have a generic "JobID_t-from-string" helper instead.
+  boost::uuids::string_generator gen;
+  boost::uuids::uuid job_uuid = gen(job_id);
+  JobDescriptor *jd = FindOrNull(job_table_, job_uuid);
+  return jd;
 }
 
 void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
@@ -224,7 +223,12 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   // TODO(malte): This should become deterministic, and based on the
   // inputs/outputs somehow, maybe.
   JobID_t new_job_id = GenerateJobID();
+  // Clone the JD and update it with some information
+  JobDescriptor new_jd = job_descriptor;
+  new_jd.set_uuid(to_string(new_job_id));
   // Add job to local job table
+  CHECK(InsertIfNotPresent(&job_table_, new_job_id, new_jd));
+  // Finally, return the new job's ID
   return to_string(new_job_id);
 }
 

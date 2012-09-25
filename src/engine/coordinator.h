@@ -63,7 +63,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   virtual ~Coordinator();
   void Run();
   void AwaitNextMessage();
-  const JobDescriptor& DescriptorForJob(const string& job_id);
+  const JobDescriptor* DescriptorForJob(const string& job_id);
   void Shutdown(const string& reason);
   const string SubmitJob(const JobDescriptor& job_descriptor);
 
@@ -111,10 +111,15 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
 #endif
   scoped_ptr<TopologyManager> topology_manager_;
   // A map of resources associated with this coordinator.
+  // The key is a resource UUID, the value a pair.
   // The first component of the pair is the resource descriptor, the second is
   // the timestamp when the latest heartbeat or message was received from this
   // resource..
   ResourceMap_t associated_resources_;
+  // A map of all jobs known to this coordinator, indexed by their job ID.
+  // Key is the job ID, value a ResourceDescriptor.
+  // Currently, this table grows ad infinitum.
+  JobMap_t job_table_;
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;
