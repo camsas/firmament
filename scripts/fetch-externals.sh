@@ -255,7 +255,7 @@ fi
 print_subhdr "GOOGLE TEST LIBRARY FOR C++"
 get_dep_svn "googletest" "googlecode"
 cd googletest-svn/make
-if [[ ${OS_ID} == 'Ubuntu' && ${OS_RELEASE} == '11.10' ]]; then
+if [[ ${OS_ID} == 'Ubuntu' && [[ ${OS_RELEASE} == '11.10' || ${OS_RELEASE} == '12.04' ]]; then
   echo "Applying Ubuntu 11.10-specific patch to googletest library..."
   patch -p0 -s -N -r - < ${EXT_DIR}/../scripts/fix-gtest-ubuntu.diff
 fi
