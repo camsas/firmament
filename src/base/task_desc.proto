@@ -21,5 +21,6 @@ message TaskDescriptor {
   repeated ReferenceDescriptor dependencies = 6;
   repeated ReferenceDescriptor outputs = 7;
   optional string binary = 8;
+  repeated TaskDescriptor spawned = 9;
 }
 
