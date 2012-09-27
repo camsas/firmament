@@ -354,7 +354,7 @@ fi
 
 ## pb2json library (converts protobufs to JSON)
 print_subhdr "PB2JSON LIBRARY"
-get_dep_git "pb2json" "https://github.com/renenglish/pb2json"
+get_dep_git "pb2json" "https://github.com/ms705/pb2json"
 cd pb2json-git/
 echo -n "Building pb2json library..."
 RES=$(make)

@@ -8,6 +8,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/bind.hpp>
 #include <google/protobuf/text_format.h>
+#include <pb2json.h>
 
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
@@ -150,9 +151,13 @@ void CoordinatorHTTPUI::HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
     }
     // Return serialized DTG
     HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, false);
-    string serialized_dtg(jd->ByteSize(), '\n');
-    jd->SerializeToString(&serialized_dtg);
-    writer->write(serialized_dtg);
+    size_t len = jd->ByteSize();
+    vector<char> serialized_dtg(len);
+    jd->SerializeToArray(&serialized_dtg[0], len);
+    JobDescriptor dummy_jd;
+    char *json = pb2json(&dummy_jd, &serialized_dtg[0], len);
+    VLOG(1) << json;
+    writer->write(json);
     FinishOkResponse(writer, false);
   } else {
     ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
