@@ -228,6 +228,13 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   new_jd.set_uuid(to_string(new_job_id));
   // Add job to local job table
   CHECK(InsertIfNotPresent(&job_table_, new_job_id, new_jd));
+#ifdef __SIMULATE_SYNTHETIC_DTG__
+  LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";
+  sim_dtg_generator_.reset(new sim::SimpleDTGGenerator(FindOrNull(job_table_,
+                                                                  new_job_id)));
+  boost::thread t(boost::bind(&sim::SimpleDTGGenerator::Run,
+                              sim_dtg_generator_));
+#endif
   // Finally, return the new job's ID
   return to_string(new_job_id);
 }

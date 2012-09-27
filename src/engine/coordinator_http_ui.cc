@@ -152,7 +152,6 @@ void CoordinatorHTTPUI::HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
     // Return serialized DTG
     HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, false);
     char *json = pb2json(*jd);
-    VLOG(1) << json;
     writer->write(json);
     FinishOkResponse(writer, false);
   } else {

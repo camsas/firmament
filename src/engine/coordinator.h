@@ -39,6 +39,9 @@
 #include "engine/coordinator_http_ui.h"
 #endif
 #include "engine/topology_manager.h"
+#ifdef __SIMULATE_SYNTHETIC_DTG__
+#include "sim/simple_dtg_generator.h"
+#endif
 
 namespace firmament {
 
@@ -123,6 +126,9 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;
+#ifdef __SIMULATE_SYNTHETIC_DTG__
+  shared_ptr<sim::SimpleDTGGenerator> sim_dtg_generator_;
+#endif
 };
 
 }  // namespace firmament
