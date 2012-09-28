@@ -211,7 +211,7 @@ void Coordinator::Shutdown(const string& reason) {
   LOG(INFO) << "Coordinator shutting down; reason: " << reason;
 #ifdef __HTTP_UI__
   if (FLAGS_http_ui && c_http_ui_)
-    c_http_ui_->Shutdown(true);
+    c_http_ui_->Shutdown(false);
 #endif
   m_adapter_->StopListen();
   // Toggling the exit flag will make the Coordinator drop out of its main loop.
