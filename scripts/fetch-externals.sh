@@ -15,7 +15,7 @@ BASE_PKGS="wget subversion autoconf"
 COMPILER_PKGS="clang libprotobuf-dev protobuf-compiler"
 GOOGLE_PKGS="libgoogle-perftools0 libgoogle-perftools-dev libprotobuf-dev"
 BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
-MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev"
+MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev"
 
 UBUNTU_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 DEBIAN_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
@@ -23,7 +23,7 @@ DEBIAN_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_P
 GFLAGS_VER="1.7"
 GLOG_VER="HEAD"
 PROTOBUF_VER="2.4.1"
-BOOST_VER="1.48.0"
+BOOST_VER="1.46.0"
 
 #################################
 
@@ -144,6 +144,39 @@ function get_dep_deb {
 
 ##################################
 
+function get_dep_svn {
+  REPO=$2
+  NAME=$1
+  if [[ ${REPO} == "googlecode" ]]; then
+    REPO="http://${NAME}.googlecode.com/svn/trunk/"
+  fi
+
+  if [ -d ${NAME}-svn ]
+  then
+    svn up ${NAME}-svn/
+  else
+    mkdir -p ${NAME}-svn
+    svn co ${REPO} ${NAME}-svn/
+  fi
+}
+
+##################################
+
+function get_dep_git {
+  REPO=$2
+  NAME=$1
+
+  if [ -d ${NAME}-git ]
+  then
+    svn up ${NAME}-git/
+  else
+    mkdir -p ${NAME}-git
+    git clone ${REPO} ${NAME}-git/
+  fi
+}
+
+##################################
+
 function get_dep_arch {
   URL=$2
   NAME=$1
@@ -193,7 +226,8 @@ then
     echo -n "${OS_ID} package check previously ran successfully; skipping. "
     echo "Delete .${OS_ID}-ok file if you want to re-run it."
   else
-    check_dpkg_packages ${OS_ID}
+    echo "Checking if necessary packages are installed..."
+#    check_dpkg_packages ${OS_ID}
   fi
 elif [[ ${TARGET} == "scc" ]]; then
   echo "Building for the SCC. Note that you MUST build on the MCPC, and "
@@ -255,7 +289,7 @@ fi
 print_subhdr "GOOGLE TEST LIBRARY FOR C++"
 get_dep_svn "googletest" "googlecode"
 cd googletest-svn/make
-if [[ ${OS_ID} == 'Ubuntu' && ${OS_RELEASE} == '11.10' ]]; then
+if [[ ${OS_ID} == 'Ubuntu' && ( ${OS_RELEASE} == '11.10' || ${OS_RELEASE} == '12.04' ) ]]; then
   echo "Applying Ubuntu 11.10-specific patch to googletest library..."
   patch -p0 -s -N -r - < ${EXT_DIR}/../scripts/fix-gtest-ubuntu.diff
 fi
@@ -317,6 +351,16 @@ else
   print_succ_or_fail $RES
   cd ${EXT_DIR}
 fi
+
+## pb2json library (converts protobufs to JSON)
+print_subhdr "PB2JSON LIBRARY"
+get_dep_git "pb2json" "https://github.com/ms705/pb2json"
+cd pb2json-git/
+echo -n "Building pb2json library..."
+RES=$(make)
+print_succ_or_fail ${RES}
+cd ${EXT_DIR}
+
 
 ## cpplint.py (linter script)
 print_subhdr "CPPLINT HELPER SCRIPT"

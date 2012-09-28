@@ -1,5 +1,7 @@
 package firmament;
 
+import "base/reference_desc.proto";
+
 enum TaskState {
   CREATED = 0;
   RUNNING = 1;
@@ -16,5 +18,9 @@ message TaskDescriptor {
   required TaskState state = 3;
   optional uint64 job_id = 4;
   optional uint64 index = 5;
+  repeated ReferenceDescriptor dependencies = 6;
+  repeated ReferenceDescriptor outputs = 7;
+  optional string binary = 8;
+  repeated TaskDescriptor spawned = 9;
 }
 

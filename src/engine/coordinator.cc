@@ -123,6 +123,16 @@ void Coordinator::HandleRecv(const boost::system::error_code& error,
   delete env;
 }
 
+
+const JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
+  // XXX(malte): This makes assumptions about JobID_t being a Boost UUID. We
+  // should have a generic "JobID_t-from-string" helper instead.
+  boost::uuids::string_generator gen;
+  boost::uuids::uuid job_uuid = gen(job_id);
+  JobDescriptor *jd = FindOrNull(job_table_, job_uuid);
+  return jd;
+}
+
 void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
   // Registration message
   if (bm->HasExtension(register_extn)) {
@@ -187,6 +197,11 @@ ResourceID_t Coordinator::GenerateUUID() {
   return gen();
 }
 
+JobID_t Coordinator::GenerateJobID() {
+  boost::uuids::random_generator gen;
+  return gen();
+}
+
 #ifdef __HTTP_UI__
 void Coordinator::InitHTTPUI() {
   // Start up HTTP interface
@@ -204,7 +219,24 @@ void Coordinator::InitHTTPUI() {
 
 const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   LOG(INFO) << "NEW JOB: " << job_descriptor.DebugString();
-  return "test1234";
+  // Generate a job ID
+  // TODO(malte): This should become deterministic, and based on the
+  // inputs/outputs somehow, maybe.
+  JobID_t new_job_id = GenerateJobID();
+  // Clone the JD and update it with some information
+  JobDescriptor new_jd = job_descriptor;
+  new_jd.set_uuid(to_string(new_job_id));
+  // Add job to local job table
+  CHECK(InsertIfNotPresent(&job_table_, new_job_id, new_jd));
+#ifdef __SIMULATE_SYNTHETIC_DTG__
+  LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";
+  sim_dtg_generator_.reset(new sim::SimpleDTGGenerator(FindOrNull(job_table_,
+                                                                  new_job_id)));
+  boost::thread t(boost::bind(&sim::SimpleDTGGenerator::Run,
+                              sim_dtg_generator_));
+#endif
+  // Finally, return the new job's ID
+  return to_string(new_job_id);
 }
 
 void Coordinator::Shutdown(const string& reason) {

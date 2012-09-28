@@ -4,9 +4,9 @@ SUFFIX=engine
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc $(PB2JSON_LIB) -ljansson
 
-BINS = coordinator worker
+BINS = coordinator worker coordinator_sim
 OBJS = coordinator_http_ui.o coordinator.o worker.o topology_manager.o
 PBS =
 TESTS = coordinator_test worker_test
@@ -20,8 +20,7 @@ TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \
 # to avoid cyclic dependencies that will break test compilation.
 # E.g. worker_test would depend on coordinator.o if it had coordinator_http_ui.o
 # as a dependency.
-TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
-			 $(BUILD_DIR)/base/job_desc.pb.o
+TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o
 
 OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
@@ -52,6 +51,28 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(LIBS) -o $(BUILD_DIR)/engine/coordinator, \
 		"  DYNLNK  $(BUILD_DIR)/engine/coordinator")
 
+# XXX(malte): temporary hack
+$(OBJ_DIR)/coordinator_sim: $(BUILD_DIR)/sim/simple_dtg_generator.o \
+	$(BUILD_DIR)/base/libfirmament_base.a \
+	$(BUILD_DIR)/misc/libfirmament_misc.a \
+	$(BUILD_DIR)/messages/libfirmament_messages.a \
+	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) \
+		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
+		$(CXXFLAGS) \
+		$(SRC_ROOT_DIR)/engine/coordinator.cc \
+		$(BUILD_DIR)/engine/coordinator_http_ui.o \
+		$(BUILD_DIR)/base/libfirmament_base.a \
+		$(BUILD_DIR)/misc/libfirmament_misc.a \
+		$(BUILD_DIR)/messages/libfirmament_messages.a \
+		$(BUILD_DIR)/platforms/common.pb.o \
+		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
+		$(BUILD_DIR)/engine/topology_manager.o \
+		$< \
+		$(LIBS) -o $(BUILD_DIR)/engine/coordinator_sim \
+		-D__SIMULATE_SYNTHETIC_DTG__, \
+		"  DYNLNK  $(BUILD_DIR)/engine/coordinator_sim")
 
 $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \

@@ -58,13 +58,26 @@ GTEST_FLAGS=-DGTEST_HAS_TR1_TUPLE=0
 #GPERFTOOLS_LIB ?= $(EXT_DIR)/google-perftools-build/lib/libtcmalloc_and_profiler.so
 #export GPERFTOOLS_LIB
 
+#######################################
+# pb2json-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for pb2json
+PB2JSON_INC_DIR ?= $(EXT_DIR)/pb2json-git/
+export PB2JSON_INC_DIR
+
+# Path to the compiled googletest library (usually under
+# "make" in the googletest directory in "ext").
+PB2JSON_LIB ?= $(EXT_DIR)/pb2json-git/libpb2json.a
+export PB2JSON_LIB
+
 
 #######################################
 # INCLUDES
 #######################################
 
 INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) \
-	   -I$(BOOST_INC_DIR) #-I$(GPERFTOOLS_INC_DIR)
+	   -I$(PB2JSON_INC_DIR) #-I$(GPERFTOOLS_INC_DIR)
 
 
 #######################################
@@ -85,7 +98,7 @@ LIBS += -ltcmalloc -lgflags -lglog -lpthread -lprotobuf
 CXX = clang++
 
 # for clang++, uncomment this line
-CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-language-extension-token -Wno-deprecated
+CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-language-extension-token -Wno-deprecated -Wno-error=unused-function
 
 # XXX(malte): this is a hack to enable support for configuration #defines; we
 # should move this to a proper configuration stage

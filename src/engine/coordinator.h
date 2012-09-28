@@ -23,6 +23,8 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/job_desc.pb.h"
+#include "base/task_desc.pb.h"
+#include "base/reference_desc.pb.h"
 #include "base/resource_desc.pb.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
@@ -37,6 +39,9 @@
 #include "engine/coordinator_http_ui.h"
 #endif
 #include "engine/topology_manager.h"
+#ifdef __SIMULATE_SYNTHETIC_DTG__
+#include "sim/simple_dtg_generator.h"
+#endif
 
 namespace firmament {
 
@@ -61,6 +66,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   virtual ~Coordinator();
   void Run();
   void AwaitNextMessage();
+  const JobDescriptor* DescriptorForJob(const string& job_id);
   void Shutdown(const string& reason);
   const string SubmitJob(const JobDescriptor& job_descriptor);
 
@@ -81,6 +87,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
 
  protected:
   ResourceID_t GenerateUUID();
+  JobID_t GenerateJobID();
   void HandleIncomingMessage(BaseMessage *bm);
   void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
@@ -107,13 +114,21 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
 #endif
   scoped_ptr<TopologyManager> topology_manager_;
   // A map of resources associated with this coordinator.
+  // The key is a resource UUID, the value a pair.
   // The first component of the pair is the resource descriptor, the second is
   // the timestamp when the latest heartbeat or message was received from this
   // resource..
   ResourceMap_t associated_resources_;
+  // A map of all jobs known to this coordinator, indexed by their job ID.
+  // Key is the job ID, value a ResourceDescriptor.
+  // Currently, this table grows ad infinitum.
+  JobMap_t job_table_;
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;
+#ifdef __SIMULATE_SYNTHETIC_DTG__
+  shared_ptr<sim::SimpleDTGGenerator> sim_dtg_generator_;
+#endif
 };
 
 }  // namespace firmament

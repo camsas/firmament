@@ -39,13 +39,18 @@ class CoordinatorHTTPUI {
   void ErrorResponse(const unsigned int error_code,
                      HTTPRequestPtr http_request,
                      TCPConnectionPtr tcp_conn);
-  void FinishOkResponse(HTTPResponseWriterPtr writer);
+  void FinishOkResponse(HTTPResponseWriterPtr writer, bool html_footer);
   void Init(uint16_t port);
   HTTPResponseWriterPtr InitOkResponse(HTTPRequestPtr http_request,
-                                       TCPConnectionPtr tcp_conn);
+                                       TCPConnectionPtr tcp_conn,
+                                       bool html_header);
   void LogRequest(HTTPRequestPtr& http_request);
   void HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOLINT
-                              TCPConnectionPtr& tcp_conn);
+                          TCPConnectionPtr& tcp_conn);
+  void HandleJobStatusURI(HTTPRequestPtr& http_request,  // NOLINT
+                          TCPConnectionPtr& tcp_conn);
+  void HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
+                       TCPConnectionPtr& tcp_conn);
   void HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
                      TCPConnectionPtr& tcp_conn);
   void HandleResourcesURI(HTTPRequestPtr& http_request,  // NOLINT
