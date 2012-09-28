@@ -29,6 +29,10 @@ class SimpleDTGGenerator {
   boost::variate_generator<base_generator_type&,
       job_size_dist_type> job_size_gen_;*/
 
+  boost::uniform_smallint<> output_id_distribution_;
+  boost::variate_generator<base_generator_type&,
+      boost::uniform_smallint<> > output_id_gen_;
+
   boost::uniform_smallint<> spawner_distribution_;
   boost::variate_generator<base_generator_type&,
       boost::uniform_smallint<> > spawner_gen_;
