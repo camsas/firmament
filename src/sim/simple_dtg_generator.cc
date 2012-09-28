@@ -28,12 +28,22 @@ void SimpleDTGGenerator::Run() {
   for (uint32_t i = 1; i < 101; ++i) {
     uint32_t spawner_id = spawner_gen_() % i;
     TaskDescriptor* spawner = tasks.at(spawner_id);
+    spawner->set_state(RUNNING);
     VLOG(1) << "Spawning a new task at " << spawner_id << ", which already "
             << "has " << spawner->spawned_size() << " children.";
     TaskDescriptor* new_task = spawner->add_spawned();
     new_task->set_uid(i);
-    new_task->set_name("");
+    new_task->set_name("Task " + i);
     new_task->set_state(CREATED);
+    if (spawner->outputs_size() > 0) {
+      ReferenceDescriptor* rd = new_task->add_dependencies();
+      *rd = spawner->outputs(0);  // copy
+    }
+    ReferenceDescriptor* od = new_task->add_outputs();
+    od->set_id(i * 3);
+    od->set_scope(ReferenceDescriptor::PUBLIC);
+    od->set_type(ReferenceDescriptor::FUTURE);
+    od->set_non_deterministic(false);
     tasks.push_back(new_task);
     double next_spawn = task_spawn_gen_();
     delay += next_spawn;

@@ -2,7 +2,7 @@ from base import job_desc_pb2
 from base import task_desc_pb2
 from base import reference_desc_pb2
 from google.protobuf import text_format
-import httplib, urllib, re, sys
+import httplib, urllib, re, sys, random
 
 hostname = "ganymede.cl.cam.ac.uk"
 port = 8080
@@ -15,6 +15,11 @@ job_desc.root_task.uid = 0
 job_desc.root_task.name = ""
 job_desc.root_task.state = task_desc_pb2.CREATED
 job_desc.root_task.binary = "ls"
+final_output_desc = job_desc.root_task.outputs.add()
+final_output_desc.id = random.randint(0, 10000000)
+final_output_desc.scope = reference_desc_pb2.ReferenceDescriptor.PUBLIC
+final_output_desc.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
+final_output_desc.non_deterministic = False
 
 #params = urllib.urlencode({'test': text_format.MessageToString(job_desc)})
 params = 'test=%s' % text_format.MessageToString(job_desc)
