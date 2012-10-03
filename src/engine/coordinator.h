@@ -90,6 +90,8 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   ResourceID_t GenerateUUID();
   JobID_t GenerateJobID();
   void HandleIncomingMessage(BaseMessage *bm);
+  void HandleIncomingReceiveError(const boost::system::error_code& error,
+                                  const string& remote_endpoint);
   void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
   void HandleTaskStateChange(const TaskStateMessage& msg);
