@@ -59,8 +59,6 @@ shared_ptr<MessagingChannelInterface<T> >
 StreamSocketsAdapter<T>::GetChannelForEndpoint(
     const string& endpoint) {
   CHECK_NE(endpoint, "");
-/*  typeof(endpoint_channel_map_.begin()) it =
-      endpoint_channel_map_.find(endpoint);*/
   shared_ptr<StreamSocketsChannel<T> >* chan =
       FindOrNull(endpoint_channel_map_, endpoint);
   if (!chan)
@@ -122,14 +120,17 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     size_t bytes_transferred,
     shared_ptr<StreamSocketsChannel<T> > chan) {
   if (error) {
-    LOG(WARNING) << "Error receiving in MA";
+    LOG(WARNING) << "Failed to receive message on MA " << *this;
     // TODO(malte): think about clearing up state here. Should we consider the
     // envelope as having been consumed? Currently we do so.
-    // XXX(malte): hack, not safe (offset may have changed!)
-    endpoint_channel_map_.erase("");
-    channel_recv_envelopes_.erase(chan);
-    //chan->Close();
-    // XXX(malte): Do we need to unlock/signal here?
+    // XXX(malte): the below is possibly unsafe in some way, especially w.r.t.
+    // concurrency
+    VLOG(1) << "chans: " << endpoint_channel_map_.size();
+    CHECK(endpoint_channel_map_.erase(chan->RemoteEndpointString()));
+    CHECK(channel_recv_envelopes_.erase(chan));
+    VLOG(1) << "chans: " << endpoint_channel_map_.size();
+    chan->Close();
+    message_wait_ready_ = true;
     message_wait_condvar_.notify_all();
     return;
   }
@@ -241,7 +242,8 @@ void StreamSocketsAdapter<T>::StopListen() {
 
 template <class T>
 ostream& StreamSocketsAdapter<T>::ToString(ostream* stream) const {
-  return *stream << "(MessagingAdapter,type=StreamSockets,at=" << this << ")";
+  return *stream << "(MessagingAdapter,type=StreamSockets,at=" << this
+                 << ",num_channels=" << endpoint_channel_map_.size() << ")";
 }
 
 
