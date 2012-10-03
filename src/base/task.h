@@ -27,9 +27,11 @@ class Task {
   void set_index_in_job(const uint64_t idx) { descriptor_.set_index(idx); }
   const string& name() { return descriptor_.name(); }
   void set_name(const string& name) { descriptor_.set_name(name); }
-  TaskState state() { return static_cast<TaskState>(descriptor_.state()); }
-  void set_state(TaskState state) {
-    descriptor_.set_state(static_cast<TaskState>(state));
+  TaskDescriptor::TaskState state() {
+    return static_cast<TaskDescriptor::TaskState>(descriptor_.state());
+  }
+  void set_state(TaskDescriptor::TaskState state) {
+    descriptor_.set_state(static_cast<TaskDescriptor::TaskState>(state));
   }
 
  protected:

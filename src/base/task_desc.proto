@@ -2,17 +2,17 @@ package firmament;
 
 import "base/reference_desc.proto";
 
-enum TaskState {
-  CREATED = 0;
-  RUNNING = 1;
-  PENDING = 2;
-  COMPLETED = 3;
-  ASSIGNED = 4;
-  MIGRATED = 5;
-  UNKNOWN = 6;
-}
-
 message TaskDescriptor {
+  enum TaskState {
+    CREATED = 0;
+    RUNNING = 1;
+    PENDING = 2;
+    COMPLETED = 3;
+    ASSIGNED = 4;
+    MIGRATED = 5;
+    UNKNOWN = 6;
+  }
+
   required uint64 uid = 1;
   required string name = 2;
   required TaskState state = 3;
