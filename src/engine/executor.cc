@@ -50,7 +50,7 @@ void Executor::SendFinalizeMessage(bool success) {
   Envelope<BaseMessage> envelope(&bm);
   CHECK(chan_.SendS(envelope));
   VLOG(1) << "Done sending message, sleeping before quitting";
-  boost::this_thread::sleep(boost::posix_time::seconds(30));
+  //boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 
 void Executor::SendHeartbeat() {
