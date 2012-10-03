@@ -30,6 +30,7 @@
 #include "platforms/unix/common.h"
 #include "messages/heartbeat_message.pb.h"
 #include "messages/registration_message.pb.h"
+#include "messages/task_state_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/signal_handler.h"
@@ -91,6 +92,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   void HandleIncomingMessage(BaseMessage *bm);
   void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
+  void HandleTaskStateChange(const TaskStateMessage& msg);
   void HandleRecv(const boost::system::error_code& error,
                   size_t bytes_transferred,
                   Envelope<BaseMessage>* env);

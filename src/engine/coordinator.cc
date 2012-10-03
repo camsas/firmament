@@ -14,8 +14,6 @@
 
 #include "base/resource_desc.pb.h"
 #include "messages/base_message.pb.h"
-#include "messages/heartbeat_message.pb.h"
-#include "messages/registration_message.pb.h"
 #include "misc/protobuf_envelope.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
@@ -144,6 +142,10 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
     const HeartbeatMessage& msg = bm->GetExtension(heartbeat_extn);
     HandleHeartbeat(msg);
   }
+  if (bm->HasExtension(task_state_extn)) {
+    const TaskStateMessage& msg = bm->GetExtension(task_state_extn);
+    HandleTaskStateChange(msg);
+  }
 }
 
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
@@ -183,6 +185,12 @@ void Coordinator::HandleRegistrationRequest(
     // Update timestamp (registration request is an implicit heartbeat)
     rdp->second = GetCurrentTimestamp();
   }
+}
+
+void Coordinator::HandleTaskStateChange(
+    const TaskStateMessage& msg) {
+  VLOG(1) << "Task state changed to " << static_cast<uint64_t>(msg.new_state());
+  // XXX(malte): tear down the respective connection
 }
 
 
