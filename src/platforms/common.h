@@ -8,6 +8,11 @@
 
 #include <string>
 
+#ifdef __PLATFORM_HAS_BOOST__
+#include <boost/uuid/uuid_generators.hpp>
+#endif
+
+#include "base/types.h"
 #include "platforms/common.pb.h"
 
 namespace firmament {
@@ -18,6 +23,15 @@ inline PlatformID GetPlatformID(const string &platform_name) {
   CHECK(PlatformID_Parse(platform_name, &platform_id))
       << "Invalid or unknown platform specified: " << platform_name;
   return platform_id;
+}
+
+inline ResourceID_t ResourceIDFromString(const string& str) {
+#ifdef __PLATFORM_HAS_BOOST__
+  boost::uuids::string_generator gen;
+  return gen(str);
+#else
+#error unimplemented
+#endif
 }
 
 }  // namespace firmament
