@@ -24,6 +24,31 @@ void TopologyManager::LoadAndParseTopology() {
   topology_depth_ = hwloc_topology_get_depth(topology_);
 }
 
+void TopologyManager::LoadAndParseSyntheticTopology(
+    const string& topology_desc) {
+  VLOG(1) << "Synthetic topology load...";
+#if HWLOC_API_VERSION > 0x00010500
+  hwloc_topology_set_synthetic(topology_, topology_desc);
+  hwloc_topology_load(topology_);
+  topology_depth_ = hwloc_topology_get_depth(topology_);
+#else
+  LOG(ERROR) << "The version of hwloc used is too old to support synthetic "
+             << "topology generation. Version is " << hwloc_get_api_version
+             << ", we require >=1.5. Topology string was: " << topology_desc;
+#endif
+}
+
+uint32_t TopologyManager::NumProcessingUnits() {
+  hwloc_obj_t obj = NULL;
+  uint32_t count = 0;
+  do {
+    obj = hwloc_get_next_obj_by_type(topology_, HWLOC_OBJ_PU, obj);
+    if (obj != NULL)
+      count++;
+  } while (obj != NULL);
+  return count;
+}
+
 void TopologyManager::DebugPrintRawTopology() {
   char obj_string[128];
   for (uint32_t depth = 0; depth < topology_depth_; depth++) {

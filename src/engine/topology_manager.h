@@ -26,8 +26,9 @@ class TopologyManager {
  public:
   TopologyManager();
   void LoadAndParseTopology();
-  void LoadAndParseSyntheticTopology();
+  void LoadAndParseSyntheticTopology(const string& topology_desc);
   void DebugPrintRawTopology();
+  uint32_t NumProcessingUnits();
  protected:
   hwloc_topology_t topology_;
   hwloc_cpuset_t cpuset_;
