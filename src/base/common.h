@@ -10,6 +10,7 @@
 
 #include <sstream>  // NOLINT
 #include <vector>
+#include <set>
 #include <string>
 #include <limits>
 

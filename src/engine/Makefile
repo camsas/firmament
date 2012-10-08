@@ -6,27 +6,29 @@ include $(ROOT_DIR)/include/Makefile.common
 
 LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc $(PB2JSON_LIB) -ljansson
 
+LIB = libfirmament_executor.a
 BINS = coordinator worker coordinator_sim
 OBJS = coordinator_http_ui.o coordinator.o worker.o topology_manager.o
 PBS =
-TESTS = coordinator_test worker_test
+TESTS = coordinator_test worker_test topology_manager_test
 TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \
 	     $(BUILD_DIR)/misc/libfirmament_misc.a \
 	     $(BUILD_DIR)/messages/libfirmament_messages.a \
 	     $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
-	     $(BUILD_DIR)/platforms/common.pb.o \
-	     $(BUILD_DIR)/engine/topology_manager.o
+	     $(BUILD_DIR)/platforms/common.pb.o
 # Test-specific dependencies; we keep these separate from the others in order
 # to avoid cyclic dependencies that will break test compilation.
 # E.g. worker_test would depend on coordinator.o if it had coordinator_http_ui.o
 # as a dependency.
-TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o
+TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
+	                 $(BUILD_DIR)/engine/topology_manager.o
 
 OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
+OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
-all: $(OBJ_BIN) $(TESTS_BIN) .setup
+all: $(OBJ_BIN) $(TESTS_BIN) $(OBJ_LIB) .setup
 
 # TODO: check if any of the below targets can make use of a generic
 # build rule from Makefile.common, or can be converted to do so.
@@ -87,3 +89,9 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(LIBS) -o $(BUILD_DIR)/engine/worker, \
 		"  DYNLNK  $(BUILD_DIR)/engine/worker")
+
+
+# Executor interface library
+# ---------------------------
+# This needs to be linked into task binaries.
+$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, executor.o)

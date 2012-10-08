@@ -9,9 +9,11 @@
 #include <stdint.h>
 #include <map>
 #include <utility>
+#include <string>
 
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid.hpp>
+#include <boost/system/error_code.hpp>
 #endif
 
 #include "base/resource_desc.pb.h"
@@ -19,6 +21,7 @@
 
 using std::map;
 using std::pair;
+using std::string;
 
 // Smart pointers
 // Depending on compiler support and library available, we use the following, in
@@ -83,6 +86,7 @@ typedef boost::uuids::uuid JobID_t;
 typedef uint64_t ResourceID_t;
 typedef uint64_t JobID_t;
 #endif
+typedef const uint64_t TaskID_t;
 typedef map<ResourceID_t, pair<ResourceDescriptor, uint64_t> > ResourceMap_t;
 typedef map<JobID_t, JobDescriptor> JobMap_t;
 
@@ -96,7 +100,8 @@ struct AsyncMessageRecvHandler {
 // Error handler callback type definition
 template <typename T>
 struct AsyncErrorPathHandler {
-  typedef boost::function<void()> type;
+  typedef boost::function<void(const boost::system::error_code& error,
+                               const string& remote_endpoint)> type;
 };
 #else
 #error "Handler types do not currently have non-Boost versions."

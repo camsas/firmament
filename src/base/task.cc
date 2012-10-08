@@ -10,7 +10,7 @@ namespace firmament {
 Task::Task(const string& name) {
   // Set up the task descriptor.
   set_name(name);
-  set_state(CREATED);
+  set_state(TaskDescriptor::CREATED);
 
   // TODO(malte): Compute and set a UID for this task.
 }

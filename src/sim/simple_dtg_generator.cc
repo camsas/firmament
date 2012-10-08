@@ -33,13 +33,13 @@ void SimpleDTGGenerator::Run() {
   for (uint32_t i = 1; i < static_cast<uint32_t>(FLAGS_num_tasks); ++i) {
     uint32_t spawner_id = spawner_gen_() % i;
     TaskDescriptor* spawner = tasks.at(spawner_id);
-    spawner->set_state(RUNNING);
+    spawner->set_state(TaskDescriptor::RUNNING);
     VLOG(1) << "Spawning a new task at " << spawner_id << ", which already "
             << "has " << spawner->spawned_size() << " children.";
     TaskDescriptor* new_task = spawner->add_spawned();
     new_task->set_uid(i);
     new_task->set_name("");
-    new_task->set_state(CREATED);
+    new_task->set_state(TaskDescriptor::CREATED);
     if (spawner->outputs_size() > 0) {
       ReferenceDescriptor* rd = new_task->add_dependencies();
       *rd = spawner->outputs(0);  // copy

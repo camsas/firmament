@@ -1,0 +1,20 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// HeartbeatMessage is a simple keep-alive message that reports on a live
+// resource. It may also trigger registration and fault recovery, although
+// initial registration is triggered explicitly using RegistrationMessage.
+
+package firmament;
+
+import "messages/base_message.proto";
+import "base/task_desc.proto";
+
+extend BaseMessage {
+  optional TaskStateMessage task_state_extn = 105;
+}
+
+message TaskStateMessage {
+  optional uint64 id = 1;
+  required TaskDescriptor.TaskState new_state = 2;
+}

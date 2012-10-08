@@ -14,8 +14,6 @@
 
 #include "base/resource_desc.pb.h"
 #include "messages/base_message.pb.h"
-#include "messages/heartbeat_message.pb.h"
-#include "messages/registration_message.pb.h"
 #include "misc/protobuf_envelope.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
@@ -82,6 +80,9 @@ void Coordinator::Run() {
   m_adapter_->Listen(FLAGS_listen_uri);
   m_adapter_->RegisterAsyncMessageReceiptCallback(
       boost::bind(&Coordinator::HandleIncomingMessage, this, _1));
+  m_adapter_->RegisterAsyncErrorPathCallback(
+      boost::bind(&Coordinator::HandleIncomingReceiveError, this,
+                  boost::asio::placeholders::error, _2));
 
 #ifdef __HTTP_UI__
   InitHTTPUI();
@@ -144,6 +145,33 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
     const HeartbeatMessage& msg = bm->GetExtension(heartbeat_extn);
     HandleHeartbeat(msg);
   }
+  if (bm->HasExtension(task_state_extn)) {
+    const TaskStateMessage& msg = bm->GetExtension(task_state_extn);
+    HandleTaskStateChange(msg);
+  }
+}
+
+void Coordinator::HandleIncomingReceiveError(const boost::system::error_code& error,
+                                             const string& remote_endpoint) {
+  // Notify of receive error
+  // TODO(malte): since we are taking no arguments, we actually don't have the
+  // faintest idea what message this error relates to. We should try to remedy
+  // this; however, it is not trivial, since we destroy the channel before
+  // making the callback (and we do not want to have the callback on the
+  // critical path to unlocking the receive lock, as it may take a long time to
+  // run).
+  if (error.value() == boost::asio::error::eof) {
+    // Connection terminated, handle accordingly
+    LOG(INFO) << "Connection to " << remote_endpoint << " closed.";
+    // XXX(malte): Need to figure out if this relates to a resource, and if so,
+    // if we should declare it failed; or whether this is an expected job
+    // completion.
+  } else {
+    LOG(WARNING) << "Failed to complete a message receive cycle from "
+                 << remote_endpoint << ". The message was discarded, or the "
+                 << "connection failed (error: " << error.message() << ", "
+                 << "code " << error.value() << ").";
+  }
 }
 
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
@@ -183,6 +211,12 @@ void Coordinator::HandleRegistrationRequest(
     // Update timestamp (registration request is an implicit heartbeat)
     rdp->second = GetCurrentTimestamp();
   }
+}
+
+void Coordinator::HandleTaskStateChange(
+    const TaskStateMessage& msg) {
+  VLOG(1) << "Task state changed to " << static_cast<uint64_t>(msg.new_state());
+  // XXX(malte): tear down the respective connection
 }
 
 

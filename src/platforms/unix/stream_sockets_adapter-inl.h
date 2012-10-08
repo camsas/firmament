@@ -19,6 +19,13 @@ namespace platform_unix {
 namespace streamsockets {
 
 template <typename T>
+StreamSocketsAdapter<T>::StreamSocketsAdapter()
+  : message_recv_handler_(NULL),
+    error_path_handler_(NULL),
+    message_wait_ready_(false) {
+}
+
+template <typename T>
 void StreamSocketsAdapter<T>::CloseChannel(
     MessagingChannelInterface<T>* chan) {
   VLOG(1) << "Shutting down channel " << chan;
@@ -59,8 +66,6 @@ shared_ptr<MessagingChannelInterface<T> >
 StreamSocketsAdapter<T>::GetChannelForEndpoint(
     const string& endpoint) {
   CHECK_NE(endpoint, "");
-/*  typeof(endpoint_channel_map_.begin()) it =
-      endpoint_channel_map_.find(endpoint);*/
   shared_ptr<StreamSocketsChannel<T> >* chan =
       FindOrNull(endpoint_channel_map_, endpoint);
   if (!chan)
@@ -122,15 +127,28 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     size_t bytes_transferred,
     shared_ptr<StreamSocketsChannel<T> > chan) {
   if (error) {
-    LOG(WARNING) << "Error receiving in MA";
+    VLOG(1) << "Failed to receive message on MA " << *this;
     // TODO(malte): think about clearing up state here. Should we consider the
     // envelope as having been consumed? Currently we do so.
-    // XXX(malte): hack, not safe (offset may have changed!)
-    endpoint_channel_map_.erase("");
-    channel_recv_envelopes_.erase(chan);
-    //chan->Close();
-    // XXX(malte): Do we need to unlock/signal here?
+    // XXX(malte): the below is possibly unsafe in some way, especially w.r.t.
+    // concurrency
+    string remote_endpoint = chan->RemoteEndpointString();
+    CHECK(endpoint_channel_map_.erase(remote_endpoint));
+    CHECK(channel_recv_envelopes_.erase(chan));
+    // After we have removed the channel from the map of active channels and
+    // deleted its next receive envelope, we can close it without danger.
+    chan->Close();
+    // At this point, we unlock and signal to the condition variable, so that we
+    // can pick another channel to receive on, or go back to the idle loop (if
+    // no other channels are available).
+    message_wait_ready_ = true;
     message_wait_condvar_.notify_all();
+    // Invoke error callback, if any registered
+    if (error_path_handler_)
+      error_path_handler_(error, remote_endpoint);
+    else
+      LOG(ERROR) << "Unhandled error condition for failed receive from "
+                 << remote_endpoint;
     return;
   }
   CHECK(channel_recv_envelopes_.count(chan));
@@ -138,6 +156,7 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
   VLOG(2) << "Received in MA: " << *envelope << " ("
           << bytes_transferred << ")";
   // Invoke message receipt callback, if any registered
+  CHECK(message_recv_handler_ != NULL);
   message_recv_handler_(envelope->data());
   // We've finished dealing with this message, so clean up now.
   channel_recv_envelopes_.erase(chan);
@@ -241,7 +260,8 @@ void StreamSocketsAdapter<T>::StopListen() {
 
 template <class T>
 ostream& StreamSocketsAdapter<T>::ToString(ostream* stream) const {
-  return *stream << "(MessagingAdapter,type=StreamSockets,at=" << this << ")";
+  return *stream << "(MessagingAdapter,type=StreamSockets,at=" << this
+                 << ",num_channels=" << endpoint_channel_map_.size() << ")";
 }
 
 

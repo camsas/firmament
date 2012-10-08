@@ -20,6 +20,9 @@ doc:
 engine: base platforms misc sim
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
+examples: engine
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/examples all
+
 base: ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/base all
 
