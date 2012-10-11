@@ -227,7 +227,7 @@ then
     echo "Delete .${OS_ID}-ok file if you want to re-run it."
   else
     echo "Checking if necessary packages are installed..."
-#    check_dpkg_packages ${OS_ID}
+    check_dpkg_packages ${OS_ID}
   fi
 elif [[ ${TARGET} == "scc" ]]; then
   echo "Building for the SCC. Note that you MUST build on the MCPC, and "
