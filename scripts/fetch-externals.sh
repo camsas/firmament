@@ -15,7 +15,7 @@ BASE_PKGS="wget subversion autoconf"
 COMPILER_PKGS="clang libprotobuf-dev protobuf-compiler"
 GOOGLE_PKGS="libgoogle-perftools0 libgoogle-perftools-dev libprotobuf-dev"
 BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
-MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev"
+MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev libjansson-dev"
 
 UBUNTU_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 DEBIAN_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
