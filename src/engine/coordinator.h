@@ -85,6 +85,16 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
     }
     return ref_vec;
   };
+  vector<JobDescriptor> active_jobs() {
+    vector<JobDescriptor> jd_vec;
+    for (JobMap_t::const_iterator job_iter =
+         job_table_.begin();
+         job_iter != job_table_.end();
+         ++job_iter) {
+      jd_vec.push_back(job_iter->second);
+    }
+    return jd_vec;
+  }
 
  protected:
   ResourceID_t GenerateUUID();

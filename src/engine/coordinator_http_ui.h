@@ -47,6 +47,8 @@ class CoordinatorHTTPUI {
   void LogRequest(HTTPRequestPtr& http_request);
   void HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOLINT
                           TCPConnectionPtr& tcp_conn);
+  void HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLINT
+                         TCPConnectionPtr& tcp_conn);
   void HandleJobStatusURI(HTTPRequestPtr& http_request,  // NOLINT
                           TCPConnectionPtr& tcp_conn);
   void HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
