@@ -12,10 +12,10 @@ EXT_DIR=${PWD}
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
 BASE_PKGS="wget subversion autoconf"
-COMPILER_PKGS="clang libprotobuf-dev protobuf-compiler"
+COMPILER_PKGS="clang libprotobuf-dev protobuf-compiler python-protobuf"
 GOOGLE_PKGS="libgoogle-perftools0 libgoogle-perftools-dev libprotobuf-dev"
 BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
-MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev"
+MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev libjansson-dev"
 
 UBUNTU_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 DEBIAN_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
@@ -227,7 +227,7 @@ then
     echo "Delete .${OS_ID}-ok file if you want to re-run it."
   else
     echo "Checking if necessary packages are installed..."
-#    check_dpkg_packages ${OS_ID}
+    check_dpkg_packages ${OS_ID}
   fi
 elif [[ ${TARGET} == "scc" ]]; then
   echo "Building for the SCC. Note that you MUST build on the MCPC, and "

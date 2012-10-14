@@ -76,6 +76,40 @@ void CoordinatorHTTPUI::HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
   FinishOkResponse(writer, true);
 }
 
+void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLINT
+                                          TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
+  // Get job list from coordinator
+  vector<JobDescriptor> jobs = coordinator_->active_jobs();
+  uint64_t i = 0;
+  writer->write("<h1>");
+  writer->write(coordinator_->uuid());
+  writer->write("</h1>");
+  writer->write("<table border=\"1\"><tr><th></th><th>Job ID</th><th>Friendly name</th><th>State</th><th></th></tr>");
+  for (vector<JobDescriptor>::const_iterator jd_iter =
+       jobs.begin();
+       jd_iter != jobs.end();
+       ++jd_iter) {
+    writer->write("<tr><td>");
+    writer->write(i);
+    writer->write("</td><td>");
+    writer->write(jd_iter->uuid());
+    writer->write("</td><td>");
+    writer->write(jd_iter->name());
+    writer->write("</td><td>");
+    writer->write(jd_iter->state());
+    writer->write("</td><td><a href=\"/job/status/?id=\"");
+    writer->write(jd_iter->uuid());
+    writer->write(">Status</a> <a href=\"/job/dtg/?id=\"");
+    writer->write(jd_iter->uuid());
+    writer->write(">DTG</a></td></tr>");
+    ++i;
+  }
+  writer->write("</table>");
+  FinishOkResponse(writer, true);
+}
+
 void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOLINT
                                            TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -226,6 +260,9 @@ void CoordinatorHTTPUI::Init(uint16_t port) {
     // Root URI
     coordinator_http_server_->addResource("/", boost::bind(
         &CoordinatorHTTPUI::HandleRootURI, this, _1, _2));
+    // Job submission
+    coordinator_http_server_->addResource("/jobs/", boost::bind(
+        &CoordinatorHTTPUI::HandleJobsListURI, this, _1, _2));
     // Job submission
     coordinator_http_server_->addResource("/job/submit/", boost::bind(
         &CoordinatorHTTPUI::HandleJobSubmitURI, this, _1, _2));
