@@ -29,8 +29,8 @@ using pion::net::HTTPRequestPtr;
 using pion::net::TCPConnectionPtr;
 using pion::net::HTTPResponseWriterPtr;
 
-const char kHTMLStart[] = "<html><body>\n";
-const char kHTMLEnd[] = "</body></html>\n";
+const string kHTMLStart = "<html><body>\n";
+const string kHTMLEnd = "</body></html>\n";
 
 class CoordinatorHTTPUI {
  public:

@@ -102,11 +102,11 @@ void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLI
     writer->write(jd_iter->name());
     writer->write("</td><td>");
     writer->write(jd_iter->state());
-    writer->write("</td><td><a href=\"/job/status/?id=\"");
+    writer->write("</td><td><a href=\"/job/status/?id=");
     writer->write(jd_iter->uuid());
-    writer->write(">Status</a> <a href=\"/job/dtg/?id=\"");
+    writer->write("\">Status</a> <a href=\"/job/dtg/?id=");
     writer->write(jd_iter->uuid());
-    writer->write(">DTG</a></td></tr>");
+    writer->write("\">DTG</a></td></tr>");
     ++i;
   }
   writer->write("</table>");
