@@ -12,6 +12,8 @@
 #ifndef FIRMAMENT_ENGINE_TOPOLOGY_MANAGER_H
 #define FIRMAMENT_ENGINE_TOPOLOGY_MANAGER_H
 
+#include <string>
+
 extern "C" {
 #include <hwloc.h>
 }

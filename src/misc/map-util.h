@@ -4,6 +4,8 @@
 // Modified for the Firmament project, originally from
 // http://or-tools.googlecode.com/svn-history/r302/trunk/base/map-util.h
 //
+// 25.10.2012 (malte): Fixed LINT warnings.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,6 +20,8 @@
 
 #ifndef FIRMAMENT_MISC_MAP_UTIL_H
 #define FIRMAMENT_MISC_MAP_UTIL_H
+
+#include <utility>
 
 namespace firmament {
 
@@ -55,7 +59,7 @@ FindOrNull(const Collection& collection,
 // the stored value.
 template <class Collection>
 typename Collection::value_type::second_type*
-FindOrNull(Collection& collection,
+FindOrNull(Collection& collection,  // NOLINT
            const typename Collection::value_type::first_type& key) {
   typename Collection::iterator it = collection.find(key);
   if (it == collection.end()) {

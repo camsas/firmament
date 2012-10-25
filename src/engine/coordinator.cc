@@ -7,6 +7,8 @@
 #include "engine/coordinator.h"
 
 #include <string>
+#include <utility>
+
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -151,8 +153,9 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
   }
 }
 
-void Coordinator::HandleIncomingReceiveError(const boost::system::error_code& error,
-                                             const string& remote_endpoint) {
+void Coordinator::HandleIncomingReceiveError(
+    const boost::system::error_code& error,
+    const string& remote_endpoint) {
   // Notify of receive error
   // TODO(malte): since we are taking no arguments, we actually don't have the
   // faintest idea what message this error relates to. We should try to remedy

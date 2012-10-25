@@ -9,6 +9,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 // XXX(malte): Think about the Boost dependency!
 #ifdef __PLATFORM_HAS_BOOST__

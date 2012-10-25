@@ -24,9 +24,13 @@ class SignalHandler {
  public:
   SignalHandler();
 #if (BOOST_VERSION >= 104700)
-  void ConfigureSignal(int signum, void (*legacy_fptr)(int), void* object);
+  void ConfigureSignal(int signum,
+                       void (*legacy_fptr)(int),  // NOLINT
+                       void* object);
 #else
-  void ConfigureSignal(int signum, void (*legacy_fptr)(int), void*);
+  void ConfigureSignal(int signum,
+                       void (*legacy_fptr)(int),  // NOLINT
+                       void*);
 #endif
  private:
 #if (BOOST_VERSION >= 104700)

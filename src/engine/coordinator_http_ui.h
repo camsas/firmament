@@ -29,8 +29,8 @@ using pion::net::HTTPRequestPtr;
 using pion::net::TCPConnectionPtr;
 using pion::net::HTTPResponseWriterPtr;
 
-const string kHTMLStart = "<html><body>\n";
-const string kHTMLEnd = "</body></html>\n";
+const char kHTMLStart[] = "<html><body>\n";
+const char kHTMLEnd[] = "</body></html>\n";
 
 class CoordinatorHTTPUI {
  public:
@@ -44,7 +44,7 @@ class CoordinatorHTTPUI {
   HTTPResponseWriterPtr InitOkResponse(HTTPRequestPtr http_request,
                                        TCPConnectionPtr tcp_conn,
                                        bool html_header);
-  void LogRequest(HTTPRequestPtr& http_request);
+  void LogRequest(const HTTPRequestPtr& http_request);
   void HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOLINT
                           TCPConnectionPtr& tcp_conn);
   void HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLINT

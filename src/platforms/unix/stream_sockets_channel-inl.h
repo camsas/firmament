@@ -174,7 +174,6 @@ const string StreamSocketsChannel<T>::LocalEndpointString() {
     default:
       LOG(FATAL) << "Unknown stream socket type " << type_;
   }
-
 }
 
 // Ready check
