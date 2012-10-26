@@ -20,7 +20,7 @@ MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev lib
 UBUNTU_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 DEBIAN_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 
-GFLAGS_VER="1.7"
+GFLAGS_VER="2.0"
 GLOG_VER="HEAD"
 PROTOBUF_VER="2.4.1"
 BOOST_VER="1.46.0"
@@ -239,7 +239,45 @@ else
   exit 0
 fi
 
+## Google Gflags command line flag library
+print_subhdr "GOOGLE GFLAGS LIBRARY"
+if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) ]];
+then
+  PKG_RES1=$(dpkg-query -l | grep "libgflags0" 2>/dev/null)
+  PKG_RES2=$(dpkg-query -l | grep "libgflags-dev" 2>/dev/null)
+  if [[ $PKG_RES1 != "" && $PKG_RES2 != "" ]]; then
+    echo -n "Already installed."
+    echo_success
+    echo
+  else
+    get_dep_deb "google-gflags" "http://gflags.googlecode.com/files/libgflags0_${GFLAGS_VER}-1_${ARCH}.deb"
+    get_dep_deb "google-gflags" "http://gflags.googlecode.com/files/libgflags-dev_${GFLAGS_VER}-1_${ARCH}.deb"
+    echo -n "libgflags not installed."
+    echo_failure
+    echo "Please install libgflags0_${GFLAGS_VER}_${ARCH}.deb "
+    echo "and libgflags-dev_${GFLAGS_VER}_${ARCH}.deb from the ${EXT_DIR}/ directiory:"
+    echo
+    echo "$ cd ${EXT_DIR}"
+    echo "$ sudo dpkg -i libgflags0_${GFLAGS_VER}_${ARCH}.deb"
+    echo "$ sudo dpkg -i libgflags-dev_${GFLAGS_VER}_${ARCH}.deb"
+    exit 1
+ fi
+else
+  # non-deb OS -- need to get tarball and extract, config, make & install
+  echo "Downloading and extracting release tarball for Google gflags library..."
+  GFLAGS_BUILD_DIR=${EXT_DIR}/google-gflags-build
+  mkdir -p ${GFLAGS_BUILD_DIR}
+  get_dep_arch "google-gflags" "http://google-gflags.googlecode.com/files/gflags-${GFLAGS_VER}.tar.gz"
+  cd gflags-${GFLAGS_VER}
+  echo -n "Building google-gflags library..."
+  RES=$(./configure --prefix=${GFLAGS_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
+  print_succ_or_fail $RES
+  cd ${EXT_DIR}
+fi
+
 ## Google Log macros
+## N.B.: This must go *after* gflags, since glog will notice that gflags is
+## installed, and produce extra options (default flags like --logtostderr).
 print_subhdr "GOOGLE GLOG LIBRARY"
 GLOG_DIR=google-glog-svn
 GLOG_INSTALL_FILE="/usr/local/lib/pkgconfig/libglog.pc"
@@ -265,42 +303,6 @@ else
   print_succ_or_fail 0
 fi
 cd ${EXT_DIR}
-
-## Google Gflags command line flag library
-print_subhdr "GOOGLE GFLAGS LIBRARY"
-if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) ]];
-then
-  PKG_RES1=$(dpkg-query -l | grep "libgflags0" 2>/dev/null)
-  PKG_RES2=$(dpkg-query -l | grep "libgflags-dev" 2>/dev/null)
-  if [[ $PKG_RES1 != "" && $PKG_RES2 != "" ]]; then
-    echo -n "Already installed."
-    echo_success
-    echo
-  else
-    get_dep_deb "google-gflags" "http://google-gflags.googlecode.com/files/libgflags0_${GFLAGS_VER}-1_${ARCH}.deb"
-    get_dep_deb "google-gflags" "http://google-gflags.googlecode.com/files/libgflags-dev_${GFLAGS_VER}-1_${ARCH}.deb"
-    echo -n "libgflags not installed."
-    echo_failure
-    echo "Please install libgflags0_${GFLAGS_VER}_${ARCH}.deb "
-    echo "and libgflags-dev_${GFLAGS_VER}_${ARCH}.deb from the ${EXT_DIR}/ directiory:"
-    echo
-    echo "$ cd ${EXT_DIR}"
-    echo "$ sudo dpkg -i libgflags0_${GFLAGS_VER}_${ARCH}.deb"
-    echo "$ sudo dpkg -i libgflags-dev_${GFLAGS_VER}_${ARCH}.deb"
-    exit 1
- fi
-else
-  # non-deb OS -- need to get tarball and extract, config, make & install
-  echo "Downloading and extracting release tarball for Google gflags library..."
-  GFLAGS_BUILD_DIR=${EXT_DIR}/google-gflags-build
-  mkdir -p ${GFLAGS_BUILD_DIR}
-  get_dep_arch "google-gflags" "http://google-gflags.googlecode.com/files/gflags-${GFLAGS_VER}.tar.gz"
-  cd gflags-${GFLAGS_VER}
-  echo -n "Building google-gflags library..."
-  RES=$(./configure --prefix=${GFLAGS_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
-  print_succ_or_fail $RES
-  cd ${EXT_DIR}
-fi
 
 ## Google unit testing library
 print_subhdr "GOOGLE TEST LIBRARY FOR C++"
