@@ -245,9 +245,9 @@ GLOG_DIR=google-glog-svn
 GLOG_INSTALL_FILE="/usr/local/lib/pkgconfig/libglog.pc"
 #GLOG_BUILD_DIR=${EXT_DIR}/google-glog-build
 #mkdir -p ${GLOG_BUILD_DIR}
-cd ${GLOG_DIR}
 if [[ ! -f ${GLOG_INSTALL_FILE} ]]; then
   get_dep_svn "google-glog" "googlecode"
+  cd ${GLOG_DIR}
   echo -n "Building google-glog library..."
   RES=$(./configure && make --quiet 2>/dev/null)
   #RES=$(./configure --prefix=${GLOG_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
