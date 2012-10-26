@@ -255,7 +255,7 @@ if [[ ! -f ${GLOG_INSTALL_FILE} ]]; then
   echo "google-glog library (v${GLOG_VER}) was built in ${GLOG_DIR}. "
   echo "Please run the following comamnds to install it: "
   echo
-  echo "$ cd ${GLOG_BUILD_DIR}"
+  echo "$ cd ${EXT_DIR}/${GLOG_DIR}"
   echo "$ sudo make install"
   echo
   echo "... and then re-run."
@@ -282,8 +282,9 @@ then
     echo -n "libgflags not installed."
     echo_failure
     echo "Please install libgflags0_${GFLAGS_VER}_${ARCH}.deb "
-    echo "and libgflags-dev_${GFLAGS_VER}_${ARCH}.deb from the ext/ directiory:"
+    echo "and libgflags-dev_${GFLAGS_VER}_${ARCH}.deb from the ${EXT_DIR}/ directiory:"
     echo
+    echo "$ cd ${EXT_DIR}"
     echo "$ sudo dpkg -i libgflags0_${GFLAGS_VER}_${ARCH}.deb"
     echo "$ sudo dpkg -i libgflags-dev_${GFLAGS_VER}_${ARCH}.deb"
     exit 1
