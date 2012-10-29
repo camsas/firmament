@@ -25,6 +25,7 @@ namespace firmament {
 using namespace std;  // NOLINT
 
 using google::protobuf::RepeatedPtrField;
+using google::protobuf::RepeatedField;
 
 #define SUBMSG_READ(obj, submsg, member) \
     obj.GetExtension(submsg ## _extn).member()
@@ -52,6 +53,21 @@ inline void InitFirmament(int argc, char *argv[]) {
 }
 
 // Helper function to convert a repeated protobuf field to a STL set.
+// Overload for primitive numeric types using a RepeatedField.
+// This method copies the input collection, so it is O(N) in time and space.
+template <typename T>
+inline set<T> pb_to_set(const RepeatedField<T>& pb_field) {
+  set<T> return_set;
+  // N.B.: using GNU-style RTTI (typeof)
+  for (typeof(pb_field.begin()) iter = pb_field.begin();
+       iter != pb_field.end();
+       ++iter)
+    return_set.insert(*iter);
+  return return_set;
+}
+
+// Helper function to convert a repeated protobuf field to a STL set.
+// Overload for strings and message types using a RepeatedPtrField.
 // This method copies the input collection, so it is O(N) in time and space.
 template <typename T>
 inline set<T> pb_to_set(const RepeatedPtrField<T>& pb_field) {
@@ -65,6 +81,21 @@ inline set<T> pb_to_set(const RepeatedPtrField<T>& pb_field) {
 }
 
 // Helper function to convert a repeated protobuf field to a STL vector.
+// Overload for primitive numeric types using a RepeatedField.
+// This method copies the input collection, so it is O(N) in time and space.
+template <typename T>
+inline vector<T> pb_to_vector(const RepeatedField<T>& pb_field) {
+  vector<T> return_vec;
+  // N.B.: using GNU-style RTTI (typeof)
+  for (typeof(pb_field.begin()) iter = pb_field.begin();
+       iter != pb_field.end();
+       ++iter)
+    return_vec.push_back(*iter);
+  return return_vec;
+}
+
+// Helper function to convert a repeated protobuf field to a STL vector.
+// Overload for strings and message types using a RepeatedPtrField.
 // This method copies the input collection, so it is O(N) in time and space.
 template <typename T>
 inline vector<T> pb_to_vector(const RepeatedPtrField<T>& pb_field) {
