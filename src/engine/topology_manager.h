@@ -12,11 +12,14 @@
 #ifndef FIRMAMENT_ENGINE_TOPOLOGY_MANAGER_H
 #define FIRMAMENT_ENGINE_TOPOLOGY_MANAGER_H
 
+#include <string>
+
 extern "C" {
 #include <hwloc.h>
 }
 
 #include "base/common.h"
+#include "base/types.h"
 #include "base/resource_desc.pb.h"
 
 namespace firmament {
@@ -27,6 +30,7 @@ class TopologyManager {
  public:
   TopologyManager();
   void AsProtobuf(ResourceDescriptor* topology_pb);
+  vector<ResourceDescriptor> FlatResourceSet();
   void LoadAndParseTopology();
   void LoadAndParseSyntheticTopology(const string& topology_desc);
   void DebugPrintRawTopology();

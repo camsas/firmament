@@ -15,7 +15,8 @@
 #include "platforms/common.pb.h"
 
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
-DEFINE_string(resource_id, "", "The resource ID that is running this executor.");
+DEFINE_string(resource_id, "",
+              "The resource ID that is running this executor.");
 
 namespace firmament {
 
@@ -41,7 +42,6 @@ void Executor::SendFinalizeMessage(bool success) {
   BaseMessage bm;
   if (success)
     SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::COMPLETED);
-    //bm.MutableExtension(task_state_extn)->set_state(TaskDescriptor::COMPLETED);
   else
     LOG(FATAL) << "Unimplemented error path!";
   VLOG(1) << "Sending finalize message (task state change to "

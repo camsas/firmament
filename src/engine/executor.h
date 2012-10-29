@@ -69,6 +69,7 @@ class Executor {
   void SendHeartbeat();
   bool SendMessageToCoordinator(BaseMessage* msg);
   void AwaitMessage();
+
  private:
   bool task_running_;
 };

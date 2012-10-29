@@ -20,7 +20,7 @@ MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev lib
 UBUNTU_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 DEBIAN_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 
-GFLAGS_VER="1.7"
+GFLAGS_VER="2.0"
 GLOG_VER="HEAD"
 PROTOBUF_VER="2.4.1"
 BOOST_VER="1.46.0"
@@ -239,17 +239,6 @@ else
   exit 0
 fi
 
-## Google Log macros
-print_subhdr "GOOGLE GLOG LIBRARY"
-GLOG_BUILD_DIR=${EXT_DIR}/google-glog-build
-mkdir -p ${GLOG_BUILD_DIR}
-get_dep_svn "google-glog" "googlecode"
-cd google-glog-svn
-echo -n "Building google-glog library..."
-RES=$(./configure --prefix=${GLOG_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
-print_succ_or_fail $RES
-cd ${EXT_DIR}
-
 ## Google Gflags command line flag library
 print_subhdr "GOOGLE GFLAGS LIBRARY"
 if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) ]];
@@ -261,13 +250,14 @@ then
     echo_success
     echo
   else
-    get_dep_deb "google-gflags" "http://google-gflags.googlecode.com/files/libgflags0_${GFLAGS_VER}-1_${ARCH}.deb"
-    get_dep_deb "google-gflags" "http://google-gflags.googlecode.com/files/libgflags-dev_${GFLAGS_VER}-1_${ARCH}.deb"
+    get_dep_deb "google-gflags" "http://gflags.googlecode.com/files/libgflags0_${GFLAGS_VER}-1_${ARCH}.deb"
+    get_dep_deb "google-gflags" "http://gflags.googlecode.com/files/libgflags-dev_${GFLAGS_VER}-1_${ARCH}.deb"
     echo -n "libgflags not installed."
     echo_failure
     echo "Please install libgflags0_${GFLAGS_VER}_${ARCH}.deb "
-    echo "and libgflags-dev_${GFLAGS_VER}_${ARCH}.deb from the ext/ directiory:"
+    echo "and libgflags-dev_${GFLAGS_VER}_${ARCH}.deb from the ${EXT_DIR}/ directiory:"
     echo
+    echo "$ cd ${EXT_DIR}"
     echo "$ sudo dpkg -i libgflags0_${GFLAGS_VER}_${ARCH}.deb"
     echo "$ sudo dpkg -i libgflags-dev_${GFLAGS_VER}_${ARCH}.deb"
     exit 1
@@ -284,6 +274,35 @@ else
   print_succ_or_fail $RES
   cd ${EXT_DIR}
 fi
+
+## Google Log macros
+## N.B.: This must go *after* gflags, since glog will notice that gflags is
+## installed, and produce extra options (default flags like --logtostderr).
+print_subhdr "GOOGLE GLOG LIBRARY"
+GLOG_DIR=google-glog-svn
+GLOG_INSTALL_FILE="/usr/local/lib/pkgconfig/libglog.pc"
+#GLOG_BUILD_DIR=${EXT_DIR}/google-glog-build
+#mkdir -p ${GLOG_BUILD_DIR}
+if [[ ! -f ${GLOG_INSTALL_FILE} ]]; then
+  get_dep_svn "google-glog" "googlecode"
+  cd ${GLOG_DIR}
+  echo -n "Building google-glog library..."
+  RES=$(./configure && make --quiet 2>/dev/null)
+  #RES=$(./configure --prefix=${GLOG_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
+  print_succ_or_fail $RES
+  echo "google-glog library (v${GLOG_VER}) was built in ${GLOG_DIR}. "
+  echo "Please run the following comamnds to install it: "
+  echo
+  echo "$ cd ${EXT_DIR}/${GLOG_DIR}"
+  echo "$ sudo make install"
+  echo
+  echo "... and then re-run."
+  exit 1
+else
+  echo -n "Already installed!"
+  print_succ_or_fail 0
+fi
+cd ${EXT_DIR}
 
 ## Google unit testing library
 print_subhdr "GOOGLE TEST LIBRARY FOR C++"

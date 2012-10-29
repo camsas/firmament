@@ -9,6 +9,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 // XXX(malte): Think about the Boost dependency!
 #ifdef __PLATFORM_HAS_BOOST__
@@ -39,6 +40,8 @@
 #ifdef __HTTP_UI__
 #include "engine/coordinator_http_ui.h"
 #endif
+#include "engine/scheduler_interface.h"
+#include "engine/simple_scheduler.h"
 #include "engine/topology_manager.h"
 #ifdef __SIMULATE_SYNTHETIC_DTG__
 #include "sim/simple_dtg_generator.h"
@@ -52,6 +55,8 @@ using machine::topology::TopologyManager;
 using platform_unix::SignalHandler;
 using platform_unix::streamsockets::StreamSocketsChannel;
 using platform_unix::streamsockets::StreamSocketsAdapter;
+using scheduler::SchedulerInterface;
+using scheduler::SimpleScheduler;
 
 #ifdef __HTTP_UI__
 // Forward declaration
@@ -97,8 +102,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   }
 
  protected:
-  ResourceID_t GenerateUUID();
-  JobID_t GenerateJobID();
+  void DetectLocalResources();
   void HandleIncomingMessage(BaseMessage *bm);
   void HandleIncomingReceiveError(const boost::system::error_code& error,
                                   const string& remote_endpoint);
@@ -140,6 +144,10 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;
+  // The local scheduler object. A coordinator may not have a scheduler, in
+  // which case this will be a stub that defers to another scheduler.
+  // TODO(malte): Work out the detailed semantics of this.
+  scoped_ptr<SchedulerInterface> scheduler_;
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   shared_ptr<sim::SimpleDTGGenerator> sim_dtg_generator_;
 #endif

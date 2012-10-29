@@ -5,6 +5,8 @@
 #include "engine/coordinator_http_ui.h"
 
 #include <string>
+#include <vector>
+
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/bind.hpp>
 #include <google/protobuf/text_format.h>
@@ -54,7 +56,7 @@ void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOL
   JobDescriptor job_descriptor;
   google::protobuf::TextFormat::ParseFromString(*job_descriptor_param,
                                                 &job_descriptor);
-  VLOG(1) << "JD:" << job_descriptor.DebugString();
+  VLOG(3) << "JD:" << job_descriptor.DebugString();
   string job_id = coordinator_->SubmitJob(job_descriptor);
   // Return the job ID to the client
   writer->write(job_id);
@@ -86,7 +88,8 @@ void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLI
   writer->write("<h1>");
   writer->write(coordinator_->uuid());
   writer->write("</h1>");
-  writer->write("<table border=\"1\"><tr><th></th><th>Job ID</th><th>Friendly name</th><th>State</th><th></th></tr>");
+  writer->write("<table border=\"1\"><tr><th></th><th>Job ID</th>"
+                "<th>Friendly name</th><th>State</th><th></th></tr>");
   for (vector<JobDescriptor>::const_iterator jd_iter =
        jobs.begin();
        jd_iter != jobs.end();
@@ -120,7 +123,8 @@ void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOL
   writer->write("<h1>");
   writer->write(coordinator_->uuid());
   writer->write("</h1>");
-  writer->write("<table border=\"1\"><tr><th></th><th>Resource ID</th><th>Friendly name</th><th>State</th></tr>");
+  writer->write("<table border=\"1\"><tr><th></th><th>Resource ID</th>"
+                "<th>Friendly name</th><th>State</th></tr>");
   for (vector<ResourceDescriptor>::const_iterator rd_iter =
        resources.begin();
        rd_iter != resources.end();
@@ -184,7 +188,8 @@ void CoordinatorHTTPUI::HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
       return;
     }
     // Return serialized DTG
-    HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, false);
+    HTTPResponseWriterPtr writer = InitOkResponse(http_request,
+                                                  tcp_conn, false);
     char *json = pb2json(*jd);
     writer->write(json);
     FinishOkResponse(writer, false);
@@ -243,7 +248,7 @@ void CoordinatorHTTPUI::FinishOkResponse(HTTPResponseWriterPtr writer,
   writer->send();
 }
 
-void CoordinatorHTTPUI::LogRequest(HTTPRequestPtr& http_request) {
+void CoordinatorHTTPUI::LogRequest(const HTTPRequestPtr& http_request) {
   LOG(INFO) << "[HTTPREQ] Serving " << http_request->getResource();
 }
 

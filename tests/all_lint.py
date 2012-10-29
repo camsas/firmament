@@ -14,6 +14,10 @@ ignore_warnings = ["build/header_guard", "build/include_order",
                    "whitespace/comments"]
 
 source_dir = sys.argv[1]
+if len(sys.argv) > 2:
+  verbose = bool(sys.argv[2] == "True")
+else:
+  verbose = True
 filter_string = "-" + ",-".join(ignore_warnings)
 source_files = []
 num_good_files = 0
@@ -28,25 +32,35 @@ try:
         # XXX(malte): Hack to ignore simulator for linting purposes (for now)
         if "/sim/" in f:
           continue
-        print "Adding source file %s to list..." % (f)
+        if verbose:
+          print "Adding source file %s to list..." % (f)
         source_files.append(f)
 
   for source_file in source_files:
-    print "******************************************************************" \
-        "*************"
-    print "* LINTING: %s" % source_file
-    print "******************************************************************" \
-        "*************"
     # lint the next file
-    retcode = subprocess.call(["python", "scripts/cpplint.py",
-                               "--filter=%s" % (filter_string), source_file],
-                              stdout=sys.stdout, stderr=sys.stderr)
+#    retcode = subprocess.call(["python", "scripts/cpplint.py",
+#                               "--filter=%s" % (filter_string), source_file],
+#                              stdout=sys.stdout, stderr=sys.stderr)
+
+    try:
+      retdata = subprocess.check_output(
+          ["python", "scripts/cpplint.py",
+           "--filter=%s" % (filter_string), source_file],
+          stderr=subprocess.STDOUT)
+      retcode = 0
+    except subprocess.CalledProcessError as e:
+      retdata = e.output
+      retcode = e.returncode
 
     if retcode == 0:
-      print bcolors.GREEN + "GOOD :-)\n" + bcolors.ENDC
+      if verbose:
+        print "[ " + bcolors.GREEN + "OK" + bcolors.ENDC + " ]",
+        print " %s" % (source_file)
       num_good_files = num_good_files + 1
     else:
-      print bcolors.RED + "FAILED :-( See above for details.\n" + bcolors.ENDC
+      print "[ " + bcolors.RED + "FAIL" + bcolors.ENDC + " ]",
+      print " %s:" % (source_file)
+      print retdata
       num_bad_files = num_bad_files + 1
 
 except Exception as e:

@@ -21,8 +21,8 @@ extern void task_main(TaskID_t task_id);
 
 class TaskInterface : public PrintableInterface {
  public:
-  TaskInterface(TaskID_t task_id)
-    : id_(task_id) {};
+  explicit TaskInterface(TaskID_t task_id)
+    : id_(task_id) {}
   // Top-level task run invocation.
   virtual void Invoke() = 0;
 

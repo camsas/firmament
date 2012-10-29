@@ -6,6 +6,8 @@
 #ifndef FIRMAMENT_BASE_CONCRETE_REFERENCE_H
 #define FIRMAMENT_BASE_CONCRETE_REFERENCE_H
 
+#include <string>
+#include <set>
 #include <google/protobuf/repeated_field.h>
 
 #include "base/common.h"
@@ -35,7 +37,7 @@ class ConcreteReference : public ReferenceInterface {
       desc_.add_location(*it);
   }
   explicit ConcreteReference(const ReferenceDescriptor& desc)
-    : ReferenceInterface (desc) {
+    : ReferenceInterface(desc) {
     ValidateInitDescriptor(desc);
     id_ = desc.id();
     size_ = desc.size();
@@ -53,6 +55,7 @@ class ConcreteReference : public ReferenceInterface {
   }
   inline uint64_t size() { return size_; }
   inline const set<string>& locations() { return locations_; }
+
  protected:
   void ValidateInitDescriptor(const ReferenceDescriptor& desc) {
     CHECK_EQ(desc.type(), ReferenceDescriptor::CONCRETE);
@@ -62,6 +65,7 @@ class ConcreteReference : public ReferenceInterface {
     CHECK_EQ(desc_.type(), ReferenceDescriptor::CONCRETE);
     CHECK_EQ(desc_.size(), size_);
   }
+
  private:
   // unit tests
   FRIEND_TEST(ReferencesTest, CreateConcreteTest);

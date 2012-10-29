@@ -19,7 +19,7 @@ class FutureReference : public ReferenceInterface {
     desc_.set_type(type_);
   }
   explicit FutureReference(const ReferenceDescriptor& desc)
-    : ReferenceInterface (desc) {
+    : ReferenceInterface(desc) {
     ValidateInitDescriptor(desc);
     id_ = desc.id();
   }
@@ -27,6 +27,7 @@ class FutureReference : public ReferenceInterface {
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<Future, id=" << id_ << ">";
   }
+
  protected:
   void ValidateInitDescriptor(const ReferenceDescriptor& desc) {
     CHECK_EQ(desc.type(), ReferenceDescriptor::FUTURE);
@@ -35,6 +36,7 @@ class FutureReference : public ReferenceInterface {
     CHECK_EQ(id_, desc_.id());
     CHECK_EQ(desc_.type(), ReferenceDescriptor::FUTURE);
   }
+
  private:
   // unit tests
   FRIEND_TEST(ReferencesTest, CreateFutureTest);

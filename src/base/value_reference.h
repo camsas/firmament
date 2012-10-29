@@ -6,6 +6,8 @@
 #ifndef FIRMAMENT_BASE_VALUE_REFERENCE_H
 #define FIRMAMENT_BASE_VALUE_REFERENCE_H
 
+#include <string>
+
 #include "base/common.h"
 #include "base/reference_interface.h"
 
@@ -20,7 +22,7 @@ class ValueReference : public ReferenceInterface {
     desc_.set_inline_data(value);
   }
   explicit ValueReference(const ReferenceDescriptor& desc)
-    : ReferenceInterface (desc) {
+    : ReferenceInterface(desc) {
     ValidateInitDescriptor(desc);
     id_ = desc.id();
     value_ = desc.inline_data();
@@ -32,6 +34,7 @@ class ValueReference : public ReferenceInterface {
   }
   // Accessor methods
   inline const string value() { return value_; }
+
  protected:
   void ValidateInitDescriptor(const ReferenceDescriptor& desc) {
     CHECK_EQ(desc.type(), ReferenceDescriptor::VALUE);
@@ -42,6 +45,7 @@ class ValueReference : public ReferenceInterface {
     CHECK_EQ(desc_.type(), ReferenceDescriptor::VALUE);
     CHECK_EQ(desc_.inline_data(), value_);
   }
+
  private:
   // unit tests
   FRIEND_TEST(ReferencesTest, CreateValueTest);

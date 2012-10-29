@@ -14,4 +14,32 @@
 #include "base/error_reference.h"
 #include "base/value_reference.h"
 
+namespace firmament {
+
+shared_ptr<ReferenceInterface> ReferenceFromDescriptor(
+    const ReferenceDescriptor& desc) {
+  switch (desc.type()) {
+    case ReferenceDescriptor::TOMBSTONE:
+      //return shared_ptr<ReferenceInterface>(new TombstoneReference(desc));
+      LOG(FATAL) << "Unimplemented!";
+      break;
+    case ReferenceDescriptor::FUTURE:
+      return shared_ptr<ReferenceInterface>(new FutureReference(desc));
+      break;
+    case ReferenceDescriptor::CONCRETE:
+      return shared_ptr<ReferenceInterface>(new ConcreteReference(desc));
+      break;
+    case ReferenceDescriptor::ERROR:
+      return shared_ptr<ReferenceInterface>(new ErrorReference(desc));
+      break;
+    case ReferenceDescriptor::VALUE:
+      return shared_ptr<ReferenceInterface>(new ValueReference(desc));
+      break;
+    default:
+      LOG(FATAL) << "Unknown or unrecognized reference type.";
+  }
+}
+
+}  // namespace firmament
+
 #endif  // FIRMAMENT_BASE_REFERENCE_TYPES_H

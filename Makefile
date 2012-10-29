@@ -51,7 +51,10 @@ tests-clean:
 	touch build/tests/all_tests.txt
 
 lint:
-	python tests/all_lint.py src/
+	python tests/all_lint.py src/ False
+
+lint-verb:
+	python tests/all_lint.py src/ True
 
 clean:
 	rm -rf build

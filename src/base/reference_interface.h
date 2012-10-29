@@ -38,6 +38,7 @@ class ReferenceInterface : public PrintableInterface {
     ValidateInternalDescriptor();
     return desc_;
   }
+
  protected:
   virtual void ValidateInitDescriptor(const ReferenceDescriptor& desc) = 0;
   void ValidateInternalDescriptor() {

@@ -44,7 +44,7 @@ class CoordinatorHTTPUI {
   HTTPResponseWriterPtr InitOkResponse(HTTPRequestPtr http_request,
                                        TCPConnectionPtr tcp_conn,
                                        bool html_header);
-  void LogRequest(HTTPRequestPtr& http_request);
+  void LogRequest(const HTTPRequestPtr& http_request);
   void HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOLINT
                           TCPConnectionPtr& tcp_conn);
   void HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLINT

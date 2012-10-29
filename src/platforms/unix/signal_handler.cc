@@ -12,13 +12,14 @@ SignalHandler::SignalHandler()
 #if (BOOST_VERSION >= 104700)
   : signal_set_(signal_set(signal_io_service_)) {
 #else
-{
+{  // NOLINT
 #endif
   VLOG(1) << "Signal handler set up, ready to add signals.";
 }
 
 #if (BOOST_VERSION >= 104700)
-void SignalHandler::ConfigureSignal(int signum, void (*legacy_fptr)(int),
+void SignalHandler::ConfigureSignal(int signum,
+                                    void (*legacy_fptr)(int),  // NOLINT
                                     void* object) {
   // Convert function pointer into callback
   // TODO(malte): this is largely untested, and may not even compile. Test
@@ -27,7 +28,8 @@ void SignalHandler::ConfigureSignal(int signum, void (*legacy_fptr)(int),
   signals_.async_wait(boost::bind(legacy_fptr, object, signum));
 }
 #else
-void SignalHandler::ConfigureSignal(int signum, void (*legacy_fptr)(int),
+void SignalHandler::ConfigureSignal(int signum,
+                                    void (*legacy_fptr)(int),  // NOLINT
                                     void*) {
   signal(signum, legacy_fptr);
 }

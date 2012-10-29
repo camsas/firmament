@@ -5,7 +5,7 @@
 
 #include "examples/hello_world.h"
 
-#include <iostream>
+#include <iostream>  // NOLINT
 #include <cstdlib>
 
 namespace firmament {
