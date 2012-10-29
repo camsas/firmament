@@ -38,7 +38,8 @@ bool Coordinator::exit_ = false;
 Coordinator::Coordinator(PlatformID platform_id)
   : platform_id_(platform_id),
     topology_manager_(new TopologyManager()),
-    uuid_(GenerateUUID()) {
+    uuid_(GenerateUUID()),
+    scheduler_(new SimpleScheduler()) {
   // Start up a coordinator ccording to the platform parameter
   // platform_ = platform::GetByID(platform_id);
   string desc_name = "";  // platform_.GetDescriptiveName();
@@ -75,7 +76,7 @@ Coordinator::~Coordinator() {
 
 void Coordinator::Run() {
   // Test topology detection
-  LOG(INFO) << "Resource topology detected:";
+  LOG(INFO) << "Detecting resource topology:";
   topology_manager_->DebugPrintRawTopology();
 
   // Coordinator starting -- set up and wait for workers to connect.
