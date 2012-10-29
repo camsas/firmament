@@ -17,6 +17,22 @@ TopologyManager::TopologyManager() {
   LoadAndParseTopology();
 }
 
+void TopologyManager::AsProtobuf(ResourceDescriptor* topology_pb) {
+  // TODO(malte): stub
+  ResourceDescriptor root_resource;
+#if 0
+  root_resource.set_type(RESOURCE_MACHINE);
+  for (uint32_t depth = 0; depth < topology_depth_; depth++) {
+    uint32_t num_objs_at_level = hwloc_get_nbobjs_by_depth(topology_, depth);
+    for (uint32_t i = 0; i < num_objs_at_level; ++i) {
+      hwloc_obj_snprintf(obj_string, sizeof(obj_string), topology_,
+                         hwloc_get_obj_by_depth(topology_, depth, i), "#", 0);
+      LOG(INFO) << "Index: " << i << ": " << obj_string;
+    }
+  }
+#endif
+}
+
 void TopologyManager::LoadAndParseTopology() {
   VLOG(1) << "Analyzing machine topology...";
   // library call to perform topology detection

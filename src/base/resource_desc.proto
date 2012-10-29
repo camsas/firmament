@@ -13,12 +13,25 @@ message ResourceDescriptor {
     RESOURCE_LOST = 3;
   }
 
+  enum ResourceType {
+    RESOURCE_PU = 0;
+    RESOURCE_CORE = 1;
+    RESOURCE_CACHE = 2;
+    RESOURCE_NIC = 3;
+    RESOURCE_DISK = 4;
+    RESOURCE_SSD = 5;
+    RESOURCE_MACHINE = 6;
+  }
+
   required string uuid = 1;
   optional string friendly_name = 2;
   optional string descriptive_name = 3;
   optional ResourceState state = 4 [default = RESOURCE_UNKNOWN];
-  optional uint64 task_capacity = 5 [default = 1];
+  optional uint64 task_capacity = 5 [default = 0];
   optional uint64 last_heartbeat = 6;
+  optional ResourceType type = 7;
+  repeated string siblings = 8;
+  repeated string children = 9;
   //repeated TaskDescriptor task_queue = 2;
   // ensemble(s)
   // state
