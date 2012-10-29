@@ -56,7 +56,7 @@ void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOL
   JobDescriptor job_descriptor;
   google::protobuf::TextFormat::ParseFromString(*job_descriptor_param,
                                                 &job_descriptor);
-  VLOG(1) << "JD:" << job_descriptor.DebugString();
+  VLOG(3) << "JD:" << job_descriptor.DebugString();
   string job_id = coordinator_->SubmitJob(job_descriptor);
   // Return the job ID to the client
   writer->write(job_id);

@@ -19,6 +19,8 @@ extern "C" {
 }
 
 #include "base/common.h"
+#include "base/types.h"
+#include "base/resource_desc.pb.h"
 
 namespace firmament {
 namespace machine {
@@ -27,6 +29,7 @@ namespace topology {
 class TopologyManager {
  public:
   TopologyManager();
+  vector<ResourceDescriptor> FlatResourceSet();
   void LoadAndParseTopology();
   void LoadAndParseSyntheticTopology(const string& topology_desc);
   void DebugPrintRawTopology();

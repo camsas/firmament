@@ -39,7 +39,9 @@ Coordinator::Coordinator(PlatformID platform_id)
   : platform_id_(platform_id),
     topology_manager_(new TopologyManager()),
     uuid_(GenerateUUID()),
-    scheduler_(new SimpleScheduler()) {
+    scheduler_(new SimpleScheduler(
+        shared_ptr<JobMap_t>(&job_table_),
+        shared_ptr<ResourceMap_t>(&associated_resources_))) {
   // Start up a coordinator ccording to the platform parameter
   // platform_ = platform::GetByID(platform_id);
   string desc_name = "";  // platform_.GetDescriptiveName();
@@ -74,10 +76,32 @@ Coordinator::~Coordinator() {
 #endif*/
 }
 
+void Coordinator::DetectLocalResources() {
+  // TODO(malte): This is somewhat of a hack currently; instead of taking a
+  // flat vector of resources, we obviuosly want to take a proper topology.
+  uint64_t num_local_pus = topology_manager_->NumProcessingUnits();
+  LOG(INFO) << "Found " << num_local_pus << " local PUs.";
+  vector<ResourceDescriptor> local_resources =
+      topology_manager_->FlatResourceSet();
+  uint32_t i = 0;
+  for (vector<ResourceDescriptor>::iterator lr_iter = local_resources.begin();
+       lr_iter != local_resources.end();
+       ++lr_iter) {
+    CHECK(InsertIfNotPresent(&associated_resources_,
+                             JobIDFromString(lr_iter->uuid()),
+                             pair<ResourceDescriptor, uint64_t>(
+                                 *lr_iter, GetCurrentTimestamp())));
+    VLOG(1) << "Added local resource " << lr_iter->uuid() << " (PU #" << i
+            << "): " << lr_iter->DebugString();
+    ++i;
+  }
+}
+
 void Coordinator::Run() {
   // Test topology detection
   LOG(INFO) << "Detecting resource topology:";
   topology_manager_->DebugPrintRawTopology();
+  DetectLocalResources();
 
   // Coordinator starting -- set up and wait for workers to connect.
   m_adapter_->Listen(FLAGS_listen_uri);
@@ -96,7 +120,7 @@ void Coordinator::Run() {
     // Wait for events (i.e. messages from workers.
     // TODO(malte): we need to think about any actions that the coordinator
     // itself might need to take, and how they can be triggered
-    VLOG(2) << "Hello from main loop!";
+    VLOG(3) << "Hello from main loop!";
     AwaitNextMessage();
   }
 
@@ -107,7 +131,7 @@ void Coordinator::Run() {
 }
 
 void Coordinator::AwaitNextMessage() {
-  VLOG(2) << "Waiting for next message from adapter...";
+  VLOG(3) << "Waiting for next message from adapter...";
   m_adapter_->AwaitNextMessage();
   boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
@@ -120,7 +144,7 @@ void Coordinator::HandleRecv(const boost::system::error_code& error,
                  << error.message();
     return;
   }
-  VLOG(2) << "Received " << bytes_transferred << " bytes asynchronously, "
+  VLOG(3) << "Received " << bytes_transferred << " bytes asynchronously, "
           << "in envelope at " << env << ", representing message " << *env;
   BaseMessage *bm = env->data();
   HandleIncomingMessage(bm);
@@ -129,10 +153,7 @@ void Coordinator::HandleRecv(const boost::system::error_code& error,
 
 
 const JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
-  // XXX(malte): This makes assumptions about JobID_t being a Boost UUID. We
-  // should have a generic "JobID_t-from-string" helper instead.
-  boost::uuids::string_generator gen;
-  boost::uuids::uuid job_uuid = gen(job_id);
+  JobID_t job_uuid = JobIDFromString(job_id);
   JobDescriptor *jd = FindOrNull(job_table_, job_uuid);
   return jd;
 }
@@ -230,16 +251,6 @@ void Coordinator::HandleSignal(int signum) {
     exit_ = true;
 }
 
-ResourceID_t Coordinator::GenerateUUID() {
-  boost::uuids::random_generator gen;
-  return gen();
-}
-
-JobID_t Coordinator::GenerateJobID() {
-  boost::uuids::random_generator gen;
-  return gen();
-}
-
 #ifdef __HTTP_UI__
 void Coordinator::InitHTTPUI() {
   // Start up HTTP interface
@@ -256,11 +267,12 @@ void Coordinator::InitHTTPUI() {
 #endif
 
 const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
-  LOG(INFO) << "NEW JOB: " << job_descriptor.DebugString();
   // Generate a job ID
   // TODO(malte): This should become deterministic, and based on the
   // inputs/outputs somehow, maybe.
   JobID_t new_job_id = GenerateJobID();
+  LOG(INFO) << "NEW JOB: " << new_job_id;
+  VLOG(2) << "Details:\n" << job_descriptor.DebugString();
   // Clone the JD and update it with some information
   JobDescriptor new_jd = job_descriptor;
   new_jd.set_uuid(to_string(new_job_id));
@@ -273,6 +285,9 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   boost::thread t(boost::bind(&sim::SimpleDTGGenerator::Run,
                               sim_dtg_generator_));
 #endif
+  // Kick off the scheduler for this job.
+  scheduler_->ScheduleJob(shared_ptr<JobDescriptor>(
+      FindOrNull(job_table_, new_job_id)));
   // Finally, return the new job's ID
   return to_string(new_job_id);
 }

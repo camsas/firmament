@@ -8,34 +8,64 @@
 #include <deque>
 
 #include "base/reference_types.h"
+#include "misc/map-util.h"
 
 namespace firmament {
 namespace scheduler {
 
-SimpleScheduler::SimpleScheduler() {
+SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
+                                 shared_ptr<ResourceMap_t> resource_map)
+    : SchedulerInterface(job_map, resource_map) {
+  VLOG(1) << "SimpleScheduler initiated.";
 }
 
-const set<shared_ptr<TaskDescriptor> > SimpleScheduler::RunnableTasksForJob(
-    JobDescriptor& job_desc) {
-  set<string> dummy;
-  shared_ptr<TaskDescriptor> rtp(job_desc.mutable_root_task());
+void SimpleScheduler::BindTaskToResource(
+    shared_ptr<TaskDescriptor> task_desc,
+//    shared_ptr<ResourceDescriptor> res_desc) {
+    ResourceDescriptor* res_desc) {
+  // TODO(malte): stub
+  VLOG(1) << "Binding task " << task_desc->uid() << " to resource "
+          << res_desc->uuid();
+  // TODO(malte): safety checks
+  res_desc->set_state(ResourceDescriptor::RESOURCE_BUSY);
+  task_desc->set_state(TaskDescriptor::RUNNING);
+}
+
+const ResourceID_t* SimpleScheduler::FindResourceForTask(
+    shared_ptr<TaskDescriptor> task_desc) {
+  // TODO(malte): stub
+  VLOG(2) << "Trying to place task " << task_desc->uid() << "...";
+  // Find the first idle resource in the resource map
+  for (ResourceMap_t::iterator res_iter = resource_map_->begin();
+       res_iter != resource_map_->end();
+       ++res_iter) {
+    ResourceID_t* rid = new ResourceID_t(res_iter->first);
+    if (res_iter->second.first.state() == ResourceDescriptor::RESOURCE_IDLE)
+      return rid;
+  }
+  return NULL;
+}
+
+const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::RunnableTasksForJob(
+    shared_ptr<JobDescriptor> job_desc) {
+  // XXX(malte): Obviously, this is pretty broken.
+  set<ReferenceID_t> dummy;
+  shared_ptr<TaskDescriptor> rtp(job_desc, job_desc->mutable_root_task());
   return LazyGraphReduction(dummy, rtp);
 }
 
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
 // Derek Murray's thesis on CIEL.
-const set<shared_ptr<TaskDescriptor> > SimpleScheduler::LazyGraphReduction(
-    const set<string>& output_ids,
+const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::LazyGraphReduction(
+    const set<ReferenceID_t>& output_ids,
     shared_ptr<TaskDescriptor> root_task) {
   VLOG(2) << "Performing lazy graph reduction";
   // Local data structures
-  set<shared_ptr<TaskDescriptor> > runnable_tasks;
-  set<shared_ptr<TaskDescriptor> > blocked_tasks;
   deque<shared_ptr<TaskDescriptor> > newly_active_tasks;
   bool do_schedule = false;
   // Add expected producer for object_id to queue, if the object reference is
   // not already concrete.
-  for (set<string>::const_iterator output_id_iter = output_ids.begin();
+  for (set<ReferenceID_t>::const_iterator output_id_iter = output_ids.begin();
        output_id_iter != output_ids.end();
        ++output_id_iter) {
     shared_ptr<ReferenceInterface> ref = ReferenceForID(*output_id_iter);
@@ -45,7 +75,8 @@ const set<shared_ptr<TaskDescriptor> > SimpleScheduler::LazyGraphReduction(
     }
     // otherwise, we add the producer for said output reference to the queue, if
     // it is not already scheduled.
-    shared_ptr<TaskDescriptor> task = TaskForOutputID(*output_id_iter);
+    shared_ptr<TaskDescriptor> task =
+        ProducingTaskForReferenceID(*output_id_iter);
     CHECK(task != NULL) << "Could not find task producing output ID "
                         << *output_id_iter;
     if (task->state() == TaskDescriptor::CREATED) {
@@ -57,6 +88,7 @@ const set<shared_ptr<TaskDescriptor> > SimpleScheduler::LazyGraphReduction(
   newly_active_tasks.push_back(root_task);
   while (!newly_active_tasks.empty()) {
     shared_ptr<TaskDescriptor> current_task = newly_active_tasks.front();
+    VLOG(2) << "Next active task considered is " << current_task->uid();
     newly_active_tasks.pop_front();
     // Find any unfulfilled dependencies
     bool will_block = false;
@@ -66,43 +98,81 @@ const set<shared_ptr<TaskDescriptor> > SimpleScheduler::LazyGraphReduction(
          ++iter) {
       shared_ptr<ReferenceInterface> ref = ReferenceFromDescriptor(*iter);
       if (ref->Consumable()) {
-        // TODO
+        // This input reference is consumable. So far, so good.
+        VLOG(2) << "Task " << current_task->uid() << "'s dependency " << ref
+                << " is consumable.";
       } else {
-        VLOG(2) << "Task " << current_task << " is blocking on reference " << ref;
+        // This input reference is not consumable; set the task to block and
+        // look at its predecessors (which may produce the necessary input, and
+        // may be runnable).
+        VLOG(2) << "Task " << current_task->uid()
+                << " is blocking on reference " << ref;
         will_block = true;
+        // Look at predecessor task (producing this reference)
+        shared_ptr<TaskDescriptor> producing_task =
+            ProducingTaskForReferenceID(ref->id());
+        if (producing_task) {
+          if (producing_task->state() == TaskDescriptor::CREATED ||
+              producing_task->state() == TaskDescriptor::COMPLETED) {
+            producing_task->set_state(TaskDescriptor::BLOCKING);
+            newly_active_tasks.push_back(producing_task);
+          }
+        } else {
+          LOG(ERROR) << "Failed to find producing task for ref " << ref
+                     << "; will block until it is produced.";
+          continue;
+        }
       }
     }
     if (!will_block) {
       // This task is runnable
-      VLOG(2) << "Adding task " << current_task << " to RUNNABLE set.";
+      VLOG(2) << "Adding task " << current_task->uid() << " to RUNNABLE set.";
       current_task->set_state(TaskDescriptor::RUNNABLE);
-      runnable_tasks.insert(current_task);
+      runnable_tasks_.insert(current_task);
     }
   }
   VLOG(1) << "do_schedule is " << do_schedule;
-  return runnable_tasks;
+  return runnable_tasks_;
 }
 
-shared_ptr<ReferenceInterface> SimpleScheduler::ReferenceFromDescriptor(
-    const ReferenceDescriptor& desc) {
-  switch (desc.type()) {
-    case ReferenceDescriptor::CONCRETE:
-      return shared_ptr<ReferenceInterface>(new ConcreteReference(desc));
-      break;
-    default:
-      LOG(FATAL) << "Unknown or unrecognized reference type.";
+uint64_t SimpleScheduler::ScheduleJob(shared_ptr<JobDescriptor> job_desc) {
+  VLOG(2) << "Preparing to schedule job " << job_desc->uuid();
+  // Get the set of runnable tasks for this job
+  set<shared_ptr<TaskDescriptor> > runnable_tasks =
+      RunnableTasksForJob(job_desc);
+  VLOG(2) << "Scheduling job " << job_desc->uuid() << ", which has "
+          << runnable_tasks.size() << " runnable tasks.";
+  for (set<shared_ptr<TaskDescriptor> >::const_iterator task_iter =
+       runnable_tasks.begin();
+       task_iter != runnable_tasks.end();
+       ++task_iter) {
+    VLOG(2) << "Considering task " << (*task_iter)->uid() << ":\n"
+            << (*task_iter)->DebugString();
+    // TODO(malte): check passing semantics here.
+    const ResourceID_t* best_resource = FindResourceForTask(*task_iter);
+    if (!best_resource) {
+      VLOG(2) << "No suitable resource found, will need to try again.";
+    } else {
+      pair<ResourceDescriptor, uint64_t>* rp = FindOrNull(*resource_map_,
+                                                          *best_resource);
+      CHECK(rp);
+      LOG(INFO) << "Scheduling task " << (*task_iter)->uid() << " on resource "
+                << rp->first.uuid() << "[" << rp << "]";
+      BindTaskToResource(*task_iter, &(rp->first));
+    }
   }
+  return 0;
 }
 
 shared_ptr<ReferenceInterface> SimpleScheduler::ReferenceForID(
-    const string& id) {
-  // TODO(malte): stub
+    ReferenceID_t id) {
+  // XXX(malte): stub
   return shared_ptr<ReferenceInterface>();  // NULL
 }
 
-shared_ptr<TaskDescriptor> SimpleScheduler::TaskForOutputID(
-    const string& id) {
-  // TODO(malte): stub
+shared_ptr<TaskDescriptor> SimpleScheduler::ProducingTaskForReferenceID(
+    ReferenceID_t id) {
+  // XXX(malte): stub
   return shared_ptr<TaskDescriptor>();  // NULL
 }
 

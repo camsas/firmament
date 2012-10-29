@@ -5,6 +5,7 @@
 // information via hwloc, and exposing it using a variety of interfaces.
 
 #include "engine/topology_manager.h"
+#include "misc/utils.h"
 
 namespace firmament {
 namespace machine {
@@ -36,6 +37,19 @@ void TopologyManager::LoadAndParseSyntheticTopology(
              << "topology generation. Version is " << hwloc_get_api_version
              << ", we require >=1.5. Topology string was: " << topology_desc;
 #endif
+}
+
+vector<ResourceDescriptor> TopologyManager::FlatResourceSet() {
+  vector<ResourceDescriptor> rds;
+  for (uint32_t i = 0; i < NumProcessingUnits(); ++i) {
+    ResourceID_t rid = GenerateUUID();
+    ResourceDescriptor rd;
+    rd.set_uuid(to_string(rid));
+    rd.set_state(ResourceDescriptor::RESOURCE_IDLE);
+    rd.set_friendly_name("local resource");  // TODO(malte): better auto-gen name
+    rds.push_back(rd);
+  }
+  return rds;
 }
 
 uint32_t TopologyManager::NumProcessingUnits() {

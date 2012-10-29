@@ -102,8 +102,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   }
 
  protected:
-  ResourceID_t GenerateUUID();
-  JobID_t GenerateJobID();
+  void DetectLocalResources();
   void HandleIncomingMessage(BaseMessage *bm);
   void HandleIncomingReceiveError(const boost::system::error_code& error,
                                   const string& remote_endpoint);
