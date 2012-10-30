@@ -1,11 +1,11 @@
 // The Firmament project
 // Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// Main executor class.
+// Main task library class.
 // TODO(malte): This should really be made platform-independent, so that we can
-// have platform-specific executor libraries.
+// have platform-specific libraries.
 
-#include "engine/executor.h"
+#include "engine/task_lib.h"
 
 #include "base/common.h"
 #include "messages/heartbeat_message.pb.h"
@@ -16,11 +16,11 @@
 
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 DEFINE_string(resource_id, "",
-              "The resource ID that is running this executor.");
+              "The resource ID that is running this task.");
 
 namespace firmament {
 
-Executor::Executor()
+TaskLib::TaskLib()
   : m_adapter_(new StreamSocketsAdapter<BaseMessage>()),
     chan_(StreamSocketsChannel<BaseMessage>::SS_TCP),
     coordinator_uri_(FLAGS_coordinator_uri),
@@ -28,17 +28,17 @@ Executor::Executor()
     task_running_(false) {
 }
 
-void Executor::AwaitNextMessage() {
+void TaskLib::AwaitNextMessage() {
   // Finally, call back into ourselves.
   //AwaitNextMessage();
 }
 
-bool Executor::RegisterWithCoordinator() {
+bool TaskLib::RegisterWithCoordinator() {
   // XXX(malte): stub
   return false;
 }
 
-void Executor::SendFinalizeMessage(bool success) {
+void TaskLib::SendFinalizeMessage(bool success) {
   BaseMessage bm;
   if (success)
     SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::COMPLETED);
@@ -53,7 +53,7 @@ void Executor::SendFinalizeMessage(bool success) {
   //boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 
-void Executor::SendHeartbeat() {
+void TaskLib::SendHeartbeat() {
   BaseMessage bm;
   bm.MutableExtension(heartbeat_extn)->set_uuid(
       boost::uuids::to_string(resource_id_));
@@ -65,20 +65,20 @@ void Executor::SendHeartbeat() {
   SendMessageToCoordinator(&bm);
 }
 
-bool Executor::SendMessageToCoordinator(BaseMessage* msg) {
+bool TaskLib::SendMessageToCoordinator(BaseMessage* msg) {
   Envelope<BaseMessage> envelope(msg);
   return chan_.SendA(
-      envelope, boost::bind(&Executor::HandleWrite,
+      envelope, boost::bind(&TaskLib::HandleWrite,
                             this,
                             boost::asio::placeholders::error,
                             boost::asio::placeholders::bytes_transferred));
 }
 
-bool Executor::ConnectToCoordinator(const string& coordinator_uri) {
+bool TaskLib::ConnectToCoordinator(const string& coordinator_uri) {
   return m_adapter_->EstablishChannel(coordinator_uri, &chan_);
 }
 
-void Executor::HandleWrite(const boost::system::error_code& error,
+void TaskLib::HandleWrite(const boost::system::error_code& error,
                          size_t bytes_transferred) {
   VLOG(1) << "In HandleWrite, thread is " << boost::this_thread::get_id();
   if (error)
@@ -87,7 +87,7 @@ void Executor::HandleWrite(const boost::system::error_code& error,
     VLOG(1) << "bytes_transferred: " << bytes_transferred;
 }
 
-void Executor::Run() {
+void TaskLib::Run() {
   // TODO(malte): Any setup work goes here
   CHECK(ConnectToCoordinator(coordinator_uri_))
       << "Failed to connect to coordinator; is it reachable?";
@@ -114,7 +114,7 @@ void Executor::Run() {
   SendFinalizeMessage(true);
 }
 
-void Executor::RunTask() {
+void TaskLib::RunTask() {
   // TODO(malte): execute the actual task code
   //CHECK(task_desc_.code_dependency.is_consumable());
   //fork();

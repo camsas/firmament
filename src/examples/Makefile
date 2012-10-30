@@ -23,12 +23,12 @@ all: $(OBJ_BIN) .setup
 #$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS)) $(addprefix $(OBJ_DIR)/, $(PBS))
 
 $(OBJ_DIR)/hello_world: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
-	$(BUILD_DIR)/engine/libfirmament_executor.a
+	$(BUILD_DIR)/engine/libfirmament_task_lib.a
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
-		$(SRC_ROOT_DIR)/engine/executor_main.cc \
+		$(SRC_ROOT_DIR)/engine/task_lib_main.cc \
 		$(CXXFLAGS) \
-		$(BUILD_DIR)/engine/libfirmament_executor.a \
+		$(BUILD_DIR)/engine/libfirmament_task_lib.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \

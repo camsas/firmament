@@ -6,7 +6,7 @@ include $(ROOT_DIR)/include/Makefile.common
 
 LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc $(PB2JSON_LIB) -ljansson
 
-LIB = libfirmament_executor.a
+LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim
 OBJS = coordinator_http_ui.o coordinator.o simple_scheduler.o worker.o topology_manager.o
 PBS =
@@ -94,7 +94,7 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		"  DYNLNK  $(BUILD_DIR)/engine/worker")
 
 
-# Executor interface library
+# Task interface library
 # ---------------------------
 # This needs to be linked into task binaries.
-$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, executor.o)
+$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, task_lib.o)

@@ -1,12 +1,12 @@
 // The Firmament project
 // Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// The executor class is part of libfirmament, the library that gets linked into
-// task binaries. Eventually, we should make this an interface, and support
-// platform-specific executor classes.
+// The task library class is part of libfirmament, the library that gets linked
+// into task binaries. Eventually, we should make this an interface, and support
+// platform-specific classes.
 
-#ifndef FIRMAMENT_ENGINE_EXECUTOR_H
-#define FIRMAMENT_ENGINE_EXECUTOR_H
+#ifndef FIRMAMENT_ENGINE_TASK_LIB_H
+#define FIRMAMENT_ENGINE_TASK_LIB_H
 
 #include <string>
 #ifdef __PLATFORM_HAS_BOOST__
@@ -16,7 +16,7 @@
 #include <boost/bind.hpp>
 #else
 // Currently this won't build if __PLATFORM_HAS_BOOST__ is not defined.
-#error __PLATFORM_HAS_BOOST__ not set, so cannot build executor!
+#error __PLATFORM_HAS_BOOST__ not set, so cannot build task library!
 #endif
 
 #include "base/common.h"
@@ -40,9 +40,9 @@ namespace firmament {
 using platform_unix::streamsockets::StreamSocketsAdapter;
 using platform_unix::streamsockets::StreamSocketsChannel;
 
-class Executor {
+class TaskLib {
  public:
-  explicit Executor();
+  explicit TaskLib();
   void Run();
   void AwaitNextMessage();
   bool ConnectToCoordinator(const string& coordinator_uri);
@@ -76,4 +76,4 @@ class Executor {
 
 }  // namespace firmament
 
-#endif
+#endif  // FIRMAMENT_ENGINE_TASK_LIB_H
