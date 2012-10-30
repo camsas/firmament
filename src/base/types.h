@@ -13,6 +13,7 @@
 
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <boost/system/error_code.hpp>
 #endif
 
