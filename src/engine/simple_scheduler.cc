@@ -9,9 +9,13 @@
 
 #include "base/reference_types.h"
 #include "misc/map-util.h"
+#include "misc/utils.h"
+#include "engine/local_executor.h"
 
 namespace firmament {
 namespace scheduler {
+
+using executor::LocalExecutor;
 
 SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
                                  shared_ptr<ResourceMap_t> resource_map)
@@ -29,6 +33,11 @@ void SimpleScheduler::BindTaskToResource(
   // TODO(malte): safety checks
   res_desc->set_state(ResourceDescriptor::RESOURCE_BUSY);
   task_desc->set_state(TaskDescriptor::RUNNING);
+  // TODO(malte): hacked-up task execution
+  LocalExecutor exec(ResourceIDFromString(res_desc->uuid()));
+  // XXX(malte): This is currently a SYNCHRONOUS call, and obviously shouldn't
+  // be.
+  exec.RunTask(task_desc);
 }
 
 const ResourceID_t* SimpleScheduler::FindResourceForTask(
@@ -40,6 +49,8 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
        res_iter != resource_map_->end();
        ++res_iter) {
     ResourceID_t* rid = new ResourceID_t(res_iter->first);
+    VLOG(3) << "Considering resource " << *rid << ", which is in state "
+            << res_iter->second.first.state();
     if (res_iter->second.first.state() == ResourceDescriptor::RESOURCE_IDLE)
       return rid;
   }
