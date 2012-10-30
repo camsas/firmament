@@ -35,6 +35,7 @@ uint64_t MakeEnsembleUID(Ensemble *ens);*/
 
 ResourceID_t GenerateUUID();
 JobID_t GenerateJobID();
+ResourceID_t ResourceIDFromString(const string& str);
 JobID_t JobIDFromString(const string& str);
 
 }  // namespace firmament
