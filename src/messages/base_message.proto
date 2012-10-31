@@ -17,7 +17,12 @@ package firmament;
 // Extension registry:
 // -------------------
 // 101  - TestMessage
-// 102  - <free>
+// 102  - HeartbeatMessage
+// 103  - RegistrationMessage
+// 104  - TaskAssignMessage [DEPRECATED]
+// 105  - TaskCompleteMessage [DEPRECATED]
+// 106  - TaskStateMessage
+// 107  - <free>
 // ...
 // 1000 - <free>
 

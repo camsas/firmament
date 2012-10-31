@@ -8,8 +8,8 @@ package firmament;
 import "messages/base_message.proto";
 
 extend BaseMessage {
-  optional TaskAssignMessage task_assign_extn = 103;
-  optional TaskCompleteMessage task_complete_extn = 104;
+  optional TaskAssignMessage task_assign_extn = 104;
+  optional TaskCompleteMessage task_complete_extn = 105;
 }
 
 message TaskAssignMessage {
