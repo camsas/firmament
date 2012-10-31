@@ -24,8 +24,16 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id)
 }
 
 bool LocalExecutor::RunTask(shared_ptr<TaskDescriptor> td) {
+  // Set environment variables
+  // TODO(malte): this really shouldn't be happening here
+  setenv("TASK_ID", to_string(td->uid()).c_str(), 1);
+  setenv("FLAGS_coordinator_uri", "tcp://localhost:9999", 1);
+  setenv("FLAGS_resource_id", to_string(local_resource_id_).c_str(), 1);
+  // TODO(malte): hack
+  vector<string> args = pb_to_vector(td->args());
+  args.push_back("--tryfromenv=coordinator_uri,resource_id");
   // TODO(malte): This is somewhat hackish
-  bool res = (RunProcessSync(td->binary(), pb_to_vector(td->args())) == 0);
+  bool res = (RunProcessSync(td->binary(), args) == 0);
   return res;
 }
 
@@ -57,9 +65,6 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       close(pipe_to[1]);
       close(pipe_from[0]);
       close(pipe_from[1]);
-      // Set environment variables
-      // TODO(malte): fix
-      setenv("TASK_ID", "0", 1);
       // Convert args from string to char*
       vector<char*> argv;
       argv.reserve(args.size() + 2);
