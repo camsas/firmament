@@ -240,8 +240,16 @@ void Coordinator::HandleRegistrationRequest(
 
 void Coordinator::HandleTaskStateChange(
     const TaskStateMessage& msg) {
-  VLOG(1) << "Task state changed to " << static_cast<uint64_t>(msg.new_state());
-  // XXX(malte): tear down the respective connection
+  switch (msg.new_state()) {
+    case TaskDescriptor::COMPLETED:
+      VLOG(1) << "Task " << msg.id() << " now in state COMPLETED.";
+      // XXX(malte): tear down the respective connection, cleanup
+      break;
+    default:
+      VLOG(1) << "Task " << msg.id() << "'s state changed to "
+              << static_cast<uint64_t>(msg.new_state());
+      break;
+  }
 }
 
 

@@ -118,7 +118,7 @@ void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOL
   LogRequest(http_request);
   HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
   // Get resource information from coordinator
-  vector<ResourceDescriptor> resources = coordinator_->associated_resources();
+  const vector<ResourceDescriptor> resources = coordinator_->associated_resources();
   uint64_t i = 0;
   writer->write("<h1>");
   writer->write(coordinator_->uuid());
