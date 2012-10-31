@@ -8,9 +8,9 @@
 
 #include "base/common.h"
 #include "engine/task_lib.h"
-#include "platforms/common.h"
+//#include "platforms/common.h"
 
-#include "platforms/common.pb.h"
+//#include "platforms/common.pb.h"
 
 DECLARE_string(coordinator_uri);
 DECLARE_string(resource_id);

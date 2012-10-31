@@ -54,6 +54,8 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline) {
       close(pipe_to[1]);
       close(pipe_from[0]);
       close(pipe_from[1]);
+      // Set environment variables
+      setenv("TASK_ID", "0", 1);
       // Run the task binary
       execlp(cmdline.c_str(), "\0", NULL);
       // execl only returns if there was an error

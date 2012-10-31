@@ -20,11 +20,10 @@
 #endif
 
 #include "base/common.h"
-#include "base/data_object.h"
 #include "base/types.h"
-#include "base/task_interface.h"
-#include "base/reference_types.h"
+#include "base/data_object.h"
 #include "base/resource_desc.pb.h"
+#include "base/task_interface.h"
 #include "messages/base_message.pb.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
