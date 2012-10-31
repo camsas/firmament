@@ -33,6 +33,10 @@ void SimpleScheduler::BindTaskToResource(
   // TODO(malte): safety checks
   res_desc->set_state(ResourceDescriptor::RESOURCE_BUSY);
   task_desc->set_state(TaskDescriptor::RUNNING);
+  // XXX(malte): The below call, while innocent-looking, is actually a rather
+  // bad idea -- it ends up calling the shared_ptr destructor and blows away the
+  // TD. Need to find another way.
+  //CHECK(runnable_tasks_.erase(task_desc));
   // TODO(malte): hacked-up task execution
   LocalExecutor exec(ResourceIDFromString(res_desc->uuid()));
   // XXX(malte): This is currently a SYNCHRONOUS call, and obviously shouldn't

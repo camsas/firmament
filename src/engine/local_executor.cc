@@ -17,21 +17,24 @@ extern "C" {
 namespace firmament {
 namespace executor {
 
+using common::pb_to_vector;
+
 LocalExecutor::LocalExecutor(ResourceID_t resource_id)
     : local_resource_id_(resource_id) {
 }
 
 bool LocalExecutor::RunTask(shared_ptr<TaskDescriptor> td) {
-  // XXX(malte): hack
-  bool res = (RunProcessSync(td->binary()) == 0);
-  VLOG(1) << "res is " << res;
+  // TODO(malte): This is somewhat hackish
+  bool res = (RunProcessSync(td->binary(), pb_to_vector(td->args())) == 0);
   return res;
 }
 
-int32_t LocalExecutor::RunProcessSync(const string& cmdline) {
+int32_t LocalExecutor::RunProcessSync(const string& cmdline,
+                                      vector<string> args) {
   pid_t pid;
   int pipe_to[2];    // pipe to feed input data to task
   int pipe_from[2];  // pipe to receive output data from task
+  int status;
   if ( pipe(pipe_to) != 0 ) {
     LOG(ERROR) << "Failed to create pipe to task.";
   }
@@ -44,7 +47,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline) {
       // Error
       LOG(ERROR) << "Failed to fork child process.";
       break;
-    case 0:
+    case 0: {
       // Child
       // set up pipes
       dup2(pipe_to[0], STDIN_FILENO);
@@ -55,13 +58,26 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline) {
       close(pipe_from[0]);
       close(pipe_from[1]);
       // Set environment variables
+      // TODO(malte): fix
       setenv("TASK_ID", "0", 1);
+      // Convert args from string to char*
+      vector<char*> argv;
+      argv.reserve(args.size() + 2);
+      // argv[0] is always the command name
+      argv.push_back((char*)(cmdline.c_str()));
+      for (uint32_t i = 0; i < args.size(); ++i) {
+        // N.B.: This casts away the const qualifier on the c_str() result.
+        // This is joyfully unsafe, of course.
+        argv.push_back((char*)(args[i].c_str()));
+      }
+      // The last argument to execvp is always NULL.
+      argv.push_back(NULL);
       // Run the task binary
-      execlp(cmdline.c_str(), "\0", NULL);
+      execvp(cmdline.c_str(), &argv[0]);
       // execl only returns if there was an error
-      LOG(ERROR) << "execlp failed for task command " << cmdline << "!";
-      VLOG(1) << "failing at execlp";
-      return -1;
+      PLOG(ERROR) << "execvp failed for task command " << cmdline << "!";
+      _exit(1);
+    }
     default:
       // Parent
       VLOG(1) << "Task process with PID " << pid << " created.";
@@ -72,15 +88,13 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline) {
       close(pipe_to[1]);
       ReadFromPipe(pipe_from[0]);
       // wait for task to terminate
-      int status;
       while (!WIFEXITED(status)) {
         waitpid(pid, &status, NULL);
       }
       VLOG(1) << "Task process with PID " << pid << " exited with status "
-              << status << ".";
+              << WEXITSTATUS(status);
       return status;
   }
-  VLOG(1) << "failing at dropout";
   return -1;
 }
 

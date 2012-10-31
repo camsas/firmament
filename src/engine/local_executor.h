@@ -29,9 +29,12 @@ class LocalExecutor : public ExecutorInterface {
   }
  protected:
   // Unit tests
-  FRIEND_TEST(LocalExecutorTest, SimpleProcessExecutionTest);
+  FRIEND_TEST(LocalExecutorTest, SimpleSyncProcessExecutionTest);
+  FRIEND_TEST(LocalExecutorTest, SyncProcessExecutionWithArgsTest);
+  FRIEND_TEST(LocalExecutorTest, ExecutionFailureTest);
   ResourceID_t local_resource_id_;
-  int32_t RunProcessSync(const string& cmdline);
+  int32_t RunProcessSync(const string& cmdline,
+                         vector<string> args);
   void ReadFromPipe(int fd);
   void WriteToPipe(int fd);
 };
