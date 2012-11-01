@@ -12,7 +12,7 @@ namespace firmament {
 
 void task_main(TaskID_t task_id) {
   examples::hello_world::HelloWorldTask t(task_id);
-  VLOG(1) << "Called task_main, starting " << t;
+  LOG(INFO) << "Called task_main, starting " << t;
   t.Invoke();
 }
 
