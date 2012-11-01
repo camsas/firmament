@@ -4,7 +4,7 @@ SUFFIX=engine
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc $(PB2JSON_LIB) -ljansson
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc $(PB2JSON_LIB) -ljansson -lctemplate
 
 LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim

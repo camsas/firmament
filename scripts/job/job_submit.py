@@ -37,7 +37,7 @@ except Exception as e:
   sys.exit(1)
 
 data = response.read()
-match = re.search(r"<html><body>\s([0-9a-f\-]+)</body></html>", data, re.MULTILINE | re.S | re.I | re.U)
+match = re.search(r"([0-9a-f\-]+)", data, re.MULTILINE | re.S | re.I | re.U)
 print "----------------------------------------------"
 if match and response.status == 200:
   job_id = match.group(1)

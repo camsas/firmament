@@ -25,6 +25,8 @@ using pion::net::HTTPTypes;
 using pion::net::HTTPServer;
 using pion::net::TCPConnection;
 
+using ctemplate::TemplateDictionary;
+
 CoordinatorHTTPUI::CoordinatorHTTPUI(shared_ptr<Coordinator> coordinator) {
   coordinator_ = coordinator;
 }
@@ -39,6 +41,25 @@ CoordinatorHTTPUI::~CoordinatorHTTPUI() {
   LOG(INFO) << "Coordinator HTTP UI server destroyed.";
 }
 
+void CoordinatorHTTPUI::AddHeaderToTemplate(TemplateDictionary* dict,
+                                            ResourceID_t uuid) {
+  // HTML header
+  TemplateDictionary* header_sub_dict = dict->AddIncludeDictionary("HEADER");
+  header_sub_dict->SetFilename("src/webui/header.tpl");
+  // Page header
+  TemplateDictionary* pgheader_sub_dict =
+      dict->AddIncludeDictionary("PAGE_HEADER");
+  pgheader_sub_dict->SetFilename("src/webui/page_header.tpl");
+  pgheader_sub_dict->SetValue("RESOURCE_ID", to_string(uuid));
+}
+
+void CoordinatorHTTPUI::AddFooterToTemplate(TemplateDictionary* dict) {
+  // Page footer
+  TemplateDictionary* pgheader_sub_dict =
+      dict->AddIncludeDictionary("PAGE_FOOTER");
+  pgheader_sub_dict->SetFilename("src/webui/page_footer.tpl");
+}
+
 void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOLINT
                                            TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -51,7 +72,7 @@ void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOL
     return;
   }
   // We're okay to continue
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   // Submit the JD to the coordinator
   JobDescriptor job_descriptor;
   google::protobuf::TextFormat::ParseFromString(*job_descriptor_param,
@@ -60,94 +81,86 @@ void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOL
   string job_id = coordinator_->SubmitJob(job_descriptor);
   // Return the job ID to the client
   writer->write(job_id);
-  FinishOkResponse(writer, true);
+  FinishOkResponse(writer);
 }
 
 void CoordinatorHTTPUI::HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
                                       TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   // Individual to this request
   //HTTPTypes::QueryParams &params = http_request->getQueryParams();
-  writer->write("<h1>");
-  writer->write(coordinator_->uuid());
-  writer->write("</h1>");
-  writer->write("<a href=\"/resources\">Resources</a><br />");
-  writer->write("<a href=\"/jobs\">Jobs</a><br />");
-  writer->write("<a href=\"/shutdown\">Shutdown</a>");
-  FinishOkResponse(writer, true);
+  TemplateDictionary dict("main");
+  AddHeaderToTemplate(&dict, coordinator_->uuid());
+  AddFooterToTemplate(&dict);
+  string output;
+  ExpandTemplate("src/webui/main.tpl", ctemplate::DO_NOT_STRIP, &dict, &output);
+  writer->write(output);
+  FinishOkResponse(writer);
 }
 
 void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLINT
                                           TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   // Get job list from coordinator
   vector<JobDescriptor> jobs = coordinator_->active_jobs();
   uint64_t i = 0;
-  writer->write("<h1>");
-  writer->write(coordinator_->uuid());
-  writer->write("</h1>");
-  writer->write("<table border=\"1\"><tr><th></th><th>Job ID</th>"
-                "<th>Friendly name</th><th>State</th><th></th></tr>");
+  TemplateDictionary dict("jobs_list");
+  AddHeaderToTemplate(&dict, coordinator_->uuid());
+  AddFooterToTemplate(&dict);
   for (vector<JobDescriptor>::const_iterator jd_iter =
        jobs.begin();
        jd_iter != jobs.end();
        ++jd_iter) {
-    writer->write("<tr><td>");
-    writer->write(i);
-    writer->write("</td><td>");
-    writer->write(jd_iter->uuid());
-    writer->write("</td><td>");
-    writer->write(jd_iter->name());
-    writer->write("</td><td>");
-    writer->write(jd_iter->state());
-    writer->write("</td><td><a href=\"/job/status/?id=");
-    writer->write(jd_iter->uuid());
-    writer->write("\">Status</a> <a href=\"/job/dtg/?id=");
-    writer->write(jd_iter->uuid());
-    writer->write("\">DTG</a></td></tr>");
+    TemplateDictionary* sect_dict = dict.AddSectionDictionary("JOB_DATA");
+    sect_dict->SetIntValue("JOB_NUM", i);
+    sect_dict->SetValue("JOB_ID", to_string(jd_iter->uuid()));
+    sect_dict->SetValue("JOB_FRIENDLY_NAME", jd_iter->name());
+    sect_dict->SetIntValue("JOB_ROOT_TASK_ID", jd_iter->root_task().uid());
+    sect_dict->SetIntValue("JOB_STATE", jd_iter->state());
     ++i;
   }
-  writer->write("</table>");
-  FinishOkResponse(writer, true);
+  string output;
+  ExpandTemplate("src/webui/jobs_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
+                 &output);
+  writer->write(output);
+  FinishOkResponse(writer);
 }
 
 void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOLINT
                                            TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  const vector<ResourceDescriptor> resources = coordinator_->associated_resources();
+  const vector<ResourceDescriptor> resources =
+      coordinator_->associated_resources();
   uint64_t i = 0;
-  writer->write("<h1>");
-  writer->write(coordinator_->uuid());
-  writer->write("</h1>");
-  writer->write("<table border=\"1\"><tr><th></th><th>Resource ID</th>"
-                "<th>Friendly name</th><th>State</th></tr>");
+  TemplateDictionary dict("resources_list");
+  AddHeaderToTemplate(&dict, coordinator_->uuid());
+  AddFooterToTemplate(&dict);
   for (vector<ResourceDescriptor>::const_iterator rd_iter =
        resources.begin();
        rd_iter != resources.end();
        ++rd_iter) {
-    writer->write("<tr><td>");
-    writer->write(i);
-    writer->write("</td><td>");
-    writer->write(rd_iter->uuid());
-    writer->write("</td><td>");
-    writer->write(rd_iter->friendly_name());
-    writer->write("</td><td>");
-    writer->write(rd_iter->state());
-    writer->write("</td></tr>");
+    TemplateDictionary* sect_dict = dict.AddSectionDictionary("RES_DATA");
+    sect_dict->SetIntValue("RES_NUM", i);
+    sect_dict->SetValue("RES_ID", to_string(rd_iter->uuid()));
+    sect_dict->SetValue("RES_FRIENDLY_NAME", rd_iter->friendly_name());
+    sect_dict->SetIntValue("RES_STATE", rd_iter->state());
     ++i;
   }
-  writer->write("</table>");
-  FinishOkResponse(writer, true);
+  string output;
+  ExpandTemplate("src/webui/resources_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
+                 &output);
+  writer->write(output);
+  FinishOkResponse(writer);
 }
 
 void CoordinatorHTTPUI::HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
                                         TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   // Individual to this request
   if (http_request->getMethod() != "POST") {
     // return an error
@@ -155,21 +168,27 @@ void CoordinatorHTTPUI::HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
   } else {
     writer->write("ok");
   }
-  FinishOkResponse(writer, true);
+  FinishOkResponse(writer);
 }
 
 void CoordinatorHTTPUI::HandleJobStatusURI(HTTPRequestPtr& http_request,  // NOLINT
                                            TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   HTTPTypes::QueryParams &params = http_request->getQueryParams();
   string* job_id = FindOrNull(params, "id");
+  TemplateDictionary dict("job_dtg");
+  AddHeaderToTemplate(&dict, coordinator_->uuid());
+  AddFooterToTemplate(&dict);
+  string output;
   if (job_id) {
-    writer->write(*job_id);
+    dict.SetValue("JOB_ID", *job_id);
+    ExpandTemplate("src/webui/job_dtg.tpl", ctemplate::DO_NOT_STRIP, &dict, &output);
   } else {
-    writer->write("Please specify a job ID parameter.");
+    output = "Please specify a job ID parameter.";
   }
-  FinishOkResponse(writer, true);
+  writer->write(output);
+  FinishOkResponse(writer);
 }
 
 void CoordinatorHTTPUI::HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
@@ -189,10 +208,10 @@ void CoordinatorHTTPUI::HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
     }
     // Return serialized DTG
     HTTPResponseWriterPtr writer = InitOkResponse(http_request,
-                                                  tcp_conn, false);
+                                                  tcp_conn);
     char *json = pb2json(*jd);
     writer->write(json);
-    FinishOkResponse(writer, false);
+    FinishOkResponse(writer);
   } else {
     ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
@@ -203,17 +222,16 @@ void CoordinatorHTTPUI::HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
 void CoordinatorHTTPUI::HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLINT
                                           TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn, true);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   string reason = "HTTP request from " + tcp_conn->getRemoteIp().to_string();
   coordinator_->Shutdown(reason);
   writer->write("Shutdown for coordinator initiated.");
-  FinishOkResponse(writer, true);
+  FinishOkResponse(writer);
 }
 
 HTTPResponseWriterPtr CoordinatorHTTPUI::InitOkResponse(
     HTTPRequestPtr http_request,
-    TCPConnectionPtr tcp_conn,
-    bool html_header) {
+    TCPConnectionPtr tcp_conn) {
   HTTPResponseWriterPtr writer = HTTPResponseWriter::create(
       tcp_conn, *http_request, boost::bind(&TCPConnection::finish,
                                            tcp_conn));
@@ -222,9 +240,6 @@ HTTPResponseWriterPtr CoordinatorHTTPUI::InitOkResponse(
   r.setStatusMessage(HTTPTypes::RESPONSE_MESSAGE_OK);
   // Hack to allow file:// access
   r.addHeader("Access-Control-Allow-Origin", "*");
-  // Header
-  if (html_header)
-    writer->writeNoCopy(kHTMLStart);
   return writer;
 }
 
@@ -241,10 +256,7 @@ void CoordinatorHTTPUI::ErrorResponse(
   writer->send();
 }
 
-void CoordinatorHTTPUI::FinishOkResponse(HTTPResponseWriterPtr writer,
-                                         bool html_footer) {
-  if (html_footer)
-    writer->writeNoCopy(kHTMLEnd);
+void CoordinatorHTTPUI::FinishOkResponse(HTTPResponseWriterPtr writer) {
   writer->send();
 }
 
