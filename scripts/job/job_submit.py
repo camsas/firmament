@@ -4,17 +4,19 @@ from base import reference_desc_pb2
 from google.protobuf import text_format
 import httplib, urllib, re, sys, random
 
-hostname = "ganymede.cl.cam.ac.uk"
-port = 8080
+hostname = sys.argv[1]
+port = int(sys.argv[2])
 
 job_desc = job_desc_pb2.JobDescriptor()
 
-job_desc.uuid = ""
+job_desc.uuid = "" # UUID will be set automatically on submission
 job_desc.name = "testjob"
 job_desc.root_task.uid = 0
-job_desc.root_task.name = ""
+job_desc.root_task.name = "root_task"
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
-job_desc.root_task.binary = "/mnt/dev/firmament/build/examples/hello_world"
+job_desc.root_task.binary = sys.argv[3]
+#job_desc.root_task.binary = "/bin/echo"
+#job_desc.root_task.args.append("Hello World!")
 final_output_desc = job_desc.root_task.outputs.add()
 final_output_desc.id = random.randint(0, 10000000)
 final_output_desc.scope = reference_desc_pb2.ReferenceDescriptor.PUBLIC
