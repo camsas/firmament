@@ -73,3 +73,8 @@ print "Total files: %d, of which\n-- " % (num_good_files + num_bad_files) + \
     bcolors.GREEN + "%d" % (num_good_files) + bcolors.ENDC + " good (no " \
     "warnings)\n-- " + bcolors.RED + "%d" % (num_bad_files) + bcolors.ENDC + \
     " bad (warnings)"
+
+if num_bad_files > 0:
+  sys.exit(1)
+else:
+  sys.exit(0)
