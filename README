@@ -52,7 +52,11 @@ scripts/job/job_submit.py:
 $ make examples
 $ cd scripts/job/job_submit.py
 $ make
-$ python job_submit.py
+$ python job_submit.py <host> <webUI port (8080)> <binary>
+
+Example for the last line:
+
+$ python job_submit.py localhost 8080 /home/me/build/examples/hello_world
 
 (Note that you need to run `make` in the script directory since the script
 depends on some protocol buffer data structures that need to be compiled.)
