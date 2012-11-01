@@ -38,3 +38,24 @@ will run unit tests.
 
 Binaries are in the build/ subdirectory of the project root, and all accept the
 --helpshort argument to show their command line options.
+
+Start by running a coordinator:
+
+$ build/engine/coordinator --platform PL_UNIX --listen_uri tcp://<host>:<port>
+
+Once the coordinator is up and running, you can access its HTTP interface at
+http://<host>:8080/ (the port can be customized using --http_ui_port argument).
+
+To submit a toy job, first make the examples target and then use the script in
+scripts/job/job_submit.py:
+
+$ make examples
+$ cd scripts/job/job_submit.py
+$ make
+$ python job_submit.py
+
+(Note that you need to run `make` in the script directory since the script
+depends on some protocol buffer data structures that need to be compiled.)
+
+If this all works, you should see the job print "Hello world" in the
+coordinator's console.
