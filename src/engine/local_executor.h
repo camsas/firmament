@@ -11,6 +11,9 @@
 #ifndef FIRMAMENT_ENGINE_LOCAL_EXECUTOR_H
 #define FIRMAMENT_ENGINE_LOCAL_EXECUTOR_H
 
+#include <vector>
+#include <string>
+
 #include "base/common.h"
 #include "base/types.h"
 #include "engine/executor_interface.h"

@@ -13,6 +13,7 @@
 #define FIRMAMENT_ENGINE_TOPOLOGY_MANAGER_H
 
 #include <string>
+#include <vector>
 
 extern "C" {
 #include <hwloc.h>

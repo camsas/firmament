@@ -55,8 +55,8 @@ JobID_t JobIDFromString(const string& str) {
 }
 
 ResourceID_t ResourceIDFromString(const string& str) {
-  // XXX(malte): This makes assumptions about ResourceID_t being a Boost UUID. We
-  // should have a generic "JobID_t-from-string" helper instead.
+  // XXX(malte): This makes assumptions about ResourceID_t being a Boost UUID.
+  // We should have a generic "JobID_t-from-string" helper instead.
 #ifdef __PLATFORM_HAS_BOOST__
   boost::uuids::string_generator gen;
   boost::uuids::uuid res_uuid = gen(str);

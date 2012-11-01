@@ -6,6 +6,7 @@
 #include "engine/simple_scheduler.h"
 
 #include <deque>
+#include <utility>
 
 #include "base/reference_types.h"
 #include "misc/map-util.h"

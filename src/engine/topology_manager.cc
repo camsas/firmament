@@ -5,6 +5,9 @@
 // information via hwloc, and exposing it using a variety of interfaces.
 
 #include "engine/topology_manager.h"
+
+#include <vector>
+
 #include "misc/utils.h"
 
 namespace firmament {
@@ -62,7 +65,7 @@ vector<ResourceDescriptor> TopologyManager::FlatResourceSet() {
     ResourceDescriptor rd;
     rd.set_uuid(to_string(rid));
     rd.set_state(ResourceDescriptor::RESOURCE_IDLE);
-    rd.set_friendly_name("local resource");  // TODO(malte): better auto-gen name
+    rd.set_friendly_name("local resource");  // TODO(malte): auto-gen name
     rds.push_back(rd);
   }
   return rds;

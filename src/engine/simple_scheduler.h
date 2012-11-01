@@ -6,6 +6,8 @@
 #ifndef FIRMAMENT_ENGINE_SIMPLE_SCHEDULER_H
 #define FIRMAMENT_ENGINE_SIMPLE_SCHEDULER_H
 
+#include <set>
+
 #include "base/common.h"
 #include "base/types.h"
 #include "base/reference_interface.h"
@@ -26,11 +28,13 @@ class SimpleScheduler : public SchedulerInterface {
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<SimpleScheduler>";
   }
+
  protected:
   void BindTaskToResource(shared_ptr<TaskDescriptor> task_desc,
 //                          shared_ptr<ResourceDescriptor> res_desc);
                           ResourceDescriptor* res_desc);
   const ResourceID_t* FindResourceForTask(shared_ptr<TaskDescriptor> task_desc);
+
  private:
   // Unit tests
   FRIEND_TEST(SimpleSchedulerTest, LazyGraphReductionTest);

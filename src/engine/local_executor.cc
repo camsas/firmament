@@ -69,11 +69,11 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       vector<char*> argv;
       argv.reserve(args.size() + 2);
       // argv[0] is always the command name
-      argv.push_back((char*)(cmdline.c_str()));
+      argv.push_back(reinterpret_cast<char*>(cmdline.c_str()));
       for (uint32_t i = 0; i < args.size(); ++i) {
         // N.B.: This casts away the const qualifier on the c_str() result.
         // This is joyfully unsafe, of course.
-        argv.push_back((char*)(args[i].c_str()));
+        argv.push_back(reinterpret_cast<char*>(args[i].c_str()));
       }
       // The last argument to execvp is always NULL.
       argv.push_back(NULL);
@@ -89,7 +89,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       // close unused pipe ends
       close(pipe_to[0]);
       close(pipe_from[1]);
-      // TODO
+      // TODO(malte): fix the pipe stuff to work properly
       close(pipe_to[1]);
       ReadFromPipe(pipe_from[0]);
       // wait for task to terminate
@@ -106,7 +106,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
 void LocalExecutor::WriteToPipe(int fd) {
   FILE *stream;
   // Open the pipe
-  if ( (stream = fdopen(fd, "w")) == NULL ) {
+  if ((stream = fdopen(fd, "w")) == NULL) {
     LOG(ERROR) << "Failed to open pipe for writing. FD: " << fd;
   }
   // Write the data to the pipe
@@ -118,7 +118,7 @@ void LocalExecutor::WriteToPipe(int fd) {
 void LocalExecutor::ReadFromPipe(int fd) {
   FILE *stream;
   int ch;
-  if ( (stream =fdopen(fd, "r")) == NULL) {
+  if ((stream =fdopen(fd, "r")) == NULL) {
     LOG(ERROR) << "Failed to open pipe for reading. FD " << fd;
   }
   while ( (ch = getc(stream)) != EOF ) {

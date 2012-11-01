@@ -3,6 +3,8 @@
 //
 // SimpleScheduler class unit tests.
 
+#include <set>
+
 #include <gtest/gtest.h>
 
 #include "base/common.h"

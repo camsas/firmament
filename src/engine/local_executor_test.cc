@@ -3,6 +3,9 @@
 //
 // LocalExecutor class unit tests.
 
+#include <string>
+#include <vector>
+
 #include <gtest/gtest.h>
 #include <gtest/gtest-spi.h>
 

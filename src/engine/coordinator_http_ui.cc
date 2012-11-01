@@ -183,7 +183,8 @@ void CoordinatorHTTPUI::HandleJobStatusURI(HTTPRequestPtr& http_request,  // NOL
   string output;
   if (job_id) {
     dict.SetValue("JOB_ID", *job_id);
-    ExpandTemplate("src/webui/job_dtg.tpl", ctemplate::DO_NOT_STRIP, &dict, &output);
+    ExpandTemplate("src/webui/job_dtg.tpl", ctemplate::DO_NOT_STRIP, &dict,
+                   &output);
   } else {
     output = "Please specify a job ID parameter.";
   }

@@ -6,6 +6,8 @@
 #ifndef FIRMAMENT_MISC_UTILS_H
 #define FIRMAMENT_MISC_UTILS_H
 
+#include <string>
+
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>

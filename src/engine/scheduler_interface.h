@@ -6,6 +6,8 @@
 #ifndef FIRMAMENT_ENGINE_SCHEDULER_INTERFACE_H
 #define FIRMAMENT_ENGINE_SCHEDULER_INTERFACE_H
 
+#include <set>
+
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "misc/printable_interface.h"
@@ -41,7 +43,6 @@ class SchedulerInterface : public PrintableInterface {
   // execution handler.
   virtual void BindTaskToResource(shared_ptr<TaskDescriptor> task_desc,
                                   ResourceDescriptor* res_desc) = 0;
-//                                  shared_ptr<ResourceDescriptor> res_desc) = 0;
   // Finds a resource for a runnable task. This is the core placement logic.
   // Returns the resource ID of the resource chosen in the second argument, or
   // NULL if no resource could be found.
