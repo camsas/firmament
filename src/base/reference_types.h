@@ -37,6 +37,9 @@ shared_ptr<ReferenceInterface> ReferenceFromDescriptor(
       break;
     default:
       LOG(FATAL) << "Unknown or unrecognized reference type.";
+      // g++ requires this, as it otherwise warns control reaching the end of a
+      // non-void function. clang recognizes that LOG(FATAL) exits.
+      return shared_ptr<ReferenceInterface>();  // N.B.: unreachable
   }
 }
 

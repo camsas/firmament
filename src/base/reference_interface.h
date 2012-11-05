@@ -30,7 +30,7 @@ class ReferenceInterface : public PrintableInterface {
     : id_(desc.id()) {}
   // Non-accessor members
   inline ReferenceDescriptor AsProtobuf() { return desc(); }
-  virtual inline bool Consumable() = 0;
+  virtual bool Consumable() = 0;
   virtual ostream& ToString(ostream* stream) const = 0;
   // Accessor methods
   inline ReferenceID_t id() { return id_; }

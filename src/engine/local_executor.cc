@@ -94,7 +94,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       ReadFromPipe(pipe_from[0]);
       // wait for task to terminate
       while (!WIFEXITED(status)) {
-        waitpid(pid, &status, NULL);
+        waitpid(pid, &status, 0);
       }
       VLOG(1) << "Task process with PID " << pid << " exited with status "
               << WEXITSTATUS(status);
