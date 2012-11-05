@@ -35,7 +35,7 @@ void StreamSocketsAdapter<T>::CloseChannel(
 template <typename T>
 bool StreamSocketsAdapter<T>::EstablishChannel(
     const string& endpoint_uri,
-    MessagingChannelInterface<T>* chan) {
+    shared_ptr<MessagingChannelInterface<T> > chan) {
   VLOG(1) << "Establishing channel from endpoint " << endpoint_uri
           << ", chan: " << *chan << "!";
   return chan->Establish(endpoint_uri);

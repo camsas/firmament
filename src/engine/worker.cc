@@ -98,7 +98,8 @@ bool Worker::SendMessageToCoordinator(BaseMessage* msg) {
 }
 
 bool Worker::ConnectToCoordinator(const string& coordinator_uri) {
-  if (!m_adapter_->EstablishChannel(coordinator_uri, &chan_))
+  if (!m_adapter_->EstablishChannel(
+      coordinator_uri, shared_ptr<StreamSocketsChannel<BaseMessage> >(&chan_)))
     return false;
   // TODO(malte): Send registration message
   return RegisterWithCoordinator();

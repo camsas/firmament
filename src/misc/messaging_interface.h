@@ -73,8 +73,9 @@ class MessagingAdapterInterface : public PrintableInterface {
   virtual shared_ptr<MessagingChannelInterface<T> >
       GetChannelForEndpoint(const string& endpoint) = 0;
   // Set up a messaging channel to a remote endpoint.
-  virtual bool EstablishChannel(const string& endpoint_uri,
-                                MessagingChannelInterface<T>* chan) = 0;
+  virtual bool EstablishChannel(
+      const string& endpoint_uri,
+      shared_ptr<MessagingChannelInterface<T> > chan) = 0;
   // Listen for incoming channel establishment requests.
   virtual void Listen(const string& endpoint_uri) = 0;
   // Check if we are ready to accept connections.

@@ -47,7 +47,7 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
   void AddChannelForConnection(TCPConnection::connection_ptr connection);
   void CloseChannel(MessagingChannelInterface<T>* chan);
   bool EstablishChannel(const string& endpoint_uri,
-                        MessagingChannelInterface<T>* chan);
+                        shared_ptr<MessagingChannelInterface<T> > chan);
   shared_ptr<MessagingChannelInterface<T> > GetChannelForEndpoint(
       const string& endpoint);
   void Listen(const string& endpoint_uri);

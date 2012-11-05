@@ -65,7 +65,7 @@ class StreamSocketsChannelTest : public ::testing::Test {
     channel_.reset(new StreamSocketsChannel<BaseMessage>(
         StreamSocketsChannel<BaseMessage>::SS_TCP));
     VLOG(1) << "Establishing channel";
-    local_adapter_->EstablishChannel(remote_uri_, channel_.get());
+    local_adapter_->EstablishChannel(remote_uri_, channel_);
   }
 
   virtual void TearDown() {
@@ -99,7 +99,7 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
       new StreamSocketsChannel<uint64_t>(
           StreamSocketsChannel<uint64_t>::SS_TCP));
   local_uint_adapter->EstablishChannel("tcp://localhost:7788",
-                                       uint_channel.get());
+                                       uint_channel);
   while (!uint_channel->Ready()) {  }
   uint64_t testInteger = 5;
   Envelope<uint64_t> envelope(&testInteger);

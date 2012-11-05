@@ -75,7 +75,8 @@ bool TaskLib::SendMessageToCoordinator(BaseMessage* msg) {
 }
 
 bool TaskLib::ConnectToCoordinator(const string& coordinator_uri) {
-  return m_adapter_->EstablishChannel(coordinator_uri, &chan_);
+  return m_adapter_->EstablishChannel(
+      coordinator_uri, shared_ptr<StreamSocketsChannel<BaseMessage> >(chan_));
 }
 
 void TaskLib::HandleWrite(const boost::system::error_code& error,
