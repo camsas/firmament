@@ -31,6 +31,10 @@ using google::protobuf::RepeatedField;
     obj.GetExtension(submsg ## _extn).member()
 #define SUBMSG_WRITE(obj, submsg, member, val) \
     obj.MutableExtension(submsg ## _extn)->set_ ## member(val)
+#define SUBMSG_READ_PTR(obj, submsg, member) \
+    obj->GetExtension(submsg ## _extn).member()
+#define SUBMSG_WRITE_PTR(obj, submsg, member, val) \
+    obj->MutableExtension(submsg ## _extn)->set_ ## member(val)
 
 // Helper function to convert an arbitrary object to a string via the
 // stringstream standard library class.
