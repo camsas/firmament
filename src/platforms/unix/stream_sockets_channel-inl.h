@@ -38,6 +38,7 @@ using boost::asio::io_service;
 template <class T>
 StreamSocketsChannel<T>::StreamSocketsChannel(StreamSocketType type)
   : client_io_service_(new io_service),
+    client_socket_(NULL),
     channel_ready_(false),
     type_(type) {
   switch (type) {
@@ -87,11 +88,13 @@ void StreamSocketsChannel<T>::Close() {
   channel_ready_ = false;
   if (!client_connection_) {
     // The channel has ownership of the client socket
-    client_socket_->shutdown(tcp::socket::shutdown_both);
+    if (client_socket_)
+      client_socket_->shutdown(tcp::socket::shutdown_both);
   } else {
     // The channel was constructed around an existing connection, so it does not
     // have ownership of the socket. Ask the connection to terminate instead.
     client_connection_->Close();
+    client_socket_ = NULL;
   }
   CHECK(!(client_connection_ && client_io_service_));
   if (client_io_service_) {
@@ -126,7 +129,9 @@ bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
   tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
   tcp::resolver::iterator end;
 
-  client_socket_.reset(new tcp::socket(*client_io_service_));
+  if (client_socket_)
+    LOG(WARNING) << "Replacing an existing client socket!";
+  client_socket_ = new tcp::socket(*client_io_service_);
   boost::system::error_code error = boost::asio::error::host_not_found;
   while (error && endpoint_iterator != end) {
     client_socket_->close();

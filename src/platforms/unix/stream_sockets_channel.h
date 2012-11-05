@@ -74,7 +74,9 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
   // TCP and io_service data structures
   shared_ptr<boost::asio::io_service> client_io_service_;
   scoped_ptr<boost::asio::io_service::work> io_service_work_;
-  shared_ptr<boost::asio::ip::tcp::socket> client_socket_;
+  // This cannot be a shared_ptr, since the client socket may disappear under
+  // the channel's feet at any point in time.
+  boost::asio::ip::tcp::socket* client_socket_;
   TCPConnection::connection_ptr client_connection_;
   bool channel_ready_;
   StreamSocketType type_;
