@@ -151,19 +151,19 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
       remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
   CHECK(backchannel);
   while (!backchannel->Ready()) {  }
-  // send first time
-  channel_->SendS(envelope1);
-  // send second time
   BaseMessage tm2;
   SUBMSG_WRITE(tm2, test, test, 7);
   Envelope<BaseMessage> envelope2(&tm2);
-  channel_->SendS(envelope2);
+  // send first time
+  channel_->SendS(envelope1);
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);
   // first receive
   CHECK(backchannel->RecvS(&recv_env));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm1, test, test));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
+  // send second time
+  channel_->SendS(envelope2);
   // second receive
   CHECK(backchannel->RecvS(&recv_env));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm2, test, test));
