@@ -38,10 +38,10 @@ bool Coordinator::exit_ = false;
 Coordinator::Coordinator(PlatformID platform_id)
   : platform_id_(platform_id),
     topology_manager_(new TopologyManager()),
+    associated_resources_(new ResourceMap_t),
+    job_table_(new JobMap_t),
     uuid_(GenerateUUID()),
-    scheduler_(new SimpleScheduler(
-        shared_ptr<JobMap_t>(&job_table_),
-        shared_ptr<ResourceMap_t>(&associated_resources_))) {
+    scheduler_(new SimpleScheduler(job_table_, associated_resources_)) {
   // Start up a coordinator ccording to the platform parameter
   // platform_ = platform::GetByID(platform_id);
   string desc_name = "";  // platform_.GetDescriptiveName();
@@ -87,7 +87,7 @@ void Coordinator::DetectLocalResources() {
   for (vector<ResourceDescriptor>::iterator lr_iter = local_resources.begin();
        lr_iter != local_resources.end();
        ++lr_iter) {
-    CHECK(InsertIfNotPresent(&associated_resources_,
+    CHECK(InsertIfNotPresent(associated_resources_.get(),
                              JobIDFromString(lr_iter->uuid()),
                              pair<ResourceDescriptor, uint64_t>(
                                  *lr_iter, GetCurrentTimestamp())));
@@ -154,7 +154,7 @@ void Coordinator::HandleRecv(const boost::system::error_code& error,
 
 const JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
   JobID_t job_uuid = JobIDFromString(job_id);
-  JobDescriptor *jd = FindOrNull(job_table_, job_uuid);
+  JobDescriptor *jd = FindOrNull(*job_table_, job_uuid);
   return jd;
 }
 
@@ -203,7 +203,7 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
   boost::uuids::string_generator gen;
   boost::uuids::uuid uuid = gen(msg.uuid());
   pair<ResourceDescriptor, uint64_t>* rdp =
-      FindOrNull(associated_resources_, uuid);
+      FindOrNull(*associated_resources_, uuid);
   if (!rdp) {
     LOG(WARNING) << "HEARTBEAT from UNKNOWN resource (uuid: "
                  << msg.uuid() << ")!";
@@ -220,11 +220,11 @@ void Coordinator::HandleRegistrationRequest(
   boost::uuids::string_generator gen;
   boost::uuids::uuid uuid = gen(msg.uuid());
   pair<ResourceDescriptor, uint64_t>* rdp =
-      FindOrNull(associated_resources_, uuid);
+      FindOrNull(*associated_resources_, uuid);
   if (!rdp) {
     LOG(INFO) << "REGISTERING NEW RESOURCE (uuid: " << msg.uuid() << ")";
     // N.B.: below will copy the resource descriptor
-    CHECK(InsertIfNotPresent(&associated_resources_, uuid,
+    CHECK(InsertIfNotPresent(associated_resources_.get(), uuid,
                              pair<ResourceDescriptor, uint64_t>(
                                  msg.res_desc(),
                                  GetCurrentTimestamp())));
@@ -285,17 +285,17 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   JobDescriptor new_jd = job_descriptor;
   new_jd.set_uuid(to_string(new_job_id));
   // Add job to local job table
-  CHECK(InsertIfNotPresent(&job_table_, new_job_id, new_jd));
+  CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, new_jd));
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";
-  sim_dtg_generator_.reset(new sim::SimpleDTGGenerator(FindOrNull(job_table_,
+  sim_dtg_generator_.reset(new sim::SimpleDTGGenerator(FindOrNull(*job_table_,
                                                                   new_job_id)));
   boost::thread t(boost::bind(&sim::SimpleDTGGenerator::Run,
                               sim_dtg_generator_));
 #endif
   // Kick off the scheduler for this job.
   scheduler_->ScheduleJob(shared_ptr<JobDescriptor>(
-      FindOrNull(job_table_, new_job_id)));
+      FindOrNull(*job_table_, new_job_id)));
   // Finally, return the new job's ID
   return to_string(new_job_id);
 }

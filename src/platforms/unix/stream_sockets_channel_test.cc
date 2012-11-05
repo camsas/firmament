@@ -81,7 +81,7 @@ class StreamSocketsChannelTest : public ::testing::Test {
   shared_ptr<StreamSocketsAdapter<BaseMessage> > remote_adapter_;
   const string local_uri_;
   const string remote_uri_;
-  scoped_ptr<StreamSocketsChannel<BaseMessage> > channel_;
+  shared_ptr<StreamSocketsChannel<BaseMessage> > channel_;
 };
 
 // Tests synchronous send of an integer.
@@ -114,6 +114,7 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
   backchannel->RecvS(&recv_env);
   CHECK_EQ(recvdInteger, testInteger);
   CHECK_EQ(recvdInteger, 5);
+  uint_channel->Close();
 }
 
 // Tests synchronous send of a protobuf.

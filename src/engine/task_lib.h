@@ -55,7 +55,7 @@ class TaskLib {
 
  protected:
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
-  StreamSocketsChannel<BaseMessage> chan_;
+  shared_ptr<StreamSocketsChannel<BaseMessage> > chan_;
   bool exit_;
   // TODO(malte): transform this into a better representation
   string coordinator_uri_;

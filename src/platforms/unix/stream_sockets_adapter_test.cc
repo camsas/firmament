@@ -64,8 +64,9 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
   // it can use shared_from_this().
   shared_ptr<StreamSocketsAdapter<BaseMessage> > mess_adapter(
       new StreamSocketsAdapter<BaseMessage>());
-  StreamSocketsChannel<BaseMessage>
-      channel(StreamSocketsChannel<BaseMessage>::SS_TCP);
+  shared_ptr<StreamSocketsChannel<BaseMessage> > channel(
+      new StreamSocketsChannel<BaseMessage>(
+          StreamSocketsChannel<BaseMessage>::SS_TCP));
   VLOG(1) << "Calling Listen";
   mess_adapter->Listen(uri);
   // Need to block and wait for the socket to become ready, otherwise race
@@ -75,32 +76,32 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
     VLOG(1) << "Waiting until ready to listen in server...";
   }
   VLOG(1) << "Calling EstablishChannel";
-  mess_adapter->EstablishChannel(uri, &channel);
+  mess_adapter->EstablishChannel(uri, channel);
   // Need to block and wait until the connection is ready, too.
-  while (!channel.Ready()) {
+  while (!channel->Ready()) {
     VLOG(1) << "Waiting until channel established...";
   }
   // Send a test protobuf message through the channel
   BaseMessage s_tm;
   s_tm.MutableExtension(test_extn)->set_test(43);
   while (!mess_adapter->GetChannelForEndpoint(
-      channel.LocalEndpointString())) {
+      channel->LocalEndpointString())) {
     VLOG(3) << "Waiting for channel with endpoint "
-            << channel.LocalEndpointString();
+            << channel->LocalEndpointString();
   }
   VLOG(1) << "Calling SendS";
   CHECK(mess_adapter->SendMessageToEndpoint(
-      channel.LocalEndpointString(), s_tm));
+      channel->LocalEndpointString(), s_tm));
   // Receive the protobuf at the other end of the channel
   BaseMessage r_tm;
   Envelope<BaseMessage> envelope(&r_tm);
   VLOG(1) << "Calling RecvS";
-  CHECK(channel.RecvS(&envelope));
+  CHECK(channel->RecvS(&envelope));
   // The received message should have the "test" field set to 43 (instead of the
   // default 42).
   CHECK_EQ(r_tm.GetExtension(test_extn).test(), 43);
   VLOG(1) << "closing channel";
-  channel.Close();
+  channel->Close();
   mess_adapter->StopListen();
 }
 
@@ -146,23 +147,24 @@ TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
       new StreamSocketsAdapter<BaseMessage>());
   shared_ptr<StreamSocketsAdapter<BaseMessage> > mess_adapter2(
       new StreamSocketsAdapter<BaseMessage>());
-  StreamSocketsChannel<BaseMessage>
-      channel(StreamSocketsChannel<BaseMessage>::SS_TCP);
+  shared_ptr<StreamSocketsChannel<BaseMessage> >
+      channel(new StreamSocketsChannel<BaseMessage>(
+          StreamSocketsChannel<BaseMessage>::SS_TCP));
   mess_adapter1->Listen(uri1);
   // Need to block and wait for the socket to become ready, otherwise race
   // ensues.
   while (!mess_adapter1->ListenReady()) { }
   // Make a channel MA2 -> MA1
-  mess_adapter2->EstablishChannel(uri1, &channel);
+  mess_adapter2->EstablishChannel(uri1, channel);
   // Need to block and wait until the connection is ready, too.
-  while (!channel.Ready()) {  }
+  while (!channel->Ready()) {  }
   VLOG(1) << "channel is ready; getting backchannel...";
   // Send a message through the explicitly established channel.
   //mess_adapter1->SendOnConnection(0);
   // Check if we have a backchannel MA1 -> MA2
   while (mess_adapter1->NumActiveChannels() == 0) {}
   shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
-      mess_adapter1->GetChannelForEndpoint(channel.LocalEndpointString());
+      mess_adapter1->GetChannelForEndpoint(channel->LocalEndpointString());
   while (!backchannel->Ready()) {  }
   // Send a test message through the backchannel (MA2 -> MA1), and check if we
   // have received it.
@@ -171,14 +173,14 @@ TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
   s_tm.MutableExtension(test_extn)->set_test(44);
   BaseMessage r_tm;
   Envelope<BaseMessage> r_envelope(&r_tm);
-  channel.SendS(s_envelope);
+  channel->SendS(s_envelope);
   CHECK(backchannel->RecvS(&r_envelope));
   CHECK_EQ(s_tm.GetExtension(test_extn).test(),
            r_tm.GetExtension(test_extn).test());
   CHECK_EQ(r_tm.GetExtension(test_extn).test(), 44);
   // Clean up the channels.
   backchannel->Close();
-  channel.Close();
+  channel->Close();
 }
 
 }  // namespace streamsockets

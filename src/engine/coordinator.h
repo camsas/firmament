@@ -83,8 +83,8 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   vector<ResourceDescriptor> associated_resources() {
     vector<ResourceDescriptor> ref_vec;
     for (ResourceMap_t::const_iterator res_iter =
-         associated_resources_.begin();
-         res_iter != associated_resources_.end();
+         associated_resources_->begin();
+         res_iter != associated_resources_->end();
          ++res_iter) {
       ref_vec.push_back(res_iter->second.first);
     }
@@ -93,8 +93,8 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   vector<JobDescriptor> active_jobs() {
     vector<JobDescriptor> jd_vec;
     for (JobMap_t::const_iterator job_iter =
-         job_table_.begin();
-         job_iter != job_table_.end();
+         job_table_->begin();
+         job_iter != job_table_->end();
          ++job_iter) {
       jd_vec.push_back(job_iter->second);
     }
@@ -136,11 +136,11 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   // The first component of the pair is the resource descriptor, the second is
   // the timestamp when the latest heartbeat or message was received from this
   // resource..
-  ResourceMap_t associated_resources_;
+  shared_ptr<ResourceMap_t> associated_resources_;
   // A map of all jobs known to this coordinator, indexed by their job ID.
   // Key is the job ID, value a ResourceDescriptor.
   // Currently, this table grows ad infinitum.
-  JobMap_t job_table_;
+  shared_ptr<JobMap_t> job_table_;
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;

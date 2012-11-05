@@ -22,7 +22,8 @@ namespace firmament {
 
 TaskLib::TaskLib()
   : m_adapter_(new StreamSocketsAdapter<BaseMessage>()),
-    chan_(StreamSocketsChannel<BaseMessage>::SS_TCP),
+    chan_(new StreamSocketsChannel<BaseMessage>(
+        StreamSocketsChannel<BaseMessage>::SS_TCP)),
     coordinator_uri_(FLAGS_coordinator_uri),
     resource_id_(ResourceIDFromString(FLAGS_resource_id)),
     task_running_(false) {
@@ -48,7 +49,7 @@ void TaskLib::SendFinalizeMessage(bool success) {
           << (success ? "COMPLETED" : "FAILED") << "!";
   //SendMessageToCoordinator(&bm);
   Envelope<BaseMessage> envelope(&bm);
-  CHECK(chan_.SendS(envelope));
+  CHECK(chan_->SendS(envelope));
   VLOG(1) << "Done sending message, sleeping before quitting";
   //boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
@@ -59,7 +60,7 @@ void TaskLib::SendHeartbeat() {
       boost::uuids::to_string(resource_id_));
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
-  SUBMSG_WRITE(bm, heartbeat, location, chan_.LocalEndpointString());
+  SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());
   SUBMSG_WRITE(bm, heartbeat, sequence_number, 1);
   VLOG(1) << "Sending heartbeat message!";
   SendMessageToCoordinator(&bm);
@@ -67,7 +68,7 @@ void TaskLib::SendHeartbeat() {
 
 bool TaskLib::SendMessageToCoordinator(BaseMessage* msg) {
   Envelope<BaseMessage> envelope(msg);
-  return chan_.SendA(
+  return chan_->SendA(
       envelope, boost::bind(&TaskLib::HandleWrite,
                             this,
                             boost::asio::placeholders::error,

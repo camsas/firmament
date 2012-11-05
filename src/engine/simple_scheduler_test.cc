@@ -25,7 +25,9 @@ class SimpleSchedulerTest : public ::testing::Test {
   // You can remove any or all of the following functions if its body
   // is empty.
 
-  SimpleSchedulerTest() {
+  SimpleSchedulerTest() :
+    job_map_(new JobMap_t),
+    res_map_(new ResourceMap_t) {
     // You can do set-up work for each test here.
     FLAGS_v = 3;
   }
@@ -40,10 +42,9 @@ class SimpleSchedulerTest : public ::testing::Test {
   virtual void SetUp() {
     // Code here will be called immediately after the constructor (right
     // before each test).
-    res_map_.clear();
-    job_map_.clear();
-    sched_.reset(new SimpleScheduler(shared_ptr<JobMap_t>(&job_map_),
-                                     shared_ptr<ResourceMap_t>(&res_map_)));
+    res_map_->clear();
+    job_map_->clear();
+    sched_.reset(new SimpleScheduler(job_map_, res_map_));
   }
 
   virtual void TearDown() {
@@ -54,22 +55,23 @@ class SimpleSchedulerTest : public ::testing::Test {
   // Objects declared here can be used by all tests in the test case for
   // SimpleScheduler.
   scoped_ptr<SimpleScheduler> sched_;
-  JobMap_t job_map_;
-  ResourceMap_t res_map_;
+  shared_ptr<JobMap_t> job_map_;
+  shared_ptr<ResourceMap_t> res_map_;
 };
 
 // Tests that the lazy graph reduction algorithm correctly identifies runnable
 // tasks.
 TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   // Simple, plain, 1-task job (base case)
-  JobDescriptor* test_job = new JobDescriptor;
-  VLOG(1) << "got here, job is: " << test_job->DebugString();
-  shared_ptr<TaskDescriptor> rtp(test_job->mutable_root_task());
+  shared_ptr<JobDescriptor> test_job(new JobDescriptor);
+  shared_ptr<TaskDescriptor> rtp(new TaskDescriptor);
   set<ReferenceID_t> output_ids(pb_to_set(test_job->output_ids()));
   set<shared_ptr<TaskDescriptor> > runnable_tasks =
       sched_->LazyGraphReduction(output_ids, rtp);
   // The root task should be runnable
   CHECK_EQ(runnable_tasks.size(), 1);
+  // The only runnable task should be equivalent to the root task we pushed in.
+  CHECK_EQ(*runnable_tasks.begin(), rtp);
 }
 
 // Tests correct operation of the RunnableTasksForJob wrapper.
