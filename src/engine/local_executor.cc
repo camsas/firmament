@@ -69,11 +69,11 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       vector<char*> argv;
       argv.reserve(args.size() + 2);
       // argv[0] is always the command name
-      argv.push_back(reinterpret_cast<char*>(cmdline.c_str()));
+      argv.push_back((char*)(cmdline.c_str()));  // NOLINT
       for (uint32_t i = 0; i < args.size(); ++i) {
         // N.B.: This casts away the const qualifier on the c_str() result.
         // This is joyfully unsafe, of course.
-        argv.push_back(reinterpret_cast<char*>(args[i].c_str()));
+        argv.push_back((char*)(args[i].c_str()));  // NOLINT
       }
       // The last argument to execvp is always NULL.
       argv.push_back(NULL);
