@@ -292,6 +292,7 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
              boost::asio::transfer_at_least(sizeof(size_t)), error);
   if (error || len != sizeof(size_t)) {
     VLOG(1) << "Error reading from connection on channel " << *this
+            << "(len: " << len << ", expected: " << sizeof(size_t) << ")"
             << ": " << error.message();
     return false;
   }
