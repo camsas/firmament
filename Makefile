@@ -4,7 +4,7 @@
 # Get common build settings
 include include/Makefile.config
 
-all: tests-clean info ext platforms misc engine doc
+all: tests-clean info ext platforms misc engine examples
 
 info:
 	@echo "Build using $(CXX)"
@@ -13,9 +13,6 @@ ext: ext/.ext-ok
 
 ext/.ext-ok:
 	$(SCRIPTS_DIR)/fetch-externals.sh
-
-doc:
-#	@doxygen
 
 engine: base platforms misc sim
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
