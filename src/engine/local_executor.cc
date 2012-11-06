@@ -32,12 +32,13 @@ bool LocalExecutor::RunTask(shared_ptr<TaskDescriptor> td) {
   // TODO(malte): hack
   vector<string> args = pb_to_vector(td->args());
   // TODO(malte): This is somewhat hackish
-  bool res = (RunProcessSync(td->binary(), args) == 0);
+  bool res = (RunProcessSync(td->binary(), args, true) == 0);
   return res;
 }
 
 int32_t LocalExecutor::RunProcessSync(const string& cmdline,
-                                      vector<string> args) {
+                                      vector<string> args,
+                                      bool default_args) {
   pid_t pid;
   int pipe_to[2];    // pipe to feed input data to task
   int pipe_from[2];  // pipe to receive output data from task
@@ -69,7 +70,8 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       argv.reserve(args.size() + 2);
       // argv[0] is always the command name
       argv.push_back((char*)(cmdline.c_str()));  // NOLINT
-      argv.push_back((char*)"--tryfromenv=coordinator_uri,resource_id");  // NOLINT
+      if (default_args)
+        argv.push_back((char*)"--tryfromenv=coordinator_uri,resource_id");  // NOLINT
       for (uint32_t i = 0; i < args.size(); ++i) {
         // N.B.: This casts away the const qualifier on the c_str() result.
         // This is joyfully unsafe, of course.

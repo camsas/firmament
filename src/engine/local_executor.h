@@ -37,7 +37,8 @@ class LocalExecutor : public ExecutorInterface {
   FRIEND_TEST(LocalExecutorTest, ExecutionFailureTest);
   ResourceID_t local_resource_id_;
   int32_t RunProcessSync(const string& cmdline,
-                         vector<string> args);
+                         vector<string> args,
+                         bool default_args);
   void ReadFromPipe(int fd);
   void WriteToPipe(int fd);
 };
