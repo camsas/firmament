@@ -143,6 +143,9 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   // Key is the job ID, value a ResourceDescriptor.
   // Currently, this table grows ad infinitum.
   shared_ptr<JobMap_t> job_table_;
+  // A map of all data objects known to the coordinator.
+  // TODO(malte): This may move to the store layer.
+  shared_ptr<DataObjectMap_t> object_table_;
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;

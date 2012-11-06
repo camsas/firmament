@@ -42,6 +42,36 @@ JobID_t GenerateJobID() {
   return gen();
 }
 
+TaskID_t GenerateTaskID(const TaskDescriptor& parent_task) {
+  // A new task's ID is a hash of the parent (spawning) task's ID and its
+  // current spawn counter value, which is implicitly stored in the TD by means
+  // of the length of its set of spawned tasks.
+  size_t hash = 0;
+  boost::hash_combine(hash, parent_task.uid());
+  boost::hash_combine(hash, parent_task.spawned_size());
+  return static_cast<TaskID_t>(hash);
+}
+
+DataObjectID_t GenerateDataObjectID(const TaskDescriptor& producing_task) {
+  // A thin shim that converts to the signature of GenerateDataObjectID.
+  return GenerateDataObjectID(producing_task.uid(),
+                              producing_task.outputs_size());
+}
+
+DataObjectID_t GenerateDataObjectID(
+    TaskID_t producing_task, TaskOutputID_t output_id) {
+  // A new data object ID is allocated by hashing the ID of the producing task
+  // and the ID of the output (which may be greater than the number of declared
+  // output IDs, since tasks can produce extra outputs).
+  // TODO(malte): This is not *quite* the same as CIEL's naming scheme (which is
+  // a little cleverer and uses the task argument structure here), but works for
+  // now. Revisit later.
+  size_t hash = 0;
+  boost::hash_combine(hash, producing_task);
+  boost::hash_combine(hash, output_id);
+  return static_cast<DataObjectID_t>(hash);
+}
+
 JobID_t JobIDFromString(const string& str) {
   // XXX(malte): This makes assumptions about JobID_t being a Boost UUID. We
   // should have a generic "JobID_t-from-string" helper instead.

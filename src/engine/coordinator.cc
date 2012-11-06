@@ -290,6 +290,26 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   new_jd.set_uuid(to_string(new_job_id));
   // Add job to local job table
   CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, new_jd));
+  // Adds its outputs to the object table and generate future references for
+  // them.
+  for (RepeatedPtrField<ReferenceDescriptor>::const_iterator output_iter =
+       new_jd.root_task().outputs().begin();
+       output_iter != new_jd.root_task().outputs().end();
+       ++output_iter) {
+    VLOG(1) << "Considering root task output " << output_iter->id() << ", "
+            << "adding to local object table";
+    CHECK(InsertIfNotPresent(object_table_.get(), output_iter->id(),
+                             *output_iter));
+  }
+  for (RepeatedField<DataObjectID_t>::const_iterator output_iter =
+       new_jd.output_ids().begin();
+       output_iter != new_jd.output_ids().end();
+       ++output_iter) {
+    VLOG(1) << "Considering job output " << *output_iter;
+    // The root task must produce all of the non-existent job outputs, so they
+    // should all be in the object table now.
+    CHECK(FindOrNull(*object_table_.get(), *output_iter));
+  }
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";
   sim_dtg_generator_.reset(new sim::SimpleDTGGenerator(FindOrNull(*job_table_,
