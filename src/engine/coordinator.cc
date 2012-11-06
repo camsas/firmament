@@ -15,6 +15,7 @@
 #endif
 
 #include "base/resource_desc.pb.h"
+#include "engine/stub_object_store.h"
 #include "messages/base_message.pb.h"
 #include "misc/protobuf_envelope.h"
 #include "misc/map-util.h"
@@ -32,6 +33,8 @@ DEFINE_int32(http_ui_port, 8080,
 
 namespace firmament {
 
+using store::StubObjectStore;
+
 // Initial value of exit_ toggle
 bool Coordinator::exit_ = false;
 
@@ -41,7 +44,8 @@ Coordinator::Coordinator(PlatformID platform_id)
     associated_resources_(new ResourceMap_t),
     job_table_(new JobMap_t),
     uuid_(GenerateUUID()),
-    scheduler_(new SimpleScheduler(job_table_, associated_resources_)) {
+    scheduler_(new SimpleScheduler(job_table_, associated_resources_)),
+    object_store_(new StubObjectStore) {
   // Start up a coordinator ccording to the platform parameter
   // platform_ = platform::GetByID(platform_id);
   string desc_name = "";  // platform_.GetDescriptiveName();

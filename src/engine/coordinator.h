@@ -42,6 +42,7 @@
 #endif
 #include "engine/scheduler_interface.h"
 #include "engine/simple_scheduler.h"
+#include "engine/object_store_interface.h"
 #include "engine/topology_manager.h"
 #ifdef __SIMULATE_SYNTHETIC_DTG__
 #include "sim/simple_dtg_generator.h"
@@ -57,6 +58,7 @@ using platform_unix::streamsockets::StreamSocketsChannel;
 using platform_unix::streamsockets::StreamSocketsAdapter;
 using scheduler::SchedulerInterface;
 using scheduler::SimpleScheduler;
+using store::ObjectStoreInterface;
 
 #ifdef __HTTP_UI__
 // Forward declaration
@@ -148,6 +150,8 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   // which case this will be a stub that defers to another scheduler.
   // TODO(malte): Work out the detailed semantics of this.
   scoped_ptr<SchedulerInterface> scheduler_;
+  // The local object store.
+  scoped_ptr<ObjectStoreInterface> object_store_;
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   shared_ptr<sim::SimpleDTGGenerator> sim_dtg_generator_;
 #endif
