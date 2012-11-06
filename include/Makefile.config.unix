@@ -99,6 +99,8 @@ CXX = clang++
 
 # for clang++, uncomment this line
 CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-language-extension-token -Wno-deprecated -Wno-error=unused-function
+# for g++, uncomment this line
+#CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-deprecated -Wno-error=unused-function
 
 # XXX(malte): this is a hack to enable support for configuration #defines; we
 # should move this to a proper configuration stage
