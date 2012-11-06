@@ -74,7 +74,7 @@ TEST_F(LocalExecutorTest, ExecutionFailureTest) {
   LocalExecutor le(rid);
   vector<string> empty_args;
   // We expect to fail this time.
-  CHECK_NE(le.RunProcessSync("/bin/idonotexist", empty_args), 0);
+  CHECK_NE(le.RunProcessSync("/bin/idonotexist", empty_args, false), 0);
 }
 
 // Tests that we can pass execution information in a task descriptor (just a
