@@ -54,19 +54,24 @@ class CoordinatorHTTPUI {
                        TCPConnectionPtr& tcp_conn);
   void HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
                      TCPConnectionPtr& tcp_conn);
-  void HandleResourcesURI(HTTPRequestPtr& http_request,  // NOLINT
-                          TCPConnectionPtr& tcp_conn);
+  void HandleResourcesListURI(HTTPRequestPtr& http_request,  // NOLINT
+                              TCPConnectionPtr& tcp_conn);
+  void HandleResourceURI(HTTPRequestPtr& http_request,  // NOLINT
+                         TCPConnectionPtr& tcp_conn);
   void HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
                        TCPConnectionPtr& tcp_conn);
   void HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLINT
                          TCPConnectionPtr& tcp_conn);
   void Shutdown(bool block);
 
+  inline bool active() { return active_; }
+
  protected:
   void AddHeaderToTemplate(TemplateDictionary* dict, ResourceID_t uuid);
   void AddFooterToTemplate(TemplateDictionary* dict);
   HTTPServerPtr coordinator_http_server_;
   shared_ptr<Coordinator> coordinator_;
+  bool active_;
 };
 
 }  // namespace webui

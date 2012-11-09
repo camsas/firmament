@@ -27,9 +27,9 @@ using pion::net::TCPConnection;
 
 using ctemplate::TemplateDictionary;
 
-CoordinatorHTTPUI::CoordinatorHTTPUI(shared_ptr<Coordinator> coordinator) {
-  coordinator_ = coordinator;
-}
+CoordinatorHTTPUI::CoordinatorHTTPUI(shared_ptr<Coordinator> coordinator)
+  : coordinator_(coordinator),
+    active_(true) { }
 
 CoordinatorHTTPUI::~CoordinatorHTTPUI() {
   // Kill the server without waiting for connections to terminate
@@ -128,8 +128,8 @@ void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLI
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOLINT
-                                           TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleResourcesListURI(HTTPRequestPtr& http_request,  // NOLINT
+                                               TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
   HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -156,6 +156,22 @@ void CoordinatorHTTPUI::HandleResourcesURI(HTTPRequestPtr& http_request,  // NOL
   writer->write(output);
   FinishOkResponse(writer);
 }
+
+void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLINT
+                                          TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  TemplateDictionary dict("resource_status");
+  AddHeaderToTemplate(&dict, coordinator_->uuid());
+  AddFooterToTemplate(&dict);
+  string output;
+  ExpandTemplate("src/webui/resource_status.tpl", ctemplate::DO_NOT_STRIP,
+                 &dict, &output);
+  writer->write(output);
+  FinishOkResponse(writer);
+}
+
 
 void CoordinatorHTTPUI::HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
                                         TCPConnectionPtr& tcp_conn) {  // NOLINT
@@ -225,9 +241,15 @@ void CoordinatorHTTPUI::HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLI
   LogRequest(http_request);
   HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   string reason = "HTTP request from " + tcp_conn->getRemoteIp().to_string();
+  // Make the HTTP server inactive, so that the coordinator does not try to shut
+  // it down.
+  active_ = false;
+  // Now initiate coordinator shutdown
   coordinator_->Shutdown(reason);
   writer->write("Shutdown for coordinator initiated.");
   FinishOkResponse(writer);
+  // Now shut down the HTTP server itself
+  Shutdown(true);
 }
 
 HTTPResponseWriterPtr CoordinatorHTTPUI::InitOkResponse(
@@ -290,9 +312,12 @@ void CoordinatorHTTPUI::Init(uint16_t port) {
     // Job task graph
     coordinator_http_server_->addResource("/job/dtg/", boost::bind(
         &CoordinatorHTTPUI::HandleJobDTGURI, this, _1, _2));
-    // Resource page
+    // Resource list
     coordinator_http_server_->addResource("/resources/", boost::bind(
-        &CoordinatorHTTPUI::HandleResourcesURI, this, _1, _2));
+        &CoordinatorHTTPUI::HandleResourcesListURI, this, _1, _2));
+    // Resource page
+    coordinator_http_server_->addResource("/resource/", boost::bind(
+        &CoordinatorHTTPUI::HandleResourceURI, this, _1, _2));
     // Message injection
     coordinator_http_server_->addResource("/inject/", boost::bind(
         &CoordinatorHTTPUI::HandleInjectURI, this, _1, _2));
@@ -311,6 +336,7 @@ void CoordinatorHTTPUI::Init(uint16_t port) {
 void CoordinatorHTTPUI::Shutdown(bool block) {
   LOG(INFO) << "Coordinator HTTP UI server shutting down on request.";
   coordinator_http_server_->stop(block);
+  VLOG(1) << "HTTP UI shut down.";
 }
 
 }  // namespace webui

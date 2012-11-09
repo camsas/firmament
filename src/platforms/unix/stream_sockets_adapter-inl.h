@@ -252,8 +252,10 @@ void StreamSocketsAdapter<T>::StopListen() {
     tcp_server_thread_->join();
     VLOG(2) << "TCP server thread joined.";
   }
+  message_wait_condvar_.notify_all();
   // XXX(malte): We would prefer if channels cleared up after themselves, but
   // for the moment, this is a sledgehammer approach.
+  VLOG(1) << "Dropping channels and outstanding requests...";
   endpoint_channel_map_.clear();
   channel_recv_envelopes_.clear();
 }
