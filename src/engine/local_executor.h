@@ -38,6 +38,7 @@ class LocalExecutor : public ExecutorInterface {
   ResourceID_t local_resource_id_;
   int32_t RunProcessSync(const string& cmdline,
                          vector<string> args,
+                         bool perf_monitoring,
                          bool default_args);
   void ReadFromPipe(int fd);
   void WriteToPipe(int fd);

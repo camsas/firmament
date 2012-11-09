@@ -29,15 +29,18 @@ bool LocalExecutor::RunTask(shared_ptr<TaskDescriptor> td) {
   setenv("TASK_ID", to_string(td->uid()).c_str(), 1);
   setenv("FLAGS_coordinator_uri", "tcp://localhost:9999", 1);
   setenv("FLAGS_resource_id", to_string(local_resource_id_).c_str(), 1);
+  setenv("PERF_FNAME", (to_string(local_resource_id_) +
+                        "-" + to_string(td->uid()) + ".perf").c_str(), 1);
   // TODO(malte): hack
   vector<string> args = pb_to_vector(td->args());
   // TODO(malte): This is somewhat hackish
-  bool res = (RunProcessSync(td->binary(), args, true) == 0);
+  bool res = (RunProcessSync(td->binary(), args, true, true) == 0);
   return res;
 }
 
 int32_t LocalExecutor::RunProcessSync(const string& cmdline,
                                       vector<string> args,
+                                      bool perf_monitoring,
                                       bool default_args) {
   pid_t pid;
   int pipe_to[2];    // pipe to feed input data to task
@@ -67,8 +70,25 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       close(pipe_from[1]);
       // Convert args from string to char*
       vector<char*> argv;
-      argv.reserve(args.size() + 2);
       // argv[0] is always the command name
+      if (perf_monitoring) {
+        // performance monitoring is active, so reserve extra space for the
+        // "perf" invocation prefix.
+        argv.reserve(args.size() + (default_args ? 11 : 10));
+        argv.push_back((char*)("perf"));  // NOLINT
+        argv.push_back((char*)("stat"));  // NOLINT
+        argv.push_back((char*)("-x"));  // NOLINT
+        argv.push_back((char*)(","));  // NOLINT
+        argv.push_back((char*)("-o"));  // NOLINT
+        argv.push_back((char*)(getenv("PERF_FNAME")));  // NOLINT
+        argv.push_back((char*)("-e"));  // NOLINT
+        argv.push_back((char*)("instructions,cache-misses"));  // NOLINT
+        argv.push_back((char*)("--"));  // NOLINT
+      } else {
+        // no performance monitoring, so we only need to reserve space for the
+        // default and NULL args
+        argv.reserve(args.size() + (default_args ? 2 : 1));
+      }
       argv.push_back((char*)(cmdline.c_str()));  // NOLINT
       if (default_args)
         argv.push_back((char*)"--tryfromenv=coordinator_uri,resource_id");  // NOLINT
@@ -79,8 +99,19 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       }
       // The last argument to execvp is always NULL.
       argv.push_back(NULL);
+      // Print the whole command line
+      string full_cmd_line;
+      for (vector<char*>::const_iterator arg_iter = argv.begin();
+           arg_iter != argv.end();
+           ++arg_iter) {
+        if (*arg_iter != NULL) {
+          full_cmd_line += *arg_iter;
+          full_cmd_line += " ";
+        }
+      }
+      LOG(INFO) << "COMMAND LINE: " << full_cmd_line;
       // Run the task binary
-      execvp(cmdline.c_str(), &argv[0]);
+      execvp(argv[0], &argv[0]);
       // execl only returns if there was an error
       PLOG(ERROR) << "execvp failed for task command " << cmdline << "!";
       _exit(1);
