@@ -288,6 +288,7 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   // Clone the JD and update it with some information
   JobDescriptor new_jd = job_descriptor;
   new_jd.set_uuid(to_string(new_job_id));
+  new_jd.mutable_root_task()->set_uid(GenerateTaskID(new_jd.root_task()));
   // Add job to local job table
   CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, new_jd));
   // Adds its outputs to the object table and generate future references for
