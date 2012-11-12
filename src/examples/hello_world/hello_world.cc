@@ -3,7 +3,7 @@
 //
 // Simple "hello world" task implementation.
 
-#include "examples/hello_world.h"
+#include "examples/hello_world/hello_world.h"
 
 #include <iostream>  // NOLINT
 #include <cstdlib>
