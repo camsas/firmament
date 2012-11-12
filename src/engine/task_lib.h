@@ -14,6 +14,8 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #else
 // Currently this won't build if __PLATFORM_HAS_BOOST__ is not defined.
 #error __PLATFORM_HAS_BOOST__ not set, so cannot build task library!
@@ -41,7 +43,7 @@ using platform_unix::streamsockets::StreamSocketsChannel;
 
 class TaskLib {
  public:
-  explicit TaskLib();
+  TaskLib();
   void Run();
   void AwaitNextMessage();
   bool ConnectToCoordinator(const string& coordinator_uri);
@@ -63,11 +65,9 @@ class TaskLib {
 
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
-  bool RegisterWithCoordinator();
   void SendFinalizeMessage(bool success);
   void SendHeartbeat();
   bool SendMessageToCoordinator(BaseMessage* msg);
-  void AwaitMessage();
 
  private:
   bool task_running_;

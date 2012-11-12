@@ -17,6 +17,9 @@
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 DEFINE_string(resource_id, "",
               "The resource ID that is running this task.");
+DEFINE_int32(heartbeat_interval, 1,
+             "The interval, in seconds, between heartbeats sent to the"
+             "coordinator.");
 
 namespace firmament {
 
@@ -32,47 +35,6 @@ TaskLib::TaskLib()
 void TaskLib::AwaitNextMessage() {
   // Finally, call back into ourselves.
   //AwaitNextMessage();
-}
-
-bool TaskLib::RegisterWithCoordinator() {
-  // XXX(malte): stub
-  return false;
-}
-
-void TaskLib::SendFinalizeMessage(bool success) {
-  BaseMessage bm;
-  if (success)
-    SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::COMPLETED);
-  else
-    LOG(FATAL) << "Unimplemented error path!";
-  VLOG(1) << "Sending finalize message (task state change to "
-          << (success ? "COMPLETED" : "FAILED") << "!";
-  //SendMessageToCoordinator(&bm);
-  Envelope<BaseMessage> envelope(&bm);
-  CHECK(chan_->SendS(envelope));
-  VLOG(1) << "Done sending message, sleeping before quitting";
-  //boost::this_thread::sleep(boost::posix_time::seconds(1));
-}
-
-void TaskLib::SendHeartbeat() {
-  BaseMessage bm;
-  bm.MutableExtension(heartbeat_extn)->set_uuid(
-      boost::uuids::to_string(resource_id_));
-  // TODO(malte): we do not always need to send the location string; it
-  // sufficies to send it if our location changed (which should be rare).
-  SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());
-  SUBMSG_WRITE(bm, heartbeat, sequence_number, 1);
-  VLOG(1) << "Sending heartbeat message!";
-  SendMessageToCoordinator(&bm);
-}
-
-bool TaskLib::SendMessageToCoordinator(BaseMessage* msg) {
-  Envelope<BaseMessage> envelope(msg);
-  return chan_->SendA(
-      envelope, boost::bind(&TaskLib::HandleWrite,
-                            this,
-                            boost::asio::placeholders::error,
-                            boost::asio::placeholders::bytes_transferred));
 }
 
 bool TaskLib::ConnectToCoordinator(const string& coordinator_uri) {
@@ -114,25 +76,65 @@ void TaskLib::Run() {
   VLOG(1) << "Dropped out of main loop -- cleaning up...";
   // XXX(malte): Deal with error case!
   SendFinalizeMessage(true);
+  chan_->Close();
 }
 
 void TaskLib::RunTask() {
-  // TODO(malte): execute the actual task code
   //CHECK(task_desc_.code_dependency.is_consumable());
-  //fork();
-  //if (child) {
   LOG(INFO) << "Invoking task code...";
   char *task_id_env = getenv("TASK_ID");
   CHECK_NOTNULL(task_id_env);
   // task_main blocks until the task has exited
-  task_main(atol(task_id_env));
-  task_running_ = false;
   //  exec(task_desc_.code_dependency());
-  //} else {
-  //  task_running_ = true;
-  //  join();
-  //  task_running_ = false;
-  //}
+  boost::thread task_thread(boost::bind(task_main, atol(task_id_env)));
+  task_running_ = true;
+  // TODO(malte): continue normal operation and monitor task instead of waiting
+  // for join here.
+  while (!task_thread.timed_join(
+      boost::posix_time::seconds(FLAGS_heartbeat_interval))) {
+    // Notify the coordinator that we're still running happily
+    SendHeartbeat();
+    // TODO(malte): We'll need to receive any potential messages from the
+    // coordinator here, too. This is probably best done by a simple RecvA on
+    // the channel.
+  }
+  task_running_ = false;
+}
+
+void TaskLib::SendFinalizeMessage(bool success) {
+  BaseMessage bm;
+  if (success)
+    SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::COMPLETED);
+  else
+    LOG(FATAL) << "Unimplemented error path!";
+  VLOG(1) << "Sending finalize message (task state change to "
+          << (success ? "COMPLETED" : "FAILED") << "!";
+  //SendMessageToCoordinator(&bm);
+  Envelope<BaseMessage> envelope(&bm);
+  CHECK(chan_->SendS(envelope));
+  VLOG(1) << "Done sending message, sleeping before quitting";
+  boost::this_thread::sleep(boost::posix_time::seconds(1));
+}
+
+void TaskLib::SendHeartbeat() {
+  BaseMessage bm;
+  bm.MutableExtension(heartbeat_extn)->set_uuid(
+      boost::uuids::to_string(resource_id_));
+  // TODO(malte): we do not always need to send the location string; it
+  // sufficies to send it if our location changed (which should be rare).
+  SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());
+  SUBMSG_WRITE(bm, heartbeat, sequence_number, 1);
+  VLOG(1) << "Sending heartbeat message!";
+  SendMessageToCoordinator(&bm);
+}
+
+bool TaskLib::SendMessageToCoordinator(BaseMessage* msg) {
+  Envelope<BaseMessage> envelope(msg);
+  return chan_->SendA(
+      envelope, boost::bind(&TaskLib::HandleWrite,
+                            this,
+                            boost::asio::placeholders::error,
+                            boost::asio::placeholders::bytes_transferred));
 }
 
 }  // namespace firmament
