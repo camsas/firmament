@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <string>
+#include <utility>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -23,14 +24,17 @@ namespace executor {
 
 class LocalExecutor : public ExecutorInterface {
  public:
-  explicit LocalExecutor(ResourceID_t resource_id);
+  LocalExecutor(ResourceID_t resource_id,
+                const string& coordinator_uri);
   bool RunTask(shared_ptr<TaskDescriptor> td);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<LocalExecutor at resource "
                    << to_string(local_resource_id_)
                    << ">";
   }
+
  protected:
+  typedef pair<string, string> EnvPair_t;
   // Unit tests
   FRIEND_TEST(LocalExecutorTest, SimpleSyncProcessExecutionTest);
   FRIEND_TEST(LocalExecutorTest, SyncProcessExecutionWithArgsTest);
@@ -40,8 +44,13 @@ class LocalExecutor : public ExecutorInterface {
                          vector<string> args,
                          bool perf_monitoring,
                          bool default_args);
+  string PerfDataFileName(const TaskDescriptor& td);
   void ReadFromPipe(int fd);
+  void SetUpEnvironmentForTask(const TaskDescriptor& td);
   void WriteToPipe(int fd);
+  // This holds the currently configured URI of the coordinator for this
+  // resource (which must be unique, for now).
+  const string coordinator_uri_;
 };
 
 }  // namespace executor

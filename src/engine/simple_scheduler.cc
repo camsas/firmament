@@ -5,6 +5,7 @@
 
 #include "engine/simple_scheduler.h"
 
+#include <string>
 #include <deque>
 #include <utility>
 
@@ -19,8 +20,10 @@ namespace scheduler {
 using executor::LocalExecutor;
 
 SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
-                                 shared_ptr<ResourceMap_t> resource_map)
-    : SchedulerInterface(job_map, resource_map) {
+                                 shared_ptr<ResourceMap_t> resource_map,
+                                 const string& coordinator_uri)
+    : SchedulerInterface(job_map, resource_map),
+      coordinator_uri_(coordinator_uri) {
   VLOG(1) << "SimpleScheduler initiated.";
 }
 
@@ -39,7 +42,7 @@ void SimpleScheduler::BindTaskToResource(
   // TD. Need to find another way.
   //CHECK(runnable_tasks_.erase(task_desc));
   // TODO(malte): hacked-up task execution
-  LocalExecutor exec(ResourceIDFromString(res_desc->uuid()));
+  LocalExecutor exec(ResourceIDFromString(res_desc->uuid()), coordinator_uri_);
   // XXX(malte): This is currently a SYNCHRONOUS call, and obviously shouldn't
   // be.
   exec.RunTask(task_desc);

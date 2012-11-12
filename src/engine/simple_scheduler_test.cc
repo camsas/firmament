@@ -44,7 +44,7 @@ class SimpleSchedulerTest : public ::testing::Test {
     // before each test).
     res_map_->clear();
     job_map_->clear();
-    sched_.reset(new SimpleScheduler(job_map_, res_map_));
+    sched_.reset(new SimpleScheduler(job_map_, res_map_, ""));
   }
 
   virtual void TearDown() {

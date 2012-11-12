@@ -43,8 +43,10 @@ Coordinator::Coordinator(PlatformID platform_id)
     topology_manager_(new TopologyManager()),
     associated_resources_(new ResourceMap_t),
     job_table_(new JobMap_t),
+    object_table_(new DataObjectMap_t),
     uuid_(GenerateUUID()),
-    scheduler_(new SimpleScheduler(job_table_, associated_resources_)),
+    scheduler_(new SimpleScheduler(job_table_, associated_resources_,
+                                   FLAGS_listen_uri)),
     object_store_(new StubObjectStore) {
   // Start up a coordinator ccording to the platform parameter
   // platform_ = platform::GetByID(platform_id);

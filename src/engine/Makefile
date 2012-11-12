@@ -98,12 +98,12 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(SRC_ROOT_DIR)/engine/worker_main.cc \
 		$(CXXFLAGS) $(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/engine/worker.o \
-		$(BUILD_DIR)/engine/local_executor.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(LIBS) -o $(BUILD_DIR)/engine/worker, \
 		"  DYNLNK  $(BUILD_DIR)/engine/worker")
+#		$(BUILD_DIR)/engine/local_executor.o \
 
 
 # Task interface library

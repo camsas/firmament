@@ -7,6 +7,7 @@
 #define FIRMAMENT_ENGINE_SIMPLE_SCHEDULER_H
 
 #include <set>
+#include <string>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -21,7 +22,8 @@ namespace scheduler {
 class SimpleScheduler : public SchedulerInterface {
  public:
   SimpleScheduler(shared_ptr<JobMap_t> job_map,
-                  shared_ptr<ResourceMap_t> resource_map);
+                  shared_ptr<ResourceMap_t> resource_map,
+                  const string& coordinator_uri);
   const set<shared_ptr<TaskDescriptor> >& RunnableTasksForJob(
       shared_ptr<JobDescriptor> job_desc);
   uint64_t ScheduleJob(shared_ptr<JobDescriptor> job_desc);
@@ -47,6 +49,10 @@ class SimpleScheduler : public SchedulerInterface {
   // execution of LazyGraphReduction
   set<shared_ptr<TaskDescriptor> > runnable_tasks_;
   set<shared_ptr<TaskDescriptor> > blocked_tasks_;
+  // Initialized to hold the URI of the (currently unique) coordinator this
+  // scheduler is associated with. This is passed down to the executor and to
+  // tasks so that they can find the coordinator at runtime.
+  const string coordinator_uri_;
 };
 
 }  // namespace scheduler

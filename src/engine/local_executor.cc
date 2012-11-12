@@ -5,33 +5,30 @@
 
 #include "engine/local_executor.h"
 
-#include "base/common.h"
-#include "base/types.h"
-
 extern "C" {
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/wait.h>
 }
 
+#include "base/common.h"
+#include "base/types.h"
+
 namespace firmament {
 namespace executor {
 
 using common::pb_to_vector;
 
-LocalExecutor::LocalExecutor(ResourceID_t resource_id)
-    : local_resource_id_(resource_id) {
+LocalExecutor::LocalExecutor(ResourceID_t resource_id,
+                             const string& coordinator_uri)
+    : local_resource_id_(resource_id),
+      coordinator_uri_(coordinator_uri) {
 }
 
 bool LocalExecutor::RunTask(shared_ptr<TaskDescriptor> td) {
-  // Set environment variables
-  // TODO(malte): this really shouldn't be happening here
-  setenv("TASK_ID", to_string(td->uid()).c_str(), 1);
-  setenv("FLAGS_coordinator_uri", "tcp://localhost:9999", 1);
-  setenv("FLAGS_resource_id", to_string(local_resource_id_).c_str(), 1);
-  setenv("PERF_FNAME", (to_string(local_resource_id_) +
-                        "-" + to_string(td->uid()) + ".perf").c_str(), 1);
-  // TODO(malte): hack
+  SetUpEnvironmentForTask(*td);
+  // Convert arguments as specified in TD into a string vector that we can munge
+  // into an actual argv[].
   vector<string> args = pb_to_vector(td->args());
   // TODO(malte): This is somewhat hackish
   bool res = (RunProcessSync(td->binary(), args, true, true) == 0);
@@ -46,10 +43,10 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
   int pipe_to[2];    // pipe to feed input data to task
   int pipe_from[2];  // pipe to receive output data from task
   int status;
-  if ( pipe(pipe_to) != 0 ) {
+  if (pipe(pipe_to) != 0) {
     LOG(ERROR) << "Failed to create pipe to task.";
   }
-  if ( pipe(pipe_from) != 0 ) {
+  if (pipe(pipe_from) != 0) {
     LOG(ERROR) << "Failed to create pipe from task.";
   }
   pid = fork();
@@ -134,6 +131,30 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       return status;
   }
   return -1;
+}
+
+string LocalExecutor::PerfDataFileName(const TaskDescriptor& td) {
+  return (to_string(local_resource_id_) + "-" + to_string(td.uid()) + ".perf");
+}
+
+void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
+  if (coordinator_uri_.empty())
+    LOG(WARNING) << "Executor does not have the coordinator_uri_ field set. "
+                 << "The task will be unable to communicate with the "
+                 << "coordinator!";
+  vector<EnvPair_t> env;
+  env.push_back(EnvPair_t("TASK_ID", to_string(td.uid())));
+  env.push_back(EnvPair_t("PERF_FNAME", PerfDataFileName(td)));
+  env.push_back(EnvPair_t("FLAGS_coordinator_uri", coordinator_uri_));
+  env.push_back(EnvPair_t("FLAGS_resource_id", to_string(local_resource_id_)));
+  // Set environment variables
+  VLOG(2) << "Task's environment variables:";
+  for (vector<EnvPair_t>::const_iterator env_iter = env.begin();
+       env_iter != env.end();
+       ++env_iter) {
+    VLOG(2) << "  " << env_iter->first << ": " << env_iter->second;
+    setenv(env_iter->first.c_str(), env_iter->second.c_str(), 1);
+  }
 }
 
 void LocalExecutor::WriteToPipe(int fd) {
