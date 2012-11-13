@@ -41,7 +41,7 @@ class SimpleScheduler : public SchedulerInterface {
   // Unit tests
   FRIEND_TEST(SimpleSchedulerTest, LazyGraphReductionTest);
   const set<shared_ptr<TaskDescriptor> >& LazyGraphReduction(
-      const set<ReferenceID_t>& output_ids,
+      const set<DataObjectID_t>& output_ids,
       shared_ptr<TaskDescriptor> root_task);
   shared_ptr<ReferenceInterface> ReferenceForID(ReferenceID_t id);
   shared_ptr<TaskDescriptor> ProducingTaskForReferenceID(ReferenceID_t id);

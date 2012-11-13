@@ -76,7 +76,7 @@ const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::RunnableTasksForJob(
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
 // Derek Murray's thesis on CIEL.
 const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::LazyGraphReduction(
-    const set<ReferenceID_t>& output_ids,
+    const set<DataObjectID_t>& output_ids,
     shared_ptr<TaskDescriptor> root_task) {
   VLOG(2) << "Performing lazy graph reduction";
   // Local data structures
@@ -84,7 +84,8 @@ const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::LazyGraphReduction(
   bool do_schedule = false;
   // Add expected producer for object_id to queue, if the object reference is
   // not already concrete.
-  for (set<ReferenceID_t>::const_iterator output_id_iter = output_ids.begin();
+  VLOG(2) << "for a job with " << output_ids.size() << " outputs";
+  for (set<DataObjectID_t>::const_iterator output_id_iter = output_ids.begin();
        output_id_iter != output_ids.end();
        ++output_id_iter) {
     shared_ptr<ReferenceInterface> ref = ReferenceForID(*output_id_iter);
@@ -95,7 +96,7 @@ const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::LazyGraphReduction(
     // otherwise, we add the producer for said output reference to the queue, if
     // it is not already scheduled.
     shared_ptr<TaskDescriptor> task =
-        ProducingTaskForReferenceID(*output_id_iter);
+        ProducingTaskForDataObjectID(*output_id_iter);
     CHECK(task != NULL) << "Could not find task producing output ID "
                         << *output_id_iter;
     if (task->state() == TaskDescriptor::CREATED) {
@@ -129,7 +130,7 @@ const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::LazyGraphReduction(
         will_block = true;
         // Look at predecessor task (producing this reference)
         shared_ptr<TaskDescriptor> producing_task =
-            ProducingTaskForReferenceID(ref->id());
+            ProducingTaskForDataObjectID(ref->id());
         if (producing_task) {
           if (producing_task->state() == TaskDescriptor::CREATED ||
               producing_task->state() == TaskDescriptor::COMPLETED) {
@@ -184,13 +185,13 @@ uint64_t SimpleScheduler::ScheduleJob(shared_ptr<JobDescriptor> job_desc) {
 }
 
 shared_ptr<ReferenceInterface> SimpleScheduler::ReferenceForID(
-    ReferenceID_t id) {
+    DataObjectID_t id) {
   // XXX(malte): stub
   return shared_ptr<ReferenceInterface>();  // NULL
 }
 
-shared_ptr<TaskDescriptor> SimpleScheduler::ProducingTaskForReferenceID(
-    ReferenceID_t id) {
+shared_ptr<TaskDescriptor> SimpleScheduler::ProducingTaskForDataObjectID(
+    DataObjectID_t id) {
   // XXX(malte): stub
   return shared_ptr<TaskDescriptor>();  // NULL
 }

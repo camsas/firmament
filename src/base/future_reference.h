@@ -13,7 +13,7 @@ namespace firmament {
 
 class FutureReference : public ReferenceInterface {
  public:
-  explicit FutureReference(ReferenceID_t id)
+  explicit FutureReference(DataObjectID_t id)
     : ReferenceInterface(id) {
     desc_.set_id(id);
     desc_.set_type(type_);
@@ -21,7 +21,6 @@ class FutureReference : public ReferenceInterface {
   explicit FutureReference(const ReferenceDescriptor& desc)
     : ReferenceInterface(desc) {
     ValidateInitDescriptor(desc);
-    id_ = desc.id();
   }
   virtual inline bool Consumable() { return false; }
   virtual ostream& ToString(ostream* stream) const {

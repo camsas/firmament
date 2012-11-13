@@ -65,7 +65,7 @@ TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   // Simple, plain, 1-task job (base case)
   shared_ptr<JobDescriptor> test_job(new JobDescriptor);
   shared_ptr<TaskDescriptor> rtp(new TaskDescriptor);
-  set<ReferenceID_t> output_ids(pb_to_set(test_job->output_ids()));
+  set<DataObjectID_t> output_ids(pb_to_set(test_job->output_ids()));
   set<shared_ptr<TaskDescriptor> > runnable_tasks =
       sched_->LazyGraphReduction(output_ids, rtp);
   // The root task should be runnable

@@ -45,7 +45,7 @@ class ReferencesTest : public ::testing::Test {
 // Test that verifies all members are initialized correctly when setting up a
 // valid Future reference.
 TEST_F(ReferencesTest, CreateFutureTest) {
-  ReferenceID_t ref_id = 1234;
+  DataObjectID_t ref_id = 1234;
   FutureReference f(ref_id);
 
   // Check all members are set to what we expect.
@@ -56,7 +56,7 @@ TEST_F(ReferencesTest, CreateFutureTest) {
 // Test that verifies all members are initialized correctly when setting up a
 // valid Error reference.
 TEST_F(ReferencesTest, CreateErrorTest) {
-  ReferenceID_t ref_id = 1234;
+  DataObjectID_t ref_id = 1234;
   const string reason = "boom";
   const string details = "kaboom";
   ErrorReference r(ref_id, reason, details);
@@ -72,7 +72,7 @@ TEST_F(ReferencesTest, CreateErrorTest) {
 // valid Error reference.
 TEST_F(ReferencesTest, CreateConcreteTest) {
   FLAGS_v = 2;
-  ReferenceID_t ref_id = 1234;
+  DataObjectID_t ref_id = 1234;
   set<string> locations;
   uint64_t size = 1000;
   locations.insert("here");
@@ -92,7 +92,7 @@ TEST_F(ReferencesTest, CreateConcreteTest) {
 // Test that verifies all members are initialized correctly when setting up a
 // valid Error reference.
 TEST_F(ReferencesTest, CreateValueTest) {
-  ReferenceID_t ref_id = 1234;
+  DataObjectID_t ref_id = 1234;
   const string value = "test";
   ValueReference r(ref_id, value);
 
@@ -106,7 +106,7 @@ TEST_F(ReferencesTest, CreateValueTest) {
 // ValidateInternalDescriptor method, which checks the integrity of the mapping
 // between the reference object and its serializable protobuf descriptor.
 TEST_F(ReferencesTest, ValidateInternalDescriptors) {
-  ReferenceID_t ref_id = 1234;
+  DataObjectID_t ref_id = 1234;
   FutureReference f(ref_id);
   ErrorReference e(ref_id, "foo", "bar");
   ConcreteReference c1(ref_id);

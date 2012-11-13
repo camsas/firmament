@@ -15,7 +15,7 @@ namespace firmament {
 
 class ErrorReference : public ReferenceInterface {
  public:
-  explicit ErrorReference(ReferenceID_t id, const string& reason,
+  explicit ErrorReference(DataObjectID_t id, const string& reason,
                           const string& details)
     : ReferenceInterface(id), reason_(reason), details_(details) {
     desc_.set_id(id);
@@ -25,7 +25,6 @@ class ErrorReference : public ReferenceInterface {
   explicit ErrorReference(const ReferenceDescriptor& desc)
     : ReferenceInterface(desc) {
     ValidateInitDescriptor(desc);
-    id_ = desc.id();
     // XXX(malte): Parse descriptor's inline_data into reason/details!
     LOG(FATAL) << "Intializing Error refs from descriptors is not "
                << "fully implemented yet";

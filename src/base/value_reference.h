@@ -15,7 +15,7 @@ namespace firmament {
 
 class ValueReference : public ReferenceInterface {
  public:
-  explicit ValueReference(ReferenceID_t id, const string& value)
+  explicit ValueReference(DataObjectID_t id, const string& value)
     : ReferenceInterface(id), value_(value) {
     desc_.set_id(id);
     desc_.set_type(type_);
@@ -24,7 +24,6 @@ class ValueReference : public ReferenceInterface {
   explicit ValueReference(const ReferenceDescriptor& desc)
     : ReferenceInterface(desc) {
     ValidateInitDescriptor(desc);
-    id_ = desc.id();
     value_ = desc.inline_data();
   }
   virtual inline bool Consumable() { return true; }
