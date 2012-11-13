@@ -19,8 +19,10 @@ class SchedulerInterface : public PrintableInterface {
  public:
   // Constructor.
   SchedulerInterface(shared_ptr<JobMap_t> job_map,
-                     shared_ptr<ResourceMap_t> resource_map)
-      : job_map_(job_map), resource_map_(resource_map) {}
+                     shared_ptr<ResourceMap_t> resource_map,
+                     shared_ptr<DataObjectMap_t> object_map)
+      : job_map_(job_map), resource_map_(resource_map),
+        object_map_(object_map) {}
   // Adds a job to the set of active jobs that are considered for scheduling.
   // TODO(malte): Determine if we actually need this, given the reactive design
   // of the scheduler.
@@ -48,9 +50,10 @@ class SchedulerInterface : public PrintableInterface {
   // NULL if no resource could be found.
   virtual const ResourceID_t* FindResourceForTask(
       shared_ptr<TaskDescriptor> task_desc) = 0;
-  // Pointers to the associated coordinator's job and resource maps
+  // Pointers to the associated coordinator's job, resource and object maps
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<ResourceMap_t> resource_map_;
+  shared_ptr<DataObjectMap_t> object_map_;
 };
 
 }  // namespace scheduler

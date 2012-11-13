@@ -23,6 +23,7 @@ class SimpleScheduler : public SchedulerInterface {
  public:
   SimpleScheduler(shared_ptr<JobMap_t> job_map,
                   shared_ptr<ResourceMap_t> resource_map,
+                  shared_ptr<DataObjectMap_t> object_map,
                   const string& coordinator_uri);
   const set<shared_ptr<TaskDescriptor> >& RunnableTasksForJob(
       shared_ptr<JobDescriptor> job_desc);
@@ -40,11 +41,13 @@ class SimpleScheduler : public SchedulerInterface {
  private:
   // Unit tests
   FRIEND_TEST(SimpleSchedulerTest, LazyGraphReductionTest);
+  FRIEND_TEST(SimpleSchedulerTest, ObjectIDToReferenceDescLookup);
+  FRIEND_TEST(SimpleSchedulerTest, ProducingTaskLookup);
   const set<shared_ptr<TaskDescriptor> >& LazyGraphReduction(
       const set<DataObjectID_t>& output_ids,
       shared_ptr<TaskDescriptor> root_task);
-  shared_ptr<ReferenceInterface> ReferenceForID(ReferenceID_t id);
-  shared_ptr<TaskDescriptor> ProducingTaskForReferenceID(ReferenceID_t id);
+  shared_ptr<ReferenceInterface> ReferenceForID(DataObjectID_t id);
+  shared_ptr<TaskDescriptor> ProducingTaskForDataObjectID(DataObjectID_t id);
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction
   set<shared_ptr<TaskDescriptor> > runnable_tasks_;

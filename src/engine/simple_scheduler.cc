@@ -18,11 +18,13 @@ namespace firmament {
 namespace scheduler {
 
 using executor::LocalExecutor;
+using common::pb_to_set;
 
 SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
                                  shared_ptr<ResourceMap_t> resource_map,
+                                 shared_ptr<DataObjectMap_t> object_map,
                                  const string& coordinator_uri)
-    : SchedulerInterface(job_map, resource_map),
+    : SchedulerInterface(job_map, resource_map, object_map),
       coordinator_uri_(coordinator_uri) {
   VLOG(1) << "SimpleScheduler initiated.";
 }
@@ -68,7 +70,7 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
 const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::RunnableTasksForJob(
     shared_ptr<JobDescriptor> job_desc) {
   // XXX(malte): Obviously, this is pretty broken.
-  set<ReferenceID_t> dummy;
+  set<DataObjectID_t> dummy = pb_to_set(job_desc->output_ids());
   shared_ptr<TaskDescriptor> rtp(job_desc, job_desc->mutable_root_task());
   return LazyGraphReduction(dummy, rtp);
 }
@@ -187,13 +189,26 @@ uint64_t SimpleScheduler::ScheduleJob(shared_ptr<JobDescriptor> job_desc) {
 shared_ptr<ReferenceInterface> SimpleScheduler::ReferenceForID(
     DataObjectID_t id) {
   // XXX(malte): stub
-  return shared_ptr<ReferenceInterface>();  // NULL
+  VLOG(1) << "looking up object " << id;
+  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
+  if (!rd)
+    return shared_ptr<ReferenceInterface>();  // NULL
+  else
+    return ReferenceFromDescriptor(*rd);
 }
 
 shared_ptr<TaskDescriptor> SimpleScheduler::ProducingTaskForDataObjectID(
     DataObjectID_t id) {
   // XXX(malte): stub
-  return shared_ptr<TaskDescriptor>();  // NULL
+  VLOG(1) << "looking up producing task for object " << id;
+  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
+  if (!rd || !rd->has_producing_task()) {
+    return shared_ptr<TaskDescriptor>();  // NULL
+  } else {
+    shared_ptr<TaskDescriptor> temp_td(new TaskDescriptor);
+    temp_td->set_uid(rd->producing_task());
+    return temp_td;
+  }
 }
 
 }  // namespace scheduler

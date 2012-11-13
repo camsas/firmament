@@ -28,5 +28,6 @@ message ReferenceDescriptor {
   optional uint64 size = 5;
   repeated string location = 6;
   optional bytes inline_data = 7;
+  optional uint64 producing_task = 8;
 }
 

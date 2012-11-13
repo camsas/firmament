@@ -46,6 +46,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     object_table_(new DataObjectMap_t),
     uuid_(GenerateUUID()),
     scheduler_(new SimpleScheduler(job_table_, associated_resources_,
+                                   object_table_,
                                    FLAGS_listen_uri)),
     object_store_(new StubObjectStore) {
   // Start up a coordinator ccording to the platform parameter
