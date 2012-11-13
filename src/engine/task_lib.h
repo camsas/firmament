@@ -71,6 +71,7 @@ class TaskLib {
 
  private:
   bool task_running_;
+  uint64_t heartbeat_seq_number_;
 };
 
 }  // namespace firmament

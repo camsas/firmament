@@ -29,7 +29,8 @@ TaskLib::TaskLib()
         StreamSocketsChannel<BaseMessage>::SS_TCP)),
     coordinator_uri_(FLAGS_coordinator_uri),
     resource_id_(ResourceIDFromString(FLAGS_resource_id)),
-    task_running_(false) {
+    task_running_(false),
+    heartbeat_seq_number_(0) {
 }
 
 void TaskLib::AwaitNextMessage() {
@@ -118,12 +119,11 @@ void TaskLib::SendFinalizeMessage(bool success) {
 
 void TaskLib::SendHeartbeat() {
   BaseMessage bm;
-  bm.MutableExtension(heartbeat_extn)->set_uuid(
-      boost::uuids::to_string(resource_id_));
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
+  SUBMSG_WRITE(bm, heartbeat, uuid, to_string(resource_id_));
   SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());
-  SUBMSG_WRITE(bm, heartbeat, sequence_number, 1);
+  SUBMSG_WRITE(bm, heartbeat, sequence_number, heartbeat_seq_number_++);
   VLOG(1) << "Sending heartbeat message!";
   SendMessageToCoordinator(&bm);
 }

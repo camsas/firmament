@@ -48,6 +48,7 @@ void SimpleScheduler::BindTaskToResource(
   // XXX(malte): This is currently a SYNCHRONOUS call, and obviously shouldn't
   // be.
   exec.RunTask(task_desc);
+  VLOG(1) << "RunTask returned";
 }
 
 const ResourceID_t* SimpleScheduler::FindResourceForTask(
