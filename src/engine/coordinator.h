@@ -132,7 +132,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   static void HandleSignal(int signum);
 #else
   // Boost ASIO signal handler setup
-  void HandleSignal(int signum);
+  static void HandleSignal(int signum);
 #endif
 #ifdef __HTTP_UI__
   void InitHTTPUI();

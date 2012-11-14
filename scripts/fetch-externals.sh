@@ -287,7 +287,7 @@ if [[ ! -f ${GLOG_INSTALL_FILE} ]]; then
   get_dep_svn "google-glog" "googlecode"
   cd ${GLOG_DIR}
   echo -n "Building google-glog library..."
-  RES=$(./configure && make --quiet 2>/dev/null)
+  RES=$(./configure --prefix=/usr && make --quiet 2>/dev/null)
   #RES=$(./configure --prefix=${GLOG_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
   print_succ_or_fail $RES
   echo "google-glog library (v${GLOG_VER}) was built in ${GLOG_DIR}. "
