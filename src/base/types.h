@@ -94,6 +94,10 @@ typedef const uint64_t TaskID_t;
 typedef map<ResourceID_t, pair<ResourceDescriptor, uint64_t> > ResourceMap_t;
 typedef map<JobID_t, JobDescriptor> JobMap_t;
 typedef map<DataObjectID_t, ReferenceDescriptor> DataObjectMap_t;
+// N.B.: the type of the second element here is a shared_ptr, since the
+// TaskDescriptor objects will be part of the JobDescriptor protobuf that is
+// already held in the job table.
+typedef map<TaskID_t, shared_ptr<TaskDescriptor> > TaskMap_t;
 
 #ifdef __PLATFORM_HAS_BOOST__
 // Message handler callback type definition

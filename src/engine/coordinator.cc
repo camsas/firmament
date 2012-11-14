@@ -44,6 +44,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     associated_resources_(new ResourceMap_t),
     job_table_(new JobMap_t),
     object_table_(new DataObjectMap_t),
+    task_table_(new TaskMap_t),
     uuid_(GenerateUUID()),
     scheduler_(new SimpleScheduler(job_table_, associated_resources_,
                                    object_table_,
@@ -281,6 +282,19 @@ void Coordinator::InitHTTPUI() {
 }
 #endif
 
+void Coordinator::AddJobsTaskToTaskTable(
+    RepeatedPtrField<TaskDescriptor>* tasks) {
+  for (RepeatedPtrField<TaskDescriptor>::iterator task_iter =
+       tasks->begin();
+       task_iter != tasks->end();
+       ++task_iter) {
+    VLOG(1) << "Adding task " << task_iter->uid() << " to task table.";
+    CHECK(InsertIfNotPresent(task_table_.get(), task_iter->uid(),
+                             shared_ptr<TaskDescriptor>(&(*task_iter))));
+    AddJobsTaskToTaskTable(task_iter->mutable_spawned());
+  }
+}
+
 const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   // Generate a job ID
   // TODO(malte): This should become deterministic, and based on the
@@ -294,6 +308,10 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   new_jd.mutable_root_task()->set_uid(GenerateTaskID(new_jd.root_task()));
   // Add job to local job table
   CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, new_jd));
+  // Add its tasks to the local task table
+  RepeatedPtrField<TaskDescriptor>* spawned_tasks =
+      new_jd.mutable_root_task()->mutable_spawned();
+  AddJobsTaskToTaskTable(spawned_tasks);
   // Adds its outputs to the object table and generate future references for
   // them.
   for (RepeatedPtrField<ReferenceDescriptor>::const_iterator output_iter =

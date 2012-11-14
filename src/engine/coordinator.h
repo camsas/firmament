@@ -104,6 +104,7 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   }
 
  protected:
+  void AddJobsTaskToTaskTable(RepeatedPtrField<TaskDescriptor>* tasks);
   void DetectLocalResources();
   void HandleIncomingMessage(BaseMessage *bm);
   void HandleIncomingReceiveError(const boost::system::error_code& error,
@@ -146,6 +147,9 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
   // A map of all data objects known to the coordinator.
   // TODO(malte): This may move to the store layer.
   shared_ptr<DataObjectMap_t> object_table_;
+  // A map of all tasks that the coordinator currently knows about.
+  // TODO(malte): Think about GC'ing this.
+  shared_ptr<TaskMap_t> task_table_;
   // This coordinator's own resource descriptor.
   ResourceDescriptor resource_desc_;
   ResourceID_t uuid_;
