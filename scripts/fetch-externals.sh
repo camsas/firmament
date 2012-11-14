@@ -13,7 +13,7 @@ EXT_DIR=${PWD}
 # Currently, we support Ubuntu and Debian.
 BASE_PKGS="wget subversion autoconf"
 COMPILER_PKGS="clang libprotobuf-dev protobuf-compiler python-protobuf"
-GOOGLE_PKGS="libgoogle-perftools0 libgoogle-perftools-dev libprotobuf-dev"
+GOOGLE_PKGS="google-perftools libgoogle-perftools-dev libprotobuf-dev"
 BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
 MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev libjansson-dev libctemplate-dev"
 
