@@ -10,6 +10,10 @@
     <td>{{RES_ID}}</td>
   </tr>
   <tr>
+    <td>Friendly name</td>
+    <td>{{RES_FRIENDLY_NAME}}</td>
+  </tr>
+  <tr>
     <td>Type</td>
     <td>{{RES_TYPE}}</td>
   </tr>
@@ -19,7 +23,7 @@
   </tr>
   <tr>
     <td>Parent ID</td>
-    <td>{{RES_PARENT_ID}}</td>
+    <td><a href="/resource/?id={{RES_PARENT_ID}}">{{RES_PARENT_ID}}</a></td>
   </tr>
   <tr>
     <td>Children IDs</td>

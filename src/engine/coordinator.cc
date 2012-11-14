@@ -54,6 +54,7 @@ Coordinator::Coordinator(PlatformID platform_id)
   // platform_ = platform::GetByID(platform_id);
   string desc_name = "";  // platform_.GetDescriptiveName();
   resource_desc_.set_uuid(to_string(uuid_));
+  resource_desc_.set_type(ResourceDescriptor::RESOURCE_MACHINE);
 
   // Log information
   LOG(INFO) << "Coordinator starting on host " << FLAGS_listen_uri
@@ -95,10 +96,12 @@ void Coordinator::DetectLocalResources() {
   for (vector<ResourceDescriptor>::iterator lr_iter = local_resources.begin();
        lr_iter != local_resources.end();
        ++lr_iter) {
+    lr_iter->set_parent(to_string(uuid_));
     CHECK(InsertIfNotPresent(associated_resources_.get(),
                              JobIDFromString(lr_iter->uuid()),
                              pair<ResourceDescriptor, uint64_t>(
                                  *lr_iter, GetCurrentTimestamp())));
+    resource_desc_.add_children(lr_iter->uuid());
     VLOG(1) << "Added local resource " << lr_iter->uuid() << " (PU #" << i
             << "): " << lr_iter->DebugString();
     ++i;

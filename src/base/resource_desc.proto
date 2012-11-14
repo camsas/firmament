@@ -21,6 +21,7 @@ message ResourceDescriptor {
     RESOURCE_DISK = 4;
     RESOURCE_SSD = 5;
     RESOURCE_MACHINE = 6;
+    RESOURCE_LOGICAL = 7;
   }
 
   required string uuid = 1;
@@ -30,8 +31,9 @@ message ResourceDescriptor {
   optional uint64 task_capacity = 5 [default = 0];
   optional uint64 last_heartbeat = 6;
   optional ResourceType type = 7;
-  repeated string siblings = 8;
-  repeated string children = 9;
+  optional string parent = 8;
+  repeated string siblings = 9;
+  repeated string children = 10;
   //repeated TaskDescriptor task_queue = 2;
   // ensemble(s)
   // state

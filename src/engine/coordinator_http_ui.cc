@@ -14,6 +14,7 @@
 
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
+#include "misc/utils.h"
 
 namespace firmament {
 namespace webui {
@@ -42,7 +43,8 @@ CoordinatorHTTPUI::~CoordinatorHTTPUI() {
 }
 
 void CoordinatorHTTPUI::AddHeaderToTemplate(TemplateDictionary* dict,
-                                            ResourceID_t uuid) {
+                                            ResourceID_t uuid,
+                                            ErrorMessage_t* err) {
   // HTML header
   TemplateDictionary* header_sub_dict = dict->AddIncludeDictionary("HEADER");
   header_sub_dict->SetFilename("src/webui/header.tpl");
@@ -51,6 +53,13 @@ void CoordinatorHTTPUI::AddHeaderToTemplate(TemplateDictionary* dict,
       dict->AddIncludeDictionary("PAGE_HEADER");
   pgheader_sub_dict->SetFilename("src/webui/page_header.tpl");
   pgheader_sub_dict->SetValue("RESOURCE_ID", to_string(uuid));
+  // Error message, if set
+  if (err) {
+    TemplateDictionary* err_dict =
+        pgheader_sub_dict->AddSectionDictionary("ERR");
+    err_dict->SetValue("ERR_TITLE", err->first);
+    err_dict->SetValue("ERR_TEXT", err->second);
+  }
 }
 
 void CoordinatorHTTPUI::AddFooterToTemplate(TemplateDictionary* dict) {
@@ -91,13 +100,29 @@ void CoordinatorHTTPUI::HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
   // Individual to this request
   //HTTPTypes::QueryParams &params = http_request->getQueryParams();
   TemplateDictionary dict("main");
-  AddHeaderToTemplate(&dict, coordinator_->uuid());
+  AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+  dict.SetValue("COORD_ID", to_string(coordinator_->uuid()));
+  dict.SetIntValue("NUM_JOBS_KNOWN", coordinator_->active_jobs().size());
+  //dict.SetIntValue("NUM_JOBS_RUNNING", );
+  // The +1 is because the coordinator itself is a resource, too.
+  dict.SetIntValue("NUM_RESOURCES_KNOWN",
+                   coordinator_->associated_resources().size() + 1);
+  dict.SetIntValue("NUM_RESOURCES_LOCAL",
+                   coordinator_->associated_resources().size());
   AddFooterToTemplate(&dict);
   string output;
   ExpandTemplate("src/webui/main.tpl", ctemplate::DO_NOT_STRIP, &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
+
+void CoordinatorHTTPUI::HandleFaviconURI(HTTPRequestPtr& http_request,  // NOLINT
+                                         TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  ErrorResponse(HTTPTypes::RESPONSE_CODE_NOT_FOUND, http_request, tcp_conn);
+}
+
 
 void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLINT
                                           TCPConnectionPtr& tcp_conn) {  // NOLINT
@@ -107,7 +132,7 @@ void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLI
   vector<JobDescriptor> jobs = coordinator_->active_jobs();
   uint64_t i = 0;
   TemplateDictionary dict("jobs_list");
-  AddHeaderToTemplate(&dict, coordinator_->uuid());
+  AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
   for (vector<JobDescriptor>::const_iterator jd_iter =
        jobs.begin();
@@ -137,7 +162,7 @@ void CoordinatorHTTPUI::HandleResourcesListURI(HTTPRequestPtr& http_request,  //
       coordinator_->associated_resources();
   uint64_t i = 0;
   TemplateDictionary dict("resources_list");
-  AddHeaderToTemplate(&dict, coordinator_->uuid());
+  AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
   for (vector<ResourceDescriptor>::const_iterator rd_iter =
        resources.begin();
@@ -162,8 +187,25 @@ void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLI
   LogRequest(http_request);
   HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
+  HTTPTypes::QueryParams &params = http_request->getQueryParams();
+  string* res_id = FindOrNull(params, "id");
+  ResourceDescriptor* rd_ptr = coordinator_->GetResource(
+      ResourceIDFromString(*res_id));
   TemplateDictionary dict("resource_status");
-  AddHeaderToTemplate(&dict, coordinator_->uuid());
+  if (rd_ptr) {
+    dict.SetValue("RES_ID", rd_ptr->uuid());
+    dict.SetValue("RES_FRIENDLY_NAME", rd_ptr->friendly_name());
+    dict.SetIntValue("RES_TYPE", rd_ptr->type());
+    dict.SetIntValue("RES_STATUS", rd_ptr->state());
+    dict.SetValue("RES_PARENT_ID", rd_ptr->parent());
+    //dict.SetValue("RES_CHILDREN_IDS", rd_ptr->children());
+    AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+  } else {
+    VLOG(1) << "rd_ptr is: " << rd_ptr;
+    ErrorMessage_t err("Resource not found.",
+                       "The requested resource does not exist.");
+    AddHeaderToTemplate(&dict, coordinator_->uuid(), &err);
+  }
   AddFooterToTemplate(&dict);
   string output;
   ExpandTemplate("src/webui/resource_status.tpl", ctemplate::DO_NOT_STRIP,
@@ -194,7 +236,7 @@ void CoordinatorHTTPUI::HandleJobStatusURI(HTTPRequestPtr& http_request,  // NOL
   HTTPTypes::QueryParams &params = http_request->getQueryParams();
   string* job_id = FindOrNull(params, "id");
   TemplateDictionary dict("job_dtg");
-  AddHeaderToTemplate(&dict, coordinator_->uuid());
+  AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
   string output;
   if (job_id) {
@@ -300,6 +342,9 @@ void CoordinatorHTTPUI::Init(uint16_t port) {
     // Root URI
     coordinator_http_server_->addResource("/", boost::bind(
         &CoordinatorHTTPUI::HandleRootURI, this, _1, _2));
+    // Root URI
+    coordinator_http_server_->addResource("/favicon.ico", boost::bind(
+        &CoordinatorHTTPUI::HandleFaviconURI, this, _1, _2));
     // Job submission
     coordinator_http_server_->addResource("/jobs/", boost::bind(
         &CoordinatorHTTPUI::HandleJobsListURI, this, _1, _2));

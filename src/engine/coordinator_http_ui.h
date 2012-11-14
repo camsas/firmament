@@ -5,6 +5,9 @@
 #ifndef FIRMAMENT_ENGINE_COORDINATOR_HTTP_UI_H
 #define FIRMAMENT_ENGINE_COORDINATOR_HTTP_UI_H
 
+#include <string>
+#include <utility>
+
 #include <pion/net/HTTPServer.hpp>
 #include <pion/net/HTTPTypes.hpp>
 #include <pion/net/HTTPRequest.hpp>
@@ -44,6 +47,8 @@ class CoordinatorHTTPUI {
   HTTPResponseWriterPtr InitOkResponse(HTTPRequestPtr http_request,
                                        TCPConnectionPtr tcp_conn);
   void LogRequest(const HTTPRequestPtr& http_request);
+  void HandleFaviconURI(HTTPRequestPtr& http_request,  // NOLINT
+                        TCPConnectionPtr& tcp_conn);
   void HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOLINT
                           TCPConnectionPtr& tcp_conn);
   void HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLINT
@@ -67,7 +72,9 @@ class CoordinatorHTTPUI {
   inline bool active() { return active_; }
 
  protected:
-  void AddHeaderToTemplate(TemplateDictionary* dict, ResourceID_t uuid);
+  typedef pair<const string, const string> ErrorMessage_t;
+  void AddHeaderToTemplate(TemplateDictionary* dict, ResourceID_t uuid,
+                           ErrorMessage_t* err);
   void AddFooterToTemplate(TemplateDictionary* dict);
   HTTPServerPtr coordinator_http_server_;
   shared_ptr<Coordinator> coordinator_;

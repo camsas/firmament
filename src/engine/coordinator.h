@@ -9,6 +9,7 @@
 
 #include <string>
 #include <map>
+#include <utility>
 #include <vector>
 
 // XXX(malte): Think about the Boost dependency!
@@ -82,6 +83,17 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
     return platform_id_;
   }
   inline ResourceID_t uuid() { return uuid_; }
+  // Gets a pointer to the resource descriptor for an associated resource
+  // (including the coordinator itself); returns NULL if the resource is not
+  // associated or the coordinator itself.
+  ResourceDescriptor* GetResource(ResourceID_t res_id) {
+    VLOG(1) << "res_id: " << res_id << ", " << uuid_;
+    if (res_id == uuid_)
+      return &resource_desc_;
+    pair<ResourceDescriptor, uint64_t>* res =
+        FindOrNull(*associated_resources_, res_id);
+    return (res ? &(res->first) : NULL);
+  }
   vector<ResourceDescriptor> associated_resources() {
     vector<ResourceDescriptor> ref_vec;
     for (ResourceMap_t::const_iterator res_iter =
