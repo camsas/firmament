@@ -21,6 +21,7 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
+#include "engine/node.h"
 #include "messages/base_message.pb.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
@@ -32,33 +33,20 @@
 
 namespace firmament {
 
-using platform_unix::streamsockets::StreamSocketsAdapter;
-using platform_unix::streamsockets::StreamSocketsChannel;
-
-class Worker {
+class Worker : public Node {
  public:
   explicit Worker(PlatformID platform_id);
   void Run();
-  void AwaitNextMessage();
   bool RunCoordinatorDiscovery(const string &coordinator_uri);
   bool ConnectToCoordinator(const string& coordinator_uri);
-  inline PlatformID platform_id() {
-    return platform_id_;
-  }
 
  protected:
-  PlatformID platform_id_;
-  shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
-  StreamSocketsChannel<BaseMessage> chan_;
-  bool exit_;
+  shared_ptr<StreamSocketsChannel<BaseMessage> > chan_;
   // TODO(malte): transform this into a better representation
   string coordinator_uri_;
-  ResourceDescriptor resource_desc_;
-  ResourceID_t uuid_;
 
   ResourceID_t GenerateUUID();
-  void HandleWrite(const boost::system::error_code& error,
-                   size_t bytes_transferred);
+  void HandleIncomingMessage(BaseMessage *bm);
   bool RegisterWithCoordinator();
   void SendHeartbeat();
   bool SendMessageToCoordinator(BaseMessage* msg);

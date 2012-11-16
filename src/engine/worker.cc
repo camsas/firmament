@@ -17,8 +17,8 @@
 #include "platforms/common.pb.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 
-DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
-              "attempting automatic discovery.");
+// N.B.: We will be inheriting a bunch of standard flags from Node here (in
+// addition to those specified below).
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 DEFINE_string(name, "", "A friendly name for this worker.");
 
@@ -31,12 +31,10 @@ using boost::posix_time::seconds;
 #endif
 
 Worker::Worker(PlatformID platform_id)
-  : platform_id_(platform_id),
-    m_adapter_(new StreamSocketsAdapter<BaseMessage>()),
-    chan_(StreamSocketsChannel<BaseMessage>::SS_TCP),
-    exit_(false),
-    coordinator_uri_(FLAGS_coordinator_uri),
-    uuid_(GenerateUUID()) {
+  : Node(platform_id, GenerateUUID()),
+    chan_(new StreamSocketsChannel<BaseMessage>(
+          StreamSocketsChannel<BaseMessage>::SS_TCP)),
+    coordinator_uri_(FLAGS_coordinator_uri) {
   string hostname = "";  // platform_.GetHostname();
   VLOG(1) << "Worker starting on host " << hostname << ", platform "
           << platform_id;
@@ -60,7 +58,17 @@ Worker::Worker(PlatformID platform_id)
   resource_desc_.set_task_capacity(0);
 }
 
-void Worker::AwaitNextMessage() {
+void Worker::HandleIncomingMessage(BaseMessage *bm) {
+  // Registration message
+  if (bm->HasExtension(register_extn)) {
+    LOG(ERROR) << "Received registration message, but workers cannot have any "
+               << "remote resources registered with them! Ignoring.";
+  }
+  // Heartbeat message
+  if (bm->HasExtension(heartbeat_extn)) {
+    LOG(ERROR) << "Received heartbeat message, but workers cannot have any "
+               << "remote resources registered with them! Ignoring.";
+  }
 }
 
 bool Worker::RegisterWithCoordinator() {
@@ -71,7 +79,7 @@ bool Worker::RegisterWithCoordinator() {
   bm.MutableExtension(register_extn)->set_uuid(
       boost::uuids::to_string(uuid_));
   // wrap in envelope
-  VLOG_EVERY_N(2, 1) << "Sending heartbeat (async)...";
+  VLOG(2) << "Sending registration message...";
   // send heartbeat message
   return SendMessageToCoordinator(&bm);
 }
@@ -82,41 +90,26 @@ void Worker::SendHeartbeat() {
       boost::uuids::to_string(uuid_));
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
-  SUBMSG_WRITE(bm, heartbeat, location, chan_.LocalEndpointString());
+  SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());
   SUBMSG_WRITE(bm, heartbeat, sequence_number, 1);
-  VLOG(1) << "Sending registration message!";
+  VLOG(1) << "Sending heartbeat  message!";
   SendMessageToCoordinator(&bm);
 }
 
 bool Worker::SendMessageToCoordinator(BaseMessage* msg) {
-  Envelope<BaseMessage> envelope(msg);
-  return chan_.SendA(
-      envelope, boost::bind(&Worker::HandleWrite,
-                            this,
-                            boost::asio::placeholders::error,
-                            boost::asio::placeholders::bytes_transferred));
+  return SendMessageToRemote(chan_, msg);
 }
 
 bool Worker::ConnectToCoordinator(const string& coordinator_uri) {
-  if (!m_adapter_->EstablishChannel(
-      coordinator_uri, shared_ptr<StreamSocketsChannel<BaseMessage> >(&chan_)))
+  if (!ConnectToRemote(coordinator_uri, chan_))
     return false;
-  // TODO(malte): Send registration message
+  // Send registration message
   return RegisterWithCoordinator();
 }
 
 ResourceID_t Worker::GenerateUUID() {
   boost::uuids::random_generator gen;
   return gen();
-}
-
-void Worker::HandleWrite(const boost::system::error_code& error,
-                         size_t bytes_transferred) {
-  VLOG(1) << "In HandleWrite, thread is " << boost::this_thread::get_id();
-  if (error)
-    LOG(ERROR) << "Error returned from async write: " << error.message();
-  else
-    VLOG(1) << "bytes_transferred: " << bytes_transferred;
 }
 
 void Worker::Run() {
@@ -135,6 +128,9 @@ void Worker::Run() {
   while (!exit_) {  // main loop
     // Wait for events
     SendHeartbeat();
+    // TODO(malte): What we want here is a select() semantic, i.e. wait for a
+    // message for up to N seconds, and if we haven't received one, go round the
+    // loop to heartbeat again.
     //AwaitNextMessage();
     boost::this_thread::sleep(seconds(10));
   }
