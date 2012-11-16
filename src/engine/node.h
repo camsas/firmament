@@ -36,7 +36,7 @@ using platform_unix::SignalHandler;
 using platform_unix::streamsockets::StreamSocketsChannel;
 using platform_unix::streamsockets::StreamSocketsAdapter;
 
-class Node : public boost::enable_shared_from_this<Node> {
+class Node {
  public:
   Node(PlatformID platform_id, ResourceID_t uuid);
   virtual ~Node();

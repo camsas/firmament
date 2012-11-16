@@ -21,10 +21,11 @@
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
-DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
-              "attempting automatic discovery.");
-DEFINE_string(listen_uri, "tcp://localhost:9998",
-              "The name/address/port to listen on.");
+// It is necessary to declare listen_uri here, since "node.o" comes after
+// "coordinator.o" in linking order (I *think*).
+DECLARE_string(listen_uri);
+DEFINE_string(parent_uri, "", "The URI of the parent coordinator to register "
+              "with.");
 #ifdef __HTTP_UI__
 DEFINE_bool(http_ui, true, "Enable HTTP interface");
 DEFINE_int32(http_ui_port, 8080,
@@ -35,17 +36,13 @@ namespace firmament {
 
 using store::StubObjectStore;
 
-// Initial value of exit_ toggle
-bool Coordinator::exit_ = false;
-
 Coordinator::Coordinator(PlatformID platform_id)
-  : platform_id_(platform_id),
+  : Node(platform_id, GenerateUUID()),
     topology_manager_(new TopologyManager()),
     associated_resources_(new ResourceMap_t),
     job_table_(new JobMap_t),
     object_table_(new DataObjectMap_t),
     task_table_(new TaskMap_t),
-    uuid_(GenerateUUID()),
     scheduler_(new SimpleScheduler(job_table_, associated_resources_,
                                    object_table_,
                                    FLAGS_listen_uri)),
@@ -62,16 +59,19 @@ Coordinator::Coordinator(PlatformID platform_id)
 
   switch (platform_id) {
     case PL_UNIX: {
-      m_adapter_.reset(
-          new platform_unix::streamsockets::
-          StreamSocketsAdapter<BaseMessage>());
-        SignalHandler handler;
-        handler.ConfigureSignal(SIGINT, Coordinator::HandleSignal, this);
-        handler.ConfigureSignal(SIGTERM, Coordinator::HandleSignal, this);
       break;
     }
     default:
       LOG(FATAL) << "Unimplemented!";
+  }
+
+  // Do we have a parent? If so, register with it now.
+  if (FLAGS_parent_uri != "") {
+    shared_ptr<StreamSocketsChannel<BaseMessage> > chan(
+        new StreamSocketsChannel<BaseMessage>(
+            StreamSocketsChannel<BaseMessage>::SS_TCP));
+    CHECK(ConnectToRemote(FLAGS_parent_uri, chan))
+        << "Failed to connect to parent!";
   }
 }
 
@@ -83,6 +83,20 @@ Coordinator::~Coordinator() {
   if (FLAGS_http_ui && c_http_ui_)
     c_http_ui_->Shutdown(false);
 #endif*/
+}
+
+bool Coordinator::RegisterWithCoordinator(
+    shared_ptr<StreamSocketsChannel<BaseMessage> > chan) {
+  BaseMessage bm;
+  ResourceDescriptor* rd = bm.MutableExtension(
+      register_extn)->mutable_res_desc();
+  *rd = resource_desc_;  // copies current local RD!
+  bm.MutableExtension(register_extn)->set_uuid(
+      boost::uuids::to_string(uuid_));
+  // wrap in envelope
+  VLOG(2) << "Sending registration message...";
+  // send heartbeat message
+  return SendMessageToRemote(chan, &bm);
 }
 
 void Coordinator::DetectLocalResources() {
@@ -141,28 +155,6 @@ void Coordinator::Run() {
   Shutdown("dropped out of main loop");
 }
 
-void Coordinator::AwaitNextMessage() {
-  VLOG(3) << "Waiting for next message from adapter...";
-  m_adapter_->AwaitNextMessage();
-  boost::this_thread::sleep(boost::posix_time::seconds(1));
-}
-
-void Coordinator::HandleRecv(const boost::system::error_code& error,
-                             size_t bytes_transferred,
-                             Envelope<BaseMessage>* env) {
-  if (error) {
-    LOG(WARNING) << "Asynchronous receive call returned an error: "
-                 << error.message();
-    return;
-  }
-  VLOG(3) << "Received " << bytes_transferred << " bytes asynchronously, "
-          << "in envelope at " << env << ", representing message " << *env;
-  BaseMessage *bm = env->data();
-  HandleIncomingMessage(bm);
-  delete env;
-}
-
-
 const JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
   JobID_t job_uuid = JobIDFromString(job_id);
   JobDescriptor *jd = FindOrNull(*job_table_, job_uuid);
@@ -183,30 +175,6 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
   if (bm->HasExtension(task_state_extn)) {
     const TaskStateMessage& msg = bm->GetExtension(task_state_extn);
     HandleTaskStateChange(msg);
-  }
-}
-
-void Coordinator::HandleIncomingReceiveError(
-    const boost::system::error_code& error,
-    const string& remote_endpoint) {
-  // Notify of receive error
-  // TODO(malte): since we are taking no arguments, we actually don't have the
-  // faintest idea what message this error relates to. We should try to remedy
-  // this; however, it is not trivial, since we destroy the channel before
-  // making the callback (and we do not want to have the callback on the
-  // critical path to unlocking the receive lock, as it may take a long time to
-  // run).
-  if (error.value() == boost::asio::error::eof) {
-    // Connection terminated, handle accordingly
-    LOG(INFO) << "Connection to " << remote_endpoint << " closed.";
-    // XXX(malte): Need to figure out if this relates to a resource, and if so,
-    // if we should declare it failed; or whether this is an expected job
-    // completion.
-  } else {
-    LOG(WARNING) << "Failed to complete a message receive cycle from "
-                 << remote_endpoint << ". The message was discarded, or the "
-                 << "connection failed (error: " << error.message() << ", "
-                 << "code " << error.value() << ").";
   }
 }
 
@@ -261,13 +229,6 @@ void Coordinator::HandleTaskStateChange(
               << static_cast<uint64_t>(msg.new_state());
       break;
   }
-}
-
-
-void Coordinator::HandleSignal(int signum) {
-  // TODO(malte): stub
-  if (signum == SIGTERM || signum == SIGINT)
-    exit_ = true;
 }
 
 #ifdef __HTTP_UI__

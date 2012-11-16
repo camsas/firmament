@@ -28,6 +28,7 @@
 #include "base/task_desc.pb.h"
 #include "base/reference_desc.pb.h"
 #include "base/resource_desc.pb.h"
+#include "engine/node.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
 #include "messages/heartbeat_message.pb.h"
@@ -69,20 +70,16 @@ class CoordinatorHTTPUI;
 using webui::CoordinatorHTTPUI;
 #endif
 
-class Coordinator : public boost::enable_shared_from_this<Coordinator> {
+class Coordinator : public Node,
+                    public boost::enable_shared_from_this<Coordinator> {
  public:
   explicit Coordinator(PlatformID platform_id);
   virtual ~Coordinator();
   void Run();
-  void AwaitNextMessage();
   const JobDescriptor* DescriptorForJob(const string& job_id);
   void Shutdown(const string& reason);
   const string SubmitJob(const JobDescriptor& job_descriptor);
 
-  inline PlatformID platform_id() {
-    return platform_id_;
-  }
-  inline ResourceID_t uuid() { return uuid_; }
   // Gets a pointer to the resource descriptor for an associated resource
   // (including the coordinator itself); returns NULL if the resource is not
   // associated or the coordinator itself.
@@ -117,31 +114,17 @@ class Coordinator : public boost::enable_shared_from_this<Coordinator> {
 
  protected:
   void AddJobsTaskToTaskTable(RepeatedPtrField<TaskDescriptor>* tasks);
+  bool RegisterWithCoordinator(
+      shared_ptr<StreamSocketsChannel<BaseMessage> > chan);
   void DetectLocalResources();
   void HandleIncomingMessage(BaseMessage *bm);
-  void HandleIncomingReceiveError(const boost::system::error_code& error,
-                                  const string& remote_endpoint);
   void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
   void HandleTaskStateChange(const TaskStateMessage& msg);
-  void HandleRecv(const boost::system::error_code& error,
-                  size_t bytes_transferred,
-                  Envelope<BaseMessage>* env);
-#if (BOOST_VERSION < 104700)
-  // compatible with C-style signal handler setup
-  static void HandleSignal(int signum);
-#else
-  // Boost ASIO signal handler setup
-  static void HandleSignal(int signum);
-#endif
 #ifdef __HTTP_UI__
   void InitHTTPUI();
 #endif
 
-  PlatformID platform_id_;
-  static bool exit_;
-  string coordinator_uri_;
-  shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
 #ifdef __HTTP_UI__
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
 #endif
