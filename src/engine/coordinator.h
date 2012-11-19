@@ -155,9 +155,6 @@ class Coordinator : public Node,
   // A map of all tasks that the coordinator currently knows about.
   // TODO(malte): Think about GC'ing this.
   shared_ptr<TaskMap_t> task_table_;
-  // This coordinator's own resource descriptor.
-  ResourceDescriptor resource_desc_;
-  ResourceID_t uuid_;
   // The local scheduler object. A coordinator may not have a scheduler, in
   // which case this will be a stub that defers to another scheduler.
   // TODO(malte): Work out the detailed semantics of this.
