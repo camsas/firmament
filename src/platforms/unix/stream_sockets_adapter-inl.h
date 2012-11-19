@@ -36,7 +36,7 @@ template <typename T>
 bool StreamSocketsAdapter<T>::EstablishChannel(
     const string& endpoint_uri,
     shared_ptr<MessagingChannelInterface<T> > chan) {
-  VLOG(1) << "Establishing channel from endpoint " << endpoint_uri
+  VLOG(1) << "Establishing channel to endpoint " << endpoint_uri
           << ", chan: " << *chan << "!";
   return chan->Establish(endpoint_uri);
 }

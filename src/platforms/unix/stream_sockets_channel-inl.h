@@ -71,6 +71,7 @@ StreamSocketsChannel<T>::StreamSocketsChannel(
 
 template <class T>
 StreamSocketsChannel<T>::~StreamSocketsChannel() {
+  VLOG(2) << "Channel destructor called!";
   // The user may already have manually cleaned up. If not, we do so now.
   if (Ready()) {
     channel_ready_ = false;
