@@ -89,8 +89,8 @@ typedef boost::uuids::uuid JobID_t;
 typedef uint64_t ResourceID_t;
 typedef uint64_t JobID_t;
 #endif
-typedef const uint32_t TaskOutputID_t;
-typedef const uint64_t TaskID_t;
+typedef uint32_t TaskOutputID_t;
+typedef uint64_t TaskID_t;
 typedef map<ResourceID_t, pair<ResourceDescriptor, uint64_t> > ResourceMap_t;
 typedef map<JobID_t, JobDescriptor> JobMap_t;
 typedef map<DataObjectID_t, ReferenceDescriptor> DataObjectMap_t;
