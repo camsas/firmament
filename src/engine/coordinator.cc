@@ -272,29 +272,44 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   LOG(INFO) << "NEW JOB: " << new_job_id;
   VLOG(2) << "Details:\n" << job_descriptor.DebugString();
   // Clone the JD and update it with some information
-  JobDescriptor new_jd = job_descriptor;
-  new_jd.set_uuid(to_string(new_job_id));
-  new_jd.mutable_root_task()->set_uid(GenerateTaskID(new_jd.root_task()));
+  JobDescriptor* new_jd = new JobDescriptor;
+  new_jd->CopyFrom(job_descriptor);
+  new_jd->set_uuid(to_string(new_job_id));
+  // Set the root task ID (which is 0 or unset on submission)
+  new_jd->mutable_root_task()->set_uid(GenerateTaskID(new_jd->root_task()));
   // Add job to local job table
-  CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, new_jd));
-  // Add its tasks to the local task table
+  CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, *new_jd));
+  // Add its root task to the task table
+  if (!InsertIfNotPresent(task_table_.get(), new_jd->root_task().uid(),
+                          shared_ptr<TaskDescriptor>(
+                              new_jd->mutable_root_task()))) {
+    VLOG(1) << "Task " << new_jd->root_task().uid() << " aöready exists in "
+            << "task table, so not adding it again.";
+  }
+  // Add its spawned tasks (if any) to the local task table
   RepeatedPtrField<TaskDescriptor>* spawned_tasks =
-      new_jd.mutable_root_task()->mutable_spawned();
-  AddJobsTaskToTaskTable(spawned_tasks);
+      new_jd->mutable_root_task()->mutable_spawned();
+  AddJobsTasksToTaskTable(spawned_tasks);
   // Adds its outputs to the object table and generate future references for
   // them.
-  for (RepeatedPtrField<ReferenceDescriptor>::const_iterator output_iter =
-       new_jd.root_task().outputs().begin();
-       output_iter != new_jd.root_task().outputs().end();
+  for (RepeatedPtrField<ReferenceDescriptor>::iterator output_iter =
+       new_jd->mutable_root_task()->mutable_outputs()->begin();
+       output_iter != new_jd->mutable_root_task()->mutable_outputs()->end();
        ++output_iter) {
+    // First set the producing task field on the root task output, since the
+    // task ID has only just been determined (so it cannot be set yet)
+    output_iter->set_producing_task(new_jd->root_task().uid());
     VLOG(1) << "Considering root task output " << output_iter->id() << ", "
             << "adding to local object table";
-    CHECK(InsertIfNotPresent(object_table_.get(), output_iter->id(),
-                             *output_iter));
+    if (!InsertIfNotPresent(object_table_.get(), output_iter->id(),
+                            *output_iter)) {
+      VLOG(1) << "Output " << output_iter->id() << " already exists in "
+              << "local object table. Not adding again.";
+    }
   }
   for (RepeatedField<DataObjectID_t>::const_iterator output_iter =
-       new_jd.output_ids().begin();
-       output_iter != new_jd.output_ids().end();
+       new_jd->output_ids().begin();
+       output_iter != new_jd->output_ids().end();
        ++output_iter) {
     VLOG(1) << "Considering job output " << *output_iter;
     // The root task must produce all of the non-existent job outputs, so they
