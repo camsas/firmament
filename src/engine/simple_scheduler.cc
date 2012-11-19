@@ -43,13 +43,18 @@ void SimpleScheduler::BindTaskToResource(
   // XXX(malte): The below call, while innocent-looking, is actually a rather
   // bad idea -- it ends up calling the shared_ptr destructor and blows away the
   // TD. Need to find another way.
-  //CHECK(runnable_tasks_.erase(task_desc));
+  if (VLOG_IS_ON(1))
+    DebugPrintRunnableTasks();
+  CHECK(runnable_tasks_.erase(task_desc->uid()));
+  if (VLOG_IS_ON(1))
+    DebugPrintRunnableTasks();
   // TODO(malte): hacked-up task execution
   LocalExecutor exec(ResourceIDFromString(res_desc->uuid()), coordinator_uri_);
   // XXX(malte): This is currently a SYNCHRONOUS call, and obviously shouldn't
   // be.
   exec.RunTask(task_desc);
   VLOG(1) << "RunTask returned";
+  res_desc->set_state(ResourceDescriptor::RESOURCE_IDLE);
 }
 
 const ResourceID_t* SimpleScheduler::FindResourceForTask(
