@@ -119,7 +119,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       // Run the task binary
       execvp(argv[0], &argv[0]);
       // execl only returns if there was an error
-      PLOG(ERROR) << "execvp failed for task command " << cmdline << "!";
+      PLOG(ERROR) << "execvp failed for task command '" << full_cmd_line << "'";
       //ReportTaskExecutionFailure();
       _exit(1);
     }

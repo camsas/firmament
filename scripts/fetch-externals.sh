@@ -280,7 +280,7 @@ fi
 ## installed, and produce extra options (default flags like --logtostderr).
 print_subhdr "GOOGLE GLOG LIBRARY"
 GLOG_DIR=google-glog-svn
-GLOG_INSTALL_FILE="/usr/local/lib/pkgconfig/libglog.pc"
+GLOG_INSTALL_FILE="/usr/lib/pkgconfig/libglog.pc"
 #GLOG_BUILD_DIR=${EXT_DIR}/google-glog-build
 #mkdir -p ${GLOG_BUILD_DIR}
 if [[ ! -f ${GLOG_INSTALL_FILE} ]]; then
