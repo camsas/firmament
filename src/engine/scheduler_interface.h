@@ -20,20 +20,21 @@ class SchedulerInterface : public PrintableInterface {
   // Constructor.
   SchedulerInterface(shared_ptr<JobMap_t> job_map,
                      shared_ptr<ResourceMap_t> resource_map,
-                     shared_ptr<DataObjectMap_t> object_map)
+                     shared_ptr<DataObjectMap_t> object_map,
+                     shared_ptr<TaskMap_t> task_map)
       : job_map_(job_map), resource_map_(resource_map),
-        object_map_(object_map) {}
+        object_map_(object_map), task_map_(task_map) {}
   // Adds a job to the set of active jobs that are considered for scheduling.
   // TODO(malte): Determine if we actually need this, given the reactive design
   // of the scheduler.
   //void AddJob(shared_ptr<JobDescriptor> job_desc);
   // Finds runnable tasks for the job in the argument and adds them to the
   // global runnable set.
-  virtual const set<shared_ptr<TaskDescriptor> >& RunnableTasksForJob(
-      shared_ptr<JobDescriptor> job_desc) = 0;
+  virtual const set<TaskID_t>& RunnableTasksForJob(
+      JobDescriptor* job_desc) = 0;
   // Schedules all runnable tasks in a job.
   // Returns the number of tasks scheduled.
-  virtual uint64_t ScheduleJob(shared_ptr<JobDescriptor> job_desc) = 0;
+  virtual uint64_t ScheduleJob(JobDescriptor* job_desc) = 0;
   // Runs a scheduling iteration for all active jobs.
   // TODO(malte): Determine if the need this, given the reactive design of the
   // scheduler.

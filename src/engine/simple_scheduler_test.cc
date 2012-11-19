@@ -56,14 +56,13 @@ class SimpleSchedulerTest : public ::testing::Test {
     // before the destructor).
   }
 
-  void PrintRunnableTasks(set<shared_ptr<TaskDescriptor> > runnable_tasks) {
+  void PrintRunnableTasks(set<TaskID_t> runnable_tasks) {
     int i = 0;
-    for (set<shared_ptr<TaskDescriptor> >::const_iterator t_iter =
+    for (set<TaskID_t>::const_iterator t_iter =
          runnable_tasks.begin();
          t_iter != runnable_tasks.end();
          ++t_iter) {
-      VLOG(1) << "Runnable task " << i << ": " << (*t_iter)->uid()
-              << " [at " << *t_iter << "]";
+      VLOG(1) << "Runnable task " << i << ": " << *t_iter;
       ++i;
     }
   }
@@ -74,32 +73,36 @@ class SimpleSchedulerTest : public ::testing::Test {
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<ResourceMap_t> res_map_;
   shared_ptr<DataObjectMap_t> obj_map_;
+  shared_ptr<TaskMap_t> task_map_;
 };
 
 // Tests that the lazy graph reduction algorithm correctly identifies runnable
 // tasks.
 TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   // Simple, plain, 1-task job (base case)
-  shared_ptr<JobDescriptor> test_job(new JobDescriptor);
-  shared_ptr<TaskDescriptor> rtp(new TaskDescriptor);
+  JobDescriptor* test_job = new JobDescriptor;
+  TaskDescriptor* rtp = new TaskDescriptor;
   set<DataObjectID_t> output_ids(pb_to_set(test_job->output_ids()));
-  set<shared_ptr<TaskDescriptor> > runnable_tasks =
+  set<TaskID_t> runnable_tasks =
       sched_->LazyGraphReduction(output_ids, rtp);
   // The root task should be runnable
   CHECK_EQ(runnable_tasks.size(), 1);
   // The only runnable task should be equivalent to the root task we pushed in.
-  CHECK_EQ(*runnable_tasks.begin(), rtp);
+  CHECK_EQ(*runnable_tasks.begin(), rtp->uid());
+  delete rtp;
+  delete test_job;
 }
 
 // Tests correct operation of the RunnableTasksForJob wrapper.
 TEST_F(SimpleSchedulerTest, FindRunnableTasksForJob) {
   // Simple, plain, 1-task job (base case)
-  shared_ptr<JobDescriptor> test_job(new JobDescriptor);
+  JobDescriptor* test_job = new JobDescriptor;
   VLOG(1) << "got here, job is: " << test_job->DebugString();
-  set<shared_ptr<TaskDescriptor> > runnable_tasks =
+  set<TaskID_t> runnable_tasks =
       sched_->RunnableTasksForJob(test_job);
   // The root task should be runnable
   CHECK_EQ(runnable_tasks.size(), 1);
+  delete test_job;
 }
 
 // Tests lookup of a reference in the object table.
@@ -128,7 +131,7 @@ TEST_F(SimpleSchedulerTest, ProducingTaskLookup) {
 // Find runnable tasks for a slightly more elaborate task graph.
 TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   // Somewhat more complex job with 3 tasks.
-  shared_ptr<JobDescriptor> test_job(new JobDescriptor);
+  JobDescriptor* test_job = new JobDescriptor;
   test_job->mutable_root_task()->set_uid(0);
   test_job->mutable_root_task()->set_name("root_task");
   // add spawned task #1
@@ -152,17 +155,18 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   // put future input ref of td2 into object table
   InsertIfNotPresent(obj_map_.get(), d0_td2->id(), *d0_td2);
   VLOG(1) << "got here, job is: " << test_job->DebugString();
-  set<shared_ptr<TaskDescriptor> > runnable_tasks =
+  set<TaskID_t> runnable_tasks =
       sched_->RunnableTasksForJob(test_job);
   PrintRunnableTasks(runnable_tasks);
   // Two tasks should be runnable: those spawned by the root task.
   CHECK_EQ(runnable_tasks.size(), 2);
+  delete test_job;
 }
 
 // Find runnable tasks for a slightly more elaborate task graph.
 TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   // Somewhat more complex job with 3 tasks.
-  shared_ptr<JobDescriptor> test_job(new JobDescriptor);
+  JobDescriptor* test_job = new JobDescriptor;
   test_job->mutable_root_task()->set_uid(0);
   test_job->mutable_root_task()->set_name("root_task");
   ReferenceDescriptor* o0_rt = test_job->mutable_root_task()->add_outputs();
@@ -187,11 +191,12 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   // put future input ref of td2 into object table
   InsertIfNotPresent(obj_map_.get(), d0_td1->id(), *d0_td1);
   VLOG(1) << "got here, job is: " << test_job->DebugString();
-  set<shared_ptr<TaskDescriptor> > runnable_tasks =
+  set<TaskID_t> runnable_tasks =
       sched_->RunnableTasksForJob(test_job);
   // Two tasks should be runnable: those spawned by the root task.
   PrintRunnableTasks(runnable_tasks);
   CHECK_EQ(runnable_tasks.size(), 2);
+  delete test_job;
 }
 
 

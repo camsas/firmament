@@ -69,19 +69,28 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
   return NULL;
 }
 
-const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::RunnableTasksForJob(
-    shared_ptr<JobDescriptor> job_desc) {
+void SimpleScheduler::DebugPrintRunnableTasks() {
+  VLOG(1) << "Runnable task queue now contains " << runnable_tasks_.size()
+          << " elements:";
+  for (set<TaskID_t>::const_iterator t_iter = runnable_tasks_.begin();
+       t_iter != runnable_tasks_.end();
+       ++t_iter)
+    VLOG(1) << "  " << *t_iter;
+}
+
+const set<TaskID_t>& SimpleScheduler::RunnableTasksForJob(
+    JobDescriptor* job_desc) {
   // XXX(malte): Obviously, this is pretty broken.
   set<DataObjectID_t> dummy = pb_to_set(job_desc->output_ids());
-  shared_ptr<TaskDescriptor> rtp(job_desc, job_desc->mutable_root_task());
+  TaskDescriptor* rtp = job_desc->mutable_root_task();
   return LazyGraphReduction(dummy, rtp);
 }
 
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
 // Derek Murray's thesis on CIEL.
-const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::LazyGraphReduction(
+const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
     const set<DataObjectID_t>& output_ids,
-    shared_ptr<TaskDescriptor> root_task) {
+    TaskDescriptor* root_task) {
   VLOG(2) << "Performing lazy graph reduction";
   // Local data structures
   deque<shared_ptr<TaskDescriptor> > newly_active_tasks;
@@ -109,7 +118,10 @@ const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::LazyGraphReduction(
     }
   }
   // Add root task to queue
-  newly_active_tasks.push_back(root_task);
+  shared_ptr<TaskDescriptor>* rtd_ptr = FindOrNull(*task_map_,
+                                                   root_task->uid());
+  CHECK(rtd_ptr);
+  newly_active_tasks.push_back(*rtd_ptr);
   while (!newly_active_tasks.empty()) {
     shared_ptr<TaskDescriptor> current_task = newly_active_tasks.front();
     VLOG(2) << "Next active task considered is " << current_task->uid();
@@ -152,37 +164,39 @@ const set<shared_ptr<TaskDescriptor> >& SimpleScheduler::LazyGraphReduction(
       // This task is runnable
       VLOG(2) << "Adding task " << current_task->uid() << " to RUNNABLE set.";
       current_task->set_state(TaskDescriptor::RUNNABLE);
-      runnable_tasks_.insert(current_task);
+      runnable_tasks_.insert(current_task->uid());
     }
   }
   VLOG(1) << "do_schedule is " << do_schedule;
   return runnable_tasks_;
 }
 
-uint64_t SimpleScheduler::ScheduleJob(shared_ptr<JobDescriptor> job_desc) {
+uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
   VLOG(2) << "Preparing to schedule job " << job_desc->uuid();
   // Get the set of runnable tasks for this job
-  set<shared_ptr<TaskDescriptor> > runnable_tasks =
-      RunnableTasksForJob(job_desc);
+  set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
   VLOG(2) << "Scheduling job " << job_desc->uuid() << ", which has "
           << runnable_tasks.size() << " runnable tasks.";
-  for (set<shared_ptr<TaskDescriptor> >::const_iterator task_iter =
+  for (set<TaskID_t>::const_iterator task_iter =
        runnable_tasks.begin();
        task_iter != runnable_tasks.end();
        ++task_iter) {
-    VLOG(2) << "Considering task " << (*task_iter)->uid() << ":\n"
-            << (*task_iter)->DebugString();
+    shared_ptr<TaskDescriptor>* td = FindOrNull(*task_map_, *task_iter);
+    CHECK(td);
+    VLOG(2) << "TD for ID " << *task_iter << " is at " << td->get();
+    VLOG(2) << "Considering task " << (*td)->uid() << ":\n"
+            << (*td)->DebugString();
     // TODO(malte): check passing semantics here.
-    const ResourceID_t* best_resource = FindResourceForTask(*task_iter);
+    const ResourceID_t* best_resource = FindResourceForTask(*td);
     if (!best_resource) {
       VLOG(2) << "No suitable resource found, will need to try again.";
     } else {
       pair<ResourceDescriptor, uint64_t>* rp = FindOrNull(*resource_map_,
                                                           *best_resource);
       CHECK(rp);
-      LOG(INFO) << "Scheduling task " << (*task_iter)->uid() << " on resource "
+      LOG(INFO) << "Scheduling task " << (*td)->uid() << " on resource "
                 << rp->first.uuid() << "[" << rp << "]";
-      BindTaskToResource(*task_iter, &(rp->first));
+      BindTaskToResource(*td, &(rp->first));
     }
   }
   return 0;
@@ -207,9 +221,12 @@ shared_ptr<TaskDescriptor> SimpleScheduler::ProducingTaskForDataObjectID(
   if (!rd || !rd->has_producing_task()) {
     return shared_ptr<TaskDescriptor>();  // NULL
   } else {
-    shared_ptr<TaskDescriptor> temp_td(new TaskDescriptor);
-    temp_td->set_uid(rd->producing_task());
-    return temp_td;
+    shared_ptr<TaskDescriptor>* td_ptr =
+        FindOrNull(*task_map_, rd->producing_task());
+    if (td_ptr)
+      return *td_ptr;
+    else
+      return shared_ptr<TaskDescriptor>();  // NULL
   }
 }
 

@@ -26,9 +26,8 @@ class SimpleScheduler : public SchedulerInterface {
                   shared_ptr<DataObjectMap_t> object_map,
                   shared_ptr<TaskMap_t> task_map,
                   const string& coordinator_uri);
-  const set<shared_ptr<TaskDescriptor> >& RunnableTasksForJob(
-      shared_ptr<JobDescriptor> job_desc);
-  uint64_t ScheduleJob(shared_ptr<JobDescriptor> job_desc);
+  const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
+  uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<SimpleScheduler>";
   }
@@ -44,14 +43,15 @@ class SimpleScheduler : public SchedulerInterface {
   FRIEND_TEST(SimpleSchedulerTest, LazyGraphReductionTest);
   FRIEND_TEST(SimpleSchedulerTest, ObjectIDToReferenceDescLookup);
   FRIEND_TEST(SimpleSchedulerTest, ProducingTaskLookup);
-  const set<shared_ptr<TaskDescriptor> >& LazyGraphReduction(
+  void DebugPrintRunnableTasks();
+  const set<TaskID_t>& LazyGraphReduction(
       const set<DataObjectID_t>& output_ids,
-      shared_ptr<TaskDescriptor> root_task);
+      TaskDescriptor* root_task);
   shared_ptr<ReferenceInterface> ReferenceForID(DataObjectID_t id);
   shared_ptr<TaskDescriptor> ProducingTaskForDataObjectID(DataObjectID_t id);
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction
-  set<shared_ptr<TaskDescriptor> > runnable_tasks_;
+  set<TaskID_t> runnable_tasks_;
   set<shared_ptr<TaskDescriptor> > blocked_tasks_;
   // Initialized to hold the URI of the (currently unique) coordinator this
   // scheduler is associated with. This is passed down to the executor and to
