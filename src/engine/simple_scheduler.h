@@ -6,6 +6,7 @@
 #ifndef FIRMAMENT_ENGINE_SIMPLE_SCHEDULER_H
 #define FIRMAMENT_ENGINE_SIMPLE_SCHEDULER_H
 
+#include <map>
 #include <set>
 #include <string>
 
@@ -15,9 +16,12 @@
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
 #include "engine/scheduler_interface.h"
+#include "engine/executor_interface.h"
 
 namespace firmament {
 namespace scheduler {
+
+using executor::ExecutorInterface;
 
 class SimpleScheduler : public SchedulerInterface {
  public:
@@ -26,6 +30,10 @@ class SimpleScheduler : public SchedulerInterface {
                   shared_ptr<DataObjectMap_t> object_map,
                   shared_ptr<TaskMap_t> task_map,
                   const string& coordinator_uri);
+  ~SimpleScheduler();
+  void DeregisterResource(ResourceID_t res_id);
+  void RegisterResource(ResourceID_t res_id);
+  void HandleTaskCompletion(shared_ptr<TaskDescriptor> td_ptr);
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
   uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
@@ -57,6 +65,8 @@ class SimpleScheduler : public SchedulerInterface {
   // scheduler is associated with. This is passed down to the executor and to
   // tasks so that they can find the coordinator at runtime.
   const string coordinator_uri_;
+  map<ResourceID_t, ExecutorInterface*> executors_;
+  map<TaskID_t, ResourceID_t> task_bindings_;
 };
 
 }  // namespace scheduler

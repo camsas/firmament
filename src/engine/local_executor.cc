@@ -23,9 +23,18 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
                              const string& coordinator_uri)
     : local_resource_id_(resource_id),
       coordinator_uri_(coordinator_uri) {
+  VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
 }
 
-bool LocalExecutor::RunTask(shared_ptr<TaskDescriptor> td) {
+void LocalExecutor::RunTask(shared_ptr<TaskDescriptor> td) {
+  CHECK(td);
+  // TODO(malte): We lose the thread reference here, so we can never join this
+  // thread. Need to return or store if we ever need it for anythign again.
+  boost::thread per_task_thread(
+      boost::bind(&LocalExecutor::_RunTask, this, td));
+}
+
+bool LocalExecutor::_RunTask(shared_ptr<TaskDescriptor> td) {
   SetUpEnvironmentForTask(*td);
   // Convert arguments as specified in TD into a string vector that we can munge
   // into an actual argv[].
@@ -111,6 +120,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       execvp(argv[0], &argv[0]);
       // execl only returns if there was an error
       PLOG(ERROR) << "execvp failed for task command " << cmdline << "!";
+      //ReportTaskExecutionFailure();
       _exit(1);
     }
     default:
@@ -124,6 +134,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       ReadFromPipe(pipe_from[0]);
       // wait for task to terminate
       while (!WIFEXITED(status)) {
+        VLOG(2) << "Waiting for task to exit...";
         waitpid(pid, &status, 0);
       }
       VLOG(1) << "Task process with PID " << pid << " exited with status "

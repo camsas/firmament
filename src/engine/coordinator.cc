@@ -116,6 +116,8 @@ void Coordinator::DetectLocalResources() {
                              pair<ResourceDescriptor, uint64_t>(
                                  *lr_iter, GetCurrentTimestamp())));
     resource_desc_.add_children(lr_iter->uuid());
+    // Register with scheduler
+    scheduler_->RegisterResource(ResourceIDFromString(lr_iter->uuid()));
     VLOG(1) << "Added local resource " << lr_iter->uuid() << " (PU #" << i
             << "): " << lr_iter->DebugString();
     ++i;
@@ -227,6 +229,7 @@ void Coordinator::HandleTaskStateChange(
       CHECK(td_ptr) << "Received completion message for unknown task "
                     << msg.id();
       (*td_ptr)->set_state(TaskDescriptor::COMPLETED);
+      scheduler_->HandleTaskCompletion(*td_ptr);
       break;
     }
     default:

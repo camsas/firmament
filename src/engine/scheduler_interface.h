@@ -28,6 +28,17 @@ class SchedulerInterface : public PrintableInterface {
   // TODO(malte): Determine if we actually need this, given the reactive design
   // of the scheduler.
   //void AddJob(shared_ptr<JobDescriptor> job_desc);
+  // Unregister a resource ID from the scheduler. No-op if the resource ID is
+  // not actually registered with it.
+  virtual void DeregisterResource(ResourceID_t res_id) = 0;
+  // Handle the completion of a task. This usually involves freeing up its
+  // resource by setting it idle, and recording any bookkeeping data required.
+  virtual void HandleTaskCompletion(shared_ptr<TaskDescriptor> td_ptr) = 0;
+  // Registers a resource ID with the scheduler, who may subsequently assign
+  // work to this resource. A resource may be registered with multiple
+  // schedulers.
+  // TODO(malte): Work out what the semantics of doing so are!
+  virtual void RegisterResource(ResourceID_t res_id) = 0;
   // Finds runnable tasks for the job in the argument and adds them to the
   // global runnable set.
   virtual const set<TaskID_t>& RunnableTasksForJob(

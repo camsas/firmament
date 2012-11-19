@@ -15,6 +15,12 @@
 #include <string>
 #include <utility>
 
+#ifdef __PLATFORM_HAS_BOOST__
+#include <boost/thread.hpp>
+#else
+#error Boost not available!
+#endif
+
 #include "base/common.h"
 #include "base/types.h"
 #include "engine/executor_interface.h"
@@ -26,7 +32,7 @@ class LocalExecutor : public ExecutorInterface {
  public:
   LocalExecutor(ResourceID_t resource_id,
                 const string& coordinator_uri);
-  bool RunTask(shared_ptr<TaskDescriptor> td);
+  void RunTask(shared_ptr<TaskDescriptor> td);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<LocalExecutor at resource "
                    << to_string(local_resource_id_)
@@ -39,11 +45,14 @@ class LocalExecutor : public ExecutorInterface {
   FRIEND_TEST(LocalExecutorTest, SimpleSyncProcessExecutionTest);
   FRIEND_TEST(LocalExecutorTest, SyncProcessExecutionWithArgsTest);
   FRIEND_TEST(LocalExecutorTest, ExecutionFailureTest);
+  FRIEND_TEST(LocalExecutorTest, SimpleTaskExecutionTest);
+  FRIEND_TEST(LocalExecutorTest, TaskExecutionWithArgsTest);
   ResourceID_t local_resource_id_;
   int32_t RunProcessSync(const string& cmdline,
                          vector<string> args,
                          bool perf_monitoring,
                          bool default_args);
+  bool _RunTask(shared_ptr<TaskDescriptor> td);
   string PerfDataFileName(const TaskDescriptor& td);
   void ReadFromPipe(int fd);
   void SetUpEnvironmentForTask(const TaskDescriptor& td);

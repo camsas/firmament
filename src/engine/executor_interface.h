@@ -16,7 +16,7 @@ namespace executor {
 class ExecutorInterface : public PrintableInterface {
  public:
   virtual ostream& ToString(ostream* stream) const = 0;
-  virtual bool RunTask(shared_ptr<TaskDescriptor> td) = 0;
+  virtual void RunTask(shared_ptr<TaskDescriptor> td) = 0;
  protected:
 };
 

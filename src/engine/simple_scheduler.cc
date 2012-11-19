@@ -7,6 +7,7 @@
 
 #include <string>
 #include <deque>
+#include <map>
 #include <utility>
 
 #include "base/reference_types.h"
@@ -30,6 +31,15 @@ SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
   VLOG(1) << "SimpleScheduler initiated.";
 }
 
+SimpleScheduler::~SimpleScheduler() {
+  for (map<ResourceID_t, ExecutorInterface*>::const_iterator exec_iter =
+       executors_.begin();
+       exec_iter != executors_.end();
+       ++exec_iter)
+    delete exec_iter->second;
+  executors_.clear();
+}
+
 void SimpleScheduler::BindTaskToResource(
     shared_ptr<TaskDescriptor> task_desc,
 //    shared_ptr<ResourceDescriptor> res_desc) {
@@ -40,6 +50,8 @@ void SimpleScheduler::BindTaskToResource(
   // TODO(malte): safety checks
   res_desc->set_state(ResourceDescriptor::RESOURCE_BUSY);
   task_desc->set_state(TaskDescriptor::RUNNING);
+  CHECK(InsertIfNotPresent(&task_bindings_, task_desc->uid(),
+                           ResourceIDFromString(res_desc->uuid())));
   // XXX(malte): The below call, while innocent-looking, is actually a rather
   // bad idea -- it ends up calling the shared_ptr destructor and blows away the
   // TD. Need to find another way.
@@ -48,13 +60,14 @@ void SimpleScheduler::BindTaskToResource(
   CHECK(runnable_tasks_.erase(task_desc->uid()));
   if (VLOG_IS_ON(1))
     DebugPrintRunnableTasks();
-  // TODO(malte): hacked-up task execution
-  LocalExecutor exec(ResourceIDFromString(res_desc->uuid()), coordinator_uri_);
-  // XXX(malte): This is currently a SYNCHRONOUS call, and obviously shouldn't
-  // be.
-  exec.RunTask(task_desc);
-  VLOG(1) << "RunTask returned";
-  res_desc->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  // Find an executor for this resource.
+  ExecutorInterface** exec =
+      FindOrNull(executors_, ResourceIDFromString(res_desc->uuid()));
+  CHECK(exec);
+  // Actually kick off the task
+  // N.B. This is an asynchronous call, as the executor will spawn a thread.
+  (*exec)->RunTask(task_desc);
+  VLOG(1) << "Task running";
 }
 
 const ResourceID_t* SimpleScheduler::FindResourceForTask(
@@ -81,6 +94,35 @@ void SimpleScheduler::DebugPrintRunnableTasks() {
        t_iter != runnable_tasks_.end();
        ++t_iter)
     VLOG(1) << "  " << *t_iter;
+}
+
+void SimpleScheduler::DeregisterResource(ResourceID_t res_id) {
+  VLOG(1) << "Removing executor for resource " << res_id
+          << " which is now deregistered from this scheduler.";
+  ExecutorInterface** exec = FindOrNull(executors_, res_id);
+  // Terminate any running tasks on the resource.
+  //(*exec)->TerminateAllTasks();
+  // Remove the executor for the resource.
+  CHECK(executors_.erase(res_id));
+  delete exec;
+}
+
+void SimpleScheduler::HandleTaskCompletion(shared_ptr<TaskDescriptor> td_ptr) {
+  // Find resource for task
+  ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, td_ptr->uid());
+  VLOG(1) << "Handling completion of task " << td_ptr->uid()
+          << ", freeing resource " << *res_id_ptr;
+  // Set the bound resource idle again.
+  pair<ResourceDescriptor, uint64_t>* res =
+      FindOrNull(*resource_map_, *res_id_ptr);
+  res->first.set_state(ResourceDescriptor::RESOURCE_IDLE);
+}
+
+void SimpleScheduler::RegisterResource(ResourceID_t res_id) {
+  // Create an executor for each resource.
+  VLOG(1) << "Adding executor for resource " << res_id;
+  LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_);
+  CHECK(InsertIfNotPresent(&executors_, res_id, exec));
 }
 
 const set<TaskID_t>& SimpleScheduler::RunnableTasksForJob(
