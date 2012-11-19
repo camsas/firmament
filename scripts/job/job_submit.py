@@ -15,10 +15,12 @@ job_desc.root_task.uid = 0
 job_desc.root_task.name = "root_task"
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
 job_desc.root_task.binary = sys.argv[3]
+output_id = random.randint(0, 10000000)
+job_desc.output_ids.append(output_id)
 #job_desc.root_task.binary = "/bin/echo"
 #job_desc.root_task.args.append("Hello World!")
 final_output_desc = job_desc.root_task.outputs.add()
-final_output_desc.id = random.randint(0, 10000000)
+final_output_desc.id = output_id
 final_output_desc.scope = reference_desc_pb2.ReferenceDescriptor.PUBLIC
 final_output_desc.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
 final_output_desc.non_deterministic = False
