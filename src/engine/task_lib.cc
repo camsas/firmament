@@ -11,6 +11,7 @@
 #include "messages/heartbeat_message.pb.h"
 #include "messages/registration_message.pb.h"
 #include "messages/task_state_message.pb.h"
+#include "misc/utils.h"
 #include "platforms/common.h"
 #include "platforms/common.pb.h"
 
@@ -104,6 +105,7 @@ void TaskLib::RunTask() {
 
 void TaskLib::SendFinalizeMessage(bool success) {
   BaseMessage bm;
+  SUBMSG_WRITE(bm, task_state, id, TaskIDFromString(getenv("TASK_ID")));
   if (success)
     SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::COMPLETED);
   else

@@ -220,10 +220,15 @@ void Coordinator::HandleRegistrationRequest(
 void Coordinator::HandleTaskStateChange(
     const TaskStateMessage& msg) {
   switch (msg.new_state()) {
-    case TaskDescriptor::COMPLETED:
+    case TaskDescriptor::COMPLETED: {
       VLOG(1) << "Task " << msg.id() << " now in state COMPLETED.";
       // XXX(malte): tear down the respective connection, cleanup
+      shared_ptr<TaskDescriptor>* td_ptr = FindOrNull(*task_table_, msg.id());
+      CHECK(td_ptr) << "Received completion message for unknown task "
+                    << msg.id();
+      (*td_ptr)->set_state(TaskDescriptor::COMPLETED);
       break;
+    }
     default:
       VLOG(1) << "Task " << msg.id() << "'s state changed to "
               << static_cast<uint64_t>(msg.new_state());
