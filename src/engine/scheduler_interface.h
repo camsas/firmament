@@ -54,6 +54,7 @@ class SchedulerInterface : public PrintableInterface {
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<ResourceMap_t> resource_map_;
   shared_ptr<DataObjectMap_t> object_map_;
+  shared_ptr<TaskMap_t> task_map_;
 };
 
 }  // namespace scheduler

@@ -24,6 +24,7 @@ class SimpleScheduler : public SchedulerInterface {
   SimpleScheduler(shared_ptr<JobMap_t> job_map,
                   shared_ptr<ResourceMap_t> resource_map,
                   shared_ptr<DataObjectMap_t> object_map,
+                  shared_ptr<TaskMap_t> task_map,
                   const string& coordinator_uri);
   const set<shared_ptr<TaskDescriptor> >& RunnableTasksForJob(
       shared_ptr<JobDescriptor> job_desc);

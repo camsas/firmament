@@ -23,8 +23,9 @@ using common::pb_to_set;
 SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
                                  shared_ptr<ResourceMap_t> resource_map,
                                  shared_ptr<DataObjectMap_t> object_map,
+                                 shared_ptr<TaskMap_t> task_map,
                                  const string& coordinator_uri)
-    : SchedulerInterface(job_map, resource_map, object_map),
+    : SchedulerInterface(job_map, resource_map, object_map, task_map),
       coordinator_uri_(coordinator_uri) {
   VLOG(1) << "SimpleScheduler initiated.";
 }

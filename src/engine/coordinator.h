@@ -111,9 +111,19 @@ class Coordinator : public Node,
     }
     return jd_vec;
   }
+  vector<shared_ptr<TaskDescriptor> > active_tasks() {
+    vector<shared_ptr<TaskDescriptor> > td_vec;
+    for (TaskMap_t::const_iterator task_iter =
+         task_table_->begin();
+         task_iter != task_table_->end();
+         ++task_iter) {
+      td_vec.push_back(task_iter->second);
+    }
+    return td_vec;
+  }
 
  protected:
-  void AddJobsTaskToTaskTable(RepeatedPtrField<TaskDescriptor>* tasks);
+  void AddJobsTasksToTaskTable(RepeatedPtrField<TaskDescriptor>* tasks);
   bool RegisterWithCoordinator(
       shared_ptr<StreamSocketsChannel<BaseMessage> > chan);
   void DetectLocalResources();

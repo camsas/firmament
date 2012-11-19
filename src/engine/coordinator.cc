@@ -44,7 +44,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     object_table_(new DataObjectMap_t),
     task_table_(new TaskMap_t),
     scheduler_(new SimpleScheduler(job_table_, associated_resources_,
-                                   object_table_,
+                                   object_table_, task_table_,
                                    FLAGS_listen_uri)),
     object_store_(new StubObjectStore) {
   // Start up a coordinator ccording to the platform parameter
@@ -246,7 +246,7 @@ void Coordinator::InitHTTPUI() {
 }
 #endif
 
-void Coordinator::AddJobsTaskToTaskTable(
+void Coordinator::AddJobsTasksToTaskTable(
     RepeatedPtrField<TaskDescriptor>* tasks) {
   for (RepeatedPtrField<TaskDescriptor>::iterator task_iter =
        tasks->begin();
@@ -255,7 +255,7 @@ void Coordinator::AddJobsTaskToTaskTable(
     VLOG(1) << "Adding task " << task_iter->uid() << " to task table.";
     CHECK(InsertIfNotPresent(task_table_.get(), task_iter->uid(),
                              shared_ptr<TaskDescriptor>(&(*task_iter))));
-    AddJobsTaskToTaskTable(task_iter->mutable_spawned());
+    AddJobsTasksToTaskTable(task_iter->mutable_spawned());
   }
 }
 
