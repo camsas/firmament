@@ -34,7 +34,7 @@ ext/.ext-ok:
 engine: base platforms misc sim
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
-examples: engine
+examples: engine scripts
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/examples all
 
 base: ext

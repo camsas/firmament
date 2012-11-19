@@ -54,8 +54,7 @@ To submit a toy job, first make the examples target and then use the script in
 scripts/job/job_submit.py:
 
 $ make examples
-$ cd scripts/job/job_submit.py
-$ make
+$ cd scripts/job/
 $ python job_submit.py <host> <webUI port (8080)> <binary>
 
 Example for the last line:
