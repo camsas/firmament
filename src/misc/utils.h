@@ -20,6 +20,8 @@
 
 namespace firmament {
 
+#define ENUM_TO_STRING(t, v) t ## _descriptor()->FindValueByNumber(v)->name()
+
 // Returns the current epoch timestamp in µ-seconds as an integer.
 // Uses gettimeofday() under the hood, so does not make any guarantees w.r.t.
 // time zones etc.
@@ -41,8 +43,11 @@ DataObjectID_t GenerateDataObjectID(const TaskDescriptor& task_descriptor);
 DataObjectID_t GenerateDataObjectID(TaskID_t producing_task,
                                     TaskOutputID_t output_id);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task);
+// Utility functions to parse various types from strings.
+DataObjectID_t DataObjectIDFromString(const string& str);
 ResourceID_t ResourceIDFromString(const string& str);
 JobID_t JobIDFromString(const string& str);
+TaskID_t TaskIDFromString(const string& str);
 
 }  // namespace firmament
 

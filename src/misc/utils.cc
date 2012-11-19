@@ -72,6 +72,12 @@ DataObjectID_t GenerateDataObjectID(
   return static_cast<DataObjectID_t>(hash);
 }
 
+DataObjectID_t DataObjectIDFromString(const string& str) {
+  // XXX(malte): possibly unsafe use of atol() here.
+  DataObjectID_t object_id = atol(str.c_str());
+  return object_id;
+}
+
 JobID_t JobIDFromString(const string& str) {
   // XXX(malte): This makes assumptions about JobID_t being a Boost UUID. We
   // should have a generic "JobID_t-from-string" helper instead.
@@ -96,5 +102,10 @@ ResourceID_t ResourceIDFromString(const string& str) {
   return res_uuid;
 }
 
+TaskID_t TaskIDFromString(const string& str) {
+  // XXX(malte): possibly unsafe use of atol() here.
+  TaskID_t task_uuid = atol(str.c_str());
+  return task_uuid;
+}
 
 }  // namespace firmament
