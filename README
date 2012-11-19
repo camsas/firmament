@@ -36,6 +36,10 @@ $ make test
 
 will run unit tests.
 
+Other targets can be listed by running
+
+$ make help
+
 Binaries are in the build/ subdirectory of the project root, and all accept the
 --helpshort argument to show their command line options.
 
@@ -58,8 +62,10 @@ Example for the last line:
 
 $ python job_submit.py localhost 8080 /home/me/build/examples/hello_world
 
-(Note that you need to run `make` in the script directory since the script
-depends on some protocol buffer data structures that need to be compiled.)
+(Note that you may need to run 'make' in the script directory since the script
+depends on some protocol buffer data structures that need to be compiled. If
+you have run 'make all', all script dependencies should automatically have been
+built, though.)
 
 If this all works, you should see the job print "Hello world" in the
 coordinator's console.

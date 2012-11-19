@@ -1,13 +1,30 @@
-.PHONY: clean test ext
+.PHONY: clean test ext help info
 .DEFAULT: all
 
 # Get common build settings
 include include/Makefile.config
 
-all: tests-clean info ext platforms misc engine examples
+all: tests-clean ext platforms misc engine examples scripts
+
+help: info
 
 info:
-	@echo "Build using $(CXX)"
+	@echo "C++ compiler: $(CXX)"
+	@echo "CPPFLAGS: $(CPPFLAGS)"
+	@echo "CXXFLAGS: $(CXXFLAGS)"
+	@echo "Platform: $(PLATFORM)"
+	@echo "Build output in $(BUILD_DIR)"
+	@echo
+	@echo "Targets:"
+	@echo "  - all: build all code"
+	@echo "  - clean: remove all temporary build infrastructure"
+	@echo "  - examples: build example jobs"
+	@echo "  - ext: set up external dependencies (should only run once "
+	@echo "         and automatically, but can be re-run manually)"
+	@echo "  - test: run unit tests (must be preceded by clean & make all)"
+	@echo "  - lint: run code style checker scripts"
+	@echo "  - lint-verb: verbose code style checking"
+	@echo
 
 ext: ext/.ext-ok
 
@@ -37,7 +54,8 @@ messages: base ext
 platforms: messages
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/platforms all
 
-nonext: engine doc
+scripts:
+	$(MAKE) $(MAKEFLAGS) -C $(ROOT_DIR)/scripts/job
 
 test: ext
 	$(MAKE) $(MAKEFLAGS) -C tests run
