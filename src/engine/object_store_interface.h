@@ -9,12 +9,15 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "misc/printable_interface.h"
+#include "base/reference_interface.h"
 
 namespace firmament {
 namespace store {
 
 class ObjectStoreInterface : public PrintableInterface {
  public:
+  virtual void PutObject(DataObjectID_t id, void* data, size_t len) = 0;
+  virtual bool GetObject(DataObjectID_t id, void*, size_t* len) = 0;
   virtual ostream& ToString(ostream* stream) const = 0;
  protected:
 };

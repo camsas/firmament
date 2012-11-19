@@ -20,6 +20,8 @@ namespace store {
 class StubObjectStore : public ObjectStoreInterface {
  public:
   StubObjectStore();
+  void PutObject(DataObjectID_t id, void* data, size_t len);
+  bool GetObject(DataObjectID_t id, void*, size_t* len);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<StubObjectStore, containing "
                    << stub_object_map_.size() << " objects>";
