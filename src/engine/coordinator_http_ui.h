@@ -49,6 +49,8 @@ class CoordinatorHTTPUI {
   void LogRequest(const HTTPRequestPtr& http_request);
   void HandleFaviconURI(HTTPRequestPtr& http_request,  // NOLINT
                         TCPConnectionPtr& tcp_conn);
+  void HandleJobURI(HTTPRequestPtr& http_request,  // NOLINT
+                    TCPConnectionPtr& tcp_conn);
   void HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOLINT
                           TCPConnectionPtr& tcp_conn);
   void HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLINT
@@ -65,6 +67,10 @@ class CoordinatorHTTPUI {
                          TCPConnectionPtr& tcp_conn);
   void HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
                        TCPConnectionPtr& tcp_conn);
+  void HandleReferenceURI(HTTPRequestPtr& http_request,  // NOLINT
+                          TCPConnectionPtr& tcp_conn);
+  void HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
+                     TCPConnectionPtr& tcp_conn);
   void HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLINT
                          TCPConnectionPtr& tcp_conn);
   void Shutdown(bool block);

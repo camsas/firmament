@@ -84,13 +84,57 @@ class Coordinator : public Node,
   // (including the coordinator itself); returns NULL if the resource is not
   // associated or the coordinator itself.
   ResourceDescriptor* GetResource(ResourceID_t res_id) {
-    VLOG(1) << "res_id: " << res_id << ", " << uuid_;
     if (res_id == uuid_)
       return &resource_desc_;
     pair<ResourceDescriptor, uint64_t>* res =
         FindOrNull(*associated_resources_, res_id);
     return (res ? &(res->first) : NULL);
   }
+  // Gets a pointer to the job descriptor for a job known to the coordinator.
+  // If the job is not known to the coordinator, we will return NULL.
+  JobDescriptor* GetJob(JobID_t job_id) {
+    return FindOrNull(*job_table_, job_id);
+  }
+  // Gets a pointer to the reference descriptor for a reference known to the
+  // coordinator.
+  // If the reference is not known to the coordinator, we will return NULL.
+  ReferenceDescriptor* GetReference(DataObjectID_t object_id) {
+    return FindOrNull(*object_table_, object_id);
+  }
+  // Gets a pointer to the task descriptor for a task known to the coordinator.
+  // If the task is not known to the coordinator, we will return NULL.
+  shared_ptr<TaskDescriptor> GetTask(TaskID_t task_id) {
+    shared_ptr<TaskDescriptor>* result =
+        FindOrNull(*task_table_, task_id);
+    if (!result)
+      return shared_ptr<TaskDescriptor>();  // NULL
+    else
+      return *result;
+  }
+  inline size_t NumResources() { return associated_resources_->size(); }
+  inline size_t NumJobs() { return job_table_->size(); }
+  inline size_t NumJobsInState(JobDescriptor::JobState state) {
+    size_t count = 0;
+    for (JobMap_t::const_iterator j_iter = job_table_->begin();
+         j_iter != job_table_->end();
+         ++j_iter)
+      if (j_iter->second.state() == state)
+        count++;
+    return count;
+  }
+  inline size_t NumTasks() { return task_table_->size(); }
+  inline size_t NumTasksInState(TaskDescriptor::TaskState state) {
+    size_t count = 0;
+    for (TaskMap_t::const_iterator t_iter = task_table_->begin();
+         t_iter != task_table_->end();
+         ++t_iter) {
+      if (t_iter->second->state() == state)
+        count++;
+    }
+    return count;
+  }
+  inline size_t NumReferences() { return object_table_->size(); }
+
   vector<ResourceDescriptor> associated_resources() {
     vector<ResourceDescriptor> ref_vec;
     for (ResourceMap_t::const_iterator res_iter =
