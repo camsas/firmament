@@ -33,7 +33,7 @@ class SchedulerInterface : public PrintableInterface {
   virtual void DeregisterResource(ResourceID_t res_id) = 0;
   // Handle the completion of a task. This usually involves freeing up its
   // resource by setting it idle, and recording any bookkeeping data required.
-  virtual void HandleTaskCompletion(shared_ptr<TaskDescriptor> td_ptr) = 0;
+  virtual void HandleTaskCompletion(TaskDescriptor* td_ptr) = 0;
   // Registers a resource ID with the scheduler, who may subsequently assign
   // work to this resource. A resource may be registered with multiple
   // schedulers.
@@ -55,13 +55,13 @@ class SchedulerInterface : public PrintableInterface {
   // modify various bits of meta-data tracking assignments. It will then
   // delegate the actual execution of the task binary to the appropriate local
   // execution handler.
-  virtual void BindTaskToResource(shared_ptr<TaskDescriptor> task_desc,
+  virtual void BindTaskToResource(TaskDescriptor* task_desc,
                                   ResourceDescriptor* res_desc) = 0;
   // Finds a resource for a runnable task. This is the core placement logic.
   // Returns the resource ID of the resource chosen in the second argument, or
   // NULL if no resource could be found.
   virtual const ResourceID_t* FindResourceForTask(
-      shared_ptr<TaskDescriptor> task_desc) = 0;
+      TaskDescriptor* task_desc) = 0;
   // Pointers to the associated coordinator's job, resource and object maps
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<ResourceMap_t> resource_map_;

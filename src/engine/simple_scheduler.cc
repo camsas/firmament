@@ -41,7 +41,7 @@ SimpleScheduler::~SimpleScheduler() {
 }
 
 void SimpleScheduler::BindTaskToResource(
-    shared_ptr<TaskDescriptor> task_desc,
+    TaskDescriptor* task_desc,
 //    shared_ptr<ResourceDescriptor> res_desc) {
     ResourceDescriptor* res_desc) {
   // TODO(malte): stub
@@ -66,12 +66,12 @@ void SimpleScheduler::BindTaskToResource(
   CHECK(exec);
   // Actually kick off the task
   // N.B. This is an asynchronous call, as the executor will spawn a thread.
-  (*exec)->RunTask(task_desc);
+  (*exec)->RunTask(task_desc, true);
   VLOG(1) << "Task running";
 }
 
 const ResourceID_t* SimpleScheduler::FindResourceForTask(
-    shared_ptr<TaskDescriptor> task_desc) {
+    TaskDescriptor* task_desc) {
   // TODO(malte): stub
   VLOG(2) << "Trying to place task " << task_desc->uid() << "...";
   // Find the first idle resource in the resource map
@@ -107,7 +107,7 @@ void SimpleScheduler::DeregisterResource(ResourceID_t res_id) {
   delete exec;
 }
 
-void SimpleScheduler::HandleTaskCompletion(shared_ptr<TaskDescriptor> td_ptr) {
+void SimpleScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
   // Find resource for task
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, td_ptr->uid());
   VLOG(1) << "Handling completion of task " << td_ptr->uid()
@@ -116,6 +116,8 @@ void SimpleScheduler::HandleTaskCompletion(shared_ptr<TaskDescriptor> td_ptr) {
   pair<ResourceDescriptor, uint64_t>* res =
       FindOrNull(*resource_map_, *res_id_ptr);
   res->first.set_state(ResourceDescriptor::RESOURCE_IDLE);
+  // Remove the task's resource binding (as it is no longer currently bound)
+  task_bindings_.erase(td_ptr->uid());
 }
 
 void SimpleScheduler::RegisterResource(ResourceID_t res_id) {
@@ -140,7 +142,7 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
     TaskDescriptor* root_task) {
   VLOG(2) << "Performing lazy graph reduction";
   // Local data structures
-  deque<shared_ptr<TaskDescriptor> > newly_active_tasks;
+  deque<TaskDescriptor* > newly_active_tasks;
   bool do_schedule = false;
   // Add expected producer for object_id to queue, if the object reference is
   // not already concrete.
@@ -155,8 +157,7 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
     }
     // otherwise, we add the producer for said output reference to the queue, if
     // it is not already scheduled.
-    shared_ptr<TaskDescriptor> task =
-        ProducingTaskForDataObjectID(*output_id_iter);
+    TaskDescriptor* task = ProducingTaskForDataObjectID(*output_id_iter);
     CHECK(task != NULL) << "Could not find task producing output ID "
                         << *output_id_iter;
     if (task->state() == TaskDescriptor::CREATED) {
@@ -165,12 +166,11 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
     }
   }
   // Add root task to queue
-  shared_ptr<TaskDescriptor>* rtd_ptr = FindOrNull(*task_map_,
-                                                   root_task->uid());
+  TaskDescriptor** rtd_ptr = FindOrNull(*task_map_, root_task->uid());
   CHECK(rtd_ptr);
   newly_active_tasks.push_back(*rtd_ptr);
   while (!newly_active_tasks.empty()) {
-    shared_ptr<TaskDescriptor> current_task = newly_active_tasks.front();
+    TaskDescriptor* current_task = newly_active_tasks.front();
     VLOG(2) << "Next active task considered is " << current_task->uid();
     newly_active_tasks.pop_front();
     // Find any unfulfilled dependencies
@@ -189,10 +189,10 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
         // look at its predecessors (which may produce the necessary input, and
         // may be runnable).
         VLOG(2) << "Task " << current_task->uid()
-                << " is blocking on reference " << ref;
+                << " is blocking on reference " << *ref;
         will_block = true;
         // Look at predecessor task (producing this reference)
-        shared_ptr<TaskDescriptor> producing_task =
+        TaskDescriptor* producing_task =
             ProducingTaskForDataObjectID(ref->id());
         if (producing_task) {
           if (producing_task->state() == TaskDescriptor::CREATED ||
@@ -228,9 +228,8 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
        runnable_tasks.begin();
        task_iter != runnable_tasks.end();
        ++task_iter) {
-    shared_ptr<TaskDescriptor>* td = FindOrNull(*task_map_, *task_iter);
+    TaskDescriptor** td = FindOrNull(*task_map_, *task_iter);
     CHECK(td);
-    VLOG(2) << "TD for ID " << *task_iter << " is at " << td->get();
     VLOG(2) << "Considering task " << (*td)->uid() << ":\n"
             << (*td)->DebugString();
     // TODO(malte): check passing semantics here.
@@ -260,20 +259,20 @@ shared_ptr<ReferenceInterface> SimpleScheduler::ReferenceForID(
     return ReferenceFromDescriptor(*rd);
 }
 
-shared_ptr<TaskDescriptor> SimpleScheduler::ProducingTaskForDataObjectID(
+TaskDescriptor* SimpleScheduler::ProducingTaskForDataObjectID(
     DataObjectID_t id) {
   // XXX(malte): stub
   VLOG(1) << "looking up producing task for object " << id;
   ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
   if (!rd || !rd->has_producing_task()) {
-    return shared_ptr<TaskDescriptor>();  // NULL
+    return NULL;
   } else {
-    shared_ptr<TaskDescriptor>* td_ptr =
-        FindOrNull(*task_map_, rd->producing_task());
+    TaskDescriptor** td_ptr = FindOrNull(*task_map_, rd->producing_task());
     if (td_ptr)
       return *td_ptr;
     else
-      return shared_ptr<TaskDescriptor>();  // NULL
+      VLOG(2) << "... NOT FOUND";
+    return (td_ptr ? *td_ptr : NULL);
   }
 }
 

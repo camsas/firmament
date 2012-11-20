@@ -103,13 +103,9 @@ class Coordinator : public Node,
   }
   // Gets a pointer to the task descriptor for a task known to the coordinator.
   // If the task is not known to the coordinator, we will return NULL.
-  shared_ptr<TaskDescriptor> GetTask(TaskID_t task_id) {
-    shared_ptr<TaskDescriptor>* result =
-        FindOrNull(*task_table_, task_id);
-    if (!result)
-      return shared_ptr<TaskDescriptor>();  // NULL
-    else
-      return *result;
+  TaskDescriptor* GetTask(TaskID_t task_id) {
+    TaskDescriptor** result = FindOrNull(*task_table_, task_id);
+    return (result ? *result : NULL);
   }
   inline size_t NumResources() { return associated_resources_->size(); }
   inline size_t NumJobs() { return job_table_->size(); }
@@ -155,8 +151,8 @@ class Coordinator : public Node,
     }
     return jd_vec;
   }
-  vector<shared_ptr<TaskDescriptor> > active_tasks() {
-    vector<shared_ptr<TaskDescriptor> > td_vec;
+  vector<TaskDescriptor*> active_tasks() {
+    vector<TaskDescriptor*> td_vec;
     for (TaskMap_t::const_iterator task_iter =
          task_table_->begin();
          task_iter != task_table_->end();

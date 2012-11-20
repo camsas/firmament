@@ -225,7 +225,7 @@ void Coordinator::HandleTaskStateChange(
     case TaskDescriptor::COMPLETED: {
       VLOG(1) << "Task " << msg.id() << " now in state COMPLETED.";
       // XXX(malte): tear down the respective connection, cleanup
-      shared_ptr<TaskDescriptor>* td_ptr = FindOrNull(*task_table_, msg.id());
+      TaskDescriptor** td_ptr = FindOrNull(*task_table_, msg.id());
       CHECK(td_ptr) << "Received completion message for unknown task "
                     << msg.id();
       (*td_ptr)->set_state(TaskDescriptor::COMPLETED);
@@ -262,7 +262,7 @@ void Coordinator::AddJobsTasksToTaskTable(
        ++task_iter) {
     VLOG(1) << "Adding task " << task_iter->uid() << " to task table.";
     CHECK(InsertIfNotPresent(task_table_.get(), task_iter->uid(),
-                             shared_ptr<TaskDescriptor>(&(*task_iter))));
+                             &(*task_iter)));
     AddJobsTasksToTaskTable(task_iter->mutable_spawned());
   }
 }
@@ -284,8 +284,7 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, *new_jd));
   // Add its root task to the task table
   if (!InsertIfNotPresent(task_table_.get(), new_jd->root_task().uid(),
-                          shared_ptr<TaskDescriptor>(
-                              new_jd->mutable_root_task()))) {
+                          new_jd->mutable_root_task())) {
     VLOG(1) << "Task " << new_jd->root_task().uid() << " aöready exists in "
             << "task table, so not adding it again.";
   }

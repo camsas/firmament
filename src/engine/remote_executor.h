@@ -19,7 +19,8 @@ namespace executor {
 class RemoteExecutor : public ExecutorInterface {
  public:
   explicit RemoteExecutor(ResourceID_t resource_id);
-  void RunTask(shared_ptr<TaskDescriptor> td);
+  void RunTask(TaskDescriptor* td,
+               bool firmament_binary);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<RemoteExecutor for resource "
                    << to_string(local_resource_id_)

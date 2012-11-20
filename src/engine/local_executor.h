@@ -32,7 +32,8 @@ class LocalExecutor : public ExecutorInterface {
  public:
   LocalExecutor(ResourceID_t resource_id,
                 const string& coordinator_uri);
-  void RunTask(shared_ptr<TaskDescriptor> td);
+  void RunTask(TaskDescriptor* td,
+               bool firmament_binary);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<LocalExecutor at resource "
                    << to_string(local_resource_id_)
@@ -52,7 +53,8 @@ class LocalExecutor : public ExecutorInterface {
                          vector<string> args,
                          bool perf_monitoring,
                          bool default_args);
-  bool _RunTask(shared_ptr<TaskDescriptor> td);
+  bool _RunTask(TaskDescriptor* td,
+                bool firmament_binary);
   string PerfDataFileName(const TaskDescriptor& td);
   void ReadFromPipe(int fd);
   void SetUpEnvironmentForTask(const TaskDescriptor& td);

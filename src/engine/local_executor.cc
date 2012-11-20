@@ -26,21 +26,26 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
 }
 
-void LocalExecutor::RunTask(shared_ptr<TaskDescriptor> td) {
+void LocalExecutor::RunTask(TaskDescriptor* td,
+                            bool firmament_binary) {
   CHECK(td);
   // TODO(malte): We lose the thread reference here, so we can never join this
   // thread. Need to return or store if we ever need it for anythign again.
   boost::thread per_task_thread(
-      boost::bind(&LocalExecutor::_RunTask, this, td));
+      boost::bind(&LocalExecutor::_RunTask, this, td, firmament_binary));
 }
 
-bool LocalExecutor::_RunTask(shared_ptr<TaskDescriptor> td) {
+bool LocalExecutor::_RunTask(TaskDescriptor* td,
+                             bool firmament_binary) {
   SetUpEnvironmentForTask(*td);
   // Convert arguments as specified in TD into a string vector that we can munge
   // into an actual argv[].
   vector<string> args = pb_to_vector(td->args());
   // TODO(malte): This is somewhat hackish
-  bool res = (RunProcessSync(td->binary(), args, true, true) == 0);
+  // arguments: binary (path + name), arguments, performance monitoring on/off,
+  // is this a Firmament task binary? (on/off; will cause default arugments to
+  // be passed)
+  bool res = (RunProcessSync(td->binary(), args, false, firmament_binary) == 0);
   return res;
 }
 

@@ -29,7 +29,8 @@ class SimpleSchedulerTest : public ::testing::Test {
   SimpleSchedulerTest() :
     job_map_(new JobMap_t),
     res_map_(new ResourceMap_t),
-    obj_map_(new DataObjectMap_t) {
+    obj_map_(new DataObjectMap_t),
+    task_map_(new TaskMap_t) {
     // You can do set-up work for each test here.
     FLAGS_v = 3;
   }
@@ -67,6 +68,23 @@ class SimpleSchedulerTest : public ::testing::Test {
     }
   }
 
+  void AddJobsTasksToTaskMap(JobDescriptor* jd) {
+    AddTaskToTaskMap(jd->mutable_root_task());
+  }
+
+  void AddTaskToTaskMap(TaskDescriptor* tdp) {
+    // Add root task to task map (this would have been done by the coordinator
+    // in the real system)
+    CHECK(InsertIfNotPresent(task_map_.get(), tdp->uid(), tdp));
+    if (tdp->spawned_size() > 0) {
+      for (RepeatedPtrField<TaskDescriptor>::iterator t_iter =
+           tdp->mutable_spawned()->begin();
+           t_iter != tdp->mutable_spawned()->end();
+           ++t_iter)
+        AddTaskToTaskMap(&(*t_iter));
+    }
+  }
+
   // Objects declared here can be used by all tests in the test case for
   // SimpleScheduler.
   scoped_ptr<SimpleScheduler> sched_;
@@ -82,7 +100,9 @@ TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   // Simple, plain, 1-task job (base case)
   JobDescriptor* test_job = new JobDescriptor;
   TaskDescriptor* rtp = new TaskDescriptor;
+  rtp->set_uid(GenerateTaskID(*rtp));
   set<DataObjectID_t> output_ids(pb_to_set(test_job->output_ids()));
+  AddTaskToTaskMap(rtp);
   set<TaskID_t> runnable_tasks =
       sched_->LazyGraphReduction(output_ids, rtp);
   // The root task should be runnable
@@ -97,7 +117,7 @@ TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
 TEST_F(SimpleSchedulerTest, FindRunnableTasksForJob) {
   // Simple, plain, 1-task job (base case)
   JobDescriptor* test_job = new JobDescriptor;
-  VLOG(1) << "got here, job is: " << test_job->DebugString();
+  AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks =
       sched_->RunnableTasksForJob(test_job);
   // The root task should be runnable
@@ -118,14 +138,18 @@ TEST_F(SimpleSchedulerTest, ObjectIDToReferenceDescLookup) {
 
 // Tests lookup of a data object's producing task via the object table.
 TEST_F(SimpleSchedulerTest, ProducingTaskLookup) {
+  TaskDescriptor td;
+  td.set_uid(1);
+  AddTaskToTaskMap(&td);
   ReferenceDescriptor rd;
   rd.set_id(1234);
   rd.set_type(ReferenceDescriptor::CONCRETE);
   rd.set_producing_task(1);
   CHECK(InsertIfNotPresent(obj_map_.get(), rd.id(), rd));
-  shared_ptr<TaskDescriptor> td = sched_->ProducingTaskForDataObjectID(rd.id());
-  VLOG(1) << td->DebugString();
-  CHECK_EQ(td->uid(), 1);
+  TaskDescriptor* tdp = sched_->ProducingTaskForDataObjectID(rd.id());
+  CHECK(tdp);
+  VLOG(1) << tdp->DebugString();
+  CHECK_EQ(tdp->uid(), 1);
 }
 
 // Find runnable tasks for a slightly more elaborate task graph.
@@ -155,6 +179,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   // put future input ref of td2 into object table
   InsertIfNotPresent(obj_map_.get(), d0_td2->id(), *d0_td2);
   VLOG(1) << "got here, job is: " << test_job->DebugString();
+  AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks =
       sched_->RunnableTasksForJob(test_job);
   PrintRunnableTasks(runnable_tasks);
@@ -171,7 +196,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   test_job->mutable_root_task()->set_name("root_task");
   ReferenceDescriptor* o0_rt = test_job->mutable_root_task()->add_outputs();
   o0_rt->set_id(GenerateDataObjectID(test_job->root_task()));
-  o0_rt->set_type(ReferenceDescriptor::FUTURE);
+  o0_rt->set_type(ReferenceDescriptor::CONCRETE);
   o0_rt->set_producing_task(test_job->root_task().uid());
   // add spawned task #1
   TaskDescriptor* td1 = test_job->mutable_root_task()->add_spawned();
@@ -182,7 +207,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   o0_td1->set_producing_task(td1->uid());
   ReferenceDescriptor* d0_td1 = td1->add_dependencies();
   d0_td1->set_id(o0_rt->id());
-  d0_td1->set_type(ReferenceDescriptor::FUTURE);
+  d0_td1->set_type(ReferenceDescriptor::CONCRETE);
   d0_td1->set_producing_task(test_job->root_task().uid());
   test_job->add_output_ids(o0_td1->id());
   test_job->add_output_ids(d0_td1->id());
@@ -191,6 +216,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   // put future input ref of td2 into object table
   InsertIfNotPresent(obj_map_.get(), d0_td1->id(), *d0_td1);
   VLOG(1) << "got here, job is: " << test_job->DebugString();
+  AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks =
       sched_->RunnableTasksForJob(test_job);
   // Two tasks should be runnable: those spawned by the root task.

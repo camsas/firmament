@@ -366,7 +366,7 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
   // Get resource information from coordinator
   HTTPTypes::QueryParams &params = http_request->getQueryParams();
   string* task_id = FindOrNull(params, "id");
-  shared_ptr<TaskDescriptor> td_ptr = coordinator_->GetTask(
+  TaskDescriptor* td_ptr = coordinator_->GetTask(
       TaskIDFromString(*task_id));
   TemplateDictionary dict("task_status");
   if (td_ptr) {

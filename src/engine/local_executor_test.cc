@@ -86,8 +86,7 @@ TEST_F(LocalExecutorTest, SimpleTaskExecutionTest) {
   LocalExecutor le(rid, "");
   TaskDescriptor* td = new TaskDescriptor;
   td->set_binary("/bin/ls");
-  shared_ptr<TaskDescriptor> tdp(td);
-  CHECK(le._RunTask(tdp));
+  CHECK(le._RunTask(td, false));
 }
 
 // As above, but also passing arguments this time.
@@ -97,8 +96,7 @@ TEST_F(LocalExecutorTest, TaskExecutionWithArgsTest) {
   TaskDescriptor* td = new TaskDescriptor;
   td->set_binary("/bin/ls");
   td->add_args("-l");
-  shared_ptr<TaskDescriptor> tdp(td);
-  CHECK(le._RunTask(tdp));
+  CHECK(le._RunTask(td, false));
 }
 
 
