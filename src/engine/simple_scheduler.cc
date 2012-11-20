@@ -52,11 +52,9 @@ void SimpleScheduler::BindTaskToResource(
   task_desc->set_state(TaskDescriptor::RUNNING);
   CHECK(InsertIfNotPresent(&task_bindings_, task_desc->uid(),
                            ResourceIDFromString(res_desc->uuid())));
-  // XXX(malte): The below call, while innocent-looking, is actually a rather
-  // bad idea -- it ends up calling the shared_ptr destructor and blows away the
-  // TD. Need to find another way.
   if (VLOG_IS_ON(1))
     DebugPrintRunnableTasks();
+  // Remove the task from the runnable set
   CHECK(runnable_tasks_.erase(task_desc->uid()));
   if (VLOG_IS_ON(1))
     DebugPrintRunnableTasks();
@@ -251,25 +249,28 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
 shared_ptr<ReferenceInterface> SimpleScheduler::ReferenceForID(
     DataObjectID_t id) {
   // XXX(malte): stub
-  VLOG(1) << "looking up object " << id;
+  VLOG(2) << "Looking up object " << id;
   ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
-  if (!rd)
+  if (!rd) {
+    VLOG(2) << "... NOT FOUND";
     return shared_ptr<ReferenceInterface>();  // NULL
-  else
+  } else {
+    VLOG(2) << " ... ref has type " << rd->type();
     return ReferenceFromDescriptor(*rd);
+  }
 }
 
 TaskDescriptor* SimpleScheduler::ProducingTaskForDataObjectID(
     DataObjectID_t id) {
   // XXX(malte): stub
-  VLOG(1) << "looking up producing task for object " << id;
+  VLOG(2) << "Looking up producing task for object " << id;
   ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
   if (!rd || !rd->has_producing_task()) {
     return NULL;
   } else {
     TaskDescriptor** td_ptr = FindOrNull(*task_map_, rd->producing_task());
     if (td_ptr)
-      return *td_ptr;
+      VLOG(2) << "... is " << (*td_ptr)->uid();
     else
       VLOG(2) << "... NOT FOUND";
     return (td_ptr ? *td_ptr : NULL);

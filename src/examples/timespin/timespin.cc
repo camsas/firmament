@@ -33,6 +33,7 @@
 namespace firmament {
 
 void task_main(TaskID_t task_id) {
+  VLOG(1) << "Task " << task_id << " spinning for 10 seconds!";
   timespin_main(10);
 }
 
@@ -41,6 +42,7 @@ void task_main(TaskID_t task_id) {
 volatile sig_atomic_t flag = 1;
 
 void catch_timer(int sig) {
+  printf("caught timer signal (%d)\n", sig);
   flag = 0;
 }
 
