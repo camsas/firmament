@@ -49,6 +49,13 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   return res;
 }
 
+int32_t LocalExecutor::RunProcessAsync(const string& cmdline,
+                                       vector<string> args,
+                                       bool perf_monitoring,
+                                       bool default_args) {
+  return 0;
+}
+
 int32_t LocalExecutor::RunProcessSync(const string& cmdline,
                                       vector<string> args,
                                       bool perf_monitoring,

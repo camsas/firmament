@@ -49,6 +49,10 @@ class LocalExecutor : public ExecutorInterface {
   FRIEND_TEST(LocalExecutorTest, SimpleTaskExecutionTest);
   FRIEND_TEST(LocalExecutorTest, TaskExecutionWithArgsTest);
   ResourceID_t local_resource_id_;
+  int32_t RunProcessAsync(const string& cmdline,
+                          vector<string> args,
+                          bool perf_monitoring,
+                          bool default_args);
   int32_t RunProcessSync(const string& cmdline,
                          vector<string> args,
                          bool perf_monitoring,
