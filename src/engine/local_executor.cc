@@ -55,7 +55,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
                                       bool default_args) {
   pid_t pid;
   int pipe_to[2];    // pipe to feed input data to task
-  int pipe_from[2];  // pipe to receive output data from task
+  int pipe_from[3];  // pipe to receive output data from task
   int status;
   if (pipe(pipe_to) != 0) {
     LOG(ERROR) << "Failed to create pipe to task.";
@@ -74,11 +74,13 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       // set up pipes
       dup2(pipe_to[0], STDIN_FILENO);
       dup2(pipe_from[1], STDOUT_FILENO);
+      //dup2(pipe_from[2], STDERR_FILENO);
       // close unnecessary pipe descriptors
       close(pipe_to[0]);
       close(pipe_to[1]);
       close(pipe_from[0]);
       close(pipe_from[1]);
+      //close(pipe_from[2]);
       // Convert args from string to char*
       vector<char*> argv;
       // argv[0] is always the command name
@@ -136,7 +138,13 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       close(pipe_from[1]);
       // TODO(malte): fix the pipe stuff to work properly
       close(pipe_to[1]);
+      // TODO(malte): ReadFromPipe is a synchronous call that will only return
+      // once the pipe has been closed! Check if this is actually the semantic
+      // we want.
+      // The fact that we cannot concurrently read from the STDOUT and the
+      // STDERR pipe this way suggest the answer is that it is not...
       ReadFromPipe(pipe_from[0]);
+      //ReadFromPipe(pipe_from[1]);
       // wait for task to terminate
       while (!WIFEXITED(status)) {
         VLOG(2) << "Waiting for task to exit...";
@@ -173,14 +181,14 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
   }
 }
 
-void LocalExecutor::WriteToPipe(int fd) {
+void LocalExecutor::WriteToPipe(int fd, void* data, size_t len) {
   FILE *stream;
   // Open the pipe
   if ((stream = fdopen(fd, "w")) == NULL) {
     LOG(ERROR) << "Failed to open pipe for writing. FD: " << fd;
   }
   // Write the data to the pipe
-  // fputs()
+  fwrite(data, len, 1, stream);
   // Finally, close the pipe
   fclose(stream);
 }

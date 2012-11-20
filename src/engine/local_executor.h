@@ -58,7 +58,7 @@ class LocalExecutor : public ExecutorInterface {
   string PerfDataFileName(const TaskDescriptor& td);
   void ReadFromPipe(int fd);
   void SetUpEnvironmentForTask(const TaskDescriptor& td);
-  void WriteToPipe(int fd);
+  void WriteToPipe(int fd, void* data, size_t len);
   // This holds the currently configured URI of the coordinator for this
   // resource (which must be unique, for now).
   const string coordinator_uri_;
