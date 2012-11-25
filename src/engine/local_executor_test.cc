@@ -79,6 +79,18 @@ TEST_F(LocalExecutorTest, SyncProcessExecutionWithArgsTest) {
   CHECK_NE(le.RunProcessSync("/bin/idonotexist", empty_args, false, false), 0);
 }*/
 
+// Tests that we can asynchronously execute a binary with arguments.
+TEST_F(LocalExecutorTest, AsyncProcessExecutionWithArgsTest) {
+  ResourceID_t rid;
+  LocalExecutor le(rid, "");
+  vector<string> args;
+  args.push_back("-l");
+  // We expect to get a return code of 0; this is hard-coded and independent of
+  // whether the process execution succeeds (the actual execution happens in a
+  // newly spawned thread).
+  CHECK_EQ(le.RunProcessAsync("/bin/ls", args, false, false), 0);
+}
+
 // Tests that we can pass execution information in a task descriptor (just a
 // binary name in this case).
 TEST_F(LocalExecutorTest, SimpleTaskExecutionTest) {

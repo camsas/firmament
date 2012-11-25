@@ -29,6 +29,8 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
 void LocalExecutor::RunTask(TaskDescriptor* td,
                             bool firmament_binary) {
   CHECK(td);
+  // XXX(malte): Move this over to use RunProcessAsync, instead of custom thread
+  // spawning.
   // TODO(malte): We lose the thread reference here, so we can never join this
   // thread. Need to return or store if we ever need it for anythign again.
   boost::thread per_task_thread(
@@ -53,6 +55,13 @@ int32_t LocalExecutor::RunProcessAsync(const string& cmdline,
                                        vector<string> args,
                                        bool perf_monitoring,
                                        bool default_args) {
+  // TODO(malte): We lose the thread reference here, so we can never join this
+  // thread. Need to return or store if we ever need it for anythign again.
+  boost::thread async_process_thread(
+      boost::bind(&LocalExecutor::RunProcessSync, this, cmdline, args,
+                  perf_monitoring, default_args));
+  // We hard-code the return to zero here; maybe should return a thread
+  // reference instead.
   return 0;
 }
 

@@ -45,6 +45,7 @@ class LocalExecutor : public ExecutorInterface {
   // Unit tests
   FRIEND_TEST(LocalExecutorTest, SimpleSyncProcessExecutionTest);
   FRIEND_TEST(LocalExecutorTest, SyncProcessExecutionWithArgsTest);
+  FRIEND_TEST(LocalExecutorTest, AsyncProcessExecutionWithArgsTest);
   FRIEND_TEST(LocalExecutorTest, ExecutionFailureTest);
   FRIEND_TEST(LocalExecutorTest, SimpleTaskExecutionTest);
   FRIEND_TEST(LocalExecutorTest, TaskExecutionWithArgsTest);
