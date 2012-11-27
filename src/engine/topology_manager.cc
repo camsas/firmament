@@ -149,10 +149,11 @@ ResourceDescriptor::ResourceType TopologyManager::TranslateHwlocType(
 
 void TopologyManager::TraverseProtobufTree(
     ResourceTopologyNodeDescriptor* pb,
-    boost::function<void(const ResourceDescriptor&)> callback) {
-  VLOG(1) << "Invoking TPT callback for resource "
-          << pb->resource_desc().uuid();
-  callback(pb->resource_desc());
+    boost::function<void(ResourceDescriptor*)> callback) {  // NOLINT
+  VLOG(2) << "Traversal of resource topology, reached "
+          << pb->resource_desc().uuid()
+          << ", invoking callback [" << callback << "]";
+  callback(pb->mutable_resource_desc());
   for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator
        rtnd_iter = pb->mutable_children()->begin();
        rtnd_iter != pb->mutable_children()->end();

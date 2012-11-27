@@ -117,28 +117,25 @@ void Coordinator::DetectLocalResources() {
       boost::bind(&Coordinator::AddLocalResource, this, _1));
 }
 
-void Coordinator::AddLocalResource(const ResourceDescriptor& resource_desc) {
+void Coordinator::AddLocalResource(ResourceDescriptor* resource_desc) {
+  CHECK(resource_desc);
   // Compute resource ID
-  ResourceID_t res_id = ResourceIDFromString(resource_desc.uuid());
+  ResourceID_t res_id = ResourceIDFromString(resource_desc->uuid());
   // Add resource to local resource set
   CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
-                           pair<ResourceDescriptor, uint64_t>(
+                           pair<ResourceDescriptor*, uint64_t>(
                                resource_desc, GetCurrentTimestamp())));
-  // Look up the copy of the resource descriptor from the resource table
-  pair<ResourceDescriptor, uint64_t>* rdp = FindOrNull(*associated_resources_,
-                                                       res_id);
-  CHECK(rdp);
   // Register with scheduler if this resource is schedulable
-  if (resource_desc.type() == ResourceDescriptor::RESOURCE_PU) {
+  if (resource_desc->type() == ResourceDescriptor::RESOURCE_PU) {
     // TODO(malte): We make the assumption here that any local PU resource is
     // exclusively owned by this coordinator, and set its state to IDLE if it is
     // currently unknown. If coordinators were to ever shared PUs, we'd need
     // something more clever here.
-    if (rdp->first.state() == ResourceDescriptor::RESOURCE_UNKNOWN)
-      rdp->first.set_state(ResourceDescriptor::RESOURCE_IDLE);
+    if (resource_desc->state() == ResourceDescriptor::RESOURCE_UNKNOWN)
+      resource_desc->set_state(ResourceDescriptor::RESOURCE_IDLE);
     scheduler_->RegisterResource(res_id);
-    VLOG(1) << "Added local resource " << resource_desc.uuid()
-            << " [" << resource_desc.friendly_name()
+    VLOG(1) << "Added local resource " << resource_desc->uuid()
+            << " [" << resource_desc->friendly_name()
             << "] to scheduler.";
   }
 }
@@ -202,7 +199,7 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
   boost::uuids::string_generator gen;
   boost::uuids::uuid uuid = gen(msg.uuid());
-  pair<ResourceDescriptor, uint64_t>* rdp =
+  pair<ResourceDescriptor*, uint64_t>* rdp =
       FindOrNull(*associated_resources_, uuid);
   if (!rdp) {
     LOG(WARNING) << "HEARTBEAT from UNKNOWN resource (uuid: "
@@ -219,14 +216,15 @@ void Coordinator::HandleRegistrationRequest(
     const RegistrationMessage& msg) {
   boost::uuids::string_generator gen;
   boost::uuids::uuid uuid = gen(msg.uuid());
-  pair<ResourceDescriptor, uint64_t>* rdp =
+  pair<ResourceDescriptor*, uint64_t>* rdp =
       FindOrNull(*associated_resources_, uuid);
   if (!rdp) {
     LOG(INFO) << "REGISTERING NEW RESOURCE (uuid: " << msg.uuid() << ")";
-    // N.B.: below will copy the resource descriptor
+    // N.B.: below creates a new resource descriptor
+    // XXX(malte): We should be adding to the topology tree instead here!
     CHECK(InsertIfNotPresent(associated_resources_.get(), uuid,
-                             pair<ResourceDescriptor, uint64_t>(
-                                 msg.res_desc(),
+                             pair<ResourceDescriptor*, uint64_t>(
+                                 new ResourceDescriptor(msg.res_desc()),
                                  GetCurrentTimestamp())));
   } else {
     LOG(INFO) << "REGISTRATION request from resource " << msg.uuid()

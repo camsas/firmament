@@ -208,26 +208,26 @@ void CoordinatorHTTPUI::HandleResourcesListURI(HTTPRequestPtr& http_request,  //
   LogRequest(http_request);
   HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  const vector<ResourceDescriptor> resources =
+  const vector<ResourceDescriptor*> resources =
       coordinator_->associated_resources();
   uint64_t i = 0;
   TemplateDictionary dict("resources_list");
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
-  for (vector<ResourceDescriptor>::const_iterator rd_iter =
+  for (vector<ResourceDescriptor*>::const_iterator rd_iter =
        resources.begin();
        rd_iter != resources.end();
        ++rd_iter) {
     TemplateDictionary* sect_dict = dict.AddSectionDictionary("RES_DATA");
     sect_dict->SetIntValue("RES_NUM", i);
-    sect_dict->SetValue("RES_ID", to_string(rd_iter->uuid()));
-    sect_dict->SetValue("RES_FRIENDLY_NAME", rd_iter->friendly_name());
+    sect_dict->SetValue("RES_ID", to_string((*rd_iter)->uuid()));
+    sect_dict->SetValue("RES_FRIENDLY_NAME", (*rd_iter)->friendly_name());
     sect_dict->SetValue("RES_STATE",
                         ENUM_TO_STRING(ResourceDescriptor::ResourceState,
-                                       rd_iter->state()));
+                                       (*rd_iter)->state()));
     // N.B.: We make the assumption that only PU type resources are schedulable
     // here!
-    if (rd_iter->type() != ResourceDescriptor::RESOURCE_PU)
+    if ((*rd_iter)->type() != ResourceDescriptor::RESOURCE_PU)
       sect_dict->AddSectionDictionary("RES_NON_SCHEDULABLE");
     ++i;
   }

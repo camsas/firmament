@@ -42,7 +42,7 @@ class TopologyManager {
   uint32_t NumProcessingUnits();
   void TraverseProtobufTree(
       ResourceTopologyNodeDescriptor* pb,
-      boost::function<void(const ResourceDescriptor&)> callback);
+      boost::function<void(ResourceDescriptor*)> callback);  // NOLINT
 
  protected:
   void MakeProtobufTree(hwloc_obj_t node,
