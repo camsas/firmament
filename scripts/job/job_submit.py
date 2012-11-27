@@ -4,6 +4,11 @@ from base import reference_desc_pb2
 from google.protobuf import text_format
 import httplib, urllib, re, sys, random
 
+if len(sys.argv) < 4:
+  print "usage: job_submit.py <coordinator hostname> <web UI port> " \
+      "<task binary>"
+  sys.exit(1)
+
 hostname = sys.argv[1]
 port = int(sys.argv[2])
 
