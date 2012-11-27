@@ -70,9 +70,9 @@ d3.json("/resources/topology", function(error, root) {
          .attr("fill", function(d) {
            switch (d.resource_desc.state) {
              case 0: return "gray";
-             case 1: return "green";
-             case 2: return "red";
-             case 3: return "orange";
+             case 1: return "#00ff00";
+             case 2: return "#ff0000";
+             case 3: return "black";
              default: return "white";
            }
          });
