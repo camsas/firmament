@@ -22,6 +22,7 @@ extern "C" {
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
+#include "base/resource_topology_node_desc.pb.h"
 
 namespace firmament {
 namespace machine {
@@ -30,13 +31,26 @@ namespace topology {
 class TopologyManager {
  public:
   TopologyManager();
-  void AsProtobuf(ResourceDescriptor* topology_pb);
+  void AsProtobuf(ResourceTopologyNodeDescriptor* topology_pb);
+  bool BindToCore(uint32_t core_id, bool strict);
+  bool BindToCPUMask(uint64_t mask, bool strict);
+  bool BindToResource(ResourceID_t res_id);
   vector<ResourceDescriptor> FlatResourceSet();
   void LoadAndParseTopology();
   void LoadAndParseSyntheticTopology(const string& topology_desc);
   void DebugPrintRawTopology();
   uint32_t NumProcessingUnits();
+  void TraverseProtobufTree(
+      ResourceTopologyNodeDescriptor* pb,
+      boost::function<void(const ResourceDescriptor&)> callback);
+
  protected:
+  void MakeProtobufTree(hwloc_obj_t node,
+                        ResourceTopologyNodeDescriptor* obj_pb,
+                        ResourceTopologyNodeDescriptor* parent_pb);
+  ResourceDescriptor::ResourceType TranslateHwlocType(
+      hwloc_obj_type_t obj_type);
+  // Local fields holding topology information
   hwloc_topology_t topology_;
   hwloc_cpuset_t cpuset_;
   uint32_t topology_depth_;

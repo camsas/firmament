@@ -8,9 +8,9 @@
 #include "base/common.h"
 #include "engine/topology_manager.h"
 
-namespace {
+namespace firmament {
 
-using firmament::machine::topology::TopologyManager;
+using machine::topology::TopologyManager;
 
 // The fixture for testing class TopologyManager.
 class TopologyManagerTest : public ::testing::Test {
@@ -60,12 +60,19 @@ TEST_F(TopologyManagerTest, ParseSyntheticTopology) {
 TEST_F(TopologyManagerTest, GetNumPUs) {
   FLAGS_v = 2;
   TopologyManager t;
-  //t.LoadAndParseTopology();
   VLOG(1) << "PUs: " << t.NumProcessingUnits();
   t.DebugPrintRawTopology();
 }
 
-}  // namespace
+// Tests topology extraction to protobuf.
+TEST_F(TopologyManagerTest, GetResourceTreeAsPB) {
+  FLAGS_v = 2;
+  TopologyManager t;
+  ResourceTopologyNodeDescriptor res_desc;
+  t.AsProtobuf(&res_desc);
+}
+
+}  // namespace firmament
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

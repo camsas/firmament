@@ -263,6 +263,21 @@ void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLI
   FinishOkResponse(writer);
 }
 
+void CoordinatorHTTPUI::HandleResourcesTopologyURI(
+    HTTPRequestPtr& http_request,  // NOLINT
+    TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  // Get resource topology from coordinator
+  const ResourceTopologyNodeDescriptor& root_rtnd =
+      coordinator_->local_resource_topology();
+  // Return serialized resource topology
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request,
+                                                tcp_conn);
+  char *json = pb2json(root_rtnd);
+  writer->write(json);
+  FinishOkResponse(writer);
+}
+
 void CoordinatorHTTPUI::HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
                                         TCPConnectionPtr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -474,6 +489,9 @@ void CoordinatorHTTPUI::Init(uint16_t port) {
     // Resource list
     coordinator_http_server_->addResource("/resources/", boost::bind(
         &CoordinatorHTTPUI::HandleResourcesListURI, this, _1, _2));
+    // Resource topology
+    coordinator_http_server_->addResource("/resources/topology/", boost::bind(
+        &CoordinatorHTTPUI::HandleResourcesTopologyURI, this, _1, _2));
     // Resource page
     coordinator_http_server_->addResource("/resource/", boost::bind(
         &CoordinatorHTTPUI::HandleResourceURI, this, _1, _2));

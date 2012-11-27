@@ -22,6 +22,8 @@ message ResourceDescriptor {
     RESOURCE_SSD = 5;
     RESOURCE_MACHINE = 6;
     RESOURCE_LOGICAL = 7;
+    RESOURCE_NUMA_NODE = 8;
+    RESOURCE_SOCKET = 9;
   }
 
   required string uuid = 1;

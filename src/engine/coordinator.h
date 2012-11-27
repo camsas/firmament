@@ -28,6 +28,7 @@
 #include "base/task_desc.pb.h"
 #include "base/reference_desc.pb.h"
 #include "base/resource_desc.pb.h"
+#include "base/resource_topology_node_desc.pb.h"
 #include "engine/node.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
@@ -161,9 +162,14 @@ class Coordinator : public Node,
     }
     return td_vec;
   }
+  inline const ResourceTopologyNodeDescriptor& local_resource_topology() {
+    CHECK_NOTNULL(local_resource_topology_);
+    return *local_resource_topology_;
+  }
 
  protected:
   void AddJobsTasksToTaskTable(RepeatedPtrField<TaskDescriptor>* tasks);
+  void AddLocalResource(const ResourceDescriptor& resource_desc);
   bool RegisterWithCoordinator(
       shared_ptr<StreamSocketsChannel<BaseMessage> > chan);
   void DetectLocalResources();
@@ -185,6 +191,9 @@ class Coordinator : public Node,
   // the timestamp when the latest heartbeat or message was received from this
   // resource..
   shared_ptr<ResourceMap_t> associated_resources_;
+  // TODO(malte): Figure out the right representation here. Currently, we
+  // maintain both associated_resources_ and the topology tree; one may suffice?
+  ResourceTopologyNodeDescriptor* local_resource_topology_;
   // A map of all jobs known to this coordinator, indexed by their job ID.
   // Key is the job ID, value a ResourceDescriptor.
   // Currently, this table grows ad infinitum.

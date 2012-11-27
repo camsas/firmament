@@ -15,6 +15,7 @@
 #endif
 
 #include "base/resource_desc.pb.h"
+#include "base/resource_topology_node_desc.pb.h"
 #include "engine/stub_object_store.h"
 #include "messages/base_message.pb.h"
 #include "misc/protobuf_envelope.h"
@@ -40,6 +41,7 @@ Coordinator::Coordinator(PlatformID platform_id)
   : Node(platform_id, GenerateUUID()),
     topology_manager_(new TopologyManager()),
     associated_resources_(new ResourceMap_t),
+    local_resource_topology_(new ResourceTopologyNodeDescriptor),
     job_table_(new JobMap_t),
     object_table_(new DataObjectMap_t),
     task_table_(new TaskMap_t),
@@ -104,23 +106,40 @@ void Coordinator::DetectLocalResources() {
   // flat vector of resources, we obviuosly want to take a proper topology.
   uint64_t num_local_pus = topology_manager_->NumProcessingUnits();
   LOG(INFO) << "Found " << num_local_pus << " local PUs.";
-  vector<ResourceDescriptor> local_resources =
-      topology_manager_->FlatResourceSet();
-  uint32_t i = 0;
-  for (vector<ResourceDescriptor>::iterator lr_iter = local_resources.begin();
-       lr_iter != local_resources.end();
-       ++lr_iter) {
-    lr_iter->set_parent(to_string(uuid_));
-    CHECK(InsertIfNotPresent(associated_resources_.get(),
-                             JobIDFromString(lr_iter->uuid()),
-                             pair<ResourceDescriptor, uint64_t>(
-                                 *lr_iter, GetCurrentTimestamp())));
-    resource_desc_.add_children(lr_iter->uuid());
-    // Register with scheduler
-    scheduler_->RegisterResource(ResourceIDFromString(lr_iter->uuid()));
-    VLOG(1) << "Added local resource " << lr_iter->uuid() << " (PU #" << i
-            << "): " << lr_iter->DebugString();
-    ++i;
+  // Get local resource topology and save it to the topology protobuf
+  // TODO(malte): Figure out how this interacts with dynamically added
+  // resources; currently, we only run detection (i.e. the DetectLocalResources
+  // method) once at startup.
+  topology_manager_->AsProtobuf(local_resource_topology_);
+  local_resource_topology_->set_parent_id(to_string(uuid_));
+  topology_manager_->TraverseProtobufTree(
+      local_resource_topology_,
+      boost::bind(&Coordinator::AddLocalResource, this, _1));
+}
+
+void Coordinator::AddLocalResource(const ResourceDescriptor& resource_desc) {
+  // Compute resource ID
+  ResourceID_t res_id = ResourceIDFromString(resource_desc.uuid());
+  // Add resource to local resource set
+  CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
+                           pair<ResourceDescriptor, uint64_t>(
+                               resource_desc, GetCurrentTimestamp())));
+  // Look up the copy of the resource descriptor from the resource table
+  pair<ResourceDescriptor, uint64_t>* rdp = FindOrNull(*associated_resources_,
+                                                       res_id);
+  CHECK(rdp);
+  // Register with scheduler if this resource is schedulable
+  if (resource_desc.type() == ResourceDescriptor::RESOURCE_PU) {
+    // TODO(malte): We make the assumption here that any local PU resource is
+    // exclusively owned by this coordinator, and set its state to IDLE if it is
+    // currently unknown. If coordinators were to ever shared PUs, we'd need
+    // something more clever here.
+    if (rdp->first.state() == ResourceDescriptor::RESOURCE_UNKNOWN)
+      rdp->first.set_state(ResourceDescriptor::RESOURCE_IDLE);
+    scheduler_->RegisterResource(res_id);
+    VLOG(1) << "Added local resource " << resource_desc.uuid()
+            << " [" << resource_desc.friendly_name()
+            << "] to scheduler.";
   }
 }
 
