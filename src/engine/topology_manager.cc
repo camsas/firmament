@@ -21,20 +21,34 @@ TopologyManager::TopologyManager() {
   LoadAndParseTopology();
 }
 
-void TopologyManager::AsProtobuf(ResourceDescriptor* topology_pb) {
-  // TODO(malte): stub
-  ResourceDescriptor root_resource;
-#if 0
-  root_resource.set_type(RESOURCE_MACHINE);
-  for (uint32_t depth = 0; depth < topology_depth_; depth++) {
-    uint32_t num_objs_at_level = hwloc_get_nbobjs_by_depth(topology_, depth);
-    for (uint32_t i = 0; i < num_objs_at_level; ++i) {
-      hwloc_obj_snprintf(obj_string, sizeof(obj_string), topology_,
-                         hwloc_get_obj_by_depth(topology_, depth, i), "#", 0);
-      LOG(INFO) << "Index: " << i << ": " << obj_string;
-    }
-  }
-#endif
+void TopologyManager::AsProtobuf(ResourceTopologyNodeDescriptor* topology_pb) {
+  ResourceDescriptor* root_resource = topology_pb->mutable_resource_desc();
+  root_resource->set_type(ResourceDescriptor::RESOURCE_MACHINE);
+  hwloc_obj_t root_obj = hwloc_get_root_obj(topology_);
+  MakeProtobufTree(root_obj, topology_pb, NULL);
+  VLOG(1) << topology_pb->DebugString();
+}
+
+bool TopologyManager::BindToCore(uint32_t core_id, bool strict) {
+  // Make a few sanity checks
+  //CHECK_LT(core_id, );
+  // Bind the current process to the specified core
+  //hwloc_
+  return false;
+}
+
+bool TopologyManager::BindToCPUMask(uint64_t mask, bool strict) {
+  // Make a few sanity checks
+  //CHECK_LT(core_id, );
+  // Bind the current process to the specified core
+  //hwloc_
+  return false;
+}
+
+bool TopologyManager::BindToResource(ResourceID_t res_id) {
+  // Check that the resource exists, is local, and is a CPU
+  //
+  return false;
 }
 
 void TopologyManager::LoadAndParseTopology() {
