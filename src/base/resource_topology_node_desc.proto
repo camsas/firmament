@@ -1,0 +1,17 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Resource topology node protobuf. This is an indirection PB that we use to
+// conveniently pass topologically arranged RDs around. Note that children are
+// directly included, while the parent is referenced by ID (optional; do not
+// rely on back-references to the parent being present!).
+
+package firmament;
+
+import "base/resource_desc.proto";
+
+message ResourceTopologyNodeDescriptor {
+  required ResourceDescriptor resource_desc = 1;
+  repeated ResourceTopologyNodeDescriptor children = 2;
+  optional string parent_id = 3;
+}
