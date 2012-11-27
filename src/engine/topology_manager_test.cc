@@ -7,6 +7,7 @@
 
 #include "base/common.h"
 #include "engine/topology_manager.h"
+#include "misc/utils.h"
 
 namespace firmament {
 
@@ -70,6 +71,46 @@ TEST_F(TopologyManagerTest, GetResourceTreeAsPB) {
   TopologyManager t;
   ResourceTopologyNodeDescriptor res_desc;
   t.AsProtobuf(&res_desc);
+}
+
+// Tests that subsequent calls to AsProtobuf return a consistent view of the
+// topology, and do not generate spurious new UUIDs.
+TEST_F(TopologyManagerTest, CheckResourceTreeConsistency) {
+  FLAGS_v = 2;
+  TopologyManager t;
+  ResourceTopologyNodeDescriptor res_desc1;
+  ResourceTopologyNodeDescriptor res_desc2;
+  t.AsProtobuf(&res_desc1);
+  t.AsProtobuf(&res_desc2);
+  // Check that the two resource trees are identical
+  CHECK_EQ(res_desc1.DebugString(),
+           res_desc2.DebugString());
+}
+
+// Tests pinning to the root resource of a resource tree
+TEST_F(TopologyManagerTest, TestTrivialResourceBinding) {
+  FLAGS_v = 2;
+  TopologyManager t;
+  ResourceTopologyNodeDescriptor res_desc;
+  t.AsProtobuf(&res_desc);
+  t.BindToResource(ResourceIDFromString(
+      res_desc.resource_desc().uuid()));
+}
+
+// Tests pinning to the root resource of a resource tree
+TEST_F(TopologyManagerTest, TestBindToPUResource) {
+  FLAGS_v = 2;
+  TopologyManager t;
+  ResourceTopologyNodeDescriptor res_desc;
+  t.AsProtobuf(&res_desc);
+  ResourceTopologyNodeDescriptor* rtnd_ptr = &res_desc;
+  // Deep dive to find first PU
+  while (rtnd_ptr->children_size() > 0 &&
+         rtnd_ptr->resource_desc().type() != ResourceDescriptor::RESOURCE_PU) {
+    rtnd_ptr = rtnd_ptr->mutable_children(0);
+  }
+  t.BindToResource(ResourceIDFromString(
+      rtnd_ptr->resource_desc().uuid()));
 }
 
 }  // namespace firmament

@@ -8,6 +8,7 @@
 
 #include <vector>
 
+#include "misc/map-util.h"
 #include "misc/utils.h"
 
 namespace firmament {
@@ -26,7 +27,7 @@ void TopologyManager::AsProtobuf(ResourceTopologyNodeDescriptor* topology_pb) {
   root_resource->set_type(ResourceDescriptor::RESOURCE_MACHINE);
   hwloc_obj_t root_obj = hwloc_get_root_obj(topology_);
   MakeProtobufTree(root_obj, topology_pb, NULL);
-  VLOG(1) << topology_pb->DebugString();
+  VLOG(3) << topology_pb->DebugString();
 }
 
 bool TopologyManager::BindToCore(uint32_t core_id, bool strict) {
@@ -47,8 +48,21 @@ bool TopologyManager::BindToCPUMask(uint64_t mask, bool strict) {
 
 bool TopologyManager::BindToResource(ResourceID_t res_id) {
   // Check that the resource exists, is local, and is a CPU
-  //
-  return false;
+  hwloc_obj_t* obj;
+  CHECK(obj = FindOrNull(resourceID_to_obj_, res_id));
+  // TODO(malte): We may want to lift this restriction if we find that pinning
+  // to sub-trees of the resource tree is a good idea.
+  //CHECK((*obj)->type == HWLOC_OBJ_PU);
+  if (VLOG_IS_ON(2)) {
+    VLOG(2) << "Resource " << res_id << " corresponds to CPUSet "
+            << DebugCPUSet((*obj)->cpuset);
+  }
+  if (hwloc_set_cpubind(topology_, (*obj)->cpuset, 0) != 0) {
+    PLOG(WARNING) << "Failed to bind to CPU: ";
+    return false;
+  } else {
+    return true;
+  }
 }
 
 void TopologyManager::LoadAndParseTopology() {
@@ -95,7 +109,17 @@ void TopologyManager::MakeProtobufTree(
   char obj_string[128];
   // Add this object
   hwloc_obj_snprintf(obj_string, sizeof(obj_string), topology_, node, " #", 0);
-  string obj_id = to_string(GenerateUUID());
+  ResourceID_t* res_id = FindOrNull(obj_to_resourceID_, node);
+  string obj_id;
+  if (!res_id) {
+    // If this object is not already known, we generate a new resource ID.
+    ResourceID_t new_rid = GenerateUUID();
+    obj_id = to_string(new_rid);
+    InsertIfNotPresent(&obj_to_resourceID_, node, new_rid);
+    InsertIfNotPresent(&resourceID_to_obj_, new_rid, node);
+  } else {
+    obj_id = to_string(*res_id);
+  }
   obj_pb->mutable_resource_desc()->set_uuid(to_string(obj_id));
   obj_pb->mutable_resource_desc()->set_type(TranslateHwlocType(node->type));
   obj_pb->mutable_resource_desc()->set_friendly_name(obj_string);
@@ -150,7 +174,7 @@ ResourceDescriptor::ResourceType TopologyManager::TranslateHwlocType(
 void TopologyManager::TraverseProtobufTree(
     ResourceTopologyNodeDescriptor* pb,
     boost::function<void(ResourceDescriptor*)> callback) {  // NOLINT
-  VLOG(2) << "Traversal of resource topology, reached "
+  VLOG(3) << "Traversal of resource topology, reached "
           << pb->resource_desc().uuid()
           << ", invoking callback [" << callback << "]";
   callback(pb->mutable_resource_desc());
@@ -161,6 +185,10 @@ void TopologyManager::TraverseProtobufTree(
     TraverseProtobufTree(&(*rtnd_iter), callback);
   }
 }
+
+// ----------------------------------------------------------------------------
+// Debug helper methods
+// ----------------------------------------------------------------------------
 
 void TopologyManager::DebugPrintRawTopology() {
   char obj_string[128];
@@ -173,6 +201,22 @@ void TopologyManager::DebugPrintRawTopology() {
       LOG(INFO) << "Index: " << i << ": " << obj_string;
     }
   }
+}
+
+string TopologyManager::DebugCPUSet(hwloc_const_cpuset_t cpuset) {
+  string dump;
+  char hex_dump[128];
+  char list_dump[128];
+  hwloc_bitmap_snprintf(hex_dump, sizeof(hex_dump), cpuset);
+  hwloc_bitmap_list_snprintf(list_dump, sizeof(list_dump), cpuset);
+  // This is ugly, but the easiest way around the const char*/char* mismatch
+  // that befalls "+"-based concatenation of strings.
+  dump = "[";
+  dump += hex_dump;
+  dump += " = ";
+  dump += list_dump;
+  dump += "]";
+  return dump;
 }
 
 }  // namespace topology

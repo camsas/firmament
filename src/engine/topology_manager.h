@@ -13,6 +13,7 @@
 #define FIRMAMENT_ENGINE_TOPOLOGY_MANAGER_H
 
 #include <string>
+#include <map>
 #include <vector>
 
 extern "C" {
@@ -45,6 +46,7 @@ class TopologyManager {
       boost::function<void(ResourceDescriptor*)> callback);  // NOLINT
 
  protected:
+  string DebugCPUSet(hwloc_const_cpuset_t cpuset);
   void MakeProtobufTree(hwloc_obj_t node,
                         ResourceTopologyNodeDescriptor* obj_pb,
                         ResourceTopologyNodeDescriptor* parent_pb);
@@ -54,6 +56,8 @@ class TopologyManager {
   hwloc_topology_t topology_;
   hwloc_cpuset_t cpuset_;
   uint32_t topology_depth_;
+  map<hwloc_obj_t, ResourceID_t> obj_to_resourceID_;
+  map<ResourceID_t, hwloc_obj_t> resourceID_to_obj_;
 };
 
 }  // namespace topology
