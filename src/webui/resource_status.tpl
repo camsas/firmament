@@ -27,7 +27,13 @@
   </tr>
   <tr>
     <td>Children IDs</td>
-    <td>{{RES_CHILDREN_IDS}}</td>
+    <td>
+      <ul>
+      {{#RES_CHILDREN}}
+        <li><a href="/resource/?id={{RES_CHILD_ID}}">{{RES_CHILD_ID}}</a></li>
+      {{/RES_CHILDREN}}
+      </ul>
+    </td>
   </tr>
 </table>
 

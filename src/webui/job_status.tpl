@@ -22,10 +22,14 @@
     <td><a href="/task/?id={{JOB_ROOT_TASK_ID}}">{{JOB_ROOT_TASK_ID}}</a></td>
   </tr>
   <tr>
-    <td rowspan="{{JOB_NUM_OUTPUTS}}">Outputs</td>
-    {{#JOB_OUTPUTS}}
-    <td><a href="/ref/?id={{JOB_OUTPUT_ID}}">{{JOB_OUTPUT_ID}}</a></td>
-    {{/JOB_OUTPUTS}}
+    <td>Outputs</td>
+    <td>
+      <ul>
+      {{#JOB_OUTPUTS}}
+      <li><a href="/ref/?id={{JOB_OUTPUT_ID}}">{{JOB_OUTPUT_ID}}</a></li>
+      {{/JOB_OUTPUTS}}
+      </ul>
+    </td>
   </tr>
 </table>
 

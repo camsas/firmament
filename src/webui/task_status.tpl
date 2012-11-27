@@ -30,10 +30,14 @@
     {{/TASK_SPAWNED}}
   </tr>
   <tr>
-    <td rowspan="{{TASK_NUM_OUTPUTS}}">Outputs</td>
-    {{#TASK_OUTPUTS}}
-    <td><a href="/ref/?id={{TASK_OUTPUT_ID}}">{{TASK_OUTPUT_ID}}</a></td>
-    {{/TASK_OUTPUTS}}
+    <td>Outputs</td>
+    <td>
+      <ul>
+      {{#TASK_OUTPUTS}}
+        <li><a href="/ref/?id={{TASK_OUTPUT_ID}}">{{TASK_OUTPUT_ID}}</a></li>
+      {{/TASK_OUTPUTS}}
+      </ul>
+    </td>
   </tr>
 </table>
 

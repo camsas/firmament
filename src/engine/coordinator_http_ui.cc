@@ -163,6 +163,11 @@ void CoordinatorHTTPUI::HandleJobURI(HTTPRequestPtr& http_request,  // NOLINT
   // Get resource information from coordinator
   HTTPTypes::QueryParams &params = http_request->getQueryParams();
   string* job_id = FindOrNull(params, "id");
+  if (!job_id) {
+    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
   JobDescriptor* jd_ptr = coordinator_->GetJob(
       JobIDFromString(*job_id));
   TemplateDictionary dict("job_status");
@@ -220,6 +225,10 @@ void CoordinatorHTTPUI::HandleResourcesListURI(HTTPRequestPtr& http_request,  //
     sect_dict->SetValue("RES_STATE",
                         ENUM_TO_STRING(ResourceDescriptor::ResourceState,
                                        rd_iter->state()));
+    // N.B.: We make the assumption that only PU type resources are schedulable
+    // here!
+    if (rd_iter->type() != ResourceDescriptor::RESOURCE_PU)
+      sect_dict->AddSectionDictionary("RES_NON_SCHEDULABLE");
     ++i;
   }
   string output;
@@ -236,18 +245,24 @@ void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLI
   // Get resource information from coordinator
   HTTPTypes::QueryParams &params = http_request->getQueryParams();
   string* res_id = FindOrNull(params, "id");
+  if (!res_id) {
+    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
   ResourceDescriptor* rd_ptr = coordinator_->GetResource(
       ResourceIDFromString(*res_id));
   TemplateDictionary dict("resource_status");
   if (rd_ptr) {
     dict.SetValue("RES_ID", rd_ptr->uuid());
     dict.SetValue("RES_FRIENDLY_NAME", rd_ptr->friendly_name());
-    dict.SetIntValue("RES_TYPE", rd_ptr->type());
+    dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
+                                             rd_ptr->type()));
     dict.SetValue("RES_STATUS",
                   ENUM_TO_STRING(ResourceDescriptor::ResourceState,
                                  rd_ptr->state()));
     dict.SetValue("RES_PARENT_ID", rd_ptr->parent());
-    //dict.SetValue("RES_CHILDREN_IDS", rd_ptr->children());
+    dict.SetIntValue("RES_NUM_CHILDREN", rd_ptr->children_size());
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
     VLOG(1) << "rd_ptr is: " << rd_ptr;
@@ -298,6 +313,11 @@ void CoordinatorHTTPUI::HandleJobStatusURI(HTTPRequestPtr& http_request,  // NOL
   HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   HTTPTypes::QueryParams &params = http_request->getQueryParams();
   string* job_id = FindOrNull(params, "id");
+  if (!job_id) {
+    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
   TemplateDictionary dict("job_dtg");
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
@@ -348,6 +368,11 @@ void CoordinatorHTTPUI::HandleReferenceURI(HTTPRequestPtr& http_request,  // NOL
   // Get resource information from coordinator
   HTTPTypes::QueryParams &params = http_request->getQueryParams();
   string* ref_id = FindOrNull(params, "id");
+  if (!ref_id) {
+    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
   ReferenceDescriptor* rd_ptr = coordinator_->GetReference(
       DataObjectIDFromString(*ref_id));
   TemplateDictionary dict("reference_view");
@@ -355,7 +380,9 @@ void CoordinatorHTTPUI::HandleReferenceURI(HTTPRequestPtr& http_request,  // NOL
     dict.SetIntValue("REF_ID", rd_ptr->id());
     dict.SetValue("REF_TYPE", ENUM_TO_STRING(ReferenceDescriptor::ReferenceType,
                                              rd_ptr->type()));
-    dict.SetIntValue("REF_SCOPE", rd_ptr->scope());
+    dict.SetValue("REF_SCOPE",
+                  ENUM_TO_STRING(ReferenceDescriptor::ReferenceScope,
+                                 rd_ptr->scope()));
     dict.SetIntValue("REF_NONDET", rd_ptr->non_deterministic());
     dict.SetIntValue("REF_SIZE", rd_ptr->size());
     dict.SetIntValue("REF_PRODUCER", rd_ptr->producing_task());
@@ -381,6 +408,11 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
   // Get resource information from coordinator
   HTTPTypes::QueryParams &params = http_request->getQueryParams();
   string* task_id = FindOrNull(params, "id");
+  if (!task_id) {
+    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
   TaskDescriptor* td_ptr = coordinator_->GetTask(
       TaskIDFromString(*task_id));
   TemplateDictionary dict("task_status");
