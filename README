@@ -51,7 +51,8 @@ Once the coordinator is up and running, you can access its HTTP interface at
 http://<host>:8080/ (the port can be customized using --http_ui_port argument).
 
 To submit a toy job, first make the examples target and then use the script in
-scripts/job/job_submit.py:
+scripts/job/job_submit.py. Note that jobs are currently submitted to the web UI
+port, and NOT the internal listen port!
 
 $ make examples
 $ cd scripts/job/
