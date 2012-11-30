@@ -13,6 +13,9 @@
 
 namespace firmament {
 
+boost::mt19937 ran_;
+bool ran_init_ = false;
+
 uint64_t GetCurrentTimestamp() {
   struct timeval ts;
   gettimeofday(&ts, NULL);
@@ -33,12 +36,20 @@ uint64_t MakeEnsembleUID(Ensemble *ens) {
 }*/
 
 ResourceID_t GenerateUUID() {
-  boost::uuids::random_generator gen;
+  if (!ran_init_) {
+    ran_.seed(time(NULL));
+    ran_init_ = true;
+  }
+  boost::uuids::basic_random_generator<boost::mt19937> gen(&ran_);
   return gen();
 }
 
 JobID_t GenerateJobID() {
-  boost::uuids::random_generator gen;
+  if (!ran_init_) {
+    ran_.seed(time(NULL));
+    ran_init_ = true;
+  }
+  boost::uuids::basic_random_generator<boost::mt19937> gen(&ran_);
   return gen();
 }
 
