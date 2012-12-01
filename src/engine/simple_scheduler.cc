@@ -25,9 +25,11 @@ SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
                                  shared_ptr<ResourceMap_t> resource_map,
                                  shared_ptr<DataObjectMap_t> object_map,
                                  shared_ptr<TaskMap_t> task_map,
+                                 shared_ptr<TopologyManager> topo_mgr,
                                  const string& coordinator_uri)
     : SchedulerInterface(job_map, resource_map, object_map, task_map),
-      coordinator_uri_(coordinator_uri) {
+      coordinator_uri_(coordinator_uri),
+      topology_manager_(topo_mgr) {
   VLOG(1) << "SimpleScheduler initiated.";
 }
 
@@ -121,7 +123,8 @@ void SimpleScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
 void SimpleScheduler::RegisterResource(ResourceID_t res_id) {
   // Create an executor for each resource.
   VLOG(1) << "Adding executor for resource " << res_id;
-  LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_);
+  LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_,
+                                          topology_manager_);
   CHECK(InsertIfNotPresent(&executors_, res_id, exec));
 }
 

@@ -22,8 +22,21 @@ using common::pb_to_vector;
 LocalExecutor::LocalExecutor(ResourceID_t resource_id,
                              const string& coordinator_uri)
     : local_resource_id_(resource_id),
-      coordinator_uri_(coordinator_uri) {
+      coordinator_uri_(coordinator_uri),
+      topology_manager_(shared_ptr<TopologyManager>()) {  // NULL
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
+  VLOG(1) << "No topology manager passed, so will not bind to resource.";
+}
+
+LocalExecutor::LocalExecutor(ResourceID_t resource_id,
+                             const string& coordinator_uri,
+                             shared_ptr<TopologyManager> topology_mgr)
+    : local_resource_id_(resource_id),
+      coordinator_uri_(coordinator_uri),
+      topology_manager_(topology_mgr) {
+  VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
+  VLOG(1) << "Tasks will be bound to the resource by the topology manager"
+          << "at " << topology_manager_;
 }
 
 void LocalExecutor::RunTask(TaskDescriptor* td,
@@ -149,6 +162,9 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     default:
       // Parent
       VLOG(1) << "Task process with PID " << pid << " created.";
+      // Pin the task to the appropriate resource
+      if (topology_manager_)
+        topology_manager_->BindPIDToResource(pid, local_resource_id_);
       // close unused pipe ends
       close(pipe_to[0]);
       close(pipe_from[1]);

@@ -11,9 +11,12 @@
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "misc/printable_interface.h"
+#include "engine/topology_manager.h"
 
 namespace firmament {
 namespace scheduler {
+
+using machine::topology::TopologyManager;
 
 class SchedulerInterface : public PrintableInterface {
  public:

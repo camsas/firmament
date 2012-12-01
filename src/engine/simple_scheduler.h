@@ -29,6 +29,7 @@ class SimpleScheduler : public SchedulerInterface {
                   shared_ptr<ResourceMap_t> resource_map,
                   shared_ptr<DataObjectMap_t> object_map,
                   shared_ptr<TaskMap_t> task_map,
+                  shared_ptr<TopologyManager> topo_mgr,
                   const string& coordinator_uri);
   ~SimpleScheduler();
   void DeregisterResource(ResourceID_t res_id);
@@ -67,6 +68,8 @@ class SimpleScheduler : public SchedulerInterface {
   const string coordinator_uri_;
   map<ResourceID_t, ExecutorInterface*> executors_;
   map<TaskID_t, ResourceID_t> task_bindings_;
+  // Pointer to the coordinator's topology manager
+  shared_ptr<TopologyManager> topology_manager_;
 };
 
 }  // namespace scheduler

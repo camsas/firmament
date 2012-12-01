@@ -29,7 +29,12 @@ TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
 	                 $(BUILD_DIR)/engine/stub_object_store.o \
 	                 $(BUILD_DIR)/engine/topology_manager.o \
 	                 $(BUILD_DIR)/base/libfirmament_base.a
-TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/local_executor.o
+TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/local_executor.o \
+			      $(BUILD_DIR)/engine/topology_manager.o \
+			      $(BUILD_DIR)/base/libfirmament_base.a
+TESTS_local_executor_DEPS = $(BUILD_DIR)/engine/topology_manager.o \
+			    $(BUILD_DIR)/base/libfirmament_base.a \
+			    $(BUILD_DIR)/misc/libfirmament_misc.a
 TESTS_worker_DEPS = $(BUILD_DIR)/engine/node.o \
 		    $(BUILD_DIR)/platforms/unix/libfirmament_unix.a
 

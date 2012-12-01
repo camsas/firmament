@@ -49,7 +49,7 @@ class SimpleSchedulerTest : public ::testing::Test {
     job_map_->clear();
     obj_map_->clear();
     sched_.reset(new SimpleScheduler(job_map_, res_map_, obj_map_, task_map_,
-                                     ""));
+                                     shared_ptr<TopologyManager>(), ""));
   }
 
   virtual void TearDown() {

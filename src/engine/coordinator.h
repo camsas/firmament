@@ -184,7 +184,6 @@ class Coordinator : public Node,
 #ifdef __HTTP_UI__
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
 #endif
-  scoped_ptr<TopologyManager> topology_manager_;
   // A map of resources associated with this coordinator.
   // The key is a resource UUID, the value a pair.
   // The first component of the pair is the resource descriptor, the second is
@@ -204,6 +203,9 @@ class Coordinator : public Node,
   // A map of all tasks that the coordinator currently knows about.
   // TODO(malte): Think about GC'ing this.
   shared_ptr<TaskMap_t> task_table_;
+  // The topology manager associated with this coordinator; responsible for the
+  // local resources.
+  shared_ptr<TopologyManager> topology_manager_;
   // The local scheduler object. A coordinator may not have a scheduler, in
   // which case this will be a stub that defers to another scheduler.
   // TODO(malte): Work out the detailed semantics of this.

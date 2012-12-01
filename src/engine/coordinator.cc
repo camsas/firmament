@@ -39,14 +39,15 @@ using store::StubObjectStore;
 
 Coordinator::Coordinator(PlatformID platform_id)
   : Node(platform_id, GenerateUUID()),
-    topology_manager_(new TopologyManager()),
     associated_resources_(new ResourceMap_t),
     local_resource_topology_(new ResourceTopologyNodeDescriptor),
     job_table_(new JobMap_t),
     object_table_(new DataObjectMap_t),
     task_table_(new TaskMap_t),
+    topology_manager_(new TopologyManager()),
     scheduler_(new SimpleScheduler(job_table_, associated_resources_,
                                    object_table_, task_table_,
+                                   topology_manager_,
                                    FLAGS_listen_uri)),
     object_store_(new StubObjectStore) {
   // Start up a coordinator ccording to the platform parameter
