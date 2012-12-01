@@ -115,7 +115,7 @@ ResourceID_t ResourceIDFromString(const string& str) {
 
 TaskID_t TaskIDFromString(const string& str) {
   // XXX(malte): possibly unsafe use of atol() here.
-  TaskID_t task_uuid = atol(str.c_str());
+  TaskID_t task_uuid = strtoul(str.c_str(), NULL, 10);
   return task_uuid;
 }
 

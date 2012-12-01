@@ -84,11 +84,13 @@ void TaskLib::Run() {
 void TaskLib::RunTask() {
   //CHECK(task_desc_.code_dependency.is_consumable());
   LOG(INFO) << "Invoking task code...";
-  char *task_id_env = getenv("TASK_ID");
+  char* task_id_env = getenv("TASK_ID");
+  VLOG(1) << "Task ID read from environment is " << task_id_env;
   CHECK_NOTNULL(task_id_env);
+  TaskID_t task_id = TaskIDFromString(task_id_env);
   // task_main blocks until the task has exited
   //  exec(task_desc_.code_dependency());
-  boost::thread task_thread(boost::bind(task_main, atol(task_id_env)));
+  boost::thread task_thread(boost::bind(task_main, task_id));
   task_running_ = true;
   // TODO(malte): continue normal operation and monitor task instead of waiting
   // for join here.
@@ -111,7 +113,7 @@ void TaskLib::SendFinalizeMessage(bool success) {
   else
     LOG(FATAL) << "Unimplemented error path!";
   VLOG(1) << "Sending finalize message (task state change to "
-          << (success ? "COMPLETED" : "FAILED") << "!";
+          << (success ? "COMPLETED" : "FAILED") << ")!";
   //SendMessageToCoordinator(&bm);
   Envelope<BaseMessage> envelope(&bm);
   CHECK(chan_->SendS(envelope));

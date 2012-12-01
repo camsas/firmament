@@ -57,6 +57,20 @@ TEST_F(UtilsTest, DataObjectIDGenerateFromTDTest) {
   CHECK_EQ(GenerateDataObjectID(td.uid(), td.outputs_size()), 175247688336);
 }
 
+// Tests task ID parsing from string.
+TEST_F(UtilsTest, TaskIDFromString) {
+  FLAGS_v = 2;
+  // Simple case
+  string test1 = "1234567";
+  // A value that overflows an int64_t (long), but fits within an uint64_t
+  // (unsigned long).
+  string test2 = "16733209960240500155";
+  // Test both
+  CHECK_EQ(TaskIDFromString(test1), 1234567);
+  CHECK_EQ(TaskIDFromString(test2), 16733209960240500155U);
+}
+
+
 
 }  // namespace firmament
 
