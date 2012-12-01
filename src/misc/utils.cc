@@ -53,6 +53,12 @@ JobID_t GenerateJobID() {
   return gen();
 }
 
+TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc) {
+  size_t hash = 0;
+  boost::hash_combine(hash, job_desc.uuid());
+  return static_cast<TaskID_t>(hash);
+}
+
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task) {
   // A new task's ID is a hash of the parent (spawning) task's ID and its
   // current spawn counter value, which is implicitly stored in the TD by means

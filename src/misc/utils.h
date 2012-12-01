@@ -42,6 +42,9 @@ JobID_t GenerateJobID();
 DataObjectID_t GenerateDataObjectID(const TaskDescriptor& task_descriptor);
 DataObjectID_t GenerateDataObjectID(TaskID_t producing_task,
                                     TaskOutputID_t output_id);
+// XXX(malte): This is a hack. Figure out a proper hashing function compatible
+// with root tasks.
+TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task);
 // Utility functions to parse various types from strings.
 DataObjectID_t DataObjectIDFromString(const string& str);

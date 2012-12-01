@@ -297,13 +297,13 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   new_jd->CopyFrom(job_descriptor);
   new_jd->set_uuid(to_string(new_job_id));
   // Set the root task ID (which is 0 or unset on submission)
-  new_jd->mutable_root_task()->set_uid(GenerateTaskID(new_jd->root_task()));
+  new_jd->mutable_root_task()->set_uid(GenerateRootTaskID(*new_jd));
   // Add job to local job table
   CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, *new_jd));
   // Add its root task to the task table
   if (!InsertIfNotPresent(task_table_.get(), new_jd->root_task().uid(),
                           new_jd->mutable_root_task())) {
-    VLOG(1) << "Task " << new_jd->root_task().uid() << " aöready exists in "
+    VLOG(1) << "Task " << new_jd->root_task().uid() << " already exists in "
             << "task table, so not adding it again.";
   }
   // Add its spawned tasks (if any) to the local task table
