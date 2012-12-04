@@ -85,7 +85,6 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
   pid_t pid;
   int pipe_to[2];    // pipe to feed input data to task
   int pipe_from[3];  // pipe to receive output data from task
-  int status;
   if (pipe(pipe_to) != 0) {
     LOG(ERROR) << "Failed to create pipe to task.";
   }
@@ -180,8 +179,9 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       ReadFromPipe(pipe_from[0]);
       //ReadFromPipe(pipe_from[1]);
       // wait for task to terminate
+      int status;
       while (!WIFEXITED(status)) {
-        VLOG(2) << "Waiting for task to exit...";
+        VLOG_EVERY_N(2, 1000) << "Waiting for task to exit...";
         waitpid(pid, &status, 0);
       }
       VLOG(1) << "Task process with PID " << pid << " exited with status "
