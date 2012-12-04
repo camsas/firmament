@@ -220,6 +220,7 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
 }
 
 uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
+  uint64_t total_scheduled = 0;
   VLOG(2) << "Preparing to schedule job " << job_desc->uuid();
   // Get the set of runnable tasks for this job
   set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
@@ -244,9 +245,12 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
       LOG(INFO) << "Scheduling task " << (*td)->uid() << " on resource "
                 << rp->first->uuid() << " [" << rp << "]";
       BindTaskToResource(*td, rp->first);
+      total_scheduled++;
     }
   }
-  return 0;
+  if (total_scheduled > 0)
+    job_desc->set_state(JobDescriptor::RUNNING);
+  return total_scheduled;
 }
 
 shared_ptr<ReferenceInterface> SimpleScheduler::ReferenceForID(

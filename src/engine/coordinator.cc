@@ -344,7 +344,10 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
                               sim_dtg_generator_));
 #endif
   // Kick off the scheduler for this job.
-  scheduler_->ScheduleJob(FindOrNull(*job_table_, new_job_id));
+  uint64_t num_scheduled = scheduler_->ScheduleJob(
+      FindOrNull(*job_table_, new_job_id));
+  VLOG(1) << "Attempted to schedule job " << new_job_id << ", successfully "
+          << "scheduled " << num_scheduled << " tasks.";
   // Finally, return the new job's ID
   return to_string(new_job_id);
 }
