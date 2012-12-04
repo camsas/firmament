@@ -14,7 +14,7 @@
 namespace firmament {
 
 typedef ReferenceDescriptor::ReferenceType ReferenceType_t;
-typedef size_t DataObjectID_t;
+typedef uint64_t DataObjectID_t;
 
 class ReferenceInterface : public PrintableInterface {
  public:
