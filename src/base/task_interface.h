@@ -7,6 +7,7 @@
 #define FIRMAMENT_BASE_TASK_INTERFACE_H
 
 #include <string>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -17,7 +18,7 @@ namespace firmament {
 // Main task invocation method. This will be linked to the
 // implementation-specific task_main() procedure in the task implementation.
 // TODO(malte): Ideally, we wouldn't need this level of indirection.
-extern void task_main(TaskID_t task_id);
+extern void task_main(TaskID_t task_id, vector<char *>* arg_vec);
 
 class TaskInterface : public PrintableInterface {
  public:

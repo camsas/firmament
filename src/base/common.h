@@ -50,7 +50,15 @@ namespace common {
 // binaries.
 inline void InitFirmament(int argc, char *argv[]) {
   // Use gflags to parse command line flags
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  // The final (boolean) argument determines whether gflags-parsed flags should
+  // be removed from the array (if true), otherwise they will re-ordered such
+  // that all gflags-parsed flags are at the beginning. Removing them has proven
+  // to have problematic interactions with task_lib, since the modified pointer
+  // is lost. For this reason, we re-arrange instead, and have our own logic to
+  // drop flags.
+  // TODO(malte): figure out if the above can be fixed; hard-coded flag removal
+  // logic is annoying!
+  google::ParseCommandLineFlags(&argc, &argv, false);
 
   // Set up glog for logging output
   google::InitGoogleLogging(argv[0]);

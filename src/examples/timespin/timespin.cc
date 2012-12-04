@@ -25,6 +25,8 @@
 
 #include "examples/timespin/timespin.h"
 
+#include <vector>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>
@@ -32,9 +34,14 @@
 
 namespace firmament {
 
-void task_main(TaskID_t task_id) {
-  VLOG(1) << "Task " << task_id << " spinning for 10 seconds!";
-  timespin_main(10);
+void task_main(TaskID_t task_id, vector<char*>* arg_vec) {
+  int64_t dur;
+  if (arg_vec->size() < 2 || atol(arg_vec->at(1)) <= 0)
+    dur = 10;
+  else
+    dur = atol(arg_vec->at(1));
+  VLOG(1) << "Task " << task_id << " spinning for " << dur << " seconds!";
+  timespin_main(dur);
 }
 
 }  // namespace firmament

@@ -7,6 +7,8 @@
 
 #include "engine/task_lib.h"
 
+#include <vector>
+
 #include "base/common.h"
 #include "messages/heartbeat_message.pb.h"
 #include "messages/registration_message.pb.h"
@@ -18,6 +20,7 @@
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 DEFINE_string(resource_id, "",
               "The resource ID that is running this task.");
+DEFINE_string(task_id, "", "The ID of this task.");
 DEFINE_int32(heartbeat_interval, 1,
              "The interval, in seconds, between heartbeats sent to the"
              "coordinator.");
@@ -30,6 +33,7 @@ TaskLib::TaskLib()
         StreamSocketsChannel<BaseMessage>::SS_TCP)),
     coordinator_uri_(FLAGS_coordinator_uri),
     resource_id_(ResourceIDFromString(FLAGS_resource_id)),
+    task_error_(false),
     task_running_(false),
     heartbeat_seq_number_(0) {
 }
@@ -44,6 +48,21 @@ bool TaskLib::ConnectToCoordinator(const string& coordinator_uri) {
       coordinator_uri, shared_ptr<StreamSocketsChannel<BaseMessage> >(chan_));
 }
 
+void TaskLib::ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec) {
+  VLOG(1) << "Stripping Firmament default arguments...";
+  for (int64_t i = 0; i < argc; ++i) {
+    if (strstr(argv[i], "--tryfromenv") || strstr(argv[i], "--v")) {
+      // Ignore standard arguments that refer to Firmament's task_lib, rather
+      // than being passed through to the user code.
+      continue;
+    } else {
+      arg_vec->push_back(argv[i]);
+    }
+  }
+  VLOG(1) << arg_vec->size() << " out of " << argc << " original arguments "
+          << "remain.";
+}
+
 void TaskLib::HandleWrite(const boost::system::error_code& error,
                          size_t bytes_transferred) {
   VLOG(1) << "In HandleWrite, thread is " << boost::this_thread::get_id();
@@ -53,7 +72,7 @@ void TaskLib::HandleWrite(const boost::system::error_code& error,
     VLOG(1) << "bytes_transferred: " << bytes_transferred;
 }
 
-void TaskLib::Run() {
+void TaskLib::Run(int argc, char *argv[]) {
   // TODO(malte): Any setup work goes here
   CHECK(ConnectToCoordinator(coordinator_uri_))
       << "Failed to connect to coordinator; is it reachable?";
@@ -61,53 +80,62 @@ void TaskLib::Run() {
   // Async receive -- the handler is responsible for invoking this again.
   AwaitNextMessage();
 
-  // Run task
+  // Run task -- this will only return when the task thread has finished.
   task_running_ = true;
-  RunTask();
-
-  while (task_running_) {  // main loop -- && task_running
-    // Send period heartbeats
-    SendHeartbeat();
-    VLOG(1) << "Sent heartbeat...";
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
-  }
+  RunTask(argc, argv);
 
   // We have dropped out of the main loop and are exiting
   // TODO(malte): any cleanup we need to do; terminate running
   // tasks etc.
   VLOG(1) << "Dropped out of main loop -- cleaning up...";
-  // XXX(malte): Deal with error case!
-  SendFinalizeMessage(true);
+  // task_error_ will be set if the task failed for some reason.
+  SendFinalizeMessage(!task_error_);
   chan_->Close();
 }
 
-void TaskLib::RunTask() {
+void TaskLib::RunTask(int argc, char *argv[]) {
   //CHECK(task_desc_.code_dependency.is_consumable());
   LOG(INFO) << "Invoking task code...";
-  char* task_id_env = getenv("TASK_ID");
-  VLOG(1) << "Task ID read from environment is " << task_id_env;
+  const char* task_id_env;
+  if (FLAGS_task_id.empty())
+    task_id_env = getenv("TASK_ID");
+  else
+    task_id_env = FLAGS_task_id.c_str();
+  VLOG(1) << "Task ID is " << task_id_env;
   CHECK_NOTNULL(task_id_env);
-  TaskID_t task_id = TaskIDFromString(task_id_env);
+  task_id_ = TaskIDFromString(task_id_env);
+  // Convert the arguments
+  vector<char*>* task_arg_vec = new vector<char*>;
+  ConvertTaskArgs(argc, argv, task_arg_vec);
   // task_main blocks until the task has exited
   //  exec(task_desc_.code_dependency());
-  boost::thread task_thread(boost::bind(task_main, task_id));
+  boost::thread task_thread(boost::bind(task_main, task_id_, task_arg_vec));
   task_running_ = true;
-  // TODO(malte): continue normal operation and monitor task instead of waiting
-  // for join here.
+  // This will check if the task thread has joined once every heartbeat
+  // interval, and go back to sleep if it has not.
+  // TODO(malte): think about whether we'd like some kind of explicit
+  // notification scheme in case the heartbeat interval is large.
   while (!task_thread.timed_join(
       boost::posix_time::seconds(FLAGS_heartbeat_interval))) {
+    // TODO(malte): Check if we've exited with an error
+    // if(error)
+    //   task_error_ = true;
     // Notify the coordinator that we're still running happily
+    VLOG(1) << "Task thread has not yet joined, sending heartbeat...";
     SendHeartbeat();
     // TODO(malte): We'll need to receive any potential messages from the
     // coordinator here, too. This is probably best done by a simple RecvA on
     // the channel.
   }
   task_running_ = false;
+  delete task_arg_vec;
+  // The finalizing message, reporting task success or failure, will be sent by
+  // the main loop once we drop out here.
 }
 
 void TaskLib::SendFinalizeMessage(bool success) {
   BaseMessage bm;
-  SUBMSG_WRITE(bm, task_state, id, TaskIDFromString(getenv("TASK_ID")));
+  SUBMSG_WRITE(bm, task_state, id, task_id_);
   if (success)
     SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::COMPLETED);
   else

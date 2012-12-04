@@ -9,6 +9,7 @@
 #define FIRMAMENT_ENGINE_TASK_LIB_H
 
 #include <string>
+#include <vector>
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -44,10 +45,10 @@ using platform_unix::streamsockets::StreamSocketsChannel;
 class TaskLib {
  public:
   TaskLib();
-  void Run();
+  void Run(int argc, char *argv[]);
   void AwaitNextMessage();
   bool ConnectToCoordinator(const string& coordinator_uri);
-  void RunTask();
+  void RunTask(int argc, char *argv[]);
   // CIEL programming model
   /*virtual const string Construct(const DataObject& object);
   virtual void Spawn(const ConcreteReference& code,
@@ -62,7 +63,9 @@ class TaskLib {
   // TODO(malte): transform this into a better representation
   string coordinator_uri_;
   ResourceID_t resource_id_;
+  TaskID_t task_id_;
 
+  void ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec);
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
   void SendFinalizeMessage(bool success);
@@ -70,6 +73,7 @@ class TaskLib {
   bool SendMessageToCoordinator(BaseMessage* msg);
 
  private:
+  bool task_error_;
   bool task_running_;
   uint64_t heartbeat_seq_number_;
 };

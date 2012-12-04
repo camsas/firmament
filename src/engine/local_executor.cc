@@ -133,10 +133,12 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       }
       argv.push_back((char*)(cmdline.c_str()));  // NOLINT
       if (default_args)
-        argv.push_back((char*)"--tryfromenv=coordinator_uri,resource_id");  // NOLINT
+        argv.push_back(
+            (char*)"--tryfromenv=coordinator_uri,resource_id,task_id");  // NOLINT
       for (uint32_t i = 0; i < args.size(); ++i) {
         // N.B.: This casts away the const qualifier on the c_str() result.
         // This is joyfully unsafe, of course.
+        VLOG(1) << "Adding extra argument \"" << args[i] << "\"";
         argv.push_back((char*)(args[i].c_str()));  // NOLINT
       }
       // The last argument to execvp is always NULL.
@@ -199,7 +201,7 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
                  << "The task will be unable to communicate with the "
                  << "coordinator!";
   vector<EnvPair_t> env;
-  env.push_back(EnvPair_t("TASK_ID", to_string(td.uid())));
+  env.push_back(EnvPair_t("FLAGS_task_id", to_string(td.uid())));
   env.push_back(EnvPair_t("PERF_FNAME", PerfDataFileName(td)));
   env.push_back(EnvPair_t("FLAGS_coordinator_uri", coordinator_uri_));
   env.push_back(EnvPair_t("FLAGS_resource_id", to_string(local_resource_id_)));
