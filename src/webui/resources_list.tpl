@@ -60,7 +60,7 @@ d3.json("/resources/topology", function(error, root) {
   var node = svg.selectAll(".node")
       .data(nodes)
     .enter().append("g")
-      .attr("class", function(d) { return "node " + (d.resource_desc.type == 0 ? "pu" : "other"); })
+      .attr("class", function(d) { return "node " + (d.resource_desc.schedulable == true ? "pu" : "other"); })
       .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
       .on("mouseover", mouseover)
       .on("mouseout", mouseout);

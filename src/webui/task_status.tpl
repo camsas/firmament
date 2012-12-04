@@ -19,11 +19,13 @@
   </tr>
   <tr>
     <td>Dependencies</td>
-    <ol>
-      {{#TASK_DEPS}}
-      <li><a href="/ref/?id={{TASK_DEP_ID}}">{{TASK_DEP_ID}}</a></li>
-      {{/TASK_DEPS}}
-    </ol>
+    <td>
+      <ol>
+        {{#TASK_DEPS}}
+        <li><a href="/ref/?id={{TASK_DEP_ID}}">{{TASK_DEP_ID}}</a></li>
+        {{/TASK_DEPS}}
+      </ol>
+    </td>
   </tr>
   <tr>
     <td>Spawned</td>
