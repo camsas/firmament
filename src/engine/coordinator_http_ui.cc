@@ -143,8 +143,8 @@ void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLI
     sect_dict->SetIntValue("JOB_NUM", i);
     sect_dict->SetValue("JOB_ID", to_string(jd_iter->uuid()));
     sect_dict->SetValue("JOB_FRIENDLY_NAME", jd_iter->name());
-    sect_dict->SetFormattedValue("JOB_ROOT_TASK_ID", "%lu",
-                                 jd_iter->root_task().uid());
+    sect_dict->SetFormattedValue("JOB_ROOT_TASK_ID", "%ju",
+                                 TaskID_t(jd_iter->root_task().uid()));
     sect_dict->SetValue("JOB_STATE",
                         ENUM_TO_STRING(JobDescriptor::JobState,
                                        jd_iter->state()));
@@ -177,8 +177,9 @@ void CoordinatorHTTPUI::HandleJobURI(HTTPRequestPtr& http_request,  // NOLINT
     dict.SetValue("JOB_NAME", jd_ptr->name());
     dict.SetValue("JOB_STATUS", ENUM_TO_STRING(JobDescriptor::JobState,
                                                jd_ptr->state()));
-    dict.SetFormattedValue("JOB_ROOT_TASK_ID", "%lu",
-                           jd_ptr->root_task().uid());
+
+    dict.SetFormattedValue("JOB_ROOT_TASK_ID", "%ju",
+                           TaskID_t(jd_ptr->root_task().uid()));
     if (jd_ptr->output_ids_size() > 0)
       dict.SetIntValue("JOB_NUM_OUTPUTS", jd_ptr->output_ids_size());
     else
@@ -419,7 +420,7 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
       TaskIDFromString(*task_id));
   TemplateDictionary dict("task_status");
   if (td_ptr) {
-    dict.SetFormattedValue("TASK_ID", "%lu", td_ptr->uid());
+    dict.SetFormattedValue("TASK_ID", "%ju", TaskID_t(td_ptr->uid()));
     //dict.SetValue("TASK_NAME", td_ptr->name());
     dict.SetValue("TASK_STATUS", ENUM_TO_STRING(TaskDescriptor::TaskState,
                                                 td_ptr->state()));
