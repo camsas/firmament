@@ -230,7 +230,7 @@ void CoordinatorHTTPUI::HandleResourcesListURI(HTTPRequestPtr& http_request,  //
                                        (*rd_iter)->state()));
     // N.B.: We make the assumption that only PU type resources are schedulable
     // here!
-    if ((*rd_iter)->type() != ResourceDescriptor::RESOURCE_PU)
+    if (!(*rd_iter)->schedulable())
       sect_dict->AddSectionDictionary("RES_NON_SCHEDULABLE");
     ++i;
   }

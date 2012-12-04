@@ -51,6 +51,8 @@ Worker::Worker(PlatformID platform_id)
 
   // TODO(malte): fix this!
   resource_desc_.set_uuid(boost::uuids::to_string(uuid_));
+  resource_desc_.set_schedulable(true);
+  resource_desc_.set_state(ResourceDescriptor::RESOURCE_IDLE);
 
   if (!FLAGS_name.empty())
     resource_desc_.set_friendly_name(FLAGS_name);

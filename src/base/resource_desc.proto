@@ -36,8 +36,5 @@ message ResourceDescriptor {
   optional string parent = 8;
   repeated string siblings = 9;
   repeated string children = 10;
-  //repeated TaskDescriptor task_queue = 2;
-  // ensemble(s)
-  // state
-  // optional ResourceStatsDescriptor stats = X
+  optional bool schedulable = 11 [default = false];
 }

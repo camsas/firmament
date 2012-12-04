@@ -132,6 +132,7 @@ void Coordinator::AddLocalResource(ResourceDescriptor* resource_desc) {
     // exclusively owned by this coordinator, and set its state to IDLE if it is
     // currently unknown. If coordinators were to ever shared PUs, we'd need
     // something more clever here.
+    resource_desc->set_schedulable(true);
     if (resource_desc->state() == ResourceDescriptor::RESOURCE_UNKNOWN)
       resource_desc->set_state(ResourceDescriptor::RESOURCE_IDLE);
     scheduler_->RegisterResource(res_id);
