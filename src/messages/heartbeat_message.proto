@@ -17,6 +17,7 @@ extend BaseMessage {
 message HeartbeatMessage {
   required string uuid = 1;
   optional string location = 2;
-  optional uint64 sequence_number = 3;
-  optional ResourceDescriptor res_desc = 4;
+  optional uint64 capacity = 3;
+  optional uint64 load = 4;
+  optional ResourceDescriptor res_desc = 5;
 }

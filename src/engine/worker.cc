@@ -93,7 +93,9 @@ void Worker::SendHeartbeat() {
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
   SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());
-  SUBMSG_WRITE(bm, heartbeat, sequence_number, 1);
+  SUBMSG_WRITE(bm, heartbeat, capacity, 1);
+  // TODO(malte): report how many free resources we have
+  SUBMSG_WRITE(bm, heartbeat, load, 1);
   VLOG(1) << "Sending heartbeat  message!";
   SendMessageToCoordinator(&bm);
 }

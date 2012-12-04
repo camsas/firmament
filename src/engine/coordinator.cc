@@ -192,11 +192,17 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
     const RegistrationMessage& msg = bm->GetExtension(register_extn);
     HandleRegistrationRequest(msg);
   }
-  // Heartbeat message
+  // Resource heartbeat message
   if (bm->HasExtension(heartbeat_extn)) {
     const HeartbeatMessage& msg = bm->GetExtension(heartbeat_extn);
     HandleHeartbeat(msg);
   }
+  // Task heartbeat message
+  if (bm->HasExtension(task_heartbeat_extn)) {
+    const TaskHeartbeatMessage& msg = bm->GetExtension(task_heartbeat_extn);
+    HandleTaskHeartbeat(msg);
+  }
+  // Task state change message
   if (bm->HasExtension(task_state_extn)) {
     const TaskStateMessage& msg = bm->GetExtension(task_state_extn);
     HandleTaskStateChange(msg);
@@ -244,6 +250,17 @@ void Coordinator::HandleRegistrationRequest(
     // TODO(malte): Implement checking logic, deal with recovery case
     // Update timestamp (registration request is an implicit heartbeat)
     rdp->second = GetCurrentTimestamp();
+  }
+}
+
+void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
+  TaskID_t task_id = msg.task_id();
+  TaskDescriptor** tdp = FindOrNull(*task_table_, task_id);
+  if (!tdp) {
+    LOG(WARNING) << "HEARTBEAT from UNKNOWN task (ID: "
+                 << task_id << ")!";
+  } else {
+    LOG(INFO) << "HEARTBEAT from task " << task_id;
   }
 }
 

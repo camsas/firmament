@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "base/common.h"
-#include "messages/heartbeat_message.pb.h"
 #include "messages/registration_message.pb.h"
+#include "messages/task_heartbeat_message.pb.h"
 #include "messages/task_state_message.pb.h"
 #include "misc/utils.h"
 #include "platforms/common.h"
@@ -151,11 +151,11 @@ void TaskLib::SendFinalizeMessage(bool success) {
 
 void TaskLib::SendHeartbeat() {
   BaseMessage bm;
+  SUBMSG_WRITE(bm, task_heartbeat, task_id, task_id_);
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
-  SUBMSG_WRITE(bm, heartbeat, uuid, to_string(resource_id_));
-  SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());
-  SUBMSG_WRITE(bm, heartbeat, sequence_number, heartbeat_seq_number_++);
+  SUBMSG_WRITE(bm, task_heartbeat, location, chan_->LocalEndpointString());
+  SUBMSG_WRITE(bm, task_heartbeat, sequence_number, heartbeat_seq_number_++);
   VLOG(1) << "Sending heartbeat message!";
   SendMessageToCoordinator(&bm);
 }
