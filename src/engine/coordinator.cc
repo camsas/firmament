@@ -51,14 +51,17 @@ Coordinator::Coordinator(PlatformID platform_id)
                                    FLAGS_listen_uri)),
     object_store_(new StubObjectStore) {
   // Start up a coordinator ccording to the platform parameter
-  // platform_ = platform::GetByID(platform_id);
-  string desc_name = "";  // platform_.GetDescriptiveName();
+  string hostname = boost::asio::ip::host_name();
+  string desc_name = "Coordinator on " + hostname;
   resource_desc_.set_uuid(to_string(uuid_));
+  resource_desc_.set_friendly_name(desc_name);
   resource_desc_.set_type(ResourceDescriptor::RESOURCE_MACHINE);
+  local_resource_topology_->mutable_resource_desc()->CopyFrom(resource_desc_);
 
   // Log information
-  LOG(INFO) << "Coordinator starting on host " << FLAGS_listen_uri
-            << ", platform " << platform_id << ", uuid " << uuid_;
+  LOG(INFO) << "Coordinator starting on host " << hostname << "(listening on"
+            << FLAGS_listen_uri << ")" << ", platform " << platform_id
+            << ", uuid " << uuid_;
 
   switch (platform_id) {
     case PL_UNIX: {
@@ -111,7 +114,9 @@ void Coordinator::DetectLocalResources() {
   // TODO(malte): Figure out how this interacts with dynamically added
   // resources; currently, we only run detection (i.e. the DetectLocalResources
   // method) once at startup.
-  topology_manager_->AsProtobuf(local_resource_topology_);
+  ResourceTopologyNodeDescriptor* root_node =
+      local_resource_topology_->add_children();
+  topology_manager_->AsProtobuf(root_node);
   local_resource_topology_->set_parent_id(to_string(uuid_));
   topology_manager_->TraverseProtobufTree(
       local_resource_topology_,
@@ -223,11 +228,15 @@ void Coordinator::HandleRegistrationRequest(
   if (!rdp) {
     LOG(INFO) << "REGISTERING NEW RESOURCE (uuid: " << msg.uuid() << ")";
     // N.B.: below creates a new resource descriptor
-    // XXX(malte): We should be adding to the topology tree instead here!
     CHECK(InsertIfNotPresent(associated_resources_.get(), uuid,
                              pair<ResourceDescriptor*, uint64_t>(
                                  new ResourceDescriptor(msg.res_desc()),
                                  GetCurrentTimestamp())));
+    // Add new resource to the topology tree (as a child of the root node)
+    ResourceTopologyNodeDescriptor* rtnd =
+        local_resource_topology_->add_children();
+    // Copy the resource descriptor of the newly registered resource
+    rtnd->mutable_resource_desc()->CopyFrom(msg.res_desc());
   } else {
     LOG(INFO) << "REGISTRATION request from resource " << msg.uuid()
               << " that we already know about. "
