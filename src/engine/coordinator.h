@@ -112,6 +112,8 @@ class Coordinator : public Node,
   inline size_t NumJobs() { return job_table_->size(); }
   inline size_t NumJobsInState(JobDescriptor::JobState state) {
     size_t count = 0;
+    if (job_table_->empty())
+      return 0;
     for (JobMap_t::const_iterator j_iter = job_table_->begin();
          j_iter != job_table_->end();
          ++j_iter)
