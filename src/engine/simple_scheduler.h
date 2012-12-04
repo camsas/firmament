@@ -59,7 +59,8 @@ class SimpleScheduler : public SchedulerInterface {
   shared_ptr<ReferenceInterface> ReferenceForID(DataObjectID_t id);
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   // Cached sets of runnable and blocked tasks; these are updated on each
-  // execution of LazyGraphReduction
+  // execution of LazyGraphReduction. Note that this set includes tasks from all
+  // jobs.
   set<TaskID_t> runnable_tasks_;
   set<TaskDescriptor*> blocked_tasks_;
   // Initialized to hold the URI of the (currently unique) coordinator this
@@ -70,6 +71,9 @@ class SimpleScheduler : public SchedulerInterface {
   map<TaskID_t, ResourceID_t> task_bindings_;
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
+  // Flag (effectively a lock) indicating if the scheduler is currently
+  // in the process of making scheduling decisions.
+  bool scheduling_;
 };
 
 }  // namespace scheduler
