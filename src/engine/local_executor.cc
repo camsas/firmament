@@ -39,6 +39,26 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
           << "at " << topology_manager_;
 }
 
+char* LocalExecutor::AddPerfMonitoringToCommandLine(vector<char*> argv) {
+  // Define the string prefix for performance monitoring
+  string perf_string = "perf stat -x, -o ";
+  perf_string += getenv("PERF_FNAME");
+  perf_string += " -e instructions,cache-misses --";
+  // Ugly parsing code to transform it into an argv representation
+  char* perf_c_string = (char*)malloc(perf_string.size()+1);  // NOLINT
+  snprintf(perf_c_string, perf_string.size(), "%s", perf_string.c_str());
+  char* piece;
+  char* tmp_ptr = NULL;
+  piece = strtok_r(perf_c_string, " ", &tmp_ptr);
+  while (piece != NULL) {
+    argv.push_back(piece);
+    piece = strtok_r(NULL, " ", &tmp_ptr);
+  }
+  // Return pointer to the allocated string in order to be able to delete it
+  // later.
+  return perf_c_string;
+}
+
 void LocalExecutor::RunTask(TaskDescriptor* td,
                             bool firmament_binary) {
   CHECK(td);
@@ -60,7 +80,8 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   // arguments: binary (path + name), arguments, performance monitoring on/off,
   // is this a Firmament task binary? (on/off; will cause default arugments to
   // be passed)
-  bool res = (RunProcessSync(td->binary(), args, false, firmament_binary) == 0);
+  bool res = (RunProcessSync(td->binary(), args, firmament_binary,
+                             firmament_binary) == 0);
   return res;
 }
 
@@ -82,6 +103,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
                                       vector<string> args,
                                       bool perf_monitoring,
                                       bool default_args) {
+  char* perf_prefix;
   pid_t pid;
   int pipe_to[2];    // pipe to feed input data to task
   int pipe_from[3];  // pipe to receive output data from task
@@ -116,15 +138,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
         // performance monitoring is active, so reserve extra space for the
         // "perf" invocation prefix.
         argv.reserve(args.size() + (default_args ? 11 : 10));
-        argv.push_back((char*)("perf"));  // NOLINT
-        argv.push_back((char*)("stat"));  // NOLINT
-        argv.push_back((char*)("-x"));  // NOLINT
-        argv.push_back((char*)(","));  // NOLINT
-        argv.push_back((char*)("-o"));  // NOLINT
-        argv.push_back((char*)(getenv("PERF_FNAME")));  // NOLINT
-        argv.push_back((char*)("-e"));  // NOLINT
-        argv.push_back((char*)("instructions,cache-misses"));  // NOLINT
-        argv.push_back((char*)("--"));  // NOLINT
+        perf_prefix = AddPerfMonitoringToCommandLine(argv);
       } else {
         // no performance monitoring, so we only need to reserve space for the
         // default and NULL args
@@ -186,6 +200,8 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       }
       VLOG(1) << "Task process with PID " << pid << " exited with status "
               << WEXITSTATUS(status);
+      if (perf_monitoring)
+        delete perf_prefix;
       return status;
   }
   return -1;
