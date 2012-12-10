@@ -26,6 +26,7 @@
 #include "base/types.h"
 #include "base/data_object.h"
 #include "base/resource_desc.pb.h"
+#include "base/reference_types.h"
 #include "base/task_interface.h"
 #include "messages/base_message.pb.h"
 // XXX(malte): include order dependency
@@ -50,11 +51,11 @@ class TaskLib {
   bool ConnectToCoordinator(const string& coordinator_uri);
   void RunTask(int argc, char *argv[]);
   // CIEL programming model
-  /*virtual const string Construct(const DataObject& object);
-  virtual void Spawn(const ConcreteReference& code,
-                     vector<FutureReference>* outputs);
-  virtual void Publish(const vector<ConcreteReference>& references);
-  virtual void TailSpawn(const ConcreteReference& code);*/
+  //virtual const string Construct(const DataObject& object);
+  void Spawn(const ConcreteReference& code,
+             vector<FutureReference>* outputs);
+  void Publish(const vector<ConcreteReference>& references);
+  //virtual void TailSpawn(const ConcreteReference& code);
 
  protected:
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;

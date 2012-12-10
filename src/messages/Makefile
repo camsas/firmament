@@ -9,7 +9,7 @@ OBJS =
 #PBS = test_message.pb.o base_message.pb.o
 PBS = base_message.pb.o test_message.pb.o heartbeat_message.pb.o \
       registration_message.pb.o task_heartbeat_message.pb.o \
-      task_state_message.pb.o
+      task_spawn_message.pb.o task_state_message.pb.o
 TESTS =
 TESTS_DEPS =
 

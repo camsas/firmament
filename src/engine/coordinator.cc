@@ -187,26 +187,41 @@ const JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
 }
 
 void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
+  uint32_t handled_extensions = 0;
   // Registration message
   if (bm->HasExtension(register_extn)) {
     const RegistrationMessage& msg = bm->GetExtension(register_extn);
     HandleRegistrationRequest(msg);
+    handled_extensions++;
   }
   // Resource heartbeat message
   if (bm->HasExtension(heartbeat_extn)) {
     const HeartbeatMessage& msg = bm->GetExtension(heartbeat_extn);
     HandleHeartbeat(msg);
+    handled_extensions++;
   }
   // Task heartbeat message
   if (bm->HasExtension(task_heartbeat_extn)) {
     const TaskHeartbeatMessage& msg = bm->GetExtension(task_heartbeat_extn);
     HandleTaskHeartbeat(msg);
+    handled_extensions++;
   }
   // Task state change message
   if (bm->HasExtension(task_state_extn)) {
     const TaskStateMessage& msg = bm->GetExtension(task_state_extn);
     HandleTaskStateChange(msg);
+    handled_extensions++;
   }
+  // Task spawn message
+  if (bm->HasExtension(task_spawn_extn)) {
+    const TaskSpawnMessage& msg = bm->GetExtension(task_spawn_extn);
+    HandleTaskSpawn(msg);
+    handled_extensions++;
+  }
+  // Check that we have handled at least one sub-message
+  if (handled_extensions == 0)
+    LOG(ERROR) << "Ignored incoming message, no known extension present:"
+               << bm->DebugString();
 }
 
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
@@ -262,6 +277,11 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
   } else {
     LOG(INFO) << "HEARTBEAT from task " << task_id;
   }
+}
+
+void Coordinator::HandleTaskSpawn(
+    const TaskSpawnMessage& msg) {
+  LOG(ERROR) << "Unimplemented!";
 }
 
 void Coordinator::HandleTaskStateChange(

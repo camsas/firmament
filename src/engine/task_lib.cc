@@ -12,6 +12,7 @@
 #include "base/common.h"
 #include "messages/registration_message.pb.h"
 #include "messages/task_heartbeat_message.pb.h"
+#include "messages/task_spawn_message.pb.h"
 #include "messages/task_state_message.pb.h"
 #include "misc/utils.h"
 #include "platforms/common.h"
@@ -46,6 +47,25 @@ void TaskLib::AwaitNextMessage() {
 bool TaskLib::ConnectToCoordinator(const string& coordinator_uri) {
   return m_adapter_->EstablishChannel(
       coordinator_uri, shared_ptr<StreamSocketsChannel<BaseMessage> >(chan_));
+}
+
+void TaskLib::Spawn(const ConcreteReference& code,
+                     vector<FutureReference>* outputs) {
+  VLOG(1) << "Spawning a new task; code reference is " << code.desc().id();
+  // Craft a task spawn message for the new task, using a newly created task
+  // descriptor.
+  BaseMessage msg;
+  SUBMSG_WRITE(msg, task_spawn, creating_task_id, task_id_);
+  TaskDescriptor* new_task =
+      msg.MutableExtension(task_spawn_extn)->mutable_spawned_task_desc();
+  new_task->set_uid(1234);
+  new_task->set_name("");
+  new_task->set_state(TaskDescriptor::CREATED);
+  SendMessageToCoordinator(&msg);
+}
+
+void TaskLib::Publish(const vector<ConcreteReference>& references) {
+  LOG(ERROR) << "Output publication currently unimplemented!";
 }
 
 void TaskLib::ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec) {
@@ -109,7 +129,8 @@ void TaskLib::RunTask(int argc, char *argv[]) {
   ConvertTaskArgs(argc, argv, task_arg_vec);
   // task_main blocks until the task has exited
   //  exec(task_desc_.code_dependency());
-  boost::thread task_thread(boost::bind(task_main, task_id_, task_arg_vec));
+  boost::thread task_thread(boost::bind(task_main, this, task_id_,
+                                        task_arg_vec));
   task_running_ = true;
   // This will check if the task thread has joined once every heartbeat
   // interval, and go back to sleep if it has not.
