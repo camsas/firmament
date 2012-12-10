@@ -13,13 +13,15 @@ namespace firmament {
 
         //TACH: make non unix specific.
 
-        SimpleObjectStore::SimpleObjectStore()
+        SimpleObjectStore::SimpleObjectStore(ResourceID_t uuid_): uuid(uuid_)
  {
             message_adapter_.reset(new platform_unix::streamsockets::StreamSocketsAdapter<BaseMessage > ());
             object_table_.reset(new DataObjectMap_t);
             VLOG(1) << "Setting up communications ";
 
             setUpCommunication();
+            
+            Cache* cache = new Cache(this, 1024, "Cache" + to_string(uuid));
 
             VLOG(1) << "End of Test ";
 
@@ -34,6 +36,7 @@ namespace firmament {
 
         }
 
+        /* Method occurs when the data was lot located in the cache */
         bool SimpleObjectStore::GetObject(DataObjectID_t id, void* data, size_t* len) {
             VLOG(1) << "Retrieving object " << id << " from store.";
             memset(data, 42, 1);
@@ -41,6 +44,12 @@ namespace firmament {
             return true;
         }
 
+        /* There is in theory no need for this method. Only ever use 
+         shared memory (if cache is full when try to write, then 
+         * remove item from cache). Only occurs when size of data is bigger
+         * than the whole size of the cache, in which case
+         * write directly to disk. 
+         */
         void SimpleObjectStore::PutObject(DataObjectID_t id, void* data, size_t len) {
             VLOG(1) << "Adding object " << id << " (size " << len
                     << " bytes) to store.";
@@ -67,12 +76,17 @@ namespace firmament {
         }
 
         ReferenceDescriptor* ObjectStoreInterface::GetReference(DataObjectID_t id) {
-            return 0;
+            return FindOrNull(DataObjectMap_t,id); 
+           
         }
 
         void SimpleObjectStore::HandleIncomingMessage(BaseMessage *bm) {
             VLOG(1) << "Storage Engine: HandleIncomingMessage";
-
+            
+            /* Handle Put */
+            /* Handle Get */
+            /* Handle Request */
+            /* Handle Obtain */
         }
 
         void SimpleObjectStore::HandleIncomingReceiveError(
@@ -128,6 +142,11 @@ namespace firmament {
         void SimpleObjectStore::createSharedBuffer(size_t size) { 
             
             
+        }
+        
+        void* SimpleObjectStore::obtain_object_remotely(DataObjectID_t id) {
+            VLOG(1) << "Obtaining object remotely " << endl ; 
+            return (void*) 0 ; 
         }
         
 

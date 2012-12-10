@@ -45,7 +45,7 @@
 #endif
 #include "engine/scheduler_interface.h"
 #include "engine/simple_scheduler.h"
-#include "engine/object_store_interface.h"
+#include "storage/object_store_interface.h"
 #include "engine/topology_manager.h"
 #ifdef __SIMULATE_SYNTHETIC_DTG__
 #include "sim/simple_dtg_generator.h"
@@ -96,12 +96,9 @@ class Coordinator : public Node,
   JobDescriptor* GetJob(JobID_t job_id) {
     return FindOrNull(*job_table_, job_id);
   }
-  // Gets a pointer to the reference descriptor for a reference known to the
-  // coordinator.
-  // If the reference is not known to the coordinator, we will return NULL.
-  ReferenceDescriptor* GetReference(DataObjectID_t object_id) {
-    return FindOrNull(*object_table_, object_id);
-  }
+
+  
+  
   // Gets a pointer to the task descriptor for a task known to the coordinator.
   // If the task is not known to the coordinator, we will return NULL.
   TaskDescriptor* GetTask(TaskID_t task_id) {
@@ -130,7 +127,6 @@ class Coordinator : public Node,
     }
     return count;
   }
-  inline size_t NumReferences() { return object_table_->size(); }
 
   vector<ResourceDescriptor*> associated_resources() {
     vector<ResourceDescriptor*> res_vec;
@@ -166,7 +162,13 @@ class Coordinator : public Node,
     CHECK_NOTNULL(local_resource_topology_);
     return *local_resource_topology_;
   }
+  
+  shared_ptr<ObjectStoreInterface> get_object_store() { 
+      return object_store_; 
+  }
 
+  void InformStorageEngineNewResource(ResourceDescriptor* rd); 
+  
  protected:
   void AddJobsTasksToTaskTable(RepeatedPtrField<TaskDescriptor>* tasks);
   void AddLocalResource(ResourceDescriptor* resource_desc);
@@ -177,6 +179,8 @@ class Coordinator : public Node,
   void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
   void HandleTaskStateChange(const TaskStateMessage& msg);
+  void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg); 
+  void Coordinator::HandleStorageDiscoverRequest(const StorageDiscoverMessage& msg) ; 
 #ifdef __HTTP_UI__
   void InitHTTPUI();
 #endif
@@ -198,9 +202,6 @@ class Coordinator : public Node,
   // Key is the job ID, value a ResourceDescriptor.
   // Currently, this table grows ad infinitum.
   shared_ptr<JobMap_t> job_table_;
-  // A map of all data objects known to the coordinator.
-  // TODO(malte): This may move to the store layer.
-  shared_ptr<DataObjectMap_t> object_table_;
   // A map of all tasks that the coordinator currently knows about.
   // TODO(malte): Think about GC'ing this.
   shared_ptr<TaskMap_t> task_table_;
@@ -209,7 +210,7 @@ class Coordinator : public Node,
   // TODO(malte): Work out the detailed semantics of this.
   scoped_ptr<SchedulerInterface> scheduler_;
   // The local object store.
-  scoped_ptr<ObjectStoreInterface> object_store_;
+  shared_ptr<ObjectStoreInterface> object_store_;
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   shared_ptr<sim::SimpleDTGGenerator> sim_dtg_generator_;
 #endif

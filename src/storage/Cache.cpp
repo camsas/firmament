@@ -10,11 +10,11 @@
 namespace firmament {
     namespace store {
         
-           using boost::interprocess;
+using boost::interprocess;
 
-Cache::Cache(ObjectStoreInterface* obj, size_t size_): cache(new Cache_t), store(obj), size(size_), capacity(size_)  {
+Cache::Cache(ObjectStoreInterface* obj, size_t size_, const string& cache_name_): cache(new Cache_t), store(obj), size(size_), capacity(size_), cache_name(cache_name_)  {
     VLOG(1) << "Setting up Cache of size: "  << size  << endl ; 
-    
+    create_cache(cache_name); 
     
 }
 
@@ -22,12 +22,56 @@ Cache::Cache(const Cache& orig) {
 }
 
 Cache::~Cache() {
+    clearCache() ; 
     shared_memory_object::remove("cache");
     
 }
 
- bool Cache::insert_in_cache(DataObjectID_t id, void* data)  { 
-     
+ 
+ /* Currently using LRU*/
+void Cache::make_space_in_cache() { 
+    
+    /* Identify object to remove */
+    DataObjectID_t id = cache->begin()->first ;
+    ReferenceDescriptor* rd = store->GetReference(id); 
+     size_t size = rd->size();  
+    this->capacity+=size ; 
+    VLOG(1) << "Removing Object UUID: " <<  id ; 
+
+    /* Make sure file will be written to disk  */
+    DataObject_t obj = cache->begin()->second; 
+    /* TODO: delete other files if this one is locked
+     Right now will only block */
+    obj.second.write_lock.lock() ; 
+    file_mapping m_file(id, read_only);
+    mapped_region region(m_file, read_only);
+    region.flush() ;   
+    /*Erase from cache before releasing lock*/
+    cache->erase(cache->begin()) ;  /* LRU */ 
+    obj.second.write_lock.unlock() ; 
+
+}
+
+/* From Remote TCP */
+//TODO: not very efficient, shouldn't have to write to disk first, THEN
+// map the file
+bool Cache::write_object_to_cache(const ObtainObjectMessage&  msg) {
+    
+    DataObjectID_t id = msg.uuid() ; 
+    void* data = msg.data() ; 
+    size_t size = msg.size() ; 
+    ifstream is;
+    is.open (id, ios::binary ); 
+    is.read (data,size);
+    is.close();
+    
+    write_object_to_cache(id) ; 
+    
+}
+
+/* From File on disk */
+bool Cache::write_object_to_cache(DataObjectID_t id) { 
+    
      VLOG(1) << "Inserting in cache Object ID: " << id ; 
      
      ReferenceDescriptor* rd = store->GetReference(id); 
@@ -37,24 +81,32 @@ Cache::~Cache() {
      if (this->capacity>=size) { 
         
          this->capacity-=size;
-         cache->insert(pair<id,<pair<data, size()> >); 
+         
+         /* Map File Read Only */
+         file_mapping m_file(id, read_only);
+         mapped_region region(m_file, read_only);
+         
+         DataObject_t* object = new DataObject_t(id, new Mutex_t); 
+         cache->insert(pair<id,object>); 
          return true ; 
      }
      
      make_space_in_cache() ; 
      return false ; 
- }
- 
- /* Currently using LRU*/
-void Cache::make_space_in_cache() { 
+     
     
-    /* Identify object to remove */
-    size_t size = cache->right.begin()->first->second ; 
-    this->capacity+=size ; 
-    VLOG(1) << "Removing Object UUID: " << cache->right.begin()->second ; 
+  
+}
 
-    cache->right.erase(cache->right.begin()) ;  /* LRU */ 
-
+/* From File on disk */
+void Cache::write_object_to_disk(DataObject_t id, void* data, size_t size) {
+    
+    ofstream os(id);
+    os.write (data,size);
+    os.close();
+    
+    
+  
 }
 
 
@@ -73,15 +125,29 @@ void Cache::print_cache()
  * was any other object.*/
         
 
-void Cache::create_cache() {
+void Cache::create_cache(const string& cache_name) {
     
-
-   shared_memory_object shm_obj(open_or_create,"cache",read_only );
-   shm_obj.truncate(size);
-   mapped_region region(shm, read_write);
-   region.getAddress() ; 
+        /* Ensure no existing cache exists */
+    
+    shared_memory_object::remove(cache_name); 
+    
+  managed_shared_memory segment(create_only ,cache_name  ,size);       
+      
+   SharedmemAllocator_t alloc_inst (segment.get_segment_manager());
+   
+   cache =   segment.construct<Cache_t>(cache_name)      
+                                 (std::less<DataObjectID_t>() 
+                                 ,alloc_inst);    
+   
+   
 }
         
+void Cache::clearCache() { 
+    
+    while (capacity!=size()) { 
+        make_space_in_cache(); 
+    }
+}
 
 } //store
 

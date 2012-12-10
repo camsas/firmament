@@ -37,7 +37,7 @@ class ObjectStoreInterface : public PrintableInterface {
    
  protected:
         string listening_interface_ ; 
-        string uuid ; 
+        ResourceID_t uuid ; 
 
 };
 

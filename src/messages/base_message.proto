@@ -22,7 +22,7 @@ package firmament;
 // 104  - TaskAssignMessage [DEPRECATED]
 // 105  - TaskCompleteMessage [DEPRECATED]
 // 106  - TaskStateMessage
-// 107  - <free>
+// 107  - StorageRegistrationMessage
 // ...
 // 1000 - <free>
 

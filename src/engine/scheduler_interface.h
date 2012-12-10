@@ -11,6 +11,7 @@
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "misc/printable_interface.h"
+#include "storage/object_store_interface.h"
 
 namespace firmament {
 namespace scheduler {
@@ -20,10 +21,9 @@ class SchedulerInterface : public PrintableInterface {
   // Constructor.
   SchedulerInterface(shared_ptr<JobMap_t> job_map,
                      shared_ptr<ResourceMap_t> resource_map,
-                     shared_ptr<DataObjectMap_t> object_map,
+                     shared_ptr<store::ObjectStoreInterface> store,
                      shared_ptr<TaskMap_t> task_map)
-      : job_map_(job_map), resource_map_(resource_map),
-        object_map_(object_map), task_map_(task_map) {}
+      : job_map_(job_map),  resource_map_(resource_map), task_map_(task_map), object_store_(store) {}
   // Adds a job to the set of active jobs that are considered for scheduling.
   // TODO(malte): Determine if we actually need this, given the reactive design
   // of the scheduler.
@@ -65,8 +65,8 @@ class SchedulerInterface : public PrintableInterface {
   // Pointers to the associated coordinator's job, resource and object maps
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<ResourceMap_t> resource_map_;
-  shared_ptr<DataObjectMap_t> object_map_;
   shared_ptr<TaskMap_t> task_map_;
+  shared_ptr<store::ObjectStoreInterface> object_store_; 
 };
 
 }  // namespace scheduler

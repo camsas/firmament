@@ -12,7 +12,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "base/reference_interface.h"
+#include "storage/reference_interface.h"
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
 #include "engine/scheduler_interface.h"
@@ -27,7 +27,7 @@ class SimpleScheduler : public SchedulerInterface {
  public:
   SimpleScheduler(shared_ptr<JobMap_t> job_map,
                   shared_ptr<ResourceMap_t> resource_map,
-                  shared_ptr<DataObjectMap_t> object_map,
+                  shared_ptr<store::ObjectStoreInterface> object_store,
                   shared_ptr<TaskMap_t> task_map,
                   const string& coordinator_uri);
   ~SimpleScheduler();

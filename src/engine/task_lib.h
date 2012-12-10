@@ -23,7 +23,6 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "base/data_object.h"
 #include "base/resource_desc.pb.h"
 #include "base/task_interface.h"
 #include "messages/base_message.pb.h"
@@ -35,6 +34,7 @@
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_adapter-inl.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
+#include "storage/types.h"
 
 namespace firmament {
 
@@ -69,9 +69,14 @@ class TaskLib {
   void SendHeartbeat();
   bool SendMessageToCoordinator(BaseMessage* msg);
 
+  void setUpStorageEngine() ; 
+  
  private:
   bool task_running_;
   uint64_t heartbeat_seq_number_;
+  
+  Cache_t* cache ; 
+  string storage_uri ; 
 };
 
 }  // namespace firmament

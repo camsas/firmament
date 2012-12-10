@@ -55,7 +55,7 @@ using namespace std;
 
 class SimpleObjectStore: public ObjectStoreInterface {
  public:
-  SimpleObjectStore();
+  SimpleObjectStore(ResourceID_t uuid);
   ~SimpleObjectStore();
   void PutObject(DataObjectID_t id, void* data, size_t len);
   bool GetObject(DataObjectID_t id, void*, size_t* len);

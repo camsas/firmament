@@ -36,6 +36,7 @@ message ResourceDescriptor {
   optional string parent = 8;
   repeated string siblings = 9;
   repeated string children = 10;
+  required string storage_engine = 11; 
   //repeated TaskDescriptor task_queue = 2;
   // ensemble(s)
   // state

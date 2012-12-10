@@ -15,6 +15,7 @@
 #include "platforms/common.h"
 #include "platforms/common.pb.h"
 
+
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 DEFINE_string(resource_id, "",
               "The resource ID that is running this task.");
@@ -88,6 +89,15 @@ void TaskLib::RunTask() {
   CHECK_NOTNULL(task_id_env);
   // task_main blocks until the task has exited
   //  exec(task_desc_.code_dependency());
+  
+  /* Set up Storage Engine here, returning a void* to the Cache */
+  /* Alternate way of doing this: set up cache here and just pass the
+   various pointers. */
+  
+  setUpStorageEngine() ; 
+  
+  
+  
   boost::thread task_thread(boost::bind(task_main, atol(task_id_env)));
   task_running_ = true;
   // TODO(malte): continue normal operation and monitor task instead of waiting
@@ -138,5 +148,35 @@ bool TaskLib::SendMessageToCoordinator(BaseMessage* msg) {
                             boost::asio::placeholders::error,
                             boost::asio::placeholders::bytes_transferred));
 }
+
+void TaskLib::setUpStorageEngine() { 
+    
+    /* Contact coordinator to ask where storage engine is for this resource
+     As currently, only assume that is local, don't currently need it
+     Also need */
+    
+    
+//    StorageDiscoverMessage* msg = new StorageDiscoverMessage() ; 
+//    
+//    msg->set_uuid(resource_id_) ; 
+//    msg->uri(""); 
+//    
+//    SendMessageToCoordinator(msg); 
+//    Expect reply with URI 
+    
+    /* If local*/
+    Cache_t* cache_ = managed_memory_segment.find<Cache_t>("Cache" + to_string(resource_id_));
+    
+    //TODO: error handling
+    if (cache==NULL) VLOG(1) << "Error: no cache found"; 
+    
+    
+    
+    /* Else if not local - not implemented*/
+
+
+    
+}
+
 
 }  // namespace firmament
