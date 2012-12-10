@@ -33,15 +33,16 @@ class ReferenceInterface : public PrintableInterface {
   virtual bool Consumable() = 0;
   virtual ostream& ToString(ostream* stream) const = 0;
   // Accessor methods
-  inline DataObjectID_t id() { return id_; }
-  inline ReferenceDescriptor desc() {
+  inline DataObjectID_t id() const { return id_; }
+  inline ReferenceDescriptor desc() const {
     ValidateInternalDescriptor();
     return desc_;
   }
 
  protected:
-  virtual void ValidateInitDescriptor(const ReferenceDescriptor& desc) = 0;
-  void ValidateInternalDescriptor() {
+  virtual void ValidateInitDescriptor(
+      const ReferenceDescriptor& desc) const = 0;
+  void ValidateInternalDescriptor() const {
     CHECK_EQ(id_, desc_.id());
   }
   // Fields shared between all reference types

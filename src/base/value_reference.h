@@ -35,11 +35,11 @@ class ValueReference : public ReferenceInterface {
   inline const string value() { return value_; }
 
  protected:
-  void ValidateInitDescriptor(const ReferenceDescriptor& desc) {
+  void ValidateInitDescriptor(const ReferenceDescriptor& desc) const {
     CHECK_EQ(desc.type(), ReferenceDescriptor::VALUE);
     CHECK(desc.has_inline_data());
   }
-  void ValidateInternalDescriptor() {
+  void ValidateInternalDescriptor() const {
     CHECK_EQ(id_, desc_.id());
     CHECK_EQ(desc_.type(), ReferenceDescriptor::VALUE);
     CHECK_EQ(desc_.inline_data(), value_);
