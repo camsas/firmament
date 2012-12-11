@@ -1,0 +1,44 @@
+
+package firmament;
+
+import "messages/base_message.proto";
+
+extend BaseMessage {
+  optional PutObjectMessage put_object_extn = 108;
+  optional GetObjectMessage get_object_extn = 109;
+  optional RequestObjectMessage request_object_extn=110; 
+  optional ObtainObjectMessage obtain_object_extn=111; 
+  optional StorageDiscoverMessage storage_discover_message_extn =112 ; 
+}
+
+/* Should be very rarely used */
+message PutObjectMessage {
+
+}   
+
+message GetObjectMessage {
+  required size_t uuid = 1;
+}
+
+message RequestObjectMessage { 
+  required size_t uuid = 1 ; 
+  optional string uri = 2  ; // Check whether this is actually needed
+
+}
+
+
+message ObtainObjectMessage { 
+    required size_t uuid = 1 ; 
+    required void* data  = 2 ; 
+}
+
+message ObtainObjectMessage { 
+    required size_t uuid = 1 ; 
+    required void* data  = 2 ; 
+}
+
+message StorageDiscoverMessage { 
+    required string uuid = 1 ; 
+    required string uri =  2 ; 
+    required string storage_uri = 3 ; 
+}
