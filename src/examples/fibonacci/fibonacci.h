@@ -14,9 +14,9 @@ namespace fibonacci {
 
 class FibonacciTask : public TaskInterface {
  public:
-  explicit FibonacciTask(TaskID_t task_id)
-    : TaskInterface(task_id) {}
-  void Invoke();
+  explicit FibonacciTask(TaskLib* task_lib, TaskID_t task_id)
+    : TaskInterface(task_lib, task_id) {}
+  void Invoke(uint64_t n);
 };
 
 }  // namespace fibonacci
