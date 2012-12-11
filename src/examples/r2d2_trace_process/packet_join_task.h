@@ -1,10 +1,14 @@
 // The Firmament project
 // Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// Extracts packet latency from R2D2 DAG packet traces.
+// Joins two R2D2 DAG capture files, matching packets in the second one (DAG1)
+// to packets in the first one (DAG0). Writes out the timestamp when the packet
+// was received, the latency it experienced, and the time since the last packet
+// arrived.
 
-#ifndef FIRMAMENT_EXAMPLE_R2D2_LATENCY_EXTRACTION_TASK_H
-#define FIRMAMENT_EXAMPLE_R2D2_LATENCY_EXTRACTION_TASK_H
+
+#ifndef FIRMAMENT_EXAMPLE_R2D2_PACKET_JOIN_TASK_H
+#define FIRMAMENT_EXAMPLE_R2D2_PACKET_JOIN_TASK_H
 
 #include <string>
 
@@ -48,4 +52,4 @@ class PacketJoinTask {
 }  // namespace examples
 }  // namespace firmament
 
-#endif  // FIRMAMENT_EXAMPLE_R2D2_LATENCY_EXTRACTION_TASK_H
+#endif  // FIRMAMENT_EXAMPLE_R2D2_PACKET_JOIN_TASK_H

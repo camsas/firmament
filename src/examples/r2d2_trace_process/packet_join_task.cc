@@ -1,7 +1,10 @@
 // The Firmament project
 // Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// Extracts latency values from two R2D2 DAG capture files.
+// Joins two R2D2 DAG capture files, matching packets in the second one (DAG1)
+// to packets in the first one (DAG0). Writes out the timestamp when the packet
+// was received, the latency it experienced, and the time since the last packet
+// arrived.
 
 #include "examples/r2d2_trace_process/common.h"
 #ifndef __FIRMAMENT__
