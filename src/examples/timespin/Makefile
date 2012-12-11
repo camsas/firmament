@@ -22,7 +22,7 @@ $(OBJ_BIN): $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/engine/task_lib_main.cc \
-		$(CXXFLAGS) \
+		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/engine/libfirmament_task_lib.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \

@@ -1,5 +1,6 @@
 BINS = hello_world \
        fibonacci \
+       r2d2_trace_process \
        timespin
 
 OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))

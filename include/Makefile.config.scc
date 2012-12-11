@@ -147,7 +147,11 @@ CXX = g++
 # N.B.: -DSCC and -march=pentium are specific to compiling for the SCC's P54C
 CPPFLAGS = -DSCC -march=pentium $(INCLUDES)
 
-CXXFLAGS = -L$(BOOST_LIB_DIR) -L$(GLOG_LIB_DIR) -L$(GFLAGS_LIB_DIR) -L$(PROTOBUF_LIB_DIR) $(LIBS) -Wall -Wextra -Werror -g -O0
+CPPFLAGS += -L$(BOOST_LIB_DIR) -L$(GLOG_LIB_DIR) -L$(GFLAGS_LIB_DIR) -L$(PROTOBUF_LIB_DIR) $(LIBS) -Wall -Wextra -Werror
+
+OPTFLAGS = -g -O0
+
+DEFINES = -D__FIRMAMENT__ -D__PLATFORM_HAS_BOOST__
 
 
 #######################################

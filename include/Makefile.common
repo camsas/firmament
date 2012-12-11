@@ -70,7 +70,7 @@ $(OBJ_DIR)/%.pb.o: $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc \
 # Make unit test object file (special case).
 $(TEST_OBJ_DIR)/%_test.o: %_test.cc .setup
 	$(call quiet-command, \
-		$(CXX) $(CPPFLAGS) $(CXXFLAGS) \
+		$(CXX) $(CPPFLAGS) $(OPTFLAGS) $(DEFINES) \
 		-c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		-I$(SRC_GEN_DIR)/$(SUFFIX)/ -o $@, \
 		"  TESTC   $@")
@@ -78,7 +78,7 @@ $(TEST_OBJ_DIR)/%_test.o: %_test.cc .setup
 # Make object file (generic).
 $(OBJ_DIR)/%.o: %.cc %.h .setup
 	$(call quiet-command, \
-		$(CXX) $(CPPFLAGS) $(CXXFLAGS) \
+		$(CXX) $(CPPFLAGS) $(OPTFLAGS) $(DEFINES) \
 		-c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		-I$(SRC_GEN_DIR)/$(SUFFIX)/ -o $@, \
 		"  CXX     $@")
@@ -86,7 +86,8 @@ $(OBJ_DIR)/%.o: %.cc %.h .setup
 # Make unit test binary and add it to the test list run by global "make test".
 $(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_DEPS) $(TESTS_%_DEPS)
 	$(call quiet-command, \
-		$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+		$(CXX) $(CPPFLAGS) $(OPTFLAGS) $(DEFINES) \
+		$(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		$(GTEST_LIB) $(BUILD_DIR)/$(SUFFIX)/$*.o \
 		$(TESTS_DEPS) $($(subst x,$*,TESTS_x_DEPS)) \
 		-o $@ $(GTEST_FLAGS) $(LIBS); \
@@ -99,7 +100,8 @@ $(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_DEPS) $(TESTS_%_DEPS)
 # .cc files for such cases.
 $(TEST_OBJ_DIR)/%_test: %_test.cc $(TESTS_DEPS) $(TESTS_%_DEPS)
 	$(call quiet-command, \
-		$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+		$(CXX) $(CPPFLAGS) $(OPTFLAGS) $(DEFINES) \
+		$(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		$(GTEST_LIB) \
 		$(TESTS_DEPS) $($(subst x,$*,TESTS_x_DEPS)) \
 		-o $@ $(GTEST_FLAGS) $(LIBS); \

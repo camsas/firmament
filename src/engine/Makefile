@@ -60,7 +60,7 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
-		$(CXXFLAGS) \
+		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/engine/coordinator.o \
 		$(BUILD_DIR)/engine/node.o \
 		$(BUILD_DIR)/engine/coordinator_http_ui.o \
@@ -87,7 +87,7 @@ $(OBJ_DIR)/coordinator_sim: $(BUILD_DIR)/sim/simple_dtg_generator.o \
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
-		$(CXXFLAGS) \
+		$(OPTFLAGS) $(DEFINES) \
 		$(SRC_ROOT_DIR)/engine/coordinator.cc \
 		$(BUILD_DIR)/engine/node.o \
 		$(BUILD_DIR)/engine/coordinator_http_ui.o \
@@ -113,7 +113,7 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/engine/worker_main.cc \
-		$(CXXFLAGS) \
+		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/engine/node.o \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/engine/worker.o \
