@@ -10,7 +10,7 @@
 
 namespace firmament {
 
-void task_main(TaskID_t task_id) {
+void task_main(TaskID_t task_id, Cache_t* cache) {
   examples::hello_world::HelloWorldTask t(task_id);
   LOG(INFO) << "Called task_main, starting " << t;
   t.Invoke();

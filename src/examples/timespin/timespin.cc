@@ -32,7 +32,7 @@
 
 namespace firmament {
 
-void task_main(TaskID_t task_id) {
+void task_main(TaskID_t task_id, Cache_t* cache) {
   VLOG(1) << "Task " << task_id << " spinning for 10 seconds!";
   timespin_main(10);
 }
