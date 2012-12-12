@@ -1,0 +1,18 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Task spawn message.
+
+package firmament;
+
+import "base/task_desc.proto";
+import "messages/base_message.proto";
+
+extend BaseMessage {
+  optional TaskSpawnMessage task_spawn_extn = 105;
+}
+
+message TaskSpawnMessage {
+  required uint64 creating_task_id = 1;
+  required TaskDescriptor spawned_task_desc = 2;
+}
