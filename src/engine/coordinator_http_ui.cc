@@ -143,7 +143,8 @@ void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLI
     sect_dict->SetIntValue("JOB_NUM", i);
     sect_dict->SetValue("JOB_ID", to_string(jd_iter->uuid()));
     sect_dict->SetValue("JOB_FRIENDLY_NAME", jd_iter->name());
-    sect_dict->SetIntValue("JOB_ROOT_TASK_ID", jd_iter->root_task().uid());
+    sect_dict->SetFormattedValue("JOB_ROOT_TASK_ID", "%ju",
+                                 TaskID_t(jd_iter->root_task().uid()));
     sect_dict->SetValue("JOB_STATE",
                         ENUM_TO_STRING(JobDescriptor::JobState,
                                        jd_iter->state()));
@@ -176,7 +177,9 @@ void CoordinatorHTTPUI::HandleJobURI(HTTPRequestPtr& http_request,  // NOLINT
     dict.SetValue("JOB_NAME", jd_ptr->name());
     dict.SetValue("JOB_STATUS", ENUM_TO_STRING(JobDescriptor::JobState,
                                                jd_ptr->state()));
-    dict.SetIntValue("JOB_ROOT_TASK_ID", jd_ptr->root_task().uid());
+
+    dict.SetFormattedValue("JOB_ROOT_TASK_ID", "%ju",
+                           TaskID_t(jd_ptr->root_task().uid()));
     if (jd_ptr->output_ids_size() > 0)
       dict.SetIntValue("JOB_NUM_OUTPUTS", jd_ptr->output_ids_size());
     else
@@ -227,7 +230,7 @@ void CoordinatorHTTPUI::HandleResourcesListURI(HTTPRequestPtr& http_request,  //
                                        (*rd_iter)->state()));
     // N.B.: We make the assumption that only PU type resources are schedulable
     // here!
-    if ((*rd_iter)->type() != ResourceDescriptor::RESOURCE_PU)
+    if (!(*rd_iter)->schedulable())
       sect_dict->AddSectionDictionary("RES_NON_SCHEDULABLE");
     ++i;
   }
@@ -384,7 +387,7 @@ void CoordinatorHTTPUI::HandleReferenceURI(HTTPRequestPtr& http_request,  // NOL
                                  rd_ptr->scope()));
     dict.SetIntValue("REF_NONDET", rd_ptr->non_deterministic());
     dict.SetIntValue("REF_SIZE", rd_ptr->size());
-    dict.SetIntValue("REF_PRODUCER", rd_ptr->producing_task());
+    dict.SetFormattedValue("REF_PRODUCER", "%ju", rd_ptr->producing_task());
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
     ErrorMessage_t err("Reference or data object not found.",
@@ -416,10 +419,49 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
       TaskIDFromString(*task_id));
   TemplateDictionary dict("task_status");
   if (td_ptr) {
-    dict.SetIntValue("TASK_ID", td_ptr->uid());
-    //dict.SetValue("TASK_NAME", td_ptr->name());
+    dict.SetFormattedValue("TASK_ID", "%ju", TaskID_t(td_ptr->uid()));
+    if (td_ptr->has_name())
+      dict.SetValue("TASK_NAME", td_ptr->name());
     dict.SetValue("TASK_STATUS", ENUM_TO_STRING(TaskDescriptor::TaskState,
                                                 td_ptr->state()));
+    // Dependencies
+    if (td_ptr->dependencies_size() > 0)
+      dict.SetIntValue("TASK_NUM_DEPS", td_ptr->dependencies_size());
+    else
+      dict.SetIntValue("TASK_NUM_DEPS", 1);
+    for (RepeatedPtrField<ReferenceDescriptor>::const_iterator dep_iter =
+         td_ptr->dependencies().begin();
+         dep_iter != td_ptr->dependencies().end();
+         ++dep_iter) {
+      TemplateDictionary* dep_dict = dict.AddSectionDictionary("TASK_DEPS");
+      dep_dict->SetIntValue("TASK_DEP_ID", dep_iter->id());
+    }
+    // Spawned
+    if (td_ptr->spawned_size() > 0)
+      dict.SetIntValue("TASK_NUM_SPAWNED", td_ptr->spawned_size());
+    else
+      dict.SetIntValue("TASK_NUM_SPAWNED", 1);
+    for (RepeatedPtrField<TaskDescriptor>::const_iterator spawn_iter =
+         td_ptr->spawned().begin();
+         spawn_iter != td_ptr->spawned().end();
+         ++spawn_iter) {
+      TemplateDictionary* spawn_dict =
+          dict.AddSectionDictionary("TASK_SPAWNED");
+      spawn_dict->SetFormattedValue("TASK_SPAWNED_ID", "%ju",
+                                  TaskID_t(spawn_iter->uid()));
+    }
+    // Outputs
+    if (td_ptr->outputs_size() > 0)
+      dict.SetIntValue("TASK_NUM_OUTPUTS", td_ptr->outputs_size());
+    else
+      dict.SetIntValue("TASK_NUM_OUTPUTS", 1);
+    for (RepeatedPtrField<ReferenceDescriptor>::const_iterator out_iter =
+         td_ptr->outputs().begin();
+         out_iter != td_ptr->outputs().end();
+         ++out_iter) {
+      TemplateDictionary* out_dict = dict.AddSectionDictionary("TASK_OUTPUTS");
+      out_dict->SetFormattedValue("TASK_OUTPUT_ID", "%jd", out_iter->id());
+    }
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
     ErrorMessage_t err("Task not found.",

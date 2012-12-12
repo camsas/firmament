@@ -51,6 +51,8 @@ Worker::Worker(PlatformID platform_id)
 
   // TODO(malte): fix this!
   resource_desc_.set_uuid(boost::uuids::to_string(uuid_));
+  resource_desc_.set_schedulable(true);
+  resource_desc_.set_state(ResourceDescriptor::RESOURCE_IDLE);
 
   if (!FLAGS_name.empty())
     resource_desc_.set_friendly_name(FLAGS_name);
@@ -91,7 +93,9 @@ void Worker::SendHeartbeat() {
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
   SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());
-  SUBMSG_WRITE(bm, heartbeat, sequence_number, 1);
+  SUBMSG_WRITE(bm, heartbeat, capacity, 1);
+  // TODO(malte): report how many free resources we have
+  SUBMSG_WRITE(bm, heartbeat, load, 1);
   VLOG(1) << "Sending heartbeat  message!";
   SendMessageToCoordinator(&bm);
 }

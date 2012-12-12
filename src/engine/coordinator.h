@@ -34,6 +34,8 @@
 #include "platforms/unix/common.h"
 #include "messages/heartbeat_message.pb.h"
 #include "messages/registration_message.pb.h"
+#include "messages/task_heartbeat_message.pb.h"
+#include "messages/task_spawn_message.pb.h"
 #include "messages/task_state_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
@@ -109,6 +111,8 @@ class Coordinator : public Node,
   inline size_t NumJobs() { return job_table_->size(); }
   inline size_t NumJobsInState(JobDescriptor::JobState state) {
     size_t count = 0;
+    if (job_table_->empty())
+      return 0;
     for (JobMap_t::const_iterator j_iter = job_table_->begin();
          j_iter != job_table_->end();
          ++j_iter)
@@ -178,6 +182,8 @@ class Coordinator : public Node,
   void HandleIncomingMessage(BaseMessage *bm);
   void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
+  void HandleTaskHeartbeat(const TaskHeartbeatMessage& msg);
+  void HandleTaskSpawn(const TaskSpawnMessage& msg);
   void HandleTaskStateChange(const TaskStateMessage& msg);
   void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg); 
   void Coordinator::HandleStorageDiscoverRequest(const StorageDiscoverMessage& msg) ; 
@@ -188,7 +194,6 @@ class Coordinator : public Node,
 #ifdef __HTTP_UI__
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
 #endif
-  scoped_ptr<TopologyManager> topology_manager_;
   // A map of resources associated with this coordinator.
   // The key is a resource UUID, the value a pair.
   // The first component of the pair is the resource descriptor, the second is
@@ -205,6 +210,9 @@ class Coordinator : public Node,
   // A map of all tasks that the coordinator currently knows about.
   // TODO(malte): Think about GC'ing this.
   shared_ptr<TaskMap_t> task_table_;
+  // The topology manager associated with this coordinator; responsible for the
+  // local resources.
+  shared_ptr<TopologyManager> topology_manager_;
   // The local scheduler object. A coordinator may not have a scheduler, in
   // which case this will be a stub that defers to another scheduler.
   // TODO(malte): Work out the detailed semantics of this.

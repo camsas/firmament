@@ -38,25 +38,26 @@ DEFINE_int32(http_ui_port, 8080,
 
 namespace firmament {
 
-    Coordinator::Coordinator(PlatformID platform_id)
-    : Node(platform_id, GenerateUUID()),
-    topology_manager_(new TopologyManager()),
+
+Coordinator::Coordinator(PlatformID platform_id)
+  : Node(platform_id, GenerateUUID()),
     associated_resources_(new ResourceMap_t),
     local_resource_topology_(new ResourceTopologyNodeDescriptor),
     job_table_(new JobMap_t),
     task_table_(new TaskMap_t),
+    topology_manager_(new TopologyManager()),
     scheduler_(new SimpleScheduler(job_table_, associated_resources_,
     object_store_, task_table_,
     FLAGS_listen_uri)),
     object_store_(new store::SimpleObjectStore(uuid_))
  { 
         // Start up a coordinator according to the platform parameter
-        // platform_ = platform::GetByID(platform_id);
-        string desc_name = ""; // platform_.GetDescriptiveName();
+        string hostname = boost::asio::ip::host_name();
+        string desc_name = "Coordinator on " + hostname;
         resource_desc_.set_uuid(to_string(uuid_));
+        resource_desc_.set_friendly_name(desc_name);
         resource_desc_.set_type(ResourceDescriptor::RESOURCE_MACHINE);
-        resource_desc_.set_storage_engine(object_store_->get_listening_interface());
-
+        local_resource_topology_->mutable_resource_desc()->CopyFrom(resource_desc_);
         // Log information
         LOG(INFO) << "Coordinator starting on host " << FLAGS_listen_uri
                 << ", platform " << platform_id << ", uuid " << uuid_;
@@ -115,6 +116,8 @@ namespace firmament {
         // TODO(malte): Figure out how this interacts with dynamically added
         // resources; currently, we only run detection (i.e. the DetectLocalResources
         // method) once at startup.
+        ResourceTopologyNodeDescriptor* root_node =
+      local_resource_topology_->add_children();
         topology_manager_->AsProtobuf(local_resource_topology_);
         local_resource_topology_->set_parent_id(to_string(uuid_));
         topology_manager_->TraverseProtobufTree(
@@ -136,6 +139,7 @@ namespace firmament {
             // exclusively owned by this coordinator, and set its state to IDLE if it is
             // currently unknown. If coordinators were to ever shared PUs, we'd need
             // something more clever here.
+            resource_desc->set_schedulable(true);
             if (resource_desc->state() == ResourceDescriptor::RESOURCE_UNKNOWN)
                 resource_desc->set_state(ResourceDescriptor::RESOURCE_IDLE);
             scheduler_->RegisterResource(res_id);
@@ -185,36 +189,54 @@ namespace firmament {
     }
 
     void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
+          uint32_t handled_extensions = 0;
         // Registration message
         if (bm->HasExtension(register_extn)) {
             const RegistrationMessage& msg = bm->GetExtension(register_extn);
             HandleRegistrationRequest(msg);
+            handled_extensions++; 
         }
-        // Heartbeat message
+        // Resource Heartbeat message
         if (bm->HasExtension(heartbeat_extn)) {
             const HeartbeatMessage& msg = bm->GetExtension(heartbeat_extn);
             HandleHeartbeat(msg);
+            handled_extensions++;
         }
+        // Task heartbeat message
+        if (bm->HasExtension(task_heartbeat_extn)) {
+            const TaskHeartbeatMessage& msg = bm->GetExtension(task_heartbeat_extn);
+            HandleTaskHeartbeat(msg);
+            handled_extensions++;
+        }
+        // Task state change message
         if (bm->HasExtension(task_state_extn)) {
             const TaskStateMessage& msg = bm->GetExtension(task_state_extn);
             HandleTaskStateChange(msg);
+            handled_extensions++;
         }
-        
+        // Task spawn message
+        if (bm->HasExtension(task_spawn_extn)) {
+            const TaskSpawnMessage& msg = bm->GetExtension(task_spawn_extn);
+            HandleTaskSpawn(msg);
+            handled_extensions++;
+        }
+
         /* Storage Engine*/
         if (bm->HasExtension(register_storage_extn)) {
             const StorageRegistrationMessage& msg = bm->GetExtension(register_storage_extn);
             HandleStorageRegistrationRequest(msg);
         }
-        
+
         if (bm->HasExtension(storage_discover_message_extn)) {
             const StorageDiscoverMessage& msg = bm->GetExtension(storage_discover_message_extn);
             HandleStorageDiscoverRequest(msg);
-           
-        }
-        
-        
-        
 
+        }
+
+        // Check that we have handled at least one sub-message
+        if (handled_extensions == 0)
+            LOG(ERROR) << "Ignored incoming message, no known extension present:"
+            << bm->DebugString();
     }
 
     void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
@@ -260,6 +282,22 @@ namespace firmament {
             rdp->second = GetCurrentTimestamp();
         }
     }
+    
+    void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
+  TaskID_t task_id = msg.task_id();
+  TaskDescriptor** tdp = FindOrNull(*task_table_, task_id);
+  if (!tdp) {
+    LOG(WARNING) << "HEARTBEAT from UNKNOWN task (ID: "
+                 << task_id << ")!";
+  } else {
+    LOG(INFO) << "HEARTBEAT from task " << task_id;
+  }
+}
+
+void Coordinator::HandleTaskSpawn(
+    const TaskSpawnMessage& msg) {
+  LOG(ERROR) << "Unimplemented!";
+}
 
     void Coordinator::HandleTaskStateChange(
             const TaskStateMessage& msg) {
@@ -283,7 +321,6 @@ namespace firmament {
     }
 
 #ifdef __HTTP_UI__
-
 void Coordinator::InitHTTPUI() {
         // Start up HTTP interface
         if (FLAGS_http_ui && FLAGS_http_ui_port > 0) {
@@ -298,87 +335,88 @@ void Coordinator::InitHTTPUI() {
     }
 #endif
 
-    void Coordinator::AddJobsTasksToTaskTable(
-            RepeatedPtrField<TaskDescriptor>* tasks) {
-        for (RepeatedPtrField<TaskDescriptor>::iterator task_iter =
-                tasks->begin();
-                task_iter != tasks->end();
-                ++task_iter) {
-            VLOG(1) << "Adding task " << task_iter->uid() << " to task table.";
-            CHECK(InsertIfNotPresent(task_table_.get(), task_iter->uid(),
-                    &(*task_iter)));
-            AddJobsTasksToTaskTable(task_iter->mutable_spawned());
-        }
+void Coordinator::AddJobsTasksToTaskTable(
+    RepeatedPtrField<TaskDescriptor>* tasks) {
+  for (RepeatedPtrField<TaskDescriptor>::iterator task_iter =
+       tasks->begin();
+       task_iter != tasks->end();
+       ++task_iter) {
+    VLOG(1) << "Adding task " << task_iter->uid() << " to task table.";
+    CHECK(InsertIfNotPresent(task_table_.get(), task_iter->uid(),
+                             &(*task_iter)));
+    AddJobsTasksToTaskTable(task_iter->mutable_spawned());
+  }
+}
+
+  const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
+  // Generate a job ID
+  // TODO(malte): This should become deterministic, and based on the
+  // inputs/outputs somehow, maybe.
+  JobID_t new_job_id = GenerateJobID();
+  LOG(INFO) << "NEW JOB: " << new_job_id;
+  VLOG(2) << "Details:\n" << job_descriptor.DebugString();
+  // Clone the JD and update it with some information
+  JobDescriptor* new_jd = new JobDescriptor;
+  new_jd->CopyFrom(job_descriptor);
+  new_jd->set_uuid(to_string(new_job_id));
+  // Set the root task ID (which is 0 or unset on submission)
+  new_jd->mutable_root_task()->set_uid(GenerateRootTaskID(*new_jd));
+  // Add job to local job table
+  CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, *new_jd));
+  // Add its root task to the task table
+  if (!InsertIfNotPresent(task_table_.get(), new_jd->root_task().uid(),
+                          new_jd->mutable_root_task())) {
+    VLOG(1) << "Task " << new_jd->root_task().uid() << " already exists in "
+            << "task table, so not adding it again.";
+  }
+  // Add its spawned tasks (if any) to the local task table
+  RepeatedPtrField<TaskDescriptor>* spawned_tasks =
+      new_jd->mutable_root_task()->mutable_spawned();
+  AddJobsTasksToTaskTable(spawned_tasks);
+  // Adds its outputs to the object table and generate future references for
+  // them.
+  for (RepeatedPtrField<ReferenceDescriptor>::iterator output_iter =
+       new_jd->mutable_root_task()->mutable_outputs()->begin();
+       output_iter != new_jd->mutable_root_task()->mutable_outputs()->end();
+       ++output_iter) {
+    // First set the producing task field on the root task output, since the
+    // task ID has only just been determined (so it cannot be set yet)
+    output_iter->set_producing_task(new_jd->root_task().uid());
+    VLOG(1) << "Considering root task output " << output_iter->id() << ", "
+            << "adding to local object table";
+    if (!InsertIfNotPresent(object_store_.getObjectTable(), output_iter->id(),
+                            *output_iter)) {
+      VLOG(1) << "Output " << output_iter->id() << " already exists in "
+              << "local object table. Not adding again.";
     }
-
-    const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
-        // Generate a job ID
-        // TODO(malte): This should become deterministic, and based on the
-        // inputs/outputs somehow, maybe.
-        JobID_t new_job_id = GenerateJobID();
-        LOG(INFO) << "NEW JOB: " << new_job_id;
-        VLOG(2) << "Details:\n" << job_descriptor.DebugString();
-        // Clone the JD and update it with some information
-        JobDescriptor* new_jd = new JobDescriptor;
-        new_jd->CopyFrom(job_descriptor);
-        new_jd->set_uuid(to_string(new_job_id));
-        // Set the root task ID (which is 0 or unset on submission)
-        new_jd->mutable_root_task()->set_uid(GenerateTaskID(new_jd->root_task()));
-        // Add job to local job table
-        CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, *new_jd));
-        // Add its root task to the task table
-        if (!InsertIfNotPresent(task_table_.get(), new_jd->root_task().uid(),
-                new_jd->mutable_root_task())) {
-            VLOG(1) << "Task " << new_jd->root_task().uid() << " aöready exists in "
-                    << "task table, so not adding it again.";
-        }
-        // Add its spawned tasks (if any) to the local task table
-        RepeatedPtrField<TaskDescriptor>* spawned_tasks =
-                new_jd->mutable_root_task()->mutable_spawned();
-        AddJobsTasksToTaskTable(spawned_tasks);
-        // Adds its outputs to the object table and generate future references for
-        // them.
-        for (RepeatedPtrField<ReferenceDescriptor>::iterator output_iter =
-                new_jd->mutable_root_task()->mutable_outputs()->begin();
-                output_iter != new_jd->mutable_root_task()->mutable_outputs()->end();
-                ++output_iter) {
-            // First set the producing task field on the root task output, since the
-            // task ID has only just been determined (so it cannot be set yet)
-            output_iter->set_producing_task(new_jd->root_task().uid());
-            VLOG(1) << "Considering root task output " << output_iter->id() << ", "
-                    << "adding to local object table";
-            //    //TACH
-            //    if (!InsertIfNotPresent(object_table_.get(), output_iter->id(),
-            //                            *output_iter)) {
-            //      VLOG(1) << "Output " << output_iter->id() << " already exists in "
-            //              << "local object table. Not adding again.";
-            //    }
-
-        }
-        //  for (RepeatedField<DataObjectID_t>::const_iterator output_iter =
-        //       new_jd->output_ids().begin();
-        //       output_iter != new_jd->output_ids().end();
-        //       ++output_iter) {
-        //    VLOG(1) << "Considering job output " << *output_iter;
-        //    // The root task must produce all of the non-existent job outputs, so they
-        //    // should all be in the object table now.
-        //    CHECK(FindOrNull(*object_table_.get(), *output_iter));
-        //  }
+  }
+  for (RepeatedField<DataObjectID_t>::const_iterator output_iter =
+       new_jd->output_ids().begin();
+       output_iter != new_jd->output_ids().end();
+       ++output_iter) {
+    VLOG(1) << "Considering job output " << *output_iter;
+    // The root task must produce all of the non-existent job outputs, so they
+    // should all be in the object table now.
+    CHECK(FindOrNull(*object_table_.get(), *output_iter));
+  }
 #ifdef __SIMULATE_SYNTHETIC_DTG__
-        LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";
-        sim_dtg_generator_.reset(new sim::SimpleDTGGenerator(FindOrNull(*job_table_,
-                new_job_id)));
-        boost::thread t(boost::bind(&sim::SimpleDTGGenerator::Run,
-                sim_dtg_generator_));
+  LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";
+  sim_dtg_generator_.reset(new sim::SimpleDTGGenerator(FindOrNull(*job_table_,
+                                                                  new_job_id)));
+  boost::thread t(boost::bind(&sim::SimpleDTGGenerator::Run,
+                              sim_dtg_generator_));
 #endif
-        // Kick off the scheduler for this job.
-        scheduler_->ScheduleJob(FindOrNull(*job_table_, new_job_id));
-        // Finally, return the new job's ID
-        return to_string(new_job_id);
-    }
+  // Kick off the scheduler for this job.
+  uint64_t num_scheduled = scheduler_->ScheduleJob(
+      FindOrNull(*job_table_, new_job_id));
+  VLOG(1) << "Attempted to schedule job " << new_job_id << ", successfully "
+          << "scheduled " << num_scheduled << " tasks.";
+  // Finally, return the new job's ID
+  return to_string(new_job_id);
+}
 
-    void Coordinator::Shutdown(const string& reason) {
-        LOG(INFO) << "Coordinator shutting down; reason: " << reason;
+void Coordinator::Shutdown(const string& reason) {
+  LOG(INFO) << "Coordinator shutting down; reason: " << reason;
 #ifdef __HTTP_UI__
         if (FLAGS_http_ui && c_http_ui_ && c_http_ui_->active())
             c_http_ui_->Shutdown(false);

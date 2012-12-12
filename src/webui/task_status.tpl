@@ -18,25 +18,33 @@
     <td>{{TASK_STATUS}}</td>
   </tr>
   <tr>
-    <td rowspan="{{TASK_NUM_DEPS}}">Dependencies</td>
-    {{#TASK_DEPS}}
-    <td><a href="/ref/?id={{TASK_DEP_ID}}">{{TASK_DEP_ID}}</a></td>
-    {{/TASK_DEPS}}
+    <td>Dependencies</td>
+    <td>
+      <ol>
+        {{#TASK_DEPS}}
+        <li><a href="/ref/?id={{TASK_DEP_ID}}">{{TASK_DEP_ID}}</a></li>
+        {{/TASK_DEPS}}
+      </ol>
+    </td>
   </tr>
   <tr>
-    <td rowspan="{{TASK_NUM_SPAWNED}}">Spawned</td>
-    {{#TASK_SPAWNED}}
-    <td><a href="/task/?id={{TASK_SPAWNED_ID}}">{{TASK_SPAWNED_ID}}</a></td>
-    {{/TASK_SPAWNED}}
+    <td>Spawned</td>
+    <td>
+      <ol>
+        {{#TASK_SPAWNED}}
+        <li><a href="/task/?id={{TASK_SPAWNED_ID}}">{{TASK_SPAWNED_ID}}</a></li>
+        {{/TASK_SPAWNED}}
+      </ol>
+    </td>
   </tr>
   <tr>
     <td>Outputs</td>
     <td>
-      <ul>
+      <ol>
       {{#TASK_OUTPUTS}}
         <li><a href="/ref/?id={{TASK_OUTPUT_ID}}">{{TASK_OUTPUT_ID}}</a></li>
       {{/TASK_OUTPUTS}}
-      </ul>
+      </ol>
     </td>
   </tr>
 </table>

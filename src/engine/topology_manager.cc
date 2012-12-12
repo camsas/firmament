@@ -46,7 +46,26 @@ bool TopologyManager::BindToCPUMask(uint64_t mask, bool strict) {
   return false;
 }
 
-bool TopologyManager::BindToResource(ResourceID_t res_id) {
+bool TopologyManager::BindPIDToResource(pid_t pid, ResourceID_t res_id) {
+  // Check that the resource exists, is local, and is a CPU
+  hwloc_obj_t* obj;
+  CHECK(obj = FindOrNull(resourceID_to_obj_, res_id));
+  // TODO(malte): We may want to lift this restriction if we find that pinning
+  // to sub-trees of the resource tree is a good idea.
+  //CHECK((*obj)->type == HWLOC_OBJ_PU);
+  if (VLOG_IS_ON(2)) {
+    VLOG(2) << "Resource " << res_id << " corresponds to CPUSet "
+            << DebugCPUSet((*obj)->cpuset);
+  }
+  if (hwloc_set_proc_cpubind(topology_, pid, (*obj)->cpuset, 0) != 0) {
+    PLOG(WARNING) << "Failed to bind to CPU: ";
+    return false;
+  } else {
+    return true;
+  }
+}
+
+bool TopologyManager::BindSelfToResource(ResourceID_t res_id) {
   // Check that the resource exists, is local, and is a CPU
   hwloc_obj_t* obj;
   CHECK(obj = FindOrNull(resourceID_to_obj_, res_id));

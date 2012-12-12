@@ -19,8 +19,8 @@ package firmament;
 // 101  - TestMessage
 // 102  - HeartbeatMessage
 // 103  - RegistrationMessage
-// 104  - TaskAssignMessage [DEPRECATED]
-// 105  - TaskCompleteMessage [DEPRECATED]
+// 104  - TaskHeartbeatMessage
+// 105  - TaskSpawnMessage
 // 106  - TaskStateMessage
 // 107  - StorageRegistrationMessage
 // ...

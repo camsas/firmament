@@ -56,10 +56,10 @@ class ConcreteReference : public ReferenceInterface {
   inline const set<string>& locations() { return locations_; }
 
  protected:
-  void ValidateInitDescriptor(const ReferenceDescriptor& desc) {
+  void ValidateInitDescriptor(const ReferenceDescriptor& desc) const {
     CHECK_EQ(desc.type(), ReferenceDescriptor::CONCRETE);
   }
-  void ValidateInternalDescriptor() {
+  void ValidateInternalDescriptor() const {
     CHECK_EQ(id_, desc_.id());
     CHECK_EQ(desc_.type(), ReferenceDescriptor::CONCRETE);
     CHECK_EQ(desc_.size(), size_);

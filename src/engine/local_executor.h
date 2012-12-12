@@ -24,14 +24,20 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "engine/executor_interface.h"
+#include "engine/topology_manager.h"
 
 namespace firmament {
 namespace executor {
+
+using machine::topology::TopologyManager;
 
 class LocalExecutor : public ExecutorInterface {
  public:
   LocalExecutor(ResourceID_t resource_id,
                 const string& coordinator_uri);
+  LocalExecutor(ResourceID_t resource_id,
+                const string& coordinator_uri,
+                shared_ptr<TopologyManager> topology_mgr);
   void RunTask(TaskDescriptor* td,
                bool firmament_binary);
   virtual ostream& ToString(ostream* stream) const {
@@ -50,6 +56,7 @@ class LocalExecutor : public ExecutorInterface {
   FRIEND_TEST(LocalExecutorTest, SimpleTaskExecutionTest);
   FRIEND_TEST(LocalExecutorTest, TaskExecutionWithArgsTest);
   ResourceID_t local_resource_id_;
+  char* AddPerfMonitoringToCommandLine(vector<char*> argv);
   int32_t RunProcessAsync(const string& cmdline,
                           vector<string> args,
                           bool perf_monitoring,
@@ -67,6 +74,10 @@ class LocalExecutor : public ExecutorInterface {
   // This holds the currently configured URI of the coordinator for this
   // resource (which must be unique, for now).
   const string coordinator_uri_;
+  // Local pointer to topology manager
+  // TODO(malte): Figure out what to do if this local executor is associated
+  // with a dumb worker, who does not have topology support!
+  shared_ptr<TopologyManager> topology_manager_;
 };
 
 }  // namespace executor

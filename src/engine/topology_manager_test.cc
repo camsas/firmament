@@ -93,7 +93,7 @@ TEST_F(TopologyManagerTest, TestTrivialResourceBinding) {
   TopologyManager t;
   ResourceTopologyNodeDescriptor res_desc;
   t.AsProtobuf(&res_desc);
-  t.BindToResource(ResourceIDFromString(
+  t.BindSelfToResource(ResourceIDFromString(
       res_desc.resource_desc().uuid()));
 }
 
@@ -109,7 +109,7 @@ TEST_F(TopologyManagerTest, TestBindToPUResource) {
          rtnd_ptr->resource_desc().type() != ResourceDescriptor::RESOURCE_PU) {
     rtnd_ptr = rtnd_ptr->mutable_children(0);
   }
-  t.BindToResource(ResourceIDFromString(
+  t.BindSelfToResource(ResourceIDFromString(
       rtnd_ptr->resource_desc().uuid()));
 }
 

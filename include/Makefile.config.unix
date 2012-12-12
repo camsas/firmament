@@ -89,22 +89,28 @@ INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) \
 #LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf -lboost_system -lboost_thread -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc
 #LIBS += $(GPERFTOOLS_LIB) -lgflags -lglog -lpthread -lprotobuf
 LIBS += -ltcmalloc -lgflags -lglog -lpthread -lprotobuf
+#LIBS += -lgflags -lglog -lpthread -lprotobuf
 
 
 #######################################
 # COMPILER
 #######################################
 
+#CXX = g++
 CXX = clang++
 
 # for clang++, uncomment this line
-CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-language-extension-token -Wno-deprecated -Wno-error=unused-function
+CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-language-extension-token -Wno-deprecated -Wno-error=unused-function -Wno-vla
 # for g++, uncomment this line
-#CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-deprecated -Wno-error=unused-function
+#CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-deprecated -Wno-error=unused-function -Wno-vla
 
 # XXX(malte): this is a hack to enable support for configuration #defines; we
 # should move this to a proper configuration stage
 CPPFLAGS += -D__HTTP_UI__ -D__PLATFORM_HAS_BOOST__
+
+# To build statically linked executables, uncomment the following line AND make
+# sure that tcmalloc is NOT linked.
+#CPPFLAGS += -static -pthread
 
 # for gcc/g++, uncomment this line
 #CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-deprecated

@@ -8,14 +8,11 @@ package firmament;
 import "messages/base_message.proto";
 
 extend BaseMessage {
-  optional TaskAssignMessage task_assign_extn = 104;
-  optional TaskCompleteMessage task_complete_extn = 105;
+  optional TaskHeartbeatMessage task_heartbeat_extn = 104;
 }
 
-message TaskAssignMessage {
-  required string uuid = 1;
-}
-
-message TaskCompleteMessage {
-  required string uuid = 1;
+message TaskHeartbeatMessage {
+  required uint64 task_id = 1;
+  optional string location = 2;
+  optional uint64 sequence_number = 3;
 }

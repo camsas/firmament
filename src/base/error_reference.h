@@ -39,11 +39,11 @@ class ErrorReference : public ReferenceInterface {
   inline string const details() { return details_; }
 
  protected:
-  void ValidateInitDescriptor(const ReferenceDescriptor& desc) {
+  void ValidateInitDescriptor(const ReferenceDescriptor& desc) const {
     CHECK_EQ(desc.type(), ReferenceDescriptor::ERROR);
     CHECK(desc.has_inline_data());
   }
-  void ValidateInternalDescriptor() {
+  void ValidateInternalDescriptor() const {
     CHECK_EQ(id_, desc_.id());
     CHECK_EQ(desc_.type(), ReferenceDescriptor::ERROR);
     CHECK(desc_.has_inline_data());

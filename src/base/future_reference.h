@@ -28,10 +28,10 @@ class FutureReference : public ReferenceInterface {
   }
 
  protected:
-  void ValidateInitDescriptor(const ReferenceDescriptor& desc) {
+  void ValidateInitDescriptor(const ReferenceDescriptor& desc) const {
     CHECK_EQ(desc.type(), ReferenceDescriptor::FUTURE);
   }
-  void ValidateInternalDescriptor() {
+  void ValidateInternalDescriptor() const {
     CHECK_EQ(id_, desc_.id());
     CHECK_EQ(desc_.type(), ReferenceDescriptor::FUTURE);
   }

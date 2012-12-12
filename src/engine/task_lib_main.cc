@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
             << FLAGS_resource_id;
   TaskLib task_lib;
 
-  task_lib.Run();
+  task_lib.Run(argc, argv);
 
   LOG(INFO) << "Executor's Run() method returned; terminating...";
 }

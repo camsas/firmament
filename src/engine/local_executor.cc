@@ -22,8 +22,41 @@ using common::pb_to_vector;
 LocalExecutor::LocalExecutor(ResourceID_t resource_id,
                              const string& coordinator_uri)
     : local_resource_id_(resource_id),
-      coordinator_uri_(coordinator_uri) {
+      coordinator_uri_(coordinator_uri),
+      topology_manager_(shared_ptr<TopologyManager>()) {  // NULL
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
+  VLOG(1) << "No topology manager passed, so will not bind to resource.";
+}
+
+LocalExecutor::LocalExecutor(ResourceID_t resource_id,
+                             const string& coordinator_uri,
+                             shared_ptr<TopologyManager> topology_mgr)
+    : local_resource_id_(resource_id),
+      coordinator_uri_(coordinator_uri),
+      topology_manager_(topology_mgr) {
+  VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
+  VLOG(1) << "Tasks will be bound to the resource by the topology manager"
+          << "at " << topology_manager_;
+}
+
+char* LocalExecutor::AddPerfMonitoringToCommandLine(vector<char*> argv) {
+  // Define the string prefix for performance monitoring
+  string perf_string = "perf stat -x, -o ";
+  perf_string += getenv("PERF_FNAME");
+  perf_string += " -e instructions,cache-misses --";
+  // Ugly parsing code to transform it into an argv representation
+  char* perf_c_string = (char*)malloc(perf_string.size()+1);  // NOLINT
+  snprintf(perf_c_string, perf_string.size(), "%s", perf_string.c_str());
+  char* piece;
+  char* tmp_ptr = NULL;
+  piece = strtok_r(perf_c_string, " ", &tmp_ptr);
+  while (piece != NULL) {
+    argv.push_back(piece);
+    piece = strtok_r(NULL, " ", &tmp_ptr);
+  }
+  // Return pointer to the allocated string in order to be able to delete it
+  // later.
+  return perf_c_string;
 }
 
 void LocalExecutor::RunTask(TaskDescriptor* td,
@@ -47,7 +80,8 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   // arguments: binary (path + name), arguments, performance monitoring on/off,
   // is this a Firmament task binary? (on/off; will cause default arugments to
   // be passed)
-  bool res = (RunProcessSync(td->binary(), args, false, firmament_binary) == 0);
+  bool res = (RunProcessSync(td->binary(), args, firmament_binary,
+                             firmament_binary) == 0);
   return res;
 }
 
@@ -69,10 +103,10 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
                                       vector<string> args,
                                       bool perf_monitoring,
                                       bool default_args) {
+  char* perf_prefix;
   pid_t pid;
   int pipe_to[2];    // pipe to feed input data to task
   int pipe_from[3];  // pipe to receive output data from task
-  int status;
   if (pipe(pipe_to) != 0) {
     LOG(ERROR) << "Failed to create pipe to task.";
   }
@@ -104,15 +138,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
         // performance monitoring is active, so reserve extra space for the
         // "perf" invocation prefix.
         argv.reserve(args.size() + (default_args ? 11 : 10));
-        argv.push_back((char*)("perf"));  // NOLINT
-        argv.push_back((char*)("stat"));  // NOLINT
-        argv.push_back((char*)("-x"));  // NOLINT
-        argv.push_back((char*)(","));  // NOLINT
-        argv.push_back((char*)("-o"));  // NOLINT
-        argv.push_back((char*)(getenv("PERF_FNAME")));  // NOLINT
-        argv.push_back((char*)("-e"));  // NOLINT
-        argv.push_back((char*)("instructions,cache-misses"));  // NOLINT
-        argv.push_back((char*)("--"));  // NOLINT
+        perf_prefix = AddPerfMonitoringToCommandLine(argv);
       } else {
         // no performance monitoring, so we only need to reserve space for the
         // default and NULL args
@@ -120,10 +146,12 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       }
       argv.push_back((char*)(cmdline.c_str()));  // NOLINT
       if (default_args)
-        argv.push_back((char*)"--tryfromenv=coordinator_uri,resource_id");  // NOLINT
+        argv.push_back(
+            (char*)"--tryfromenv=coordinator_uri,resource_id,task_id");  // NOLINT
       for (uint32_t i = 0; i < args.size(); ++i) {
         // N.B.: This casts away the const qualifier on the c_str() result.
         // This is joyfully unsafe, of course.
+        VLOG(1) << "Adding extra argument \"" << args[i] << "\"";
         argv.push_back((char*)(args[i].c_str()));  // NOLINT
       }
       // The last argument to execvp is always NULL.
@@ -149,6 +177,9 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     default:
       // Parent
       VLOG(1) << "Task process with PID " << pid << " created.";
+      // Pin the task to the appropriate resource
+      if (topology_manager_)
+        topology_manager_->BindPIDToResource(pid, local_resource_id_);
       // close unused pipe ends
       close(pipe_to[0]);
       close(pipe_from[1]);
@@ -162,12 +193,15 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       ReadFromPipe(pipe_from[0]);
       //ReadFromPipe(pipe_from[1]);
       // wait for task to terminate
+      int status;
       while (!WIFEXITED(status)) {
-        VLOG(2) << "Waiting for task to exit...";
+        VLOG_EVERY_N(2, 1000) << "Waiting for task to exit...";
         waitpid(pid, &status, 0);
       }
       VLOG(1) << "Task process with PID " << pid << " exited with status "
               << WEXITSTATUS(status);
+      if (perf_monitoring)
+        delete perf_prefix;
       return status;
   }
   return -1;
@@ -183,7 +217,7 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
                  << "The task will be unable to communicate with the "
                  << "coordinator!";
   vector<EnvPair_t> env;
-  env.push_back(EnvPair_t("TASK_ID", to_string(td.uid())));
+  env.push_back(EnvPair_t("FLAGS_task_id", to_string(td.uid())));
   env.push_back(EnvPair_t("PERF_FNAME", PerfDataFileName(td)));
   env.push_back(EnvPair_t("FLAGS_coordinator_uri", coordinator_uri_));
   env.push_back(EnvPair_t("FLAGS_resource_id", to_string(local_resource_id_)));

@@ -9,6 +9,7 @@
 #define FIRMAMENT_ENGINE_TASK_LIB_H
 
 #include <string>
+#include <vector>
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -24,6 +25,7 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
+#include "base/reference_types.h"
 #include "base/task_interface.h"
 #include "messages/base_message.pb.h"
 // XXX(malte): include order dependency
@@ -44,16 +46,16 @@ using platform_unix::streamsockets::StreamSocketsChannel;
 class TaskLib {
  public:
   TaskLib();
-  void Run();
+  void Run(int argc, char *argv[]);
   void AwaitNextMessage();
   bool ConnectToCoordinator(const string& coordinator_uri);
-  void RunTask();
+  void RunTask(int argc, char *argv[]);
   // CIEL programming model
-  /*virtual const string Construct(const DataObject& object);
-  virtual void Spawn(const ConcreteReference& code,
-                     vector<FutureReference>* outputs);
-  virtual void Publish(const vector<ConcreteReference>& references);
-  virtual void TailSpawn(const ConcreteReference& code);*/
+  //virtual const string Construct(const DataObject& object);
+  void Spawn(const ConcreteReference& code,
+             vector<FutureReference>* outputs);
+  void Publish(const vector<ConcreteReference>& references);
+  //virtual void TailSpawn(const ConcreteReference& code);
 
  protected:
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
@@ -62,7 +64,9 @@ class TaskLib {
   // TODO(malte): transform this into a better representation
   string coordinator_uri_;
   ResourceID_t resource_id_;
+  TaskID_t task_id_;
 
+  void ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec);
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
   void SendFinalizeMessage(bool success);
@@ -72,6 +76,7 @@ class TaskLib {
   void setUpStorageEngine() ; 
   
  private:
+  bool task_error_;
   bool task_running_;
   uint64_t heartbeat_seq_number_;
   

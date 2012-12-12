@@ -11,6 +11,8 @@
 #include <utility>
 
 #include "storage/reference_types.h"
+#include "base/reference_types.h"
+#include "base/reference_utils.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "engine/local_executor.h"
@@ -26,9 +28,12 @@ SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
                                  shared_ptr<ResourceMap_t> resource_map,
                                  shared_ptr<store::ObjectStoreInterface> object_store,
                                  shared_ptr<TaskMap_t> task_map,
+                                 shared_ptr<TopologyManager> topo_mgr,
                                  const string& coordinator_uri)
     : SchedulerInterface(job_map, resource_map, object_store, task_map),
-      coordinator_uri_(coordinator_uri) {
+      coordinator_uri_(coordinator_uri),
+      topology_manager_(topo_mgr),
+      scheduling_(false) {
   VLOG(1) << "SimpleScheduler initiated.";
 }
 
@@ -71,7 +76,9 @@ void SimpleScheduler::BindTaskToResource(
 
 const ResourceID_t* SimpleScheduler::FindResourceForTask(
     TaskDescriptor* task_desc) {
-  // TODO(malte): stub
+  // TODO(malte): This is an extremely simple-minded approach to resource
+  // selection (i.e. the essence of scheduling). We will simply traverse the
+  // resource map in some order, and grab the first resource available.
   VLOG(2) << "Trying to place task " << task_desc->uid() << "...";
   // Find the first idle resource in the resource map
   for (ResourceMap_t::iterator res_iter = resource_map_->begin();
@@ -83,6 +90,9 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
     if (res_iter->second.first->state() == ResourceDescriptor::RESOURCE_IDLE)
       return rid;
   }
+  // We have not found any idle resources in our local resource map. At this
+  // point, we should start looking beyond the machine boundary and towards
+  // remote resources.
   return NULL;
 }
 
@@ -117,12 +127,15 @@ void SimpleScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
   res->first->set_state(ResourceDescriptor::RESOURCE_IDLE);
   // Remove the task's resource binding (as it is no longer currently bound)
   task_bindings_.erase(td_ptr->uid());
+  // TODO(malte): Check if this job still has any outstanding tasks, otherwise
+  // mark it as completed.
 }
 
 void SimpleScheduler::RegisterResource(ResourceID_t res_id) {
   // Create an executor for each resource.
   VLOG(1) << "Adding executor for resource " << res_id;
-  LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_);
+  LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_,
+                                          topology_manager_);
   CHECK(InsertIfNotPresent(&executors_, res_id, exec));
 }
 
@@ -218,7 +231,9 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
 }
 
 uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
+  uint64_t total_scheduled = 0;
   VLOG(2) << "Preparing to schedule job " << job_desc->uuid();
+  scheduling_ = true;
   // Get the set of runnable tasks for this job
   set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
   VLOG(2) << "Scheduling job " << job_desc->uuid() << ", which has "
@@ -242,9 +257,13 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
       LOG(INFO) << "Scheduling task " << (*td)->uid() << " on resource "
                 << rp->first->uuid() << " [" << rp << "]";
       BindTaskToResource(*td, rp->first);
+      total_scheduled++;
     }
   }
-  return 0;
+  if (total_scheduled > 0)
+    job_desc->set_state(JobDescriptor::RUNNING);
+  scheduling_ = false;
+  return total_scheduled;
 }
 
 shared_ptr<ReferenceInterface> SimpleScheduler::ReferenceForID(

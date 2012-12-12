@@ -13,6 +13,9 @@
 
 namespace firmament {
 
+boost::mt19937 ran_;
+bool ran_init_ = false;
+
 uint64_t GetCurrentTimestamp() {
   struct timeval ts;
   gettimeofday(&ts, NULL);
@@ -33,13 +36,27 @@ uint64_t MakeEnsembleUID(Ensemble *ens) {
 }*/
 
 ResourceID_t GenerateUUID() {
-  boost::uuids::random_generator gen;
+  if (!ran_init_) {
+    ran_.seed(time(NULL));
+    ran_init_ = true;
+  }
+  boost::uuids::basic_random_generator<boost::mt19937> gen(&ran_);
   return gen();
 }
 
 JobID_t GenerateJobID() {
-  boost::uuids::random_generator gen;
+  if (!ran_init_) {
+    ran_.seed(time(NULL));
+    ran_init_ = true;
+  }
+  boost::uuids::basic_random_generator<boost::mt19937> gen(&ran_);
   return gen();
+}
+
+TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc) {
+  size_t hash = 0;
+  boost::hash_combine(hash, job_desc.uuid());
+  return static_cast<TaskID_t>(hash);
 }
 
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task) {
@@ -104,7 +121,7 @@ ResourceID_t ResourceIDFromString(const string& str) {
 
 TaskID_t TaskIDFromString(const string& str) {
   // XXX(malte): possibly unsafe use of atol() here.
-  TaskID_t task_uuid = atol(str.c_str());
+  TaskID_t task_uuid = strtoul(str.c_str(), NULL, 10);
   return task_uuid;
 }
 
