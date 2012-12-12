@@ -121,10 +121,28 @@ export PROTOBUF_LIB_DIR
 
 
 #######################################
+# hwloc-SPECIFIC DEFINITIONS
+#######################################
+
+# Directory where hwloc files are installed (i.e. the --prefix argument
+# to the hwloc configure script).
+HWLOC_INSTALL_DIR ?= $(EXT_DIR)/hwloc-build
+
+# Header directory for Boost libraries
+HWLOC_INC_DIR ?= $(HWLOC_INSTALL_DIR)/include
+export HWLOC_INC_DIR
+
+# Path to the compiled hwloc library files. This will
+# be passed to the linker as a -L argument.
+HWLOC_LIB_DIR ?= $(HWLOC_INSTALL_DIR)/lib
+export HWLOC_LIB_DIR
+
+
+#######################################
 # INCLUDES
 #######################################
 
-INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) -I$(GLOG_INC_DIR) -I$(GFLAGS_INC_DIR) -I$(PROTOBUF_INC_DIR) -I$(BOOST_INC_DIR)
+INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) -I$(GLOG_INC_DIR) -I$(GFLAGS_INC_DIR) -I$(PROTOBUF_INC_DIR) -I$(BOOST_INC_DIR) -I$(HWLOC_INC_DIR)
 export INCLUDES
 
 
@@ -137,6 +155,7 @@ export INCLUDES
 #LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf
 LIBS = -pthread -lgflags -lglog -lprotobuf -lboost_system -lboost_thread -lboost_regex
 
+EXTRA_SCC_LIB_DIRS := -L$(BOOST_LIB_DIR) -L$(GLOG_LIB_DIR) -L$(GFLAGS_LIB_DIR) -L$(PROTOBUF_LIB_DIR) -L$(HWLOC_LIB_DIR)
 
 #######################################
 # COMPILER
@@ -145,12 +164,13 @@ LIBS = -pthread -lgflags -lglog -lprotobuf -lboost_system -lboost_thread -lboost
 CXX = g++
 
 # N.B.: -DSCC and -march=pentium are specific to compiling for the SCC's P54C
-CPPFLAGS = -DSCC -march=pentium $(INCLUDES)
+CPPFLAGS += -DSCC -march=pentium $(INCLUDES) $(EXTRA_SCC_LIB_DIRS)
 
-CPPFLAGS += -L$(BOOST_LIB_DIR) -L$(GLOG_LIB_DIR) -L$(GFLAGS_LIB_DIR) -L$(PROTOBUF_LIB_DIR) $(LIBS) -Wall -Wextra -Werror
+CPPFLAGS += -Wall -Wextra -Werror -Wno-sign-compare -Wno-unused-parameter
 
 OPTFLAGS = -g -O0
 
+# N.B.: No support for building the HTTP interface at present (no -D__HTTP_UI__)
 DEFINES = -D__FIRMAMENT__ -D__PLATFORM_HAS_BOOST__
 
 

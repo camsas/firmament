@@ -22,6 +22,7 @@ DEBIAN_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_P
 
 GFLAGS_VER="2.0"
 GLOG_VER="HEAD"
+HWLOC_VER="1.5"
 PROTOBUF_VER="2.4.1"
 BOOST_VER="1.46.0"
 
@@ -233,6 +234,7 @@ elif [[ ${TARGET} == "scc" ]]; then
   echo "Building for the SCC. Note that you MUST build on the MCPC, and "
   echo "that ${SCC_CC_SCRIPT} MUST exist and be accessible."
   ask_continue
+  source ${SCC_CC_SCRIPT}
 else
   echo "Operating systems other than Ubuntu (>=10.04) and Debian are not"
   echo "currently supported for automatic configuration."
@@ -267,7 +269,7 @@ else
   echo "Downloading and extracting release tarball for Google gflags library..."
   GFLAGS_BUILD_DIR=${EXT_DIR}/google-gflags-build
   mkdir -p ${GFLAGS_BUILD_DIR}
-  get_dep_arch "google-gflags" "http://google-gflags.googlecode.com/files/gflags-${GFLAGS_VER}.tar.gz"
+  get_dep_arch "google-gflags" "http://gflags.googlecode.com/files/gflags-${GFLAGS_VER}.tar.gz"
   cd gflags-${GFLAGS_VER}
   echo -n "Building google-gflags library..."
   RES=$(./configure --prefix=${GFLAGS_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
@@ -283,21 +285,26 @@ GLOG_DIR=google-glog-svn
 GLOG_INSTALL_FILE="/usr/lib/pkgconfig/libglog.pc"
 #GLOG_BUILD_DIR=${EXT_DIR}/google-glog-build
 #mkdir -p ${GLOG_BUILD_DIR}
-if [[ ! -f ${GLOG_INSTALL_FILE} ]]; then
+if [[ ${TARGET} == "scc" && ! -f ${GLOG_INSTALL_FILE} ]]; then
   get_dep_svn "google-glog" "googlecode"
   cd ${GLOG_DIR}
   echo -n "Building google-glog library..."
-  RES=$(./configure --prefix=/usr && make --quiet 2>/dev/null)
-  #RES=$(./configure --prefix=${GLOG_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
+  if [[ ${TARGET} == "scc" ]]; then
+    RES=$(./configure --prefix=${GLOG_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
+  else
+    RES=$(./configure --prefix=/usr && make --quiet 2>/dev/null)
+  fi
   print_succ_or_fail $RES
-  echo "google-glog library (v${GLOG_VER}) was built in ${GLOG_DIR}. "
-  echo "Please run the following comamnds to install it: "
-  echo
-  echo "$ cd ${EXT_DIR}/${GLOG_DIR}"
-  echo "$ sudo make install"
-  echo
-  echo "... and then re-run."
-  exit 1
+  if [[ ${TARGET} != "scc" ]]; then
+    echo "google-glog library (v${GLOG_VER}) was built in ${GLOG_DIR}. "
+    echo "Please run the following comamnds to install it: "
+    echo
+    echo "$ cd ${EXT_DIR}/${GLOG_DIR}"
+    echo "$ sudo make install"
+    echo
+    echo "... and then re-run."
+    exit 1
+  fi
 else
   echo -n "Already installed!"
   print_succ_or_fail 0
@@ -370,6 +377,24 @@ else
   print_succ_or_fail $RES
   cd ${EXT_DIR}
 fi
+
+## hwloc library
+if [[ ${TARGET} == "scc" || ( ${OS_ID} != "Ubuntu" || ${OS_ID} != "Debian" ) ]];
+then
+  print_subhdr "HWLOC"
+  # Get hwloc archive
+  echo "Downloading and extracting hwloc v${HWLOC_VER}..."
+  get_dep_arch "hwloc" "http://www.open-mpi.org/software/hwloc/v${HWLOC_VER}/downloads/hwloc-${HWLOC_VER}.tar.gz"
+  HWLOC_EXTRACT_DIR=${EXT_DIR}/hwloc-${HWLOC_VER}
+  HWLOC_BUILD_DIR=${EXT_DIR}/hwloc-build
+  mkdir -p ${HWLOC_BUILD_DIR}
+  cd ${HWLOC_EXTRACT_DIR}
+  echo -n "Building..."
+  RES=$(./configure --prefix=${HWLOC_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
+  print_succ_or_fail $RES
+  cd ${EXT_DIR}
+fi
+
 
 ## pb2json library (converts protobufs to JSON)
 print_subhdr "PB2JSON LIBRARY"

@@ -201,9 +201,9 @@ uint64_t PacketJoinTask::StartIndexGuess(
   VLOG(2) << "time since DAG0 start: " << time_since_start;
   if (time_since_start <= 0)
     return 0;
-  uint64_t start_guess = dag0_head_ptr->samples *
+  uint64_t start_guess = static_cast<uint64_t>(dag0_head_ptr->samples *
       (static_cast<double>(time_since_start) /
-       static_cast<double>(duration));
+       static_cast<double>(duration)));
   VLOG(2) << "start_guess is " << start_guess;
   uint64_t ts_at_start_guess = dag0_sample_data[start_guess].timestamp;
   VLOG(2) << "TS at " << start_guess << " is: "

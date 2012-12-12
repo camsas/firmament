@@ -95,7 +95,7 @@ void TopologyManager::LoadAndParseSyntheticTopology(
     const string& topology_desc) {
   VLOG(1) << "Synthetic topology load...";
 #if HWLOC_API_VERSION > 0x00010500
-  hwloc_topology_set_synthetic(topology_, topology_desc);
+  hwloc_topology_set_synthetic(topology_, topology_desc.c_str());
   hwloc_topology_load(topology_);
   topology_depth_ = hwloc_topology_get_depth(topology_);
 #else

@@ -46,15 +46,15 @@ class UtilsTest : public ::testing::Test {
 TEST_F(UtilsTest, DataObjectIDGenerateTest) {
   TaskID_t pid = 1234;
   TaskOutputID_t oid = 0;
-  CHECK_EQ(GenerateDataObjectID(pid, oid), 175247688336);
+  CHECK_EQ(GenerateDataObjectID(pid, oid), 175247688336ULL);
 }
 
 // Tests DO ID generation from TD.
 TEST_F(UtilsTest, DataObjectIDGenerateFromTDTest) {
   TaskDescriptor td;
   td.set_uid(1234);
-  CHECK_EQ(GenerateDataObjectID(td), 175247688336);
-  CHECK_EQ(GenerateDataObjectID(td.uid(), td.outputs_size()), 175247688336);
+  CHECK_EQ(GenerateDataObjectID(td), 175247688336ULL);
+  CHECK_EQ(GenerateDataObjectID(td.uid(), td.outputs_size()), 175247688336ULL);
 }
 
 // Tests task ID parsing from string.
@@ -67,7 +67,7 @@ TEST_F(UtilsTest, TaskIDFromString) {
   string test2 = "16733209960240500155";
   // Test both
   CHECK_EQ(TaskIDFromString(test1), 1234567);
-  CHECK_EQ(TaskIDFromString(test2), 16733209960240500155U);
+  CHECK_EQ(TaskIDFromString(test2), 16733209960240500155ULL);
 }
 
 

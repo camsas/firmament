@@ -53,7 +53,9 @@ void SimpleDTGGenerator::Run() {
     double next_spawn = task_spawn_gen_();
     delay += next_spawn;
     VLOG(1) << "Next task in " << next_spawn << " seconds.";
-    boost::this_thread::sleep(boost::posix_time::seconds(next_spawn));
+    boost::this_thread::sleep(
+      boost::posix_time::milliseconds(
+        static_cast<int>(next_spawn * 1000)));
   }
   VLOG(1) << "Mean inter-spawn time: " << (delay / 100);
 }
