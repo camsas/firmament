@@ -13,7 +13,8 @@ namespace firmament {
         
         //TACH: make non unix specific.
 
-        SimpleObjectStore::SimpleObjectStore(ResourceID_t uuid_)
+        SimpleObjectStore::SimpleObjectStore(ResourceID_t uuid_):
+        ObjectStoreInterface()
  {
             uuid = uuid_ ; 
             message_adapter_.reset(new platform_unix::streamsockets::StreamSocketsAdapter<BaseMessage > ());
