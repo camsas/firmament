@@ -8,8 +8,8 @@ STDALONE_LIBS := $(LIBS)
 LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time
 
 LIB =
-BINS = packet_join_task
-OBJS = packet_join_task.o
+BINS = packet_join_task simple_trace_analysis_task
+OBJS = packet_join_task.o simple_trace_analysis_task.o
 PBS =
 TESTS =
 TESTS_DEPS =
@@ -33,9 +33,16 @@ $(OBJ_BIN): $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(LIBS) -o $@ , \
 		"  DYNLNK  $@")
 
-standalone:
+packet_join_task: packet_join_task.cc
+	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) $(OPTFLAGS) \
-		$(SRC_ROOT_DIR)/$(SUFFIX)/packet_join_task.cc \
-		$< $(STDALONE_LIBS) -o packet_join_task
-#		"  STDALO  $@")
-#	$(call quiet-command, \
+		$(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+		$(STDALONE_LIBS) -o $@, \
+		"  STDALO  $@")
+
+simple_trace_analysis_task: simple_trace_analysis_task.cc
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) $(OPTFLAGS) \
+		$(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+		$(STDALONE_LIBS) -o $@, \
+		"  STDALO  $@")

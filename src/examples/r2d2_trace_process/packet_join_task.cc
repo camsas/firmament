@@ -110,7 +110,7 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
   // Go and keep looking at samples until reaching the end, which is the last
   // considered packet's timestamp plus WINDOW_SIZE milliseconds.
   while (i < count && fread(sample_buf, sizeof(sample_t), 1, fp)) {
-    uint64_t sample_ts = (sample_buf->timestamp);
+    uint64_t sample_ts = sample_buf->timestamp;
     if (last_idx == ~0ULL)
       last_idx = StartIndexGuess(dag0_ptr, head_buf, sample_ts);
     VLOG(2) << "*********************";

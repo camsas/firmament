@@ -18,7 +18,7 @@ extern "C" {
 #define unlikely(x) __builtin_expect((x),0)  // NOLINT
 
 typedef struct {
-    uint64_t timestamp;     // Timestamp in 5.27 fixpoint format
+    uint64_t timestamp;     // Timestamp in 32.32 fixpoint format
     union {
         struct {
             uint32_t length : 16;       // Length of the packet (up to 65kB
@@ -30,7 +30,7 @@ typedef struct {
         uint32_t raw_type_dropped_len;  // Raw 32-bit value, so that we can do
                                         // the & ourselves.
     };
-    uint32_t hash;          // 32-bit unique identifier for a given packet
+    uint64_t hash;          // 64-bit unique identifier for a given packet
 } __attribute__((__packed__)) sample_t;
 
 
@@ -39,7 +39,7 @@ typedef struct {
     uint64_t end_time;
     uint64_t samples;
     sample_t first_sample;
-} dag_capture_header_t;
+} __attribute__((__packed__)) dag_capture_header_t;
 
 // Packet type definitions
 enum {
