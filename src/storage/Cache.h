@@ -17,14 +17,24 @@
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/interprocess/sync/sharable_lock.hpp>
+#include <messages/storage_message.pb.h>
+#include "misc/utils.h"
+#include "storage/simple_object_store.h"
 
 namespace firmament { 
     namespace store {
+       
+        using namespace boost::interprocess; 
+
+class SimpleObjectStore; 
 
 class Cache {
 public:
-    Cache(ObjectStoreInterface* obj, size_t size_, const string& cache_name_);
-    Cache(const Cache& orig);
+    Cache(SimpleObjectStore* obj, size_t size_, const char* cache_name_);
+ //   Cache(const Cache& orig);
     virtual ~Cache();
     
     /* For the moment, find out size from object table */
@@ -33,25 +43,31 @@ public:
     bool write_object_to_cache(const ObtainObjectMessage&  msg);
     bool write_object_to_cache(DataObjectID_t id);
     
-    inline size_t capacity() { return capacity ; } 
-    inline const size_t getSize() { return size ; } 
+    inline size_t getCapacity() { return cache->capacity ; } 
+    inline size_t getSize() { return size ; } 
 
     void print_cache() ; 
 private:
-        const string& cache_name ; 
-        Cache_t* cache ; 
-        volatile size_t capacity ; 
+        const char* cache_name ; 
         const size_t size ; 
-        ObjectStoreInterface* store ; 
+        Cache_t* cache ;
+        SimpleObjectStore* store ;
+        managed_shared_memory* segment; 
+        named_mutex* mutex ; 
+        WriteLock_t* cache_lock; 
         
         /* Currently doing LRU but could do anything else*/
         void make_space_in_cache() ;
+        void create_cache(const char* cache_name) ;
         
-        Cache_t* create_cache() ;
-        
-        void write_object_to_disk(DataObject_t id, void* data, size_t size);
+        void write_object_to_disk(DataObjectID_t id, const char* data, size_t size); 
         
         void clearCache() ; 
+        
+        WriteLock_t getWriteLock(DataObjectID_t id) ;
+        
+        ReadLock_t getReadLock(DataObjectID_t id) ;
+        
         
         
         

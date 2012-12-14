@@ -11,8 +11,8 @@
 #include <utility>
 
 #include "storage/reference_types.h"
-#include "base/reference_types.h"
-#include "base/reference_utils.h"
+#include "storage/reference_types.h"
+#include "storage/reference_utils.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "engine/local_executor.h"

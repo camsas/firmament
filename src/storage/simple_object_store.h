@@ -43,6 +43,9 @@
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/placeholders.hpp>
+#include "storage/Cache.h"
+#include "storage/StorageInfo.h"
+#include "misc/map-util.h"
 
 
 
@@ -53,12 +56,14 @@ using platform_unix::streamsockets::StreamSocketsChannel;
 using platform_unix::streamsockets::StreamSocketsAdapter;
 using namespace std; 
 
+class Cache; 
+class StorageInfo ; 
+
 class SimpleObjectStore: public ObjectStoreInterface {
  public:
   SimpleObjectStore(ResourceID_t uuid);
   ~SimpleObjectStore();
-  void PutObject(DataObjectID_t id, void* data, size_t len);
-  bool GetObject(DataObjectID_t id, void*, size_t* len);
+
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<SimpleObjectStore, containing ";
   }
@@ -70,10 +75,11 @@ class SimpleObjectStore: public ObjectStoreInterface {
   void setUpCommunication() ; 
   void printTopology(); 
   
+  void obtain_object_remotely(DataObjectID_t id) ; 
+
   
  protected:
   shared_ptr<StreamSocketsAdapter<BaseMessage> >  message_adapter_;
-  scoped_ptr<DataObjectMap_t> object_table_ ; //TACH
   vector<StorageInfo*> peers ; /* Channel interfaces, etc. */
   vector<StorageInfo*> nodes ; /* Concatenate global information
                           about all the nodes.
@@ -81,6 +87,8 @@ class SimpleObjectStore: public ObjectStoreInterface {
   
 private: 
     void createSharedBuffer(size_t size); 
+    shared_ptr<Cache> cache  ; 
+    
 };
 
 }  // namespace store

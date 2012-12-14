@@ -46,10 +46,12 @@ Coordinator::Coordinator(PlatformID platform_id)
     job_table_(new JobMap_t),
     task_table_(new TaskMap_t),
     topology_manager_(new TopologyManager()),
+    object_store_(new store::SimpleObjectStore(uuid_)),
     scheduler_(new SimpleScheduler(job_table_, associated_resources_,
-    object_store_, task_table_,
-    FLAGS_listen_uri)),
-    object_store_(new store::SimpleObjectStore(uuid_))
+                                   object_store_, task_table_,
+                                   topology_manager_,
+                                   FLAGS_listen_uri))
+   
  { 
         // Start up a coordinator according to the platform parameter
         string hostname = boost::asio::ip::host_name();
@@ -117,14 +119,14 @@ Coordinator::Coordinator(PlatformID platform_id)
         // resources; currently, we only run detection (i.e. the DetectLocalResources
         // method) once at startup.
         ResourceTopologyNodeDescriptor* root_node =
-      local_resource_topology_->add_children();
-        topology_manager_->AsProtobuf(local_resource_topology_);
+                local_resource_topology_->add_children();
+        topology_manager_->AsProtobuf(root_node);
         local_resource_topology_->set_parent_id(to_string(uuid_));
         topology_manager_->TraverseProtobufTree(
                 local_resource_topology_,
                 boost::bind(&Coordinator::AddLocalResource, this, _1));
     }
-
+    
     void Coordinator::AddLocalResource(ResourceDescriptor* resource_desc) {
         CHECK(resource_desc);
         // Compute resource ID
@@ -265,12 +267,13 @@ Coordinator::Coordinator(PlatformID platform_id)
             LOG(INFO) << "REGISTERING NEW RESOURCE (uuid: " << msg.uuid() << ")";
             // N.B.: below creates a new resource descriptor
             // XXX(malte): We should be adding to the topology tree instead here!
+            ResourceDescriptor* rd = new ResourceDescriptor(msg.res_desc()); 
             CHECK(InsertIfNotPresent(associated_resources_.get(), uuid,
                     pair<ResourceDescriptor*, uint64_t > (
-                    new ResourceDescriptor(msg.res_desc()),
+                    rd,
                     GetCurrentTimestamp())));
-
-            //Inform storage engine
+            
+            InformStorageEngineNewResource(rd); 
 
 
         } else {
@@ -384,8 +387,7 @@ void Coordinator::AddJobsTasksToTaskTable(
     output_iter->set_producing_task(new_jd->root_task().uid());
     VLOG(1) << "Considering root task output " << output_iter->id() << ", "
             << "adding to local object table";
-    if (!InsertIfNotPresent(object_store_.getObjectTable(), output_iter->id(),
-                            *output_iter)) {
+    if(object_store_->addReference(output_iter->id(), &(*output_iter))) { 
       VLOG(1) << "Output " << output_iter->id() << " already exists in "
               << "local object table. Not adding again.";
     }
@@ -397,7 +399,7 @@ void Coordinator::AddJobsTasksToTaskTable(
     VLOG(1) << "Considering job output " << *output_iter;
     // The root task must produce all of the non-existent job outputs, so they
     // should all be in the object table now.
-    CHECK(FindOrNull(*object_table_.get(), *output_iter));
+    CHECK(object_store_->GetReference(*output_iter));
   }
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";
@@ -492,17 +494,22 @@ void Coordinator::Shutdown(const string& reason) {
 
     }
     
+    /* This is a message sent by TaskLib which seeks to discover
+     where the storage engine is - this is only important if the
+     storage engine is not guaranteed to be local */
     void Coordinator::HandleStorageDiscoverRequest(
             const StorageDiscoverMessage& msg) {
 
-        ResourceID_t uuid = msg.uuid() ; 
-        ResourceDescriptor* rd = FindOrNull(associated_resources_,uuid) ; 
+        ResourceID_t uuid = ResourceIDFromString(msg.uuid()) ; 
+        ResourceDescriptor* rd = (FindOrNull(*associated_resources_,uuid))->first ; 
         const string& uri = rd->storage_engine();
         
         StorageDiscoverMessage* reply = new StorageDiscoverMessage() ; 
-        reply.set_uuid(msg.uuid()); 
-        reply.set_uri(msg.uri()) ; 
-        reply.set_storage_uri(uri) ; 
+        reply->set_uuid(msg.uuid()); 
+        reply->set_uri(msg.uri()) ; 
+        reply->set_storage_uri(uri) ; 
+        
+        /* Send Message*/
 
     }
 

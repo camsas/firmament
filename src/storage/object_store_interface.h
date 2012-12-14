@@ -12,25 +12,38 @@
 #include "storage/reference_interface.h"
 #include "messages/storage_registration_message.pb.h"
 #include "base/reference_desc.pb.h"
+#include "storage/types.h"
+#include "misc/map-util.h"
 
 namespace firmament {
 namespace store {
 
 class ObjectStoreInterface : public PrintableInterface {
  public:
-  virtual void PutObject(DataObjectID_t id, void* data, size_t len) = 0;
-  virtual bool GetObject(DataObjectID_t id, void*, size_t* len) = 0;
+ 
   virtual ostream& ToString(ostream* stream) const = 0;
-  virtual void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg) ; 
-  virtual ReferenceDescriptor*  GetReference(DataObjectID_t id );
+  virtual void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg) = 0 ; 
   
   
+  bool addReference(DataObjectID_t id, ReferenceDescriptor* rd) { 
+            return !(InsertIfNotPresent(object_table_.get(), id, rd)) ; 
+        }
   
+  
+  ReferenceDescriptor* GetReference(DataObjectID_t id) {
+            ReferenceDescriptor* rd = *FindOrNull(*object_table_,id); 
+            return rd ; 
+           
+        }
+
+
+    
+ 
  inline string get_listening_interface() {
       return listening_interface_ ; 
   }
  
- inline string get_resource_id() {
+ inline ResourceID_t get_resource_id() {
       return uuid ; 
   }
  
@@ -38,6 +51,8 @@ class ObjectStoreInterface : public PrintableInterface {
  protected:
         string listening_interface_ ; 
         ResourceID_t uuid ; 
+        shared_ptr<DataObjectMap_t> object_table_ ; 
+
 
 };
 

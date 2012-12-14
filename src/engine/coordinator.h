@@ -37,6 +37,7 @@
 #include "messages/task_heartbeat_message.pb.h"
 #include "messages/task_spawn_message.pb.h"
 #include "messages/task_state_message.pb.h"
+#include "messages/storage_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/signal_handler.h"
@@ -186,7 +187,9 @@ class Coordinator : public Node,
   void HandleTaskSpawn(const TaskSpawnMessage& msg);
   void HandleTaskStateChange(const TaskStateMessage& msg);
   void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg); 
-  void Coordinator::HandleStorageDiscoverRequest(const StorageDiscoverMessage& msg) ; 
+  
+  /* Only necessary if storage is not guaranteed to be local*/
+  void HandleStorageDiscoverRequest(const StorageDiscoverMessage& msg) ; 
 #ifdef __HTTP_UI__
   void InitHTTPUI();
 #endif
@@ -213,12 +216,13 @@ class Coordinator : public Node,
   // The topology manager associated with this coordinator; responsible for the
   // local resources.
   shared_ptr<TopologyManager> topology_manager_;
-  // The local scheduler object. A coordinator may not have a scheduler, in
+    // The local object store.
+    shared_ptr<ObjectStoreInterface> object_store_;
+      // The local scheduler object. A coordinator may not have a scheduler, in
   // which case this will be a stub that defers to another scheduler.
   // TODO(malte): Work out the detailed semantics of this.
   scoped_ptr<SchedulerInterface> scheduler_;
-  // The local object store.
-  shared_ptr<ObjectStoreInterface> object_store_;
+
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   shared_ptr<sim::SimpleDTGGenerator> sim_dtg_generator_;
 #endif

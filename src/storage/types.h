@@ -9,36 +9,52 @@
 #define	TYPES_H
 
 #include "storage/reference_interface.h"
-#include "boost/bimap.hpp"
-#include <boost/bimap/list_of.hpp> 
-#include <boost/bimap/set_of.hpp> 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/interprocess/sync/sharable_lock.hpp>
+#include <boost/interprocess/sync/upgradable_lock.hpp>
+#include <boost/interprocess/sync/lock_options.hpp>
+#include <boost/interprocess/allocators/allocator.hpp>
+#include <boost/interprocess/offset_ptr.hpp>
 
 namespace firmament { 
 namespace store { 
     
-    typedef map<DataObjectID_t, ReferenceDescriptor> DataObjectMap_t;
+    using namespace boost::interprocess; 
     
-      typedef struct Mutex_t { 
-        
-        boost::interprocess::interprocess_mutex mut;
-        
-        boost::shared_lock<boost::interprocess::interprocess_mutex> read_lock(mut, defer_lock); 
-        boost::unique_lock<boost::interprocess::interprocess_mutex> write_lock(mut, defer_lock);
-    };
-    
-   typedef pair<DataObjectID_t, Mutex_t> DataObject_t ; 
-     
-   typedef allocator<DataObject_t, boost::interprocess::managed_shared_memory::segment_manager>  SharedmemAllocator_t;
-
+    typedef map<DataObjectID_t, ReferenceDescriptor*> DataObjectMap_t;
    
-   typedef map<DataObjectID_t, DataObject_t, SharedmemAllocator_t> Cache_t;
-     
-     
-  
+//    typedef struct  mutex_struct() { 
+//             sharable_lock<interprocess_mutex> read_lock(interprocess_mutex); 
+//             scoped_lock<interprocess_mutex> write_lock(interprocess_mutex); 
+//
+//             mutex_struct() {} ; 
+//
+//    } Mutex_t;
     
+    
+//   typedef pair<DataObjectID_t, Mutex_t> DataObject_t ; 
+     
+  // typedef boost::interprocess::allocator<DataObject_t, managed_shared_memory::segment_manager>  SharedmemAllocator_t;
 
+  // typedef map<DataObjectID_t, DataObject_t, SharedmemAllocator_t> Cache_t;
+   
+   typedef boost::interprocess::allocator<DataObjectID_t, managed_shared_memory::segment_manager>  SharedmemAllocator_t;
+
+   typedef vector<DataObjectID_t, SharedmemAllocator_t> SharedVector_t ;
+   
+   typedef struct  cache { 
+       size_t capacity ; 
+//       offset_ptr<SharedVector_t> ; 
+       SharedVector_t* object_list ; 
+       cache(size_t cap): capacity(cap) {}
+       
+   } Cache_t;
+   
+   typedef sharable_lock<named_mutex> ReadLock_t ;
+   
+   typedef scoped_lock<named_mutex> WriteLock_t ;
+   
 }
 }
 

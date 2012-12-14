@@ -202,6 +202,7 @@ void TaskLib::setUpStorageEngine() {
      As currently, only assume that is local, don't currently need it
      Also need */
     
+    const char* name = ("Cache" + to_string(resource_id_)).c_str(); 
     
 //    StorageDiscoverMessage* msg = new StorageDiscoverMessage() ; 
 //    
@@ -212,8 +213,17 @@ void TaskLib::setUpStorageEngine() {
 //    Expect reply with URI 
     
     /* If local*/
-    Cache_t* cache_ = managed_memory_segment.find<Cache_t>("Cache" + to_string(resource_id_));
+   
+    managed_shared_memory segment(open_only,name );
+    Cache_t* cache = new Cache_t ; 
     
+    cache->object_list = segment.find<SharedVector_t>("objects");
+    cache->capacity = segment.find<size_t>("size"); 
+    
+    named_mutex mutex_(open_only, cache_name);
+    mutex = &mutex_; 
+    WriteLock_t cache_lock_(*mutex);
+   
     //TODO: error handling
     if (cache==NULL) VLOG(1) << "Error: no cache found"; 
     
@@ -229,9 +239,14 @@ void TaskLib::setUpStorageEngine() {
    read lock. Contacts storage engine if data is not in cache */
   void* TaskLib::GetObjectStart(DataObjectID_t id ) { 
       VLOG(3) << "GetObjectStart " << id << endl ; 
-      DataObject_t object = FindOrNull(cache,id); 
-      if (object!=NULL) { 
-          boost::interprocess::sync::lock((object.read_lock)) ;
+      
+      vector<DataObjectID_t>::iterator result =
+              find(cache->object_list->begin(), cache->object_list->end(), id);
+      /* Should only be one result in theory*/
+      if (!result->empty()) { 
+         named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+         ReadLock_t lock(mut);  
+         lock.lock() ; 
          file_mapping m_file(id, read_only);
          mapped_region region(m_file, read_only);
          void* object = region.getAddress() ;
@@ -257,17 +272,15 @@ void TaskLib::setUpStorageEngine() {
   
   /* Releases shared read lock */
    void TaskLib::GetObjectEnd(DataObjectID_t id ) { 
-       VLOG(3) << "GetObjectEnd " << endl ; 
-      DataObject_t* object = FindOrNull(cache,id); 
-      if (object!=NULL) { 
-          boost::interprocess::sync::unlock((object->read_lock)) ;  
-          file_mapping::remove(id); 
+       VLOG(3) << "GetObjectEnd " << endl ;  
+       /* TODO : very inefficient*/
+       named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+       ReadLock_t lock(mut);  
+       file_mapping::remove(id); 
+       lock.unlock(); 
+
       }
-      else {
-          VLOG(1) << "This should not have happened. To fix " ; 
-      }
-      
-  }
+
   
   void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) { 
     VLOG(3) << "PutObjectStart " << endl ;   
@@ -279,11 +292,11 @@ void TaskLib::setUpStorageEngine() {
     file_mapping m_file(id, read_write);
     mapped_region region(m_file, read_write);  
     void* address = region.getAddress() ;
-    DataObject_t* object = new DataObject_t(id, new Mutex_t); 
-    /* Acquire write lock */
-    lock(object->write_lock) ;   
+    named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+    WriteLock_t lock(mut);  
+    lock.lock() ; 
    /* Add it to cache */
-    cache->insert(pair<id,object>); 
+    cache->insert(object); 
  
     return address ; 
   }
@@ -291,18 +304,20 @@ void TaskLib::setUpStorageEngine() {
   /* Release exclusive lock */
   void TaskLib::PutObjectEnd(DataObjectID_t id) { 
       VLOG(3) << "PutObjectEnd " << endl ; 
-      DataObject_t* object = FindOrNull(cache,id); 
       file_mapping m_file(id, read_write);
       mapped_region region(m_file, read_write);  
       region.flush() ;
       file_mapping::remove(id); 
-      if (object!=NULL) { 
-          boost::interprocess::sync::unlock((object->write_lock)) ;        
-      }
-      else {
-          VLOG(1) << "This should not have happened. To fix " ; 
-      }
+      named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+     WriteLock_t lock(mut);  
+      lock.unlock() ; 
+      
+      /* Notify Engine that reference is now concrete */
+      
+      
   }
+  
+
   
 
 
