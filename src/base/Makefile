@@ -5,7 +5,7 @@ include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
 LIB = libfirmament_base.a
-OBJS = task.o resource.o job.o ensemble.o data_object.o
+OBJS = task.o resource.o job.o ensemble.o data_object.o task_graph.o
 PBS = reference_desc.pb.o task_desc.pb.o resource_desc.pb.o \
       resource_topology_node_desc.pb.o \
       ensemble_desc.pb.o data_object_name.pb.o job_desc.pb.o
