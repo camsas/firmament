@@ -15,7 +15,6 @@
 
 #include "storage/types.h"
 #include "storage/object_store_interface.h"
-#include "storage/StorageInfo.h"
 
 #include "base/reference_desc.pb.h"
 
@@ -43,9 +42,9 @@
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/placeholders.hpp>
-#include "storage/Cache.h"
-#include "storage/StorageInfo.h"
 #include "misc/map-util.h"
+#include "Cache.h"
+#include "StorageInfo.h"
 
 
 
@@ -57,6 +56,7 @@ using platform_unix::streamsockets::StreamSocketsAdapter;
 using namespace std; 
 
 class Cache; 
+
 class StorageInfo ; 
 
 class SimpleObjectStore: public ObjectStoreInterface {

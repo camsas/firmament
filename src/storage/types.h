@@ -16,6 +16,7 @@
 #include <boost/interprocess/sync/lock_options.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/offset_ptr.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
 
 namespace firmament { 
 namespace store { 
@@ -54,6 +55,23 @@ namespace store {
    typedef sharable_lock<named_mutex> ReadLock_t ;
    
    typedef scoped_lock<named_mutex> WriteLock_t ;
+   
+   typedef struct RefNot{ 
+       
+        DataObjectID_t id ; 
+       
+        interprocess_mutex mutex ; 
+       
+        interprocess_condition  cond_read;
+
+        interprocess_condition   cond_added;
+   
+        bool writable; 
+    
+        size_t size ; 
+        
+        RefNot(): writable(true) {} ; 
+   } ReferenceNotification_t;
    
 }
 }

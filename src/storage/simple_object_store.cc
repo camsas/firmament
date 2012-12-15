@@ -5,12 +5,18 @@
 
 
 #include "storage/simple_object_store.h"
-
+#include "Cache.h"
+#include "StorageInfo.h"
 
 
 namespace firmament {
     namespace store {
         
+class Cache;  
+class StorageInfo; 
+
+
+
         //TACH: make non unix specific.
 
         SimpleObjectStore::SimpleObjectStore(ResourceID_t uuid_):
@@ -23,7 +29,7 @@ namespace firmament {
 
             setUpCommunication();
             
-            createSharedBuffer(1024) ; 
+            createSharedBuffer(10000) ; 
             
             
 
@@ -33,8 +39,9 @@ namespace firmament {
 
         SimpleObjectStore::~SimpleObjectStore()
  {
-
+            
             VLOG(2) << "Shutting Storage Engine Down";
+            cache.reset() ;  
             message_adapter_.reset();
             object_table_.reset();
             
@@ -125,7 +132,8 @@ namespace firmament {
         
         void SimpleObjectStore::createSharedBuffer(size_t size) { 
             
-            cache.reset(new Cache(this, size, ("Cache" + to_string(uuid)).c_str()));
+            cache.reset(new Cache(this, size, ("Cache" + to_string(uuid)).c_str())); 
+//            cache.reset(new Cache(this, size, ("Cache" + to_string(uuid)).c_str())); 
             
         }
         
@@ -135,6 +143,9 @@ namespace firmament {
             /* Send request (ObtainObjectMessage) with id and no data field*/
             /* Message will be received in MessageAdapter. Maybe block on condition here? */
         }
+        
+        
+
         
 
           

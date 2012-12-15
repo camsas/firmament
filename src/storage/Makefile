@@ -7,7 +7,7 @@ include $(ROOT_DIR)/include/Makefile.common
 LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time 
 
 LIB = libfirmament_storage.a
-OBJS =   StorageInfo.o simple_object_store.o Cache.o 
+OBJS =  simple_object_store.o StorageInfo.o Cache.o 
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 

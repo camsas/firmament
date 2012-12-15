@@ -21,7 +21,6 @@
 #include "base/types.h"
 
 #include "storage/types.h"
-#include "storage/object_store_interface.h"
 #include "storage/StorageInfo.h"
 
 #include "base/reference_desc.pb.h"

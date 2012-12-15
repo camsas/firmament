@@ -22,7 +22,6 @@
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <messages/storage_message.pb.h>
 #include "misc/utils.h"
-#include "storage/simple_object_store.h"
 
 namespace firmament { 
     namespace store {
@@ -30,6 +29,7 @@ namespace firmament {
         using namespace boost::interprocess; 
 
 class SimpleObjectStore; 
+class StorageInfo; 
 
 class Cache {
 public:
@@ -64,9 +64,8 @@ private:
         
         void clearCache() ; 
         
-        WriteLock_t getWriteLock(DataObjectID_t id) ;
-        
-        ReadLock_t getReadLock(DataObjectID_t id) ;
+        void handle_notification_references(ReferenceNotification_t* ref) ; 
+         
         
         
         
