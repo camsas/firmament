@@ -279,9 +279,19 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
   }
 }
 
-void Coordinator::HandleTaskSpawn(
-    const TaskSpawnMessage& msg) {
+void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
   LOG(ERROR) << "Unimplemented!";
+  // Get the descriptor for the spawning task
+  TaskDescriptor* spawner;
+  CHECK(spawner = FindOrNull(*task_table_, msg.creating_task_id()));
+  // Extract new task descriptor from the message received
+  TaskDescriptor* spawnee = new TaskDescriptor;
+  spawnee->CopyFrom(msg.spawned_task_desc());
+  // Find root task for job
+  // Add task to task graph
+  // task_graph.AddChildTask(spawner, spawnee)
+  // Run the scheduler for this job
+  // scheduler_->ScheduleJob(job);
 }
 
 void Coordinator::HandleTaskStateChange(
