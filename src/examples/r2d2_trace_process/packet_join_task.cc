@@ -144,6 +144,8 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
           // impossible to reach
           LOG(FATAL) << "Unmatched packet result is invalid";
       }
+      // Canonical output format shared with dag_join implementation
+      //OutputUnmatchedPacketResult();
     } else {
       uint64_t matched_ts = matched_sample->timestamp;
       // Work out various metrics for the corresponding packet and log them to
@@ -151,6 +153,8 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
       int64_t delay = (int64_t(sample_ts) - int64_t(matched_ts));
       int64_t inter_arrival_time = (last_idx > 0) ?
           (int64_t(matched_ts) - int64_t(matched_sample[-1].timestamp)) : 0;
+      // Canonical output format shared with dag_join implementation
+      //OutputMatchedPacketResult();
       cout << sample_ts << "," << delay << "," << inter_arrival_time << "\n";
       packets_matched++;
     }
@@ -158,7 +162,7 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
       lost_at_dag += sample_buf->value_type_dropped_len.dropped;
     // Progress update every 10000 packets
     if (i % 10000 == 0)
-      VLOG(1) << "Processed " << i << " packets...";
+      VLOG(2) << "Processed " << i << " packets...";
     // One-up, next packet
     i++;
   }
@@ -249,7 +253,8 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
     VLOG(3) << "Considering index " << cur_idx << ", bounds ("
             << cur_idx_bwd << ", " << cur_idx_fwd << ")";
     VLOG(3) << "TS is " << dag0_sample_data[cur_idx].timestamp;
-    if (dag0_sample_data[cur_idx].value_type_dropped_len.type ==
+    if (packet->value_type_dropped_len.type == udp &&
+        dag0_sample_data[cur_idx].value_type_dropped_len.type ==
         packet->value_type_dropped_len.type &&
         dag0_sample_data[cur_idx].value_type_dropped_len.length ==
         packet->value_type_dropped_len.length &&
