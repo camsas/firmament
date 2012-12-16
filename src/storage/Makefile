@@ -1,20 +1,17 @@
 ROOT_DIR=../..
-SUFFIX=base
+SUFFIX=storage
 
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-LIB = libfirmament_base.a
-OBJS = task.o resource.o job.o ensemble.o data_object.o task_graph.o
-PBS = reference_desc.pb.o task_desc.pb.o resource_desc.pb.o \
-       resource_topology_node_desc.pb.o \
-      ensemble_desc.pb.o data_object_name.pb.o job_desc.pb.o
-      
-TESTS = data_object_test 
-TESTS_DEPS = $(OBJ_DIR)/data_object_name.pb.o \
-	     $(OBJ_DIR)/reference_desc.pb.o
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time 
+
+LIB = libfirmament_storage.a
+OBJS =  simple_object_store.o StorageInfo.o Cache.o 
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
+
+	
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 

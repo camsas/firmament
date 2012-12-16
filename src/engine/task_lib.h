@@ -24,9 +24,8 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "base/data_object.h"
 #include "base/resource_desc.pb.h"
-#include "base/reference_types.h"
+#include "storage/reference_types.h"
 #include "base/task_interface.h"
 #include "messages/base_message.pb.h"
 // XXX(malte): include order dependency
@@ -37,6 +36,15 @@
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_adapter-inl.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
+#include "storage/types.h"
+#include "boost/interprocess/segment_manager.hpp"
+#include <boost/interprocess/file_mapping.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/interprocess/sync/sharable_lock.hpp>
 
 namespace firmament {
 
@@ -57,6 +65,12 @@ class TaskLib {
   void Publish(const vector<ConcreteReference>& references);
   //virtual void TailSpawn(const ConcreteReference& code);
 
+  void* GetObjectStart(DataObjectID_t id );
+  void GetObjectEnd(DataObjectID_t id ); 
+  void* PutObjectStart(DataObjectID_t id, size_t size); 
+  void PutObjectEnd(DataObjectID_t id); 
+    
+   
  protected:
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
   shared_ptr<StreamSocketsChannel<BaseMessage> > chan_;
@@ -73,10 +87,21 @@ class TaskLib {
   void SendHeartbeat();
   bool SendMessageToCoordinator(BaseMessage* msg);
 
+  void setUpStorageEngine() ; 
+  
  private:
   bool task_error_;
   bool task_running_;
   uint64_t heartbeat_seq_number_;
+  
+  
+  Cache_t* cache ; 
+  string storage_uri ; 
+  
+  managed_shared_memory* segment; 
+  named_mutex* mutex ;  
+  WriteLock_t* cache_lock; 
+        
 };
 
 }  // namespace firmament

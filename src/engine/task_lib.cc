@@ -18,6 +18,7 @@
 #include "platforms/common.h"
 #include "platforms/common.pb.h"
 
+
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 DEFINE_string(resource_id, "",
               "The resource ID that is running this task.");
@@ -129,8 +130,13 @@ void TaskLib::RunTask(int argc, char *argv[]) {
   ConvertTaskArgs(argc, argv, task_arg_vec);
   // task_main blocks until the task has exited
   //  exec(task_desc_.code_dependency());
+
+  /* Set up Storage Engine here, returning a void* to the Cache */
+  /* Alternate way of doing this: set up cache here and just pass the
+   various pointers. */
+  
+  setUpStorageEngine() ; 
   boost::thread task_thread(boost::bind(task_main, this, task_id_,
-                                        task_arg_vec));
   task_running_ = true;
   // This will check if the task thread has joined once every heartbeat
   // interval, and go back to sleep if it has not.
@@ -189,5 +195,130 @@ bool TaskLib::SendMessageToCoordinator(BaseMessage* msg) {
                             boost::asio::placeholders::error,
                             boost::asio::placeholders::bytes_transferred));
 }
+
+void TaskLib::setUpStorageEngine() { 
+    
+    /* Contact coordinator to ask where storage engine is for this resource
+     As currently, only assume that is local, don't currently need it
+     Also need */
+    
+    const char* name = ("Cache" + to_string(resource_id_)).c_str(); 
+    
+//    StorageDiscoverMessage* msg = new StorageDiscoverMessage() ; 
+//    
+//    msg->set_uuid(resource_id_) ; 
+//    msg->uri(""); 
+//    
+//    SendMessageToCoordinator(msg); 
+//    Expect reply with URI 
+    
+    /* If local*/
+   
+    managed_shared_memory segment(open_only,name );
+    Cache_t* cache = new Cache_t ; 
+    
+    cache->object_list = segment.find<SharedVector_t>("objects");
+    cache->capacity = segment.find<size_t>("size"); 
+    
+    named_mutex mutex_(open_only, cache_name);
+    mutex = &mutex_; 
+    WriteLock_t cache_lock_(*mutex);
+   
+    //TODO: error handling
+    if (cache==NULL) VLOG(1) << "Error: no cache found"; 
+    
+    
+    
+    /* Else if not local - not implemented*/
+
+
+    
+}
+
+ /* Finds data from cache and returns pointer. Acquires shared
+   read lock. Contacts storage engine if data is not in cache */
+  void* TaskLib::GetObjectStart(DataObjectID_t id ) { 
+      VLOG(3) << "GetObjectStart " << id << endl ; 
+      
+      vector<DataObjectID_t>::iterator result =
+              find(cache->object_list->begin(), cache->object_list->end(), id);
+      /* Should only be one result in theory*/
+      if (!result->empty()) { 
+         named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+         ReadLock_t lock(mut);  
+         lock.lock() ; 
+         file_mapping m_file(id, read_only);
+         mapped_region region(m_file, read_only);
+         void* object = region.getAddress() ;
+         return object ; 
+      }
+      else { 
+          VLOG(1) << "Object " << id << " was not found in cache. Contacting"
+                  "Object Store " << endl ; 
+          
+          return null ; 
+          /* Data is not in cache - Let object store do the work */
+          
+          
+          
+          /* Local set up named conditions - wait until data is in
+           cache */
+          
+          
+          /* Non local - Not implemented */
+      }
+      
+  }
+  
+  /* Releases shared read lock */
+   void TaskLib::GetObjectEnd(DataObjectID_t id ) { 
+       VLOG(3) << "GetObjectEnd " << endl ;  
+       /* TODO : very inefficient*/
+       named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+       ReadLock_t lock(mut);  
+       file_mapping::remove(id); 
+       lock.unlock(); 
+
+      }
+
+  
+  void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) { 
+    VLOG(3) << "PutObjectStart " << endl ;   
+    /* Create file */
+    std::ofstream ofs("id", std::ios::binary | std::ios::out);
+    ofs.seekp(size - 1);
+    ofs.write("", 1);
+    /* Map it*/
+    file_mapping m_file(id, read_write);
+    mapped_region region(m_file, read_write);  
+    void* address = region.getAddress() ;
+    named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+    WriteLock_t lock(mut);  
+    lock.lock() ; 
+   /* Add it to cache */
+    cache->insert(object); 
+ 
+    return address ; 
+  }
+  
+  /* Release exclusive lock */
+  void TaskLib::PutObjectEnd(DataObjectID_t id) { 
+      VLOG(3) << "PutObjectEnd " << endl ; 
+      file_mapping m_file(id, read_write);
+      mapped_region region(m_file, read_write);  
+      region.flush() ;
+      file_mapping::remove(id); 
+      named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+     WriteLock_t lock(mut);  
+      lock.unlock() ; 
+      
+      /* Notify Engine that reference is now concrete */
+      
+      
+  }
+  
+
+  
+
 
 }  // namespace firmament

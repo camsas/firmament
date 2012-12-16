@@ -37,4 +37,5 @@ message ResourceDescriptor {
   repeated string siblings = 9;
   repeated string children = 10;
   optional bool schedulable = 11 [default = false];
+  required string storage_engine = 12; 
 }

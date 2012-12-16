@@ -376,8 +376,7 @@ void CoordinatorHTTPUI::HandleReferenceURI(HTTPRequestPtr& http_request,  // NOL
                   tcp_conn);
     return;
   }
-  ReferenceDescriptor* rd_ptr = coordinator_->GetReference(
-      DataObjectIDFromString(*ref_id));
+  ReferenceDescriptor* rd_ptr = coordinator_->get_object_store()->GetReference(DataObjectIDFromString(*ref_id));
   TemplateDictionary dict("reference_view");
   if (rd_ptr) {
     dict.SetIntValue("REF_ID", rd_ptr->id());

@@ -1,0 +1,19 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// StorageRegistrationMessage informs about the existence of a resource.
+
+package firmament;
+
+import "messages/base_message.proto";
+
+extend BaseMessage {
+  optional StorageRegistrationMessage register_storage_extn = 107;
+}
+
+message StorageRegistrationMessage {
+  required string uuid = 1; //Resource ID
+  required string storage_interface = 2;
+  optional string coordinator_uuid = 3 ; // Useful to have an indication of which coordinator this object store belongs to.
+  optional bool peer = 4 ; // Hint for the storage engine whether should be added as a peer or not.
+}
