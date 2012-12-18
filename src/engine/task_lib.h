@@ -65,10 +65,13 @@ class TaskLib {
   string coordinator_uri_;
   ResourceID_t resource_id_;
   TaskID_t task_id_;
+  TaskDescriptor task_descriptor_;
 
   void ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec);
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
+  bool PullTaskInformationFromCoordinator(TaskID_t task_id,
+                                          TaskDescriptor* desc);
   void SendFinalizeMessage(bool success);
   void SendHeartbeat();
   bool SendMessageToCoordinator(BaseMessage* msg);
