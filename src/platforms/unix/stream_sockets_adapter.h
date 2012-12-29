@@ -63,6 +63,18 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
   size_t NumActiveChannels() {
     return endpoint_channel_map_.size();
   }
+  void DumpActiveChannels() {
+    LOG(INFO) << NumActiveChannels() << " active channels at "
+              << *this;
+    for (typeof(endpoint_channel_map_.begin()) chan_iter =
+         endpoint_channel_map_.begin();
+         chan_iter != endpoint_channel_map_.end();
+         ++chan_iter) {
+      LOG(INFO) << "[" << chan_iter->second << "]: Local: "
+                << chan_iter->second->LocalEndpointString()
+                << "Remote: " << chan_iter->second->RemoteEndpointString();
+    }
+  }
 
  private:
   void HandleAsyncMessageRecv(

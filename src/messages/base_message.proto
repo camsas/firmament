@@ -23,6 +23,9 @@ package firmament;
 // 105  - TaskSpawnMessage
 // 106  - TaskStateMessage
 // 107  - StorageRegistrationMessage
+// 108  - TaskInfoRequestMessage
+// 109  - TaskInfoResponseMessage
+// 110  - <free>
 // ...
 // 1000 - <free>
 

@@ -1,0 +1,25 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Task information RPC messages.
+
+package firmament;
+
+import "messages/base_message.proto";
+import "base/task_desc.proto";
+
+extend BaseMessage {
+  optional TaskInfoRequestMessage task_info_req_extn = 108;
+  optional TaskInfoResponseMessage task_info_resp_extn = 109;
+}
+
+message TaskInfoRequestMessage {
+  required uint64 task_id = 1;
+  required string requesting_resource_id = 2;
+  required string requesting_endpoint = 3;
+}
+
+message TaskInfoResponseMessage {
+  required uint64 task_id = 1;
+  optional TaskDescriptor task_desc = 2;
+}

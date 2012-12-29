@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 namespace firmament {
 
 #ifdef __FIRMAMENT__
-void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>* arg_vec) {
+void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>*) {
   examples::r2d2::SimpleTraceAnalysisTask t(task_lib, task_id);
   LOG(INFO) << "Called task_main, starting " << t;
   //t.Invoke();

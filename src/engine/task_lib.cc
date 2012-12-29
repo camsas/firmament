@@ -12,6 +12,7 @@
 #include "base/common.h"
 #include "messages/registration_message.pb.h"
 #include "messages/task_heartbeat_message.pb.h"
+#include "messages/task_info_message.pb.h"
 #include "messages/task_spawn_message.pb.h"
 #include "messages/task_state_message.pb.h"
 #include "misc/utils.h"
@@ -38,6 +39,14 @@ TaskLib::TaskLib()
     task_error_(false),
     task_running_(false),
     heartbeat_seq_number_(0) {
+  const char* task_id_env;
+  if (FLAGS_task_id.empty())
+    task_id_env = getenv("TASK_ID");
+  else
+    task_id_env = FLAGS_task_id.c_str();
+  VLOG(1) << "Task ID is " << task_id_env;
+  CHECK_NOTNULL(task_id_env);
+  task_id_ = TaskIDFromString(task_id_env);
 }
 
 void TaskLib::AwaitNextMessage() {
@@ -93,10 +102,34 @@ void TaskLib::HandleWrite(const boost::system::error_code& error,
     VLOG(1) << "bytes_transferred: " << bytes_transferred;
 }
 
+bool TaskLib::PullTaskInformationFromCoordinator(TaskID_t task_id,
+                                                 TaskDescriptor* desc) {
+  // Send request for task information to coordinator
+  BaseMessage msg;
+  SUBMSG_WRITE(msg, task_info_req, task_id, task_id);
+  SUBMSG_WRITE(msg, task_info_req, requesting_resource_id,
+               to_string(resource_id_));
+  SUBMSG_WRITE(msg, task_info_req, requesting_endpoint,
+               chan_->LocalEndpointString());
+  Envelope<BaseMessage> envelope(&msg);
+  CHECK(chan_->SendS(envelope));
+  // Wait for a response
+  BaseMessage response;
+  Envelope<BaseMessage> recv_envelope(&response);
+  chan_->RecvS(&recv_envelope);
+  CHECK(response.HasExtension(task_info_resp_extn));
+  desc->CopyFrom(SUBMSG_READ(response, task_info_resp, task_desc));
+  VLOG(1) << "Received TD: " << desc->DebugString();
+  return true;
+}
+
 void TaskLib::Run(int argc, char *argv[]) {
-  // TODO(malte): Any setup work goes here
+  // First, connect to the coordinator
   CHECK(ConnectToCoordinator(coordinator_uri_))
       << "Failed to connect to coordinator; is it reachable?";
+
+  // Pull task information from coordinator if we do not have it already
+  PullTaskInformationFromCoordinator(task_id_, &task_descriptor_);
 
   // Async receive -- the handler is responsible for invoking this again.
   AwaitNextMessage();
@@ -117,14 +150,6 @@ void TaskLib::Run(int argc, char *argv[]) {
 void TaskLib::RunTask(int argc, char *argv[]) {
   //CHECK(task_desc_.code_dependency.is_consumable());
   LOG(INFO) << "Invoking task code...";
-  const char* task_id_env;
-  if (FLAGS_task_id.empty())
-    task_id_env = getenv("TASK_ID");
-  else
-    task_id_env = FLAGS_task_id.c_str();
-  VLOG(1) << "Task ID is " << task_id_env;
-  CHECK_NOTNULL(task_id_env);
-  task_id_ = TaskIDFromString(task_id_env);
   // Convert the arguments
   vector<char*>* task_arg_vec = new vector<char*>;
   ConvertTaskArgs(argc, argv, task_arg_vec);

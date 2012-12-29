@@ -222,23 +222,26 @@ Coordinator::Coordinator(PlatformID platform_id)
             HandleTaskSpawn(msg);
             handled_extensions++;
         }
-
+        // Task info request message
+        if (bm->HasExtension(task_info_req_extn)) {
+          const TaskInfoRequestMessage& msg = bm->GetExtension(task_info_req_extn);
+          HandleTaskInfoRequest(msg);
+          handled_extensions++;
+        }
         /* Storage Engine*/
         if (bm->HasExtension(register_storage_extn)) {
             const StorageRegistrationMessage& msg = bm->GetExtension(register_storage_extn);
             HandleStorageRegistrationRequest(msg);
         }
-
         if (bm->HasExtension(storage_discover_message_extn)) {
             const StorageDiscoverMessage& msg = bm->GetExtension(storage_discover_message_extn);
             HandleStorageDiscoverRequest(msg);
 
         }
-
         // Check that we have handled at least one sub-message
         if (handled_extensions == 0)
-            LOG(ERROR) << "Ignored incoming message, no known extension present:"
-            << bm->DebugString();
+          LOG(ERROR) << "Ignored incoming message, no known extension present, "
+                     << "so cannot handle it: " << bm->DebugString();
     }
 
     void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
@@ -297,10 +300,24 @@ Coordinator::Coordinator(PlatformID platform_id)
   }
 }
 
+void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg) {
+  // Send response: the task descriptor if the task is known to this
+  // coordinator
+  VLOG(1) << "Resource " << msg.requesting_resource_id()
+          << " requests task information for " << msg.task_id();
+  TaskDescriptor** task_desc_ptr = FindOrNull(*task_table_, msg.task_id());
+  CHECK_NOTNULL(task_desc_ptr);
+  BaseMessage resp;
+  // XXX(malte): ugly hack!
+  SUBMSG_WRITE(resp, task_info_resp, task_id, msg.task_id());
+  resp.MutableExtension(task_info_resp_extn)->
+      mutable_task_desc()->CopyFrom(**task_desc_ptr);
+  m_adapter_->SendMessageToEndpoint(msg.requesting_endpoint(), resp);
+}
+
 void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
-  LOG(ERROR) << "Unimplemented!";
   // Get the descriptor for the spawning task
-  TaskDescriptor* spawner;
+  TaskDescriptor** spawner;
   CHECK(spawner = FindOrNull(*task_table_, msg.creating_task_id()));
   // Extract new task descriptor from the message received
   TaskDescriptor* spawnee = new TaskDescriptor;

@@ -12,7 +12,7 @@
 namespace firmament {
 
 void task_main(TaskLib* task_lib, TaskID_t task_id,
-               vector<char*>* arg_vec) {
+               vector<char*>*) {
   examples::hello_world::HelloWorldTask t(task_lib, task_id);
   LOG(INFO) << "Called task_main, starting " << t;
   t.Invoke();
