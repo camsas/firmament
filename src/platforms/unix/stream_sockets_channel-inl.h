@@ -179,6 +179,7 @@ const string StreamSocketsChannel<T>::LocalEndpointString() {
       return protocol + address;
     default:
       LOG(FATAL) << "Unknown stream socket type " << type_;
+      return "";
   }
 }
 
@@ -213,6 +214,7 @@ const string StreamSocketsChannel<T>::RemoteEndpointString() {
       return protocol + address;
     default:
       LOG(FATAL) << "Unknown stream socket type " << type_;
+      return ""; 
   }
 }
 

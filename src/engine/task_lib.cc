@@ -219,11 +219,16 @@ void TaskLib::setUpStorageEngine() {
     
     cache->object_list = segment.find<SharedVector_t>("objects");
     cache->capacity = segment.find<size_t>("size"); 
+   
     
     named_mutex mutex_(open_only, cache_name);
     mutex = &mutex_; 
     WriteLock_t cache_lock_(*mutex);
    
+     reference_not_t = 
+                    segment->construct<ReferenceNotification_t>("refnot")();
+     
+    
     //TODO: error handling
     if (cache==NULL) VLOG(1) << "Error: no cache found"; 
     
@@ -282,8 +287,18 @@ void TaskLib::setUpStorageEngine() {
       }
 
   
+   /* Return null if cache is full */
   void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) { 
-    VLOG(3) << "PutObjectStart " << endl ;   
+      VLOG(3) << "PutObjectStart " << endl ;
+      cache_lock->lock(); 
+      if (cache->capacity > size ) cache->capacity-=size; 
+      else { 
+          VLOG(3) << "Fail to create object << id << ". Cache full "; 
+          cache_lock->unlock() ; 
+          return NULL ; 
+      }
+      cache_lock->unlock() ; 
+      
     /* Create file */
     std::ofstream ofs("id", std::ios::binary | std::ios::out);
     ofs.seekp(size - 1);
@@ -296,26 +311,65 @@ void TaskLib::setUpStorageEngine() {
     WriteLock_t lock(mut);  
     lock.lock() ; 
    /* Add it to cache */
-    cache->insert(object); 
+    cache->object_list->push_back(id); 
  
     return address ; 
   }
   
-  /* Release exclusive lock */
-  void TaskLib::PutObjectEnd(DataObjectID_t id) { 
+  /* Tries to extend file by "extend_by" bytes. Returns void if failed 
+   ex: cache full. Find a way to do this without unmapping/remapping the
+   file */
+  void* TaskLib::Extend(DataObjectID_t id, size_t old_size, size_t new_size) {
+      void* address= NULL ;
+      cache_lock->lock(); 
+      size_t extend_by = new_size - old_size; 
+      if (cache->capacity > extend_by ) cache->capacity-=extend_by; 
+      else { 
+          VLOG(3) << "Fail to extend. Cache full "; 
+          cache_lock->unlock() ; 
+          return address ; 
+      }
+      cache_lock->unlock() ; 
+      file_mapping m_file(id, read_write);
+      mapped_region region(m_file, read_write);  
+      region.flush() ;
+      file_mapping::remove(id); 
+      std::ofstream ofs("id", std::ios::binary);
+      ofs.seekp(new_size - 1);
+      ofs.write("", 1);
+     file_mapping m_file(id, read_write);
+     mapped_region region(m_file, read_write);  
+     address = region.getAddress() ;
+     
+     return address ; 
+      
+  }
+  
+  
+  /* Release exclusive lock  - value of size actually written */
+  void TaskLib::PutObjectEnd(DataObjectID_t id, size_t size) { 
       VLOG(3) << "PutObjectEnd " << endl ; 
       file_mapping m_file(id, read_write);
       mapped_region region(m_file, read_write);  
       region.flush() ;
       file_mapping::remove(id); 
       named_mutex mut(open_only, StringFromDataObjectIdMut(id));
-     WriteLock_t lock(mut);  
+      WriteLock_t lock(mut);  
       lock.unlock() ; 
       
       /* Notify Engine that reference is now concrete */
-      
-      
-  }
+      WriteLock_t lock_ref(reference_not_t->mutex);
+      while(!reference_not_t->writable) 
+          reference_not_t->cond_read.wait(lock_ref); 
+      CHECK(writable == true ); 
+      reference_not_t->id = id ; 
+      reference_not_t->writable = false ; 
+      reference_not_t->size = size; 
+      lock_ref.unlock() ;  /* Not sure if this is necessary */
+      reference_not_t->cond_added.notify_one() ; /* Storage engine will be 
+                                      * only one waiting on this */             
+      }  
+ 
   
 
   

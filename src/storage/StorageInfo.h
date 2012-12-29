@@ -49,54 +49,52 @@
 
 
 
-namespace firmament { 
-    namespace store {
-    
-using namespace std ; 
-using platform_unix::streamsockets::StreamSocketsChannel;
-using platform_unix::streamsockets::StreamSocketsAdapter;
+namespace firmament {
+  namespace store {
+
+    using namespace std;
+    using platform_unix::streamsockets::StreamSocketsChannel;
+    using platform_unix::streamsockets::StreamSocketsAdapter;
+
+    class StorageInfo {
+    public:
+      StorageInfo();
+      StorageInfo(const string& node_uri, const string& uuid, const string& coo_uuid, shared_ptr<StreamSocketsChannel<BaseMessage> > chan);
+      StorageInfo(const StorageInfo& orig);
+      ~StorageInfo();
+
+      inline string get_node_uri() {
+        return node_uri;
+      }
+
+      inline string get_coordinator_uuid() {
+        return coordinator_uuid;
+      }
+
+      inline long get_average_rtt() {
+        return average_rtt;
+      }
+
+      inline string get_resource_uuid() {
+        return uuid;
+      }
+
+    private:
+
+      string node_uri; /* Address of node*/
+
+      string uuid; /* Resource ID  */
+
+      string coordinator_uuid; /* UUID of coordinator if known */
+
+      long int average_rtt; /* Average RTT to contact node */
+
+      boost::shared_ptr<StreamSocketsChannel<BaseMessage> > chan;
 
 
+    };
 
-class StorageInfo {
-public:
-    StorageInfo();
-    StorageInfo(const string& node_uri, const string& uuid, const string& coo_uuid, shared_ptr<StreamSocketsChannel<BaseMessage> > chan); 
-    StorageInfo(const StorageInfo& orig);
-     ~StorageInfo();
-    
-    inline string get_node_uri() {
-        return node_uri ; 
-    }
-    
-    inline string get_coordinator_uuid() {
-        return coordinator_uuid; 
-    }
-    
-    inline long get_average_rtt()  { 
-        return average_rtt; 
-    }
-    
-     inline string get_resource_uuid() {
-        return uuid ; 
-    }
-    
-private:
-
-    string node_uri ; /* Address of node*/
-        
-    string uuid ; /* Resource ID  */
-    
-    string coordinator_uuid ; /* UUID of coordinator if known */
-
-    long int average_rtt ; /* Average RTT to contact node */
-    
-    boost::shared_ptr<StreamSocketsChannel<BaseMessage> > chan ; 
-    
-    
-};
-
-} //namespace store
+  } //namespace store
 } //namespace firmament
 
 #endif	/* STORAGEINFO_H */

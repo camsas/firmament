@@ -48,8 +48,10 @@ class AsyncTCPServer : public boost::enable_shared_from_this<AsyncTCPServer>,
     return endpoint_connection_map_[endpoint];
   }
   inline bool listening() { return listening_; }
+  inline string listening_interface() { return listening_interface_ ; } ; 
  private:
   bool listening_;
+  string listening_interface_ ; 
   void StartAccept();
   void HandleAccept(TCPConnection::connection_ptr connection,
                     const boost::system::error_code& error,

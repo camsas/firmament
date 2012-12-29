@@ -1,23 +1,18 @@
 // The Firmament project
 // Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// HeartbeatMessage is a simple keep-alive message that reports on a live
-// resource. It may also trigger registration and fault recovery, although
-// initial registration is triggered explicitly using RegistrationMessage.
+// Task spawn message.
 
 package firmament;
 
+import "base/task_desc.proto";
 import "messages/base_message.proto";
-import "base/resource_desc.proto";
 
 extend BaseMessage {
-  optional HeartbeatMessage heartbeat_extn = 102;
+  optional TaskSpawnMessage task_spawn_extn = 105;
 }
 
-message HeartbeatMessage {
-  required string uuid = 1;
-  optional string location = 2;
-  optional uint64 capacity = 3;
-  optional uint64 load = 4;
-  optional ResourceDescriptor res_desc = 5;
+message TaskSpawnMessage {
+  required uint64 creating_task_id = 1;
+  required TaskDescriptor spawned_task_desc = 2;
 }

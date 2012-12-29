@@ -45,6 +45,7 @@
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/interprocess/sync/sharable_lock.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
 
 namespace firmament {
 
@@ -69,6 +70,7 @@ class TaskLib {
   void GetObjectEnd(DataObjectID_t id ); 
   void* PutObjectStart(DataObjectID_t id, size_t size); 
   void PutObjectEnd(DataObjectID_t id); 
+  void* Extend(DataObjectID_t id, size_t old_size, size_t new_size); 
     
    
  protected:
@@ -96,11 +98,11 @@ class TaskLib {
   
   
   Cache_t* cache ; 
-  string storage_uri ; 
-  
+  string storage_uri ;  
   managed_shared_memory* segment; 
   named_mutex* mutex ;  
   WriteLock_t* cache_lock; 
+  ReferenceNotification_t* reference_not_t ; 
         
 };
 
