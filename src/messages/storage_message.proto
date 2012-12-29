@@ -13,29 +13,26 @@ extend BaseMessage {
 
 /* Should be very rarely used */
 message PutObjectMessage {
-
+   required string uuid = 1 ; 
+   required bytes data = 2 ;  
 }   
 
 message GetObjectMessage {
-  required size_t uuid = 1;
+  required uint64 uuid = 1;
 }
 
 message RequestObjectMessage { 
-  required size_t uuid = 1 ; 
+  required uint64 uuid = 1 ; 
   optional string uri = 2  ; // Check whether this is actually needed
-
-}
-
-
-message ObtainObjectMessage { 
-    required size_t uuid = 1 ; 
-    required void* data  = 2 ; 
 }
 
 message ObtainObjectMessage { 
-    required size_t uuid = 1 ; 
-    required void* data  = 2 ; 
+    required uint64 uuid = 1 ;
+    optional bytes data  = 2 ;  
+    required uint64 size = 3 ;  
+
 }
+
 
 message StorageDiscoverMessage { 
     required string uuid = 1 ; 

@@ -23,57 +23,64 @@
 #include <messages/storage_message.pb.h>
 #include "misc/utils.h"
 
-namespace firmament { 
-    namespace store {
-       
-        using namespace boost::interprocess; 
+namespace firmament {
+  namespace store {
 
-class SimpleObjectStore; 
-class StorageInfo; 
+    using namespace boost::interprocess;
 
-class Cache {
-public:
-    Cache(SimpleObjectStore* obj, size_t size_, const char* cache_name_);
- //   Cache(const Cache& orig);
-    virtual ~Cache();
-    
-    /* For the moment, find out size from object table */
-    void remove_from_cache(DataObjectID_t id) ; 
-    
-    bool write_object_to_cache(const ObtainObjectMessage&  msg);
-    bool write_object_to_cache(DataObjectID_t id);
-    
-    inline size_t getCapacity() { return cache->capacity ; } 
-    inline size_t getSize() { return size ; } 
+    class SimpleObjectStore;
+    class StorageInfo;
 
-    void print_cache() ; 
-private:
-        const char* cache_name ; 
-        const size_t size ; 
-        Cache_t* cache ;
-        SimpleObjectStore* store ;
-        managed_shared_memory* segment; 
-        named_mutex* mutex ; 
-        WriteLock_t* cache_lock; 
-        
-        /* Currently doing LRU but could do anything else*/
-        void make_space_in_cache() ;
-        void create_cache(const char* cache_name) ;
-        
-        void write_object_to_disk(DataObjectID_t id, const char* data, size_t size); 
-        
-        void clearCache() ; 
-        
-        void handle_notification_references(ReferenceNotification_t* ref) ; 
-         
-        
-        
-        
-        
-        
-};
+    class Cache {
+    public:
+      Cache(SimpleObjectStore* obj, size_t size_,  string cache_name_);
+      
+      
+      //   Cache(const Cache& orig);
+      virtual ~Cache();
 
-} //store
+      /* For the moment, find out size from object table */
+      void remove_from_cache(DataObjectID_t id);
+
+      bool write_object_to_cache(const ObtainObjectMessage& msg);
+      bool write_object_to_cache(DataObjectID_t id);
+
+      inline size_t getCapacity() {
+        return cache->capacity;
+      }
+
+      inline size_t getSize() {
+        return size;
+      }
+
+      void print_cache();
+    private:
+      string cache_name;
+      const size_t size;
+      Cache_t* cache;
+      SimpleObjectStore* store;
+      managed_shared_memory* segment;
+      named_mutex* mutex;
+      WriteLock_t* cache_lock;
+
+      /* Currently doing LRU but could do anything else*/
+      void make_space_in_cache();
+      void create_cache(const char* cache_name);
+
+      void write_object_to_disk(DataObjectID_t id, const char* data, size_t size);
+
+      void clearCache();
+
+      void handle_notification_references(ReferenceNotification_t* ref);
+
+
+
+
+
+
+    };
+
+  } //store
 } // firmament
 #endif	/* CACHE_H */
 

@@ -18,6 +18,6 @@ namespace firmament {
 
 
 
-}  // namespace firmament
+} // namespace firmament
 
 #endif  // FIRMAMENT_BASE_REFERENCE_TYPES_H
