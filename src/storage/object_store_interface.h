@@ -28,8 +28,9 @@ namespace firmament {
       }
 
       ReferenceDescriptor* GetReference(DataObjectID_t id) {
-        ReferenceDescriptor* rd = *FindOrNull(*object_table_, id);
-        return rd;
+        ReferenceDescriptor** rd = FindOrNull(*object_table_, id); 
+        if (rd!= NULL) return *rd ;
+        else return NULL;
 
       }
 

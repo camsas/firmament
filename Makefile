@@ -31,7 +31,7 @@ ext: ext/.ext-ok
 ext/.ext-ok:
 	$(SCRIPTS_DIR)/fetch-externals.sh
 
-engine: base platforms misc storage sim
+engine: base storage platforms misc  sim
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
 examples: engine scripts
@@ -46,10 +46,10 @@ sim: base misc
 misc: messages ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/misc all
 
-messages: base ext
+messages:  base ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/messages all
 	
-storage: messages platforms ext 	
+storage: messages ext 	
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/storage all
 
 # N.B.: This currently builds *all* platforms; we probably want a configure

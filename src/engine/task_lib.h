@@ -51,6 +51,7 @@ namespace firmament {
 
 using platform_unix::streamsockets::StreamSocketsAdapter;
 using platform_unix::streamsockets::StreamSocketsChannel;
+using namespace store; 
 
 class TaskLib {
  public:
@@ -69,8 +70,8 @@ class TaskLib {
   void* GetObjectStart(DataObjectID_t id );
   void GetObjectEnd(DataObjectID_t id ); 
   void* PutObjectStart(DataObjectID_t id, size_t size); 
-  void PutObjectEnd(DataObjectID_t id); 
-  void* Extend(DataObjectID_t id, size_t old_size, size_t new_size); 
+  void PutObjectEnd(DataObjectID_t id, size_t size);
+  void* Extend(DataObjectID_t id, size_t old_size, size_t new_size);
     
    
  protected:

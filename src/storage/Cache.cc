@@ -24,10 +24,10 @@ namespace firmament {
     //}
 
     Cache::~Cache() {
-      clearCache();
-      free(cache);
-      named_mutex::remove(cache_name.c_str());
-      shared_memory_object::remove(cache_name.c_str());
+//      clearCache();
+//      free(cache);
+//      named_mutex::remove(cache_name.c_str());
+//      shared_memory_object::remove(cache_name.c_str());
     }
 
         /* Currently using LRU*/
@@ -47,7 +47,7 @@ namespace firmament {
 
         /* TODO: delete other files if this one is locked
          Right now will only block */
-        named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+        named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
         WriteLock_t lock(mut);
         if (!(cleared = lock.try_lock())) {
           VLOG(3) << "Removal failed - Object in use";
@@ -178,7 +178,7 @@ namespace firmament {
 
       ReferenceNotification_t* reference_not_t =
               segment->construct<ReferenceNotification_t > ("refnot")();
-
+      reference_not_t = new ReferenceNotification_t(); 
 
 //      boost::thread t(
 //        boost::bind(
@@ -192,7 +192,7 @@ namespace firmament {
       named_mutex mutex_(open_or_create, cache_name);
       mutex = &mutex_;
 
-      WriteLock_t cache_lock_(*mutex);
+      scoped_lock<named_mutex> cache_lock_(mutex_);
 
       cache_lock = &cache_lock_;
       cache->capacity = *capac;

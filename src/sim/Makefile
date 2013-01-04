@@ -28,5 +28,6 @@ $(OBJ_DIR)/old-main: workload_generator.o ensemble_sim.o task_sim.o job_sim.o sc
 	   $(BUILD_DIR)/sim/event_queue.o \
 	   $(BUILD_DIR)/base/libfirmament_base.a \
 	   $(BUILD_DIR)/misc/libfirmament_misc.a \
+	   $(BUILD_DIR)/storage/libfirmament_storage.a \
 	   -I$(SRC_ROOT_DIR) $(LIBS) \
 	   -o $(BUILD_DIR)/sim/simulation

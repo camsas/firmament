@@ -15,6 +15,7 @@
 
 #include "storage/types.h"
 #include "storage/object_store_interface.h"
+#include "storage/simple_object_store.h"
 
 #include "base/reference_desc.pb.h"
 
@@ -32,6 +33,7 @@
 #include "platforms/unix/stream_sockets_channel-inl.h"
 
 #include "messages/base_message.pb.h"
+#include "messages/storage_message.pb.h"
 #include "base/common.h"
 #include "base/types.h"
 #include "base/job_desc.pb.h"
@@ -43,8 +45,6 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/placeholders.hpp>
 #include "misc/map-util.h"
-#include "Cache.h"
-#include "StorageInfo.h"
 
 
 
@@ -71,7 +71,8 @@ namespace firmament {
       void HandleIncomingReceiveError(const boost::system::error_code& error,
               const string& remote_endpoint);
       void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg);
-
+      void HandleIncomingHeartBeat(const StorageHeartBeatMessage& msg );
+ 
       void setUpCommunication();
       void printTopology();
 
@@ -86,11 +87,17 @@ namespace firmament {
                           */
 
     private:
-      void createSharedBuffer(size_t size);
       shared_ptr<Cache> cache;
-
-    };
-
+      
+      /* Currently only exchange heartbeats with peers*/
+      long int peer_heartbeat_frequency; 
+     
+      void createSharedBuffer(size_t size);
+      void HeartBeatTask();
+      void sendHeartbeat(); 
+   
+    }; 
+    
   } // namespace store
 } // namespace firmament
 

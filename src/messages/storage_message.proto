@@ -9,6 +9,7 @@ extend BaseMessage {
   optional RequestObjectMessage request_object_extn=110; 
   optional ObtainObjectMessage obtain_object_extn=111; 
   optional StorageDiscoverMessage storage_discover_message_extn =112 ; 
+  optional StorageHeartBeatMessage storage_heartbeat_message_extn = 113; 
 }
 
 /* Should be very rarely used */
@@ -38,4 +39,9 @@ message StorageDiscoverMessage {
     required string uuid = 1 ; 
     required string uri =  2 ; 
     required string storage_uri = 3 ; 
+}
+
+message StorageHeartBeatMessage { 
+    required string uuid = 1 ; 
+    
 }

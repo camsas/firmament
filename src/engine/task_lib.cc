@@ -52,7 +52,7 @@ bool TaskLib::ConnectToCoordinator(const string& coordinator_uri) {
 
 void TaskLib::Spawn(const ConcreteReference& code,
                      vector<FutureReference>* outputs) {
-  VLOG(1) << "Spawning a new task; code reference is " << code.desc().id();
+//  VLOG(1) << "Spawning a new task; code reference is " << code.desc().id();
   // Craft a task spawn message for the new task, using a newly created task
   // descriptor.
   BaseMessage msg;
@@ -137,6 +137,7 @@ void TaskLib::RunTask(int argc, char *argv[]) {
   
   setUpStorageEngine() ; 
   boost::thread task_thread(boost::bind(task_main, this, task_id_,
+                                        task_arg_vec));
   task_running_ = true;
   // This will check if the task thread has joined once every heartbeat
   // interval, and go back to sleep if it has not.
@@ -215,20 +216,20 @@ void TaskLib::setUpStorageEngine() {
     /* If local*/
    
     managed_shared_memory segment(open_only,name );
-    Cache_t* cache = new Cache_t ; 
+    Cache_t* cache = new Cache_t(1024) ; 
     
-    cache->object_list = segment.find<SharedVector_t>("objects");
-    cache->capacity = segment.find<size_t>("size"); 
+    cache->object_list = segment.find<SharedVector_t>("objects").first;
+    cache->capacity = *segment.find<size_t>("size").first; 
    
     
-    named_mutex mutex_(open_only, cache_name);
+    named_mutex mutex_(open_only, name);
     mutex = &mutex_; 
-    WriteLock_t cache_lock_(*mutex);
+    scoped_lock<named_mutex> cache_lock_(*mutex);
    
      reference_not_t = 
-                    segment->construct<ReferenceNotification_t>("refnot")();
+                    segment.construct<ReferenceNotification_t>("refnot")();
      
-    
+     
     //TODO: error handling
     if (cache==NULL) VLOG(1) << "Error: no cache found"; 
     
@@ -245,23 +246,23 @@ void TaskLib::setUpStorageEngine() {
   void* TaskLib::GetObjectStart(DataObjectID_t id ) { 
       VLOG(3) << "GetObjectStart " << id << endl ; 
       
-      vector<DataObjectID_t>::iterator result =
+      SharedVector_t::iterator result =
               find(cache->object_list->begin(), cache->object_list->end(), id);
       /* Should only be one result in theory*/
-      if (!result->empty()) { 
-         named_mutex mut(open_only, StringFromDataObjectIdMut(id));
-         ReadLock_t lock(mut);  
-         lock.lock() ; 
-         file_mapping m_file(id, read_only);
+      if (result!=cache->object_list->end()) { 
+         named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
+         ReadLock_t rlock(mut);  
+         rlock.lock() ; 
+         file_mapping m_file(StringFromDataObjectId(id), read_only);
          mapped_region region(m_file, read_only);
-         void* object = region.getAddress() ;
+         void* object = region.get_address() ;
          return object ; 
       }
       else { 
           VLOG(1) << "Object " << id << " was not found in cache. Contacting"
                   "Object Store " << endl ; 
           
-          return null ; 
+          return NULL ; 
           /* Data is not in cache - Let object store do the work */
           
           
@@ -279,9 +280,9 @@ void TaskLib::setUpStorageEngine() {
    void TaskLib::GetObjectEnd(DataObjectID_t id ) { 
        VLOG(3) << "GetObjectEnd " << endl ;  
        /* TODO : very inefficient*/
-       named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+       named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
        ReadLock_t lock(mut);  
-       file_mapping::remove(id); 
+       file_mapping::remove(StringFromDataObjectId(id)); 
        lock.unlock(); 
 
       }
@@ -293,7 +294,7 @@ void TaskLib::setUpStorageEngine() {
       cache_lock->lock(); 
       if (cache->capacity > size ) cache->capacity-=size; 
       else { 
-          VLOG(3) << "Fail to create object << id << ". Cache full "; 
+          VLOG(3) << "Fail to create object" << id << ". Cache full "; 
           cache_lock->unlock() ; 
           return NULL ; 
       }
@@ -304,10 +305,10 @@ void TaskLib::setUpStorageEngine() {
     ofs.seekp(size - 1);
     ofs.write("", 1);
     /* Map it*/
-    file_mapping m_file(id, read_write);
+    file_mapping m_file(StringFromDataObjectId(id), read_write);
     mapped_region region(m_file, read_write);  
-    void* address = region.getAddress() ;
-    named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+    void* address = region.get_address() ;
+    named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
     WriteLock_t lock(mut);  
     lock.lock() ; 
    /* Add it to cache */
@@ -330,16 +331,16 @@ void TaskLib::setUpStorageEngine() {
           return address ; 
       }
       cache_lock->unlock() ; 
-      file_mapping m_file(id, read_write);
+      file_mapping m_file(StringFromDataObjectId(id), read_write);
       mapped_region region(m_file, read_write);  
       region.flush() ;
-      file_mapping::remove(id); 
+      file_mapping::remove(StringFromDataObjectId(id)); 
       std::ofstream ofs("id", std::ios::binary);
       ofs.seekp(new_size - 1);
       ofs.write("", 1);
-     file_mapping m_file(id, read_write);
-     mapped_region region(m_file, read_write);  
-     address = region.getAddress() ;
+      file_mapping m_file2(StringFromDataObjectId(id), read_write);
+      mapped_region region2(m_file, read_write);  
+      address = region2.get_address() ;
      
      return address ; 
       
@@ -349,19 +350,18 @@ void TaskLib::setUpStorageEngine() {
   /* Release exclusive lock  - value of size actually written */
   void TaskLib::PutObjectEnd(DataObjectID_t id, size_t size) { 
       VLOG(3) << "PutObjectEnd " << endl ; 
-      file_mapping m_file(id, read_write);
+      file_mapping m_file(StringFromDataObjectId(id), read_write);
       mapped_region region(m_file, read_write);  
       region.flush() ;
-      file_mapping::remove(id); 
-      named_mutex mut(open_only, StringFromDataObjectIdMut(id));
+      file_mapping::remove(StringFromDataObjectId(id)); 
+      named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
       WriteLock_t lock(mut);  
       lock.unlock() ; 
       
       /* Notify Engine that reference is now concrete */
-      WriteLock_t lock_ref(reference_not_t->mutex);
+      scoped_lock<interprocess_mutex>  lock_ref(reference_not_t->mutex);
       while(!reference_not_t->writable) 
           reference_not_t->cond_read.wait(lock_ref); 
-      CHECK(writable == true ); 
       reference_not_t->id = id ; 
       reference_not_t->writable = false ; 
       reference_not_t->size = size; 

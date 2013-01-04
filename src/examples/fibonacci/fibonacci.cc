@@ -3,7 +3,7 @@
 //
 // Naive fibonacci series computation.
 
-#include "base/reference_types.h"
+#include "storage/reference_types.h"
 #include "examples/fibonacci/fibonacci.h"
 
 #include <iostream>  // NOLINT
