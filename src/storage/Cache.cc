@@ -19,17 +19,15 @@ namespace firmament {
 
     }
 
-    //Cache::Cache(const Cache& orig):cache_name(orig.cache_name), size(orig.size), cache(orig.cache), store(orig.store) {
-    //    
-    //}
 
     Cache::~Cache() {
-//      clearCache();
-//      free(cache);
-//      named_mutex::remove(cache_name.c_str());
-//      shared_memory_object::remove(cache_name.c_str());
+//      if (cache!= NULL)    { 
+//        clearCache();
+//        delete(cache);
+//        named_mutex::remove(cache_name.c_str());
+//        shared_memory_object::remove(cache_name.c_str());
+//      }
     }
-
         /* Currently using LRU*/
     void Cache::make_space_in_cache() {
       VLOG(3) << "Make Space in Cache ";
@@ -201,8 +199,10 @@ namespace firmament {
 
     void Cache::clearCache() {
       VLOG(3) << "Clearing Cache ";
+      if (cache->object_list!=NULL) { 
       while (cache->object_list->empty()) {
         make_space_in_cache();
+      }
       }
     }
 

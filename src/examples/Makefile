@@ -1,6 +1,7 @@
 BINS = hello_world \
        fibonacci \
-       timespin
+       timespin \
+       store_example 
 
 OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
 
