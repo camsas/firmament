@@ -52,6 +52,10 @@ int main(int argc, char* argv[]) {
       reinterpret_cast<dag_capture_header_t*>(dag0_ptr);
   firmament::examples::r2d2::print_header_info("DAG0", head);
 
+  // Special case: count == 0 (means ALL packets)
+  if (count == 0)
+    count = head->samples;
+
   // Set up task and run
   firmament::examples::r2d2::PacketJoinTask t;
   t.Invoke(dag0_ptr, dag1_filename, offset, count);
@@ -83,7 +87,7 @@ void print_header_info(const string& dag_label, dag_capture_header_t* header) {
 }
 
 void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
-                                   uint64_t offset, uint64_t count) {
+                            uint64_t offset, uint64_t count) {
   // Open the dag1 data set
   FILE* fp = fopen(dag1_filename, "r");
   // Allocate buffer for and read header data
@@ -162,7 +166,7 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
       lost_at_dag += sample_buf->value_type_dropped_len.dropped;
     // Progress update every 10000 packets
     if (i % 10000 == 0)
-      VLOG(2) << "Processed " << i << " packets...";
+      VLOG(1) << "Processed " << i << " packets...";
     // One-up, next packet
     i++;
   }
