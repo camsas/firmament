@@ -134,7 +134,8 @@ namespace firmament {
     }
 
     void SimpleObjectStore::createSharedBuffer(size_t size) {
-      string str = ("Cache" + to_string(uuid));
+      string str = ("Cache");
+//      string str = ("Cache" + to_string(uuid));
       cache.reset(new Cache(this, size, str));
 
     }

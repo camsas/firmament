@@ -200,8 +200,8 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       }
       VLOG(1) << "Task process with PID " << pid << " exited with status "
               << WEXITSTATUS(status);
-      if (perf_monitoring)
-        delete perf_prefix;
+//      if (perf_monitoring)
+//        delete perf_prefix;
       return status;
   }
   return -1;

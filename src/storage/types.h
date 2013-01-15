@@ -48,6 +48,8 @@ namespace firmament {
     
     typedef struct cache {
       size_t capacity;
+      
+      size_t size ; 
       //       offset_ptr<SharedVector_t> ; 
       SharedVector_t* object_list;
 

@@ -15,7 +15,9 @@ namespace hello_world {
 class HelloWorldTask : public TaskInterface {
  public:
   explicit HelloWorldTask(TaskLib* task_lib, TaskID_t task_id)
-    : TaskInterface(task_lib, task_id) {}
+    : 
+ 
+   TaskInterface(task_lib, task_id) {   VLOG(3) << "Calling HellowWorldTask" << endl ;}
   void Invoke();
 };
 

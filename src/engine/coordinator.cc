@@ -391,6 +391,8 @@ void Coordinator::AddJobsTasksToTaskTable(
       VLOG(1) << "Output " << output_iter->id() << " already exists in "
               << "local object table. Not adding again.";
     }
+    if (object_store_->GetReference(output_iter->id())!=NULL) VLOG(3) << "Object is indeed in object store " << endl; 
+    else VLOG(3) << "Error Object is not in object store " << endl ; 
   }
   for (RepeatedField<DataObjectID_t>::const_iterator output_iter =
        new_jd->output_ids().begin();

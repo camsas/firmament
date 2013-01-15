@@ -19,50 +19,58 @@ namespace firmament {
 
     }
 
-
     Cache::~Cache() {
-//      if (cache!= NULL)    { 
-//        clearCache();
-//        delete(cache);
-//        named_mutex::remove(cache_name.c_str());
-//        shared_memory_object::remove(cache_name.c_str());
-//      }
+      //      if (cache!= NULL)    { 
+      //        clearCache();
+      //        delete(cache);
+      //        named_mutex::remove(cache_name.c_str());
+      //        shared_memory_object::remove(cache_name.c_str());
+      //      }
     }
-        /* Currently using LRU*/
+
+    /* Currently using LRU*/
     void Cache::make_space_in_cache() {
       VLOG(3) << "Make Space in Cache ";
       /* Identify object to remove */
       SharedVector_t::iterator it = cache->object_list->begin();
       bool cleared = false;
+      try {
+        while (cleared != true || it != cache->object_list->end()) {
+          DataObjectID_t id = *it;
+          ReferenceDescriptor* rd = store->GetReference(id);
+          size_t size = rd->size();
+          cache_lock->lock();
 
-      while (cleared != true || it != cache->object_list->end()) {
-        DataObjectID_t id = *it;
-        ReferenceDescriptor* rd = store->GetReference(id);
-        size_t size = rd->size();
-        cache_lock->lock();
+          VLOG(3) << "Trying to remove Object UUID: " << id;
 
-        VLOG(3) << "Trying to remove Object UUID: " << id;
+          /* TODO: delete other files if this one is locked
+           Right now will only block */
 
-        /* TODO: delete other files if this one is locked
-         Right now will only block */
-        named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
-        WriteLock_t lock(mut);
-        if (!(cleared = lock.try_lock())) {
-          VLOG(3) << "Removal failed - Object in use";
-          it++;
-          continue;
+          named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
+
+          WriteLock_t lock(mut);
+
+          if (!(cleared = lock.try_lock())) {
+            VLOG(3) << "Removal failed - Object in use";
+            it++;
+            continue;
+          }
+
+          file_mapping m_file(StringFromDataObjectId(id), read_only);
+          mapped_region region(m_file, read_only);
+          region.flush();
+          file_mapping::remove(StringFromDataObjectId(id));
+
+          cache->object_list->erase(cache->object_list->begin()); /* LRU */
+          lock.unlock();
+          named_mutex::remove(StringFromDataObjectIdMut(id));
+
+          cache->capacity += size;
+          cache_lock->unlock();
+          VLOG(3) << "Object Successfully Removed";
         }
-        file_mapping m_file(StringFromDataObjectId(id), read_only);
-        mapped_region region(m_file, read_only);
-        region.flush();
-        file_mapping::remove(StringFromDataObjectId(id));
-        /*Erase from cache before releasing lock*/
-        cache->object_list->erase(cache->object_list->begin()); /* LRU */
-        lock.unlock();
-        named_mutex::remove(StringFromDataObjectIdMut(id));
-        cache->capacity += size;
-        cache_lock->unlock();
-        VLOG(3) << "Object Successfully Removed";
+      } catch (interprocess_exception& e) {
+        VLOG(1) << "Error: make_space_in_cache" << endl;
       }
     }
 
@@ -90,30 +98,37 @@ namespace firmament {
 
       VLOG(3) << "Writing Object " << id << " to Cache from disk";
 
-      ReferenceDescriptor* rd = store->GetReference(id);
+      try {
+        ReferenceDescriptor* rd = store->GetReference(id);
 
-      size_t size = rd->size();
-      //TODO concurrency control 
+        size_t size = rd->size();
+        //TODO concurrency control 
 
-      cache_lock->lock();
-      if (cache->capacity >= size) {
+        cache_lock->lock();
+        if (cache->capacity >= size) {
 
-        cache->capacity -= size;
+          cache->capacity -= size;
 
-        /* Map File Read Only */
-        file_mapping m_file(StringFromDataObjectId(id), read_only);
-        mapped_region region(m_file, read_only);
+          /* Map File Read Only */
 
-        /* Create mutex */
-        named_mutex mutex(open_or_create, StringFromDataObjectIdMut(id));
+          file_mapping m_file(StringFromDataObjectId(id), read_only);
+          mapped_region region(m_file, read_only);
 
-        cache->object_list->push_back(id);
+          /* Create mutex */
+          named_mutex mutex(open_or_create, StringFromDataObjectIdMut(id));
 
-        return true;
+          cache->object_list->push_back(id);
+
+          return true;
+        }
+        cache_lock->unlock();
+
+        make_space_in_cache();
+
+      } catch (interprocess_exception& e) {
+        VLOG(1) << "Writing Object " << endl;
       }
-      cache_lock->unlock();
 
-      make_space_in_cache();
       return false;
 
 
@@ -146,63 +161,79 @@ namespace firmament {
 
 
     void Cache::create_cache(const char* cache_name) {
-      VLOG(3) << "Creating Cache " << cache_name;
+      VLOG(3) << "Creating cache " << cache_name << endl;
       /* Ensure no existing cache exists */
 
-      shared_memory_object::remove(cache_name);
+      try {
+        shared_memory_object::remove(cache_name);
 
-      size_t cache_n = 1024; /* This is not the size of the cache
+        size_t cache_n = 1024; /* This is not the size of the cache
                                    * but the number of max items we allow
                                    TODO: add it as parameter
                                    */
-      size_t cache_size = sizeof (ReferenceNotification_t) + sizeof (size_t) +
-              sizeof (vector<DataObjectID_t>) + sizeof (DataObjectID_t) * cache_n;
+        size_t cache_size = sizeof (ReferenceNotification_t) + sizeof (size_t) +
+                sizeof (vector<DataObjectID_t>) + sizeof (DataObjectID_t) * cache_n;
 
-      managed_shared_memory segment_(create_only, cache_name, cache_size);
+        managed_shared_memory segment_(create_only, cache_name, cache_size);
 
-      segment = &segment_;
+        segment = &segment_;
 
-      const SharedmemAllocator_t alloc_inst(segment->get_segment_manager());
+        const SharedmemAllocator_t alloc_inst(segment->get_segment_manager());
 
-      SharedVector_t *vec =
-              segment->construct<SharedVector_t > ("objects")(alloc_inst);
-      size_t* capac =
-              segment->construct<size_t > ("size")(size);
+        SharedVector_t *vec =
+                segment->construct<SharedVector_t > ("objects")(alloc_inst);
+        size_t* capac =
+                segment->construct<size_t > ("capacity")(size);
+        
+        size_t* size_ =  segment->construct<size_t >("size")(size);
 
 
 
 
-      /* Temporary Hack until I implement cleaner memory channel */
+        /* Temporary Hack until I implement cleaner memory channel */
 
-      ReferenceNotification_t* reference_not_t =
-              segment->construct<ReferenceNotification_t > ("refnot")();
-      reference_not_t = new ReferenceNotification_t(); 
+        ReferenceNotification_t* reference_not_t =
+                segment->construct<ReferenceNotification_t > ("refnot")();
+        reference_not_t = new ReferenceNotification_t();
 
-//      boost::thread t(
-//        boost::bind(
-//        boost::mem_fn(&Cache::handle_notification_references), this, _1)(
-//              reference_not_t));
-      
-      boost::thread t(&Cache::handle_notification_references, *this, reference_not_t); 
+        //      boost::thread t(
+        //        boost::bind(
+        //        boost::mem_fn(&Cache::handle_notification_references), this, _1)(
+        //              reference_not_t));
 
-      /* End of Hack */
+        boost::thread t(&Cache::handle_notification_references, *this, reference_not_t);
 
-      named_mutex mutex_(open_or_create, cache_name);
-      mutex = &mutex_;
+        /* End of Hack */
 
-      scoped_lock<named_mutex> cache_lock_(mutex_);
+        VLOG(3) << "Acquiring Cache name  mutex" << endl;
 
-      cache_lock = &cache_lock_;
-      cache->capacity = *capac;
-      cache->object_list = vec;
+        named_mutex mutex_(open_or_create, cache_name);
+
+        VLOG(3) << "Acquired Cache name mutex " << endl;
+
+        mutex = &mutex_;
+
+        scoped_lock<named_mutex> cache_lock_(mutex_, defer_lock);
+        
+        VLOG(3) << "Created Cache lock " << endl ; 
+        
+        cache_lock = &cache_lock_;
+        cache->capacity = *capac;
+        cache->size = *size_ ; 
+        cache->object_list = vec;
+      } catch (interprocess_exception& e) {
+        VLOG(1) << "Error: creating cache " << endl;
+      }
+
+      VLOG(3) << "Cache created successfully " << cache_name << endl;
     }
 
     void Cache::clearCache() {
       VLOG(3) << "Clearing Cache ";
-      if (cache->object_list!=NULL) { 
-      while (cache->object_list->empty()) {
-        make_space_in_cache();
-      }
+      if (cache->object_list != NULL) {
+        while (cache->object_list->empty()) {
+          make_space_in_cache();
+        }
       }
     }
 
@@ -211,13 +242,19 @@ namespace firmament {
 
       VLOG(3) << "Setting up thread to handle notifications references";
 
+      try {
       while (true) {
+        VLOG(3) << "Acquiring lock" << endl;
         scoped_lock<interprocess_mutex> lock(ref->mutex);
-        while (ref->writable) ref->cond_added.wait(lock);
+        VLOG(3) << "Acquired lock" << endl;
+        while (ref->writable) {
+          VLOG(3) << "Waiting for reference to become readable " << endl;
+          ref->cond_added.wait(lock);
+        }
         DataObjectID_t id = ref->id;
-        ReferenceDescriptor* rd = store->GetReference(id); 
+        ReferenceDescriptor* rd = store->GetReference(id);
         switch (rd->type()) {
-          case (ReferenceDescriptor::CONCRETE): 
+          case (ReferenceDescriptor::CONCRETE):
           {
             /* Was already concrete. Add 
              this location to reference
@@ -226,24 +263,24 @@ namespace firmament {
             rd->add_location(store->get_listening_interface());
           }
             break;
-          
+
           case (ReferenceDescriptor::FUTURE):
           {
             /* Was future. Make Concrete now*/
             VLOG(3) << "Reference was a future. Making concrete ";
-            set<string> loc; 
+            set<string> loc;
             loc.insert(store->get_listening_interface());
             ConcreteReference* conc_ref = new ConcreteReference(id, ref->size, loc);
             rd = new ReferenceDescriptor(conc_ref->desc());
           }
             break;
-          
-          default:  
+
+          default:
           {
-             VLOG(1) << "Unimplemented "; 
-          } 
-            break; 
-          
+            VLOG(1) << "Unimplemented ";
+          }
+            break;
+
         }
         ref->writable = true;
         lock.unlock();
@@ -251,6 +288,9 @@ namespace firmament {
                                                * will be able to write */
 
       }
+      } catch (interprocess_exception& e) { 
+          VLOG(1) << "Handling Notification Reference Error " << endl ; 
+        }
 
     }
 

@@ -15,7 +15,6 @@
 
 #include "storage/types.h"
 #include "storage/object_store_interface.h"
-#include "storage/simple_object_store.h"
 
 #include "base/reference_desc.pb.h"
 
