@@ -17,7 +17,7 @@ namespace store {
 class ObjectStoreInterface : public PrintableInterface {
  public:
   virtual void PutObject(DataObjectID_t id, void* data, size_t len) = 0;
-  virtual bool GetObject(DataObjectID_t id, void*, size_t* len) = 0;
+  virtual void* GetObject(DataObjectID_t id) = 0;
   virtual ostream& ToString(ostream* stream) const = 0;
  protected:
 };

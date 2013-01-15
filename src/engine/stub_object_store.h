@@ -20,14 +20,17 @@ namespace store {
 class StubObjectStore : public ObjectStoreInterface {
  public:
   StubObjectStore();
+  void* GetObject(DataObjectID_t id);
+  uint64_t Flush();
   void PutObject(DataObjectID_t id, void* data, size_t len);
-  bool GetObject(DataObjectID_t id, void*, size_t* len);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<StubObjectStore, containing "
                    << stub_object_map_.size() << " objects>";
   }
  protected:
-  map<DataObjectID_t, string> stub_object_map_;
+  map<DataObjectID_t, char*> stub_object_map_;
+ private:
+  FRIEND_TEST(StubObjectStoreTest, PutObjectTest);
 };
 
 }  // namespace store
