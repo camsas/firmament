@@ -185,9 +185,7 @@ namespace firmament {
         size_t cache_size = sizeof (ReferenceNotification_t) + sizeof (size_t) +
                 sizeof (vector<DataObjectID_t>) + sizeof (DataObjectID_t) * cache_n;
       
-        managed_shared_memory segment_(create_only, cache_name, cache_size);
-
-        segment = &segment_;
+        managed_shared_memory* segment = new managed_shared_memory(create_only, cache_name, cache_size);
 
         const SharedmemAllocator_t alloc_inst(segment->get_segment_manager());
 
