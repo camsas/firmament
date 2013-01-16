@@ -219,7 +219,7 @@ namespace firmament {
       
       managed_shared_memory segment(open_only, name);
 
-      Cache_t* cache = new Cache_t(0);
+      cache = new Cache_t(0);
 
       cache->object_list = segment.find<SharedVector_t > ("objects").first;
       cache->capacity = *segment.find<size_t > ("capacity").first;
@@ -228,8 +228,10 @@ namespace firmament {
       named_mutex mutex_(open_only, name);
 
       mutex = &mutex_;
-      scoped_lock<named_mutex> cache_lock_(mutex_, defer_lock);
+      scoped_lock<named_mutex> cache_lock_(*mutex, defer_lock);
 
+      cache_lock=&cache_lock_ ; 
+      
       reference_not_t =
              segment.find<ReferenceNotification_t >("refnot").first;
 
@@ -307,7 +309,7 @@ namespace firmament {
   void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
     try {
       cout << "PutObjectStart " << endl;
-      cache_lock->lock();
+      while(!cache_lock->try_lock()) { cout << "Failed to acquire lock " ;}
       cout << "Cache Log acquired " << endl ; 
       if (cache->capacity > size) cache->capacity -= size;
       else {

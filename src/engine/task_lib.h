@@ -73,7 +73,12 @@ class TaskLib {
   void PutObjectEnd(DataObjectID_t id, size_t size);
   void* Extend(DataObjectID_t id, size_t old_size, size_t new_size);
     
-   
+  Cache_t* getCache() { 
+    return cache ; 
+  }
+
+  
+  
  protected:
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
   shared_ptr<StreamSocketsChannel<BaseMessage> > chan_;
@@ -92,6 +97,8 @@ class TaskLib {
 
   void setUpStorageEngine() ; 
   
+  
+  
  private:
   bool task_error_;
   bool task_running_;
@@ -102,8 +109,10 @@ class TaskLib {
   string storage_uri ;  
   managed_shared_memory* segment; 
   named_mutex* mutex ;  
-  WriteLock_t* cache_lock; 
+  scoped_lock<named_mutex>* cache_lock; 
   ReferenceNotification_t* reference_not_t ; 
+  
+  
         
 };
 
