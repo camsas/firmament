@@ -348,7 +348,7 @@ namespace firmament {
       file_mapping m_file(file_name.c_str(), read_write);
       mapped_region region(m_file, read_write, 0, size);
 
-      cout << "File Mapped " << endl;
+      cout << "File Mapped  of size " << region.get_size() << endl;
       void* address = region.get_address();
 
 
