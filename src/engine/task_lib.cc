@@ -217,13 +217,14 @@ namespace firmament {
       /* If local*/
 
 
-      managed_shared_memory segment(open_only, name);
+      managed_shared_memory* segment = new managed_shared_memory(open_only, name);
 
       cache = new Cache_t(0);
 
-      cache->object_list = segment.find<SharedVector_t > ("objects").first;
-      cache->capacity = *segment.find<size_t > ("capacity").first;
-      cache->size = *segment.find<size_t > ("size").first;
+      cache->object_list = segment->find<SharedVector_t >("objects").first;
+      
+      cache->capacity = *segment->find<size_t >("capacity").first;
+      cache->size = *segment->find<size_t>("size").first;
 
       // named_mutex mutex_(open_only, name);
 
@@ -236,7 +237,7 @@ namespace firmament {
       to guarantee lock persistence across functions. */
 
       reference_not_t =
-              segment.find<ReferenceNotification_t > ("refnot").first;
+              segment->find<ReferenceNotification_t > ("refnot").first;
 
       cout << "Cache created with capacity: " << cache->capacity << " size " << cache->size << endl;
 
@@ -302,10 +303,11 @@ namespace firmament {
       /* TODO : very inefficient*/
       string mut_name_s = boost::lexical_cast<string > (id) + "mut";
       named_upgradable_mutex mut(open_only, mut_name_s.c_str());
-      ReadLock_t lock(mut, defer_lock);
+      ReadLock_t lock(mut, accept_ownership);
       //      string nm = boost::lexical_cast<string>(id); 
       //      file_mapping::remove(nm.c_str());
       lock.unlock();
+      
     } catch (interprocess_exception& e) {
       cout << "Error: GetObjectEnd " << endl;
       cout << "Error: " << e.what();
@@ -323,8 +325,6 @@ namespace firmament {
       //      while(!cache_locks.try_lock()) { cout << "Lock is owned by someone " << endl ; }
 
       cache_lock->lock();
-      cout << "Lock acquired " << endl;
-
       if (cache->capacity > size) cache->capacity -= size;
       else {
         cout << "Fail to create object" << id << ". Cache full ";
@@ -362,13 +362,16 @@ namespace firmament {
 
       cout << "Mutex created " << endl;
 
-      WriteLock_t lock(mut);
-
+      /* Don't think this is correct. Find source of deadlock
+       * Should be able to simply do WriteLock_t lock(mut) */
+      WriteLock_t lock(mut, accept_ownership);
+      
       cout << "Lock created " << endl;
       cout << " Write lock acquired on file " << endl;
       /* Add it to cache */
       cache->object_list->push_back(id);
-      cout << "Added list to cache , New capacity " << cache->capacity << endl;
+      cout << "Added list to cache << endl "; 
+      cout << " New capacity " << cache->capacity << endl;
       return address;
     } catch (interprocess_exception& e) {
       cout << "Error: PutObjectStart " << endl;
@@ -420,7 +423,7 @@ namespace firmament {
       file_mapping::remove(file_name.c_str());
       file_name += "mut";
       named_upgradable_mutex mut(open_only, file_name.c_str());
-      WriteLock_t lock(mut);
+      WriteLock_t lock(mut, accept_ownership);
       lock.unlock();
 
       /* Notify Engine that reference is now concrete */

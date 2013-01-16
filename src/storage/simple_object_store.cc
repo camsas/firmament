@@ -78,7 +78,7 @@ namespace firmament {
 
     void SimpleObjectStore::HandleIncomingHeartBeat(const StorageHeartBeatMessage& msg ) { 
       
-      VLOG(3) << "Handle Incoming HeartBeat Message "; 
+      VLOG(1) << "Handle Incoming HeartBeat Message "; 
       
 
     }

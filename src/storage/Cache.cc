@@ -50,7 +50,7 @@ namespace firmament {
           string mutex_name = file_name + "mut"; 
           named_upgradable_mutex mut(open_only, mutex_name.c_str());
 
-          WriteLock_t lock(mut);
+          WriteLock_t lock(mut, defer_lock);
 
           if (!(cleared = lock.try_lock())) {
             VLOG(3) << "Removal failed - Object in use";
@@ -61,7 +61,7 @@ namespace firmament {
           file_mapping m_file(file_name.c_str(), read_only);
           mapped_region region(m_file, read_only);
           region.flush();
-          file_mapping::remove(file_name.c_str());
+      //    file_mapping::remove(file_name.c_str());
 
           cache->object_list->erase(cache->object_list->begin()); /* LRU */
           lock.unlock();
