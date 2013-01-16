@@ -205,7 +205,7 @@ namespace firmament {
      Also need */
     try {
       const char* name = "Cache";
-      
+
       //    StorageDiscoverMessage* msg = new StorageDiscoverMessage() ; 
       //    
       //    msg->set_uuid(resource_id_) ; 
@@ -216,7 +216,7 @@ namespace firmament {
 
       /* If local*/
 
-      
+
       managed_shared_memory segment(open_only, name);
 
       cache = new Cache_t(0);
@@ -225,20 +225,23 @@ namespace firmament {
       cache->capacity = *segment.find<size_t > ("capacity").first;
       cache->size = *segment.find<size_t > ("size").first;
 
-      named_mutex mutex_(open_only, name);
+      // named_mutex mutex_(open_only, name);
 
-      mutex = &mutex_;
-      scoped_lock<named_mutex> cache_lock_(*mutex, defer_lock);
+      //  named_mutex::remove(name); 
+      mutex = new named_mutex(open_only, name);
+      cache_lock = new scoped_lock<named_mutex > (*mutex, defer_lock);
 
-      cache_lock=&cache_lock_ ; 
-      
+      /* This is wrong because of stack allocation,
+       *  but need to find alternative way 
+      to guarantee lock persistence across functions. */
+
       reference_not_t =
-             segment.find<ReferenceNotification_t >("refnot").first;
+              segment.find<ReferenceNotification_t > ("refnot").first;
 
-      cout<< "Cache created with capacity: " << cache->capacity << " size " << cache->size <<endl ; 
-      
+      cout << "Cache created with capacity: " << cache->capacity << " size " << cache->size << endl;
+
     } catch (interprocess_exception& e) {
-      cout << "Error: " << e.what() << endl ; 
+      cout << "Error: " << e.what() << endl;
       cout << "Error: storage engine coudn't be initialised (TaskLib) " << endl;
     }
     /* Else if not local - not implemented*/
@@ -253,22 +256,24 @@ namespace firmament {
     cout << "GetObjectStart " << id << endl;
     try {
 
-      cout << "Cache Capacity " << cache->capacity << " Cache size " << cache->size  << endl; 
-      
-      if (cache->capacity!=cache->size) {
-              SharedVector_t::iterator result =
-              find(cache->object_list->begin(), cache->object_list->end(), id);
-      /* Should only be one result in theory*/
-        cout  << "Object " << id << " was  found in cache." <<endl ;
-        named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
+      cout << "Cache Capacity " << cache->capacity << " Cache size " << cache->size << endl;
+      string nm = boost::lexical_cast<string > (id);
+      if (cache->capacity != cache->size) {
+        SharedVector_t::iterator result =
+                find(cache->object_list->begin(), cache->object_list->end(), id);
+        /* Should only be one result in theory*/
+        cout << "Object " << id << " was  found in cache." << endl;
+
+        named_upgradable_mutex mut(open_only, nm.c_str());
         ReadLock_t rlock(mut);
         rlock.lock();
-        file_mapping m_file(StringFromDataObjectId(id), read_only);
+
+        file_mapping m_file(nm.c_str(), read_only);
         mapped_region region(m_file, read_only);
         void* object = region.get_address();
         return object;
       } else {
-        cout  << "Object " << id << " was not found in cache. Contacting "
+        cout << "Object " << id << " was not found in cache. Contacting "
                 "Object Store " << endl;
 
         return NULL;
@@ -282,7 +287,7 @@ namespace firmament {
 
         /* Non local - Not implemented */
       }
-      
+
     } catch (interprocess_exception& e) {
       cout << "Error: GetObjectStart " << endl;
     }
@@ -292,15 +297,18 @@ namespace firmament {
 
   /* Releases shared read lock */
   void TaskLib::GetObjectEnd(DataObjectID_t id) {
-    VLOG(3) << "GetObjectEnd " << endl;
+    cout << "GetObjectEnd " << endl;
     try {
       /* TODO : very inefficient*/
-      named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
-      ReadLock_t lock(mut);
-      file_mapping::remove(StringFromDataObjectId(id));
+      string mut_name_s = boost::lexical_cast<string > (id) + "mut";
+      named_upgradable_mutex mut(open_only, mut_name_s.c_str());
+      ReadLock_t lock(mut, defer_lock);
+      //      string nm = boost::lexical_cast<string>(id); 
+      //      file_mapping::remove(nm.c_str());
       lock.unlock();
     } catch (interprocess_exception& e) {
-      VLOG(1) << "Error: GetObjectEnd " << endl;
+      cout << "Error: GetObjectEnd " << endl;
+      cout << "Error: " << e.what();
     }
 
   }
@@ -309,8 +317,14 @@ namespace firmament {
   void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
     try {
       cout << "PutObjectStart " << endl;
-      while(!cache_lock->try_lock()) { cout << "Failed to acquire lock " ;}
-      cout << "Cache Log acquired " << endl ; 
+      /* TODO: replace with reference to cache_lock */
+      //      named_mutex mutex_(open_only, "Cache");
+      //      scoped_lock<named_mutex> cache_locks(mutex_, defer_lock);
+      //      while(!cache_locks.try_lock()) { cout << "Lock is owned by someone " << endl ; }
+
+      cache_lock->lock();
+      cout << "Lock acquired " << endl;
+
       if (cache->capacity > size) cache->capacity -= size;
       else {
         cout << "Fail to create object" << id << ". Cache full ";
@@ -319,24 +333,46 @@ namespace firmament {
       }
       cache_lock->unlock();
 
+
+      string file_name = boost::lexical_cast<string > (id);
+
       /* Create file */
-      std::ofstream ofs("id", std::ios::binary | std::ios::out);
+      std::ofstream ofs(file_name.c_str(), std::ios::binary | std::ios::out);
       ofs.seekp(size - 1);
       ofs.write("", 1);
       /* Map it*/
-      file_mapping m_file(StringFromDataObjectId(id), read_write);
-      mapped_region region(m_file, read_write);
+
+      permissions permission;
+      permission.set_unrestricted();
+
+      file_mapping m_file(file_name.c_str(), read_write);
+      mapped_region region(m_file, read_write, 0, size);
+
+      cout << "File Mapped " << endl;
       void* address = region.get_address();
-      named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
+
+
+      /* This doesn't seem to work Illegal Argument returned*/
+      //  named_upgradable_mutex mut(open_or_create, StringFromDataObjectIdMut(id), permission); 
+
+      /* Temp fix*/
+
+      string mut_name_s = boost::lexical_cast<string > (id) + "mut";
+      named_upgradable_mutex mut(open_or_create, mut_name_s.c_str(), permission);
+
+      cout << "Mutex created " << endl;
+
       WriteLock_t lock(mut);
-      lock.lock();
+
+      cout << "Lock created " << endl;
+      cout << " Write lock acquired on file " << endl;
       /* Add it to cache */
       cache->object_list->push_back(id);
-
+      cout << "Added list to cache , New capacity " << cache->capacity << endl;
       return address;
     } catch (interprocess_exception& e) {
-      VLOG(1) << "Error: PutObjectStart " << endl;
-
+      cout << "Error: PutObjectStart " << endl;
+      cout << "Error: " << e.what() << endl;
     }
     return NULL;
   }
@@ -346,6 +382,8 @@ namespace firmament {
    file */
   void* TaskLib::Extend(DataObjectID_t id, size_t old_size, size_t new_size) {
     void* address = NULL;
+    //    named_mutex mutex_(open_only, "Cache");
+    //    scoped_lock<named_mutex> cache_locks(mutex_); 
     cache_lock->lock();
     size_t extend_by = new_size - old_size;
     if (cache->capacity > extend_by) cache->capacity -= extend_by;
@@ -355,14 +393,15 @@ namespace firmament {
       return address;
     }
     cache_lock->unlock();
-    file_mapping m_file(StringFromDataObjectId(id), read_write);
+    string file_name = boost::lexical_cast<string > (id);
+    file_mapping m_file(file_name.c_str(), read_write);
     mapped_region region(m_file, read_write);
     region.flush();
-    file_mapping::remove(StringFromDataObjectId(id));
-    std::ofstream ofs("id", std::ios::binary);
+    file_mapping::remove(file_name.c_str());
+    std::ofstream ofs(file_name.c_str(), std::ios::binary);
     ofs.seekp(new_size - 1);
     ofs.write("", 1);
-    file_mapping m_file2(StringFromDataObjectId(id), read_write);
+    file_mapping m_file2(file_name.c_str(), read_write);
     mapped_region region2(m_file, read_write);
     address = region2.get_address();
 
@@ -372,13 +411,15 @@ namespace firmament {
 
   /* Release exclusive lock  - value of size actually written */
   void TaskLib::PutObjectEnd(DataObjectID_t id, size_t size) {
-    VLOG(3) << "PutObjectEnd " << endl;
+    cout << "PutObjectEnd " << endl;
     try {
-      file_mapping m_file(StringFromDataObjectId(id), read_write);
+      string file_name = boost::lexical_cast<string > (id);
+      file_mapping m_file(file_name.c_str(), read_write);
       mapped_region region(m_file, read_write);
       region.flush();
-      file_mapping::remove(StringFromDataObjectId(id));
-      named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
+      file_mapping::remove(file_name.c_str());
+      file_name += "mut";
+      named_upgradable_mutex mut(open_only, file_name.c_str());
       WriteLock_t lock(mut);
       lock.unlock();
 

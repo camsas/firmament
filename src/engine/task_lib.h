@@ -77,6 +77,9 @@ class TaskLib {
     return cache ; 
   }
 
+
+  
+  
   
   
  protected:
@@ -98,7 +101,7 @@ class TaskLib {
   void setUpStorageEngine() ; 
   
   
-  
+
  private:
   bool task_error_;
   bool task_running_;
@@ -108,7 +111,7 @@ class TaskLib {
   Cache_t* cache ; 
   string storage_uri ;  
   managed_shared_memory* segment; 
-  named_mutex* mutex ;  
+  named_mutex* mutex;  
   scoped_lock<named_mutex>* cache_lock; 
   ReferenceNotification_t* reference_not_t ; 
   

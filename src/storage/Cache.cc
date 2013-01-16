@@ -46,7 +46,9 @@ namespace firmament {
           /* TODO: delete other files if this one is locked
            Right now will only block */
 
-          named_upgradable_mutex mut(open_only, StringFromDataObjectIdMut(id));
+          string file_name = boost::lexical_cast<string>(id); 
+          string mutex_name = file_name + "mut"; 
+          named_upgradable_mutex mut(open_only, mutex_name.c_str());
 
           WriteLock_t lock(mut);
 
@@ -56,14 +58,15 @@ namespace firmament {
             continue;
           }
 
-          file_mapping m_file(StringFromDataObjectId(id), read_only);
+          file_mapping m_file(file_name.c_str(), read_only);
           mapped_region region(m_file, read_only);
           region.flush();
-          file_mapping::remove(StringFromDataObjectId(id));
+          file_mapping::remove(file_name.c_str());
 
           cache->object_list->erase(cache->object_list->begin()); /* LRU */
           lock.unlock();
-          named_mutex::remove(StringFromDataObjectIdMut(id));
+          
+          named_mutex::remove(mutex_name.c_str());
 
           cache->capacity += size;
           cache_lock->unlock();
@@ -84,7 +87,10 @@ namespace firmament {
       const string& data = msg.data();
       size_t size = msg.size();
       ofstream os;
-      os.open(StringFromDataObjectId(id), ios::binary);
+       string file_name =  boost::lexical_cast<string>(id); 
+
+      os.open(file_name.c_str(), ios::binary|ios::out);
+      /* TODO change to more efficient way */
       os.write(data.c_str(), size);
       os.close();
 
@@ -111,11 +117,15 @@ namespace firmament {
 
           /* Map File Read Only */
 
-          file_mapping m_file(StringFromDataObjectId(id), read_only);
+          string mut_name_s =  boost::lexical_cast<string>(id); 
+
+                    
+          file_mapping m_file(mut_name_s.c_str(), read_only);
           mapped_region region(m_file, read_only);
 
           /* Create mutex */
-          named_mutex mutex(open_or_create, StringFromDataObjectIdMut(id));
+          mut_name_s+="mut" ;
+          named_mutex mutex(open_or_create, mut_name_s.c_str());
 
           cache->object_list->push_back(id);
 
@@ -138,7 +148,8 @@ namespace firmament {
     /* From File on disk */
     void Cache::write_object_to_disk(DataObjectID_t id, const char* data, size_t size) {
       VLOG(3) << "Writing Object " << id << " to disk ";
-      ofstream os(StringFromDataObjectId(id));
+      string file_name = boost::lexical_cast<string>(id); 
+      ofstream os(file_name.c_str(), std::ios::binary | std::ios::out);
       os.write(data, size);
       os.close();
 
@@ -173,7 +184,7 @@ namespace firmament {
                                    */
         size_t cache_size = sizeof (ReferenceNotification_t) + sizeof (size_t) +
                 sizeof (vector<DataObjectID_t>) + sizeof (DataObjectID_t) * cache_n;
-
+      
         managed_shared_memory segment_(create_only, cache_name, cache_size);
 
         segment = &segment_;

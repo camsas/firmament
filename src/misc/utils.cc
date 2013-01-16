@@ -95,29 +95,6 @@ DataObjectID_t DataObjectIDFromString(const string& str) {
   return object_id;
 }
 
-const char* StringFromDataObjectId(DataObjectID_t id) {
-  // XXX(malte): possibly unsafe use of atol() here.
-  string str= boost::lexical_cast<string>(id);
-  return str.c_str(); 
-}
-const char* StringFromDataObjectIdMut(DataObjectID_t id) {
-  // XXX(malte): possibly unsafe use of atol() here.
-  string str= boost::lexical_cast<string>(id) + "mut";
-  return str.c_str(); 
-}
-
-const char* StringFromDataObjectIdObj(DataObjectID_t id) {
-  // XXX(malte): possibly unsafe use of atol() here.
-  string str= boost::lexical_cast<string>(id) + "obj";
-  return str.c_str(); 
-}
-
-const char* StringFromDataObjectIdSize(DataObjectID_t id) {
-  // XXX(malte): possibly unsafe use of atol() here.
-  string str= boost::lexical_cast<string>(id) + "size";
-  return str.c_str(); 
-}
-
 
 JobID_t JobIDFromString(const string& str) {
   // XXX(malte): This makes assumptions about JobID_t being a Boost UUID. We
