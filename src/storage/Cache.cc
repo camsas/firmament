@@ -176,6 +176,9 @@ namespace firmament {
       /* Ensure no existing cache exists */
 
       try {
+        
+
+      
         shared_memory_object::remove(cache_name);
 
         size_t cache_n = 1024; /* This is not the size of the cache
@@ -185,16 +188,17 @@ namespace firmament {
         size_t cache_size = sizeof (ReferenceNotification_t) + sizeof (size_t) +
                 sizeof (vector<DataObjectID_t>) + sizeof (DataObjectID_t) * cache_n;
 
-        managed_shared_memory* segment = new managed_shared_memory(create_only, cache_name, cache_size);
+        
+        managed_shared_memory segment(create_only, cache_name, cache_size);
 
-        const SharedmemAllocator_t alloc_inst(segment->get_segment_manager());
+        const SharedmemAllocator_t alloc_inst(segment.get_segment_manager());
 
         SharedVector_t *vec =
-                segment->construct<SharedVector_t > ("objects")(alloc_inst);
+                segment.construct<SharedVector_t > ("objects")(alloc_inst);
         size_t* capac =
-                segment->construct<size_t > ("capacity")(size);
+                segment.construct<size_t > ("capacity")(size);
 
-        size_t* size_ = segment->construct<size_t > ("size")(size);
+        size_t* size_ = segment.construct<size_t > ("size")(size);
 
 
 
@@ -202,7 +206,7 @@ namespace firmament {
         /* Temporary Hack until I implement cleaner memory channel */
 
         ReferenceNotification_t* reference_not_t =
-                segment->construct<ReferenceNotification_t > ("refnot")();
+                segment.construct<ReferenceNotification_t>("refnot")();
         reference_not_t = new ReferenceNotification_t();
 
    
@@ -260,17 +264,18 @@ namespace firmament {
       try {
         while (true) {
           VLOG(3) << "Acquiring lock" << endl;
-          scoped_lock<interprocess_mutex> lock(ref->mutex);
+          scoped_lock<interprocess_mutex> lock(ref->mutex, accept_ownership);
           VLOG(3) << "Acquired lock" << endl;
           while (ref->writable) {
             VLOG(3) << "Waiting for reference to become readable " << endl;
             ref->cond_added.wait(lock);
           }
-
+          VLOG(3) << "Cache: message received. Processing " << endl; 
           switch (ref->request_type) {
 
             case (PUT_OBJECT):
             {
+              VLOG(3) << "Type of message: PUT_OBJECT" << endl ; 
               DataObjectID_t id = ref->id;
               ReferenceDescriptor* rd = store->GetReference(id);
               switch (rd->type()) {
@@ -307,6 +312,7 @@ namespace firmament {
               break;
             case (GET_OBJECT):
             {
+              VLOG(3) << "Type of message: GET_OBJECT" << endl ; 
               DataObjectID_t id = ref->id;
               ref->success = obtain_object(id);
            }
@@ -320,7 +326,8 @@ namespace firmament {
           }
 
           ref->writable = true;
-          lock.unlock();
+//          lock.unlock();
+          VLOG(3) << "Finished processing message " << endl ; 
           ref->cond_read.notify_all(); /* Only notify one given only one 
                                                * will be able to write */
 

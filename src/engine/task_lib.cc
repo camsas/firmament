@@ -216,27 +216,20 @@ namespace firmament {
 
       /* If local*/
 
-      managed_shared_memory* segment = new managed_shared_memory(open_only, name);
+      managed_shared_memory segment(open_only, name);
 
       cache = new Cache_t(0);
 
-      cache->object_list = (segment->find<SharedVector_t > ("objects")).first;
+      cache->object_list = (segment.find<SharedVector_t > ("objects")).first;
 
-      cache->capacity = *((segment->find<size_t > ("capacity")).first);
-      cache->size = *((segment->find<size_t > ("size")).first);
-
-      // named_mutex mutex_(open_only, name);
-
-      //  named_mutex::remove(name); 
+      cache->capacity = *((segment.find<size_t > ("capacity")).first);
+      cache->size = *((segment.find<size_t > ("size")).first);
+ 
       mutex = new named_mutex(open_only, name);
       cache_lock = new scoped_lock<named_mutex > (*mutex, defer_lock);
 
-      /* This is wrong because of stack allocation,
-       *  but need to find alternative way 
-      to guarantee lock persistence across functions. */
-
-//      reference_not_t =
-//              (segment->find<ReferenceNotification_t > ("refnot")).first;
+      reference_not_t =
+              (segment.find<ReferenceNotification_t>("refnot")).first;
 
       cout << "Cache created with capacity: " << cache->capacity << " size " << cache->size << endl;
 
@@ -281,19 +274,24 @@ namespace firmament {
 
         /* Not fully implemented. Refactor so that 
          the whole thing is asynchronous?*/
-
+        
         scoped_lock<interprocess_mutex> lock_ref(reference_not_t->mutex);
+        cout << "Acquired reference mutex " << endl ;
         while (!reference_not_t->writable) {
+          cout << "Waiting for reference to become writable " << endl ; 
           reference_not_t->cond_read.wait(lock_ref);
         }
+        cout << "Writing Message " << endl ; 
         reference_not_t->id = id;
         reference_not_t->writable = false;
         reference_not_t->request_type = GET_OBJECT;
         lock_ref.unlock(); /* Not sure if this is necessary */
+        cout << "Notify storage engine of new message " << endl ; 
         reference_not_t->cond_added.notify_one(); /* Storage engine will be 
                                       * only one waiting on this */
 
-        while (!reference_not_t->writable && !reference_not_t->request_type == GET_OBJECT) {
+        while (!reference_not_t->writable || !reference_not_t->request_type == GET_OBJECT) {
+          cout << "Wait for reply " << endl ; 
           reference_not_t->cond_read.wait(lock_ref);
         }
 
@@ -319,7 +317,7 @@ namespace firmament {
 
         reference_not_t->writable = true;
         reference_not_t->request_type = FREE;
-        lock_ref.unlock(); /* Not sure if this is necessary */
+  //      lock_ref.unlock(); /* Not sure if this is necessary */
         reference_not_t->cond_added.notify_all(); /* Storage engine will be 
                                       * only one waiting on this */
       }

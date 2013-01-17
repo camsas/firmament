@@ -86,7 +86,7 @@ namespace firmament {
       
       bool success; 
       
-      RefNot():writable(true) {} ;
+      RefNot():writable(true),  size(0) , request_type(FREE), success(false) {} ;
       
     } ReferenceNotification_t;
 
