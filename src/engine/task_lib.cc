@@ -221,10 +221,10 @@ namespace firmament {
 
       cache = new Cache_t(0);
 
-      cache->object_list = segment->find<SharedVector_t >("objects").first;
-      
-      cache->capacity = *segment->find<size_t >("capacity").first;
-      cache->size = *segment->find<size_t>("size").first;
+      cache->object_list = segment->find<SharedVector_t > ("objects").first;
+
+      cache->capacity = *segment->find<size_t > ("capacity").first;
+      cache->size = *segment->find<size_t > ("size").first;
 
       // named_mutex mutex_(open_only, name);
 
@@ -277,17 +277,55 @@ namespace firmament {
         cout << "Object " << id << " was not found in cache. Contacting "
                 "Object Store " << endl;
 
-        return NULL;
         /* Data is not in cache - Let object store do the work */
+        /* Really ought to use memory channels*/
 
+        /* Not fully implemented. Refactor so that 
+         the whole thing is asynchronous?*/
 
+        scoped_lock<interprocess_mutex> lock_ref(reference_not_t->mutex);
+        while (!reference_not_t->writable) {
+          reference_not_t->cond_read.wait(lock_ref);
+        }
+        reference_not_t->id = id;
+        reference_not_t->writable = false;
+        reference_not_t->request_type = GET_OBJECT;
+        lock_ref.unlock(); /* Not sure if this is necessary */
+        reference_not_t->cond_added.notify_one(); /* Storage engine will be 
+                                      * only one waiting on this */
 
-        /* Local set up named conditions - wait until data is in
-         cache */
+        while (!reference_not_t->writable && !reference_not_t->request_type == GET_OBJECT) {
+          reference_not_t->cond_read.wait(lock_ref);
+        }
 
+        if (!reference_not_t->success) {
+          cout << "Object was never found " << endl;
+          return NULL;
+        } else {
 
-        /* Non local - Not implemented */
+          SharedVector_t::iterator result =
+                  find(cache->object_list->begin(), cache->object_list->end(), id);
+          /* Should only be one result in theory*/
+          cout << "Object " << id << " was now found in cache." << endl;
+
+          named_upgradable_mutex mut(open_only, nm.c_str());
+          ReadLock_t rlock(mut);
+          rlock.lock();
+
+          file_mapping m_file(nm.c_str(), read_only);
+          mapped_region region(m_file, read_only);
+          void* object = region.get_address();
+          return object;
+        }
+
+        reference_not_t->writable = true;
+        reference_not_t->request_type = FREE;
+        lock_ref.unlock(); /* Not sure if this is necessary */
+        reference_not_t->cond_added.notify_all(); /* Storage engine will be 
+                                      * only one waiting on this */
       }
+
+
 
     } catch (interprocess_exception& e) {
       cout << "Error: GetObjectStart " << endl;
@@ -307,7 +345,7 @@ namespace firmament {
       //      string nm = boost::lexical_cast<string>(id); 
       //      file_mapping::remove(nm.c_str());
       lock.unlock();
-      
+
     } catch (interprocess_exception& e) {
       cout << "Error: GetObjectEnd " << endl;
       cout << "Error: " << e.what();
@@ -337,7 +375,7 @@ namespace firmament {
       string file_name = boost::lexical_cast<string > (id);
 
       /* Create file */
-      std::ofstream ofs(file_name.c_str(), std::ios::binary | std::ios::out);
+      std::ofstream ofs(file_name.c_str(), std::ios::binary | std::ios::out | std::ios::in);
       ofs.seekp(size - 1);
       ofs.write("", 1);
       /* Map it*/
@@ -365,12 +403,12 @@ namespace firmament {
       /* Don't think this is correct. Find source of deadlock
        * Should be able to simply do WriteLock_t lock(mut) */
       WriteLock_t lock(mut, accept_ownership);
-      
+
       cout << "Lock created " << endl;
       cout << " Write lock acquired on file " << endl;
       /* Add it to cache */
       cache->object_list->push_back(id);
-      cout << "Added list to cache << endl "; 
+      cout << "Added list to cache << endl ";
       cout << " New capacity " << cache->capacity << endl;
       return address;
     } catch (interprocess_exception& e) {
@@ -428,14 +466,16 @@ namespace firmament {
 
       /* Notify Engine that reference is now concrete */
       scoped_lock<interprocess_mutex> lock_ref(reference_not_t->mutex);
-      while (!reference_not_t->writable)
+      while (!reference_not_t->writable) {
         reference_not_t->cond_read.wait(lock_ref);
+      }
+
       reference_not_t->id = id;
       reference_not_t->writable = false;
       reference_not_t->size = size;
+      reference_not_t->request_type = PUT_OBJECT;
       lock_ref.unlock(); /* Not sure if this is necessary */
-      reference_not_t->cond_added.notify_one(); /* Storage engine will be 
-                                      * only one waiting on this */
+      reference_not_t->cond_added.notify_all();
 
     } catch (interprocess_exception& e) {
       VLOG(1) << "Error: PutObjectEnd " << endl;

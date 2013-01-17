@@ -46,6 +46,8 @@ namespace firmament {
 
       bool write_object_to_cache(const ObtainObjectMessage& msg);
       bool write_object_to_cache(DataObjectID_t id);
+      
+      bool obtain_object(DataObjectID_t id) ; 
 
       inline size_t getCapacity() {
         return cache->capacity;

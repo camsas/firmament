@@ -2,7 +2,7 @@
 // Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
 // Stub object store class.
- 
+
 #include "storage/simple_object_store.h"
 #include "storage/Cache.h"
 #include "storage/StorageInfo.h"
@@ -63,27 +63,24 @@ namespace firmament {
     void SimpleObjectStore::HandleIncomingMessage(BaseMessage *bm) {
       VLOG(3) << "Storage Engine: HandleIncomingMessage";
 
-      /* Handle Put */
-      /* Handle Get */
-      /* Handle Request */
-      /* Handle Obtain */
-      
+
       /* Handle HeartBeatMessage */
       if (bm->HasExtension(storage_heartbeat_message_extn)) {
-            const StorageHeartBeatMessage& msg = bm->GetExtension(storage_heartbeat_message_extn);
-            HandleIncomingHeartBeat(msg);
-        }      
-      
-    }
-
-    void SimpleObjectStore::HandleIncomingHeartBeat(const StorageHeartBeatMessage& msg ) { 
-      
-      VLOG(1) << "Handle Incoming HeartBeat Message "; 
-      
+        const StorageHeartBeatMessage& msg = bm->GetExtension(storage_heartbeat_message_extn);
+        HandleIncomingHeartBeat(msg);
+      }
 
     }
-    
-    
+
+    void SimpleObjectStore::HandleIncomingHeartBeat(const StorageHeartBeatMessage& msg) {
+
+      VLOG(1) << "Handle Incoming HeartBeat Message ";
+
+      /* Update object map efficiently*/
+
+
+    }
+
     void SimpleObjectStore::HandleIncomingReceiveError(
             const boost::system::error_code& error,
             const string& remote_endpoint) {
@@ -135,7 +132,7 @@ namespace firmament {
 
     void SimpleObjectStore::createSharedBuffer(size_t size) {
       string str = ("Cache");
-//      string str = ("Cache" + to_string(uuid));
+      //      string str = ("Cache" + to_string(uuid));
       cache.reset(new Cache(this, size, str));
 
     }
@@ -146,39 +143,38 @@ namespace firmament {
       /* Send request (ObtainObjectMessage) with id and no data field*/
       /* Message will be received in MessageAdapter. Maybe block on condition here? */
     }
-    
-    
-    void SimpleObjectStore::HeartBeatTask() { 
-      VLOG(3) << "Setting up heartbeat thread  " << endl ; 
-      
-      boost::thread t(&SimpleObjectStore::sendHeartbeat, *this); 
+
+    void SimpleObjectStore::HeartBeatTask() {
+      VLOG(3) << "Setting up heartbeat thread  " << endl;
+
+      boost::thread t(&SimpleObjectStore::sendHeartbeat, *this);
 
     }
-    
-    void SimpleObjectStore::sendHeartbeat() { 
-      
+
+    void SimpleObjectStore::sendHeartbeat() {
+
       /* Random back-off */
       boost::this_thread::sleep(boost::posix_time::milliseconds(rand() % 10));
-              
-      while(true) { 
-        
-       for (vector<StorageInfo*>::iterator it = peers.begin(); it != peers.end(); ++it) {
-            
-          StorageInfo* node = *it ; 
-          
+
+      while (true) {
+
+        for (vector<StorageInfo*>::iterator it = peers.begin(); it != peers.end(); ++it) {
+
+          StorageInfo* node = *it;
+
           /* Create heartbeat message, which includes modifications of map */
-          
+
           string uri = node->get_node_uri();
-          
+
           /* Send it */
-                  
-          
+
+
         }
-        
-        
+
+
       }
-      
-      
+
+
     }
 
 

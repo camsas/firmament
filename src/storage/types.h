@@ -61,11 +61,17 @@ namespace firmament {
     typedef sharable_lock<named_upgradable_mutex> ReadLock_t;
 
     typedef scoped_lock<named_upgradable_mutex> WriteLock_t;
+    
+    enum notification_types {
+      PUT_OBJECT, 
+      GET_OBJECT, 
+      FREE
+    };
 
     typedef struct RefNot {       
       
       DataObjectID_t id;
-
+     
       interprocess_mutex mutex;
 
       interprocess_condition cond_read;
@@ -75,6 +81,10 @@ namespace firmament {
       bool writable;
 
       size_t size;
+      
+      notification_types request_type; 
+      
+      bool success; 
       
       RefNot():writable(true) {} ;
       

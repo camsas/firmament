@@ -46,8 +46,8 @@ namespace firmament {
           /* TODO: delete other files if this one is locked
            Right now will only block */
 
-          string file_name = boost::lexical_cast<string>(id); 
-          string mutex_name = file_name + "mut"; 
+          string file_name = boost::lexical_cast<string > (id);
+          string mutex_name = file_name + "mut";
           named_upgradable_mutex mut(open_only, mutex_name.c_str());
 
           WriteLock_t lock(mut, defer_lock);
@@ -61,11 +61,11 @@ namespace firmament {
           file_mapping m_file(file_name.c_str(), read_only);
           mapped_region region(m_file, read_only);
           region.flush();
-      //    file_mapping::remove(file_name.c_str());
+          //    file_mapping::remove(file_name.c_str());
 
           cache->object_list->erase(cache->object_list->begin()); /* LRU */
           lock.unlock();
-          
+
           named_mutex::remove(mutex_name.c_str());
 
           cache->capacity += size;
@@ -87,9 +87,9 @@ namespace firmament {
       const string& data = msg.data();
       size_t size = msg.size();
       ofstream os;
-       string file_name =  boost::lexical_cast<string>(id); 
+      string file_name = boost::lexical_cast<string > (id);
 
-      os.open(file_name.c_str(), ios::binary|ios::out);
+      os.open(file_name.c_str(), ios::binary | ios::out);
       /* TODO change to more efficient way */
       os.write(data.c_str(), size);
       os.close();
@@ -117,14 +117,14 @@ namespace firmament {
 
           /* Map File Read Only */
 
-          string mut_name_s =  boost::lexical_cast<string>(id); 
+          string mut_name_s = boost::lexical_cast<string > (id);
 
-                    
+
           file_mapping m_file(mut_name_s.c_str(), read_only);
           mapped_region region(m_file, read_only);
 
           /* Create mutex */
-          mut_name_s+="mut" ;
+          mut_name_s += "mut";
           named_mutex mutex(open_or_create, mut_name_s.c_str());
 
           cache->object_list->push_back(id);
@@ -148,7 +148,7 @@ namespace firmament {
     /* From File on disk */
     void Cache::write_object_to_disk(DataObjectID_t id, const char* data, size_t size) {
       VLOG(3) << "Writing Object " << id << " to disk ";
-      string file_name = boost::lexical_cast<string>(id); 
+      string file_name = boost::lexical_cast<string > (id);
       ofstream os(file_name.c_str(), std::ios::binary | std::ios::out);
       os.write(data, size);
       os.close();
@@ -184,7 +184,7 @@ namespace firmament {
                                    */
         size_t cache_size = sizeof (ReferenceNotification_t) + sizeof (size_t) +
                 sizeof (vector<DataObjectID_t>) + sizeof (DataObjectID_t) * cache_n;
-      
+
         managed_shared_memory* segment = new managed_shared_memory(create_only, cache_name, cache_size);
 
         const SharedmemAllocator_t alloc_inst(segment->get_segment_manager());
@@ -193,8 +193,8 @@ namespace firmament {
                 segment->construct<SharedVector_t > ("objects")(alloc_inst);
         size_t* capac =
                 segment->construct<size_t > ("capacity")(size);
-        
-        size_t* size_ =  segment->construct<size_t >("size")(size);
+
+        size_t* size_ = segment->construct<size_t > ("size")(size);
 
 
 
@@ -205,11 +205,7 @@ namespace firmament {
                 segment->construct<ReferenceNotification_t > ("refnot")();
         reference_not_t = new ReferenceNotification_t();
 
-        //      boost::thread t(
-        //        boost::bind(
-        //        boost::mem_fn(&Cache::handle_notification_references), this, _1)(
-        //              reference_not_t));
-
+   
         boost::thread t(&Cache::handle_notification_references, *this, reference_not_t);
 
         /* End of Hack */
@@ -223,12 +219,12 @@ namespace firmament {
         mutex = &mutex_;
 
         scoped_lock<named_mutex> cache_lock_(mutex_, defer_lock);
-        
-        VLOG(3) << "Created Cache lock " << endl ; 
-        
+
+        VLOG(3) << "Created Cache lock " << endl;
+
         cache_lock = &cache_lock_;
         cache->capacity = *capac;
-        cache->size = *size_ ; 
+        cache->size = *size_;
         cache->object_list = vec;
       } catch (interprocess_exception& e) {
         VLOG(1) << "Error: creating cache " << endl;
@@ -246,60 +242,92 @@ namespace firmament {
       }
     }
 
+    bool Cache::obtain_object(DataObjectID_t id) {
+
+      VLOG(1) << "ObtainObject: Unimplemented" << endl;
+
+      /* Infer what is the best way to obtain the object */
+
+
+      return false;
+    }
+
     /* Temporary - Move to channel abstraction in future */
     void Cache::handle_notification_references(ReferenceNotification_t* ref) {
 
       VLOG(3) << "Setting up thread to handle notifications references";
 
       try {
-      while (true) {
-        VLOG(3) << "Acquiring lock" << endl;
-        scoped_lock<interprocess_mutex> lock(ref->mutex);
-        VLOG(3) << "Acquired lock" << endl;
-        while (ref->writable) {
-          VLOG(3) << "Waiting for reference to become readable " << endl;
-          ref->cond_added.wait(lock);
-        }
-        DataObjectID_t id = ref->id;
-        ReferenceDescriptor* rd = store->GetReference(id);
-        switch (rd->type()) {
-          case (ReferenceDescriptor::CONCRETE):
-          {
-            /* Was already concrete. Add 
-             this location to reference
-             Adding listening interface directly
-             rather than ResourceID for now*/
-            rd->add_location(store->get_listening_interface());
+        while (true) {
+          VLOG(3) << "Acquiring lock" << endl;
+          scoped_lock<interprocess_mutex> lock(ref->mutex);
+          VLOG(3) << "Acquired lock" << endl;
+          while (ref->writable) {
+            VLOG(3) << "Waiting for reference to become readable " << endl;
+            ref->cond_added.wait(lock);
           }
-            break;
 
-          case (ReferenceDescriptor::FUTURE):
-          {
-            /* Was future. Make Concrete now*/
-            VLOG(3) << "Reference was a future. Making concrete ";
-            set<string> loc;
-            loc.insert(store->get_listening_interface());
-            ConcreteReference* conc_ref = new ConcreteReference(id, ref->size, loc);
-            rd = new ReferenceDescriptor(conc_ref->desc());
+          switch (ref->request_type) {
+
+            case (PUT_OBJECT):
+            {
+              DataObjectID_t id = ref->id;
+              ReferenceDescriptor* rd = store->GetReference(id);
+              switch (rd->type()) {
+                case (ReferenceDescriptor::CONCRETE):
+                {
+                  /* Was already concrete. Add 
+                   this location to reference
+                   Adding listening interface directly
+                   rather than ResourceID for now*/
+                  rd->add_location(store->get_listening_interface());
+                  ref->request_type = FREE;
+
+                }
+                  break;
+
+                case (ReferenceDescriptor::FUTURE):
+                {
+                  /* Was future. Make Concrete now*/
+                  VLOG(3) << "Reference was a future. Making concrete ";
+                  set<string> loc;
+                  loc.insert(store->get_listening_interface());
+                  ConcreteReference* conc_ref = new ConcreteReference(id, ref->size, loc);
+                  rd = new ReferenceDescriptor(conc_ref->desc());
+                  ref->request_type = FREE;
+                }
+                  break;
+
+                default:
+                {
+                  VLOG(1) << "Unimplemented ";
+                } 
+              }
+            }
+              break;
+            case (GET_OBJECT):
+            {
+              DataObjectID_t id = ref->id;
+              ref->success = obtain_object(id);
+           }
+              break;
+
+            case (FREE):
+              /* Fall through */
+            default:
+              VLOG(1) << "Request not recognised , ignored" << endl;
+              break;
           }
-            break;
 
-          default:
-          {
-            VLOG(1) << "Unimplemented ";
-          }
-            break;
-
-        }
-        ref->writable = true;
-        lock.unlock();
-        ref->cond_read.notify_one(); /* Only notify one given only one 
+          ref->writable = true;
+          lock.unlock();
+          ref->cond_read.notify_all(); /* Only notify one given only one 
                                                * will be able to write */
 
-      }
-      } catch (interprocess_exception& e) { 
-          VLOG(1) << "Handling Notification Reference Error " << endl ; 
         }
+      } catch (interprocess_exception& e) {
+        VLOG(1) << "Handling Notification Reference Error " << endl;
+      }
 
     }
 
