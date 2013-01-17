@@ -216,20 +216,20 @@ namespace firmament {
 
       /* If local*/
 
-      managed_shared_memory segment(open_only, name);
+      managed_shared_memory* segment = new managed_shared_memory(open_only, name);
 
       cache = new Cache_t(0);
 
-      cache->object_list = (segment.find<SharedVector_t > ("objects")).first;
+      cache->object_list = (segment->find<SharedVector_t > ("objects")).first;
 
-      cache->capacity = *((segment.find<size_t > ("capacity")).first);
-      cache->size = *((segment.find<size_t > ("size")).first);
+      cache->capacity = *((segment->find<size_t > ("capacity")).first);
+      cache->size = *((segment->find<size_t > ("size")).first);
  
       mutex = new named_mutex(open_only, name);
       cache_lock = new scoped_lock<named_mutex > (*mutex, defer_lock);
 
       reference_not_t =
-              (segment.find<ReferenceNotification_t>("refnot")).first;
+              (segment->find<ReferenceNotification_t>("refnot")).first;
 
       cout << "Cache created with capacity: " << cache->capacity << " size " << cache->size << endl;
 

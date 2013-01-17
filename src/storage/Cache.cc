@@ -20,12 +20,12 @@ namespace firmament {
     }
 
     Cache::~Cache() {
-      //      if (cache!= NULL)    { 
-      //        clearCache();
-      //        delete(cache);
-      //        named_mutex::remove(cache_name.c_str());
-      //        shared_memory_object::remove(cache_name.c_str());
-      //      }
+       if (cache!= NULL)    { 
+              clearCache();
+              named_mutex::remove(cache_name.c_str());
+              shared_memory_object::remove(cache_name.c_str());
+              
+      }
     }
 
     /* Currently using LRU*/
@@ -180,7 +180,8 @@ namespace firmament {
 
       
         shared_memory_object::remove(cache_name);
-
+        named_mutex::remove(cache_name);
+              
         size_t cache_n = 1024; /* This is not the size of the cache
                                    * but the number of max items we allow
                                    TODO: add it as parameter
@@ -189,16 +190,16 @@ namespace firmament {
                 sizeof (vector<DataObjectID_t>) + sizeof (DataObjectID_t) * cache_n;
 
         
-        managed_shared_memory segment(create_only, cache_name, cache_size);
+        managed_shared_memory* segment = new managed_shared_memory(create_only, cache_name, cache_size);
 
-        const SharedmemAllocator_t alloc_inst(segment.get_segment_manager());
+        const SharedmemAllocator_t alloc_inst(segment->get_segment_manager());
 
         SharedVector_t *vec =
-                segment.construct<SharedVector_t > ("objects")(alloc_inst);
+                segment->construct<SharedVector_t > ("objects")(alloc_inst);
         size_t* capac =
-                segment.construct<size_t > ("capacity")(size);
+                segment->construct<size_t > ("capacity")(size);
 
-        size_t* size_ = segment.construct<size_t > ("size")(size);
+        size_t* size_ = segment->construct<size_t > ("size")(size);
 
 
 
@@ -206,7 +207,7 @@ namespace firmament {
         /* Temporary Hack until I implement cleaner memory channel */
 
         ReferenceNotification_t* reference_not_t =
-                segment.construct<ReferenceNotification_t>("refnot")();
+                segment->construct<ReferenceNotification_t>("refnot")();
         reference_not_t = new ReferenceNotification_t();
 
    
@@ -216,17 +217,15 @@ namespace firmament {
 
         VLOG(3) << "Acquiring Cache name  mutex" << endl;
 
-        named_mutex mutex_(open_or_create, cache_name);
+        mutex = new named_mutex(open_or_create, cache_name);
 
         VLOG(3) << "Acquired Cache name mutex " << endl;
 
-        mutex = &mutex_;
 
-        scoped_lock<named_mutex> cache_lock_(mutex_, defer_lock);
+       cache_lock = new  scoped_lock<named_mutex>(*mutex, defer_lock);
 
         VLOG(3) << "Created Cache lock " << endl;
 
-        cache_lock = &cache_lock_;
         cache->capacity = *capac;
         cache->size = *size_;
         cache->object_list = vec;
@@ -264,7 +263,7 @@ namespace firmament {
       try {
         while (true) {
           VLOG(3) << "Acquiring lock" << endl;
-          scoped_lock<interprocess_mutex> lock(ref->mutex, accept_ownership);
+          scoped_lock<interprocess_mutex> lock(ref->mutex);
           VLOG(3) << "Acquired lock" << endl;
           while (ref->writable) {
             VLOG(3) << "Waiting for reference to become readable " << endl;
