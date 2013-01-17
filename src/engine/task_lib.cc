@@ -384,12 +384,6 @@ namespace firmament {
       cout << "File Mapped  of size " << region->get_size() << endl;
       void* address = region->get_address();
 
-
-      /* This doesn't seem to work Illegal Argument returned*/
-      //  named_upgradable_mutex mut(open_or_create, StringFromDataObjectIdMut(id), permission); 
-
-      /* Temp fix*/
-
       string mut_name_s = boost::lexical_cast<string > (id) + "mut";
       named_upgradable_mutex mut(open_or_create, mut_name_s.c_str(), permission);
 
