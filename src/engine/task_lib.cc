@@ -354,10 +354,6 @@ namespace firmament {
   void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
     try {
       cout << "PutObjectStart " << endl;
-      /* TODO: replace with reference to cache_lock */
-      //      named_mutex mutex_(open_only, "Cache");
-      //      scoped_lock<named_mutex> cache_locks(mutex_, defer_lock);
-      //      while(!cache_locks.try_lock()) { cout << "Lock is owned by someone " << endl ; }
 
       cache_lock->lock();
       if (cache->capacity > size) cache->capacity -= size;
@@ -380,11 +376,13 @@ namespace firmament {
       permissions permission;
       permission.set_unrestricted();
 
-      file_mapping m_file(file_name.c_str(), read_write);
-      mapped_region region(m_file, read_write, 0, size);
+      /* Should delete in PutObjectEnd. TODO Modify to have coherent picture
+       of stack vs memory allocated */
+      file_mapping* m_file = new file_mapping(file_name.c_str(), read_write);
+      mapped_region*  region = new mapped_region(*m_file, read_write, 0, size);
 
-      cout << "File Mapped  of size " << region.get_size() << endl;
-      void* address = region.get_address();
+      cout << "File Mapped  of size " << region->get_size() << endl;
+      void* address = region->get_address();
 
 
       /* This doesn't seem to work Illegal Argument returned*/
@@ -432,16 +430,16 @@ namespace firmament {
     }
     cache_lock->unlock();
     string file_name = boost::lexical_cast<string > (id);
-    file_mapping m_file(file_name.c_str(), read_write);
-    mapped_region region(m_file, read_write);
-    region.flush();
-    file_mapping::remove(file_name.c_str());
+    file_mapping* m_file = new file_mapping(file_name.c_str(), read_write);
+    mapped_region* region = new mapped_region(*m_file, read_write);
+    region->flush();
+ //   file_mapping::remove(file_name.c_str());
     std::ofstream ofs(file_name.c_str(), std::ios::binary);
     ofs.seekp(new_size - 1);
     ofs.write("", 1);
-    file_mapping m_file2(file_name.c_str(), read_write);
-    mapped_region region2(m_file, read_write);
-    address = region2.get_address();
+    m_file = new file_mapping(file_name.c_str(), read_write);
+    region = new mapped_region(*m_file, read_write);
+    address = region->get_address();
 
     return address;
 
@@ -452,10 +450,9 @@ namespace firmament {
     cout << "PutObjectEnd " << endl;
     try {
       string file_name = boost::lexical_cast<string > (id);
-      file_mapping m_file(file_name.c_str(), read_write);
-      mapped_region region(m_file, read_write);
-      region.flush();
-      file_mapping::remove(file_name.c_str());
+      file_mapping*  m_file = new file_mapping(file_name.c_str(), read_write);
+      mapped_region* region  = new mapped_region(*m_file, read_write);
+      region->flush();
       file_name += "mut";
       named_upgradable_mutex mut(open_only, file_name.c_str());
       WriteLock_t lock(mut, accept_ownership);
