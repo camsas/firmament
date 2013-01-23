@@ -336,7 +336,7 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
         break;
       }
     } else if (!direction_fwd) {
-      if ((cur_idx_fwd < dag0_head_ptr->samples &&
+      if ((cur_idx_fwd <= dag0_head_ptr->samples &&
           dag0_sample_data[cur_idx_fwd].timestamp < max_time)) {
         // Flip to forward
         direction_fwd = true;
