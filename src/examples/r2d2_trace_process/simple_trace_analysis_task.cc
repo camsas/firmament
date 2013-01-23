@@ -47,6 +47,13 @@ int main(int argc, char* argv[]) {
       reinterpret_cast<dag_capture_header_t*>(dag0_ptr);
   firmament::examples::r2d2::print_header_info("DAG0", head);
 
+  // Special case: count == 0 (means ALL packets)
+  if (count == 0) {
+    count = head->samples;
+    VLOG(1) << "Total samples: " << head->samples
+            << ", considering full length.";
+  }
+
   // Set up task and run
   firmament::examples::r2d2::SimpleTraceAnalysisTask t;
   t.Invoke(dag0_ptr, offset, count);
