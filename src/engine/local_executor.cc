@@ -200,8 +200,8 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       }
       VLOG(1) << "Task process with PID " << pid << " exited with status "
               << WEXITSTATUS(status);
-      if (perf_monitoring)
-        delete perf_prefix;
+      /*if (perf_monitoring)
+        delete perf_prefix;*/
       return status;
   }
   return -1;
@@ -251,7 +251,7 @@ void LocalExecutor::ReadFromPipe(int fd) {
   }
   while ( (ch = getc(stream)) != EOF ) {
     // XXX(malte): temp hack
-    putc(ch, stdout);
+    //putc(ch, stdout);
   }
   fflush(stdout);
   fclose(stream);
