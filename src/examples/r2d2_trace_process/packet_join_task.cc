@@ -7,7 +7,8 @@
 // arrived.
 
 #include "examples/r2d2_trace_process/common.h"
-#ifndef __FIRMAMENT__
+//#ifndef __FIRMAMENT__
+#if 1
 extern "C" {
 #include "examples/r2d2_trace_process/standalone_io.h"
 }
@@ -65,10 +66,40 @@ int main(int argc, char* argv[]) {
 namespace firmament {
 
 #ifdef __FIRMAMENT__
-void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>*) {
-  examples::r2d2::PacketJoinTask t(task_lib, task_id);
-  LOG(INFO) << "Called task_main, starting " << t;
-  //t.Invoke();
+void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>* args) {
+  // Rudimentary command line parsing
+  if (args->size() != 5)
+    LOG(FATAL) << "usage: packet_join_task <dag0_cap> <dag1_cap> "
+               << "<offset> <count>";
+  char* dag0_filename = args->at(1);
+  char* dag1_filename = args->at(2);
+  uint64_t offset = atol(args->at(3));
+  uint64_t count = atol(args->at(4));
+
+  // Informative output
+  VLOG(1) << "Latency extraction task starting.";
+  VLOG(1) << "  DAG0 filename: " << dag0_filename;
+  VLOG(1) << "  DAG1 filename: " << dag1_filename;
+  VLOG(1) << "  Offset into DAG1: " << offset;
+  VLOG(1) << "  Num packets to consider: " << count;
+
+  // XXX(malte): This should happen automatically in
+  // Firmament!
+  // Map dag0 data set into memory
+  void* dag0_ptr = load_to_shmem(dag0_filename);
+
+  // Analyze dag0 header
+  dag_capture_header_t* head =
+      reinterpret_cast<dag_capture_header_t*>(dag0_ptr);
+  examples::r2d2::print_header_info("DAG0", head);
+
+  // Special case: count == 0 (means ALL packets)
+  if (count == 0)
+    count = head->samples;
+
+  // Set up task and run
+  firmament::examples::r2d2::PacketJoinTask t(task_lib, task_id);
+  t.Invoke(dag0_ptr, dag1_filename, offset, count);
 }
 #endif
 

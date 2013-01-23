@@ -4,7 +4,7 @@
 //
 // IO helpers for operation of R2D2 examples in standalone mode.
 
-#ifndef __FIRMAMENT__
+//#ifndef __FIRMAMENT__
 #ifndef FIRMAMENT_EXAMPLE_R2D2_STANDALONE_IO_H
 #define FIRMAMENT_EXAMPLE_R2D2_STANDALONE_IO_H
 
@@ -48,4 +48,4 @@ void* load_to_shmem(char* filename) {
 #endif
 
 #endif  // FIRMAMENT_EXAMPLE_R2D2_STANDALONE_IO_H
-#endif  // ifndef __FIRMAMENT__
+//#endif  // ifndef __FIRMAMENT__
