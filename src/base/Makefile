@@ -9,9 +9,10 @@ OBJS = task.o resource.o job.o ensemble.o data_object.o task_graph.o
 PBS = reference_desc.pb.o task_desc.pb.o resource_desc.pb.o \
       resource_topology_node_desc.pb.o \
       ensemble_desc.pb.o data_object_name.pb.o job_desc.pb.o
-TESTS = data_object_test references_test
+TESTS = data_object_test references_test task_graph_test
 TESTS_DEPS = $(OBJ_DIR)/data_object_name.pb.o \
-	     $(OBJ_DIR)/reference_desc.pb.o
+	     $(OBJ_DIR)/reference_desc.pb.o \
+	     $(OBJ_DIR)/task_desc.pb.o
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
