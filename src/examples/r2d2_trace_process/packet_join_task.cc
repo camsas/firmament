@@ -142,6 +142,7 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
   uint64_t lost_at_dag = 0;
   uint64_t last_idx = ~0ULL;
   uint64_t* last_idx_ptr = &last_idx;
+  uint64_t unmatched_since_last_match = 0;
   // Go and keep looking at samples until reaching the end, which is the last
   // considered packet's timestamp plus WINDOW_SIZE milliseconds.
   while (i < count && fread(sample_buf, sizeof(sample_t), 1, fp)) {
@@ -164,6 +165,7 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
     if (!matched_sample) {
       VLOG(2) << "Unmatched packet " << (offset + i) << " at time "
               << sample_ts << ", hash: " << sample_buf->hash
+              << " (" << hex << sample_buf->hash << ")" << dec
               << "; presumed lost!";
       switch (match_result) {
         case RESULT_AFTER_END:
@@ -181,6 +183,7 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
       }
       // Canonical output format shared with dag_join implementation
       //OutputUnmatchedPacketResult();
+      unmatched_since_last_match++;
     } else {
       uint64_t matched_ts = matched_sample->timestamp;
       // Work out various metrics for the corresponding packet and log them to
@@ -190,8 +193,10 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
           (int64_t(matched_ts) - int64_t(matched_sample[-1].timestamp)) : 0;
       // Canonical output format shared with dag_join implementation
       //OutputMatchedPacketResult();
-      cout << sample_ts << "," << delay << "," << inter_arrival_time << "\n";
+      cout << sample_ts << "," << delay << "," << inter_arrival_time
+           << "," << unmatched_since_last_match << endl;
       packets_matched++;
+      unmatched_since_last_match = 0;
     }
     if (unlikely(sample_buf->value_type_dropped_len.dropped > 0))
       lost_at_dag += sample_buf->value_type_dropped_len.dropped;
@@ -268,6 +273,10 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
   } else if (timestamp > dag0_head_ptr->end_time) {
     *result = RESULT_AFTER_END;
     return NULL;
+  } else if (packet->hash == 0xFEEDCAFEDEADBEEF) {
+    // Filter packets from second input source (which have no seq no)
+    *result = RESULT_UNMATCHED;
+    return NULL;
   }
   // Figure out the window to consider
   uint64_t min_time = timestamp - WINDOW_SIZE;
@@ -295,8 +304,11 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
         packet->value_type_dropped_len.length &&
         dag0_sample_data[cur_idx].hash == packet->hash) {
       // We have a match!
+      //VLOG_EVERY_N(1, 1000) << "MATCHED";
       VLOG(2) << "Matched to packet at "
               << dag0_sample_data[cur_idx].timestamp
+              << ", hash: " << packet->hash << " (" << hex << packet->hash
+              << ")" << dec
               << ", last indices: BWD: " << cur_idx_bwd
               << ", FWD: " << cur_idx_fwd << ", CUR: " << cur_idx;
       VLOG(2) << "Made " << (*init_idx - cur_idx_bwd)
@@ -318,6 +330,9 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
         cur_idx = ++cur_idx_fwd;
       } else {
         // We can go neither forward nor backward any more, so stop.
+        VLOG(2) << "Giving up on packet as we've exhausted the search range!";
+        VLOG(2) << "Last indices: " << cur_idx_bwd << "/" << cur_idx
+                << "/" << cur_idx_fwd;
         break;
       }
     } else if (!direction_fwd) {
@@ -330,13 +345,23 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
         // Keep going backward (unless we've hit zero)
         if (cur_idx_bwd > 0)
           cur_idx = --cur_idx_bwd;
+        else {
+          VLOG(2) << "Giving up on packet as we've exhausted the search range!";
+          VLOG(2) << "Last indices: " << cur_idx_bwd << "/" << cur_idx
+                  << "/" << cur_idx_fwd;
+          break;
+        }
       } else {
         // We can go neither forward nor backward any more, so stop.
+        VLOG(2) << "Giving up on packet as we've exhausted the search range!";
+        VLOG(2) << "Last indices: " << cur_idx_bwd << "/" << cur_idx
+                << "/" << cur_idx_fwd;
         break;
       }
     }
   }
   // No match, presume packet lost
+  VLOG_EVERY_N(1, 1000) << "1000 UNMATCHED packets! (ex.: " << packet->hash << ")";
   VLOG(2) << "Gave up on packet at " << timestamp
           << ", last indices: BWD: " << cur_idx_bwd
           << ", FWD: " << cur_idx_fwd << ", CUR: " << cur_idx;

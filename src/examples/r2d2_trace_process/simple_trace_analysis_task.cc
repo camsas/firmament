@@ -84,10 +84,13 @@ void SimpleTraceAnalysisTask::DumpPacketInformation(sample_t* packet) {
     inter_arrival_time = 0;
   else
     inter_arrival_time = packet->timestamp - prev_packet_timestamp_;
+  uint64_t source = 0;
+  if (packet->hash == 0xFEEDCAFEDEADBEEF)
+    source = 1;
   // Dump output to stdout
   cout << packet->timestamp << "," << packet->value_type_dropped_len.type
        << "," << packet->value_type_dropped_len.length
-       << "," << inter_arrival_time << endl;
+       << "," << inter_arrival_time << "," << source << endl;
   // Record this packets arrival time
   prev_packet_timestamp_ = packet->timestamp;
 }
