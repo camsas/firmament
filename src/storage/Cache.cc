@@ -50,7 +50,7 @@ namespace firmament {
           string mutex_name = file_name + "mut";
           named_upgradable_mutex mut(open_only, mutex_name.c_str());
 
-          WriteLock_t lock(mut, defer_lock);
+          WriteLock_t lock(mut, boost::interprocess::defer_lock);
 
           if (!(cleared = lock.try_lock())) {
             VLOG(3) << "Removal failed - Object in use";
@@ -77,13 +77,11 @@ namespace firmament {
       }
     }
 
-    /* From Remote TCP */
-    //TODO: not very efficient, shouldn't have to write to disk first, THEN
-    // map the file
+    /* From Remote. Using a write through strategy for now */
 
     bool Cache::write_object_to_cache(const ObtainObjectMessage& msg) {
-      DataObjectID_t id = msg.uuid();
-      VLOG(3) << "Writing Object " << id << " to Cache from TCP";
+      DataObjectID_t id = msg.object_id();
+      VLOG(3) << "Writing Object " << id << " to Cache from remote";
       const string& data = msg.data();
       size_t size = msg.size();
       ofstream os;
@@ -173,12 +171,8 @@ namespace firmament {
 
     void Cache::create_cache(const char* cache_name) {
       VLOG(3) << "Creating cache " << cache_name << endl;
-      /* Ensure no existing cache exists */
-
       try {
-        
-
-      
+        /* Ensure no existing cache exists */
         shared_memory_object::remove(cache_name);
         named_mutex::remove(cache_name);
               
@@ -188,8 +182,7 @@ namespace firmament {
                                    */
         size_t cache_size = sizeof (ReferenceNotification_t) + sizeof (size_t) +
                 sizeof (vector<DataObjectID_t>) + sizeof (DataObjectID_t) * cache_n;
-
-        
+  
         managed_shared_memory* segment = new managed_shared_memory(create_only, cache_name, cache_size);
 
         const SharedmemAllocator_t alloc_inst(segment->get_segment_manager());
@@ -201,16 +194,12 @@ namespace firmament {
 
         size_t* size_ = segment->construct<size_t > ("size")(size);
 
-
-
-
         /* Temporary Hack until I implement cleaner memory channel */
 
         ReferenceNotification_t* reference_not_t =
                 segment->construct<ReferenceNotification_t>("refnot")();
         reference_not_t = new ReferenceNotification_t();
 
-   
         boost::thread t(&Cache::handle_notification_references, *this, reference_not_t);
 
         /* End of Hack */
@@ -221,8 +210,7 @@ namespace firmament {
 
         VLOG(3) << "Acquired Cache name mutex " << endl;
 
-
-       cache_lock = new  scoped_lock<named_mutex>(*mutex, defer_lock);
+        cache_lock = new  scoped_lock<named_mutex>(*mutex, boost::interprocess::defer_lock);
 
         VLOG(3) << "Created Cache lock " << endl;
 
@@ -249,9 +237,12 @@ namespace firmament {
 
       VLOG(1) << "ObtainObject: Unimplemented" << endl;
 
-      /* Infer what is the best way to obtain the object */
-
-
+      /* Contact object store  */
+      
+      store->obtain_object_remotely(id); 
+      
+     
+      
       return false;
     }
 
@@ -282,10 +273,11 @@ namespace firmament {
                 {
                   /* Was already concrete. Add 
                    this location to reference
-                   Adding listening interface directly
-                   rather than ResourceID for now*/
-                  rd->add_location(store->get_listening_interface());
+                   Adding resource ID directly
+                   rather than listening interface for now*/
+                  rd->add_location(lexical_cast<string>(store->get_resource_id()));
                   ref->request_type = FREE;
+                  rd->set_is_modified(true); 
 
                 }
                   break;
@@ -299,6 +291,8 @@ namespace firmament {
                   ConcreteReference* conc_ref = new ConcreteReference(id, ref->size, loc);
                   rd = new ReferenceDescriptor(conc_ref->desc());
                   ref->request_type = FREE;
+                  rd->set_is_modified(true); 
+
                 }
                   break;
 
@@ -311,6 +305,7 @@ namespace firmament {
               break;
             case (GET_OBJECT):
             {
+                /* TODO Make asynchronous */
               VLOG(3) << "Type of message: GET_OBJECT" << endl ; 
               DataObjectID_t id = ref->id;
               ref->success = obtain_object(id);

@@ -53,6 +53,7 @@ namespace firmament {
     using platform_unix::streamsockets::StreamSocketsChannel;
     using platform_unix::streamsockets::StreamSocketsAdapter;
     using namespace std;
+    using namespace boost; 
 
     class Cache;
 
@@ -77,11 +78,17 @@ namespace firmament {
 
       void obtain_object_remotely(DataObjectID_t id);
 
+   
+      void HeartBeatMasterTask(); 
+      void sendHeartBeatMasterTask(); 
+      
+      
+      StorageInfo* infer_best_location(ReferenceDescriptor* rd); 
 
     protected:
       shared_ptr<StreamSocketsAdapter<BaseMessage> > message_adapter_;
-      vector<StorageInfo*> peers; /* Channel interfaces, etc. */
-      vector<StorageInfo*> nodes; /* Concatenate global information
+      NodeTable_t peers; /* Channel interfaces, etc. */
+      NodeTable_t nodes; /* Concatenate global information
                           about all the nodes.
                           */
 

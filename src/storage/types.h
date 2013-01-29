@@ -18,12 +18,15 @@
 #include <boost/interprocess/offset_ptr.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/interprocess/sync/named_upgradable_mutex.hpp>
+#include <storage/StorageInfo.h>
 
 namespace firmament {
   namespace store {
 
     using namespace boost::interprocess;
 
+    class StorageInfo ; 
+    
     typedef map<DataObjectID_t, ReferenceDescriptor*> DataObjectMap_t;
 
     //    typedef struct  mutex_struct() { 
@@ -45,6 +48,7 @@ namespace firmament {
 
     typedef vector<DataObjectID_t, SharedmemAllocator_t> SharedVector_t;
 
+    typedef map<string, StorageInfo*> NodeTable_t ; 
     
     typedef struct cache {
       size_t capacity;
