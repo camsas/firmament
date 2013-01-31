@@ -97,8 +97,9 @@ void AggregateBandwidthAnalysisTask::Invoke(void* dag0_ptr, uint64_t offset,
     prev_packet_timestamp_ = data_ptr[offset-1].timestamp;
   uint64_t first_timestamp = data_ptr[offset].timestamp;
   uint64_t bw_sample_start = first_timestamp;
-  uint64_t bw_sample_width = 1000;
-  uint64_t bw_aggregate_counter = 0;
+  uint64_t bw_sample_width = 1000000;
+  uint64_t bw_aggregate_counter_s0 = 0;
+  uint64_t bw_aggregate_counter_s1 = 0;
   // Iterate over all packets in our section of the capture file and extract
   // information for each of them.
   for (i = offset; i < (offset + count); ++i) {
@@ -107,34 +108,50 @@ void AggregateBandwidthAnalysisTask::Invoke(void* dag0_ptr, uint64_t offset,
             << ", BW-TS-start: " << bw_sample_start - first_timestamp
             << ", BW-TS-end: " << (bw_sample_start + bw_sample_width -
                                    first_timestamp);
+    uint64_t* bw_aggregate_counter;
+    if (packet->hash == 0xFEEDCAFEDEADBEEF)
+      bw_aggregate_counter = &bw_aggregate_counter_s1;
+    else
+      bw_aggregate_counter = &bw_aggregate_counter_s0;
     if (packet->timestamp <= bw_sample_start + bw_sample_width) {
       VLOG(2) << "WITHIN sample period, adding.";
-      bw_aggregate_counter += packet->value_type_dropped_len.length;
+      *bw_aggregate_counter += packet->value_type_dropped_len.length;
     } else {
-      bw_aggregate_counter += packet->value_type_dropped_len.length;
+      *bw_aggregate_counter += packet->value_type_dropped_len.length;
       uint64_t width = packet->timestamp - bw_sample_start;
       VLOG(2) << "BEYOND sample period, emitting point(s) for period of size "
-              << width << ", aggregate size: " << bw_aggregate_counter;
+              << width << ", aggregate size: " << bw_aggregate_counter_s0
+              << "/" << bw_aggregate_counter_s1;
       if (packet->timestamp - prev_packet_timestamp_ > bw_sample_width) {
         // big gap, emit two data points on either side of the big gap
         VLOG(2) << "BIG gap: emitting two data points!";
         cout << prev_packet_timestamp_ << ","
-             << bw_aggregate_counter << ","
-             << fixed << (double(bw_aggregate_counter * 8) /
-                          (double(width) / double(SECS2NS))) << "\n";
+             << bw_aggregate_counter_s0 << ","
+             << fixed << (double(bw_aggregate_counter_s0 * 8) /
+                          (double(width) / double(SECS2NS))) << ","
+             << fixed << (double(bw_aggregate_counter_s1 * 8) /
+                          (double(width) / double(SECS2NS)))
+              << "\n";
         cout << packet->timestamp << ","
-             << bw_aggregate_counter << ","
-             << fixed << (double(bw_aggregate_counter * 8) /
-                          (double(width) / double(SECS2NS))) << "\n";
+             << bw_aggregate_counter_s0 << ","
+             << fixed << (double(bw_aggregate_counter_s0 * 8) /
+                          (double(width) / double(SECS2NS))) << ","
+             << fixed << (double(bw_aggregate_counter_s1 * 8) /
+                          (double(width) / double(SECS2NS)))
+             << "\n";
       } else {
         // simple, small gap, emit one data point and move on
         cout << packet->timestamp << ","
-             << bw_aggregate_counter << ","
-             << fixed << (double(bw_aggregate_counter * 8) /
-                          (double(width) / double(SECS2NS))) << "\n";
+             << bw_aggregate_counter_s0 << ","
+             << fixed << (double(bw_aggregate_counter_s0 * 8) /
+                          (double(width) / double(SECS2NS))) << ","
+             << fixed << (double(bw_aggregate_counter_s1 * 8) /
+                          (double(width) / double(SECS2NS)))
+             << "\n";
       }
       bw_sample_start = packet->timestamp;
-      bw_aggregate_counter = 0;
+      bw_aggregate_counter_s0 = 0;
+      bw_aggregate_counter_s1 = 0;
     }
     prev_packet_timestamp_ = packet->timestamp;
   }

@@ -160,8 +160,11 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
     // Try matching the packet against DAG0's dataset within a window of +/-
     // WINDOW_SIZE from its timestamp.
     dag_match_result_t match_result;
+    uint64_t bwd_steps;
+    uint64_t fwd_steps;
     sample_t* matched_sample = MatchPacketWithinWindow(
-        dag0_ptr, sample_ts, sample_buf, last_idx_ptr, &match_result);
+        dag0_ptr, sample_ts, sample_buf, last_idx_ptr, &match_result,
+        &bwd_steps, &fwd_steps);
     if (!matched_sample) {
       VLOG(2) << "Unmatched packet " << (offset + i) << " at time "
               << sample_ts << ", hash: " << sample_buf->hash
@@ -194,15 +197,18 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
       // Canonical output format shared with dag_join implementation
       //OutputMatchedPacketResult();
       cout << sample_ts << "," << delay << "," << inter_arrival_time
-           << "," << unmatched_since_last_match << endl;
+           << "," << unmatched_since_last_match << "," << bwd_steps
+           << "," << fwd_steps << endl;
       packets_matched++;
       unmatched_since_last_match = 0;
     }
     if (unlikely(sample_buf->value_type_dropped_len.dropped > 0))
       lost_at_dag += sample_buf->value_type_dropped_len.dropped;
     // Progress update every 10000 packets
-    if (i % 10000 == 0)
-      VLOG(1) << "Processed " << i << " packets...";
+    if (i % 100000 == 0) {
+      float perc = double(i) / double(head_buf->samples) * 100.0;
+      VLOG(1) << perc << "% (" << i << " packets)";
+    }
     // One-up, next packet
     i++;
   }
@@ -215,6 +221,9 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
   VLOG(1) << "Unmatched         : " << packets_unmatched;
   VLOG(1) << "After DAG0 end    : " << packets_after_end;
   VLOG(1) << "Lost at DAG       : " << lost_at_dag;
+  VLOG(1) << "-----------------------------";
+  VLOG(1) << "Avg BWD steps p.p.: " << fixed << (double(total_backward_steps_) / double(i));
+  VLOG(1) << "Avg FWD steps p.p.: " << fixed << (double(total_forward_steps_) / double(i));
   // Clean up memory
   free(head_buf);
   free(sample_buf);
@@ -259,7 +268,8 @@ uint64_t PacketJoinTask::StartIndexGuess(
 
 sample_t* PacketJoinTask::MatchPacketWithinWindow(
     void* dag0_ptr, uint64_t timestamp, sample_t* packet,
-    uint64_t* init_idx, dag_match_result_t* result) {
+    uint64_t* init_idx, dag_match_result_t* result,
+    uint64_t* bwd_steps, uint64_t* fwd_steps) {
   // Shortcut: if timestamp is before the start of DAG0 minus window size,
   // we can give up immediately.
   dag_capture_header_t* dag0_head_ptr =
@@ -311,9 +321,12 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
               << ")" << dec
               << ", last indices: BWD: " << cur_idx_bwd
               << ", FWD: " << cur_idx_fwd << ", CUR: " << cur_idx;
-      VLOG(2) << "Made " << (*init_idx - cur_idx_bwd)
-              << " backward steps and " << (cur_idx_fwd - *init_idx)
-              << " forward steps.";
+      *bwd_steps = (*init_idx - cur_idx_bwd);
+      *fwd_steps = (cur_idx_fwd - *init_idx);
+      VLOG(2) << "Made " << *bwd_steps  << " backward steps and "
+              << *fwd_steps << " forward steps.";
+      total_backward_steps_ += *bwd_steps;
+      total_forward_steps_ += *fwd_steps;
       *init_idx = cur_idx;
       *result = RESULT_MATCHED;
       return &dag0_sample_data[cur_idx];
@@ -365,9 +378,12 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
   VLOG(2) << "Gave up on packet at " << timestamp
           << ", last indices: BWD: " << cur_idx_bwd
           << ", FWD: " << cur_idx_fwd << ", CUR: " << cur_idx;
-  VLOG(2) << "Made " << (*init_idx - cur_idx_bwd)
-          << " backward steps and " << (cur_idx_fwd - *init_idx)
-          << " forward steps.";
+  *bwd_steps = (*init_idx - cur_idx_bwd);
+  *fwd_steps = (cur_idx_fwd - *init_idx);
+  VLOG(2) << "Made " << *bwd_steps  << " backward steps and "
+          << *fwd_steps << " forward steps.";
+  total_backward_steps_ += *bwd_steps;
+  total_forward_steps_ += *fwd_steps;
   *result = RESULT_UNMATCHED;
   return NULL;
 }
