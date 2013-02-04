@@ -42,6 +42,10 @@ class TaskGraphNode {
     CHECK_LT(idx, children_.size());
     return children_.at(idx);
   }
+  void add_child(TaskGraphNode* child) {
+    CHECK_NOTNULL(child);
+    children_.push_back(child);
+  }
  protected:
   vector<TaskGraphNode*> children_;
   TaskDescriptor* desc_;
@@ -53,15 +57,19 @@ class TaskGraph {
   explicit TaskGraph(TaskDescriptor* root_task_);
   void AddChildTask(TaskDescriptor* parent, TaskDescriptor* child);
   set<TaskDescriptor*> ChildrenOf(TaskDescriptor* task);
+  void CreateNodesForChildren(TaskGraphNode *node, TaskDescriptor* descr);
   void DelegateOutput(TaskDescriptor* delegator, ReferenceDescriptor* output,
                       TaskDescriptor* delegatee);
   TaskDescriptor* ParentOf(TaskDescriptor* task);
   void SetTaskState(TaskDescriptor* task);
  protected:
   FRIEND_TEST(TaskGraphTest, CreateTGTest);
+  FRIEND_TEST(TaskGraphTest, GetParentOfRootTest);
   FRIEND_TEST(TaskGraphTest, GetParentTest);
+  FRIEND_TEST(TaskGraphTest, GetChildrenTest);
   TaskGraphNode* root_node_;
   bool Contains(TaskDescriptor* task);
+  map<TaskDescriptor*, TaskGraphNode*> td_node_map_;
 };
 
 }  // namespace firmament

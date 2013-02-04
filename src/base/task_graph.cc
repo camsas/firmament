@@ -9,6 +9,7 @@
 #include <set>
 
 #include "base/task_graph.h"
+#include "misc/map-util.h"
 #include "misc/pb_utils.h"
 
 namespace firmament {
@@ -16,12 +17,27 @@ namespace firmament {
 TaskGraph::TaskGraph(TaskDescriptor* root_task) {
   // Create a node for the root task
   root_node_ = new TaskGraphNode(root_task, NULL);
+  InsertIfNotPresent(&td_node_map_, root_task, root_node_);
   VLOG(1) << root_node_->descriptor() << ", " << root_task;
   // Create nodes for all members of the task graph.
+  CreateNodesForChildren(root_node_, root_task);
 }
 
 void TaskGraph::AddChildTask(TaskDescriptor* parent, TaskDescriptor* child) {
   LOG(FATAL) << "stub";
+}
+
+void TaskGraph::CreateNodesForChildren(TaskGraphNode* node,
+                                       TaskDescriptor* descr) {
+  for (typeof(descr->mutable_spawned()->begin()) c_iter =
+       descr->mutable_spawned()->begin();
+       c_iter != descr->mutable_spawned()->end();
+       ++c_iter) {
+    TaskGraphNode* new_child = new TaskGraphNode(&(*c_iter), node);
+    node->add_child(new_child);
+    InsertIfNotPresent(&td_node_map_, &(*c_iter), new_child);
+    CreateNodesForChildren(new_child, &(*c_iter));
+  }
 }
 
 void TaskGraph::DelegateOutput(TaskDescriptor* delegator,
@@ -52,7 +68,14 @@ set<TaskDescriptor*> TaskGraph::ChildrenOf(TaskDescriptor* task) {
 }
 
 TaskDescriptor* TaskGraph::ParentOf(TaskDescriptor* task) {
-  LOG(FATAL) << "stub";
+  TaskGraphNode** node = FindOrNull(td_node_map_, task);
+  if (!node)
+    return NULL;
+  // If this is the root task, we return a pointer to itself
+  if ((*node)->mutable_parent() == NULL)
+    return task;
+  // Otherwise return a pointer to the parent's TD
+  return (*node)->mutable_parent()->descriptor();
 }
 
 void TaskGraph::SetTaskState(TaskDescriptor* task) {

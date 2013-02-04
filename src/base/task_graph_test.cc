@@ -57,17 +57,27 @@ TEST_F(TaskGraphTest, CreateTGTest) {
   CHECK_EQ(sample_tg.root_node_->descriptor(), &sample_tg_root_desc_);
 }
 
-// Retrieve a task's parent (who spawned it).
-TEST_F(TaskGraphTest, GetParentTest) {
+// For the root, we expect to get itself back when asking for the parent
+TEST_F(TaskGraphTest, GetParentOfRootTest) {
   TaskGraph sample_tg(&sample_tg_root_desc_);
   CHECK_EQ(sample_tg.root_node_->mutable_parent(), static_cast<TaskGraphNode*>(NULL));
   CHECK_EQ(sample_tg.ParentOf(&sample_tg_root_desc_),
-           static_cast<TaskDescriptor*>(NULL));
+           &sample_tg_root_desc_);
 }
+
+// Retrieve a task's parent (who spawned it).
+TEST_F(TaskGraphTest, GetParentTest) {
+  TaskGraph sample_tg(&sample_tg_root_desc_);
+  TaskDescriptor* ctd = sample_tg.root_node_->descriptor()->mutable_spawned(0);
+  // Parent of child 1 should be the root task
+  CHECK_EQ(sample_tg.ParentOf(ctd), &sample_tg_root_desc_);
+}
+
 
 // Retrieve a task's children (tasks spawned by it).
 TEST_F(TaskGraphTest, GetChildrenTest) {
   TaskGraph sample_tg(&sample_tg_root_desc_);
+  CHECK_EQ(sample_tg.root_node_->children().size(), 2);
 }
 
 }  // namespace firmament
