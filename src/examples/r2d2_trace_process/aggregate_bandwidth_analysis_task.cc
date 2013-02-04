@@ -97,7 +97,7 @@ void AggregateBandwidthAnalysisTask::Invoke(void* dag0_ptr, uint64_t offset,
     prev_packet_timestamp_ = data_ptr[offset-1].timestamp;
   uint64_t first_timestamp = data_ptr[offset].timestamp;
   uint64_t bw_sample_start = first_timestamp;
-  uint64_t bw_sample_width = 1000000;
+  uint64_t bw_sample_width = WINDOW_SIZE;
   uint64_t bw_aggregate_counter_s0 = 0;
   uint64_t bw_aggregate_counter_s1 = 0;
   // Iterate over all packets in our section of the capture file and extract
