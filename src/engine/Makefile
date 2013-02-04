@@ -68,11 +68,11 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/engine/remote_executor.o \
 		$(BUILD_DIR)/engine/simple_scheduler.o \
-		$(BUILD_DIR)/storage/simple_object_store.o \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
+		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) $(HTTP_UI_LIBS) \
 		-o $(BUILD_DIR)/engine/coordinator, \
 		"  DYNLNK  $(BUILD_DIR)/engine/coordinator")
@@ -95,12 +95,11 @@ $(OBJ_DIR)/coordinator_sim: $(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/engine/remote_executor.o \
 		$(BUILD_DIR)/engine/simple_scheduler.o \
-		$(BUILD_DIR)/storage/simple_object_store.o \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
-		$< \
+		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) $(HTTP_UI_LIBS) \
 		-o $(BUILD_DIR)/engine/coordinator_sim \
 		-D__SIMULATE_SYNTHETIC_DTG__, \
@@ -119,6 +118,7 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
+		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) -o $(BUILD_DIR)/engine/worker, \
 		"  DYNLNK  $(BUILD_DIR)/engine/worker")
 #		$(BUILD_DIR)/engine/local_executor.o \

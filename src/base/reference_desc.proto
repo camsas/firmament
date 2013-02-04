@@ -32,6 +32,9 @@ message ReferenceDescriptor {
 
   optional uint64 time_to_compute = 9 ;
   required uint64 version = 10 ;
+
+  /* Modifications for storage engine */
+  required bool is_modified = 11; 
   
  
 }

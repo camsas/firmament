@@ -287,7 +287,7 @@ TaskDescriptor* SimpleScheduler::ProducingTaskForDataObjectID(
   // XXX(malte): stub
   VLOG(2) << "Looking up producing task for object " << id;
 //  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
-  ReferenceDescriptor* rd = 0;
+  ReferenceDescriptor* rd = object_store_->GetReference(id);
   if (!rd || !rd->has_producing_task()) {
     return NULL;
   } else {

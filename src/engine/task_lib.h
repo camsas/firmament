@@ -51,6 +51,7 @@ namespace firmament {
 
 using platform_unix::streamsockets::StreamSocketsAdapter;
 using platform_unix::streamsockets::StreamSocketsChannel;
+using namespace store; 
 
 class TaskLib {
  public:
@@ -69,10 +70,18 @@ class TaskLib {
   void* GetObjectStart(DataObjectID_t id );
   void GetObjectEnd(DataObjectID_t id ); 
   void* PutObjectStart(DataObjectID_t id, size_t size); 
-  void PutObjectEnd(DataObjectID_t id); 
-  void* Extend(DataObjectID_t id, size_t old_size, size_t new_size); 
+  void PutObjectEnd(DataObjectID_t id, size_t size);
+  void* Extend(DataObjectID_t id, size_t old_size, size_t new_size);
     
-   
+  Cache_t* getCache() { 
+    return cache ; 
+  }
+
+
+  
+  
+  
+  
  protected:
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
   shared_ptr<StreamSocketsChannel<BaseMessage> > chan_;
@@ -94,6 +103,8 @@ class TaskLib {
 
   void setUpStorageEngine() ; 
   
+  
+
  private:
   bool task_error_;
   bool task_running_;
@@ -103,9 +114,11 @@ class TaskLib {
   Cache_t* cache ; 
   string storage_uri ;  
   managed_shared_memory* segment; 
-  named_mutex* mutex ;  
-  WriteLock_t* cache_lock; 
+  named_mutex* mutex;  
+  scoped_lock<named_mutex>* cache_lock; 
   ReferenceNotification_t* reference_not_t ; 
+  
+  
         
 };
 

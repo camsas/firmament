@@ -17,12 +17,16 @@
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/offset_ptr.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
+#include <boost/interprocess/sync/named_upgradable_mutex.hpp>
+#include <storage/StorageInfo.h>
 
 namespace firmament {
   namespace store {
 
     using namespace boost::interprocess;
 
+    class StorageInfo ; 
+    
     typedef map<DataObjectID_t, ReferenceDescriptor*> DataObjectMap_t;
 
     //    typedef struct  mutex_struct() { 
@@ -44,9 +48,12 @@ namespace firmament {
 
     typedef vector<DataObjectID_t, SharedmemAllocator_t> SharedVector_t;
 
+    typedef map<string, StorageInfo*> NodeTable_t ; 
     
     typedef struct cache {
       size_t capacity;
+      
+      size_t size ; 
       //       offset_ptr<SharedVector_t> ; 
       SharedVector_t* object_list;
 
@@ -55,14 +62,20 @@ namespace firmament {
 
     } Cache_t;
 
-    typedef sharable_lock<named_mutex> ReadLock_t;
+    typedef sharable_lock<named_upgradable_mutex> ReadLock_t;
 
-    typedef scoped_lock<named_mutex> WriteLock_t;
+    typedef scoped_lock<named_upgradable_mutex> WriteLock_t;
+    
+    enum notification_types {
+      PUT_OBJECT, 
+      GET_OBJECT, 
+      FREE
+    };
 
     typedef struct RefNot {       
       
       DataObjectID_t id;
-
+     
       interprocess_mutex mutex;
 
       interprocess_condition cond_read;
@@ -72,6 +85,12 @@ namespace firmament {
       bool writable;
 
       size_t size;
+      
+      notification_types request_type; 
+      
+      bool success; 
+      
+      RefNot():writable(true),  size(0) , request_type(FREE), success(false) {} ;
       
     } ReferenceNotification_t;
 

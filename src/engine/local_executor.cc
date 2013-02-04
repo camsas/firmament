@@ -195,13 +195,13 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       // wait for task to terminate
       int status;
       while (!WIFEXITED(status)) {
-        VLOG_EVERY_N(2, 1000) << "Waiting for task to exit...";
+   //     VLOG_EVERY_N(2, 1000) << "Waiting for task to exit...";
         waitpid(pid, &status, 0);
       }
       VLOG(1) << "Task process with PID " << pid << " exited with status "
               << WEXITSTATUS(status);
-      if (perf_monitoring)
-        delete perf_prefix;
+//      if (perf_monitoring)
+//        delete perf_prefix;
       return status;
   }
   return -1;

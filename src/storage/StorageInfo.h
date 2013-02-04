@@ -78,7 +78,7 @@ namespace firmament {
       inline string get_resource_uuid() {
         return uuid;
       }
-
+      
     private:
 
       string node_uri; /* Address of node*/
@@ -90,7 +90,7 @@ namespace firmament {
       long int average_rtt; /* Average RTT to contact node */
 
       boost::shared_ptr<StreamSocketsChannel<BaseMessage> > chan;
-
+      
 
     };
 

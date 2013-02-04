@@ -32,6 +32,7 @@
 #include "platforms/unix/stream_sockets_channel-inl.h"
 
 #include "messages/base_message.pb.h"
+#include "messages/storage_message.pb.h"
 #include "base/common.h"
 #include "base/types.h"
 #include "base/job_desc.pb.h"
@@ -43,8 +44,6 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/placeholders.hpp>
 #include "misc/map-util.h"
-#include "Cache.h"
-#include "StorageInfo.h"
 
 
 
@@ -54,6 +53,7 @@ namespace firmament {
     using platform_unix::streamsockets::StreamSocketsChannel;
     using platform_unix::streamsockets::StreamSocketsAdapter;
     using namespace std;
+    using namespace boost; 
 
     class Cache;
 
@@ -71,26 +71,39 @@ namespace firmament {
       void HandleIncomingReceiveError(const boost::system::error_code& error,
               const string& remote_endpoint);
       void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg);
-
+      void HandleIncomingHeartBeat(const StorageHeartBeatMessage& msg );
+ 
       void setUpCommunication();
       void printTopology();
 
       void obtain_object_remotely(DataObjectID_t id);
 
+   
+      void HeartBeatMasterTask(); 
+      void sendHeartBeatMasterTask(); 
+      
+      
+      StorageInfo* infer_best_location(ReferenceDescriptor* rd); 
 
     protected:
       shared_ptr<StreamSocketsAdapter<BaseMessage> > message_adapter_;
-      vector<StorageInfo*> peers; /* Channel interfaces, etc. */
-      vector<StorageInfo*> nodes; /* Concatenate global information
+      NodeTable_t peers; /* Channel interfaces, etc. */
+      NodeTable_t nodes; /* Concatenate global information
                           about all the nodes.
                           */
 
     private:
-      void createSharedBuffer(size_t size);
       shared_ptr<Cache> cache;
-
-    };
-
+      
+      /* Currently only exchange heartbeats with peers*/
+      long int peer_heartbeat_frequency; 
+     
+      void createSharedBuffer(size_t size);
+      void HeartBeatTask();
+      void sendHeartbeat(); 
+   
+    }; 
+    
   } // namespace store
 } // namespace firmament
 

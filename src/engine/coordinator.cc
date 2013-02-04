@@ -418,6 +418,8 @@ void Coordinator::AddJobsTasksToTaskTable(
       VLOG(1) << "Output " << output_iter->id() << " already exists in "
               << "local object table. Not adding again.";
     }
+    if (object_store_->GetReference(output_iter->id())!=NULL) VLOG(3) << "Object is indeed in object store " << endl; 
+    else VLOG(3) << "Error Object is not in object store " << endl ; 
   }
   for (RepeatedField<DataObjectID_t>::const_iterator output_iter =
        new_jd->output_ids().begin();
@@ -429,11 +431,11 @@ void Coordinator::AddJobsTasksToTaskTable(
     CHECK(object_store_->GetReference(*output_iter));
   }
 #ifdef __SIMULATE_SYNTHETIC_DTG__
-  LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";
-  sim_dtg_generator_.reset(new sim::SimpleDTGGenerator(FindOrNull(*job_table_,
-                                                                  new_job_id)));
-  boost::thread t(boost::bind(&sim::SimpleDTGGenerator::Run,
-                              sim_dtg_generator_));
+//  LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";
+//  sim_dtg_generator_.reset(new sim::SimpleDTGGenerator(FindOrNull(*job_table_,
+//                                                                  new_job_id)));
+//  boost::thread t(boost::bind(&sim::SimpleDTGGenerator::Run,
+//                              sim_dtg_generator_));
 #endif
   // Kick off the scheduler for this job.
   uint64_t num_scheduled = scheduler_->ScheduleJob(

@@ -22,6 +22,8 @@
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <messages/storage_message.pb.h>
 #include "misc/utils.h"
+#include "simple_object_store.h"
+
 
 namespace firmament {
   namespace store {
@@ -44,6 +46,8 @@ namespace firmament {
 
       bool write_object_to_cache(const ObtainObjectMessage& msg);
       bool write_object_to_cache(DataObjectID_t id);
+      
+      bool obtain_object(DataObjectID_t id) ; 
 
       inline size_t getCapacity() {
         return cache->capacity;
@@ -61,7 +65,7 @@ namespace firmament {
       SimpleObjectStore* store;
       managed_shared_memory* segment;
       named_mutex* mutex;
-      WriteLock_t* cache_lock;
+      scoped_lock<named_mutex>* cache_lock;
 
       /* Currently doing LRU but could do anything else*/
       void make_space_in_cache();

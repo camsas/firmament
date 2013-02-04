@@ -30,7 +30,7 @@ namespace firmament {
     uuid(uuid_),
     coordinator_uuid(coo_uuid_),
     average_rtt(0),
-    chan(chan_) {
+    chan(chan_){
     }
 
     StorageInfo::StorageInfo(const StorageInfo& orig) {
@@ -38,6 +38,8 @@ namespace firmament {
 
     StorageInfo::~StorageInfo() {
     }
+    
+   
 
   } //namespace store
 } // namespace firmament
