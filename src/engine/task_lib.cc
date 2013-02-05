@@ -322,7 +322,7 @@ void TaskLib::ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec) {
         reference_not_t->cond_added.notify_one(); /* Storage engine will be 
                                       * only one waiting on this */
 
-        while (!reference_not_t->writable || !reference_not_t->request_type == GET_OBJECT) {
+        while (!reference_not_t->writable || !reference_not_t->request_type == GET_OBJECT ) {
           cout << "Wait for reply " << endl ; 
           reference_not_t->cond_read.wait(lock_ref);
         }
