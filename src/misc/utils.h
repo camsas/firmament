@@ -17,6 +17,7 @@
 //#include "base/ensemble.h"
 #include "base/common.h"
 #include "base/types.h"
+#include "boost/lexical_cast.hpp"
 
 namespace firmament {
 
@@ -39,7 +40,7 @@ uint64_t MakeEnsembleUID(Ensemble *ens);*/
 
 ResourceID_t GenerateUUID();
 JobID_t GenerateJobID();
-DataObjectID_t GenerateDataObjectID(const TaskDescriptor& task_descriptor);
+DataObjectID_t GenerateDataObjectID(const TaskDescriptor& task_descriptor); //TACH
 DataObjectID_t GenerateDataObjectID(TaskID_t producing_task,
                                     TaskOutputID_t output_id);
 // XXX(malte): This is a hack. Figure out a proper hashing function compatible

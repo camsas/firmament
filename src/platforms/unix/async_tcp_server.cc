@@ -11,6 +11,7 @@
 #include <boost/bind.hpp>
 
 #include "platforms/unix/tcp_connection.h"
+#include <boost/lexical_cast.hpp>
 
 using boost::asio::ip::tcp;
 using boost::posix_time::ptime;
@@ -25,6 +26,7 @@ AsyncTCPServer::AsyncTCPServer(
     const string& endpoint_addr, const string& port,
     AcceptHandler::type accept_callback)
     : listening_(false),
+        listening_interface_(""),
       accept_handler_(accept_callback),
       io_service_(new boost::asio::io_service),
       acceptor_(*io_service_) {
@@ -40,6 +42,12 @@ AsyncTCPServer::AsyncTCPServer(
   acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
   acceptor_.bind(endpoint);
   acceptor_.listen();
+
+  tcp::endpoint endp =  acceptor_.local_endpoint() ; 
+  listening_interface_ = "tcp://" + endp.address().to_string() + ":" + boost::lexical_cast<string>(endp.port()) ; 
+  
+  VLOG(1) << listening_interface_ ; 
+  
   StartAccept();
 }
 

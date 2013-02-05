@@ -14,6 +14,7 @@
 
 DECLARE_string(coordinator_uri);
 DECLARE_string(resource_id);
+DECLARE_string(cache_name); 
 
 using namespace firmament;  // NOLINT
 

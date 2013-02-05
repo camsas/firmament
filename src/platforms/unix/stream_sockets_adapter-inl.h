@@ -194,11 +194,41 @@ void StreamSocketsAdapter<T>::Listen(const string& endpoint_uri) {
           &StreamSocketsAdapter::AddChannelForConnection,
           this->shared_from_this(),
           _1)));
+  VLOG(2) << "TCP server created " ; 
   tcp_server_thread_.reset(
       new boost::thread(boost::bind(&AsyncTCPServer::Run, tcp_server_)));
   VLOG(1) << "AsyncTCPServer's main thread running as "
           << tcp_server_thread_->get_id();
 }
+
+template <typename T>
+string StreamSocketsAdapter<T>::Listen() {
+  // no-op if we are already listening
+  /*if (ListenReady())
+    return;*/
+  CHECK(!ListenReady());
+  CHECK_EQ(endpoint_channel_map_.size(), 0);
+  CHECK_EQ(channel_recv_envelopes_.size(), 0);
+  message_wait_mutex_.lock();
+  message_wait_ready_ = false;
+  message_wait_mutex_.unlock();
+  // Unknown port
+  VLOG(1) << "Creating an async TCP server with an unspecified port ";
+  tcp_server_.reset(new AsyncTCPServer(
+      "localhost", "", boost::bind(
+          &StreamSocketsAdapter::AddChannelForConnection,
+          this->shared_from_this(),
+          _1)));
+  VLOG(2) << "TCP server created " ; 
+  tcp_server_thread_.reset(
+      new boost::thread(boost::bind(&AsyncTCPServer::Run, tcp_server_)));
+  VLOG(1) << "AsyncTCPServer's main thread running as "
+          << tcp_server_thread_->get_id();
+  
+  return tcp_server_->listening_interface(); 
+}
+
+
 
 template <typename T>
 bool StreamSocketsAdapter<T>::ListenReady() {

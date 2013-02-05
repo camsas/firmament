@@ -10,11 +10,13 @@
 #include <map>
 #include <utility>
 
-#include "base/reference_types.h"
-#include "base/reference_utils.h"
+#include "storage/reference_types.h"
+#include "storage/reference_types.h"
+#include "storage/reference_utils.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "engine/local_executor.h"
+#include "storage/object_store_interface.h"
 
 namespace firmament {
 namespace scheduler {
@@ -24,11 +26,11 @@ using common::pb_to_set;
 
 SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
                                  shared_ptr<ResourceMap_t> resource_map,
-                                 shared_ptr<DataObjectMap_t> object_map,
+                                 shared_ptr<store::ObjectStoreInterface> object_store,
                                  shared_ptr<TaskMap_t> task_map,
                                  shared_ptr<TopologyManager> topo_mgr,
                                  const string& coordinator_uri)
-    : SchedulerInterface(job_map, resource_map, object_map, task_map),
+    : SchedulerInterface(job_map, resource_map, object_store, task_map),
       coordinator_uri_(coordinator_uri),
       topology_manager_(topo_mgr),
       scheduling_(false) {
@@ -268,7 +270,9 @@ shared_ptr<ReferenceInterface> SimpleScheduler::ReferenceForID(
     DataObjectID_t id) {
   // XXX(malte): stub
   VLOG(2) << "Looking up object " << id;
-  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
+//  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
+  ReferenceDescriptor* rd = 0;
+
   if (!rd) {
     VLOG(2) << "... NOT FOUND";
     return shared_ptr<ReferenceInterface>();  // NULL
@@ -282,7 +286,8 @@ TaskDescriptor* SimpleScheduler::ProducingTaskForDataObjectID(
     DataObjectID_t id) {
   // XXX(malte): stub
   VLOG(2) << "Looking up producing task for object " << id;
-  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
+//  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
+  ReferenceDescriptor* rd = object_store_->GetReference(id);
   if (!rd || !rd->has_producing_task()) {
     return NULL;
   } else {

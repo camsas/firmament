@@ -68,7 +68,7 @@ $(OBJ_DIR)/%.pb.o: $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc \
 		"  PBC     $@")
 
 # Make unit test object file (special case).
-$(TEST_OBJ_DIR)/%_test.o: %_test.cc .setup
+$(TEST_OBJ_DIR)/%_test.o: %_test.cc %.cc %.h .setup
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) $(OPTFLAGS) $(DEFINES) \
 		-c $(SRC_ROOT_DIR)/$(SUFFIX)/$< \

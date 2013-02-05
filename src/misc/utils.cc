@@ -95,6 +95,7 @@ DataObjectID_t DataObjectIDFromString(const string& str) {
   return object_id;
 }
 
+
 JobID_t JobIDFromString(const string& str) {
   // XXX(malte): This makes assumptions about JobID_t being a Boost UUID. We
   // should have a generic "JobID_t-from-string" helper instead.

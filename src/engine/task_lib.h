@@ -24,9 +24,8 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "base/data_object.h"
 #include "base/resource_desc.pb.h"
-#include "base/reference_types.h"
+#include "storage/reference_types.h"
 #include "base/task_interface.h"
 #include "messages/base_message.pb.h"
 // XXX(malte): include order dependency
@@ -37,11 +36,22 @@
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_adapter-inl.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
+#include "storage/types.h"
+#include "boost/interprocess/segment_manager.hpp"
+#include <boost/interprocess/file_mapping.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/interprocess/sync/sharable_lock.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
 
 namespace firmament {
 
 using platform_unix::streamsockets::StreamSocketsAdapter;
 using platform_unix::streamsockets::StreamSocketsChannel;
+using namespace store; 
 
 class TaskLib {
  public:
@@ -57,6 +67,21 @@ class TaskLib {
   void Publish(const vector<ConcreteReference>& references);
   //virtual void TailSpawn(const ConcreteReference& code);
 
+  void* GetObjectStart(DataObjectID_t id );
+  void GetObjectEnd(DataObjectID_t id ); 
+  void* PutObjectStart(DataObjectID_t id, size_t size); 
+  void PutObjectEnd(DataObjectID_t id, size_t size);
+  void* Extend(DataObjectID_t id, size_t old_size, size_t new_size);
+    
+  Cache_t* getCache() { 
+    return cache ; 
+  }
+
+
+  
+  
+  
+  
  protected:
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
   shared_ptr<StreamSocketsChannel<BaseMessage> > chan_;
@@ -65,18 +90,36 @@ class TaskLib {
   string coordinator_uri_;
   ResourceID_t resource_id_;
   TaskID_t task_id_;
+  TaskDescriptor task_descriptor_;
 
   void ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec);
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
+  bool PullTaskInformationFromCoordinator(TaskID_t task_id,
+                                          TaskDescriptor* desc);
   void SendFinalizeMessage(bool success);
   void SendHeartbeat();
   bool SendMessageToCoordinator(BaseMessage* msg);
+
+  void setUpStorageEngine() ; 
+  
+  
 
  private:
   bool task_error_;
   bool task_running_;
   uint64_t heartbeat_seq_number_;
+  
+  
+  Cache_t* cache ; 
+  string storage_uri ;  
+  managed_shared_memory* segment; 
+  named_mutex* mutex;  
+  scoped_lock<named_mutex>* cache_lock; 
+  ReferenceNotification_t* reference_not_t ; 
+  
+  
+        
 };
 
 }  // namespace firmament

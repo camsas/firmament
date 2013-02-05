@@ -9,10 +9,9 @@
 #include <gtest/gtest.h>
 
 #include "base/common.h"
-#include "base/concrete_reference.h"
-#include "base/future_reference.h"
-#include "base/error_reference.h"
-#include "base/value_reference.h"
+#include "storage/concrete_reference.h"
+#include "storage/future_reference.h"
+#include "storage/error_reference.h"
 
 namespace firmament {
 

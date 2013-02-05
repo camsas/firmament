@@ -145,7 +145,8 @@ bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
     return false;
   } else {
     io_service_work_.reset(new io_service::work(*client_io_service_));
-    VLOG(2) << "Client: we appear to have connected successfully...";
+    VLOG(2) << "Client: we appear to have connected successfully; "
+            << "local endpoint: " << LocalEndpointString();
     shared_ptr<boost::thread> thread(new boost::thread(
         boost::bind(&boost::asio::io_service::run, client_io_service_)));
     VLOG(2) << "Created IO service thread " << thread->get_id();
@@ -179,6 +180,7 @@ const string StreamSocketsChannel<T>::LocalEndpointString() {
       return protocol + address;
     default:
       LOG(FATAL) << "Unknown stream socket type " << type_;
+      return "";
   }
 }
 
@@ -213,6 +215,7 @@ const string StreamSocketsChannel<T>::RemoteEndpointString() {
       return protocol + address;
     default:
       LOG(FATAL) << "Unknown stream socket type " << type_;
+      return ""; 
   }
 }
 

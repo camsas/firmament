@@ -51,6 +51,7 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
   shared_ptr<MessagingChannelInterface<T> > GetChannelForEndpoint(
       const string& endpoint);
   void Listen(const string& endpoint_uri);
+  string Listen();
   bool ListenReady();
   void RegisterAsyncMessageReceiptCallback(
       typename AsyncMessageRecvHandler<T>::type callback);
@@ -62,6 +63,18 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
 
   size_t NumActiveChannels() {
     return endpoint_channel_map_.size();
+  }
+  void DumpActiveChannels() {
+    LOG(INFO) << NumActiveChannels() << " active channels at "
+              << *this;
+    for (typeof(endpoint_channel_map_.begin()) chan_iter =
+         endpoint_channel_map_.begin();
+         chan_iter != endpoint_channel_map_.end();
+         ++chan_iter) {
+      LOG(INFO) << "[" << chan_iter->second << "]: Local: "
+                << chan_iter->second->LocalEndpointString()
+                << "Remote: " << chan_iter->second->RemoteEndpointString();
+    }
   }
 
  private:
