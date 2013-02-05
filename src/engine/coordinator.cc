@@ -282,7 +282,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
 void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
   LOG(ERROR) << "Unimplemented!";
   // Get the descriptor for the spawning task
-  TaskDescriptor* spawner;
+  TaskDescriptor** spawner;
   CHECK(spawner = FindOrNull(*task_table_, msg.creating_task_id()));
   // Extract new task descriptor from the message received
   TaskDescriptor* spawnee = new TaskDescriptor;
