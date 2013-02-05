@@ -206,7 +206,8 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
       lost_at_dag += sample_buf->value_type_dropped_len.dropped;
     // Progress update every 10000 packets
     if (i % 100000 == 0) {
-      float perc = double(i) / double(head_buf->samples) * 100.0;
+      float perc = static_cast<double>(i) /
+          static_cast<double>(head_buf->samples) * 100.0;
       VLOG(1) << perc << "% (" << i << " packets)";
     }
     // One-up, next packet
@@ -222,8 +223,12 @@ void PacketJoinTask::Invoke(void* dag0_ptr, char* dag1_filename,
   VLOG(1) << "After DAG0 end    : " << packets_after_end;
   VLOG(1) << "Lost at DAG       : " << lost_at_dag;
   VLOG(1) << "-----------------------------";
-  VLOG(1) << "Avg BWD steps p.p.: " << fixed << (double(total_backward_steps_) / double(i));
-  VLOG(1) << "Avg FWD steps p.p.: " << fixed << (double(total_forward_steps_) / double(i));
+  VLOG(1) << "Avg BWD steps p.p.: " << fixed
+          << (static_cast<double>(total_backward_steps_) /
+             static_cast<double>(i));
+  VLOG(1) << "Avg FWD steps p.p.: " << fixed
+          << (static_cast<double>(total_forward_steps_) /
+             static_cast<double>(i));
   // Clean up memory
   free(head_buf);
   free(sample_buf);
@@ -356,9 +361,9 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
         cur_idx = ++cur_idx_fwd;
       } else if (dag0_sample_data[cur_idx_bwd].timestamp > min_time) {
         // Keep going backward (unless we've hit zero)
-        if (cur_idx_bwd > 0)
+        if (cur_idx_bwd > 0) {
           cur_idx = --cur_idx_bwd;
-        else {
+        } else {
           VLOG(2) << "Giving up on packet as we've exhausted the search range!";
           VLOG(2) << "Last indices: " << cur_idx_bwd << "/" << cur_idx
                   << "/" << cur_idx_fwd;
@@ -374,7 +379,8 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
     }
   }
   // No match, presume packet lost
-  VLOG_EVERY_N(1, 1000) << "1000 UNMATCHED packets! (ex.: " << packet->hash << ")";
+  VLOG_EVERY_N(1, 1000) << "1000 UNMATCHED packets! (ex.: "
+                        << packet->hash << ")";
   VLOG(2) << "Gave up on packet at " << timestamp
           << ", last indices: BWD: " << cur_idx_bwd
           << ", FWD: " << cur_idx_fwd << ", CUR: " << cur_idx;

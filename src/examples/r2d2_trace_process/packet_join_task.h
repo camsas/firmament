@@ -32,6 +32,7 @@ class PacketJoinTask : public TaskInterface {
 #else
 class PacketJoinTask {
 #endif
+
  public:
 #ifdef __FIRMAMENT__
   explicit PacketJoinTask(TaskLib* task_lib, TaskID_t task_id)
@@ -39,7 +40,7 @@ class PacketJoinTask {
       total_backward_steps_(0),
       total_forward_steps_(0) {}
 #else
-  PacketJoinTask() 
+  PacketJoinTask()
     : total_backward_steps_(0),
       total_forward_steps_(0) {}
 #endif
@@ -54,7 +55,7 @@ class PacketJoinTask {
 
  private:
   uint64_t total_backward_steps_;
-  uint64_t total_forward_steps_; 
+  uint64_t total_forward_steps_;
 };
 
 }  // namespace hello_world

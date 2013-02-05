@@ -127,26 +127,32 @@ void AggregateBandwidthAnalysisTask::Invoke(void* dag0_ptr, uint64_t offset,
         VLOG(2) << "BIG gap: emitting two data points!";
         cout << prev_packet_timestamp_ << ","
              << bw_aggregate_counter_s0 << ","
-             << fixed << (double(bw_aggregate_counter_s0 * 8) /
-                          (double(width) / double(SECS2NS))) << ","
-             << fixed << (double(bw_aggregate_counter_s1 * 8) /
-                          (double(width) / double(SECS2NS)))
+             << fixed << (static_cast<double>(bw_aggregate_counter_s0 * 8) /
+                          (static_cast<double>(width) /
+                           static_cast<double>(SECS2NS))) << ","
+             << fixed << (static_cast<double>(bw_aggregate_counter_s1 * 8) /
+                          (static_cast<double>(width) /
+                           static_cast<double>(SECS2NS)))
               << "\n";
         cout << packet->timestamp << ","
              << bw_aggregate_counter_s0 << ","
-             << fixed << (double(bw_aggregate_counter_s0 * 8) /
-                          (double(width) / double(SECS2NS))) << ","
-             << fixed << (double(bw_aggregate_counter_s1 * 8) /
-                          (double(width) / double(SECS2NS)))
+             << fixed << (static_cast<double>(bw_aggregate_counter_s0 * 8) /
+                          (static_cast<double>(width) /
+                           static_cast<double>(SECS2NS))) << ","
+             << fixed << (static_cast<double>(bw_aggregate_counter_s1 * 8) /
+                          (static_cast<double>(width) /
+                           static_cast<double>(SECS2NS)))
              << "\n";
       } else {
         // simple, small gap, emit one data point and move on
         cout << packet->timestamp << ","
              << bw_aggregate_counter_s0 << ","
-             << fixed << (double(bw_aggregate_counter_s0 * 8) /
-                          (double(width) / double(SECS2NS))) << ","
-             << fixed << (double(bw_aggregate_counter_s1 * 8) /
-                          (double(width) / double(SECS2NS)))
+             << fixed << (static_cast<double>(bw_aggregate_counter_s0 * 8) /
+                          (static_cast<double>(width) /
+                           static_cast<double>(SECS2NS))) << ","
+             << fixed << (static_cast<double>(bw_aggregate_counter_s1 * 8) /
+                          (static_cast<double>(width) /
+                           static_cast<double>(SECS2NS)))
              << "\n";
       }
       bw_sample_start = packet->timestamp;
