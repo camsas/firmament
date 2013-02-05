@@ -60,7 +60,8 @@ TEST_F(TaskGraphTest, CreateTGTest) {
 // For the root, we expect to get itself back when asking for the parent
 TEST_F(TaskGraphTest, GetParentOfRootTest) {
   TaskGraph sample_tg(&sample_tg_root_desc_);
-  CHECK_EQ(sample_tg.root_node_->mutable_parent(), static_cast<TaskGraphNode*>(NULL));
+  CHECK_EQ(sample_tg.root_node_->mutable_parent(),
+           static_cast<TaskGraphNode*>(NULL));
   CHECK_EQ(sample_tg.ParentOf(&sample_tg_root_desc_),
            &sample_tg_root_desc_);
 }
