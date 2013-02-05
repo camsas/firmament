@@ -57,7 +57,7 @@ namespace firmament {
       CHECK(desc.has_inline_data());
     }
 
-    void ValidateInternalDescriptor() {
+    void ValidateInternalDescriptor() const {
       CHECK_EQ(id_, desc_.id());
       CHECK_EQ(desc_.type(), ReferenceDescriptor::ERROR);
       CHECK(desc_.has_inline_data());

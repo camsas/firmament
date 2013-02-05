@@ -14,7 +14,7 @@
 namespace firmament {
 
   typedef ReferenceDescriptor::ReferenceType ReferenceType_t;
-  typedef size_t DataObjectID_t;
+  typedef uint64_t DataObjectID_t;
 
   class ReferenceInterface : public PrintableInterface {
   public:
@@ -45,7 +45,7 @@ namespace firmament {
       return id_;
     }
 
-    inline ReferenceDescriptor desc() {
+    inline ReferenceDescriptor desc() const {
       ValidateInternalDescriptor();
       return desc_;
     }
@@ -53,7 +53,7 @@ namespace firmament {
   protected:
     virtual void ValidateInitDescriptor(const ReferenceDescriptor& desc) = 0;
 
-    void ValidateInternalDescriptor() {
+    void ValidateInternalDescriptor() const {
       CHECK_EQ(id_, desc_.id());
     }
     // Fields shared between all reference types

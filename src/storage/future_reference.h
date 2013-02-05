@@ -39,7 +39,7 @@ namespace firmament {
       CHECK_EQ(desc.type(), ReferenceDescriptor::FUTURE);
     }
 
-    void ValidateInternalDescriptor() {
+    void ValidateInternalDescriptor() const {
       CHECK_EQ(id_, desc_.id());
       CHECK_EQ(desc_.type(), ReferenceDescriptor::FUTURE);
     }

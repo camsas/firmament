@@ -75,7 +75,7 @@ namespace firmament {
       CHECK_EQ(desc.type(), ReferenceDescriptor::CONCRETE);
     }
 
-    void ValidateInternalDescriptor() {
+    void ValidateInternalDescriptor() const {
       CHECK_EQ(id_, desc_.id());
       CHECK_EQ(desc_.type(), ReferenceDescriptor::CONCRETE);
       CHECK_EQ(desc_.size(), size_);
