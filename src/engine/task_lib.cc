@@ -232,7 +232,7 @@ bool TaskLib::SendMessageToCoordinator(BaseMessage* msg) {
 }
 
 void TaskLib::setUpStorageEngine() {
-  cout << "Setting Up Storage Engine (TaskLib)" << endl;
+  VLOG(1) << "Setting Up Storage Engine (TaskLib)" << endl;
   /* Contact coordinator to ask where storage engine is for this resource
    As currently, only assume that is local, don't currently need it
    Also need */
@@ -264,11 +264,12 @@ void TaskLib::setUpStorageEngine() {
     reference_not_t =
             (segment->find<ReferenceNotification_t>("refnot")).first;
 
-    cout << "Cache created with capacity: " << cache->capacity << " size " << cache->size << endl;
+    VLOG(1) << "Cache created with capacity: " << cache->capacity << " size "
+            << cache->size << endl;
 
   } catch (interprocess_exception& e) {
-    cout << "Error: " << e.what() << endl;
-    cout << "Error: storage engine coudn't be initialised (TaskLib) " << endl;
+    LOG(ERROR) << e.what();
+    LOG(ERROR) << "Error: storage engine coudn't be initialised (TaskLib) ";
   }
   /* Else if not local - not implemented*/
 

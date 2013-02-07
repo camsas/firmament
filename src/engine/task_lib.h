@@ -17,6 +17,15 @@
 #include <boost/bind.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include "boost/interprocess/segment_manager.hpp"
+#include <boost/interprocess/file_mapping.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/interprocess/sync/sharable_lock.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
 #else
 // Currently this won't build if __PLATFORM_HAS_BOOST__ is not defined.
 #error __PLATFORM_HAS_BOOST__ not set, so cannot build task library!
@@ -37,15 +46,6 @@
 #include "platforms/unix/stream_sockets_adapter-inl.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
 #include "storage/types.h"
-#include "boost/interprocess/segment_manager.hpp"
-#include <boost/interprocess/file_mapping.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/shared_memory_object.hpp>
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/sync/named_mutex.hpp>
-#include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/interprocess/sync/sharable_lock.hpp>
-#include <boost/interprocess/sync/interprocess_condition.hpp>
 
 namespace firmament {
 
