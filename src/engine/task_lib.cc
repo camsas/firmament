@@ -223,9 +223,11 @@ namespace firmament {
       cache->object_list = (segment->find<SharedVector_t > ("objects")).first;
 
       cache->capacity = *((segment->find<size_t > ("capacity")).first);
+
       cache->size = *((segment->find<size_t > ("size")).first);
- 
+
       mutex = new named_mutex(open_only, name);
+
       cache_lock = new scoped_lock<named_mutex > (*mutex, defer_lock);
 
       reference_not_t =

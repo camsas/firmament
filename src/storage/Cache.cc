@@ -20,12 +20,12 @@ namespace firmament {
     }
 
     Cache::~Cache() {
-       if (cache!= NULL)    { 
-              clearCache();
-              named_mutex::remove(cache_name.c_str());
-              shared_memory_object::remove(cache_name.c_str());
-              
-      }
+//       if (cache!= NULL)    { 
+//              clearCache();
+//              named_mutex::remove(cache_name.c_str());
+//              shared_memory_object::remove(cache_name.c_str());
+//              
+//      }
     }
 
     /* Currently using LRU*/
@@ -204,7 +204,7 @@ namespace firmament {
 
         /* End of Hack */
 
-        VLOG(3) << "Acquiring Cache name  mutex" << endl;
+        VLOG(3) << "Acquiring Cache name mutex" << endl;
 
         mutex = new named_mutex(open_or_create, cache_name);
 
@@ -225,12 +225,12 @@ namespace firmament {
     }
 
     void Cache::clearCache() {
-      VLOG(3) << "Clearing Cache ";
-      if (cache->object_list != NULL) {
-        while (cache->object_list->empty()) {
-          make_space_in_cache();
-        }
-      }
+ //     VLOG(3) << "Clearing Cache ";
+//      if (cache->object_list != NULL) {
+//        while (cache->object_list->empty()) {
+//          make_space_in_cache();
+//        }
+//      }
     }
 
     bool Cache::obtain_object(DataObjectID_t id) {
