@@ -18,7 +18,7 @@ extern "C" {
 #include <vector>
 #include <iostream>  // NOLINT
 
-#define WINDOW_SIZE 100*1000*1000  // 100ms
+#define WINDOW_SIZE 1*1000*1000  // 100ms
 
 #ifndef __FIRMAMENT__
 int main(int argc, char* argv[]) {
@@ -256,8 +256,8 @@ sample_t* PacketJoinTask::MatchPacketWithinWindow(
     if (packet->value_type_dropped_len.type == udp &&
         dag0_sample_data[cur_idx].value_type_dropped_len.type ==
         packet->value_type_dropped_len.type &&
-        dag0_sample_data[cur_idx].value_type_dropped_len.length ==
-        packet->value_type_dropped_len.length &&
+/*        dag0_sample_data[cur_idx].value_type_dropped_len.length ==
+        packet->value_type_dropped_len.length &&*/
         dag0_sample_data[cur_idx].hash == packet->hash) {
       // We have a match!
       VLOG(2) << "Matched to packet at "
