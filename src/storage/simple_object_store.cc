@@ -164,7 +164,7 @@ namespace firmament {
                  May just be local */
                 StorageInfo* info = infer_best_location(rd);
                 if (info==NULL) { 
-                    VLOG(3) << "Error: Object Table is inconsistent " << endl; 
+                    LOG(ERROR) << "Error: Object Table is inconsistent " << endl; 
                     /* Fall back to master */
                    
                 }

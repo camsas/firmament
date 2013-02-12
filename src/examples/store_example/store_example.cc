@@ -33,19 +33,19 @@ void StoreTask::Invoke() {
 //  if (read_ptr==NULL) cout <<" Ptr is null " << endl ; 
 
   cout << "Testing Put Object Start " << endl;
-  void* write_ptr = task_lib_->PutObjectStart(0, 10);
+  void* write_ptr = task_lib_->PutObjectStart(1234, 10);
   
   std::memset(write_ptr, 1, 3);
   
   cout << "Testing Put Object End " << endl ; 
-  task_lib_->PutObjectEnd(0, 10);
+  task_lib_->PutObjectEnd(1234, 10);
   
   cout << "Testing Get Object Start when  object present " << endl;
-  void* read_ptr2 = task_lib_->GetObjectStart(0); 
+  void* read_ptr2 = task_lib_->GetObjectStart(1234); 
   if (read_ptr2==NULL) cout <<" Ptr is null " << endl ; 
 
   cout << "Testing Get Object End when object present " << endl;
-  task_lib_->GetObjectEnd(0);
+  task_lib_->GetObjectEnd(1234);
   
   
 //   

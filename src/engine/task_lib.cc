@@ -291,11 +291,17 @@ void* TaskLib::GetObjectStart(DataObjectID_t id) {
       /* Should only be one result in theory*/
       cout << "Object " << id << " was  found in cache." << endl;
 
-      named_upgradable_mutex mut(open_only, nm.c_str());
+      cout << "Obtaining mutex for " << nm << endl;
+      string mutex_name = nm + "mut";
+      named_upgradable_mutex mut(open_only, mutex_name.c_str());
+      cout << "Obtaining lock" <<  endl;
       ReadLock_t rlock(mut);
       rlock.lock();
+      cout << "Lock obtained" <<  endl;
 
+      cout << "Obtaining file mapping for " << nm << endl;
       file_mapping m_file(nm.c_str(), read_only);
+      cout << "Obtaining mapped region" << endl;
       mapped_region region(m_file, read_only);
       void* object = region.get_address();
       return object;
@@ -360,6 +366,7 @@ void* TaskLib::GetObjectStart(DataObjectID_t id) {
 
   } catch (interprocess_exception& e) {
     cout << "Error: GetObjectStart " << endl;
+    cout << "Error: " << e.what() << endl;
   }
   return NULL;
 
@@ -399,26 +406,35 @@ void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
     cache_lock->unlock();
 
 
-    string file_name = boost::lexical_cast<string > (id);
+    string file_name = to_string(id);
+    cout << "file_name is: " << file_name << endl;
 
     /* Create file */
-    std::ofstream ofs(file_name.c_str(), std::ios::binary | std::ios::out | std::ios::in);
+    cout << "About to create file" << endl;
+    std::ofstream ofs(file_name.c_str(), std::ios::binary | std::ios::out);
+    cout << "File created: " << file_name << endl;
+    cout << "Create done, failbit: " << ofs.fail() << "!" << endl;
     ofs.seekp(size - 1);
+    cout << "Seek done, failbit: " << ofs.fail() << "!" << endl;
     ofs.write("", 1);
-    /* Map it*/
+    cout << "Write done, failbit: " << ofs.fail() << "!" << endl;
+    ofs.close();
 
+    /* Map it*/
     permissions permission;
     permission.set_unrestricted();
 
     /* Should delete in PutObjectEnd. TODO Modify to have coherent picture
      of stack vs memory allocated */
+    cout << "About to map file" << endl;
     file_mapping* m_file = new file_mapping(file_name.c_str(), read_write);
+    cout << "file_mapping created: " << m_file << endl;
     mapped_region*  region = new mapped_region(*m_file, read_write, 0, size);
 
     cout << "File Mapped  of size " << region->get_size() << endl;
     void* address = region->get_address();
 
-    string mut_name_s = boost::lexical_cast<string > (id) + "mut";
+    string mut_name_s = to_string(id) + "mut";
     named_upgradable_mutex mut(open_or_create, mut_name_s.c_str(), permission);
 
     cout << "Mutex created " << endl;
