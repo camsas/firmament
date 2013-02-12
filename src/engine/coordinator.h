@@ -174,7 +174,7 @@ class Coordinator : public Node,
   }
 
  protected:
-  void AddJobsTasksToTaskTable(RepeatedPtrField<TaskDescriptor>* tasks);
+  void AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id);
   void AddLocalResource(ResourceDescriptor* resource_desc);
   bool RegisterWithCoordinator(
       shared_ptr<StreamSocketsChannel<BaseMessage> > chan);
