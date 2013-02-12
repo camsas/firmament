@@ -180,7 +180,10 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
   // Add root task to queue
   TaskDescriptor** rtd_ptr = FindOrNull(*task_map_, root_task->uid());
   CHECK(rtd_ptr);
-  newly_active_tasks.push_back(*rtd_ptr);
+  // Only add the root task if it is not already scheduled, running, done
+  // or failed.
+  if ((*rtd_ptr)->state() == TaskDescriptor::CREATED)
+    newly_active_tasks.push_back(*rtd_ptr);
   while (!newly_active_tasks.empty()) {
     TaskDescriptor* current_task = newly_active_tasks.front();
     VLOG(2) << "Next active task considered is " << current_task->uid();
@@ -226,7 +229,7 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
       runnable_tasks_.insert(current_task->uid());
     }
   }
-  VLOG(1) << "do_schedule is " << do_schedule << ", runnable_task queue "
+  VLOG(1) << "do_schedule is " << do_schedule << ", runnable_task set "
           << "contains " << runnable_tasks_.size() << " tasks.";
   return runnable_tasks_;
 }
@@ -257,6 +260,8 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
       CHECK(rp);
       LOG(INFO) << "Scheduling task " << (*td)->uid() << " on resource "
                 << rp->first->uuid() << " [" << rp << "]";
+      // BindTaskToResource both binds the task AND removes it from the runnable
+      // set.
       BindTaskToResource(*td, rp->first);
       total_scheduled++;
     }
