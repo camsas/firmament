@@ -43,12 +43,12 @@ void TaskGraph::CreateNodesForChildren(TaskGraphNode* node,
 void TaskGraph::DelegateOutput(TaskDescriptor* delegator,
                                ReferenceDescriptor* output,
                                TaskDescriptor* delegatee) {
-  LOG(FATAL) << "stub";
   // Check that output actually belongs to delegator
   if (!RepeatedContainsPtr(delegator->mutable_outputs(), output))
     LOG(ERROR) << "Failed to delegate output " << output->DebugString()
                << " of " << delegator->DebugString() << " to "
-               << delegatee->DebugString();
+               << delegatee->DebugString() << " as it is not "
+               << " actually produced by " << delegator->uid() << "!";
   // Add output to delegatee
   // - if we do not already have this reference as an output, add it
   ReferenceDescriptor* delegated_rd = delegatee->add_outputs();

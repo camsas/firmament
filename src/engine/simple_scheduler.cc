@@ -139,10 +139,10 @@ void SimpleScheduler::RegisterResource(ResourceID_t res_id) {
 
 const set<TaskID_t>& SimpleScheduler::RunnableTasksForJob(
     JobDescriptor* job_desc) {
-  // XXX(malte): Obviously, this is pretty broken.
-  set<DataObjectID_t> dummy = pb_to_set(job_desc->output_ids());
+  // TODO(malte): check is this is broken
+  set<DataObjectID_t> outputs = pb_to_set(job_desc->output_ids());
   TaskDescriptor* rtp = job_desc->mutable_root_task();
-  return LazyGraphReduction(dummy, rtp);
+  return LazyGraphReduction(outputs, rtp);
 }
 
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
@@ -171,6 +171,8 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
     CHECK(task != NULL) << "Could not find task producing output ID "
                         << *output_id_iter;
     if (task->state() == TaskDescriptor::CREATED) {
+      VLOG(2) << "Setting task " << task << " active as it produces output "
+              << *output_id_iter << ", which we're interested in.";
       task->set_state(TaskDescriptor::BLOCKING);
       newly_active_tasks.push_back(task);
     }
@@ -224,7 +226,8 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
       runnable_tasks_.insert(current_task->uid());
     }
   }
-  VLOG(1) << "do_schedule is " << do_schedule;
+  VLOG(1) << "do_schedule is " << do_schedule << ", runnable_task queue "
+          << "contains " << runnable_tasks_.size() << " tasks.";
   return runnable_tasks_;
 }
 
