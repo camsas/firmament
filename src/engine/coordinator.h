@@ -29,6 +29,7 @@
 #include "base/reference_desc.pb.h"
 #include "base/resource_desc.pb.h"
 #include "base/resource_topology_node_desc.pb.h"
+#include "base/task_graph.h"
 #include "engine/node.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
@@ -211,6 +212,9 @@ class Coordinator : public Node,
   // A map of all tasks that the coordinator currently knows about.
   // TODO(malte): Think about GC'ing this.
   shared_ptr<TaskMap_t> task_table_;
+  // TODO(malte): figure out if we need task_table_ and job_table_ in addition
+  // to this.
+  TaskGraphMap_t task_graph_table_;
   // The topology manager associated with this coordinator; responsible for the
   // local resources.
   shared_ptr<TopologyManager> topology_manager_;
