@@ -10,18 +10,13 @@
 #include <vector>
 
 #include "base/common.h"
+#include "base/data_object.h"
 #include "base/types.h"
 #include "engine/task_lib.h"
 #include "misc/printable_interface.h"
 #include "storage/types.h"
-#include "boost/interprocess/sync/interprocess_mutex.hpp"
-#include <boost/interprocess/file_mapping.hpp>
-#include "data_object.h"
-#include <fstream>
-
 
 namespace firmament {
-
 
 // Forward declaration.
 class TaskLib;
@@ -45,10 +40,6 @@ class TaskInterface : public PrintableInterface {
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<Task, id=" << id_ << ">";
   }
-  
- 
-  
-  
 
  protected:
   // The task's unique identifier. Note that any TaskID_t is by definition
