@@ -194,7 +194,7 @@ void StreamSocketsAdapter<T>::Listen(const string& endpoint_uri) {
           &StreamSocketsAdapter::AddChannelForConnection,
           this->shared_from_this(),
           _1)));
-  VLOG(2) << "TCP server created " ; 
+  VLOG(2) << "TCP server created";
   tcp_server_thread_.reset(
       new boost::thread(boost::bind(&AsyncTCPServer::Run, tcp_server_)));
   VLOG(1) << "AsyncTCPServer's main thread running as "
@@ -219,13 +219,12 @@ string StreamSocketsAdapter<T>::Listen() {
           &StreamSocketsAdapter::AddChannelForConnection,
           this->shared_from_this(),
           _1)));
-  VLOG(2) << "TCP server created " ; 
+  VLOG(2) << "TCP server created";
   tcp_server_thread_.reset(
       new boost::thread(boost::bind(&AsyncTCPServer::Run, tcp_server_)));
   VLOG(1) << "AsyncTCPServer's main thread running as "
           << tcp_server_thread_->get_id();
-  
-  return tcp_server_->listening_interface(); 
+  return tcp_server_->listening_interface();
 }
 
 
