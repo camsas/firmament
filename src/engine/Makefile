@@ -12,7 +12,7 @@ LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim
 OBJS = coordinator_http_ui.o coordinator.o local_executor.o node.o simple_scheduler.o remote_executor.o worker.o topology_manager.o
 PBS =
-TESTS = coordinator_test local_executor_test worker_test topology_manager_test simple_scheduler_test
+TESTS = coordinator_test local_executor_test worker_test topology_manager_test simple_scheduler_test stub_object_store_test
 TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \
 	     $(BUILD_DIR)/misc/libfirmament_misc.a \
 	     $(BUILD_DIR)/messages/libfirmament_messages.a \

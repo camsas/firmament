@@ -22,11 +22,9 @@ class StubObjectStore : public ObjectStoreInterface {
   StubObjectStore();
   void* GetObject(DataObjectID_t id);
   uint64_t Flush();
-<<<<<<< Updated upstream
-=======
   // Mandated by ObjectStoreInterface, but unused in the stub object store
-  void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg) {};
->>>>>>> Stashed changes
+  void HandleStorageRegistrationRequest(
+      const StorageRegistrationMessage& msg) {};
   void PutObject(DataObjectID_t id, void* data, size_t len);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<StubObjectStore, containing "
