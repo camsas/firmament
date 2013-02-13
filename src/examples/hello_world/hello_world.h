@@ -1,5 +1,5 @@
 // The Firmament project
-// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
 // A "hello world" test job.
 
@@ -15,9 +15,9 @@ namespace hello_world {
 class HelloWorldTask : public TaskInterface {
  public:
   explicit HelloWorldTask(TaskLib* task_lib, TaskID_t task_id)
-    : 
- 
-   TaskInterface(task_lib, task_id) {   VLOG(3) << "Calling HellowWorldTask" << endl ;}
+    : TaskInterface(task_lib, task_id) {
+    VLOG(3) << "Constructing HelloWorldTask";
+  }
   void Invoke();
 };
 

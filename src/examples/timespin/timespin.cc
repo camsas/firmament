@@ -1,5 +1,5 @@
 // The Firmament project
-// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
 // Adaptation of Derek Murray's timespin micro-benchmark for Firmament.
 
@@ -33,7 +33,7 @@
 #include <signal.h>
 
 namespace firmament {
-    
+
 void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>* arg_vec) {
   int64_t dur;
   if (arg_vec->size() < 2 || atol(arg_vec->at(1)) <= 0)
@@ -42,7 +42,6 @@ void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>* arg_vec) {
     dur = atol(arg_vec->at(1));
   VLOG(1) << "Task " << task_id << " spinning for " << dur << " seconds!";
   timespin_main(dur);
-
 }
 
 }  // namespace firmament
