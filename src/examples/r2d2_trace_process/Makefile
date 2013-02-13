@@ -46,3 +46,10 @@ simple_trace_analysis_task: simple_trace_analysis_task.cc
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$< \
 		$(STDALONE_LIBS) -o $@, \
 		"  STDALO  $@")
+
+aggregate_bandwidth_analysis_task: aggregate_bandwidth_analysis_task.cc
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) $(OPTFLAGS) \
+		$(SRC_ROOT_DIR)/$(SUFFIX)/$< \
+		$(STDALONE_LIBS) -o $@, \
+		"  STDALO  $@")

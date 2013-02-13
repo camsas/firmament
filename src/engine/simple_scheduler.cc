@@ -141,10 +141,10 @@ void SimpleScheduler::RegisterResource(ResourceID_t res_id) {
 
 const set<TaskID_t>& SimpleScheduler::RunnableTasksForJob(
     JobDescriptor* job_desc) {
-  // XXX(malte): Obviously, this is pretty broken.
-  set<DataObjectID_t> dummy = pb_to_set(job_desc->output_ids());
+  // TODO(malte): check is this is broken
+  set<DataObjectID_t> outputs = pb_to_set(job_desc->output_ids());
   TaskDescriptor* rtp = job_desc->mutable_root_task();
-  return LazyGraphReduction(dummy, rtp);
+  return LazyGraphReduction(outputs, rtp);
 }
 
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
@@ -173,6 +173,8 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
     CHECK(task != NULL) << "Could not find task producing output ID "
                         << *output_id_iter;
     if (task->state() == TaskDescriptor::CREATED) {
+      VLOG(2) << "Setting task " << task << " active as it produces output "
+              << *output_id_iter << ", which we're interested in.";
       task->set_state(TaskDescriptor::BLOCKING);
       newly_active_tasks.push_back(task);
     }
@@ -180,7 +182,10 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
   // Add root task to queue
   TaskDescriptor** rtd_ptr = FindOrNull(*task_map_, root_task->uid());
   CHECK(rtd_ptr);
-  newly_active_tasks.push_back(*rtd_ptr);
+  // Only add the root task if it is not already scheduled, running, done
+  // or failed.
+  if ((*rtd_ptr)->state() == TaskDescriptor::CREATED)
+    newly_active_tasks.push_back(*rtd_ptr);
   while (!newly_active_tasks.empty()) {
     TaskDescriptor* current_task = newly_active_tasks.front();
     VLOG(2) << "Next active task considered is " << current_task->uid();
@@ -226,7 +231,8 @@ const set<TaskID_t>& SimpleScheduler::LazyGraphReduction(
       runnable_tasks_.insert(current_task->uid());
     }
   }
-  VLOG(1) << "do_schedule is " << do_schedule;
+  VLOG(1) << "do_schedule is " << do_schedule << ", runnable_task set "
+          << "contains " << runnable_tasks_.size() << " tasks.";
   return runnable_tasks_;
 }
 
@@ -256,6 +262,8 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
       CHECK(rp);
       LOG(INFO) << "Scheduling task " << (*td)->uid() << " on resource "
                 << rp->first->uuid() << " [" << rp << "]";
+      // BindTaskToResource both binds the task AND removes it from the runnable
+      // set.
       BindTaskToResource(*td, rp->first);
       total_scheduled++;
     }
@@ -271,7 +279,7 @@ shared_ptr<ReferenceInterface> SimpleScheduler::ReferenceForID(
   // XXX(malte): stub
   VLOG(2) << "Looking up object " << id;
 //  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
-  ReferenceDescriptor* rd = 0;
+  ReferenceDescriptor* rd = object_store_->GetReference(id);
 
   if (!rd) {
     VLOG(2) << "... NOT FOUND";

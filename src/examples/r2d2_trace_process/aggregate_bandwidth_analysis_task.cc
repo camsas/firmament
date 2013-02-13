@@ -15,7 +15,7 @@ extern "C" {
 }
 #endif
 
-#define WINDOW_SIZE 1000*1000  // 100us
+#define WINDOW_SIZE 100*1000*1000  // 100ms
 
 #ifndef __FIRMAMENT__
 int main(int argc, char* argv[]) {
@@ -109,8 +109,8 @@ void AggregateBandwidthAnalysisTask::Invoke(void* dag0_ptr, uint64_t offset,
             << ", BW-TS-end: " << (bw_sample_start + bw_sample_width -
                                    first_timestamp);
     uint64_t* bw_aggregate_counter;
-//    if (packet->hash == 0xFEEDCAFEDEADBEEF)
-    if (packet->hash == 0xFFFFFFFFFFFFF106)
+    if (packet->hash == 0xFEEDCAFEDEADBEEF ||
+        packet->hash == 0xFFFFFFFFFFFFF106)
       bw_aggregate_counter = &bw_aggregate_counter_s1;
     else
       bw_aggregate_counter = &bw_aggregate_counter_s0;

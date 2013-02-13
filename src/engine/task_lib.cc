@@ -67,11 +67,19 @@ void TaskLib::Spawn(const ConcreteReference& code,
   // descriptor.
   BaseMessage msg;
   SUBMSG_WRITE(msg, task_spawn, creating_task_id, task_id_);
-  TaskDescriptor* new_task =
-      msg.MutableExtension(task_spawn_extn)->mutable_spawned_task_desc();
-  new_task->set_uid(1234);
+  //TaskDescriptor* new_task =
+  //    msg.MutableExtension(task_spawn_extn)->mutable_spawned_task_desc();
+  TaskDescriptor* new_task = task_descriptor_.add_spawned();
+  new_task->set_uid(GenerateTaskID(task_descriptor_));
   new_task->set_name("");
   new_task->set_state(TaskDescriptor::CREATED);
+  // Job ID field must be set on task spawn
+  CHECK(task_descriptor_.has_job_id());
+  new_task->set_job_id(task_descriptor_.job_id());
+  // Copy the new task descriptor into the message
+  msg.MutableExtension(task_spawn_extn)->
+      mutable_spawned_task_desc()->CopyFrom(*new_task);
+  // Off we go!
   SendMessageToCoordinator(&msg);
 }
 

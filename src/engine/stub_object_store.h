@@ -12,7 +12,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "engine/object_store_interface.h"
+#include "storage/object_store_interface.h"
 
 namespace firmament {
 namespace store {
@@ -20,14 +20,22 @@ namespace store {
 class StubObjectStore : public ObjectStoreInterface {
  public:
   StubObjectStore();
+  void* GetObject(DataObjectID_t id);
+  uint64_t Flush();
+<<<<<<< Updated upstream
+=======
+  // Mandated by ObjectStoreInterface, but unused in the stub object store
+  void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg) {};
+>>>>>>> Stashed changes
   void PutObject(DataObjectID_t id, void* data, size_t len);
-  bool GetObject(DataObjectID_t id, void*, size_t* len);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<StubObjectStore, containing "
                    << stub_object_map_.size() << " objects>";
   }
  protected:
-  map<DataObjectID_t, string> stub_object_map_;
+  map<DataObjectID_t, char*> stub_object_map_;
+ private:
+  FRIEND_TEST(StubObjectStoreTest, PutObjectTest);
 };
 
 }  // namespace store

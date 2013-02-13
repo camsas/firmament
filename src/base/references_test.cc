@@ -12,6 +12,7 @@
 #include "storage/concrete_reference.h"
 #include "storage/future_reference.h"
 #include "storage/error_reference.h"
+#include "storage/value_reference.h"
 
 namespace firmament {
 

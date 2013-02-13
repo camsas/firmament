@@ -19,6 +19,7 @@
 
 #include "base/resource_desc.pb.h"
 #include "base/job_desc.pb.h"
+#include "base/task_graph.h"
 
 using std::map;
 using std::pair;
@@ -96,7 +97,8 @@ typedef map<JobID_t, JobDescriptor> JobMap_t;
 // N.B.: the type of the second element here is a pointer, since the
 // TaskDescriptor objects will be part of the JobDescriptor protobuf that is
 // already held in the job table.
- typedef map<TaskID_t, TaskDescriptor*> TaskMap_t;
+typedef map<TaskID_t, TaskDescriptor*> TaskMap_t;
+typedef map<JobID_t, TaskGraph*> TaskGraphMap_t;
 
 #ifdef __PLATFORM_HAS_BOOST__
 // Message handler callback type definition

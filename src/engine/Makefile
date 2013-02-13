@@ -12,12 +12,13 @@ LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim
 OBJS = coordinator_http_ui.o coordinator.o local_executor.o node.o simple_scheduler.o remote_executor.o worker.o topology_manager.o
 PBS =
-TESTS = coordinator_test local_executor_test worker_test topology_manager_test
+TESTS = coordinator_test local_executor_test worker_test topology_manager_test simple_scheduler_test
 TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \
 	     $(BUILD_DIR)/misc/libfirmament_misc.a \
 	     $(BUILD_DIR)/messages/libfirmament_messages.a \
 	     $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
-	     $(BUILD_DIR)/platforms/common.pb.o
+	     $(BUILD_DIR)/platforms/common.pb.o \
+	     $(BUILD_DIR)/storage/libfirmament_storage.a
 # Test-specific dependencies; we keep these separate from the others in order
 # to avoid cyclic dependencies that will break test compilation.
 # E.g. worker_test would depend on coordinator.o if it had coordinator_http_ui.o
@@ -32,9 +33,14 @@ TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
 	                 $(BUILD_DIR)/base/libfirmament_base.a \
 	                 $(BUILD_DIR)/storage/libfirmament_storage.a \
 			 $(HTTP_UI_LIBS)
-TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/local_executor.o \
+TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/node.o \
+			      $(BUILD_DIR)/engine/local_executor.o \
 			      $(BUILD_DIR)/engine/topology_manager.o \
-			      $(BUILD_DIR)/base/libfirmament_base.a
+			      $(BUILD_DIR)/base/libfirmament_base.a \
+			      $(BUILD_DIR)/misc/libfirmament_misc.a \
+			      $(BUILD_DIR)/messages/libfirmament_messages.a \
+			      $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
+			      $(BUILD_DIR)/storage/libfirmament_storage.a
 TESTS_local_executor_DEPS = $(BUILD_DIR)/engine/topology_manager.o \
 			    $(BUILD_DIR)/base/libfirmament_base.a \
 			    $(BUILD_DIR)/misc/libfirmament_misc.a

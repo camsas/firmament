@@ -9,21 +9,72 @@
 #define FIRMAMENT_BASE_TASK_GRAPH_H
 
 #include <string>
+#include <map>
+#include <set>
+#include <vector>
 
 #include "base/common.h"
 #include "base/task_desc.pb.h"
 
 namespace firmament {
 
+class TaskGraphNode {
+ public:
+  TaskGraphNode(TaskDescriptor* desc, TaskGraphNode* spawner)
+      : desc_(desc), parent_(spawner) {
+    VLOG(2) << "Creating new TaskGraphNode, root task descriptor is at "
+            << desc_ << "(" << desc << ")";
+  }
+  const TaskGraphNode& parent() const {
+    return *parent_;
+  }
+  TaskGraphNode* mutable_parent() const {
+    return parent_;
+  }
+  TaskDescriptor* descriptor() const {
+    return desc_;
+  }
+  const vector<TaskGraphNode*>& children() const {
+    return children_;
+  }
+  const TaskGraphNode& child(uint64_t idx) {
+    CHECK_LT(idx, children_.size());
+    return *children_.at(idx);
+  }
+  TaskGraphNode* mutable_child(uint64_t idx) {
+    CHECK_LT(idx, children_.size());
+    return children_.at(idx);
+  }
+  void add_child(TaskGraphNode* child) {
+    CHECK_NOTNULL(child);
+    children_.push_back(child);
+  }
+
+ protected:
+  vector<TaskGraphNode*> children_;
+  TaskDescriptor* desc_;
+  TaskGraphNode* parent_;
+};
+
 class TaskGraph {
  public:
   explicit TaskGraph(TaskDescriptor* root_task_);
   void AddChildTask(TaskDescriptor* parent, TaskDescriptor* child);
+  set<TaskDescriptor*> ChildrenOf(TaskDescriptor* task);
+  void CreateNodesForChildren(TaskGraphNode *node, TaskDescriptor* descr);
   void DelegateOutput(TaskDescriptor* delegator, ReferenceDescriptor* output,
                       TaskDescriptor* delegatee);
+  TaskDescriptor* ParentOf(TaskDescriptor* task);
   void SetTaskState(TaskDescriptor* task);
+
  protected:
-  TaskDescriptor* root_task_;
+  FRIEND_TEST(TaskGraphTest, CreateTGTest);
+  FRIEND_TEST(TaskGraphTest, GetParentOfRootTest);
+  FRIEND_TEST(TaskGraphTest, GetParentTest);
+  FRIEND_TEST(TaskGraphTest, GetChildrenTest);
+  TaskGraphNode* root_node_;
+  bool Contains(TaskDescriptor* task);
+  map<TaskDescriptor*, TaskGraphNode*> td_node_map_;
 };
 
 }  // namespace firmament

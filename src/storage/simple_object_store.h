@@ -65,7 +65,8 @@ namespace firmament {
       ~SimpleObjectStore();
 
       virtual ostream& ToString(ostream* stream) const {
-        return *stream << "<SimpleObjectStore, containing ";
+        return *stream << "<SimpleObjectStore, containing "
+                       << object_table_->size() << " objects>";
       }
       void HandleIncomingMessage(BaseMessage *bm);
       void HandleIncomingReceiveError(const boost::system::error_code& error,

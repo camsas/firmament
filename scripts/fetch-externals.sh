@@ -285,7 +285,7 @@ GLOG_DIR=google-glog-svn
 GLOG_INSTALL_FILE="/usr/lib/pkgconfig/libglog.pc"
 #GLOG_BUILD_DIR=${EXT_DIR}/google-glog-build
 #mkdir -p ${GLOG_BUILD_DIR}
-if [[ ${TARGET} == "scc" && ! -f ${GLOG_INSTALL_FILE} ]]; then
+if [[ ${TARGET} == "scc" || ! -f ${GLOG_INSTALL_FILE} ]]; then
   get_dep_svn "google-glog" "googlecode"
   cd ${GLOG_DIR}
   echo -n "Building google-glog library..."

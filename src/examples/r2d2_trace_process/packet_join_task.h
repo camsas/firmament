@@ -32,20 +32,30 @@ class PacketJoinTask : public TaskInterface {
 #else
 class PacketJoinTask {
 #endif
+
  public:
 #ifdef __FIRMAMENT__
   explicit PacketJoinTask(TaskLib* task_lib, TaskID_t task_id)
-    : TaskInterface(task_lib, task_id) {}
+    : TaskInterface(task_lib, task_id),
+      total_backward_steps_(0),
+      total_forward_steps_(0) {}
 #else
-  PacketJoinTask() {}
+  PacketJoinTask()
+    : total_backward_steps_(0),
+      total_forward_steps_(0) {}
 #endif
   void Invoke(void* dag0_shmem_ptr, char* dag1_filename, uint64_t offset,
               uint64_t count);
   sample_t* MatchPacketWithinWindow(void* dag0_ptr, uint64_t timestamp,
                                     sample_t* packet, uint64_t* start_idx,
-                                    dag_match_result_t* result);
+                                    dag_match_result_t* result,
+                                    uint64_t* bwd_steps, uint64_t* fwd_steps);
   uint64_t StartIndexGuess(void* dag0_ptr, dag_capture_header_t* dag1_header,
                            uint64_t timestamp);
+
+ private:
+  uint64_t total_backward_steps_;
+  uint64_t total_forward_steps_;
 };
 
 }  // namespace hello_world

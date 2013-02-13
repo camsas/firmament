@@ -316,17 +316,31 @@ void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg) {
 }
 
 void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
+  VLOG(1) << "Handling task spawn for new task "
+          << msg.spawned_task_desc().uid() << ", child of "
+          << msg.creating_task_id();
   // Get the descriptor for the spawning task
   TaskDescriptor** spawner;
   CHECK(spawner = FindOrNull(*task_table_, msg.creating_task_id()));
   // Extract new task descriptor from the message received
-  TaskDescriptor* spawnee = new TaskDescriptor;
+  //TaskDescriptor* spawnee = new TaskDescriptor;
+  TaskDescriptor* spawnee = (*spawner)->add_spawned();
   spawnee->CopyFrom(msg.spawned_task_desc());
-  // Find root task for job
+  InsertIfNotPresent(task_table_.get(), spawnee->uid(), spawnee);
+  // Extract job ID (we expect it to be set)
+  CHECK(msg.spawned_task_desc().has_job_id());
+  JobID_t job_id = JobIDFromString(msg.spawned_task_desc().job_id());
+  // Find task graph for job
+  TaskGraph** task_graph_pptr = FindOrNull(task_graph_table_, job_id);
+  CHECK_NOTNULL(task_graph_pptr);
+  TaskGraph* task_graph_ptr = *task_graph_pptr;
+  VLOG(1) << "Task graph is at " << task_graph_ptr;
   // Add task to task graph
-  // task_graph.AddChildTask(spawner, spawnee)
+  //task_graph_ptr->AddChildTask(spawner, spawnee)
   // Run the scheduler for this job
-  // scheduler_->ScheduleJob(job);
+  JobDescriptor* job = FindOrNull(*job_table_, job_id);
+  CHECK_NOTNULL(job);
+  scheduler_->ScheduleJob(job);
 }
 
     void Coordinator::HandleTaskStateChange(
@@ -365,16 +379,42 @@ void Coordinator::InitHTTPUI() {
     }
 #endif
 
-void Coordinator::AddJobsTasksToTaskTable(
-    RepeatedPtrField<TaskDescriptor>* tasks) {
+void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
+  // Set job ID field on task. We do this here since we've only just generated
+  // the job ID in the job submission, which passes it in.
+  td->set_job_id(to_string(job_id));
+  // Insert task into task table
+  VLOG(1) << "Adding task " << td->uid() << " to task table.";
+  if (!InsertIfNotPresent(task_table_.get(), td->uid(), td)) {
+    VLOG(1) << "Task " << td->uid() << " already exists in "
+            << "task table, so not adding it again.";
+  }
+  // Adds its outputs to the object table and generate future references for
+  // them.
+  for (RepeatedPtrField<ReferenceDescriptor>::iterator output_iter =
+       td->mutable_outputs()->begin();
+       output_iter != td->mutable_outputs()->end();
+       ++output_iter) {
+    // First set the producing task field on the task outputs
+    output_iter->set_producing_task(td->uid());
+    VLOG(1) << "Considering task output " << output_iter->id() << ", "
+            << "adding to local object table";
+    if(object_store_->addReference(output_iter->id(), &(*output_iter))) {
+      VLOG(1) << "Output " << output_iter->id() << " already exists in "
+              << "local object table. Not adding again.";
+    }
+    // Check that the object was actually stored
+    if (object_store_->GetReference(output_iter->id())!=NULL)
+      VLOG(3) << "Object is indeed in object store";
+    else
+      VLOG(3) << "Error: Object is not in object store";
+  }
+  // Process children recursively
   for (RepeatedPtrField<TaskDescriptor>::iterator task_iter =
-       tasks->begin();
-       task_iter != tasks->end();
+       td->mutable_spawned()->begin();
+       task_iter != td->mutable_spawned()->end();
        ++task_iter) {
-    VLOG(1) << "Adding task " << task_iter->uid() << " to task table.";
-    CHECK(InsertIfNotPresent(task_table_.get(), task_iter->uid(),
-                             &(*task_iter)));
-    AddJobsTasksToTaskTable(task_iter->mutable_spawned());
+    AddJobsTasksToTables(&(*task_iter), job_id);
   }
 }
 
@@ -393,34 +433,16 @@ void Coordinator::AddJobsTasksToTaskTable(
   new_jd->mutable_root_task()->set_uid(GenerateRootTaskID(*new_jd));
   // Add job to local job table
   CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, *new_jd));
-  // Add its root task to the task table
-  if (!InsertIfNotPresent(task_table_.get(), new_jd->root_task().uid(),
-                          new_jd->mutable_root_task())) {
-    VLOG(1) << "Task " << new_jd->root_task().uid() << " already exists in "
-            << "task table, so not adding it again.";
-  }
-  // Add its spawned tasks (if any) to the local task table
-  RepeatedPtrField<TaskDescriptor>* spawned_tasks =
-      new_jd->mutable_root_task()->mutable_spawned();
-  AddJobsTasksToTaskTable(spawned_tasks);
-  // Adds its outputs to the object table and generate future references for
-  // them.
-  for (RepeatedPtrField<ReferenceDescriptor>::iterator output_iter =
-       new_jd->mutable_root_task()->mutable_outputs()->begin();
-       output_iter != new_jd->mutable_root_task()->mutable_outputs()->end();
-       ++output_iter) {
-    // First set the producing task field on the root task output, since the
-    // task ID has only just been determined (so it cannot be set yet)
-    output_iter->set_producing_task(new_jd->root_task().uid());
-    VLOG(1) << "Considering root task output " << output_iter->id() << ", "
-            << "adding to local object table";
-    if(object_store_->addReference(output_iter->id(), &(*output_iter))) { 
-      VLOG(1) << "Output " << output_iter->id() << " already exists in "
-              << "local object table. Not adding again.";
-    }
-    if (object_store_->GetReference(output_iter->id())!=NULL) VLOG(3) << "Object is indeed in object store " << endl; 
-    else VLOG(3) << "Error Object is not in object store " << endl ; 
-  }
+  // Create a dynamic task graph for the job
+  TaskGraph* new_dtg = new TaskGraph(new_jd->mutable_root_task());
+  // Store the task graph
+  InsertIfNotPresent(&task_graph_table_, new_job_id, new_dtg);
+  // Add itself and its spawned tasks (if any) to the relevant tables:
+  // - tasks to the task_table_
+  // - inputs/outputs to the object_table_
+  // and set the job_id field on every task.
+  AddJobsTasksToTables(new_jd->mutable_root_task(), new_job_id);
+  // Set up job outputs
   for (RepeatedField<DataObjectID_t>::const_iterator output_iter =
        new_jd->output_ids().begin();
        output_iter != new_jd->output_ids().end();

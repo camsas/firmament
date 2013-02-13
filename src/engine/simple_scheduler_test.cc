@@ -13,12 +13,14 @@
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "engine/simple_scheduler.h"
+#include "storage/simple_object_store.h"
 
 namespace firmament {
 namespace scheduler {
 
 using common::pb_to_set;
 using scheduler::SimpleScheduler;
+using store::SimpleObjectStore;
 
 // The fixture for testing class SimpleScheduler.
 class SimpleSchedulerTest : public ::testing::Test {
@@ -29,7 +31,7 @@ class SimpleSchedulerTest : public ::testing::Test {
   SimpleSchedulerTest() :
     job_map_(new JobMap_t),
     res_map_(new ResourceMap_t),
-    obj_map_(new DataObjectMap_t),
+    obj_store_(new store::SimpleObjectStore(GenerateUUID())),
     task_map_(new TaskMap_t) {
     // You can do set-up work for each test here.
     FLAGS_v = 3;
@@ -47,8 +49,8 @@ class SimpleSchedulerTest : public ::testing::Test {
     // before each test).
     res_map_->clear();
     job_map_->clear();
-    obj_map_->clear();
-    sched_.reset(new SimpleScheduler(job_map_, res_map_, obj_map_, task_map_,
+    obj_store_->Flush();
+    sched_.reset(new SimpleScheduler(job_map_, res_map_, obj_store_, task_map_,
                                      shared_ptr<TopologyManager>(), ""));
   }
 
@@ -90,7 +92,7 @@ class SimpleSchedulerTest : public ::testing::Test {
   scoped_ptr<SimpleScheduler> sched_;
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<ResourceMap_t> res_map_;
-  shared_ptr<DataObjectMap_t> obj_map_;
+  shared_ptr<store::SimpleObjectStore> obj_store_;
   shared_ptr<TaskMap_t> task_map_;
 };
 
@@ -130,7 +132,7 @@ TEST_F(SimpleSchedulerTest, ObjectIDToReferenceDescLookup) {
   ReferenceDescriptor rd;
   rd.set_id(1234);
   rd.set_type(ReferenceDescriptor::CONCRETE);
-  CHECK(InsertIfNotPresent(obj_map_.get(), rd.id(), rd));
+  CHECK(!obj_store_->addReference(rd.id(), &rd));
   shared_ptr<ReferenceInterface> ref = sched_->ReferenceForID(rd.id());
   VLOG(1) << *ref;
   CHECK_EQ(ref->id(), rd.id());
@@ -145,7 +147,7 @@ TEST_F(SimpleSchedulerTest, ProducingTaskLookup) {
   rd.set_id(1234);
   rd.set_type(ReferenceDescriptor::CONCRETE);
   rd.set_producing_task(1);
-  CHECK(InsertIfNotPresent(obj_map_.get(), rd.id(), rd));
+  CHECK(!obj_store_->addReference(rd.id(), &rd));
   TaskDescriptor* tdp = sched_->ProducingTaskForDataObjectID(rd.id());
   CHECK(tdp);
   VLOG(1) << tdp->DebugString();
@@ -175,9 +177,9 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   test_job->add_output_ids(d0_td2->id());
   test_job->add_output_ids(d0_td1->id());
   // put concrete input ref of td1 into object table
-  InsertIfNotPresent(obj_map_.get(), d0_td1->id(), *d0_td1);
+  CHECK(!obj_store_->addReference(d0_td1->id(), d0_td1));
   // put future input ref of td2 into object table
-  InsertIfNotPresent(obj_map_.get(), d0_td2->id(), *d0_td2);
+  CHECK(!obj_store_->addReference(d0_td2->id(), d0_td2));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks =
@@ -212,9 +214,9 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   test_job->add_output_ids(o0_td1->id());
   test_job->add_output_ids(d0_td1->id());
   // put concrete input ref of td1 into object table
-  InsertIfNotPresent(obj_map_.get(), o0_td1->id(), *o0_td1);
+  CHECK(!obj_store_->addReference(o0_td1->id(), o0_td1));
   // put future input ref of td2 into object table
-  InsertIfNotPresent(obj_map_.get(), d0_td1->id(), *d0_td1);
+  CHECK(!obj_store_->addReference(d0_td1->id(), d0_td1));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks =

@@ -12,11 +12,11 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "storage/reference_interface.h"
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
 #include "engine/scheduler_interface.h"
 #include "engine/executor_interface.h"
+#include "storage/reference_interface.h"
 
 namespace firmament {
 namespace scheduler {
