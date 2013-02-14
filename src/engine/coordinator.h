@@ -102,8 +102,6 @@ class Coordinator : public Node,
     return FindOrNull(*job_table_, job_id);
   }
 
-  
-  
   // Gets a pointer to the task descriptor for a task known to the coordinator.
   // If the task is not known to the coordinator, we will return NULL.
   TaskDescriptor* GetTask(TaskID_t task_id) {
@@ -169,13 +167,11 @@ class Coordinator : public Node,
     CHECK_NOTNULL(local_resource_topology_);
     return *local_resource_topology_;
   }
-  
-  shared_ptr<ObjectStoreInterface> get_object_store() { 
-      return object_store_; 
+  shared_ptr<ObjectStoreInterface> get_object_store() {
+      return object_store_;
   }
+  void InformStorageEngineNewResource(ResourceDescriptor* rd);
 
-  void InformStorageEngineNewResource(ResourceDescriptor* rd); 
-  
  protected:
   void AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id);
   void AddLocalResource(ResourceDescriptor* resource_desc);
@@ -189,10 +185,10 @@ class Coordinator : public Node,
   void HandleTaskInfoRequest(const TaskInfoRequestMessage& msg);
   void HandleTaskSpawn(const TaskSpawnMessage& msg);
   void HandleTaskStateChange(const TaskStateMessage& msg);
-  void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg); 
-  
+  void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg);
+
   /* Only necessary if storage is not guaranteed to be local*/
-  void HandleStorageDiscoverRequest(const StorageDiscoverMessage& msg) ; 
+  void HandleStorageDiscoverRequest(const StorageDiscoverMessage& msg);
 #ifdef __HTTP_UI__
   void InitHTTPUI();
 #endif

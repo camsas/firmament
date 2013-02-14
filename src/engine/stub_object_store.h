@@ -24,7 +24,7 @@ class StubObjectStore : public ObjectStoreInterface {
   uint64_t Flush();
   // Mandated by ObjectStoreInterface, but unused in the stub object store
   void HandleStorageRegistrationRequest(
-      const StorageRegistrationMessage& msg) {};
+      const StorageRegistrationMessage& msg) {}
   void PutObject(DataObjectID_t id, void* data, size_t len);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<StubObjectStore, containing "

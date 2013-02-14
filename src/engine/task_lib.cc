@@ -173,10 +173,10 @@ void TaskLib::RunTask(int argc, char *argv[]) {
   // task_main blocks until the task has exited
   //  exec(task_desc_.code_dependency());
 
-  /* Set up Storage Engine here, returning a void* to the Cache */
-  /* Alternate way of doing this: set up cache here and just pass the
-   various pointers. */
-  setUpStorageEngine() ; 
+  // Set up Storage Engine here, returning a void* to the Cache
+  // Alternate way of doing this: set up cache here and just pass the
+  // various pointers.
+  setUpStorageEngine();
 
   boost::thread task_thread(boost::bind(task_main, this, task_id_,
           task_arg_vec));
@@ -247,15 +247,15 @@ void TaskLib::setUpStorageEngine() {
   try {
     const char* name = "Cache";
 
-    //    StorageDiscoverMessage* msg = new StorageDiscoverMessage() ; 
-    //    
-    //    msg->set_uuid(resource_id_) ; 
-    //    msg->uri(""); 
-    //    
-    //    SendMessageToCoordinator(msg); 
-    //    Expect reply with URI 
+    // StorageDiscoverMessage* msg = new StorageDiscoverMessage();
+    //
+    // msg->set_uuid(resource_id_);
+    // msg->uri("");
+    //
+    // SendMessageToCoordinator(msg);
+    // Expect reply with URI
 
-    /* If local*/
+    // If local
 
     managed_shared_memory* segment = new managed_shared_memory(open_only, name);
 
@@ -274,29 +274,25 @@ void TaskLib::setUpStorageEngine() {
 
     VLOG(1) << "Cache created with capacity: " << cache->capacity << " size "
             << cache->size << endl;
-
-  } catch (interprocess_exception& e) {
+  } catch (const interprocess_exception& e) {  // NOLINT
     LOG(ERROR) << e.what();
     LOG(ERROR) << "Error: storage engine coudn't be initialised (TaskLib) ";
   }
-  /* Else if not local - not implemented*/
-
-
-
+  // TODO(tach): Else if not local - not implemented
 }
 
-/* Finds data from cache and returns pointer. Acquires shared
-  read lock. Contacts storage engine if data is not in cache */
+// Finds data from cache and returns pointer. Acquires shared
+// read lock. Contacts storage engine if data is not in cache
 void* TaskLib::GetObjectStart(DataObjectID_t id) {
   cout << "GetObjectStart " << id << endl;
   try {
-
-    cout << "Cache Capacity " << cache->capacity << " Cache size " << cache->size << endl;
+    cout << "Cache Capacity " << cache->capacity
+         << " Cache size " << cache->size << endl;
     string nm = boost::lexical_cast<string > (id);
     if (cache->capacity != cache->size) {
       SharedVector_t::iterator result =
               find(cache->object_list->begin(), cache->object_list->end(), id);
-      /* Should only be one result in theory*/
+      // Should only be one result in theory
       cout << "Object " << id << " was  found in cache." << endl;
 
       cout << "Obtaining mutex for " << nm << endl;
@@ -317,29 +313,30 @@ void* TaskLib::GetObjectStart(DataObjectID_t id) {
       cout << "Object " << id << " was not found in cache. Contacting "
               "Object Store " << endl;
 
-      /* Data is not in cache - Let object store do the work */
-      /* Really ought to use memory channels*/
+      // Data is not in cache - Let object store do the work
+      // Really ought to use memory channels
 
-      /* Not fully implemented. Refactor so that 
-       the whole thing is asynchronous?*/
-      
+      // Not fully implemented. Refactor so that
+      // the whole thing is asynchronous?
+
       scoped_lock<interprocess_mutex> lock_ref(reference_not_t->mutex);
-      cout << "Acquired reference mutex " << endl ;
+      cout << "Acquired reference mutex " << endl;
       while (!reference_not_t->writable) {
-        cout << "Waiting for reference to become writable " << endl ; 
+        cout << "Waiting for reference to become writable " << endl;
         reference_not_t->cond_read.wait(lock_ref);
       }
-      cout << "Writing Message " << endl ; 
+      cout << "Writing Message " << endl;
       reference_not_t->id = id;
       reference_not_t->writable = false;
       reference_not_t->request_type = GET_OBJECT;
       lock_ref.unlock(); /* Not sure if this is necessary */
-      cout << "Notify storage engine of new message " << endl ; 
-      reference_not_t->cond_added.notify_one(); /* Storage engine will be 
-                                    * only one waiting on this */
+      cout << "Notify storage engine of new message " << endl;
+      reference_not_t->cond_added.notify_one(); // Storage engine will be
+                                                // only one waiting on this
 
-      while (!reference_not_t->writable || !reference_not_t->request_type == GET_OBJECT ) {
-        cout << "Wait for reply " << endl ; 
+      while (!reference_not_t->writable ||
+             !reference_not_t->request_type == GET_OBJECT ) {
+        cout << "Wait for reply " << endl;
         reference_not_t->cond_read.wait(lock_ref);
       }
 
@@ -347,10 +344,10 @@ void* TaskLib::GetObjectStart(DataObjectID_t id) {
         cout << "Object was never found " << endl;
         return NULL;
       } else {
-
         SharedVector_t::iterator result =
-                find(cache->object_list->begin(), cache->object_list->end(), id);
-        /* Should only be one result in theory*/
+                find(cache->object_list->begin(),
+                     cache->object_list->end(), id);
+        // Should only be one result in theory
         cout << "Object " << id << " was now found in cache." << endl;
 
         named_upgradable_mutex mut(open_only, nm.c_str());
@@ -366,47 +363,42 @@ void* TaskLib::GetObjectStart(DataObjectID_t id) {
       reference_not_t->writable = true;
       reference_not_t->request_type = FREE;
 //      lock_ref.unlock(); /* Not sure if this is necessary */
-      reference_not_t->cond_added.notify_all(); /* Storage engine will be 
-                                    * only one waiting on this */
+      reference_not_t->cond_added.notify_all(); // Storage engine will be
+                                                // only one waiting on this
     }
-
-
-
-  } catch (interprocess_exception& e) {
+  } catch (const interprocess_exception& e) {  // NOLINT
     cout << "Error: GetObjectStart " << endl;
     cout << "Error: " << e.what() << endl;
   }
   return NULL;
-
 }
 
 /* Releases shared read lock */
 void TaskLib::GetObjectEnd(DataObjectID_t id) {
   cout << "GetObjectEnd " << endl;
   try {
-    /* TODO : very inefficient*/
+    // TODO(tach): very inefficient
     string mut_name_s = boost::lexical_cast<string > (id) + "mut";
     named_upgradable_mutex mut(open_only, mut_name_s.c_str());
     ReadLock_t lock(mut, accept_ownership);
-    //      string nm = boost::lexical_cast<string>(id); 
+    //      string nm = boost::lexical_cast<string>(id);
     //      file_mapping::remove(nm.c_str());
     lock.unlock();
-
-  } catch (interprocess_exception& e) {
+  } catch (const interprocess_exception& e) {  // NOLINT
     cout << "Error: GetObjectEnd " << endl;
     cout << "Error: " << e.what();
   }
-
 }
 
-/* Return null if cache is full */
+// Return null if cache is full
 void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
   try {
     cout << "PutObjectStart " << endl;
 
     cache_lock->lock();
-    if (cache->capacity > size) cache->capacity -= size;
-    else {
+    if (cache->capacity > size) {
+      cache->capacity -= size;
+    } else {
       cout << "Fail to create object" << id << ". Cache full ";
       cache_lock->unlock();
       return NULL;
@@ -417,7 +409,7 @@ void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
     string file_name = to_string(id);
     cout << "file_name is: " << file_name << endl;
 
-    /* Create file */
+    // Create file
     cout << "About to create file" << endl;
     std::ofstream ofs(file_name.c_str(), std::ios::binary | std::ios::out);
     cout << "File created: " << file_name << endl;
@@ -428,12 +420,13 @@ void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
     cout << "Write done, failbit: " << ofs.fail() << "!" << endl;
     ofs.close();
 
-    /* Map it*/
+    // Map it
     permissions permission;
     permission.set_unrestricted();
 
-    /* Should delete in PutObjectEnd. TODO Modify to have coherent picture
-     of stack vs memory allocated */
+    // Should delete in PutObjectEnd.
+    // TODO(tach): Modify to have coherent picture
+    // of stack vs memory allocated
     cout << "About to map file" << endl;
     file_mapping* m_file = new file_mapping(file_name.c_str(), read_write);
     cout << "file_mapping created: " << m_file << endl;
@@ -458,24 +451,25 @@ void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
     cout << "Added list to cache << endl ";
     cout << " New capacity " << cache->capacity << endl;
     return address;
-  } catch (interprocess_exception& e) {
+  } catch (const interprocess_exception& e) {  // NOLINT
     cout << "Error: PutObjectStart " << endl;
     cout << "Error: " << e.what() << endl;
   }
   return NULL;
 }
 
-/* Tries to extend file by "extend_by" bytes. Returns void if failed 
- ex: cache full. Find a way to do this without unmapping/remapping the
- file */
+// Tries to extend file by "extend_by" bytes. Returns void if failed
+// ex: cache full. Find a way to do this without unmapping/remapping the
+// file
 void* TaskLib::Extend(DataObjectID_t id, size_t old_size, size_t new_size) {
   void* address = NULL;
   //    named_mutex mutex_(open_only, "Cache");
-  //    scoped_lock<named_mutex> cache_locks(mutex_); 
+  //    scoped_lock<named_mutex> cache_locks(mutex_);
   cache_lock->lock();
   size_t extend_by = new_size - old_size;
-  if (cache->capacity > extend_by) cache->capacity -= extend_by;
-  else {
+  if (cache->capacity > extend_by) {
+    cache->capacity -= extend_by;
+  } else {
     VLOG(3) << "Fail to extend. Cache full ";
     cache_lock->unlock();
     return address;
@@ -494,7 +488,6 @@ void* TaskLib::Extend(DataObjectID_t id, size_t old_size, size_t new_size) {
   address = region->get_address();
 
   return address;
-
 }
 
 /* Release exclusive lock  - value of size actually written */
@@ -522,8 +515,7 @@ void TaskLib::PutObjectEnd(DataObjectID_t id, size_t size) {
     reference_not_t->request_type = PUT_OBJECT;
     lock_ref.unlock(); /* Not sure if this is necessary */
     reference_not_t->cond_added.notify_all();
-
-  } catch (interprocess_exception& e) {
+  } catch (const interprocess_exception& e) {  // NOLINT
     VLOG(1) << "Error: PutObjectEnd " << endl;
   }
 }

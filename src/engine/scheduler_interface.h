@@ -27,7 +27,8 @@ class SchedulerInterface : public PrintableInterface {
                      shared_ptr<ResourceMap_t> resource_map,
                      shared_ptr<store::ObjectStoreInterface> store,
                      shared_ptr<TaskMap_t> task_map)
-      : job_map_(job_map),  resource_map_(resource_map), task_map_(task_map), object_store_(store) {}
+      : job_map_(job_map),  resource_map_(resource_map), task_map_(task_map),
+        object_store_(store) {}
   // Adds a job to the set of active jobs that are considered for scheduling.
   // TODO(malte): Determine if we actually need this, given the reactive design
   // of the scheduler.
@@ -70,7 +71,7 @@ class SchedulerInterface : public PrintableInterface {
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<ResourceMap_t> resource_map_;
   shared_ptr<TaskMap_t> task_map_;
-  shared_ptr<store::ObjectStoreInterface> object_store_; 
+  shared_ptr<store::ObjectStoreInterface> object_store_;
 };
 
 }  // namespace scheduler

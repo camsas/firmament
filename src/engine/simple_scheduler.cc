@@ -11,7 +11,6 @@
 #include <utility>
 
 #include "storage/reference_types.h"
-#include "storage/reference_types.h"
 #include "storage/reference_utils.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
@@ -23,10 +22,11 @@ namespace scheduler {
 
 using executor::LocalExecutor;
 using common::pb_to_set;
+using store::ObjectStoreInterface;
 
 SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
                                  shared_ptr<ResourceMap_t> resource_map,
-                                 shared_ptr<store::ObjectStoreInterface> object_store,
+                                 shared_ptr<ObjectStoreInterface> object_store,
                                  shared_ptr<TaskMap_t> task_map,
                                  shared_ptr<TopologyManager> topo_mgr,
                                  const string& coordinator_uri)

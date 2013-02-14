@@ -51,7 +51,18 @@ namespace firmament {
 
 using platform_unix::streamsockets::StreamSocketsAdapter;
 using platform_unix::streamsockets::StreamSocketsChannel;
-using namespace store; 
+// TODO(malte): Get rid of this and import the interprocess primitives at a
+// higher level.
+using namespace boost::interprocess;  // NOLINT
+using store::Cache_t;
+using store::ReferenceNotification_t;
+using store::SharedVector_t;
+using store::ReadLock_t;
+using store::WriteLock_t;
+// TODO(malte): This is suboptimal...
+using store::GET_OBJECT;
+using store::PUT_OBJECT;
+using store::FREE;
 
 class TaskLib {
  public:
@@ -67,21 +78,16 @@ class TaskLib {
   void Publish(const vector<ConcreteReference>& references);
   //virtual void TailSpawn(const ConcreteReference& code);
 
-  void* GetObjectStart(DataObjectID_t id );
-  void GetObjectEnd(DataObjectID_t id ); 
-  void* PutObjectStart(DataObjectID_t id, size_t size); 
+  void* GetObjectStart(DataObjectID_t id);
+  void GetObjectEnd(DataObjectID_t id);
+  void* PutObjectStart(DataObjectID_t id, size_t size);
   void PutObjectEnd(DataObjectID_t id, size_t size);
   void* Extend(DataObjectID_t id, size_t old_size, size_t new_size);
-    
-  Cache_t* getCache() { 
-    return cache ; 
+
+  Cache_t* getCache() {
+    return cache;
   }
 
-
-  
-  
-  
-  
  protected:
   shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
   shared_ptr<StreamSocketsChannel<BaseMessage> > chan_;
@@ -101,25 +107,19 @@ class TaskLib {
   void SendHeartbeat();
   bool SendMessageToCoordinator(BaseMessage* msg);
 
-  void setUpStorageEngine() ; 
-  
-  
+  void setUpStorageEngine();
 
  private:
   bool task_error_;
   bool task_running_;
   uint64_t heartbeat_seq_number_;
-  
-  
-  Cache_t* cache ; 
-  string storage_uri ;  
-  managed_shared_memory* segment; 
-  named_mutex* mutex;  
-  scoped_lock<named_mutex>* cache_lock; 
-  ReferenceNotification_t* reference_not_t ; 
-  
-  
-        
+
+  Cache_t* cache;
+  string storage_uri;
+  managed_shared_memory* segment;
+  named_mutex* mutex;
+  scoped_lock<named_mutex>* cache_lock;
+  ReferenceNotification_t* reference_not_t;
 };
 
 }  // namespace firmament

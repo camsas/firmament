@@ -102,6 +102,7 @@ $(OBJ_DIR)/coordinator_sim: $(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/engine/remote_executor.o \
 		$(BUILD_DIR)/engine/simple_scheduler.o \
+		$(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
