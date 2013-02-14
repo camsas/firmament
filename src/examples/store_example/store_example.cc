@@ -27,21 +27,21 @@ namespace store {
 void StoreTask::Invoke() {
   // a = read input 1
   // b = read input 2
-  cout << "Cache is " << task_lib_->getCache()->size << endl;
-  // cout << "Testing Get Object Start when no object present " << endl;
+  LOG(INFO) << "Cache is " << task_lib_->getCache()->size;
+  // cout << "Testing Get Object Start when no object present ";
   // void* read_ptr = task_lib_->GetObjectStart(0);
-  // if (read_ptr==NULL) cout <<" Ptr is null " << endl ;
+  // if (read_ptr==NULL) cout <<" Ptr is null ";
 
-  cout << "Testing Put Object Start " << endl;
+  LOG(INFO) << "Testing Put Object Start ";
   void* write_ptr = task_lib_->PutObjectStart(1234, 10);
   std::memset(write_ptr, 1, 3);
-  cout << "Testing Put Object End " << endl;
+  LOG(INFO) << "Testing Put Object End ";
   task_lib_->PutObjectEnd(1234, 10);
-  cout << "Testing Get Object Start when  object present " << endl;
+  LOG(INFO) << "Testing Get Object Start when  object present ";
   void* read_ptr2 = task_lib_->GetObjectStart(1234);
   if (read_ptr2 == NULL)
-    cout <<" Ptr is null " << endl;
-  cout << "Testing Get Object End when object present " << endl;
+    LOG(INFO) <<" Ptr is null ";
+  LOG(INFO) << "Testing Get Object End when object present ";
   task_lib_->GetObjectEnd(1234);
 }
 
