@@ -1,10 +1,13 @@
 // The Firmament project
-// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2013 Natacha Crooks <natacha.crooks@cl.cam.ac.uk>
+// Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// The executor interface assumed by the engine.
+// The interface assumed by object stores.
 
 #ifndef FIRMAMENT_STORAGE_OBJECT_STORE_INTERFACE_H
 #define FIRMAMENT_STORAGE_OBJECT_STORE_INTERFACE_H
+
+#include <string>
 
 #include "base/common.h"
 #include "base/reference_desc.pb.h"
@@ -16,38 +19,41 @@
 #include "storage/reference_interface.h"
 
 namespace firmament {
-  namespace store {
+namespace store {
 
-    class ObjectStoreInterface : public PrintableInterface {
-    public:
-      virtual ostream& ToString(ostream* stream) const = 0;
-      virtual void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg) = 0;
-      bool addReference(DataObjectID_t id, ReferenceDescriptor* rd) {
-        return !(InsertIfNotPresent(object_table_.get(), id, rd));
-      }
-      ReferenceDescriptor* GetReference(DataObjectID_t id) {
-        ReferenceDescriptor** rd = FindOrNull(*object_table_, id);
-        if (rd!= NULL) return *rd ;
-        else return NULL;
-      }
-      void Flush() {
-        VLOG(1) << "Flushing all objects from store " << *this;
-        object_table_->clear();
-      }
-      inline string get_listening_interface() {
-        return listening_interface_;
-      }
-      inline ResourceID_t get_resource_id() {
-        return uuid;
-      }
+class ObjectStoreInterface : public PrintableInterface {
+ public:
+  virtual ostream& ToString(ostream* stream) const = 0;
+  virtual void HandleStorageRegistrationRequest(
+      const StorageRegistrationMessage& msg) = 0;
+  bool addReference(DataObjectID_t id, ReferenceDescriptor* rd) {
+    return !(InsertIfNotPresent(object_table_.get(), id, rd));
+  }
+  ReferenceDescriptor* GetReference(DataObjectID_t id) {
+    ReferenceDescriptor** rd = FindOrNull(*object_table_, id);
+    if (rd!= NULL)
+      return *rd;
+    else
+      return NULL;
+  }
+  void Flush() {
+    VLOG(1) << "Flushing all objects from store " << *this;
+    object_table_->clear();
+  }
+  inline string get_listening_interface() {
+    return listening_interface_;
+  }
+  inline ResourceID_t get_resource_id() {
+    return uuid;
+  }
 
-    protected:
-      string listening_interface_;
-      ResourceID_t uuid;
-      shared_ptr<DataObjectMap_t> object_table_;
-    };
+ protected:
+  string listening_interface_;
+  ResourceID_t uuid;
+  shared_ptr<DataObjectMap_t> object_table_;
+};
 
-  } // namespace store
+} // namespace store
 } // namespace firmament
 
 #endif  // FIRMAMENT_STORAGE_OBJECT_STORE_INTERFACE
