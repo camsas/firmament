@@ -31,7 +31,7 @@ ext: ext/.ext-ok
 ext/.ext-ok:
 	$(SCRIPTS_DIR)/fetch-externals.sh
 
-engine: base storage platforms misc  sim
+engine: base storage platforms misc sim
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
 examples: engine scripts
