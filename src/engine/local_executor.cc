@@ -249,7 +249,7 @@ void LocalExecutor::ReadFromPipe(int fd) {
   }
   while ( (ch = getc(stream)) != EOF ) {
     // XXX(malte): temp hack
-    //putc(ch, stdout);
+    putc(ch, stdout);
   }
   fflush(stdout);
   fclose(stream);
