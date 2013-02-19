@@ -15,6 +15,7 @@
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
 #include "misc/utils.h"
+#include "storage/types.h"
 
 namespace firmament {
 namespace webui {
@@ -27,6 +28,8 @@ using pion::net::HTTPServer;
 using pion::net::TCPConnection;
 
 using ctemplate::TemplateDictionary;
+
+using store::DataObjectMap_t;
 
 CoordinatorHTTPUI::CoordinatorHTTPUI(shared_ptr<Coordinator> coordinator)
   : coordinator_(coordinator),
@@ -111,6 +114,11 @@ void CoordinatorHTTPUI::HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
   // The +1 is because the coordinator itself is a resource, too.
   dict.SetIntValue("NUM_RESOURCES_KNOWN", coordinator_->NumResources() + 1);
   dict.SetIntValue("NUM_RESOURCES_LOCAL", coordinator_->NumResources());
+  dict.SetIntValue("NUM_REFERENCES_KNOWN",
+                   coordinator_->get_object_store()->NumTotalReferences());
+  dict.SetIntValue("NUM_REFERENCES_CONCRETE",
+                   coordinator_->get_object_store()->NumReferencesOfType(
+                       ReferenceDescriptor::CONCRETE));
   AddFooterToTemplate(&dict);
   string output;
   ExpandTemplate("src/webui/main.tpl", ctemplate::DO_NOT_STRIP, &dict, &output);
@@ -202,6 +210,38 @@ void CoordinatorHTTPUI::HandleJobURI(HTTPRequestPtr& http_request,  // NOLINT
   string output;
   ExpandTemplate("src/webui/job_status.tpl", ctemplate::DO_NOT_STRIP,
                  &dict, &output);
+  writer->write(output);
+  FinishOkResponse(writer);
+}
+
+void CoordinatorHTTPUI::HandleReferencesListURI(HTTPRequestPtr& http_request,  // NOLINT
+                                                TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  // Get reference list from coordinator's object store
+  // XXX(malte): This is UNSAFE with regards to concurrent modification!
+  shared_ptr<DataObjectMap_t> refs =
+      coordinator_->get_object_store()->object_table();
+  uint64_t i = 0;
+  TemplateDictionary dict("refs_list");
+  AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+  AddFooterToTemplate(&dict);
+  for (DataObjectMap_t::const_iterator r_iter =
+       refs->begin();
+       r_iter != refs->end();
+       ++r_iter) {
+    TemplateDictionary* sect_dict = dict.AddSectionDictionary("REF_DATA");
+    sect_dict->SetValue("REF_ID", to_string(r_iter->first));
+    sect_dict->SetFormattedValue("REF_PRODUCING_TASK_ID", "%ju",
+                                 TaskID_t(r_iter->second->producing_task()));
+    sect_dict->SetValue("REF_TYPE",
+                        ENUM_TO_STRING(JobDescriptor::JobState,
+                                       r_iter->second->type()));
+    ++i;
+  }
+  string output;
+  ExpandTemplate("src/webui/refs_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
+                 &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -575,6 +615,9 @@ void CoordinatorHTTPUI::Init(uint16_t port) {
     // Reference status
     coordinator_http_server_->addResource("/ref/", boost::bind(
         &CoordinatorHTTPUI::HandleReferenceURI, this, _1, _2));
+    // Reference list
+    coordinator_http_server_->addResource("/refs/", boost::bind(
+        &CoordinatorHTTPUI::HandleReferencesListURI, this, _1, _2));
     // Task status
     coordinator_http_server_->addResource("/task/", boost::bind(
         &CoordinatorHTTPUI::HandleTaskURI, this, _1, _2));

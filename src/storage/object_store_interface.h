@@ -40,11 +40,23 @@ class ObjectStoreInterface : public PrintableInterface {
     VLOG(1) << "Flushing all objects from store " << *this;
     object_table_->clear();
   }
+  inline uint64_t NumTotalReferences() {
+    return object_table_->size();
+  }
+  inline uint64_t NumReferencesOfType(
+      ReferenceDescriptor::ReferenceType rt) {
+    // TODO(malte): stub
+    return 0;
+  }
   inline string get_listening_interface() {
     return listening_interface_;
   }
   inline ResourceID_t get_resource_id() {
     return uuid;
+  }
+  // XXX(malte): Hack! This shouldn't be exposed permanently.
+  inline boost::shared_ptr<DataObjectMap_t> object_table() {
+    return object_table_;
   }
 
  protected:
