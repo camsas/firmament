@@ -60,8 +60,9 @@ bool TaskLib::ConnectToCoordinator(const string& coordinator_uri) {
       coordinator_uri, shared_ptr<StreamSocketsChannel<BaseMessage> >(chan_));
 }
 
-void TaskLib::Spawn(const ConcreteReference& code,
-                     vector<FutureReference>* outputs) {
+void TaskLib::Spawn(const ReferenceInterface& code,
+                    vector<ReferenceInterface>* dependencies,
+                    vector<FutureReference>* outputs) {
   VLOG(1) << "Spawning a new task; code reference is " << code.desc().id();
   // Craft a task spawn message for the new task, using a newly created task
   // descriptor.
@@ -71,8 +72,23 @@ void TaskLib::Spawn(const ConcreteReference& code,
   //    msg.MutableExtension(task_spawn_extn)->mutable_spawned_task_desc();
   TaskDescriptor* new_task = task_descriptor_.add_spawned();
   new_task->set_uid(GenerateTaskID(task_descriptor_));
+  VLOG(1) << "New task's ID is " << new_task->uid();
   new_task->set_name("");
   new_task->set_state(TaskDescriptor::CREATED);
+  // XXX(malte): set the code ref of the new task
+  //new_task->set_binary(code);
+  // Create the outputs of the new task
+  uint64_t i = 0;
+  for (vector<FutureReference>::iterator out_iter = outputs->begin();
+       out_iter != outputs->end();
+       ++out_iter) {
+    DataObjectID_t new_output_id = GenerateDataObjectID(*new_task);
+    VLOG(1) << "Output " << i << "'s ID: " << new_output_id;
+    ReferenceDescriptor* out_rd = new_task->add_outputs();
+    out_rd->CopyFrom(out_iter->desc());
+    out_rd->set_id(new_output_id);
+    out_rd->set_producing_task(new_task->uid());
+  }
   // Job ID field must be set on task spawn
   CHECK(task_descriptor_.has_job_id());
   new_task->set_job_id(task_descriptor_.job_id());

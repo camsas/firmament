@@ -73,7 +73,8 @@ class TaskLib {
   void RunTask(int argc, char *argv[]);
   // CIEL programming model
   //virtual const string Construct(const DataObject& object);
-  void Spawn(const ConcreteReference& code,
+  void Spawn(const ReferenceInterface& code,
+             vector<ReferenceInterface>* dependencies,
              vector<FutureReference>* outputs);
   void Publish(const vector<ConcreteReference>& references);
   //virtual void TailSpawn(const ConcreteReference& code);
