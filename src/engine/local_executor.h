@@ -56,20 +56,24 @@ class LocalExecutor : public ExecutorInterface {
   FRIEND_TEST(LocalExecutorTest, SimpleTaskExecutionTest);
   FRIEND_TEST(LocalExecutorTest, TaskExecutionWithArgsTest);
   ResourceID_t local_resource_id_;
-  char* AddPerfMonitoringToCommandLine(vector<char*> argv);
+  char* AddPerfMonitoringToCommandLine(vector<char*>* argv);
+  char* AddDebuggingToCommandLine(vector<char*>* argv);
   int32_t RunProcessAsync(const string& cmdline,
                           vector<string> args,
                           bool perf_monitoring,
+                          bool debug,
                           bool default_args);
   int32_t RunProcessSync(const string& cmdline,
                          vector<string> args,
                          bool perf_monitoring,
+                         bool debug,
                          bool default_args);
   bool _RunTask(TaskDescriptor* td,
                 bool firmament_binary);
   string PerfDataFileName(const TaskDescriptor& td);
   void ReadFromPipe(int fd);
   void SetUpEnvironmentForTask(const TaskDescriptor& td);
+  char* TokenizeIntoArgv(const string& str, vector<char*>* argv);
   void WriteToPipe(int fd, void* data, size_t len);
   // This holds the currently configured URI of the coordinator for this
   // resource (which must be unique, for now).

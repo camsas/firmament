@@ -14,6 +14,11 @@ extern "C" {
 #include "base/common.h"
 #include "base/types.h"
 
+DEFINE_bool(debug_tasks, false,
+            "Run tasks through a debugger (gdb).");
+DEFINE_bool(perf_monitoring, true,
+            "Enable performance monitoring for tasks executed.");
+
 namespace firmament {
 namespace executor {
 
@@ -39,24 +44,18 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
           << "at " << topology_manager_;
 }
 
-char* LocalExecutor::AddPerfMonitoringToCommandLine(vector<char*> argv) {
+char* LocalExecutor::AddPerfMonitoringToCommandLine(vector<char*>* argv) {
   // Define the string prefix for performance monitoring
   string perf_string = "perf stat -x, -o ";
   perf_string += getenv("PERF_FNAME");
-  perf_string += " -e instructions,cache-misses --";
-  // Ugly parsing code to transform it into an argv representation
-  char* perf_c_string = (char*)malloc(perf_string.size()+1);  // NOLINT
-  snprintf(perf_c_string, perf_string.size(), "%s", perf_string.c_str());
-  char* piece;
-  char* tmp_ptr = NULL;
-  piece = strtok_r(perf_c_string, " ", &tmp_ptr);
-  while (piece != NULL) {
-    argv.push_back(piece);
-    piece = strtok_r(NULL, " ", &tmp_ptr);
-  }
-  // Return pointer to the allocated string in order to be able to delete it
-  // later.
-  return perf_c_string;
+  perf_string += " -e instructions,cache-misses -- ";
+  return TokenizeIntoArgv(perf_string, argv);
+}
+
+char* LocalExecutor::AddDebuggingToCommandLine(vector<char*>* argv) {
+  // Define the string prefix for debugging
+  string dbg_string = "gdb -batch -ex run --args ";
+  return TokenizeIntoArgv(dbg_string, argv);
 }
 
 void LocalExecutor::RunTask(TaskDescriptor* td,
@@ -80,7 +79,9 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   // arguments: binary (path + name), arguments, performance monitoring on/off,
   // is this a Firmament task binary? (on/off; will cause default arugments to
   // be passed)
-  bool res = (RunProcessSync(td->binary(), args, firmament_binary,
+  bool res = (RunProcessSync(td->binary(), args,
+                             (FLAGS_perf_monitoring && firmament_binary),
+                             FLAGS_debug_tasks,
                              firmament_binary) == 0);
   return res;
 }
@@ -88,12 +89,13 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
 int32_t LocalExecutor::RunProcessAsync(const string& cmdline,
                                        vector<string> args,
                                        bool perf_monitoring,
+                                       bool debug,
                                        bool default_args) {
   // TODO(malte): We lose the thread reference here, so we can never join this
   // thread. Need to return or store if we ever need it for anythign again.
   boost::thread async_process_thread(
       boost::bind(&LocalExecutor::RunProcessSync, this, cmdline, args,
-                  perf_monitoring, default_args));
+                  perf_monitoring, debug, default_args));
   // We hard-code the return to zero here; maybe should return a thread
   // reference instead.
   return 0;
@@ -102,6 +104,7 @@ int32_t LocalExecutor::RunProcessAsync(const string& cmdline,
 int32_t LocalExecutor::RunProcessSync(const string& cmdline,
                                       vector<string> args,
                                       bool perf_monitoring,
+                                      bool debug,
                                       bool default_args) {
   char* perf_prefix;
   pid_t pid;
@@ -133,12 +136,18 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       //close(pipe_from[2]);
       // Convert args from string to char*
       vector<char*> argv;
-      // argv[0] is always the command name
-      if (perf_monitoring) {
+      // N.B.: only one of debug and perf_monitoring can be active at a time;
+      // debug takes priority here.
+      if (debug) {
+        // task debugging is active, so reserve extra space for the
+        // gdb invocation prefix.
+        argv.reserve(args.size() + (default_args ? 4 : 3));
+        perf_prefix = AddDebuggingToCommandLine(&argv);
+      } else if (perf_monitoring) {
         // performance monitoring is active, so reserve extra space for the
         // "perf" invocation prefix.
         argv.reserve(args.size() + (default_args ? 11 : 10));
-        perf_prefix = AddPerfMonitoringToCommandLine(argv);
+        perf_prefix = AddPerfMonitoringToCommandLine(&argv);
       } else {
         // no performance monitoring, so we only need to reserve space for the
         // default and NULL args
@@ -227,6 +236,24 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
     VLOG(2) << "  " << env_iter->first << ": " << env_iter->second;
     setenv(env_iter->first.c_str(), env_iter->second.c_str(), 1);
   }
+}
+
+char* LocalExecutor::TokenizeIntoArgv(const string& str, vector<char*>* argv) {
+  // Ugly parsing code to transform str into an argv representation
+  char* str_c_string = (char*)malloc(str.size()+1);  // NOLINT
+  snprintf(str_c_string, str.size(), "%s", str.c_str());
+  char* piece;
+  char* tmp_ptr = NULL;
+  piece = strtok_r(str_c_string, " ", &tmp_ptr);
+  while (piece != NULL) {
+    argv->push_back(piece);
+    piece = strtok_r(NULL, " ", &tmp_ptr);
+  }
+  // Return pointer to the allocated string in order to be able to delete it
+  // later.
+  VLOG(1) << "After adding tokenized version of '" << str
+          << "', size of argv is " << argv->size();
+  return str_c_string;
 }
 
 void LocalExecutor::WriteToPipe(int fd, void* data, size_t len) {
