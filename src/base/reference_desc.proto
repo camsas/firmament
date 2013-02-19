@@ -23,8 +23,8 @@ message ReferenceDescriptor {
 
   required uint64 id = 1;
   required ReferenceType type = 2;
-  required ReferenceScope scope = 3;
-  required bool non_deterministic = 4;
+  optional ReferenceScope scope = 3 [default = PUBLIC];
+  optional bool non_deterministic = 4 [default = true];
   optional uint64 size = 5;
   repeated string location = 6;
   optional bytes inline_data = 7;
