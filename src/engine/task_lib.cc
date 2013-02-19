@@ -314,9 +314,9 @@ void* TaskLib::GetObjectStart(DataObjectID_t id) {
       cout << "Obtaining mutex for " << nm << endl;
       string mutex_name = nm + "mut";
       named_upgradable_mutex mut(open_only, mutex_name.c_str());
-      cout << "Obtaining lock" <<  endl;
       ReadLock_t rlock(mut);
-      rlock.lock();
+      cout << "Obtaining lock on mutex at " << rlock.mutex() << endl;
+      //rlock.lock();
       cout << "Lock obtained" <<  endl;
 
       cout << "Obtaining file mapping for " << nm << endl;
@@ -324,6 +324,7 @@ void* TaskLib::GetObjectStart(DataObjectID_t id) {
       cout << "Obtaining mapped region" << endl;
       mapped_region region(m_file, read_only);
       void* object = region.get_address();
+      cout << "Mapped object address is " << object << endl;
       return object;
     } else {
       cout << "Object " << id << " was not found in cache. Contacting "
@@ -366,7 +367,8 @@ void* TaskLib::GetObjectStart(DataObjectID_t id) {
         // Should only be one result in theory
         cout << "Object " << id << " was now found in cache." << endl;
 
-        named_upgradable_mutex mut(open_only, nm.c_str());
+        string mutex_name = nm + "mut";
+        named_upgradable_mutex mut(open_only, mutex_name.c_str());
         ReadLock_t rlock(mut);
         rlock.lock();
 
@@ -464,7 +466,7 @@ void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
     cout << " Write lock acquired on file " << endl;
     /* Add it to cache */
     cache->object_list->push_back(id);
-    cout << "Added list to cache << endl ";
+    cout << "Added list to cache" << endl;
     cout << " New capacity " << cache->capacity << endl;
     return address;
   } catch (const interprocess_exception& e) {  // NOLINT
