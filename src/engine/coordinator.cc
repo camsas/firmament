@@ -56,6 +56,7 @@ Coordinator::Coordinator(PlatformID platform_id)
   resource_desc_.set_uuid(to_string(uuid_));
   resource_desc_.set_friendly_name(desc_name);
   resource_desc_.set_type(ResourceDescriptor::RESOURCE_MACHINE);
+  resource_desc_.set_storage_engine(object_store_->get_listening_interface());
   local_resource_topology_->mutable_resource_desc()->CopyFrom(
       resource_desc_);
   // Log information
