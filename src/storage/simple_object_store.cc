@@ -5,8 +5,12 @@
 // Simple in-memory object store class.
 
 #include "storage/simple_object_store.h"
+
+#include "misc/uri_tools.h"
 #include "storage/Cache.h"
 #include "storage/StorageInfo.h"
+
+DECLARE_string(listen_uri);
 
 namespace firmament {
 namespace store {
@@ -90,7 +94,11 @@ void SimpleObjectStore::HandleIncomingReceiveError(
 // TODO(tach): Hacky and not portable
 void SimpleObjectStore::setUpCommunication() {
   VLOG(3) << "Storage Engine: Set Up Communications ";
-  listening_interface_ = message_adapter_->Listen();
+  if (FLAGS_listen_uri != "")
+    listening_interface_ = message_adapter_->Listen(
+      URITools::GetHostnameFromURI(FLAGS_listen_uri));
+  else
+    listening_interface_ = message_adapter_->Listen("localhost");
   VLOG(3) << "Successfully initialised " << listening_interface_;
 
   message_adapter_->RegisterAsyncMessageReceiptCallback(

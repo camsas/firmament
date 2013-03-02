@@ -80,6 +80,7 @@ Coordinator::Coordinator(PlatformID platform_id)
               StreamSocketsChannel<BaseMessage>::SS_TCP));
       CHECK(ConnectToRemote(FLAGS_parent_uri, chan))
               << "Failed to connect to parent!";
+      RegisterWithCoordinator(chan);
       InformStorageEngineNewResource(&resource_desc_);
   }
 }
@@ -98,7 +99,7 @@ bool Coordinator::RegisterWithCoordinator(
   BaseMessage bm;
   ResourceDescriptor* rd = bm.MutableExtension(
           register_extn)->mutable_res_desc();
-  *rd = resource_desc_; // copies current local RD!
+  rd->CopyFrom(resource_desc_); // copies current local RD!
   bm.MutableExtension(register_extn)->set_uuid(
           boost::uuids::to_string(uuid_));
   // wrap in envelope
@@ -156,7 +157,7 @@ void Coordinator::Run() {
   DetectLocalResources();
 
   // Coordinator starting -- set up and wait for workers to connect.
-  m_adapter_->Listen(FLAGS_listen_uri);
+  m_adapter_->ListenURI(FLAGS_listen_uri);
   m_adapter_->RegisterAsyncMessageReceiptCallback(
           boost::bind(&Coordinator::HandleIncomingMessage, this, _1));
   m_adapter_->RegisterAsyncErrorPathCallback(
@@ -497,6 +498,7 @@ void Coordinator::InformStorageEngineNewResource(ResourceDescriptor* rd_new) {
   BaseMessage base;
   StorageRegistrationMessage* message = new StorageRegistrationMessage();
   message->set_peer(true);
+  CHECK_NE(rd_new->storage_engine(), "");
   message->set_storage_interface(rd_new->storage_engine());
   message->set_uuid(rd_new->uuid());
 
@@ -514,6 +516,7 @@ void Coordinator::InformStorageEngineNewResource(ResourceDescriptor* rd_new) {
        ++it) {
     ResourceDescriptor* rd = *it;
     const string& uri = rd->storage_engine();
+    CHECK_NE(uri, "");
     if (!m_adapter_->GetChannelForEndpoint(uri)) {
       shared_ptr<StreamSocketsChannel<BaseMessage> > chan(
           new StreamSocketsChannel<BaseMessage > (

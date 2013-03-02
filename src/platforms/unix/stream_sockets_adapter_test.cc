@@ -68,7 +68,7 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
       new StreamSocketsChannel<BaseMessage>(
           StreamSocketsChannel<BaseMessage>::SS_TCP));
   VLOG(1) << "Calling Listen";
-  mess_adapter->Listen(uri);
+  mess_adapter->ListenURI(uri);
   // Need to block and wait for the socket to become ready, otherwise race
   // ensues.
   VLOG(1) << "Waiting for server to be ready...";
@@ -113,7 +113,7 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
   shared_ptr<StreamSocketsAdapter> mess_adapter(new StreamSocketsAdapter());
   StreamSocketsChannel<BaseMessage>
       channel(StreamSocketsChannel<BaseMessage>::SS_TCP);
-  mess_adapter->Listen(uri);
+  mess_adapter->ListenURI(uri);
   // Need to block and wait for the socket to become ready, otherwise race
   // ensues.
   while (!mess_adapter->ListenReady()) { }
@@ -150,7 +150,7 @@ TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
   shared_ptr<StreamSocketsChannel<BaseMessage> >
       channel(new StreamSocketsChannel<BaseMessage>(
           StreamSocketsChannel<BaseMessage>::SS_TCP));
-  mess_adapter1->Listen(uri1);
+  mess_adapter1->ListenURI(uri1);
   // Need to block and wait for the socket to become ready, otherwise race
   // ensues.
   while (!mess_adapter1->ListenReady()) { }

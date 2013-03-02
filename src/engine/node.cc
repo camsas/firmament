@@ -86,7 +86,7 @@ void Node::HandleWrite(const boost::system::error_code& error,
 
 void Node::Run() {
   // Node starting -- set up and wait for others to connect.
-  m_adapter_->Listen(FLAGS_listen_uri);
+  m_adapter_->ListenURI(FLAGS_listen_uri);
   m_adapter_->RegisterAsyncMessageReceiptCallback(
       boost::bind(&Node::HandleIncomingMessage, this, _1));
   m_adapter_->RegisterAsyncErrorPathCallback(

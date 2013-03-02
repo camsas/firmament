@@ -50,8 +50,9 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
                         shared_ptr<MessagingChannelInterface<T> > chan);
   shared_ptr<MessagingChannelInterface<T> > GetChannelForEndpoint(
       const string& endpoint);
-  void Listen(const string& endpoint_uri);
-  string Listen();
+  void ListenURI(const string& endpoint_uri);
+  void Listen(const string& hostname, const string& port);
+  string Listen(const string& hostname);
   bool ListenReady();
   void RegisterAsyncMessageReceiptCallback(
       typename AsyncMessageRecvHandler<T>::type callback);

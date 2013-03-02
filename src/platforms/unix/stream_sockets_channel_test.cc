@@ -55,7 +55,7 @@ class StreamSocketsChannelTest : public ::testing::Test {
     boost::this_thread::sleep(boost::posix_time::seconds(1));
     // Code here will be called immediately after the constructor (right
     // before each test).
-    remote_adapter_->Listen(remote_uri_);
+    remote_adapter_->ListenURI(remote_uri_);
     // Need to block and wait for the socket to become ready, otherwise race
     // ensues.
     VLOG(1) << "Waiting for remote end to be ready...";
@@ -93,7 +93,7 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
       new StreamSocketsAdapter<uint64_t>());
   shared_ptr<StreamSocketsAdapter<uint64_t> > remote_uint_adapter(
       new StreamSocketsAdapter<uint64_t>());
-  remote_uint_adapter->Listen("tcp://localhost:7788");
+  remote_uint_adapter->ListenURI("tcp://localhost:7788");
   while (!remote_uint_adapter->ListenReady()) { }
   shared_ptr<StreamSocketsChannel<uint64_t> > uint_channel(
       new StreamSocketsChannel<uint64_t>(

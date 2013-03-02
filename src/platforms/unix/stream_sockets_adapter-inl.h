@@ -173,7 +173,16 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
 }
 
 template <typename T>
-void StreamSocketsAdapter<T>::Listen(const string& endpoint_uri) {
+void StreamSocketsAdapter<T>::ListenURI(const string& endpoint_uri) {
+  // Extract hostname and port from URI
+  string hostname = URITools::GetHostnameFromURI(endpoint_uri);
+  string port = URITools::GetPortFromURI(endpoint_uri);
+  Listen(hostname, port);
+}
+
+template <typename T>
+void StreamSocketsAdapter<T>::Listen(const string& hostname,
+                                     const string& port) {
   // no-op if we are already listening
   /*if (ListenReady())
     return;*/
@@ -183,12 +192,8 @@ void StreamSocketsAdapter<T>::Listen(const string& endpoint_uri) {
   message_wait_mutex_.lock();
   message_wait_ready_ = false;
   message_wait_mutex_.unlock();
-  // Parse endpoint URI into hostname and port
-  string hostname = URITools::GetHostnameFromURI(endpoint_uri);
-  string port = URITools::GetPortFromURI(endpoint_uri);
-
   VLOG(1) << "Creating an async TCP server on port " << port
-          << " on endpoint " << hostname << "(" << endpoint_uri << ")";
+          << " on endpoint " << hostname;
   tcp_server_.reset(new AsyncTCPServer(
       hostname, port, boost::bind(
           &StreamSocketsAdapter::AddChannelForConnection,
@@ -202,7 +207,7 @@ void StreamSocketsAdapter<T>::Listen(const string& endpoint_uri) {
 }
 
 template <typename T>
-string StreamSocketsAdapter<T>::Listen() {
+string StreamSocketsAdapter<T>::Listen(const string& hostname) {
   // no-op if we are already listening
   /*if (ListenReady())
     return;*/
@@ -212,10 +217,10 @@ string StreamSocketsAdapter<T>::Listen() {
   message_wait_mutex_.lock();
   message_wait_ready_ = false;
   message_wait_mutex_.unlock();
-  // Unknown port
+  // Unknown port, but known hostname
   VLOG(1) << "Creating an async TCP server with an unspecified port ";
   tcp_server_.reset(new AsyncTCPServer(
-      "localhost", "", boost::bind(
+      hostname, "", boost::bind(
           &StreamSocketsAdapter::AddChannelForConnection,
           this->shared_from_this(),
           _1)));
