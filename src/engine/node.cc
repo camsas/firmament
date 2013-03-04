@@ -154,7 +154,8 @@ void Node::HandleIncomingReceiveError(
 }
 
 void Node::HandleSignal(int signum) {
-  // TODO(malte): stub
+  // TODO(malte): handle other signals, and do not necessarily quit.
+  VLOG(1) << "Received signal " << signum << ", terminating...";
   if (signum == SIGTERM || signum == SIGINT)
     exit_ = true;
 }
