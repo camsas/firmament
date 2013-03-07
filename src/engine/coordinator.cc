@@ -100,6 +100,9 @@ bool Coordinator::RegisterWithCoordinator(
   ResourceDescriptor* rd = bm.MutableExtension(
           register_extn)->mutable_res_desc();
   rd->CopyFrom(resource_desc_); // copies current local RD!
+  ResourceTopologyNodeDescriptor* rtnd = bm.MutableExtension(
+          register_extn)->mutable_rtn_desc();
+  rtnd->CopyFrom(*local_resource_topology_);
   bm.MutableExtension(register_extn)->set_uuid(
           boost::uuids::to_string(uuid_));
   // wrap in envelope
@@ -273,10 +276,16 @@ void Coordinator::HandleRegistrationRequest(
     // N.B.: below creates a new resource descriptor
     // XXX(malte): We should be adding to the topology tree instead here!
     ResourceDescriptor* rd = new ResourceDescriptor(msg.res_desc());
-    CHECK(InsertIfNotPresent(associated_resources_.get(), uuid,
+    ResourceTopologyNodeDescriptor* rtnd =
+        local_resource_topology_->add_children();
+    rtnd->CopyFrom(msg.rtn_desc());
+    rtnd->set_parent_id(resource_desc_.uuid());
+    topology_manager_->TraverseProtobufTree(
+        rtnd, boost::bind(&Coordinator::AddLocalResource, this, _1));
+    /*CHECK(InsertIfNotPresent(associated_resources_.get(), uuid,
             pair<ResourceDescriptor*, uint64_t > (
             rd,
-            GetCurrentTimestamp())));
+            GetCurrentTimestamp())));*/
     InformStorageEngineNewResource(rd);
   } else {
     LOG(INFO) << "REGISTRATION request from resource " << msg.uuid()
