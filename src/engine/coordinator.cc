@@ -498,7 +498,8 @@ void Coordinator::InformStorageEngineNewResource(ResourceDescriptor* rd_new) {
   BaseMessage base;
   StorageRegistrationMessage* message = new StorageRegistrationMessage();
   message->set_peer(true);
-  CHECK_NE(rd_new->storage_engine(), "");
+  CHECK_NE(rd_new->storage_engine(), "")
+    << "Storage engine URI missing on resource " << rd_new->uuid();
   message->set_storage_interface(rd_new->storage_engine());
   message->set_uuid(rd_new->uuid());
 
@@ -515,8 +516,17 @@ void Coordinator::InformStorageEngineNewResource(ResourceDescriptor* rd_new) {
        it != rd_vec.end();
        ++it) {
     ResourceDescriptor* rd = *it;
+    // Only machine-level resources can have a storage engine
+    // TODO(malte): is this a correct assumption? We could have per-core
+    // storage engines.
+    if (rd->type() != ResourceDescriptor::RESOURCE_MACHINE)
+      continue;
+    if (rd->storage_engine() != "")
+      VLOG(2) << "Resource " << rd->uuid() << " does not have a storage "
+              << "engine URI set; skipping notification!";
+      continue;
     const string& uri = rd->storage_engine();
-    CHECK_NE(uri, "");
+    CHECK_NE(uri, "") << "Missing storage engine URI on RD for " << rd->uuid();
     if (!m_adapter_->GetChannelForEndpoint(uri)) {
       shared_ptr<StreamSocketsChannel<BaseMessage> > chan(
           new StreamSocketsChannel<BaseMessage > (
