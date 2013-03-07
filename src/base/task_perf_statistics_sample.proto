@@ -1,0 +1,13 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// A runtime sample of a task's resource demands.
+
+package firmament;
+
+message TaskPerfStatisticsSample {
+  required uint64 task_id = 1;
+  required uint64 timestamp = 2;
+  optional uint64 vsize = 3;
+  optional uint64 rsize = 4;
+}

@@ -34,6 +34,7 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
+#include "base/task_perf_statistics_sample.pb.h"
 #include "storage/reference_types.h"
 #include "base/task_interface.h"
 #include "messages/base_message.pb.h"
@@ -42,6 +43,7 @@
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
 #include "platforms/common.h"
+#include "platforms/unix/procfs_monitor.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_adapter-inl.h"
 #include "platforms/unix/stream_sockets_channel-inl.h"
@@ -49,6 +51,7 @@
 
 namespace firmament {
 
+using platform_unix::ProcFSMonitor;
 using platform_unix::streamsockets::StreamSocketsAdapter;
 using platform_unix::streamsockets::StreamSocketsChannel;
 // TODO(malte): Get rid of this and import the interprocess primitives at a
@@ -99,21 +102,26 @@ class TaskLib {
   TaskID_t task_id_;
   TaskDescriptor task_descriptor_;
 
+  void AddTaskStatisticsToHeartbeat(
+      const ProcFSMonitor::ProcessStatistics_t& proc_stats,
+      TaskPerfStatisticsSample* stats);
   void ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec);
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
   bool PullTaskInformationFromCoordinator(TaskID_t task_id,
                                           TaskDescriptor* desc);
   void SendFinalizeMessage(bool success);
-  void SendHeartbeat();
+  void SendHeartbeat(const ProcFSMonitor::ProcessStatistics_t& stats);
   bool SendMessageToCoordinator(BaseMessage* msg);
 
   void setUpStorageEngine();
 
  private:
+  pid_t pid_;
   bool task_error_;
   bool task_running_;
   uint64_t heartbeat_seq_number_;
+  ProcFSMonitor task_perf_monitor_;
 
   Cache_t* cache;
   string storage_uri;

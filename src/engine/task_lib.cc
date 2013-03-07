@@ -36,9 +36,11 @@ namespace firmament {
         StreamSocketsChannel<BaseMessage>::SS_TCP)),
     coordinator_uri_(FLAGS_coordinator_uri),
     resource_id_(ResourceIDFromString(FLAGS_resource_id)),
+    pid_(getpid()),
     task_error_(false),
     task_running_(false),
-    heartbeat_seq_number_(0) {
+    heartbeat_seq_number_(0),
+    task_perf_monitor_(1000000) {
   const char* task_id_env;
   if (FLAGS_task_id.empty())
     task_id_env = getenv("TASK_ID");
@@ -48,6 +50,17 @@ namespace firmament {
   CHECK_NOTNULL(task_id_env);
   task_id_ = TaskIDFromString(task_id_env);
   setUpStorageEngine();
+}
+
+void TaskLib::AddTaskStatisticsToHeartbeat(
+    const ProcFSMonitor::ProcessStatistics_t& proc_stats,
+    TaskPerfStatisticsSample* stats) {
+  // Task ID and timestamp
+  stats->set_task_id(task_id_);
+  stats->set_timestamp(GetCurrentTimestamp());
+  // Memory allocated and used
+  stats->set_vsize(proc_stats.vsize);
+  stats->set_rsize(proc_stats.rss * getpagesize());
 }
 
 void TaskLib::AwaitNextMessage() {
@@ -197,6 +210,7 @@ void TaskLib::RunTask(int argc, char *argv[]) {
   boost::thread task_thread(boost::bind(task_main, this, task_id_,
           task_arg_vec));
   task_running_ = true;
+  ProcFSMonitor::ProcessStatistics_t current_stats;
   // This will check if the task thread has joined once every heartbeat
   // interval, and go back to sleep if it has not.
   // TODO(malte): think about whether we'd like some kind of explicit
@@ -208,7 +222,8 @@ void TaskLib::RunTask(int argc, char *argv[]) {
     //   task_error_ = true;
     // Notify the coordinator that we're still running happily
     VLOG(1) << "Task thread has not yet joined, sending heartbeat...";
-    SendHeartbeat();
+    task_perf_monitor_.ProcessInformation(pid_, &current_stats);
+    SendHeartbeat(current_stats);
     // TODO(malte): We'll need to receive any potential messages from the
     // coordinator here, too. This is probably best done by a simple RecvA on
     // the channel.
@@ -235,9 +250,14 @@ void TaskLib::SendFinalizeMessage(bool success) {
   boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 
-void TaskLib::SendHeartbeat() {
+void TaskLib::SendHeartbeat(
+    const ProcFSMonitor::ProcessStatistics_t& proc_stats) {
   BaseMessage bm;
   SUBMSG_WRITE(bm, task_heartbeat, task_id, task_id_);
+  // Add current set of procfs statistics
+  TaskPerfStatisticsSample* stats =
+      bm.MutableExtension(task_heartbeat_extn)->mutable_stats();
+  AddTaskStatisticsToHeartbeat(proc_stats, stats);
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
   SUBMSG_WRITE(bm, task_heartbeat, location, chan_->LocalEndpointString());

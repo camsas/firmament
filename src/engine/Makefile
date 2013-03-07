@@ -75,9 +75,9 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/engine/remote_executor.o \
 		$(BUILD_DIR)/engine/simple_scheduler.o \
+		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
-		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) $(HTTP_UI_LIBS) \
@@ -103,9 +103,9 @@ $(OBJ_DIR)/coordinator_sim: $(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(BUILD_DIR)/engine/remote_executor.o \
 		$(BUILD_DIR)/engine/simple_scheduler.o \
 		$(BUILD_DIR)/sim/simple_dtg_generator.o \
+		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
-		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) $(HTTP_UI_LIBS) \

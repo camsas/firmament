@@ -296,6 +296,9 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
                  << task_id << ")!";
   } else {
     LOG(INFO) << "HEARTBEAT from task " << task_id;
+    // Process the profiling information submitted by the task, add it to
+    // the knowledge base
+    // TODO(malte): implement this
   }
 }
 

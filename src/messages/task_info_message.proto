@@ -17,6 +17,7 @@ message TaskInfoRequestMessage {
   required uint64 task_id = 1;
   required string requesting_resource_id = 2;
   required string requesting_endpoint = 3;
+  optional uint32 task_pid = 4;
 }
 
 message TaskInfoResponseMessage {
