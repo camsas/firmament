@@ -72,17 +72,6 @@ Coordinator::Coordinator(PlatformID platform_id)
       default:
           LOG(FATAL) << "Unimplemented!";
   }
-
-  // Do we have a parent? If so, register with it now.
-  if (FLAGS_parent_uri != "") {
-      shared_ptr<StreamSocketsChannel<BaseMessage> > chan(
-              new StreamSocketsChannel<BaseMessage > (
-              StreamSocketsChannel<BaseMessage>::SS_TCP));
-      CHECK(ConnectToRemote(FLAGS_parent_uri, chan))
-              << "Failed to connect to parent!";
-      RegisterWithCoordinator(chan);
-      InformStorageEngineNewResource(&resource_desc_);
-  }
 }
 
 Coordinator::~Coordinator() {
@@ -170,6 +159,17 @@ void Coordinator::Run() {
 #ifdef __HTTP_UI__
   InitHTTPUI();
 #endif
+
+  // Do we have a parent? If so, register with it now.
+  if (FLAGS_parent_uri != "") {
+      shared_ptr<StreamSocketsChannel<BaseMessage> > chan(
+              new StreamSocketsChannel<BaseMessage > (
+              StreamSocketsChannel<BaseMessage>::SS_TCP));
+      CHECK(ConnectToRemote(FLAGS_parent_uri, chan))
+              << "Failed to connect to parent!";
+      RegisterWithCoordinator(chan);
+      InformStorageEngineNewResource(&resource_desc_);
+  }
 
   // Main loop
   while (!exit_) {
