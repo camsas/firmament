@@ -108,17 +108,17 @@ void ProcFSMonitor::Run() {
   // Return -- this typically means the monitoring thread will exit.
 }
 
-/*void ProcFSMonitor::RunForPID(pid_t pid) {
-  // Can't already be running
+void ProcFSMonitor::RunForPID(pid_t pid) {
   ProcessStatistics_t stats;
   // Keep going until we're told to stop
-  while (!stop_.timed_wait()) {
-    VLOG(2) << "ProcFSMonitor polling for PID " << pid;
+  boost::unique_lock<boost::mutex> lock(stop_mut_);
+  while (!stop_.timed_wait(
+      lock, boost::posix_time::microseconds(polling_frequency_))) {
+    VLOG(2) << "ProcFSMonitor polling...";
     ProcessInformation(pid, &stats);
-    usleep(polling_frequency_);
   }
   // Return -- this typically means the monitoring thread will exit.
-}*/
+}
 
 
 void ProcFSMonitor::Stop() {
