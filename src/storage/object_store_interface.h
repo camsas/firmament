@@ -44,7 +44,7 @@ class ObjectStoreInterface : public PrintableInterface {
     return object_table_->size();
   }
   inline uint64_t NumReferencesOfType(
-      ReferenceDescriptor::ReferenceType rt) {
+      ReferenceDescriptor::ReferenceType) {
     // TODO(malte): stub
     return 0;
   }
