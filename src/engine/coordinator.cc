@@ -101,8 +101,7 @@ bool Coordinator::RegisterWithCoordinator(
 }
 
 void Coordinator::DetectLocalResources() {
-  // TODO(malte): This is somewhat of a hack currently; instead of taking a
-  // flat vector of resources, we obviuosly want to take a proper topology.
+  // Inform the user about the number of local PUs.
   uint64_t num_local_pus = topology_manager_->NumProcessingUnits();
   LOG(INFO) << "Found " << num_local_pus << " local PUs.";
   // Get local resource topology and save it to the topology protobuf
@@ -115,17 +114,19 @@ void Coordinator::DetectLocalResources() {
   local_resource_topology_->set_parent_id(to_string(uuid_));
   topology_manager_->TraverseProtobufTree(
       local_resource_topology_,
-      boost::bind(&Coordinator::AddResource, this, _1, true));
+      boost::bind(&Coordinator::AddResource, this, _1, node_uri_, true));
 }
 
-void Coordinator::AddResource(ResourceDescriptor* resource_desc, bool local) {
+void Coordinator::AddResource(ResourceDescriptor* resource_desc,
+                              const string& endpoint_uri,
+                              bool local) {
   CHECK(resource_desc);
   // Compute resource ID
   ResourceID_t res_id = ResourceIDFromString(resource_desc->uuid());
   // Add resource to local resource set
   CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
-          pair<ResourceDescriptor*, uint64_t > (
-          resource_desc, GetCurrentTimestamp())));
+          new ResourceStatus(resource_desc, endpoint_uri,
+                             GetCurrentTimestamp())));
   // Register with scheduler if this resource is schedulable
   if (resource_desc->type() == ResourceDescriptor::RESOURCE_PU) {
     // TODO(malte): We make the assumption here that any local PU resource is
@@ -253,16 +254,15 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
   boost::uuids::string_generator gen;
   boost::uuids::uuid uuid = gen(msg.uuid());
-  pair<ResourceDescriptor*, uint64_t>* rdp =
-          FindOrNull(*associated_resources_, uuid);
-  if (!rdp) {
+  ResourceStatus** rsp = FindOrNull(*associated_resources_, uuid);
+  if (!rsp) {
       LOG(WARNING) << "HEARTBEAT from UNKNOWN resource (uuid: "
               << msg.uuid() << ")!";
   } else {
       LOG(INFO) << "HEARTBEAT from resource " << msg.uuid()
-              << " (last seen at " << rdp->second << ")";
+                << " (last seen at " << (*rsp)->last_heartbeat() << ")";
       // Update timestamp
-      rdp->second = GetCurrentTimestamp();
+      (*rsp)->set_last_heartbeat(GetCurrentTimestamp());
   }
 }
 
@@ -270,23 +270,20 @@ void Coordinator::HandleRegistrationRequest(
     const RegistrationMessage& msg) {
   boost::uuids::string_generator gen;
   boost::uuids::uuid uuid = gen(msg.uuid());
-  pair<ResourceDescriptor*, uint64_t>* rdp =
-      FindOrNull(*associated_resources_, uuid);
+  ResourceStatus** rdp = FindOrNull(*associated_resources_, uuid);
   if (!rdp) {
     LOG(INFO) << "REGISTERING NEW RESOURCE (uuid: " << msg.uuid() << ")";
     // N.B.: below creates a new resource descriptor
-    // XXX(malte): We should be adding to the topology tree instead here!
     ResourceDescriptor* rd = new ResourceDescriptor(msg.res_desc());
+    // Insert the root of the registered topology into the topology tree
     ResourceTopologyNodeDescriptor* rtnd =
         local_resource_topology_->add_children();
     rtnd->CopyFrom(msg.rtn_desc());
     rtnd->set_parent_id(resource_desc_.uuid());
+    // Recursively add its child resources to resource map and topology tree
     topology_manager_->TraverseProtobufTree(
-        rtnd, boost::bind(&Coordinator::AddResource, this, _1, false));
-    /*CHECK(InsertIfNotPresent(associated_resources_.get(), uuid,
-            pair<ResourceDescriptor*, uint64_t > (
-            rd,
-            GetCurrentTimestamp())));*/
+        rtnd, boost::bind(&Coordinator::AddResource, this, _1,
+                          msg.location(), false));
     InformStorageEngineNewResource(rd);
   } else {
     LOG(INFO) << "REGISTRATION request from resource " << msg.uuid()
@@ -294,7 +291,7 @@ void Coordinator::HandleRegistrationRequest(
               << "Checking if this is a recovery.";
     // TODO(malte): Implement checking logic, deal with recovery case
     // Update timestamp (registration request is an implicit heartbeat)
-    rdp->second = GetCurrentTimestamp();
+    (*rdp)->set_last_heartbeat(GetCurrentTimestamp());
   }
 }
 
@@ -518,28 +515,29 @@ void Coordinator::InformStorageEngineNewResource(ResourceDescriptor* rd_new) {
 
   StorageRegistrationMessage& message_ref = *message;
 
-  vector<ResourceDescriptor*> rd_vec = associated_resources();
+  vector<ResourceStatus*> rs_vec = associated_resources();
 
   /* Handle Local Engine First */
 
   object_store_->HandleStorageRegistrationRequest(message_ref);
 
   /* Handle other resources' engines*/
-  for (vector<ResourceDescriptor*>::iterator it = rd_vec.begin();
-       it != rd_vec.end();
+  for (vector<ResourceStatus*>::iterator it = rs_vec.begin();
+       it != rs_vec.end();
        ++it) {
-    ResourceDescriptor* rd = *it;
+    ResourceStatus* rs = *it;
     // Only machine-level resources can have a storage engine
     // TODO(malte): is this a correct assumption? We could have per-core
     // storage engines.
-    if (rd->type() != ResourceDescriptor::RESOURCE_MACHINE)
+    if (rs->descriptor().type() != ResourceDescriptor::RESOURCE_MACHINE)
       continue;
-    if (rd->storage_engine() != "")
-      VLOG(2) << "Resource " << rd->uuid() << " does not have a storage "
-              << "engine URI set; skipping notification!";
+    if (rs->descriptor().storage_engine() != "")
+      VLOG(2) << "Resource " << rs->descriptor().uuid() << " does not have a "
+              << "storage engine URI set; skipping notification!";
       continue;
-    const string& uri = rd->storage_engine();
-    CHECK_NE(uri, "") << "Missing storage engine URI on RD for " << rd->uuid();
+    const string& uri = rs->descriptor().storage_engine();
+    CHECK_NE(uri, "") << "Missing storage engine URI on RD for "
+                      << rs->descriptor().uuid();
     if (!m_adapter_->GetChannelForEndpoint(uri)) {
       shared_ptr<StreamSocketsChannel<BaseMessage> > chan(
           new StreamSocketsChannel<BaseMessage > (
@@ -573,7 +571,8 @@ void Coordinator::HandleStorageRegistrationRequest(
 void Coordinator::HandleStorageDiscoverRequest(
     const StorageDiscoverMessage& msg) {
   ResourceID_t uuid = ResourceIDFromString(msg.uuid());
-  ResourceDescriptor* rd = (FindOrNull(*associated_resources_, uuid))->first;
+  ResourceStatus** rsp = FindOrNull(*associated_resources_, uuid);
+  ResourceDescriptor* rd = (*rsp)->mutable_descriptor();
   const string& uri = rd->storage_engine();
   StorageDiscoverMessage* reply = new StorageDiscoverMessage();
   reply->set_uuid(msg.uuid());

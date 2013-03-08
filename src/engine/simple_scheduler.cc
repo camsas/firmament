@@ -88,8 +88,9 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
        ++res_iter) {
     ResourceID_t* rid = new ResourceID_t(res_iter->first);
     VLOG(3) << "Considering resource " << *rid << ", which is in state "
-            << res_iter->second.first->state();
-    if (res_iter->second.first->state() == ResourceDescriptor::RESOURCE_IDLE)
+            << res_iter->second->descriptor().state();
+    if (res_iter->second->descriptor().state() ==
+        ResourceDescriptor::RESOURCE_IDLE)
       return rid;
   }
   // We have not found any idle resources in our local resource map. At this
@@ -124,9 +125,8 @@ void SimpleScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
   VLOG(1) << "Handling completion of task " << td_ptr->uid()
           << ", freeing resource " << *res_id_ptr;
   // Set the bound resource idle again.
-  pair<ResourceDescriptor*, uint64_t>* res =
-      FindOrNull(*resource_map_, *res_id_ptr);
-  res->first->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  ResourceStatus** res = FindOrNull(*resource_map_, *res_id_ptr);
+  (*res)->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
   // Remove the task's resource binding (as it is no longer currently bound)
   task_bindings_.erase(td_ptr->uid());
   // TODO(malte): Check if this job still has any outstanding tasks, otherwise
@@ -274,14 +274,13 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
     if (!best_resource) {
       VLOG(2) << "No suitable resource found, will need to try again.";
     } else {
-      pair<ResourceDescriptor*, uint64_t>* rp = FindOrNull(*resource_map_,
-                                                          *best_resource);
+      ResourceStatus** rp = FindOrNull(*resource_map_, *best_resource);
       CHECK(rp);
       LOG(INFO) << "Scheduling task " << (*td)->uid() << " on resource "
-                << rp->first->uuid() << " [" << rp << "]";
+                << (*rp)->descriptor().uuid() << " [" << *rp << "]";
       // BindTaskToResource both binds the task AND removes it from the runnable
       // set.
-      BindTaskToResource(*td, rp->first);
+      BindTaskToResource(*td, (*rp)->mutable_descriptor());
       total_scheduled++;
     }
   }

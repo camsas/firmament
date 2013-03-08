@@ -251,26 +251,27 @@ void CoordinatorHTTPUI::HandleResourcesListURI(HTTPRequestPtr& http_request,  //
   LogRequest(http_request);
   HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  const vector<ResourceDescriptor*> resources =
+  const vector<ResourceStatus*> resources =
       coordinator_->associated_resources();
   uint64_t i = 0;
   TemplateDictionary dict("resources_list");
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
-  for (vector<ResourceDescriptor*>::const_iterator rd_iter =
+  for (vector<ResourceStatus*>::const_iterator rd_iter =
        resources.begin();
        rd_iter != resources.end();
        ++rd_iter) {
     TemplateDictionary* sect_dict = dict.AddSectionDictionary("RES_DATA");
     sect_dict->SetIntValue("RES_NUM", i);
-    sect_dict->SetValue("RES_ID", to_string((*rd_iter)->uuid()));
-    sect_dict->SetValue("RES_FRIENDLY_NAME", (*rd_iter)->friendly_name());
+    sect_dict->SetValue("RES_ID", to_string((*rd_iter)->descriptor().uuid()));
+    sect_dict->SetValue("RES_FRIENDLY_NAME",
+                        (*rd_iter)->descriptor().friendly_name());
     sect_dict->SetValue("RES_STATE",
                         ENUM_TO_STRING(ResourceDescriptor::ResourceState,
-                                       (*rd_iter)->state()));
+                                       (*rd_iter)->descriptor().state()));
     // N.B.: We make the assumption that only PU type resources are schedulable
     // here!
-    if (!(*rd_iter)->schedulable())
+    if (!(*rd_iter)->descriptor().schedulable())
       sect_dict->AddSectionDictionary("RES_NON_SCHEDULABLE");
     ++i;
   }
@@ -295,6 +296,8 @@ void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLI
   }
   ResourceDescriptor* rd_ptr = coordinator_->GetResource(
       ResourceIDFromString(*res_id));
+  ResourceStatus* rs_ptr = coordinator_->GetResourceStatus(
+      ResourceIDFromString(*res_id));
   TemplateDictionary dict("resource_status");
   if (rd_ptr) {
     dict.SetValue("RES_ID", rd_ptr->uuid());
@@ -306,6 +309,16 @@ void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLI
                                  rd_ptr->state()));
     dict.SetValue("RES_PARENT_ID", rd_ptr->parent());
     dict.SetIntValue("RES_NUM_CHILDREN", rd_ptr->children_size());
+    for (RepeatedPtrField<string>::const_iterator c_iter =
+         rd_ptr->children().begin();
+         c_iter != rd_ptr->children().end();
+         ++c_iter) {
+      TemplateDictionary* child_dict =
+          dict.AddSectionDictionary("RES_CHILDREN");
+      child_dict->SetValue("RES_CHILD_ID", *c_iter);
+    }
+    dict.SetValue("RES_LOCATION", rs_ptr->location());
+    dict.SetIntValue("RES_LAST_HEARTBEAT", rs_ptr->last_heartbeat());
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
     VLOG(1) << "rd_ptr is: " << rd_ptr;

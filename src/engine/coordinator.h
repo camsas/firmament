@@ -92,10 +92,16 @@ class Coordinator : public Node,
   ResourceDescriptor* GetResource(ResourceID_t res_id) {
     if (res_id == uuid_)
       return &resource_desc_;
-    pair<ResourceDescriptor*, uint64_t>* res =
-        FindOrNull(*associated_resources_, res_id);
-    return (res ? res->first : NULL);
+    ResourceStatus** res = FindOrNull(*associated_resources_, res_id);
+    return (res ? (*res)->mutable_descriptor() : NULL);
   }
+  // Gets a pointer to the resource status for an associated resource.
+  // Returns NULL if not associated.
+  ResourceStatus* GetResourceStatus(ResourceID_t res_id) {
+    ResourceStatus** res = FindOrNull(*associated_resources_, res_id);
+    return (res ? *res : NULL);
+  }
+
   // Gets a pointer to the job descriptor for a job known to the coordinator.
   // If the job is not known to the coordinator, we will return NULL.
   JobDescriptor* GetJob(JobID_t job_id) {
@@ -133,13 +139,13 @@ class Coordinator : public Node,
     return count;
   }
 
-  vector<ResourceDescriptor*> associated_resources() {
-    vector<ResourceDescriptor*> res_vec;
+  vector<ResourceStatus*> associated_resources() {
+    vector<ResourceStatus*> res_vec;
     for (ResourceMap_t::const_iterator res_iter =
          associated_resources_->begin();
          res_iter != associated_resources_->end();
          ++res_iter) {
-      res_vec.push_back(res_iter->second.first);
+      res_vec.push_back(res_iter->second);
     }
     return res_vec;
   };
@@ -174,7 +180,9 @@ class Coordinator : public Node,
 
  protected:
   void AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id);
-  void AddResource(ResourceDescriptor* resource_desc, bool local);
+  void AddResource(ResourceDescriptor* resource_desc,
+                   const string& endpoint_uri,
+                   bool local);
   bool RegisterWithCoordinator(
       shared_ptr<StreamSocketsChannel<BaseMessage> > chan);
   void DetectLocalResources();
