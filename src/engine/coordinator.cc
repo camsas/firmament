@@ -115,10 +115,10 @@ void Coordinator::DetectLocalResources() {
   local_resource_topology_->set_parent_id(to_string(uuid_));
   topology_manager_->TraverseProtobufTree(
       local_resource_topology_,
-      boost::bind(&Coordinator::AddLocalResource, this, _1));
+      boost::bind(&Coordinator::AddResource, this, _1, true));
 }
 
-void Coordinator::AddLocalResource(ResourceDescriptor* resource_desc) {
+void Coordinator::AddResource(ResourceDescriptor* resource_desc, bool local) {
   CHECK(resource_desc);
   // Compute resource ID
   ResourceID_t res_id = ResourceIDFromString(resource_desc->uuid());
@@ -135,8 +135,9 @@ void Coordinator::AddLocalResource(ResourceDescriptor* resource_desc) {
     resource_desc->set_schedulable(true);
     if (resource_desc->state() == ResourceDescriptor::RESOURCE_UNKNOWN)
       resource_desc->set_state(ResourceDescriptor::RESOURCE_IDLE);
-    scheduler_->RegisterResource(res_id);
-    VLOG(1) << "Added local resource " << resource_desc->uuid()
+    scheduler_->RegisterResource(res_id, local);
+    VLOG(1) << "Added " << (local ? "local" : "remote") << " resource "
+            << resource_desc->uuid()
             << " [" << resource_desc->friendly_name()
             << "] to scheduler.";
   }
@@ -281,7 +282,7 @@ void Coordinator::HandleRegistrationRequest(
     rtnd->CopyFrom(msg.rtn_desc());
     rtnd->set_parent_id(resource_desc_.uuid());
     topology_manager_->TraverseProtobufTree(
-        rtnd, boost::bind(&Coordinator::AddLocalResource, this, _1));
+        rtnd, boost::bind(&Coordinator::AddResource, this, _1, false));
     /*CHECK(InsertIfNotPresent(associated_resources_.get(), uuid,
             pair<ResourceDescriptor*, uint64_t > (
             rd,

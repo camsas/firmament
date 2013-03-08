@@ -15,12 +15,14 @@
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "engine/local_executor.h"
+#include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
 
 namespace firmament {
 namespace scheduler {
 
 using executor::LocalExecutor;
+using executor::RemoteExecutor;
 using common::pb_to_set;
 using store::ObjectStoreInterface;
 
@@ -131,11 +133,26 @@ void SimpleScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
   // mark it as completed.
 }
 
-void SimpleScheduler::RegisterResource(ResourceID_t res_id) {
+// Simple 2-argument wrapper
+void SimpleScheduler::RegisterResource(ResourceID_t res_id, bool local) {
+  if (local)
+    RegisterLocalResource(res_id);
+  else
+    RegisterRemoteResource(res_id);
+}
+
+void SimpleScheduler::RegisterLocalResource(ResourceID_t res_id) {
   // Create an executor for each resource.
-  VLOG(1) << "Adding executor for resource " << res_id;
+  VLOG(1) << "Adding executor for local resource " << res_id;
   LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_,
                                           topology_manager_);
+  CHECK(InsertIfNotPresent(&executors_, res_id, exec));
+}
+
+void SimpleScheduler::RegisterRemoteResource(ResourceID_t res_id) {
+  // Create an executor for each resource.
+  VLOG(1) << "Adding executor for remote resource " << res_id;
+  RemoteExecutor* exec = new RemoteExecutor(res_id, coordinator_uri_);
   CHECK(InsertIfNotPresent(&executors_, res_id, exec));
 }
 

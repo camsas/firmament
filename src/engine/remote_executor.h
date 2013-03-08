@@ -18,16 +18,20 @@ namespace executor {
 
 class RemoteExecutor : public ExecutorInterface {
  public:
-  explicit RemoteExecutor(ResourceID_t resource_id);
+  explicit RemoteExecutor(ResourceID_t resource_id,
+                          const string& coordinator_uri);
   void RunTask(TaskDescriptor* td,
                bool firmament_binary);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<RemoteExecutor for resource "
-                   << to_string(local_resource_id_)
+                   << to_string(remote_resource_id_)
+                   << ", managed by coordinator at "
+                   << managing_coordinator_uri_
                    << ">";
   }
  protected:
-  ResourceID_t local_resource_id_;
+  const string managing_coordinator_uri_;
+  ResourceID_t remote_resource_id_;
 };
 
 }  // namespace executor

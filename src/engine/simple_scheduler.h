@@ -33,7 +33,7 @@ class SimpleScheduler : public SchedulerInterface {
                   const string& coordinator_uri);
   ~SimpleScheduler();
   void DeregisterResource(ResourceID_t res_id);
-  void RegisterResource(ResourceID_t res_id);
+  void RegisterResource(ResourceID_t res_id, bool local);
   void HandleTaskCompletion(TaskDescriptor* td_ptr);
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
   uint64_t ScheduleJob(JobDescriptor* job_desc);
@@ -57,6 +57,8 @@ class SimpleScheduler : public SchedulerInterface {
       const set<DataObjectID_t>& output_ids,
       TaskDescriptor* root_task);
   shared_ptr<ReferenceInterface> ReferenceForID(DataObjectID_t id);
+  void RegisterLocalResource(ResourceID_t res_id);
+  void RegisterRemoteResource(ResourceID_t res_id);
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction. Note that this set includes tasks from all

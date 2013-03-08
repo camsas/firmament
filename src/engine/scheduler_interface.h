@@ -43,7 +43,7 @@ class SchedulerInterface : public PrintableInterface {
   // work to this resource. A resource may be registered with multiple
   // schedulers.
   // TODO(malte): Work out what the semantics of doing so are!
-  virtual void RegisterResource(ResourceID_t res_id) = 0;
+  virtual void RegisterResource(ResourceID_t res_id, bool local) = 0;
   // Finds runnable tasks for the job in the argument and adds them to the
   // global runnable set.
   virtual const set<TaskID_t>& RunnableTasksForJob(
