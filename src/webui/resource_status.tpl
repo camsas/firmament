@@ -28,12 +28,21 @@
   <tr>
     <td>Children IDs</td>
     <td>
+      Total {{RES_NUM_CHILDREN}}:
       <ul>
       {{#RES_CHILDREN}}
         <li><a href="/resource/?id={{RES_CHILD_ID}}">{{RES_CHILD_ID}}</a></li>
       {{/RES_CHILDREN}}
       </ul>
     </td>
+  </tr>
+  <tr>
+    <td>Last location</td>
+    <td>{{RES_LOCATION}}</td>
+  </tr>
+  <tr>
+    <td>Last hearbeat</td>
+    <td>{{RES_LAST_HEARTBEAT}}</td>
   </tr>
 </table>
 

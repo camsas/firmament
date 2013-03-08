@@ -32,8 +32,8 @@
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script>
 
-var width = 1024,
-    height = 500;
+var width = screen.availWidth,
+    height = screen.availHeight;
 
 var cluster = d3.layout.cluster()
     .size([width, height - 80]);
