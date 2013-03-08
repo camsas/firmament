@@ -33,8 +33,6 @@ class TopologyManager {
  public:
   TopologyManager();
   void AsProtobuf(ResourceTopologyNodeDescriptor* topology_pb);
-  bool BindToCore(uint32_t core_id, bool strict);
-  bool BindToCPUMask(uint64_t mask, bool strict);
   bool BindPIDToResource(pid_t pid, ResourceID_t res_id);
   bool BindSelfToResource(ResourceID_t res_id);
   vector<ResourceDescriptor> FlatResourceSet();

@@ -30,22 +30,6 @@ void TopologyManager::AsProtobuf(ResourceTopologyNodeDescriptor* topology_pb) {
   VLOG(3) << topology_pb->DebugString();
 }
 
-bool TopologyManager::BindToCore(uint32_t core_id, bool strict) {
-  // Make a few sanity checks
-  //CHECK_LT(core_id, );
-  // Bind the current process to the specified core
-  //hwloc_
-  return false;
-}
-
-bool TopologyManager::BindToCPUMask(uint64_t mask, bool strict) {
-  // Make a few sanity checks
-  //CHECK_LT(core_id, );
-  // Bind the current process to the specified core
-  //hwloc_
-  return false;
-}
-
 bool TopologyManager::BindPIDToResource(pid_t pid, ResourceID_t res_id) {
   // Check that the resource exists, is local, and is a CPU
   hwloc_obj_t* obj;
