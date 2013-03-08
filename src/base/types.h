@@ -92,7 +92,8 @@ typedef uint64_t JobID_t;
 #endif
 typedef uint32_t TaskOutputID_t;
 typedef uint64_t TaskID_t;
-typedef map<ResourceID_t, pair<ResourceDescriptor*, uint64_t> > ResourceMap_t;
+typedef pair<ResourceDescriptor*, uint64_t> ResourceMapEntry_t;
+typedef map<ResourceID_t, ResourceMapEntry_t> ResourceMap_t;
 typedef map<JobID_t, JobDescriptor> JobMap_t;
 // N.B.: the type of the second element here is a pointer, since the
 // TaskDescriptor objects will be part of the JobDescriptor protobuf that is
