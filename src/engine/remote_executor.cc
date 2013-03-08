@@ -6,7 +6,6 @@
 #include "engine/remote_executor.h"
 
 #include "base/common.h"
-#include "base/types.h"
 
 namespace firmament {
 namespace executor {

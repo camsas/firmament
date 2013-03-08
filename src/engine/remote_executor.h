@@ -10,7 +10,6 @@
 #include <string>
 
 #include "base/common.h"
-#include "base/types.h"
 #include "engine/executor_interface.h"
 
 namespace firmament {
@@ -18,8 +17,8 @@ namespace executor {
 
 class RemoteExecutor : public ExecutorInterface {
  public:
-  explicit RemoteExecutor(ResourceID_t resource_id,
-                          const string& coordinator_uri);
+  RemoteExecutor(ResourceID_t resource_id,
+                 const string& coordinator_uri);
   void RunTask(TaskDescriptor* td,
                bool firmament_binary);
   virtual ostream& ToString(ostream* stream) const {

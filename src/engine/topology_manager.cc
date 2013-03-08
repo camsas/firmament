@@ -144,15 +144,18 @@ void TopologyManager::MakeProtobufTree(
   obj_pb->mutable_resource_desc()->set_friendly_name(obj_string);
   // If we have a parent_pb, also add this object's ID to the parent object's
   // resource descriptor
-  if (parent_pb)
+  if (parent_pb) {
     parent_pb->mutable_resource_desc()->add_children(obj_id);
+    obj_pb->set_parent_id(parent_pb->resource_desc().uuid());
+    obj_pb->mutable_resource_desc()->set_parent(
+        parent_pb->resource_desc().uuid());
+  }
   // Iterate over the children of this object and add them recursively
   hwloc_obj_t prev_child_obj = NULL;
   for (uint32_t depth = 0; depth < node->arity; depth++) {
     hwloc_obj_t next_child_obj = hwloc_get_next_child(topology_, node,
                                                       prev_child_obj);
     ResourceTopologyNodeDescriptor* child = obj_pb->add_children();
-    obj_pb->set_parent_id(obj_id);
     MakeProtobufTree(next_child_obj, child, obj_pb);
     prev_child_obj = next_child_obj;
   }
