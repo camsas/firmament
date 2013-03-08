@@ -218,9 +218,9 @@ class Coordinator : public Node,
   // The topology manager associated with this coordinator; responsible for the
   // local resources.
   shared_ptr<TopologyManager> topology_manager_;
-    // The local object store.
-    shared_ptr<ObjectStoreInterface> object_store_;
-      // The local scheduler object. A coordinator may not have a scheduler, in
+  // The local object store.
+  shared_ptr<ObjectStoreInterface> object_store_;
+  // The local scheduler object. A coordinator may not have a scheduler, in
   // which case this will be a stub that defers to another scheduler.
   // TODO(malte): Work out the detailed semantics of this.
   scoped_ptr<SchedulerInterface> scheduler_;
