@@ -49,6 +49,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     scheduler_(new SimpleScheduler(job_table_, associated_resources_,
                                    object_store_, task_table_,
                                    topology_manager_,
+                                   m_adapter_.get(),
                                    FLAGS_listen_uri)) {
   // Start up a coordinator according to the platform parameter
   string hostname = boost::asio::ip::host_name();
@@ -104,6 +105,7 @@ void Coordinator::DetectLocalResources() {
   // Inform the user about the number of local PUs.
   uint64_t num_local_pus = topology_manager_->NumProcessingUnits();
   LOG(INFO) << "Found " << num_local_pus << " local PUs.";
+  LOG(INFO) << "Resource URI is " << node_uri_;
   // Get local resource topology and save it to the topology protobuf
   // TODO(malte): Figure out how this interacts with dynamically added
   // resources; currently, we only run detection (i.e. the DetectLocalResources
@@ -124,6 +126,8 @@ void Coordinator::AddResource(ResourceDescriptor* resource_desc,
   // Compute resource ID
   ResourceID_t res_id = ResourceIDFromString(resource_desc->uuid());
   // Add resource to local resource set
+  VLOG(1) << "Adding resource " << res_id << " to resource map; "
+          << "endpoint URI is " << endpoint_uri;
   CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
           new ResourceStatus(resource_desc, endpoint_uri,
                              GetCurrentTimestamp())));

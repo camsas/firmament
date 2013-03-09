@@ -51,7 +51,7 @@ class SimpleSchedulerTest : public ::testing::Test {
     job_map_->clear();
     obj_store_->Flush();
     sched_.reset(new SimpleScheduler(job_map_, res_map_, obj_store_, task_map_,
-                                     shared_ptr<TopologyManager>(), ""));
+                                     shared_ptr<TopologyManager>(), NULL, ""));
   }
 
   virtual void TearDown() {

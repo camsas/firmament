@@ -32,6 +32,7 @@ bool Node::exit_ = false;
 
 Node::Node(PlatformID platform_id, ResourceID_t uuid)
   : platform_id_(platform_id),
+    node_uri_(FLAGS_listen_uri),
     uuid_(uuid) {
   // Set up the node's resource descriptor
   resource_desc_.set_uuid(to_string(uuid_));

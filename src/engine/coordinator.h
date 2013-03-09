@@ -95,11 +95,19 @@ class Coordinator : public Node,
     ResourceStatus** res = FindOrNull(*associated_resources_, res_id);
     return (res ? (*res)->mutable_descriptor() : NULL);
   }
+
   // Gets a pointer to the resource status for an associated resource.
   // Returns NULL if not associated.
   ResourceStatus* GetResourceStatus(ResourceID_t res_id) {
     ResourceStatus** res = FindOrNull(*associated_resources_, res_id);
     return (res ? *res : NULL);
+  }
+
+  // Gets the current location (endpoint) of an associated resource.
+  // Returns NULL if not associated.
+  const string GetLocationForResource(ResourceID_t res_id) {
+    ResourceStatus** res = FindOrNull(*associated_resources_, res_id);
+    return (res ? (*res)->location() : NULL);
   }
 
   // Gets a pointer to the job descriptor for a job known to the coordinator.

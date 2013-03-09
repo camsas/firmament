@@ -26,15 +26,18 @@ using executor::RemoteExecutor;
 using common::pb_to_set;
 using store::ObjectStoreInterface;
 
-SimpleScheduler::SimpleScheduler(shared_ptr<JobMap_t> job_map,
-                                 shared_ptr<ResourceMap_t> resource_map,
-                                 shared_ptr<ObjectStoreInterface> object_store,
-                                 shared_ptr<TaskMap_t> task_map,
-                                 shared_ptr<TopologyManager> topo_mgr,
-                                 const string& coordinator_uri)
+SimpleScheduler::SimpleScheduler(
+    shared_ptr<JobMap_t> job_map,
+    shared_ptr<ResourceMap_t> resource_map,
+    shared_ptr<ObjectStoreInterface> object_store,
+    shared_ptr<TaskMap_t> task_map,
+    shared_ptr<TopologyManager> topo_mgr,
+    MessagingAdapterInterface<BaseMessage>* m_adapter,
+    const string& coordinator_uri)
     : SchedulerInterface(job_map, resource_map, object_store, task_map),
       coordinator_uri_(coordinator_uri),
       topology_manager_(topo_mgr),
+      m_adapter_ptr_(m_adapter),
       scheduling_(false) {
   VLOG(1) << "SimpleScheduler initiated.";
 }
@@ -152,7 +155,9 @@ void SimpleScheduler::RegisterLocalResource(ResourceID_t res_id) {
 void SimpleScheduler::RegisterRemoteResource(ResourceID_t res_id) {
   // Create an executor for each resource.
   VLOG(1) << "Adding executor for remote resource " << res_id;
-  RemoteExecutor* exec = new RemoteExecutor(res_id, coordinator_uri_);
+  RemoteExecutor* exec = new RemoteExecutor(res_id, coordinator_uri_,
+                                            resource_map_.get(),
+                                            m_adapter_ptr_);
   CHECK(InsertIfNotPresent(&executors_, res_id, exec));
 }
 

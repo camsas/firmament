@@ -30,6 +30,7 @@ class SimpleScheduler : public SchedulerInterface {
                   shared_ptr<store::ObjectStoreInterface> object_store,
                   shared_ptr<TaskMap_t> task_map,
                   shared_ptr<TopologyManager> topo_mgr,
+                  MessagingAdapterInterface<BaseMessage>* m_adapter,
                   const string& coordinator_uri);
   ~SimpleScheduler();
   void DeregisterResource(ResourceID_t res_id);
@@ -73,6 +74,9 @@ class SimpleScheduler : public SchedulerInterface {
   map<TaskID_t, ResourceID_t> task_bindings_;
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
+  // Pointer to messaging adapter to use for communication with remote
+  // resources.
+  MessagingAdapterInterface<BaseMessage>* m_adapter_ptr_;
   // Flag (effectively a lock) indicating if the scheduler is currently
   // in the process of making scheduling decisions.
   bool scheduling_;
