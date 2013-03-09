@@ -84,7 +84,7 @@ $(OBJ_DIR)/%.o: %.cc %.h .setup
 		"  CXX     $@")
 
 # Make unit test binary and add it to the test list run by global "make test".
-$(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_DEPS) $(TESTS_%_DEPS)
+$(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_%_DEPS) $(TESTS_DEPS)
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) $(OPTFLAGS) $(DEFINES) \
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$< \
@@ -98,7 +98,7 @@ $(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_DEPS) $(TESTS_%_DEPS)
 # have an -inl.h file, no .cc file).
 # TODO(malte): We may get rid of this in favour of supplying empty/skeleton
 # .cc files for such cases.
-$(TEST_OBJ_DIR)/%_test: %_test.cc $(TESTS_DEPS) $(TESTS_%_DEPS)
+$(TEST_OBJ_DIR)/%_test: %_test.cc $(TESTS_%_DEPS) $(TESTS_DEPS)
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) $(OPTFLAGS) $(DEFINES) \
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$< \
