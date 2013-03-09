@@ -95,6 +95,7 @@ bool Coordinator::RegisterWithCoordinator(
   rtnd->CopyFrom(*local_resource_topology_);
   bm.MutableExtension(register_extn)->set_uuid(
           boost::uuids::to_string(uuid_));
+  bm.MutableExtension(register_extn)->set_location(node_uri_);
   // wrap in envelope
   VLOG(2) << "Sending registration message...";
   // send heartbeat message
