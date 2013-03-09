@@ -349,7 +349,7 @@ bool StreamSocketsChannel<T>::RecvA(
   async_read(*client_socket_, *async_recv_buffer_,
              boost::asio::transfer_at_least(sizeof(size_t)),
              boost::bind(&StreamSocketsChannel<T>::RecvASecondStage,
-                         this->shared_from_this(),
+                         this,
                          boost::asio::placeholders::error,
                          boost::asio::placeholders::bytes_transferred,
                          message, callback));
@@ -385,7 +385,7 @@ void StreamSocketsChannel<T>::RecvASecondStage(
   async_read(*client_socket_, *async_recv_buffer_,
              boost::asio::transfer_at_least(msg_size),
              boost::bind(&StreamSocketsChannel<T>::RecvAThirdStage,
-                         this->shared_from_this(),
+                         this,
                          boost::asio::placeholders::error,
                          boost::asio::placeholders::bytes_transferred,
                          msg_size, final_envelope, final_callback));

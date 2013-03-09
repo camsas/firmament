@@ -62,8 +62,8 @@ class StreamSocketsChannelTest : public ::testing::Test {
     while (!remote_adapter_->ListenReady()) {
       VLOG(1) << "Waiting until ready to listen on remote adapter...";
     }
-    channel_.reset(new StreamSocketsChannel<BaseMessage>(
-        StreamSocketsChannel<BaseMessage>::SS_TCP));
+    channel_ = new StreamSocketsChannel<BaseMessage>(
+        StreamSocketsChannel<BaseMessage>::SS_TCP);
     VLOG(1) << "Establishing channel";
     local_adapter_->EstablishChannel(remote_uri_, channel_);
   }
@@ -77,11 +77,11 @@ class StreamSocketsChannelTest : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests.
-  shared_ptr<StreamSocketsAdapter<BaseMessage> > local_adapter_;
-  shared_ptr<StreamSocketsAdapter<BaseMessage> > remote_adapter_;
+  StreamSocketsAdapter<BaseMessage>* local_adapter_;
+  StreamSocketsAdapter<BaseMessage>* remote_adapter_;
   const string local_uri_;
   const string remote_uri_;
-  shared_ptr<StreamSocketsChannel<BaseMessage> > channel_;
+  StreamSocketsChannel<BaseMessage>* channel_;
 };
 
 // Tests synchronous send of an integer.
@@ -89,15 +89,15 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
   FLAGS_v = 2;
   // TODO(malte): tidy this test up and add some commentary as to how it is
   // different from others.
-  shared_ptr<StreamSocketsAdapter<uint64_t> > local_uint_adapter(
-      new StreamSocketsAdapter<uint64_t>());
-  shared_ptr<StreamSocketsAdapter<uint64_t> > remote_uint_adapter(
-      new StreamSocketsAdapter<uint64_t>());
+  StreamSocketsAdapter<uint64_t>* local_uint_adapter =
+      new StreamSocketsAdapter<uint64_t>();
+  StreamSocketsAdapter<uint64_t>* remote_uint_adapter =
+      new StreamSocketsAdapter<uint64_t>();
   remote_uint_adapter->ListenURI("tcp://localhost:7788");
   while (!remote_uint_adapter->ListenReady()) { }
-  shared_ptr<StreamSocketsChannel<uint64_t> > uint_channel(
+  StreamSocketsChannel<uint64_t>* uint_channel =
       new StreamSocketsChannel<uint64_t>(
-          StreamSocketsChannel<uint64_t>::SS_TCP));
+          StreamSocketsChannel<uint64_t>::SS_TCP);
   local_uint_adapter->EstablishChannel("tcp://localhost:7788",
                                        uint_channel);
   while (!uint_channel->Ready()) {  }
@@ -105,7 +105,7 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
   Envelope<uint64_t> envelope(&testInteger);
   uint_channel->SendS(envelope);
   while (remote_uint_adapter->NumActiveChannels() == 0) { }
-  shared_ptr<MessagingChannelInterface<uint64_t> > backchannel =
+  MessagingChannelInterface<uint64_t>* backchannel =
       remote_uint_adapter->GetChannelForEndpoint(
           uint_channel->LocalEndpointString());
   uint64_t recvdInteger = 0;
@@ -127,7 +127,7 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceive) {
   channel_->SendS(envelope);
   // Spin-wait for backchannel to become available
   while (remote_adapter_->NumActiveChannels() == 0) { }
-  shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
+  MessagingChannelInterface<BaseMessage>* backchannel =
       remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);
@@ -147,7 +147,7 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   while (!channel_->Ready()) {  }
   // Spin-wait for backchannel to become available
   while (remote_adapter_->NumActiveChannels() == 0) { }
-  shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
+  MessagingChannelInterface<BaseMessage>* backchannel =
       remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
   CHECK(backchannel);
   while (!backchannel->Ready()) {  }
@@ -180,7 +180,7 @@ TEST_F(StreamSocketsChannelTest, TCPAsyncProtobufSend) {
   channel_->SendS(envelope);
   //channel_->SendA(envelope, boost::bind(std::plus<int>(), 0, 0));
   while (remote_adapter_->NumActiveChannels() == 0) { }
-  shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
+  MessagingChannelInterface<BaseMessage>* backchannel =
       remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);

@@ -35,7 +35,7 @@ void StreamSocketsAdapter<T>::CloseChannel(
 template <typename T>
 bool StreamSocketsAdapter<T>::EstablishChannel(
     const string& endpoint_uri,
-    shared_ptr<MessagingChannelInterface<T> > chan) {
+    MessagingChannelInterface<T>* chan) {
   VLOG(1) << "Establishing channel to endpoint " << endpoint_uri
           << ", chan: " << *chan << "!";
   return chan->Establish(endpoint_uri);
@@ -50,27 +50,26 @@ StreamSocketsAdapter<T>::~StreamSocketsAdapter() {
 template <typename T>
 void StreamSocketsAdapter<T>::AddChannelForConnection(
     TCPConnection::connection_ptr connection) {
-  shared_ptr<StreamSocketsChannel<T> > channel(
-          new StreamSocketsChannel<T>(connection));
+  StreamSocketsChannel<T>* channel =
+          new StreamSocketsChannel<T>(connection);
   const string endpoint_name = connection->RemoteEndpointString();
   VLOG(1) << "Adding back-channel for connection at " << connection
           << ", channel is " << *channel << ", remote endpoint: "
           << endpoint_name;
-  pair<const string, shared_ptr<StreamSocketsChannel<T> > > val(
+  pair<const string, StreamSocketsChannel<T>*> val(
       endpoint_name, channel);
   endpoint_channel_map_.insert(val);
 }
 
 template <typename T>
-shared_ptr<MessagingChannelInterface<T> >
-StreamSocketsAdapter<T>::GetChannelForEndpoint(
+MessagingChannelInterface<T>* StreamSocketsAdapter<T>::GetChannelForEndpoint(
     const string& endpoint) {
   CHECK_NE(endpoint, "");
-  shared_ptr<StreamSocketsChannel<T> >* chan =
+  StreamSocketsChannel<T>** chan =
       FindOrNull(endpoint_channel_map_, endpoint);
   if (!chan)
     // No channel found
-    return shared_ptr<StreamSocketsChannel<T> >();
+    return NULL;
   // Return channel pointer
   return *chan;
 }
@@ -88,19 +87,18 @@ void StreamSocketsAdapter<T>::AwaitNextMessage() {
        endpoint_channel_map_.begin();
        chan_iter != endpoint_channel_map_.end();
        ++chan_iter) {
-    shared_ptr<StreamSocketsChannel<T> > chan =
-        chan_iter->second;
+    StreamSocketsChannel<T>* chan = chan_iter->second;
     if (!channel_recv_envelopes_.count(chan)) {
       // No outstanding receive request for this channel, so create one
       Envelope<T>* envelope = new Envelope<T>();
       channel_recv_envelopes_.insert(
-          pair<shared_ptr<StreamSocketsChannel<T> >,
+          pair<StreamSocketsChannel<T>*,
           Envelope<T>*>(chan, envelope));
       VLOG(2) << "MA replenishing envelope for channel " << chan
               << " at " << envelope;
       chan->RecvA(envelope,
                   boost::bind(&StreamSocketsAdapter::HandleAsyncMessageRecv,
-                              this->shared_from_this(),
+                              this,
                               boost::asio::placeholders::error,
                               boost::asio::placeholders::bytes_transferred,
                               chan));
@@ -125,7 +123,7 @@ template <typename T>
 void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     const boost::system::error_code& error,
     size_t bytes_transferred,
-    shared_ptr<StreamSocketsChannel<T> > chan) {
+    StreamSocketsChannel<T>* chan) {
   if (error) {
     VLOG(1) << "Failed to receive message on MA " << *this;
     // TODO(malte): think about clearing up state here. Should we consider the
@@ -197,8 +195,7 @@ void StreamSocketsAdapter<T>::Listen(const string& hostname,
   tcp_server_.reset(new AsyncTCPServer(
       hostname, port, boost::bind(
           &StreamSocketsAdapter::AddChannelForConnection,
-          this->shared_from_this(),
-          _1)));
+          this, _1)));
   VLOG(2) << "TCP server created";
   tcp_server_thread_.reset(
       new boost::thread(boost::bind(&AsyncTCPServer::Run, tcp_server_)));
@@ -222,8 +219,7 @@ string StreamSocketsAdapter<T>::Listen(const string& hostname) {
   tcp_server_.reset(new AsyncTCPServer(
       hostname, "", boost::bind(
           &StreamSocketsAdapter::AddChannelForConnection,
-          this->shared_from_this(),
-          _1)));
+          this, _1)));
   VLOG(2) << "TCP server created";
   tcp_server_thread_.reset(
       new boost::thread(boost::bind(&AsyncTCPServer::Run, tcp_server_)));
@@ -257,7 +253,7 @@ void StreamSocketsAdapter<T>::RegisterAsyncErrorPathCallback(
 template <typename T>
 bool StreamSocketsAdapter<T>::SendMessageToEndpoint(
     const string& endpoint_uri, T& message) {
-  shared_ptr<StreamSocketsChannel<T> >* chan =
+  StreamSocketsChannel<T>** chan =
       FindOrNull(endpoint_channel_map_, endpoint_uri);
   if (!chan) {
     LOG(ERROR) << "Failed to find channel for endpoint " << endpoint_uri;

@@ -62,11 +62,11 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
   string uri = "tcp://localhost:7777";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
-  shared_ptr<StreamSocketsAdapter<BaseMessage> > mess_adapter(
-      new StreamSocketsAdapter<BaseMessage>());
-  shared_ptr<StreamSocketsChannel<BaseMessage> > channel(
+  StreamSocketsAdapter<BaseMessage>* mess_adapter =
+      new StreamSocketsAdapter<BaseMessage>();
+  StreamSocketsChannel<BaseMessage>* channel =
       new StreamSocketsChannel<BaseMessage>(
-          StreamSocketsChannel<BaseMessage>::SS_TCP));
+          StreamSocketsChannel<BaseMessage>::SS_TCP);
   VLOG(1) << "Calling Listen";
   mess_adapter->ListenURI(uri);
   // Need to block and wait for the socket to become ready, otherwise race
@@ -143,11 +143,11 @@ TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
   string uri1 = "tcp://localhost:7779";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
-  shared_ptr<StreamSocketsAdapter<BaseMessage> > mess_adapter1(
-      new StreamSocketsAdapter<BaseMessage>());
-  shared_ptr<StreamSocketsAdapter<BaseMessage> > mess_adapter2(
-      new StreamSocketsAdapter<BaseMessage>());
-  shared_ptr<StreamSocketsChannel<BaseMessage> >
+  StreamSocketsAdapter<BaseMessage>* mess_adapter1 =
+      new StreamSocketsAdapter<BaseMessage>();
+  StreamSocketsAdapter<BaseMessage>* mess_adapter2 =
+      new StreamSocketsAdapter<BaseMessage>();
+  StreamSocketsChannel<BaseMessage>*
       channel(new StreamSocketsChannel<BaseMessage>(
           StreamSocketsChannel<BaseMessage>::SS_TCP));
   mess_adapter1->ListenURI(uri1);
@@ -163,7 +163,7 @@ TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
   //mess_adapter1->SendOnConnection(0);
   // Check if we have a backchannel MA1 -> MA2
   while (mess_adapter1->NumActiveChannels() == 0) {}
-  shared_ptr<MessagingChannelInterface<BaseMessage> > backchannel =
+  MessagingChannelInterface<BaseMessage>* backchannel =
       mess_adapter1->GetChannelForEndpoint(channel->LocalEndpointString());
   while (!backchannel->Ready()) {  }
   // Send a test message through the backchannel (MA2 -> MA1), and check if we

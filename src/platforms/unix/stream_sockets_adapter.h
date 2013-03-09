@@ -47,8 +47,8 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
   void AddChannelForConnection(TCPConnection::connection_ptr connection);
   void CloseChannel(MessagingChannelInterface<T>* chan);
   bool EstablishChannel(const string& endpoint_uri,
-                        shared_ptr<MessagingChannelInterface<T> > chan);
-  shared_ptr<MessagingChannelInterface<T> > GetChannelForEndpoint(
+                        MessagingChannelInterface<T>* chan);
+  MessagingChannelInterface<T>* GetChannelForEndpoint(
       const string& endpoint);
   void ListenURI(const string& endpoint_uri);
   void Listen(const string& hostname, const string& port);
@@ -74,23 +74,23 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
          ++chan_iter) {
       LOG(INFO) << "[" << chan_iter->second << "]: Local: "
                 << chan_iter->second->LocalEndpointString()
-                << "Remote: " << chan_iter->second->RemoteEndpointString();
+                << " Remote: " << chan_iter->second->RemoteEndpointString();
     }
   }
 
  private:
   void HandleAsyncMessageRecv(
       const boost::system::error_code& error, size_t bytes_transferred,
-      shared_ptr<StreamSocketsChannel<T> > chan);
+      StreamSocketsChannel<T>* chan);
 
   typename AsyncMessageRecvHandler<T>::type message_recv_handler_;
   typename AsyncErrorPathHandler<T>::type error_path_handler_;
   shared_ptr<AsyncTCPServer> tcp_server_;
   scoped_ptr<boost::thread> tcp_server_thread_;
   //set<shared_ptr<StreamSocketsChannel<T> > > active_channels_;
-  map<const string, shared_ptr<StreamSocketsChannel<T> > >
+  map<const string, StreamSocketsChannel<T>*>
       endpoint_channel_map_;
-  map<shared_ptr<StreamSocketsChannel<T> >, Envelope<T>* >
+  map<StreamSocketsChannel<T>*, Envelope<T>*>
       channel_recv_envelopes_;
   // Synchronization variables, locks tec.
   boost::mutex message_wait_mutex_;
