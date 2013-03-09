@@ -63,4 +63,4 @@ class TopologyManager {
 }  // namespace machine
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_COORDINATOR_H
+#endif  // FIRMAMENT_ENGINE_TOPOLOGY_MANAGER_H
