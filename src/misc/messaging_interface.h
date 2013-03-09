@@ -69,13 +69,13 @@ class MessagingAdapterInterface : public PrintableInterface {
   // invalidates the reference to it.
   virtual void CloseChannel(MessagingChannelInterface<T>* chan) = 0;
   // Returns the channel corresponding to an endpoint specifier string, or a
-  // NULL shared_ptr if no channel to this endpoint is held by the adapter.
-  virtual shared_ptr<MessagingChannelInterface<T> >
+  // NULL pointer if no channel to this endpoint is held by the adapter.
+  virtual MessagingChannelInterface<T>*
       GetChannelForEndpoint(const string& endpoint) = 0;
   // Set up a messaging channel to a remote endpoint.
   virtual bool EstablishChannel(
       const string& endpoint_uri,
-      shared_ptr<MessagingChannelInterface<T> > chan) = 0;
+      MessagingChannelInterface<T>* chan) = 0;
   // Listen for incoming channel establishment requests.
   virtual void ListenURI(const string& endpoint_uri) = 0;
   // Check if we are ready to accept connections.
