@@ -22,6 +22,7 @@ namespace executor {
 class RemoteExecutor : public ExecutorInterface {
  public:
   RemoteExecutor(ResourceID_t resource_id,
+                 ResourceID_t coordinator_resource_id,
                  const string& coordinator_uri,
                  ResourceMap_t* res_map,
                  MessagingAdapterInterface<BaseMessage>* m_adapter_ptr);
@@ -34,11 +35,18 @@ class RemoteExecutor : public ExecutorInterface {
                    << managing_coordinator_uri_
                    << ">";
   }
+
  protected:
   const string managing_coordinator_uri_;
   ResourceID_t remote_resource_id_;
+  ResourceID_t local_resource_id_;
   ResourceMap_t* res_map_ptr_;
   MessagingAdapterInterface<BaseMessage>* m_adapter_ptr_;
+
+  shared_ptr<MessagingChannelInterface<BaseMessage> > GetChannel();
+  bool SendTaskExecutionMessage(
+    shared_ptr<MessagingChannelInterface<BaseMessage> > chan,
+    TaskDescriptor* td, bool firmament_binary);
 };
 
 }  // namespace executor

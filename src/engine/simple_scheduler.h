@@ -31,6 +31,7 @@ class SimpleScheduler : public SchedulerInterface {
                   shared_ptr<TaskMap_t> task_map,
                   shared_ptr<TopologyManager> topo_mgr,
                   MessagingAdapterInterface<BaseMessage>* m_adapter,
+                  ResourceID_t coordinator_res_id,
                   const string& coordinator_uri);
   ~SimpleScheduler();
   void DeregisterResource(ResourceID_t res_id);
@@ -70,6 +71,8 @@ class SimpleScheduler : public SchedulerInterface {
   // scheduler is associated with. This is passed down to the executor and to
   // tasks so that they can find the coordinator at runtime.
   const string coordinator_uri_;
+  // We also record the resource ID of the owning coordinator.
+  ResourceID_t coordinator_res_id_;
   map<ResourceID_t, ExecutorInterface*> executors_;
   map<TaskID_t, ResourceID_t> task_bindings_;
   // Pointer to the coordinator's topology manager

@@ -50,6 +50,7 @@ Coordinator::Coordinator(PlatformID platform_id)
                                    object_store_, task_table_,
                                    topology_manager_,
                                    m_adapter_.get(),
+                                   uuid_,
                                    FLAGS_listen_uri)) {
   // Start up a coordinator according to the platform parameter
   string hostname = boost::asio::ip::host_name();

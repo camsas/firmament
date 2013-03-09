@@ -33,9 +33,11 @@ SimpleScheduler::SimpleScheduler(
     shared_ptr<TaskMap_t> task_map,
     shared_ptr<TopologyManager> topo_mgr,
     MessagingAdapterInterface<BaseMessage>* m_adapter,
+    ResourceID_t coordinator_res_id,
     const string& coordinator_uri)
     : SchedulerInterface(job_map, resource_map, object_store, task_map),
       coordinator_uri_(coordinator_uri),
+      coordinator_res_id_(coordinator_res_id),
       topology_manager_(topo_mgr),
       m_adapter_ptr_(m_adapter),
       scheduling_(false) {
@@ -155,7 +157,8 @@ void SimpleScheduler::RegisterLocalResource(ResourceID_t res_id) {
 void SimpleScheduler::RegisterRemoteResource(ResourceID_t res_id) {
   // Create an executor for each resource.
   VLOG(1) << "Adding executor for remote resource " << res_id;
-  RemoteExecutor* exec = new RemoteExecutor(res_id, coordinator_uri_,
+  RemoteExecutor* exec = new RemoteExecutor(res_id, coordinator_res_id_,
+                                            coordinator_uri_,
                                             resource_map_.get(),
                                             m_adapter_ptr_);
   CHECK(InsertIfNotPresent(&executors_, res_id, exec));

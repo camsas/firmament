@@ -31,6 +31,7 @@ TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
 	                 $(BUILD_DIR)/engine/simple_scheduler.o \
 	                 $(BUILD_DIR)/engine/topology_manager.o \
 	                 $(BUILD_DIR)/base/libfirmament_base.a \
+	                 $(BUILD_DIR)/messages/libfirmament_messages.a \
 	                 $(BUILD_DIR)/storage/libfirmament_storage.a \
 			 $(HTTP_UI_LIBS)
 TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/node.o \
