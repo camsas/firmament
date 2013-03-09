@@ -45,9 +45,9 @@ void SimpleObjectStore::HandleStorageRegistrationRequest(
 
   // TODO(tach): currently assume that no two instances of the storage engine
   // are local.
-  shared_ptr<StreamSocketsChannel<BaseMessage> > chan(
+  StreamSocketsChannel<BaseMessage>* chan =
       new StreamSocketsChannel<BaseMessage >(
-          StreamSocketsChannel<BaseMessage>::SS_TCP));
+          StreamSocketsChannel<BaseMessage>::SS_TCP);
   message_adapter_->EstablishChannel(msg.storage_interface(), chan);
 
   StorageInfo* node = new StorageInfo(

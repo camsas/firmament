@@ -22,7 +22,7 @@ StorageInfo::StorageInfo()
 
 StorageInfo::StorageInfo(const string& node_uri_, const string& uuid_,
                          const string& coo_uuid_,
-                         shared_ptr<StreamSocketsChannel<BaseMessage> > chan_)
+                         StreamSocketsChannel<BaseMessage>* chan_)
   : node_uri(node_uri_),  uuid(uuid_), coordinator_uuid(coo_uuid_),
     average_rtt(0), chan(chan_) { }
 

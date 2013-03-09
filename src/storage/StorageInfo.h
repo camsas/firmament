@@ -43,7 +43,7 @@ class StorageInfo {
   StorageInfo();
   StorageInfo(const string& node_uri, const string& uuid,
               const string& coo_uuid,
-              shared_ptr<StreamSocketsChannel<BaseMessage> > chan);
+              StreamSocketsChannel<BaseMessage>* chan);
   StorageInfo(const StorageInfo& orig);
   ~StorageInfo();
 
