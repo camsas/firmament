@@ -1,0 +1,19 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// TaskDelegationMessage is used by a coordinator to delegate rsource
+
+package firmament;
+
+import "messages/base_message.proto";
+import "base/task_desc.proto";
+
+extend BaseMessage {
+  optional TaskDelegationMessage task_delegation_extn = 110;
+}
+
+message TaskDelegationMessage {
+  required TaskDescriptor task_descriptor = 2;
+  optional string target_resource_id = 1;
+  optional string delegating_resource_id = 3;
+}
