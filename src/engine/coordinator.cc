@@ -86,7 +86,7 @@ Coordinator::~Coordinator() {
 }
 
 bool Coordinator::RegisterWithCoordinator(
-    shared_ptr<StreamSocketsChannel<BaseMessage> > chan) {
+    StreamSocketsChannel<BaseMessage>* chan) {
   BaseMessage bm;
   ResourceDescriptor* rd = bm.MutableExtension(
           register_extn)->mutable_res_desc();
@@ -170,9 +170,9 @@ void Coordinator::Run() {
 
   // Do we have a parent? If so, register with it now.
   if (FLAGS_parent_uri != "") {
-      shared_ptr<StreamSocketsChannel<BaseMessage> > chan(
-              new StreamSocketsChannel<BaseMessage > (
-              StreamSocketsChannel<BaseMessage>::SS_TCP));
+      StreamSocketsChannel<BaseMessage>* chan =
+          new StreamSocketsChannel<BaseMessage > (
+              StreamSocketsChannel<BaseMessage>::SS_TCP);
       CHECK(ConnectToRemote(FLAGS_parent_uri, chan))
               << "Failed to connect to parent!";
       RegisterWithCoordinator(chan);
@@ -545,9 +545,9 @@ void Coordinator::InformStorageEngineNewResource(ResourceDescriptor* rd_new) {
     CHECK_NE(uri, "") << "Missing storage engine URI on RD for "
                       << rs->descriptor().uuid();
     if (!m_adapter_->GetChannelForEndpoint(uri)) {
-      shared_ptr<StreamSocketsChannel<BaseMessage> > chan(
+      StreamSocketsChannel<BaseMessage>* chan =
           new StreamSocketsChannel<BaseMessage > (
-              StreamSocketsChannel<BaseMessage>::SS_TCP));
+              StreamSocketsChannel<BaseMessage>::SS_TCP);
       Coordinator::ConnectToRemote(uri, chan);
     } else {
       m_adapter_->SendMessageToEndpoint(uri, (BaseMessage&)message_ref);

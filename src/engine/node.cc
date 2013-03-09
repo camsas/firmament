@@ -61,12 +61,12 @@ Node::~Node() {
 
 bool Node::ConnectToRemote(
     const string& remote_uri,
-    shared_ptr<StreamSocketsChannel<BaseMessage> > chan) {
+    StreamSocketsChannel<BaseMessage>* chan) {
   return m_adapter_->EstablishChannel(remote_uri, chan);
 }
 
 bool Node::SendMessageToRemote(
-    shared_ptr<StreamSocketsChannel<BaseMessage> > chan,
+    StreamSocketsChannel<BaseMessage>* chan,
     BaseMessage* msg) {
   Envelope<BaseMessage> envelope(msg);
   return chan->SendA(

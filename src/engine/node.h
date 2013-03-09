@@ -51,9 +51,9 @@ class Node {
  protected:
   void AwaitNextMessage();
   bool ConnectToRemote(const string& remote_uri,
-                       shared_ptr<StreamSocketsChannel<BaseMessage> > chan);
+                       StreamSocketsChannel<BaseMessage>* chan);
   bool SendMessageToRemote(
-      shared_ptr<StreamSocketsChannel<BaseMessage> > chan,
+      StreamSocketsChannel<BaseMessage>* chan,
       BaseMessage* msg);
   virtual void HandleIncomingMessage(BaseMessage *bm) = 0;
   void HandleIncomingReceiveError(const boost::system::error_code& error,

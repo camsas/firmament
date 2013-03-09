@@ -69,8 +69,7 @@ void TaskLib::AwaitNextMessage() {
 }
 
 bool TaskLib::ConnectToCoordinator(const string& coordinator_uri) {
-  return m_adapter_->EstablishChannel(
-      coordinator_uri, shared_ptr<StreamSocketsChannel<BaseMessage> >(chan_));
+  return m_adapter_->EstablishChannel(coordinator_uri, chan_);
 }
 
 void TaskLib::Spawn(const ReferenceInterface& code,

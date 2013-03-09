@@ -191,8 +191,7 @@ class Coordinator : public Node,
   void AddResource(ResourceDescriptor* resource_desc,
                    const string& endpoint_uri,
                    bool local);
-  bool RegisterWithCoordinator(
-      shared_ptr<StreamSocketsChannel<BaseMessage> > chan);
+  bool RegisterWithCoordinator(StreamSocketsChannel<BaseMessage>* chan);
   void DetectLocalResources();
   void HandleIncomingMessage(BaseMessage *bm);
   void HandleHeartbeat(const HeartbeatMessage& msg);

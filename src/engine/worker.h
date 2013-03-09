@@ -41,7 +41,7 @@ class Worker : public Node {
   bool ConnectToCoordinator(const string& coordinator_uri);
 
  protected:
-  shared_ptr<StreamSocketsChannel<BaseMessage> > chan_;
+  StreamSocketsChannel<BaseMessage>* chan_;
   // TODO(malte): transform this into a better representation
   string coordinator_uri_;
 

@@ -28,28 +28,27 @@ RemoteExecutor::RemoteExecutor(
 }
 
 void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
-  shared_ptr<MessagingChannelInterface<BaseMessage> > chan = GetChannel();
+  MessagingChannelInterface<BaseMessage>* chan = GetChannel();
   SendTaskExecutionMessage(chan, td, firmament_binary);
 }
 
-shared_ptr<MessagingChannelInterface<BaseMessage> >
-RemoteExecutor::GetChannel() {
+MessagingChannelInterface<BaseMessage>* RemoteExecutor::GetChannel() {
   ResourceStatus** rs_ptr = FindOrNull(*res_map_ptr_, remote_resource_id_);
   CHECK(rs_ptr) << "Resource " << remote_resource_id_ << " appears to no "
                 << "longer exist in the resource map!";
   const string remote_endpoint = (*rs_ptr)->location();
   VLOG(1) << "Remote task spawn on resource " << remote_resource_id_
           << ", endpoint " << remote_endpoint;
-  shared_ptr<MessagingChannelInterface<BaseMessage> > chan =
+  MessagingChannelInterface<BaseMessage>* chan =
       m_adapter_ptr_->GetChannelForEndpoint(remote_endpoint);
   VLOG(1) << "Chan is " << chan;
   return chan;
 }
 
 bool RemoteExecutor::SendTaskExecutionMessage(
-    shared_ptr<MessagingChannelInterface<BaseMessage> > chan,
+    MessagingChannelInterface<BaseMessage>* chan,
     TaskDescriptor* td, bool firmament_binary) {
-  CHECK_NE(chan, shared_ptr<MessagingChannelInterface<BaseMessage> >());
+  CHECK_NOTNULL(chan);
   // Craft a task execution message
   BaseMessage exec_message;
   TaskDescriptor* msg_td =

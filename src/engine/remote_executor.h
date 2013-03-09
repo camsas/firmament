@@ -43,9 +43,9 @@ class RemoteExecutor : public ExecutorInterface {
   ResourceMap_t* res_map_ptr_;
   MessagingAdapterInterface<BaseMessage>* m_adapter_ptr_;
 
-  shared_ptr<MessagingChannelInterface<BaseMessage> > GetChannel();
+  MessagingChannelInterface<BaseMessage>* GetChannel();
   bool SendTaskExecutionMessage(
-    shared_ptr<MessagingChannelInterface<BaseMessage> > chan,
+    MessagingChannelInterface<BaseMessage>* chan,
     TaskDescriptor* td, bool firmament_binary);
 };
 
