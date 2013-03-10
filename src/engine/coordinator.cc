@@ -239,17 +239,25 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
     HandleTaskInfoRequest(msg);
     handled_extensions++;
   }
-  /* Storage Engine*/
+  // Storage engine registration
   if (bm->HasExtension(register_storage_extn)) {
     const StorageRegistrationMessage& msg =
         bm->GetExtension(register_storage_extn);
     HandleStorageRegistrationRequest(msg);
     handled_extensions++;
   }
+  // Storage engine discovery
   if (bm->HasExtension(storage_discover_message_extn)) {
     const StorageDiscoverMessage& msg = bm->GetExtension(
         storage_discover_message_extn);
     HandleStorageDiscoverRequest(msg);
+    handled_extensions++;
+  }
+  // Task delegation message
+ if (bm->HasExtension(task_delegation_extn)) {
+    const TaskDelegationMessage& msg = bm->GetExtension(
+        task_delegation_extn);
+    HandleTaskDelegationRequest(msg);
     handled_extensions++;
   }
   // Check that we have handled at least one sub-message
@@ -314,6 +322,16 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
     // the knowledge base
     // TODO(malte): implement this
   }
+}
+
+void Coordinator::HandleTaskDelegationRequest(
+    const TaskDelegationMessage& msg) {
+  VLOG(1) << "Handling requested delegation of task "
+          << msg.task_descriptor().uid() << " from resource "
+          << msg.delegating_resource_id();
+  // Check if there is room for this task here
+  // (or maybe enqueue it?)
+  // Return ACK/NACK
 }
 
 void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg) {

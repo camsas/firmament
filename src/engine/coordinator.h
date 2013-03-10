@@ -35,6 +35,7 @@
 #include "platforms/unix/common.h"
 #include "messages/heartbeat_message.pb.h"
 #include "messages/registration_message.pb.h"
+#include "messages/task_delegation_message.pb.h"
 #include "messages/task_heartbeat_message.pb.h"
 #include "messages/task_info_message.pb.h"
 #include "messages/task_spawn_message.pb.h"
@@ -196,6 +197,7 @@ class Coordinator : public Node,
   void HandleIncomingMessage(BaseMessage *bm);
   void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
+  void HandleTaskDelegationRequest(const TaskDelegationMessage& msg);
   void HandleTaskHeartbeat(const TaskHeartbeatMessage& msg);
   void HandleTaskInfoRequest(const TaskInfoRequestMessage& msg);
   void HandleTaskSpawn(const TaskSpawnMessage& msg);
