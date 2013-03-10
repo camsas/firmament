@@ -146,7 +146,7 @@ bool SimpleScheduler::PlaceDelegatedTask(TaskDescriptor* td,
     // Requested resource unknown or does not exist any more
     LOG(WARNING) << "Attempted to place delegated task " << td->uid()
                  << " on resource " << target_resource << ", which is "
-                 << " unknown!";
+                 << "unknown!";
     return false;
   }
   ResourceDescriptor* rd = (*rs_ptr)->mutable_descriptor();
@@ -155,10 +155,12 @@ bool SimpleScheduler::PlaceDelegatedTask(TaskDescriptor* td,
     // Resource is no longer idle
     LOG(WARNING) << "Attempted to place delegated task " << td->uid()
                  << " on resource " << target_resource << ", which is "
-                 << " not idle!";
+                 << "not idle!";
     return false;
   }
   // Otherwise, bind the task
+  runnable_tasks_.insert(td->uid());
+  InsertIfNotPresent(task_map_.get(), td->uid(), td);
   BindTaskToResource(td, rd);
   return true;
 }

@@ -30,6 +30,8 @@
 DECLARE_string(listen_uri);
 DEFINE_string(parent_uri, "", "The URI of the parent coordinator to register "
         "with.");
+DEFINE_bool(include_local_resources, true, "Add local machine's resources; "
+            "will instantiate a resource-less coordinator if false.");
 #ifdef __HTTP_UI__
 DEFINE_bool(http_ui, true, "Enable HTTP interface");
 DEFINE_int32(http_ui_port, 8080,
@@ -155,7 +157,8 @@ void Coordinator::Run() {
   // Test topology detection
   LOG(INFO) << "Detecting resource topology:";
   topology_manager_->DebugPrintRawTopology();
-  DetectLocalResources();
+  if (FLAGS_include_local_resources)
+    DetectLocalResources();
 
   // Coordinator starting -- set up and wait for workers to connect.
   m_adapter_->ListenURI(FLAGS_listen_uri);
@@ -254,7 +257,7 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
     handled_extensions++;
   }
   // Task delegation message
- if (bm->HasExtension(task_delegation_extn)) {
+  if (bm->HasExtension(task_delegation_extn)) {
     const TaskDelegationMessage& msg = bm->GetExtension(
         task_delegation_extn);
     HandleTaskDelegationRequest(msg);
@@ -331,9 +334,9 @@ void Coordinator::HandleTaskDelegationRequest(
           << msg.delegating_resource_id();
   // Check if there is room for this task here
   // (or maybe enqueue it?)
-  TaskDescriptor td(msg.task_descriptor());
+  TaskDescriptor* td = new TaskDescriptor(msg.task_descriptor());
   scheduler_->PlaceDelegatedTask(
-      &td, ResourceIDFromString(msg.delegating_resource_id()));
+      td, ResourceIDFromString(msg.target_resource_id()));
   // Return ACK/NACK
 }
 
