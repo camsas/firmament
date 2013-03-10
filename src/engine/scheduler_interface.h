@@ -39,6 +39,9 @@ class SchedulerInterface : public PrintableInterface {
   // Handle the completion of a task. This usually involves freeing up its
   // resource by setting it idle, and recording any bookkeeping data required.
   virtual void HandleTaskCompletion(TaskDescriptor* td_ptr) = 0;
+  // TODO(malte): comment
+  virtual bool PlaceDelegatedTask(TaskDescriptor* td,
+                                  ResourceID_t target_resource) = 0;
   // Registers a resource ID with the scheduler, who may subsequently assign
   // work to this resource. A resource may be registered with multiple
   // schedulers.

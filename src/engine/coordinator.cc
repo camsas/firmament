@@ -331,6 +331,9 @@ void Coordinator::HandleTaskDelegationRequest(
           << msg.delegating_resource_id();
   // Check if there is room for this task here
   // (or maybe enqueue it?)
+  TaskDescriptor td(msg.task_descriptor());
+  scheduler_->PlaceDelegatedTask(
+      &td, ResourceIDFromString(msg.delegating_resource_id()));
   // Return ACK/NACK
 }
 

@@ -55,7 +55,6 @@ SimpleScheduler::~SimpleScheduler() {
 
 void SimpleScheduler::BindTaskToResource(
     TaskDescriptor* task_desc,
-//    shared_ptr<ResourceDescriptor> res_desc) {
     ResourceDescriptor* res_desc) {
   // TODO(malte): stub
   VLOG(1) << "Binding task " << task_desc->uid() << " to resource "
@@ -136,6 +135,32 @@ void SimpleScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
   task_bindings_.erase(td_ptr->uid());
   // TODO(malte): Check if this job still has any outstanding tasks, otherwise
   // mark it as completed.
+}
+
+bool SimpleScheduler::PlaceDelegatedTask(TaskDescriptor* td,
+                                         ResourceID_t target_resource) {
+  // Check if the resource is available
+  ResourceStatus** rs_ptr = FindOrNull(*resource_map_, target_resource);
+  // Do we know about this resource?
+  if (!rs_ptr) {
+    // Requested resource unknown or does not exist any more
+    LOG(WARNING) << "Attempted to place delegated task " << td->uid()
+                 << " on resource " << target_resource << ", which is "
+                 << " unknown!";
+    return false;
+  }
+  ResourceDescriptor* rd = (*rs_ptr)->mutable_descriptor();
+  // Is the resource still idle?
+  if (rd->state() != ResourceDescriptor::RESOURCE_IDLE) {
+    // Resource is no longer idle
+    LOG(WARNING) << "Attempted to place delegated task " << td->uid()
+                 << " on resource " << target_resource << ", which is "
+                 << " not idle!";
+    return false;
+  }
+  // Otherwise, bind the task
+  BindTaskToResource(td, rd);
+  return true;
 }
 
 // Simple 2-argument wrapper

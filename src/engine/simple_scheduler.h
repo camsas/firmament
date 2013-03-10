@@ -37,6 +37,7 @@ class SimpleScheduler : public SchedulerInterface {
   void DeregisterResource(ResourceID_t res_id);
   void RegisterResource(ResourceID_t res_id, bool local);
   void HandleTaskCompletion(TaskDescriptor* td_ptr);
+  bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
   uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
@@ -45,7 +46,6 @@ class SimpleScheduler : public SchedulerInterface {
 
  protected:
   void BindTaskToResource(TaskDescriptor* task_desc,
-//                          shared_ptr<ResourceDescriptor> res_desc);
                           ResourceDescriptor* res_desc);
   const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
 
