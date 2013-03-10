@@ -70,6 +70,9 @@ void StreamSocketsAdapter<T>::AddChannelForConnection(
   boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
   InsertIfNotPresent(&endpoint_channel_map_, endpoint_name, channel);
   DumpActiveChannels();
+  // Unblock any waiters, since there's now an additional connection
+  message_wait_ready_ = true;
+  message_wait_condvar_.notify_all();
 }
 
 template <typename T>
