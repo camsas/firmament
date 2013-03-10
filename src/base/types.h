@@ -33,7 +33,7 @@ namespace firmament {
 
 using tr1::unordered_map;
 
-}
+}  // namespace firmament
 
 // Smart pointers
 // Depending on compiler support and library available, we use the following, in
