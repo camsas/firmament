@@ -41,9 +41,9 @@ Node::Node(PlatformID platform_id, ResourceID_t uuid)
   switch (platform_id) {
     case PL_UNIX: {
       // Set up a message adapter for control messages.
-      m_adapter_.reset(
-          new platform_unix::streamsockets::
-          StreamSocketsAdapter<BaseMessage>());
+      m_adapter_ = new platform_unix::streamsockets::
+          StreamSocketsAdapter<BaseMessage>();
+      VLOG(1) << "Node's adapter is at " << m_adapter_;
       // Also set up a signal handler so that we can quit the node using
       // signals.
       SignalHandler handler;

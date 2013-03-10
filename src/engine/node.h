@@ -81,7 +81,7 @@ class Node {
   // A messaging adapter for the exchange of control messages.
   // TODO(malte): This is specialized to BaseMessage protobufs here. Maybe it
   // should not be?
-  shared_ptr<StreamSocketsAdapter<BaseMessage> > m_adapter_;
+  StreamSocketsAdapter<BaseMessage>* m_adapter_;
   // This node's own resource descriptor.
   ResourceDescriptor resource_desc_;
   // The node's resource UUID.
