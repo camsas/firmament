@@ -8,6 +8,6 @@
 
 #include "base/task_interface.h"
 
-int timespin_main(int secs);
+int timespin_main(int secs, int usecs);
 
 #endif  // FIRMAMENT_EXAMPLE_TIMESPIN_H

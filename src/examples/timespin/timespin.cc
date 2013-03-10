@@ -35,13 +35,17 @@
 namespace firmament {
 
 void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>* arg_vec) {
-  int64_t dur;
-  if (arg_vec->size() < 2 || atol(arg_vec->at(1)) <= 0)
-    dur = 10;
-  else
-    dur = atol(arg_vec->at(1));
-  VLOG(1) << "Task " << task_id << " spinning for " << dur << " seconds!";
-  timespin_main(dur);
+  int64_t dur_sec, dur_usec;
+  if (arg_vec->size() < 2 || atol(arg_vec->at(1)) <= 0) {
+    dur_sec = 10;
+    dur_usec = 0;
+  } else {
+    dur_sec = atol(arg_vec->at(1));
+    dur_usec = atol(arg_vec->at(2));
+  }
+  VLOG(1) << "Task " << task_id << " spinning for " << dur_sec << " sec, "
+          << dur_usec << " µsec!";
+  timespin_main(dur_sec, dur_usec);
 }
 
 }  // namespace firmament
@@ -53,12 +57,12 @@ void catch_timer(int sig) {
   flag = 0;
 }
 
-int timespin_main(int secs) {
+int timespin_main(int secs, int usecs) {
   struct itimerval timer;
   timer.it_interval.tv_sec = 0;
   timer.it_interval.tv_usec = 0;
   timer.it_value.tv_sec = secs;
-  timer.it_value.tv_usec = 0;
+  timer.it_value.tv_usec = usecs;
 
   if (signal(SIGALRM, catch_timer)) return -1;
 
