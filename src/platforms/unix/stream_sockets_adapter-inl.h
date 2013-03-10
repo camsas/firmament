@@ -88,9 +88,12 @@ MessagingChannelInterface<T>* StreamSocketsAdapter<T>::GetChannelForEndpoint(
 
 template <typename T>
 void StreamSocketsAdapter<T>::AwaitNextMessage() {
+  VLOG(1) << "Iterating over " << endpoint_channel_map_.size()
+          << " active channels in adapter " << this;
+  DumpActiveChannels();
   // If we have no active channels, we cannot receive any messages, so we return
   // immediately.
-  boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
+  //boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
   if (endpoint_channel_map_.size() == 0)
     return;
   // Otherwise, let's make sure we have an outstanding async receive request for
@@ -144,7 +147,7 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     // XXX(malte): the below is possibly unsafe in some way, especially w.r.t.
     // concurrency
     string remote_endpoint = chan->RemoteEndpointString();
-    boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
+    //boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
     CHECK(endpoint_channel_map_.erase(remote_endpoint));
     CHECK(channel_recv_envelopes_.erase(chan));
     // After we have removed the channel from the map of active channels and
