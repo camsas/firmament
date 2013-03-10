@@ -49,7 +49,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     scheduler_(new SimpleScheduler(job_table_, associated_resources_,
                                    object_store_, task_table_,
                                    topology_manager_,
-                                   m_adapter_.get(),
+                                   m_adapter_,
                                    uuid_,
                                    FLAGS_listen_uri)) {
   // Start up a coordinator according to the platform parameter
@@ -96,7 +96,8 @@ bool Coordinator::RegisterWithCoordinator(
   rtnd->CopyFrom(*local_resource_topology_);
   bm.MutableExtension(register_extn)->set_uuid(
           boost::uuids::to_string(uuid_));
-  bm.MutableExtension(register_extn)->set_location(node_uri_);
+  bm.MutableExtension(register_extn)->set_location(
+          chan->LocalEndpointString());
   // wrap in envelope
   VLOG(2) << "Sending registration message...";
   // send heartbeat message

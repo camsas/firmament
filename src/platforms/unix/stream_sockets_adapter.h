@@ -82,6 +82,8 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
   void HandleAsyncMessageRecv(
       const boost::system::error_code& error, size_t bytes_transferred,
       StreamSocketsChannel<T>* chan);
+  bool _EstablishChannel(const string& endpoint_uri,
+                         StreamSocketsChannel<T>* chan);
 
   typename AsyncMessageRecvHandler<T>::type message_recv_handler_;
   typename AsyncErrorPathHandler<T>::type error_path_handler_;
@@ -90,6 +92,7 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
   //set<shared_ptr<StreamSocketsChannel<T> > > active_channels_;
   map<const string, StreamSocketsChannel<T>*>
       endpoint_channel_map_;
+  boost::mutex endpoint_channel_map_mutex_;
   map<StreamSocketsChannel<T>*, Envelope<T>*>
       channel_recv_envelopes_;
   // Synchronization variables, locks tec.
