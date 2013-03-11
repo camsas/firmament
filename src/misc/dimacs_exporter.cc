@@ -24,7 +24,7 @@ DIMACSExporter::DIMACSExporter()
 
 void DIMACSExporter::Export(const FlowGraph& graph) {
   // Problem header
-  output_ += GenerateHeader(0, 0);
+  output_ += GenerateHeader(graph.NumNodes(), graph.NumArcs());
   // ----------------------------
   // Supply nodes
   // ----------------------------
@@ -40,7 +40,7 @@ void DIMACSExporter::Export(const FlowGraph& graph) {
   // ----------------------------
   // Sink node
   output_ += GenerateComment("Sink node");
-
+  output_ += GenerateNode(graph.sink_node());
   // ----------------------------
   // Arcs
   // ----------------------------
@@ -49,9 +49,12 @@ void DIMACSExporter::Export(const FlowGraph& graph) {
   // Unscheduled aggregator nodes -> sink
   output_ += GenerateComment("Unscheduled agg nodes -> sink");
   // Cluster aggregator -> res topology
-  output_ += GenerateComment("Cluster agg node (X) -> sink");
+  output_ += GenerateComment("Cluster agg node (X) -> resource topo");
   // Resource topology
   output_ += GenerateComment("Resource topology (internal arcs)");
+  // XXX(malte): above comments are meaningless; currently all arcs are just
+  // dumped in one go.
+  output_ += GenerateComment("=== ALL ARCS FOLLOW (ignore above) ===");
   for (unordered_set<FlowGraphArc*>::const_iterator a_iter =
        graph.Arcs().begin();
        a_iter != graph.Arcs().end();

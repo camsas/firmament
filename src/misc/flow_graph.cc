@@ -20,6 +20,7 @@ using machine::topology::TopologyManager;
 
 FlowGraph::FlowGraph()
     : current_id_(0) {
+  // Add sink and cluster aggregator node
   AddSpecialNodes();
 }
 

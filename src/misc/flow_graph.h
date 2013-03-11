@@ -25,6 +25,12 @@ class FlowGraph {
   void AddResourceTopology(ResourceTopologyNodeDescriptor* resource_tree);
   void AddTaskNode();
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
+  inline const FlowGraphNode& sink_node() const { return *sink_node_; }
+  inline const FlowGraphNode& cluster_agg_node() const {
+    return *cluster_agg_node_;
+  }
+  inline uint64_t NumArcs() const { return arc_set_.size(); }
+  inline uint64_t NumNodes() const { return node_map_.size(); }
 
  protected:
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
