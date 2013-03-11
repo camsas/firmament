@@ -7,9 +7,12 @@ include $(ROOT_DIR)/include/Makefile.common
 LIBS += -lboost_system
 
 LIB = libfirmament_misc.a
-OBJS = event_logging.o utils.o
+OBJS = event_logging.o dimacs_exporter.o flow_graph.o utils.o
 PBS =
-TESTS = envelope_test utils_test
+TESTS = dimacs_exporter_test envelope_test utils_test flow_graph_test
+TESTS_dimacs_exporter_DEPS = $(OBJ_DIR)/../base/libfirmament_base.a
+TESTS_flow_graph_DEPS = $(OBJ_DIR)/../base/libfirmament_base.a \
+			$(OBJ_DIR)/utils.o
 TESTS_envelope_DEPS = $(OBJ_DIR)/../messages/libfirmament_messages.a
 TESTS_utils_DEPS = $(OBJ_DIR)/../base/libfirmament_base.a
 
