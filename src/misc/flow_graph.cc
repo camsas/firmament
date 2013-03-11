@@ -27,12 +27,14 @@ FlowGraph::FlowGraph()
 
 void FlowGraph::AddArcsForTask(TaskDescriptor* cur,
                                FlowGraphNode* task_node,
-                               FlowGraphNode* unsched_agg_node) {
+                               FlowGraphNode* unsched_agg_node,
+                               FlowGraphArc* unsched_agg_to_sink_arc) {
   // We always have an edge to the cluster aggregator node
   AddArcInternal(task_node, cluster_agg_node_);
   // We also always have an edge to our job's unscheduled node
   FlowGraphArc* unsched_arc = AddArcInternal(task_node, unsched_agg_node);
   // TODO(malte): stub, read value from runtime config here
+  unsched_agg_to_sink_arc->cap_upper_bound_++;
   unsched_arc->cost_ = 1;
 }
 
@@ -53,7 +55,9 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
   // First add an unscheduled aggregator node for this job
   FlowGraphNode* unsched_agg_node = AddNodeInternal(next_id());
   // ... and connect it directly to the sink
-  AddArcInternal(unsched_agg_node, sink_node_);
+  FlowGraphArc* unsched_agg_to_sink_arc =
+      AddArcInternal(unsched_agg_node, sink_node_);
+  unsched_agg_to_sink_arc->cap_upper_bound_ = 0;
   // Now add the job's task nodes
   // XXX(malte): This is a simple BFS lashup
   queue<TaskDescriptor*> q;
@@ -66,7 +70,7 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
     task_node->supply_ = 1;
     sink_node_->demand_++;
     // Arcs for this node
-    AddArcsForTask(cur, task_node, unsched_agg_node);
+    AddArcsForTask(cur, task_node, unsched_agg_node, unsched_agg_to_sink_arc);
     // Enqueue any existing children of this task
     for (RepeatedPtrField<TaskDescriptor>::iterator c_iter =
          cur->mutable_spawned()->begin();
@@ -98,12 +102,18 @@ void FlowGraph::AddSpecialNodes() {
 
 void FlowGraph::AddResourceTopology(
     ResourceTopologyNodeDescriptor* resource_tree) {
+  uint64_t num_leaves = 0;
   TraverseResourceProtobufTreeReturnRTND(
       resource_tree,
-      boost::bind(&FlowGraph::AddResourceNode, this, _1));
+      boost::bind(&FlowGraph::AddResourceNode, this, _1, &num_leaves));
+  VLOG(2) << "Added a total of " << num_leaves << " schedulable (PU) "
+          << " resources to flow graph; setting cluster aggregation node"
+          << " output capacity accordingly.";
+  cluster_agg_into_res_topo_arc_->cap_upper_bound_ = num_leaves;
 }
 
-void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd) {
+void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
+                                uint64_t* leaf_counter) {
   if (!rtnd->has_parent_id()) {
     // Root node, so add it
     VLOG(2) << "Adding node for root resource "
@@ -113,7 +123,8 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd) {
                        ResourceIDFromString(rtnd->resource_desc().uuid()),
                        root_node->id_);
     // Arc from cluster aggregator to resource topo root node
-    AddArcInternal(cluster_agg_node_, root_node);
+    cluster_agg_into_res_topo_arc_ = AddArcInternal(cluster_agg_node_,
+                                                    root_node);
   }
   if (rtnd->children_size() > 0) {
     VLOG(2) << "Adding " << rtnd->children_size() << " internal resource arcs";
@@ -147,6 +158,7 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd) {
     FlowGraphNode* cur_node = NodeForResourceID(
         ResourceIDFromString(rtnd->resource_desc().uuid()));
     AddArcInternal(cur_node->id_, sink_node_->id_);
+    (*leaf_counter)++;
   }
 }
 

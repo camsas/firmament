@@ -21,7 +21,8 @@ class FlowGraph {
  public:
   FlowGraph();
   void AddJobNodes(JobDescriptor* jd);
-  void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd);
+  void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
+                       uint64_t* leaf_counter);
   void AddResourceTopology(ResourceTopologyNodeDescriptor* resource_tree);
   void AddTaskNode();
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
@@ -37,7 +38,8 @@ class FlowGraph {
 
  protected:
   void AddArcsForTask(TaskDescriptor* cur, FlowGraphNode* task_node,
-                      FlowGraphNode* unsched_agg_node);
+                      FlowGraphNode* unsched_agg_node,
+                      FlowGraphArc* unsched_agg_to_sink_arc);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
@@ -50,6 +52,7 @@ class FlowGraph {
   unordered_map<uint64_t, FlowGraphNode*> node_map_;
   unordered_set<FlowGraphArc*> arc_set_;
   FlowGraphNode* cluster_agg_node_;
+  FlowGraphArc* cluster_agg_into_res_topo_arc_;
   FlowGraphNode* sink_node_;
   // Resource and task mappings
   unordered_map<TaskID_t, uint64_t> task_to_nodeid_map_;
