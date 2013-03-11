@@ -24,6 +24,7 @@ class FlowGraph {
   void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void AddResourceTopology(ResourceTopologyNodeDescriptor* resource_tree);
   void AddTaskNode();
+  inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
 
  protected:
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
@@ -41,7 +42,8 @@ class FlowGraph {
   FlowGraphNode* sink_node_;
   // Resource and task mappings
   unordered_map<TaskID_t, uint64_t> task_to_nodeid_map_;
-  unordered_map<ResourceID_t, uint64_t> resource_to_nodeid_map_;
+  unordered_map<ResourceID_t, uint64_t,
+      boost::hash<boost::uuids::uuid> > resource_to_nodeid_map_;
 };
 
 }  // namespace firmament

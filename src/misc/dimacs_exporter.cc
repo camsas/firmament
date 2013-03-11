@@ -52,6 +52,11 @@ void DIMACSExporter::Export(const FlowGraph& graph) {
   output_ += GenerateComment("Cluster agg node (X) -> sink");
   // Resource topology
   output_ += GenerateComment("Resource topology (internal arcs)");
+  for (unordered_set<FlowGraphArc*>::const_iterator a_iter =
+       graph.Arcs().begin();
+       a_iter != graph.Arcs().end();
+       ++a_iter)
+    output_ += GenerateArc(**a_iter);
 }
 
 void DIMACSExporter::Flush(const string& filename) {

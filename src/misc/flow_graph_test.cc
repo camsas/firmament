@@ -50,14 +50,17 @@ class FlowGraphTest : public ::testing::Test {
 TEST_F(FlowGraphTest, SimpleGraphOutput) {
   FlowGraph g;
   ResourceTopologyNodeDescriptor rtn_root;
-  rtn_root.mutable_resource_desc()->set_uuid(to_string(GenerateUUID()));
+  string root_id = to_string(GenerateUUID());
+  rtn_root.mutable_resource_desc()->set_uuid(root_id);
   ResourceTopologyNodeDescriptor* rtn_c1 = rtn_root.add_children();
   string c1_uid = to_string(GenerateUUID());
   rtn_c1->mutable_resource_desc()->set_uuid(c1_uid);
+  rtn_c1->set_parent_id(root_id);
   rtn_root.mutable_resource_desc()->add_children(c1_uid);
   ResourceTopologyNodeDescriptor* rtn_c2 = rtn_root.add_children();
   string c2_uid = to_string(GenerateUUID());
   rtn_c2->mutable_resource_desc()->set_uuid(c2_uid);
+  rtn_c2->set_parent_id(root_id);
   rtn_root.mutable_resource_desc()->add_children(c2_uid);
   g.AddResourceTopology(&rtn_root);
 }

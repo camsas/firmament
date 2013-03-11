@@ -18,7 +18,8 @@ namespace firmament {
 
 using machine::topology::TopologyManager;
 
-FlowGraph::FlowGraph() {
+FlowGraph::FlowGraph()
+    : current_id_(0) {
   AddSpecialNodes();
 }
 
@@ -56,22 +57,46 @@ void FlowGraph::AddResourceTopology(
 }
 
 void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd) {
-  VLOG(1) << "Adding " << rtnd->children_size() << " internal resource arcs";
+  if (!rtnd->has_parent_id()) {
+    // Root node, so add it
+    VLOG(2) << "Adding node for root resource "
+            << rtnd->resource_desc().uuid();
+    FlowGraphNode* root_node = AddNodeInternal(next_id());
+    InsertIfNotPresent(&resource_to_nodeid_map_,
+                       ResourceIDFromString(rtnd->resource_desc().uuid()),
+                       root_node->id_);
+  }
+  VLOG(2) << "Adding " << rtnd->children_size() << " internal resource arcs";
   for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator c_iter =
        rtnd->mutable_children()->begin();
        c_iter != rtnd->mutable_children()->end();
        ++c_iter) {
-    VLOG(1) << "Adding node for resource " << rtnd->resource_desc().uuid();
-    FlowGraphNode* cur_node = NodeForResourceID(
-        ResourceIDFromString(rtnd->parent_id()));
+    VLOG(2) << "Adding node for resource " << c_iter->resource_desc().uuid();
     FlowGraphNode* child_node = AddNodeInternal(next_id());
-    AddArcInternal(cur_node, child_node);
+    InsertIfNotPresent(&resource_to_nodeid_map_,
+                       ResourceIDFromString(c_iter->resource_desc().uuid()),
+                       child_node->id_);
+    // If we do not have a parent_id set, this is a root node, so it has no
+    // incoming internal resource topology edges
+    if (c_iter->has_parent_id()) {
+      FlowGraphNode* cur_node = NodeForResourceID(
+          ResourceIDFromString(c_iter->parent_id()));
+      AddArcInternal(cur_node, child_node);
+    } else {
+      LOG(ERROR) << "Found child without parent_id set! This will lead to an "
+                 << "inconsistent flow graph!";
+    }
   }
 }
 
 FlowGraphNode* FlowGraph::NodeForResourceID(const ResourceID_t& res_id) {
-  // stub
-  return NULL;
+  uint64_t* id = FindOrNull(resource_to_nodeid_map_, res_id);
+  // Returns NULL if resource unknown
+  if (!id)
+    return NULL;
+  VLOG(2) << "Resource " << res_id << " is represented by node " << *id;
+  FlowGraphNode** node_ptr = FindOrNull(node_map_, *id);
+  return (node_ptr ? *node_ptr : NULL);
 }
 
 }  // namespace firmament
