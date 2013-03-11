@@ -162,6 +162,7 @@ bool SimpleScheduler::PlaceDelegatedTask(TaskDescriptor* td,
   runnable_tasks_.insert(td->uid());
   InsertIfNotPresent(task_map_.get(), td->uid(), td);
   BindTaskToResource(td, rd);
+  td->set_state(TaskDescriptor::DELEGATED);
   return true;
 }
 

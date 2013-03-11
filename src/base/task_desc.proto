@@ -12,7 +12,7 @@ message TaskDescriptor {
     COMPLETED = 5;
     FAILED = 6;
     ABORTED = 7;
-    MIGRATED = 8;
+    DELEGATED = 8;
     UNKNOWN = 9;
   }
 
