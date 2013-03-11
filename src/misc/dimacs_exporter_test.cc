@@ -49,6 +49,7 @@ class DIMACSExporterTest : public ::testing::Test {
 // memcopy internally).
 TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   FlowGraph g;
+  // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
   string root_id = to_string(GenerateUUID());
   rtn_root.mutable_resource_desc()->set_uuid(root_id);
@@ -62,7 +63,18 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   rtn_c2->mutable_resource_desc()->set_uuid(c2_uid);
   rtn_c2->set_parent_id(root_id);
   rtn_root.mutable_resource_desc()->add_children(c2_uid);
+  // Test job
+  JobDescriptor jd;
+  jd.set_uuid(to_string(GenerateJobID()));
+  TaskDescriptor* rt = jd.mutable_root_task();
+  rt->set_uid(GenerateRootTaskID(jd));
+  TaskDescriptor* ct1 = rt->add_spawned();
+  ct1->set_uid(GenerateTaskID(*rt));
+  TaskDescriptor* ct2 = rt->add_spawned();
+  ct2->set_uid(GenerateTaskID(*rt));
+  // Add resources and job to flow graph
   g.AddResourceTopology(&rtn_root);
+  g.AddJobNodes(&jd);
   // Export
   DIMACSExporter exp;
   exp.Export(g);

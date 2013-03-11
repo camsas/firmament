@@ -30,17 +30,29 @@ void DIMACSExporter::Export(const FlowGraph& graph) {
   // ----------------------------
   // Task nodes
   output_ += GenerateComment("Task nodes");
+  // for ...
+  // output_ += GenerateNode();
   // Unscheduled aggregator nodes
   output_ += GenerateComment("Unscheduled agg nodes");
+  // for ...
+  // output_ += GenerateNode();
   // Resource nodes (implicit)
   output_ += GenerateComment("(Other nodes are implicit)");
+  // XXX(malte): above comments are meaningless; currently all nodes are just
+  // dumped in one go.
+  output_ += GenerateComment("=== ALL NODES FOLLOW (ignore above) ===");
+  for (unordered_map<uint64_t, FlowGraphNode*>::const_iterator n_iter =
+       graph.Nodes().begin();
+       n_iter != graph.Nodes().end();
+       ++n_iter)
+    output_ += GenerateNode(*n_iter->second);
 
   // ----------------------------
   // Demand nodes
   // ----------------------------
   // Sink node
-  output_ += GenerateComment("Sink node");
-  output_ += GenerateNode(graph.sink_node());
+  //output_ += GenerateComment("Sink node");
+  //output_ += GenerateNode(graph.sink_node());
   // ----------------------------
   // Arcs
   // ----------------------------
@@ -97,7 +109,7 @@ const string DIMACSExporter::GenerateNode(const FlowGraphNode& node) {
     CHECK_EQ(node.demand_, 0);
   if (node.demand_ > 0)
     CHECK_EQ(node.supply_, 0);
-  int64_t value = node.demand_ - node.supply_;
+  int64_t value = node.supply_ - node.demand_;
   stringstream ss;
   ss << "n " << node.id_ << " " << value << "\n";
   return ss.str();

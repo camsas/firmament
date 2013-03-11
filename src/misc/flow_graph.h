@@ -20,11 +20,14 @@ namespace firmament {
 class FlowGraph {
  public:
   FlowGraph();
-  void AddJobNodes();
+  void AddJobNodes(JobDescriptor* jd);
   void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void AddResourceTopology(ResourceTopologyNodeDescriptor* resource_tree);
   void AddTaskNode();
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
+  inline const unordered_map<uint64_t, FlowGraphNode*>& Nodes() const {
+    return node_map_;
+  }
   inline const FlowGraphNode& sink_node() const { return *sink_node_; }
   inline const FlowGraphNode& cluster_agg_node() const {
     return *cluster_agg_node_;
@@ -33,6 +36,8 @@ class FlowGraph {
   inline uint64_t NumNodes() const { return node_map_.size(); }
 
  protected:
+  void AddArcsForTask(TaskDescriptor* cur, FlowGraphNode* task_node,
+                      FlowGraphNode* unsched_agg_node);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
