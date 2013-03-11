@@ -48,8 +48,8 @@ class DIMACSExporterTest : public ::testing::Test {
 // Tests allocation of an empty envelope and puts an integer into it (using
 // memcopy internally).
 TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
-  FlowGraph g();
-  g.AddJobNodes();
+  FlowGraph g;
+  DIMACSExporter exp;
   exp.Export(g);
   exp.Flush("test.dm");
 }

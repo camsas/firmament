@@ -27,39 +27,17 @@ bool RepeatedContainsPtr(RepeatedPtrField<T>* pbf, T* item) {
   return false;
 }
 
-// Overload taking a callback that itself takes a ResourceDescriptor as its
-// argument.
+// Traversal implementation taking a callback that itself takes a
+// ResourceDescriptor as its argument.
 void TraverseResourceProtobufTree(
     ResourceTopologyNodeDescriptor* pb,
-    boost::function<void(ResourceDescriptor*)> callback) {  // NOLINT
-  VLOG(3) << "Traversal of resource topology, reached "
-          << pb->resource_desc().uuid()
-          << ", invoking callback [" << callback << "]";
-  callback(pb->mutable_resource_desc());
-  for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator
-       rtnd_iter = pb->mutable_children()->begin();
-       rtnd_iter != pb->mutable_children()->end();
-       ++rtnd_iter) {
-    TraverseResourceProtobufTree(&(*rtnd_iter), callback);
-  }
-}
+    boost::function<void(ResourceDescriptor*)> callback);  // NOLINT
 
-// Overload taking a callback that itself takes a ResourceTopologyNodeDescriptor
-// as its argument.
+// Traversal implementation taking a callback that itself takes a
+// ResourceTopologyNodeDescriptor as its argument.
 void TraverseResourceProtobufTreeReturnRTND(
     ResourceTopologyNodeDescriptor* pb,
-    boost::function<void(ResourceTopologyNodeDescriptor*)> callback) {  // NOLINT
-  VLOG(3) << "Traversal of resource topology, reached "
-          << pb->resource_desc().uuid()
-          << ", invoking callback [" << callback << "]";
-  callback(pb);
-  for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator
-       rtnd_iter = pb->mutable_children()->begin();
-       rtnd_iter != pb->mutable_children()->end();
-       ++rtnd_iter) {
-    TraverseResourceProtobufTreeReturnRTND(&(*rtnd_iter), callback);
-  }
-}
+    boost::function<void(ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
 
 }  // namespace firmament
 
