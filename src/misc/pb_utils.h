@@ -14,19 +14,6 @@
 
 namespace firmament {
 
-template <typename T>
-bool RepeatedContainsPtr(RepeatedPtrField<T>* pbf, T* item) {
-  // N.B.: using GNU-style RTTI
-  for (typeof(pbf->pointer_begin()) iter =
-       pbf->pointer_begin();
-       iter != pbf->pointer_end();
-       ++iter) {
-    if (*iter == item)
-      return true;
-  }
-  return false;
-}
-
 // Traversal implementation taking a callback that itself takes a
 // ResourceDescriptor as its argument.
 void TraverseResourceProtobufTree(
