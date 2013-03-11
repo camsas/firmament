@@ -18,6 +18,7 @@
 #include "base/resource_topology_node_desc.pb.h"
 #include "storage/simple_object_store.h"
 #include "messages/base_message.pb.h"
+#include "misc/pb_utils.h"
 #include "misc/protobuf_envelope.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
@@ -119,7 +120,7 @@ void Coordinator::DetectLocalResources() {
       local_resource_topology_->add_children();
   topology_manager_->AsProtobuf(root_node);
   local_resource_topology_->set_parent_id(to_string(uuid_));
-  topology_manager_->TraverseProtobufTree(
+  TraverseResourceProtobufTree(
       local_resource_topology_,
       boost::bind(&Coordinator::AddResource, this, _1, node_uri_, true));
 }
@@ -299,7 +300,7 @@ void Coordinator::HandleRegistrationRequest(
     rtnd->CopyFrom(msg.rtn_desc());
     rtnd->set_parent_id(resource_desc_.uuid());
     // Recursively add its child resources to resource map and topology tree
-    topology_manager_->TraverseProtobufTree(
+    TraverseResourceProtobufTree(
         rtnd, boost::bind(&Coordinator::AddResource, this, _1,
                           msg.location(), false));
     InformStorageEngineNewResource(rd);

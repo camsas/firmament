@@ -40,9 +40,6 @@ class TopologyManager {
   void LoadAndParseSyntheticTopology(const string& topology_desc);
   void DebugPrintRawTopology();
   uint32_t NumProcessingUnits();
-  void TraverseProtobufTree(
-      ResourceTopologyNodeDescriptor* pb,
-      boost::function<void(ResourceDescriptor*)> callback);  // NOLINT
 
  protected:
   string DebugCPUSet(hwloc_const_cpuset_t cpuset);
