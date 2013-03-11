@@ -28,10 +28,12 @@ using std::string;
 
 // Use TR1 implementation for hash map.
 #include <tr1/unordered_map>
+#include <tr1/unordered_set>
 
 namespace firmament {
 
 using tr1::unordered_map;
+using tr1::unordered_set;
 
 }  // namespace firmament
 
