@@ -34,6 +34,9 @@ TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
 	                 $(BUILD_DIR)/messages/libfirmament_messages.a \
 	                 $(BUILD_DIR)/storage/libfirmament_storage.a \
 			 $(HTTP_UI_LIBS)
+# N.B.: Note that simple_scheduler_test lives in the engine makefile as it
+# depends on engine components that are not yet built when the schedulers (which
+# the coordinator depends on) are built.
 TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/node.o \
 			      $(BUILD_DIR)/engine/local_executor.o \
 			      $(BUILD_DIR)/engine/remote_executor.o \
