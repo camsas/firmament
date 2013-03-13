@@ -29,18 +29,25 @@ class FlowGraph {
   inline const unordered_map<uint64_t, FlowGraphNode*>& Nodes() const {
     return node_map_;
   }
+  inline const unordered_set<uint64_t>& leaf_node_ids() const {
+    return leaf_nodes_;
+  }
+  inline const unordered_set<uint64_t>& task_node_ids() const {
+    return task_nodes_;
+  }
   inline const FlowGraphNode& sink_node() const { return *sink_node_; }
   inline const FlowGraphNode& cluster_agg_node() const {
     return *cluster_agg_node_;
   }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
   inline uint64_t NumNodes() const { return node_map_.size(); }
+  FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
 
  protected:
+  FRIEND_TEST(DIMACSExporterTest, LargeGraph);
   void AddArcsForTask(TaskDescriptor* cur, FlowGraphNode* task_node,
                       FlowGraphNode* unsched_agg_node,
                       FlowGraphArc* unsched_agg_to_sink_arc);
-  FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   void AddSpecialNodes();
@@ -58,6 +65,8 @@ class FlowGraph {
   unordered_map<TaskID_t, uint64_t> task_to_nodeid_map_;
   unordered_map<ResourceID_t, uint64_t,
       boost::hash<boost::uuids::uuid> > resource_to_nodeid_map_;
+  unordered_set<uint64_t> leaf_nodes_;
+  unordered_set<uint64_t> task_nodes_;
 };
 
 }  // namespace firmament

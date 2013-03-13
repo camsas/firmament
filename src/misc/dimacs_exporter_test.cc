@@ -5,11 +5,20 @@
 
 #include <gtest/gtest.h>
 
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include <vector>
+#include <map>
+
+#include <boost/bind.hpp>
 
 #include "base/common.h"
 #include "misc/dimacs_exporter.h"
+#include "misc/map-util.h"
 #include "misc/utils.h"
+#include "misc/pb_utils.h"
+#include "misc/flow_graph.h"
 
 namespace firmament {
 namespace misc {
@@ -22,7 +31,7 @@ class DIMACSExporterTest : public ::testing::Test {
 
   DIMACSExporterTest() {
     // You can do set-up work for each test here.
-    FLAGS_v = 2;
+    FLAGS_v = 1;
   }
 
   virtual ~DIMACSExporterTest() {
@@ -42,7 +51,19 @@ class DIMACSExporterTest : public ::testing::Test {
     // before the destructor).
   }
 
+  void reset_uuid(ResourceTopologyNodeDescriptor* rtnd) {
+    string old_parent_id = rtnd->parent_id();
+    rtnd->set_parent_id(*FindOrNull(uuid_conversion_map_, rtnd->parent_id()));
+    string new_uuid = to_string(GenerateUUID());
+    VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid()
+            << " to " << new_uuid << ", parent is " << rtnd->parent_id()
+            << ", was " << old_parent_id;
+    InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(),
+                   new_uuid);
+    rtnd->mutable_resource_desc()->set_uuid(new_uuid);
+  }
   // Objects declared here can be used by all tests.
+  map<string, string> uuid_conversion_map_;
 };
 
 // Tests allocation of an empty envelope and puts an integer into it (using
@@ -80,6 +101,70 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   exp.Export(g);
   exp.Flush("test.dm");
 }
+
+TEST_F(DIMACSExporterTest, LargeGraph) {
+  FlowGraph g;
+  // Test resource topology
+  ResourceTopologyNodeDescriptor machine_tmpl;
+  int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
+  machine_tmpl.ParseFromFileDescriptor(fd);
+  close(fd);
+  // Create N machines
+  uint64_t n = 2500;
+  ResourceTopologyNodeDescriptor rtn_root;
+  ResourceID_t root_uuid = GenerateUUID();
+  rtn_root.mutable_resource_desc()->set_uuid(to_string(root_uuid));
+  InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
+                     to_string(root_uuid));
+  for (uint64_t i = 0; i < n; ++i) {
+    ResourceTopologyNodeDescriptor* child = rtn_root.add_children();
+    child->CopyFrom(machine_tmpl);
+    child->set_parent_id(rtn_root.resource_desc().uuid());
+    TraverseResourceProtobufTreeReturnRTND(
+        child, boost::bind(&DIMACSExporterTest::reset_uuid, this, _1));
+  }
+  VLOG(1) << "Added " << n << " machines.";
+  // Add resources and job to flow graph
+  g.AddResourceTopology(&rtn_root);
+  // Test job
+  uint64_t j = 100;
+  uint64_t t = 100;
+  const vector<uint64_t> leaf_ids(g.leaf_node_ids().begin(),
+                                  g.leaf_node_ids().end());
+  for (uint64_t i = 0; i < j; ++i) {
+    JobDescriptor jd;
+    jd.set_uuid(to_string(GenerateJobID()));
+    TaskDescriptor* rt = jd.mutable_root_task();
+    rt->set_uid(GenerateRootTaskID(jd));
+    for (uint64_t k = 1; k < t; ++k) {
+      TaskDescriptor* ct = rt->add_spawned();
+      ct->set_uid(GenerateTaskID(*rt));
+    }
+    g.AddJobNodes(&jd);
+  }
+  VLOG(1) << "Added " << j*t << " tasks in " << j << " jobs (" << t
+          << " tasks each).";
+  // Add preferences for each task
+  const unordered_set<uint64_t>& task_ids = g.task_node_ids();
+  uint64_t p = 20;
+  unsigned int seed = time(NULL);
+  for (unordered_set<uint64_t>::const_iterator t_iter = task_ids.begin();
+       t_iter != task_ids.end();
+       ++t_iter) {
+    for (uint64_t i = 0; i < p; i++) {
+      uint64_t target = leaf_ids[rand_r(&seed) % leaf_ids.size()];
+      g.AddArcInternal(*t_iter, target);
+      VLOG(3) << "Added random preference arc from task node " << *t_iter
+              << " to PU node " << target;
+    }
+  }
+  VLOG(1) << "Wrote " << (task_ids.size() * p) << " preference arcs.";
+  // Export
+  DIMACSExporter exp;
+  exp.Export(g);
+  exp.Flush("test2.dm");
+}
+
 
 }  // namespace misc
 }  // namespace firmament

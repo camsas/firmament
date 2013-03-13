@@ -69,6 +69,7 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
     FlowGraphNode* task_node = AddNodeInternal(next_id());
     task_node->supply_ = 1;
     sink_node_->demand_++;
+    task_nodes_.insert(task_node->id_);
     // Arcs for this node
     AddArcsForTask(cur, task_node, unsched_agg_node, unsched_agg_to_sink_arc);
     // Enqueue any existing children of this task
@@ -116,9 +117,10 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
                                 uint64_t* leaf_counter) {
   if (!rtnd->has_parent_id()) {
     // Root node, so add it
-    VLOG(2) << "Adding node for root resource "
+    uint64_t id = next_id();
+    VLOG(2) << "Adding node " << id << " for root resource "
             << rtnd->resource_desc().uuid();
-    FlowGraphNode* root_node = AddNodeInternal(next_id());
+    FlowGraphNode* root_node = AddNodeInternal(id);
     InsertIfNotPresent(&resource_to_nodeid_map_,
                        ResourceIDFromString(rtnd->resource_desc().uuid()),
                        root_node->id_);
@@ -132,8 +134,10 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
          rtnd->mutable_children()->begin();
          c_iter != rtnd->mutable_children()->end();
          ++c_iter) {
-      VLOG(2) << "Adding node for resource " << c_iter->resource_desc().uuid();
-      FlowGraphNode* child_node = AddNodeInternal(next_id());
+      uint64_t id = next_id();
+      VLOG(2) << "Adding node " << id << " for resource "
+              << c_iter->resource_desc().uuid();
+      FlowGraphNode* child_node = AddNodeInternal(id);
       InsertIfNotPresent(&resource_to_nodeid_map_,
                          ResourceIDFromString(c_iter->resource_desc().uuid()),
                          child_node->id_);
@@ -142,6 +146,8 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
       if (c_iter->has_parent_id()) {
         FlowGraphNode* cur_node = NodeForResourceID(
             ResourceIDFromString(c_iter->parent_id()));
+        CHECK(cur_node != NULL) << "Could not find parent node with ID "
+                                << c_iter->parent_id();
         AddArcInternal(cur_node, child_node);
       } else {
         LOG(ERROR) << "Found child without parent_id set! This will lead to an "
@@ -157,7 +163,11 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
                  << " is not a PU! This may yield an unschedulable flow!";
     FlowGraphNode* cur_node = NodeForResourceID(
         ResourceIDFromString(rtnd->resource_desc().uuid()));
+    CHECK_NOTNULL(cur_node);
+    CHECK(cur_node != NULL) << "Could not find leaf node with ID "
+                            << rtnd->resource_desc().uuid();
     AddArcInternal(cur_node->id_, sink_node_->id_);
+    leaf_nodes_.insert(cur_node->id_);
     (*leaf_counter)++;
   }
 }
