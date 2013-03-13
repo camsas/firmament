@@ -1,21 +1,21 @@
 // The Firmament project
-// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2012-2013 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
-// Naive simple-minded queue-based scheduler.
+// Quincy scheduler.
 
-#ifndef FIRMAMENT_ENGINE_SIMPLE_SCHEDULER_H
-#define FIRMAMENT_ENGINE_SIMPLE_SCHEDULER_H
-
-#include <map>
-#include <set>
-#include <string>
+#ifndef FIRMAMENT_ENGINE_QUINCY_SCHEDULER_H
+#define FIRMAMENT_ENGINE_QUINCY_SCHEDULER_H
 
 #include "base/common.h"
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
-#include "engine/scheduler_interface.h"
+#include "base/flow_node_type.pb.h"
 #include "engine/executor_interface.h"
+#include "scheduling/dimacs_exporter.h"
+#include "scheduling/flow_graph.h"
+#include "scheduling/scheduling_parameters.pb.h"
+#include "scheduling/scheduler_interface.h"
 #include "storage/reference_interface.h"
 
 namespace firmament {
@@ -23,17 +23,19 @@ namespace scheduler {
 
 using executor::ExecutorInterface;
 
-class SimpleScheduler : public SchedulerInterface {
+class QuincyScheduler : public SchedulerInterface {
  public:
-  SimpleScheduler(shared_ptr<JobMap_t> job_map,
+  QuincyScheduler(shared_ptr<JobMap_t> job_map,
                   shared_ptr<ResourceMap_t> resource_map,
                   shared_ptr<store::ObjectStoreInterface> object_store,
                   shared_ptr<TaskMap_t> task_map,
                   shared_ptr<TopologyManager> topo_mgr,
                   MessagingAdapterInterface<BaseMessage>* m_adapter,
                   ResourceID_t coordinator_res_id,
-                  const string& coordinator_uri);
-  ~SimpleScheduler();
+                  const string& coordinator_uri,
+                  const SchedulingParameters& params
+                  );
+  ~QuincyScheduler();
   void DeregisterResource(ResourceID_t res_id);
   void RegisterResource(ResourceID_t res_id, bool local);
   void HandleTaskCompletion(TaskDescriptor* td_ptr);
@@ -41,7 +43,8 @@ class SimpleScheduler : public SchedulerInterface {
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
   uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
-    return *stream << "<SimpleScheduler>";
+    return *stream << "<QuincyScheduler, parameters: "
+                   << parameters_.ShortDebugString() << ">";
   }
 
  protected:
@@ -50,15 +53,6 @@ class SimpleScheduler : public SchedulerInterface {
   const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
 
  private:
-  // Unit tests
-  FRIEND_TEST(SimpleSchedulerTest, LazyGraphReductionTest);
-  FRIEND_TEST(SimpleSchedulerTest, ObjectIDToReferenceDescLookup);
-  FRIEND_TEST(SimpleSchedulerTest, ProducingTaskLookup);
-  void DebugPrintRunnableTasks();
-  const set<TaskID_t>& LazyGraphReduction(
-      const set<DataObjectID_t>& output_ids,
-      TaskDescriptor* root_task);
-  shared_ptr<ReferenceInterface> ReferenceForID(DataObjectID_t id);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
@@ -83,9 +77,28 @@ class SimpleScheduler : public SchedulerInterface {
   // Flag (effectively a lock) indicating if the scheduler is currently
   // in the process of making scheduling decisions.
   bool scheduling_;
+  // Local storage of the current flow graph
+  FlowGraph flow_graph_;
+  // Flow scheduler parameters (passed in as protobuf to constructor)
+  SchedulingParameters parameters_;
+
+  vector< map< uint64_t, uint64_t> > ReadFlowGraph(
+      char* file_name, uint64_t num_vertices);
+  bool CheckNodeType(
+      const map<uint64_t, uint64_t>& nodes_type, uint64_t node, uint64_t type);
+  uint64_t AssignNode(
+      vector< map< uint64_t, uint64_t > > &flow_graph,
+      const map<uint64_t, uint64_t>& nodes_type,
+      uint64_t node);
+  map<uint64_t, uint64_t> GetMappings(
+      vector< map< uint64_t, uint64_t > >& flow_graph,
+      const map<uint64_t, uint64_t>& nodes_type,
+      set<uint64_t> leaves,
+      uint64_t sink);
+  void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);
 };
 
 }  // namespace scheduler
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_SIMPLE_SCHEDULER_H
+#endif  // FIRMAMENT_ENGINE_QUINCY_SCHEDULER_H

@@ -11,8 +11,8 @@
 
 #include <boost/bind.hpp>
 
-#include "misc/dimacs_exporter.h"
 #include "misc/pb_utils.h"
+#include "scheduling/dimacs_exporter.h"
 
 namespace firmament {
 

@@ -14,11 +14,11 @@
 #include <boost/bind.hpp>
 
 #include "base/common.h"
-#include "misc/dimacs_exporter.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
-#include "misc/flow_graph.h"
+#include "scheduling/dimacs_exporter.h"
+#include "scheduling/flow_graph.h"
 
 namespace firmament {
 

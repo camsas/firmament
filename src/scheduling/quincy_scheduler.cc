@@ -3,7 +3,7 @@
 //
 // Implementation of a Quincy scheduler.
 
-#include "engine/quincy_scheduler.h"
+#include "scheduling/quincy_scheduler.h"
 
 #include <iostream>
 #include <fstream>
@@ -13,7 +13,6 @@
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-
 
 #include "storage/reference_types.h"
 #include "misc/map-util.h"
@@ -41,14 +40,17 @@ QuincyScheduler::QuincyScheduler(
     shared_ptr<TopologyManager> topo_mgr,
     MessagingAdapterInterface<BaseMessage>* m_adapter,
     ResourceID_t coordinator_res_id,
-    const string& coordinator_uri)
+    const string& coordinator_uri,
+    const SchedulingParameters& params)
     : SchedulerInterface(job_map, resource_map, object_store, task_map),
       coordinator_uri_(coordinator_uri),
       coordinator_res_id_(coordinator_res_id),
       topology_manager_(topo_mgr),
       m_adapter_ptr_(m_adapter),
-      scheduling_(false) {
-  VLOG(1) << "QuincyScheduler initiated.";
+      scheduling_(false),
+      parameters_(params) {
+  VLOG(1) << "QuincyScheduler initiated; parameters: "
+          << parameters_.ShortDebugString();
 }
 
 QuincyScheduler::~QuincyScheduler() {

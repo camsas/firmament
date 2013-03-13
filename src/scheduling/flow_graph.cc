@@ -10,10 +10,12 @@
 
 #include <boost/bind.hpp>
 
-#include "misc/flow_graph.h"
+#include "base/common.h"
+#include "base/types.h"
 #include "misc/map-util.h"
 #include "misc/pb_utils.h"
 #include "misc/utils.h"
+#include "scheduling/flow_graph.h"
 
 namespace firmament {
 

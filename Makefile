@@ -31,7 +31,7 @@ ext: ext/.ext-ok
 ext/.ext-ok:
 	$(SCRIPTS_DIR)/fetch-externals.sh
 
-engine: base storage platforms misc sim
+engine: base scheduling storage platforms misc sim
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
 examples: engine scripts
@@ -39,6 +39,9 @@ examples: engine scripts
 
 base: ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/base all
+
+scheduling: base misc platforms
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling all
 
 sim: base misc
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim all

@@ -10,10 +10,10 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "misc/flow_graph_arc.h"
-#include "misc/flow_graph_node.h"
-#include "engine/topology_manager.h"
 #include "base/resource_topology_node_desc.pb.h"
+#include "engine/topology_manager.h"
+#include "scheduling/flow_graph_arc.h"
+#include "scheduling/flow_graph_node.h"
 
 namespace firmament {
 

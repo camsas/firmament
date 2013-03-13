@@ -12,7 +12,7 @@
 #include "base/task_desc.pb.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
-#include "engine/simple_scheduler.h"
+#include "scheduling/simple_scheduler.h"
 #include "storage/simple_object_store.h"
 
 namespace firmament {

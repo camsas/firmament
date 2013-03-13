@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "base/common.h"
-#include "misc/flow_graph.h"
 #include "misc/utils.h"
+#include "scheduling/flow_graph.h"
 
 namespace firmament {
 namespace misc {

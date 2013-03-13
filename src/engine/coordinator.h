@@ -49,9 +49,9 @@
 #ifdef __HTTP_UI__
 #include "engine/coordinator_http_ui.h"
 #endif
-#include "engine/scheduler_interface.h"
-#include "engine/simple_scheduler.h"
-#include "engine/quincy_scheduler.h"
+#include "scheduling/scheduler_interface.h"
+#include "scheduling/simple_scheduler.h"
+#include "scheduling/quincy_scheduler.h"
 #include "storage/object_store_interface.h"
 #include "engine/topology_manager.h"
 #ifdef __SIMULATE_SYNTHETIC_DTG__

@@ -10,9 +10,9 @@ HTTP_UI_LIBS += -lpion-common -lpion-net -llog4cpp $(PB2JSON_LIB) -ljansson -lct
 
 LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim
-OBJS = coordinator_http_ui.o coordinator.o local_executor.o node.o quincy_scheduler.o simple_scheduler.o remote_executor.o worker.o topology_manager.o quincy_scheduler.o
+OBJS = coordinator_http_ui.o coordinator.o local_executor.o node.o remote_executor.o worker.o topology_manager.o
 PBS =
-TESTS = coordinator_test local_executor_test worker_test topology_manager_test simple_scheduler_test
+TESTS = coordinator_test local_executor_test simple_scheduler_test topology_manager_test worker_test
 TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \
 	     $(BUILD_DIR)/misc/libfirmament_misc.a \
 	     $(BUILD_DIR)/messages/libfirmament_messages.a \
@@ -28,10 +28,9 @@ TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
 	                 $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 	                 $(BUILD_DIR)/engine/local_executor.o \
 	                 $(BUILD_DIR)/engine/remote_executor.o \
-	                 $(BUILD_DIR)/engine/simple_scheduler.o \
-	                 $(BUILD_DIR)/engine/quincy_scheduler.o \
 	                 $(BUILD_DIR)/engine/topology_manager.o \
 	                 $(BUILD_DIR)/base/libfirmament_base.a \
+	                 $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 	                 $(BUILD_DIR)/messages/libfirmament_messages.a \
 	                 $(BUILD_DIR)/storage/libfirmament_storage.a \
 			 $(HTTP_UI_LIBS)
@@ -42,6 +41,7 @@ TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/node.o \
 			      $(BUILD_DIR)/base/libfirmament_base.a \
 			      $(BUILD_DIR)/misc/libfirmament_misc.a \
 			      $(BUILD_DIR)/messages/libfirmament_messages.a \
+			      $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 			      $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 			      $(BUILD_DIR)/storage/libfirmament_storage.a
 TESTS_local_executor_DEPS = $(BUILD_DIR)/engine/topology_manager.o \
@@ -57,7 +57,9 @@ OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
-all: $(OBJ_BIN) $(TESTS_BIN) $(OBJ_LIB) .setup
+all: protobufs $(OBJ_BIN) $(TESTS_BIN) $(OBJ_LIB) .setup
+
+protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 
 # TODO: check if any of the below targets can make use of a generic
 # build rule from Makefile.common, or can be converted to do so.
@@ -78,11 +80,10 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/engine/remote_executor.o \
 		$(BUILD_DIR)/engine/topology_manager.o \
 		$(BUILD_DIR)/platforms/common.pb.o \
-		$(BUILD_DIR)/engine/simple_scheduler.o \
-		$(BUILD_DIR)/engine/quincy_scheduler.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
+		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) $(HTTP_UI_LIBS) \
@@ -106,12 +107,11 @@ $(OBJ_DIR)/coordinator_sim: $(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(BUILD_DIR)/engine/remote_executor.o \
 		$(BUILD_DIR)/engine/topology_manager.o \
 		$(BUILD_DIR)/platforms/common.pb.o \
-		$(BUILD_DIR)/engine/simple_scheduler.o \
-		$(BUILD_DIR)/engine/quincy_scheduler.o \
 		$(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
+		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) $(HTTP_UI_LIBS) \

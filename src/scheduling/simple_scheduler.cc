@@ -3,7 +3,7 @@
 //
 // Naive implementation of a simple-minded queue-based scheduler.
 
-#include "engine/simple_scheduler.h"
+#include "scheduling/simple_scheduler.h"
 
 #include <string>
 #include <deque>
