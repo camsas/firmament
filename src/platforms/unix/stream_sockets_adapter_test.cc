@@ -58,7 +58,6 @@ class StreamSocketsAdapterTest : public ::testing::Test {
 
 // Tests channel establishment.
 TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
-  FLAGS_v = 2;
   string uri = "tcp://localhost:7777";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
@@ -139,7 +138,6 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
 // Tests backchannel establishment by sending a protobuf through the
 // backchannel.
 TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
-  FLAGS_v = 2;
   string uri1 = "tcp://localhost:7779";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().

@@ -50,7 +50,6 @@ class StreamSocketsChannelTest : public ::testing::Test {
   // and cleaning up each test, you can define the following methods:
 
   virtual void SetUp() {
-    FLAGS_v = 2;
     // Wait briefly in order for sockets to close down
     boost::this_thread::sleep(boost::posix_time::seconds(1));
     // Code here will be called immediately after the constructor (right
@@ -86,7 +85,6 @@ class StreamSocketsChannelTest : public ::testing::Test {
 
 // Tests synchronous send of an integer.
 TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
-  FLAGS_v = 2;
   // TODO(malte): tidy this test up and add some commentary as to how it is
   // different from others.
   StreamSocketsAdapter<uint64_t>* local_uint_adapter =
@@ -119,7 +117,6 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
 
 // Tests synchronous send of a protobuf.
 TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceive) {
-  FLAGS_v = 2;
   BaseMessage tm;
   tm.MutableExtension(test_extn)->set_test(5);
   Envelope<BaseMessage> envelope(&tm);
@@ -139,7 +136,6 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceive) {
 
 // Tests synchronous send of multiple subsequent protobufs.
 TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
-  FLAGS_v = 2;
   BaseMessage tm1;
   SUBMSG_WRITE(tm1, test, test, 5);
   Envelope<BaseMessage> envelope1(&tm1);
@@ -173,7 +169,6 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
 
 // Tests asynchronous send (and synchronous receive) of a protobuf.
 TEST_F(StreamSocketsChannelTest, TCPAsyncProtobufSend) {
-  FLAGS_v = 2;
   BaseMessage tm;
   SUBMSG_WRITE(tm, test, test, 5);
   Envelope<BaseMessage> envelope(&tm);

@@ -89,8 +89,13 @@ void StreamSocketsChannel<T>::Close() {
   channel_ready_ = false;
   if (!client_connection_) {
     // The channel has ownership of the client socket
-    if (client_socket_)
-      client_socket_->shutdown(tcp::socket::shutdown_both);
+    if (client_socket_) {
+      boost::system::error_code ec;
+      client_socket_->shutdown(tcp::socket::shutdown_both, ec);
+      if (ec)
+        LOG(WARNING) << "Error shutting down connections on socket for "
+                     << "connection at " << this << ": " << ec.message();
+    }
   } else {
     // The channel was constructed around an existing connection, so it does not
     // have ownership of the socket. Ask the connection to terminate instead.

@@ -69,7 +69,8 @@ void StreamSocketsAdapter<T>::AddChannelForConnection(
           << endpoint_name;
   boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
   InsertIfNotPresent(&endpoint_channel_map_, endpoint_name, channel);
-  DumpActiveChannels();
+  if (VLOG_IS_ON(2))
+    DumpActiveChannels();
   // Unblock any waiters, since there's now an additional connection
   message_wait_ready_ = true;
   message_wait_condvar_.notify_all();
@@ -93,7 +94,8 @@ template <typename T>
 void StreamSocketsAdapter<T>::AwaitNextMessage() {
   VLOG(1) << "Iterating over " << endpoint_channel_map_.size()
           << " active channels in adapter " << this;
-  DumpActiveChannels();
+  if (VLOG_IS_ON(2))
+    DumpActiveChannels();
   // If we have no active channels, we cannot receive any messages, so we return
   // immediately.
   //boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
