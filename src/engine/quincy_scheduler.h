@@ -11,7 +11,6 @@
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
 #include "base/flow_node_type.pb.h"
-#include "base/task_flow_action.pb.h"
 #include "engine/scheduler_interface.h"
 #include "engine/executor_interface.h"
 #include "storage/reference_interface.h"
