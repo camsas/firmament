@@ -22,6 +22,8 @@
 #include "misc/protobuf_envelope.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
+#include "engine/simple_scheduler.h"
+#include "engine/quincy_scheduler.h"
 #include "messages/storage_registration_message.pb.h"
 #include "messages/storage_message.pb.h"
 
@@ -33,6 +35,8 @@ DEFINE_string(parent_uri, "", "The URI of the parent coordinator to register "
         "with.");
 DEFINE_bool(include_local_resources, true, "Add local machine's resources; "
             "will instantiate a resource-less coordinator if false.");
+DEFINE_string(scheduler, "simple", "Scheduler to use: one of 'simple' or "
+              "'quincy'.");
 #ifdef __HTTP_UI__
 DEFINE_bool(http_ui, true, "Enable HTTP interface");
 DEFINE_int32(http_ui_port, 8080,
@@ -48,13 +52,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     job_table_(new JobMap_t),
     task_table_(new TaskMap_t),
     topology_manager_(new TopologyManager()),
-    object_store_(new store::SimpleObjectStore(uuid_)),
-    scheduler_(new SimpleScheduler(job_table_, associated_resources_,
-                                   object_store_, task_table_,
-                                   topology_manager_,
-                                   m_adapter_,
-                                   uuid_,
-                                   FLAGS_listen_uri)) {
+    object_store_(new store::SimpleObjectStore(uuid_)) {
   // Start up a coordinator according to the platform parameter
   string hostname = boost::asio::ip::host_name();
   string desc_name = "Coordinator on " + hostname;
@@ -64,6 +62,25 @@ Coordinator::Coordinator(PlatformID platform_id)
   resource_desc_.set_storage_engine(object_store_->get_listening_interface());
   local_resource_topology_->mutable_resource_desc()->CopyFrom(
       resource_desc_);
+  // Set up the scheduler
+  if (FLAGS_scheduler == "simple") {
+    // Simple random first-available scheduler
+    LOG(INFO) << "Using simple random scheduler.";
+    scheduler_ = new SimpleScheduler(
+        job_table_, associated_resources_, object_store_, task_table_,
+        topology_manager_, m_adapter_, uuid_, FLAGS_listen_uri);
+  } else if (FLAGS_scheduler == "quincy") {
+    // Quincy-style flow-based scheduling
+    LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
+    scheduler_ = new QuincyScheduler(
+        job_table_, associated_resources_, object_store_, task_table_,
+        topology_manager_, m_adapter_, uuid_, FLAGS_listen_uri);
+  } else {
+    // Unknown scheduler specified, error.
+    LOG(FATAL) << "Unknown or unrecognized scheduler '" << FLAGS_scheduler
+               << " specified on coordinator command line!";
+  }
+
   // Log information
   LOG(INFO) << "Coordinator starting on host " << FLAGS_listen_uri
           << ", platform " << platform_id << ", uuid " << uuid_;
@@ -381,7 +398,9 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
   // Run the scheduler for this job
   JobDescriptor* job = FindOrNull(*job_table_, job_id);
   CHECK_NOTNULL(job);
-  scheduler_->ScheduleJob(job);
+  uint64_t tasks_scheduled = scheduler_->ScheduleJob(job);
+  LOG(INFO) << "Scheduled " << tasks_scheduled << " tasks for job "
+            << job_id;
 }
 
 void Coordinator::HandleTaskStateChange(
@@ -503,8 +522,8 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   // Kick off the scheduler for this job.
   uint64_t num_scheduled = scheduler_->ScheduleJob(
       FindOrNull(*job_table_, new_job_id));
-  VLOG(1) << "Attempted to schedule job " << new_job_id << ", successfully "
-          << "scheduled " << num_scheduled << " tasks.";
+  LOG(INFO) << "Attempted to schedule job " << new_job_id << ", successfully "
+            << "scheduled " << num_scheduled << " tasks.";
   // Finally, return the new job's ID
   return to_string(new_job_id);
 }

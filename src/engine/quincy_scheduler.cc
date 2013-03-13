@@ -101,6 +101,7 @@ const set<TaskID_t>& QuincyScheduler::RunnableTasksForJob(
 
 uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
   // XXX(ionel): stub
+  LOG(ERROR) << "Quincy scheduler unimplemented!";
   return 0;
 }
 

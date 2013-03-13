@@ -20,8 +20,8 @@
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
-DEFINE_string(platform, "AUTO", "The platform we are running on, or AUTO for "
-              "attempting automatic discovery.");
+DEFINE_string(platform, "PL_UNIX", "The platform we are running on, or AUTO "
+              "for attempting automatic discovery.");
 DEFINE_string(listen_uri, "tcp://localhost:9998",
               "The name/address/port to listen on.");
 

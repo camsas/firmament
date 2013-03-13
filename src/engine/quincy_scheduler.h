@@ -38,7 +38,7 @@ class QuincyScheduler : public SchedulerInterface {
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
   uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
-    return *stream << "<QuincyScheduler>";
+    return *stream << "<QuincyScheduler, parameters: >";
   }
 
  protected:
@@ -71,6 +71,8 @@ class QuincyScheduler : public SchedulerInterface {
   // Flag (effectively a lock) indicating if the scheduler is currently
   // in the process of making scheduling decisions.
   bool scheduling_;
+  // Local storage of the current flow graph
+  FlowGraph flow_graph_;
 
   vector< map< uint64_t, uint64_t> > ReadFlowGraph(
       char* file_name, uint64_t num_vertices);
