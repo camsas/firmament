@@ -41,7 +41,6 @@ class FlowGraph {
   }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
   inline uint64_t NumNodes() const { return node_map_.size(); }
-  FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
 
  protected:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
@@ -50,6 +49,7 @@ class FlowGraph {
                       FlowGraphArc* unsched_agg_to_sink_arc);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
+  FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   void AddSpecialNodes();
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   inline uint64_t next_id() { return current_id_++; }

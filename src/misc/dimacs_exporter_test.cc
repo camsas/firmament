@@ -21,7 +21,6 @@
 #include "misc/flow_graph.h"
 
 namespace firmament {
-namespace misc {
 
 // The fixture for testing the DIMACSExporter container class.
 class DIMACSExporterTest : public ::testing::Test {
@@ -165,8 +164,6 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   exp.Flush("test2.dm");
 }
 
-
-}  // namespace misc
 }  // namespace firmament
 
 int main(int argc, char **argv) {
