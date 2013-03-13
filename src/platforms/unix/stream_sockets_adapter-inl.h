@@ -92,9 +92,9 @@ MessagingChannelInterface<T>* StreamSocketsAdapter<T>::GetChannelForEndpoint(
 
 template <typename T>
 void StreamSocketsAdapter<T>::AwaitNextMessage() {
-  VLOG(1) << "Iterating over " << endpoint_channel_map_.size()
+  VLOG(3) << "Iterating over " << endpoint_channel_map_.size()
           << " active channels in adapter " << this;
-  if (VLOG_IS_ON(2))
+  if (VLOG_IS_ON(3))
     DumpActiveChannels();
   // If we have no active channels, we cannot receive any messages, so we return
   // immediately.
