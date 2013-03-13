@@ -6,6 +6,11 @@
 #ifndef FIRMAMENT_ENGINE_QUINCY_SCHEDULER_H
 #define FIRMAMENT_ENGINE_QUINCY_SCHEDULER_H
 
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+
 #include "base/common.h"
 #include "base/types.h"
 #include "base/job_desc.pb.h"
@@ -15,7 +20,7 @@
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/scheduling_parameters.pb.h"
-#include "scheduling/scheduler_interface.h"
+#include "scheduling/event_driven_scheduler.h"
 #include "storage/reference_interface.h"
 
 namespace firmament {
@@ -23,7 +28,7 @@ namespace scheduler {
 
 using executor::ExecutorInterface;
 
-class QuincyScheduler : public SchedulerInterface {
+class QuincyScheduler : public EventDrivenScheduler {
  public:
   QuincyScheduler(shared_ptr<JobMap_t> job_map,
                   shared_ptr<ResourceMap_t> resource_map,
@@ -33,8 +38,7 @@ class QuincyScheduler : public SchedulerInterface {
                   MessagingAdapterInterface<BaseMessage>* m_adapter,
                   ResourceID_t coordinator_res_id,
                   const string& coordinator_uri,
-                  const SchedulingParameters& params
-                  );
+                  const SchedulingParameters& params);
   ~QuincyScheduler();
   void DeregisterResource(ResourceID_t res_id);
   void RegisterResource(ResourceID_t res_id, bool local);
@@ -44,7 +48,7 @@ class QuincyScheduler : public SchedulerInterface {
   uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<QuincyScheduler, parameters: "
-                   << parameters_.ShortDebugString() << ">";
+                   << parameters_.DebugString() << ">";
   }
 
  protected:
@@ -53,8 +57,25 @@ class QuincyScheduler : public SchedulerInterface {
   const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
 
  private:
+  uint64_t AssignNode(
+      vector< map< uint64_t, uint64_t > > &flow_graph,
+      const map<uint64_t, uint64_t>& nodes_type,
+      uint64_t node);
+  void ApplyDeltas();
+  bool CheckNodeType(
+      const map<uint64_t, uint64_t>& nodes_type, uint64_t node, uint64_t type);
+  map<uint64_t, uint64_t> GetMappings(
+      vector< map< uint64_t, uint64_t > >& flow_graph,
+      const map<uint64_t, uint64_t>& nodes_type,
+      set<uint64_t> leaves,
+      uint64_t sink);
+  void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);
+  vector< map< uint64_t, uint64_t> > ReadFlowGraph(
+      char* file_name, uint64_t num_vertices);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
+  void RunSchedulingIteration();
+
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction. Note that this set includes tasks from all
@@ -81,21 +102,8 @@ class QuincyScheduler : public SchedulerInterface {
   FlowGraph flow_graph_;
   // Flow scheduler parameters (passed in as protobuf to constructor)
   SchedulingParameters parameters_;
-
-  vector< map< uint64_t, uint64_t> > ReadFlowGraph(
-      char* file_name, uint64_t num_vertices);
-  bool CheckNodeType(
-      const map<uint64_t, uint64_t>& nodes_type, uint64_t node, uint64_t type);
-  uint64_t AssignNode(
-      vector< map< uint64_t, uint64_t > > &flow_graph,
-      const map<uint64_t, uint64_t>& nodes_type,
-      uint64_t node);
-  map<uint64_t, uint64_t> GetMappings(
-      vector< map< uint64_t, uint64_t > >& flow_graph,
-      const map<uint64_t, uint64_t>& nodes_type,
-      set<uint64_t> leaves,
-      uint64_t sink);
-  void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);
+  // DIMACS exporter for interfacing to the solver
+  DIMACSExporter exporter_;
 };
 
 }  // namespace scheduler

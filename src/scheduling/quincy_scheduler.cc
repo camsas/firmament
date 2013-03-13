@@ -14,15 +14,14 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "base/common.h"
+#include "base/types.h"
 #include "storage/reference_types.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "engine/local_executor.h"
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
-
-using namespace std;
-using namespace boost;
 
 namespace firmament {
 namespace scheduler {
@@ -42,15 +41,12 @@ QuincyScheduler::QuincyScheduler(
     ResourceID_t coordinator_res_id,
     const string& coordinator_uri,
     const SchedulingParameters& params)
-    : SchedulerInterface(job_map, resource_map, object_store, task_map),
-      coordinator_uri_(coordinator_uri),
-      coordinator_res_id_(coordinator_res_id),
-      topology_manager_(topo_mgr),
-      m_adapter_ptr_(m_adapter),
-      scheduling_(false),
+    : EventDrivenScheduler(job_map, resource_map, object_store, task_map,
+                           topo_mgr, m_adapter, coordinator_res_id,
+                           coordinator_uri),
       parameters_(params) {
-  VLOG(1) << "QuincyScheduler initiated; parameters: "
-          << parameters_.ShortDebugString();
+  LOG(INFO) << "QuincyScheduler initiated; parameters: "
+            << parameters_.ShortDebugString();
 }
 
 QuincyScheduler::~QuincyScheduler() {
@@ -124,7 +120,7 @@ vector< map< uint64_t, uint64_t> > QuincyScheduler::ReadFlowGraph(
   string line;
   vector<string> vals;
 
-  ifstream graph (file_name);
+  ifstream graph(file_name);
   if (graph.is_open()) {
     while (graph.good()) {
       getline(graph, line);
