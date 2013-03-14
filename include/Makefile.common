@@ -25,6 +25,11 @@ $(error SRC_GEN_DIR not set; rule from Makefile.common used without \
 	including Makefile.config first?)
 endif
 
+ifeq ($(CSRC_GEN_DIR),)
+$(error CSRC_GEN_DIR not set; rule from Makefile.common used without \
+	including Makefile.config first?)
+endif
+
 ifeq ($(SRC_ROOT_DIR),)
 $(error SRC_ROOT_DIR not set; rule from Makefile.common used without \
 	including Makefile.config first?)
@@ -59,6 +64,10 @@ $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.h: %.proto .setup
 		--proto_path=$(SRC_ROOT_DIR)/ \
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$<, \
 		"  GEN     $@")
+	$(call quiet-command,$(PBCC) --c_out=$(CSRC_GEN_DIR)/ \
+		--proto_path=$(SRC_ROOT_DIR)/ \
+		$(SRC_ROOT_DIR)/$(SUFFIX)/$<, \
+		"  GENC    $@")
 
 # Build protobuf object.
 $(OBJ_DIR)/%.pb.o: $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc \
