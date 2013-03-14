@@ -82,6 +82,19 @@ void DIMACSExporter::Flush(const string& filename) {
   fclose(outfd);
 }
 
+void DIMACSExporter::Flush(int fd) {
+  // TODO(malte): Sanity checks
+  // Write the cached DIMACS graph string out to the file
+  FILE *stream;
+  if ((stream = fdopen(fd, "w")) == NULL) {
+    LOG(ERROR) << "Failed to open FD to solver for writing. FD: " << fd;
+  } else {
+    fprintf(stream, "%s", output_.c_str());
+    fflush(stream);
+  }
+  fclose(stream);
+}
+
 const string DIMACSExporter::GenerateArc(const FlowGraphArc& arc) {
   stringstream ss;
   ss << "a " << arc.src_ << " " << arc.dst_ << " " << arc.cap_lower_bound_

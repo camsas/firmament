@@ -24,6 +24,7 @@ class DIMACSExporter {
   DIMACSExporter();
   void Export(const FlowGraph& graph);
   void Flush(const string& filename);
+  void Flush(int fd);
   void Reset() { output_ = ""; }
 
  private:

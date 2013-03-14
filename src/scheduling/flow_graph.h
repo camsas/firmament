@@ -12,6 +12,7 @@
 #include "base/types.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "engine/topology_manager.h"
+#include "misc/map-util.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
 
@@ -41,6 +42,10 @@ class FlowGraph {
   }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
   inline uint64_t NumNodes() const { return node_map_.size(); }
+  inline const FlowGraphNode* Node(uint64_t id) const {
+    FlowGraphNode* const* npp = FindOrNull(node_map_, id);
+    return (npp ? *npp : NULL);
+  }
 
  protected:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);

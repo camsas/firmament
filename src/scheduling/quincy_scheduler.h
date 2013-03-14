@@ -15,10 +15,10 @@
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
-#include "base/flow_node_type.pb.h"
 #include "engine/executor_interface.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
+#include "scheduling/flow_node_type.pb.h"
 #include "scheduling/scheduling_parameters.pb.h"
 #include "scheduling/event_driven_scheduler.h"
 #include "storage/reference_interface.h"
@@ -40,11 +40,6 @@ class QuincyScheduler : public EventDrivenScheduler {
                   const string& coordinator_uri,
                   const SchedulingParameters& params);
   ~QuincyScheduler();
-  void DeregisterResource(ResourceID_t res_id);
-  void RegisterResource(ResourceID_t res_id, bool local);
-  void HandleTaskCompletion(TaskDescriptor* td_ptr);
-  bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);
-  const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
   uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<QuincyScheduler, parameters: "
@@ -52,29 +47,24 @@ class QuincyScheduler : public EventDrivenScheduler {
   }
 
  protected:
-  void BindTaskToResource(TaskDescriptor* task_desc,
-                          ResourceDescriptor* res_desc);
   const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
 
  private:
   uint64_t AssignNode(
-      vector< map< uint64_t, uint64_t > > &flow_graph,
-      const map<uint64_t, uint64_t>& nodes_type,
+      vector< map< uint64_t, uint64_t > >* extracted_flow,
       uint64_t node);
   void ApplyDeltas();
-  bool CheckNodeType(
-      const map<uint64_t, uint64_t>& nodes_type, uint64_t node, uint64_t type);
-  map<uint64_t, uint64_t> GetMappings(
-      vector< map< uint64_t, uint64_t > >& flow_graph,
-      const map<uint64_t, uint64_t>& nodes_type,
-      set<uint64_t> leaves,
+  bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
+  map<uint64_t, uint64_t>* GetMappings(
+      vector< map< uint64_t, uint64_t > >* extracted_flow,
+      unordered_set<uint64_t> leaves,
       uint64_t sink);
   void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);
-  vector< map< uint64_t, uint64_t> > ReadFlowGraph(
-      char* file_name, uint64_t num_vertices);
+  vector< map< uint64_t, uint64_t> >* ReadFlowGraph(
+      int fd, uint64_t num_vertices);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
-  void RunSchedulingIteration();
+  uint64_t RunSchedulingIteration();
 
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   // Cached sets of runnable and blocked tasks; these are updated on each

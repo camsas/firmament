@@ -11,6 +11,9 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "base/resource_desc.pb.h"
+#include "base/task_desc.pb.h"
+#include "scheduling/flow_node_type.pb.h"
 
 namespace firmament {
 
@@ -24,6 +27,11 @@ struct FlowGraphNode {
   uint64_t id_;
   uint64_t supply_;
   uint64_t demand_;
+  FlowNodeType type_;
+  // TODO(malte): Not sure if these should be here, but they've got to go
+  // somewhere.
+  ResourceID_t resource_id_;
+  TaskID_t task_id_;
 };
 
 }  // namespace firmament

@@ -56,6 +56,7 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
 void FlowGraph::AddJobNodes(JobDescriptor* jd) {
   // First add an unscheduled aggregator node for this job
   FlowGraphNode* unsched_agg_node = AddNodeInternal(next_id());
+  unsched_agg_node->type_.set_type(FlowNodeType::JOB_AGGREGATOR);
   // ... and connect it directly to the sink
   FlowGraphArc* unsched_agg_to_sink_arc =
       AddArcInternal(unsched_agg_node, sink_node_);
@@ -70,6 +71,11 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
     // Add the current task's node
     FlowGraphNode* task_node = AddNodeInternal(next_id());
     task_node->supply_ = 1;
+    if (cur->state() == TaskDescriptor::RUNNABLE)
+      task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK);
+    else
+      // XXX(malte): FIX the assumption here!
+      task_node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
     sink_node_->demand_++;
     task_nodes_.insert(task_node->id_);
     // Arcs for this node
@@ -99,8 +105,10 @@ FlowGraphNode* FlowGraph::AddNodeInternal(uint64_t id) {
 void FlowGraph::AddSpecialNodes() {
   // Cluster aggregator node X
   cluster_agg_node_ = AddNodeInternal(next_id());
+  cluster_agg_node_->type_.set_type(FlowNodeType::GLOBAL_AGGREGATOR);
   // Sink node
   sink_node_ = AddNodeInternal(next_id());
+  sink_node_->type_.set_type(FlowNodeType::SINK);
 }
 
 void FlowGraph::AddResourceTopology(
@@ -123,6 +131,7 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
     VLOG(2) << "Adding node " << id << " for root resource "
             << rtnd->resource_desc().uuid();
     FlowGraphNode* root_node = AddNodeInternal(id);
+    root_node->type_.set_type(FlowNodeType::MACHINE);
     InsertIfNotPresent(&resource_to_nodeid_map_,
                        ResourceIDFromString(rtnd->resource_desc().uuid()),
                        root_node->id_);
@@ -165,9 +174,9 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
                  << " is not a PU! This may yield an unschedulable flow!";
     FlowGraphNode* cur_node = NodeForResourceID(
         ResourceIDFromString(rtnd->resource_desc().uuid()));
-    CHECK_NOTNULL(cur_node);
     CHECK(cur_node != NULL) << "Could not find leaf node with ID "
                             << rtnd->resource_desc().uuid();
+    cur_node->type_.set_type(FlowNodeType::PU);
     AddArcInternal(cur_node->id_, sink_node_->id_);
     leaf_nodes_.insert(cur_node->id_);
     (*leaf_counter)++;
