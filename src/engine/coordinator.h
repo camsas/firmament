@@ -195,12 +195,13 @@ class Coordinator : public Node,
                    bool local);
   bool RegisterWithCoordinator(StreamSocketsChannel<BaseMessage>* chan);
   void DetectLocalResources();
-  void HandleIncomingMessage(BaseMessage *bm);
+  void HandleIncomingMessage(BaseMessage *bm, const string& remote_endpoint);
   void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
   void HandleTaskDelegationRequest(const TaskDelegationMessage& msg);
   void HandleTaskHeartbeat(const TaskHeartbeatMessage& msg);
-  void HandleTaskInfoRequest(const TaskInfoRequestMessage& msg);
+  void HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
+                             const string& remote_endpoint);
   void HandleTaskSpawn(const TaskSpawnMessage& msg);
   void HandleTaskStateChange(const TaskStateMessage& msg);
   void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg);

@@ -123,7 +123,8 @@ typedef unordered_map<TaskID_t, TaskDescriptor*> TaskMap_t;
 // Message handler callback type definition
 template <typename T>
 struct AsyncMessageRecvHandler {
-  typedef boost::function<void(T* message)> type;
+  typedef boost::function<void(T* message,
+                               const string& remote_endpoint)> type;
 };
 
 // Error handler callback type definition

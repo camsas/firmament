@@ -46,7 +46,8 @@ class Worker : public Node {
   string coordinator_uri_;
 
   ResourceID_t GenerateUUID();
-  void HandleIncomingMessage(BaseMessage *bm);
+  void HandleIncomingMessage(BaseMessage *bm,
+                             const string& remote_endpoint);
   bool RegisterWithCoordinator();
   void SendHeartbeat();
   bool SendMessageToCoordinator(BaseMessage* msg);

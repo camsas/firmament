@@ -60,7 +60,8 @@ Worker::Worker(PlatformID platform_id)
   resource_desc_.set_task_capacity(0);
 }
 
-void Worker::HandleIncomingMessage(BaseMessage *bm) {
+void Worker::HandleIncomingMessage(BaseMessage *bm,
+                                   const string& remote_endpoint) {
   // Registration message
   if (bm->has_registration()) {
     LOG(ERROR) << "Received registration message, but workers cannot have any "

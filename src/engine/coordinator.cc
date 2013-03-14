@@ -181,7 +181,7 @@ void Coordinator::Run() {
   // Coordinator starting -- set up and wait for workers to connect.
   m_adapter_->ListenURI(FLAGS_listen_uri);
   m_adapter_->RegisterAsyncMessageReceiptCallback(
-          boost::bind(&Coordinator::HandleIncomingMessage, this, _1));
+          boost::bind(&Coordinator::HandleIncomingMessage, this, _1, _2));
   m_adapter_->RegisterAsyncErrorPathCallback(
           boost::bind(&Coordinator::HandleIncomingReceiveError, this,
           boost::asio::placeholders::error, _2));
@@ -222,7 +222,8 @@ const JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
   return jd;
 }
 
-void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
+void Coordinator::HandleIncomingMessage(BaseMessage *bm,
+                                        const string& remote_endpoint) {
   uint32_t handled_extensions = 0;
   // Registration message
   if (bm->has_registration()) {
@@ -257,7 +258,7 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
   // Task info request message
   if (bm->has_task_info_request()) {
     const TaskInfoRequestMessage& msg = bm->task_info_request();
-    HandleTaskInfoRequest(msg);
+    HandleTaskInfoRequest(msg, remote_endpoint);
     handled_extensions++;
   }
   // Storage engine registration
@@ -355,7 +356,8 @@ void Coordinator::HandleTaskDelegationRequest(
   // Return ACK/NACK
 }
 
-void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg) {
+void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
+                                        const string& remote_endpoint) {
   // Send response: the task descriptor if the task is known to this
   // coordinator
   VLOG(1) << "Resource " << msg.requesting_resource_id()
@@ -367,7 +369,7 @@ void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg) {
   SUBMSG_WRITE(resp, task_info_response, task_id, msg.task_id());
   resp.mutable_task_info_response()->
       mutable_task_desc()->CopyFrom(**task_desc_ptr);
-  m_adapter_->SendMessageToEndpoint(msg.requesting_endpoint(), resp);
+  m_adapter_->SendMessageToEndpoint(remote_endpoint, resp);
 }
 
 void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {

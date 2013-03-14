@@ -55,7 +55,8 @@ class Node {
   bool SendMessageToRemote(
       StreamSocketsChannel<BaseMessage>* chan,
       BaseMessage* msg);
-  virtual void HandleIncomingMessage(BaseMessage *bm) = 0;
+  virtual void HandleIncomingMessage(BaseMessage *bm,
+                                     const string& remote_endpoint) = 0;
   void HandleIncomingReceiveError(const boost::system::error_code& error,
                                   const string& remote_endpoint);
   void HandleRecv(const boost::system::error_code& error,

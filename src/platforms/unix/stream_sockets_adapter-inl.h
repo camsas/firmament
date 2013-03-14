@@ -177,7 +177,7 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
           << bytes_transferred << ")";
   // Invoke message receipt callback, if any registered
   CHECK(message_recv_handler_ != NULL);
-  message_recv_handler_(envelope->data());
+  message_recv_handler_(envelope->data(), chan->RemoteEndpointString());
   // We've finished dealing with this message, so clean up now.
   channel_recv_envelopes_.erase(chan);
   delete envelope;

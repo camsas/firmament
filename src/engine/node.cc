@@ -89,7 +89,7 @@ void Node::Run() {
   // Node starting -- set up and wait for others to connect.
   m_adapter_->ListenURI(FLAGS_listen_uri);
   m_adapter_->RegisterAsyncMessageReceiptCallback(
-      boost::bind(&Node::HandleIncomingMessage, this, _1));
+      boost::bind(&Node::HandleIncomingMessage, this, _1, _2));
   m_adapter_->RegisterAsyncErrorPathCallback(
       boost::bind(&Node::HandleIncomingReceiveError, this,
                   boost::asio::placeholders::error, _2));
@@ -126,7 +126,7 @@ void Node::HandleRecv(const boost::system::error_code& error,
   VLOG(3) << "Received " << bytes_transferred << " bytes asynchronously, "
           << "in envelope at " << env << ", representing message " << *env;
   BaseMessage *bm = env->data();
-  HandleIncomingMessage(bm);
+  HandleIncomingMessage(bm, "");
   delete env;
 }
 
