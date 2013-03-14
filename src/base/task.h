@@ -15,7 +15,7 @@
 #include "base/common.h"
 #include "base/job.h"
 
-#include "generated/base/task_desc.pb.h"
+#include "base/task_desc.pb.h"
 
 namespace firmament {
 
