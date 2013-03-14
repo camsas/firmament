@@ -125,14 +125,14 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     case 0: {
       // Child
       // set up pipes
-      dup2(pipe_to[0], STDIN_FILENO);
-      dup2(pipe_from[1], STDOUT_FILENO);
+      //dup2(pipe_to[0], STDIN_FILENO);
+      //dup2(pipe_from[1], STDOUT_FILENO);
       //dup2(pipe_from[2], STDERR_FILENO);
       // close unnecessary pipe descriptors
-      close(pipe_to[0]);
-      close(pipe_to[1]);
-      close(pipe_from[0]);
-      close(pipe_from[1]);
+      //close(pipe_to[0]);
+      //close(pipe_to[1]);
+      //close(pipe_from[0]);
+      //close(pipe_from[1]);
       //close(pipe_from[2]);
       // Convert args from string to char*
       vector<char*> argv;
@@ -190,16 +190,16 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       if (topology_manager_)
         topology_manager_->BindPIDToResource(pid, local_resource_id_);
       // close unused pipe ends
-      close(pipe_to[0]);
-      close(pipe_from[1]);
+      //close(pipe_to[0]);
+      //close(pipe_from[1]);
       // TODO(malte): fix the pipe stuff to work properly
-      close(pipe_to[1]);
+      //close(pipe_to[1]);
       // TODO(malte): ReadFromPipe is a synchronous call that will only return
       // once the pipe has been closed! Check if this is actually the semantic
       // we want.
       // The fact that we cannot concurrently read from the STDOUT and the
       // STDERR pipe this way suggest the answer is that it is not...
-      ReadFromPipe(pipe_from[0]);
+      //ReadFromPipe(pipe_from[0]);
       //ReadFromPipe(pipe_from[1]);
       // wait for task to terminate
       int status;

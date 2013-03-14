@@ -18,6 +18,10 @@ export SRC_ROOT_DIR
 SRC_GEN_DIR ?= $(ROOT_DIR)/src/generated
 export SRC_GEN_DIR
 
+# Generated source code root directory
+CSRC_GEN_DIR ?= $(ROOT_DIR)/src/c-generated
+export CSRC_GEN_DIR
+
 # Helper scripts directory
 SCRIPTS_DIR ?= $(ROOT_DIR)/scripts
 export SCRIPTS_DIR
@@ -125,7 +129,10 @@ DEFINES = -D__FIRMAMENT__ -D__HTTP_UI__ -D__PLATFORM_HAS_BOOST__
 
 PBC = protoc
 
+PBCC = protoc-c
+
 PBCFLAGS =
+
 
 #######################################
 # MAKE
