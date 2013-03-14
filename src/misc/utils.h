@@ -7,6 +7,7 @@
 #define FIRMAMENT_MISC_UTILS_H
 
 #include <string>
+#include <vector>
 
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid_generators.hpp>
@@ -52,6 +53,9 @@ DataObjectID_t DataObjectIDFromString(const string& str);
 ResourceID_t ResourceIDFromString(const string& str);
 JobID_t JobIDFromString(const string& str);
 TaskID_t TaskIDFromString(const string& str);
+
+int32_t ExecCommandSync(const string& cmdline, vector<string> args,
+                        int infd[2], int outfd[2]);
 
 }  // namespace firmament
 

@@ -5,9 +5,15 @@
 
 #include <boost/functional/hash.hpp>
 
-#include <string>
 // N.B.: C header for gettimeofday()
+extern "C" {
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/wait.h>
 #include <sys/time.h>
+}
+#include <string>
+#include <vector>
 
 #include "misc/utils.h"
 
@@ -124,6 +130,92 @@ TaskID_t TaskIDFromString(const string& str) {
   // XXX(malte): possibly unsafe use of atol() here.
   TaskID_t task_uuid = strtoul(str.c_str(), NULL, 10);
   return task_uuid;
+}
+
+// Pipe setup
+// outfd[0] == PARENT_READ
+// outfd[1] == CHILD_WRITE
+// infd[0] == CHILD_READ
+// infd[1] == PARENT_WRITE
+int32_t ExecCommandSync(const string& cmdline, vector<string> args,
+                        int infd[2], int outfd[2]) {
+  pid_t pid;
+  if (pipe(infd) != 0) {
+    LOG(ERROR) << "Failed to create pipe to task.";
+  }
+  if (pipe(outfd) != 0) {
+    LOG(ERROR) << "Failed to create pipe from task.";
+  }
+  pid = fork();
+  switch (pid) {
+    case -1:
+      // Error
+      LOG(ERROR) << "Failed to fork child process.";
+      break;
+    case 0: {
+      // Child
+      // Close parent pipe descriptors
+      close(infd[1]);
+      close(outfd[0]);
+      // set up pipes
+      CHECK(dup2(infd[0], STDIN_FILENO) == STDIN_FILENO);
+      CHECK(dup2(outfd[1], STDOUT_FILENO) == STDOUT_FILENO);
+      // close unnecessary pipe descriptors
+      close(infd[0]);
+      close(outfd[1]);
+      // Convert args from string to char*
+      vector<char*> argv;
+      // no performance monitoring, so we only need to reserve space for the
+      // default and NULL args
+      argv.reserve(args.size() + 1);
+      argv.push_back((char*)(cmdline.c_str()));  // NOLINT
+      for (uint32_t i = 0; i < args.size(); ++i) {
+        // N.B.: This casts away the const qualifier on the c_str() result.
+        // This is joyfully unsafe, of course.
+        argv.push_back((char*)(args[i].c_str()));  // NOLINT
+      }
+      // The last argument to execvp is always NULL.
+      argv.push_back(NULL);
+      // Print the whole command line
+      string full_cmd_line;
+      for (vector<char*>::const_iterator arg_iter = argv.begin();
+           arg_iter != argv.end();
+           ++arg_iter) {
+        if (*arg_iter != NULL) {
+          full_cmd_line += *arg_iter;
+          full_cmd_line += " ";
+        }
+      }
+      LOG(INFO) << "External execution of command: " << full_cmd_line;
+      // Run the task binary
+      execvp(argv[0], &argv[0]);
+      // execl only returns if there was an error
+      PLOG(ERROR) << "execvp failed for task command '" << full_cmd_line << "'";
+      //ReportTaskExecutionFailure();
+      _exit(1);
+    }
+    default:
+      // close unused pipe ends
+      close(infd[0]);
+      close(outfd[1]);
+      // TODO(malte): ReadFromPipe is a synchronous call that will only return
+      // once the pipe has been closed! Check if this is actually the semantic
+      // we want.
+      // The fact that we cannot concurrently read from the STDOUT and the
+      // STDERR pipe this way suggest the answer is that it is not...
+      //ReadFromPipe(pipe_from[0]);
+      //ReadFromPipe(pipe_from[1]);
+      // wait for task to terminate
+      int status;
+      while (!WIFEXITED(status)) {
+        // VLOG_EVERY_N(2, 1000) << "Waiting for task to exit...";
+        waitpid(pid, &status, 0);
+      }
+      VLOG(1) << "Task process with PID " << pid << " exited with status "
+              << WEXITSTATUS(status);
+      return status;
+  }
+  return -1;
 }
 
 }  // namespace firmament
