@@ -111,16 +111,13 @@ Coordinator::~Coordinator() {
 bool Coordinator::RegisterWithCoordinator(
     StreamSocketsChannel<BaseMessage>* chan) {
   BaseMessage bm;
-  ResourceDescriptor* rd = bm.MutableExtension(
-          register_extn)->mutable_res_desc();
+  ResourceDescriptor* rd = bm.mutable_registration()->mutable_res_desc();
   rd->CopyFrom(resource_desc_); // copies current local RD!
-  ResourceTopologyNodeDescriptor* rtnd = bm.MutableExtension(
-          register_extn)->mutable_rtn_desc();
+  ResourceTopologyNodeDescriptor* rtnd =
+      bm.mutable_registration()->mutable_rtn_desc();
   rtnd->CopyFrom(*local_resource_topology_);
-  bm.MutableExtension(register_extn)->set_uuid(
-          boost::uuids::to_string(uuid_));
-  bm.MutableExtension(register_extn)->set_location(
-          chan->LocalEndpointString());
+  SUBMSG_WRITE(bm, registration, uuid, to_string(uuid_));
+  SUBMSG_WRITE(bm, registration, location, chan->LocalEndpointString());
   // wrap in envelope
   VLOG(2) << "Sending registration message...";
   // send heartbeat message
@@ -228,59 +225,56 @@ const JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
 void Coordinator::HandleIncomingMessage(BaseMessage *bm) {
   uint32_t handled_extensions = 0;
   // Registration message
-  if (bm->HasExtension(register_extn)) {
-    const RegistrationMessage& msg = bm->GetExtension(register_extn);
+  if (bm->has_registration()) {
+    const RegistrationMessage& msg = bm->registration();
     HandleRegistrationRequest(msg);
     handled_extensions++;
   }
   // Resource Heartbeat message
-  if (bm->HasExtension(heartbeat_extn)) {
-    const HeartbeatMessage& msg = bm->GetExtension(heartbeat_extn);
+  if (bm->has_heartbeat()) {
+    const HeartbeatMessage& msg = bm->heartbeat();
     HandleHeartbeat(msg);
     handled_extensions++;
   }
   // Task heartbeat message
-  if (bm->HasExtension(task_heartbeat_extn)) {
-    const TaskHeartbeatMessage& msg = bm->GetExtension(task_heartbeat_extn);
+  if (bm->has_task_heartbeat()) {
+    const TaskHeartbeatMessage& msg = bm->task_heartbeat();
     HandleTaskHeartbeat(msg);
     handled_extensions++;
   }
   // Task state change message
-  if (bm->HasExtension(task_state_extn)) {
-    const TaskStateMessage& msg = bm->GetExtension(task_state_extn);
+  if (bm->has_task_state()) {
+    const TaskStateMessage& msg = bm->task_state();
     HandleTaskStateChange(msg);
     handled_extensions++;
   }
   // Task spawn message
-  if (bm->HasExtension(task_spawn_extn)) {
-    const TaskSpawnMessage& msg = bm->GetExtension(task_spawn_extn);
+  if (bm->has_task_spawn()) {
+    const TaskSpawnMessage& msg = bm->task_spawn();
     HandleTaskSpawn(msg);
     handled_extensions++;
   }
   // Task info request message
-  if (bm->HasExtension(task_info_req_extn)) {
-    const TaskInfoRequestMessage& msg = bm->GetExtension(task_info_req_extn);
+  if (bm->has_task_info_request()) {
+    const TaskInfoRequestMessage& msg = bm->task_info_request();
     HandleTaskInfoRequest(msg);
     handled_extensions++;
   }
   // Storage engine registration
-  if (bm->HasExtension(register_storage_extn)) {
-    const StorageRegistrationMessage& msg =
-        bm->GetExtension(register_storage_extn);
+  if (bm->has_storage_registration()) {
+    const StorageRegistrationMessage& msg = bm->storage_registration();
     HandleStorageRegistrationRequest(msg);
     handled_extensions++;
   }
   // Storage engine discovery
-  if (bm->HasExtension(storage_discover_message_extn)) {
-    const StorageDiscoverMessage& msg = bm->GetExtension(
-        storage_discover_message_extn);
+  if (bm->has_storage_discover()) {
+    const StorageDiscoverMessage& msg = bm->storage_discover();
     HandleStorageDiscoverRequest(msg);
     handled_extensions++;
   }
   // Task delegation message
-  if (bm->HasExtension(task_delegation_extn)) {
-    const TaskDelegationMessage& msg = bm->GetExtension(
-        task_delegation_extn);
+  if (bm->has_task_delegation()) {
+    const TaskDelegationMessage& msg = bm->task_delegation();
     HandleTaskDelegationRequest(msg);
     handled_extensions++;
   }
@@ -370,8 +364,8 @@ void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg) {
   CHECK_NOTNULL(task_desc_ptr);
   BaseMessage resp;
   // XXX(malte): ugly hack!
-  SUBMSG_WRITE(resp, task_info_resp, task_id, msg.task_id());
-  resp.MutableExtension(task_info_resp_extn)->
+  SUBMSG_WRITE(resp, task_info_response, task_id, msg.task_id());
+  resp.mutable_task_info_response()->
       mutable_task_desc()->CopyFrom(**task_desc_ptr);
   m_adapter_->SendMessageToEndpoint(msg.requesting_endpoint(), resp);
 }

@@ -7,12 +7,7 @@
 
 package firmament;
 
-import "messages/base_message.proto";
 import "base/task_desc.proto";
-
-extend BaseMessage {
-  optional TaskStateMessage task_state_extn = 106;
-}
 
 message TaskStateMessage {
   optional uint64 id = 1;

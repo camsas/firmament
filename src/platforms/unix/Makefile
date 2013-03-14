@@ -12,6 +12,7 @@ TESTS = procfs_monitor_test stream_sockets_adapter_test \
         stream_sockets_channel_test
 TESTS_DEPS = $(OBJ_DIR)/../common.pb.o \
 	     $(OBJ_DIR)/../../messages/libfirmament_messages.a \
+	     $(OBJ_DIR)/../../base/libfirmament_base.a \
 	     $(OBJ_DIR)/$(LIB)
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))

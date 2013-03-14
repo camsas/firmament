@@ -63,9 +63,8 @@ void SimpleObjectStore::HandleIncomingMessage(BaseMessage *bm) {
   VLOG(3) << "Storage Engine: HandleIncomingMessage";
 
   // Handle HeartBeatMessage
-  if (bm->HasExtension(storage_heartbeat_message_extn)) {
-      const StorageHeartBeatMessage& msg =
-          bm->GetExtension(storage_heartbeat_message_extn);
+  if (bm->has_storage_heartbeat()) {
+      const StorageHeartBeatMessage& msg = bm->storage_heartbeat();
       HandleIncomingHeartBeat(msg);
   }
 }

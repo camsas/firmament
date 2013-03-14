@@ -6,8 +6,7 @@ include $(ROOT_DIR)/include/Makefile.common
 
 LIB = libfirmament_messages.a
 OBJS =
-#PBS = test_message.pb.o base_message.pb.o
-PBS = base_message.pb.o test_message.pb.o heartbeat_message.pb.o \
+PBS = test_message.pb.o heartbeat_message.pb.o \
       registration_message.pb.o \
       task_delegation_message.pb.o task_heartbeat_message.pb.o \
       task_info_message.pb.o task_spawn_message.pb.o task_state_message.pb.o \
@@ -18,6 +17,11 @@ OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 
 all: protobufs $(OBJ_LIB) .setup
 
-protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
+# N.B.: base_message is handled specially here, as it (unlike any of the others)
+# has dependencies on other messages (and thus requires the correct headers to
+# be generated before it is built). It depends on **all** other messages, so it
+# must go last.
+protobufs: $(addprefix $(OBJ_DIR)/, $(PBS)) $(OBJ_DIR)/base_message.pb.o
 
-$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS)) $(addprefix $(OBJ_DIR)/, $(PBS))
+$(OBJ_LIB): $(OBJ_DIR)/base_message.pb.o $(addprefix $(OBJ_DIR)/, $(OBJS)) \
+	$(addprefix $(OBJ_DIR)/, $(PBS))

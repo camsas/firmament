@@ -41,9 +41,9 @@ TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/node.o \
 			      $(BUILD_DIR)/engine/local_executor.o \
 			      $(BUILD_DIR)/engine/remote_executor.o \
 			      $(BUILD_DIR)/engine/topology_manager.o \
+			      $(BUILD_DIR)/messages/libfirmament_messages.a \
 			      $(BUILD_DIR)/base/libfirmament_base.a \
 			      $(BUILD_DIR)/misc/libfirmament_misc.a \
-			      $(BUILD_DIR)/messages/libfirmament_messages.a \
 			      $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 			      $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 			      $(BUILD_DIR)/storage/libfirmament_storage.a

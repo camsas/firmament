@@ -10,7 +10,8 @@ LIB = libfirmament_misc.a
 OBJS = event_logging.o pb_utils.o utils.o
 PBS =
 TESTS = envelope_test utils_test
-TESTS_envelope_DEPS = $(OBJ_DIR)/../messages/libfirmament_messages.a
+TESTS_envelope_DEPS = $(OBJ_DIR)/../messages/libfirmament_messages.a \
+		      $(OBJ_DIR)/../base/libfirmament_base.a
 TESTS_utils_DEPS = $(OBJ_DIR)/../base/libfirmament_base.a
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))

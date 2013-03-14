@@ -118,7 +118,7 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
 // Tests synchronous send of a protobuf.
 TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceive) {
   BaseMessage tm;
-  tm.MutableExtension(test_extn)->set_test(5);
+  SUBMSG_WRITE(tm, test, test, 5);
   Envelope<BaseMessage> envelope(&tm);
   while (!channel_->Ready()) {  }
   channel_->SendS(envelope);

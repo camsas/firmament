@@ -7,12 +7,7 @@
 
 package firmament;
 
-import "messages/base_message.proto";
 import "base/resource_desc.proto";
-
-extend BaseMessage {
-  optional HeartbeatMessage heartbeat_extn = 102;
-}
 
 message HeartbeatMessage {
   required string uuid = 1;

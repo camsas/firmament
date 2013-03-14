@@ -81,7 +81,7 @@ void TaskLib::Spawn(const ReferenceInterface& code,
   BaseMessage msg;
   SUBMSG_WRITE(msg, task_spawn, creating_task_id, task_id_);
   //TaskDescriptor* new_task =
-  //    msg.MutableExtension(task_spawn_extn)->mutable_spawned_task_desc();
+  //    msg.mutable_task_spawn()->mutable_spawned_task_desc();
   TaskDescriptor* new_task = task_descriptor_.add_spawned();
   new_task->set_uid(GenerateTaskID(task_descriptor_));
   VLOG(1) << "New task's ID is " << new_task->uid();
@@ -105,8 +105,7 @@ void TaskLib::Spawn(const ReferenceInterface& code,
   CHECK(task_descriptor_.has_job_id());
   new_task->set_job_id(task_descriptor_.job_id());
   // Copy the new task descriptor into the message
-  msg.MutableExtension(task_spawn_extn)->
-      mutable_spawned_task_desc()->CopyFrom(*new_task);
+  msg.mutable_task_spawn()->mutable_spawned_task_desc()->CopyFrom(*new_task);
   // Off we go!
   SendMessageToCoordinator(&msg);
 }
@@ -143,10 +142,10 @@ bool TaskLib::PullTaskInformationFromCoordinator(TaskID_t task_id,
                                                  TaskDescriptor* desc) {
   // Send request for task information to coordinator
   BaseMessage msg;
-  SUBMSG_WRITE(msg, task_info_req, task_id, task_id);
-  SUBMSG_WRITE(msg, task_info_req, requesting_resource_id,
+  SUBMSG_WRITE(msg, task_info_request, task_id, task_id);
+  SUBMSG_WRITE(msg, task_info_request, requesting_resource_id,
                to_string(resource_id_));
-  SUBMSG_WRITE(msg, task_info_req, requesting_endpoint,
+  SUBMSG_WRITE(msg, task_info_request, requesting_endpoint,
                chan_->LocalEndpointString());
   Envelope<BaseMessage> envelope(&msg);
   CHECK(chan_->SendS(envelope));
@@ -154,8 +153,8 @@ bool TaskLib::PullTaskInformationFromCoordinator(TaskID_t task_id,
   BaseMessage response;
   Envelope<BaseMessage> recv_envelope(&response);
   chan_->RecvS(&recv_envelope);
-  CHECK(response.HasExtension(task_info_resp_extn));
-  desc->CopyFrom(SUBMSG_READ(response, task_info_resp, task_desc));
+  CHECK(response.has_task_info_response());
+  desc->CopyFrom(SUBMSG_READ(response, task_info_response, task_desc));
   VLOG(1) << "Received TD: " << desc->DebugString();
   return true;
 }
@@ -255,7 +254,7 @@ void TaskLib::SendHeartbeat(
   SUBMSG_WRITE(bm, task_heartbeat, task_id, task_id_);
   // Add current set of procfs statistics
   TaskPerfStatisticsSample* stats =
-      bm.MutableExtension(task_heartbeat_extn)->mutable_stats();
+      bm.mutable_task_heartbeat()->mutable_stats();
   AddTaskStatisticsToHeartbeat(proc_stats, stats);
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).

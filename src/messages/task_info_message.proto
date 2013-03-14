@@ -5,13 +5,7 @@
 
 package firmament;
 
-import "messages/base_message.proto";
 import "base/task_desc.proto";
-
-extend BaseMessage {
-  optional TaskInfoRequestMessage task_info_req_extn = 108;
-  optional TaskInfoResponseMessage task_info_resp_extn = 109;
-}
 
 message TaskInfoRequestMessage {
   required uint64 task_id = 1;

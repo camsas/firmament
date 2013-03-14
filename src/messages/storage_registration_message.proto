@@ -5,12 +5,6 @@
 
 package firmament;
 
-import "messages/base_message.proto";
-
-extend BaseMessage {
-  optional StorageRegistrationMessage register_storage_extn = 107;
-}
-
 message StorageRegistrationMessage {
   required string uuid = 1; //Resource ID
   required string storage_interface = 2;

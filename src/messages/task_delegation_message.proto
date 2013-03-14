@@ -5,12 +5,7 @@
 
 package firmament;
 
-import "messages/base_message.proto";
 import "base/task_desc.proto";
-
-extend BaseMessage {
-  optional TaskDelegationMessage task_delegation_extn = 110;
-}
 
 message TaskDelegationMessage {
   required TaskDescriptor task_descriptor = 2;

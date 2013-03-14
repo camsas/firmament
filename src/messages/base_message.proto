@@ -3,7 +3,7 @@
 //
 // BaseMessage is the root element of Firmament's message hierarchy. Any message
 // can be treated as a BaseMessage, and this is the type used for transmission
-// channels. Subordinate messages are implemented as protobuf extensions, and
+// channels. Subordinate messages are implemented as optional members, and
 // need to be registered in the comment below.
 //
 // **Note:** Protobuf message extensions have no formal inheritance relationship
@@ -14,24 +14,50 @@
 
 package firmament;
 
-// Extension registry:
+// Message registry:
 // -------------------
-// 101  - TestMessage
-// 102  - HeartbeatMessage
-// 103  - RegistrationMessage
-// 104  - TaskHeartbeatMessage
-// 105  - TaskSpawnMessage
-// 106  - TaskStateMessage
-// 107  - StorageRegistrationMessage
-// 108  - TaskInfoRequestMessage
-// 109  - TaskInfoResponseMessage
-// 110  - TaskDelegationMessage
-// 111  - <free>
+// 001  - TestMessage
+// 002  - HeartbeatMessage
+// 003  - RegistrationMessage
+// 004  - TaskHeartbeatMessage
+// 005  - TaskSpawnMessage
+// 006  - TaskStateMessage
+// 007  - StorageRegistrationMessage
+// 008  - TaskInfoRequestMessage
+// 009  - TaskInfoResponseMessage
+// 010  - TaskDelegationMessage
+// 011  - ObtainObjectMessage
+// 012  - StorageDiscoverMessage
+// 013  - StorageHeartBeatMessage
+// 014  - ObjectInfoMessage
 // ...
-// 1000 - <free>
+
+import "messages/test_message.proto";
+import "messages/heartbeat_message.proto";
+import "messages/registration_message.proto";
+import "messages/task_heartbeat_message.proto";
+import "messages/task_spawn_message.proto";
+import "messages/task_state_message.proto";
+import "messages/storage_registration_message.proto";
+import "messages/storage_message.proto";
+import "messages/task_info_message.proto";
+import "messages/task_delegation_message.proto";
 
 message BaseMessage {
   // TODO(malte): Think about having a type identifier in here, and use a
   // special "batch message" type to indicate presence of multiple extensions.
-  extensions 100 to 1000;
+  optional TestMessage test = 1;
+  optional HeartbeatMessage heartbeat = 2;
+  optional RegistrationMessage registration = 3;
+  optional TaskHeartbeatMessage task_heartbeat = 4;
+  optional TaskSpawnMessage task_spawn = 5;
+  optional TaskStateMessage task_state = 6;
+  optional StorageRegistrationMessage storage_registration = 7;
+  optional TaskInfoRequestMessage task_info_request = 8;
+  optional TaskInfoResponseMessage task_info_response = 9;
+  optional TaskDelegationMessage task_delegation = 10;
+  optional ObtainObjectMessage obtain_object = 11;
+  optional StorageDiscoverMessage storage_discover = 12;
+  optional StorageHeartBeatMessage storage_heartbeat = 13;
+  optional ObjectInfoMessage object_info = 14;
 }

@@ -82,7 +82,7 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
   }
   // Send a test protobuf message through the channel
   BaseMessage s_tm;
-  s_tm.MutableExtension(test_extn)->set_test(43);
+  SUBMSG_WRITE(s_tm, test, test, 43);
   while (!mess_adapter->GetChannelForEndpoint(
       channel->LocalEndpointString())) {
     VLOG(3) << "Waiting for channel with endpoint "
@@ -98,7 +98,7 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
   CHECK(channel->RecvS(&envelope));
   // The received message should have the "test" field set to 43 (instead of the
   // default 42).
-  CHECK_EQ(r_tm.GetExtension(test_extn).test(), 43);
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), 43);
   VLOG(1) << "closing channel";
   channel->Close();
   mess_adapter->StopListen();
@@ -122,7 +122,7 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
   // Send a test protobuf message through the channel
   BaseMessage tm1;
   Envelope<BaseMessage> envelope1(&tm1);
-  tm1.MutableExtension(test_extn)->set_test(43);
+  SUBMSG_WRITE(tm1, test, test, 43);
   mess_adapter->SendOnConnection(0);
   // Receive the protobuf at the other end of the channel
   BaseMessage tm2;
@@ -130,7 +130,7 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
   CHECK(channel.RecvS(&envelope2));
   // The received message should have the "test" field set to 43 (instead of the
   // default 42).
-  CHECK_EQ(tm2.GetExtension(test_extn).test(), tm1.GetExtension(test_extn).test());
+  CHECK_EQ(SUBMSG_READ(tm2, test, test), SUBMSG_READ(tm1, test, test));
   channel.Close();
 }*/
 
@@ -168,14 +168,14 @@ TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
   // have received it.
   BaseMessage s_tm;
   Envelope<BaseMessage> s_envelope(&s_tm);
-  s_tm.MutableExtension(test_extn)->set_test(44);
+  SUBMSG_WRITE(s_tm, test, test, 44);
   BaseMessage r_tm;
   Envelope<BaseMessage> r_envelope(&r_tm);
   channel->SendS(s_envelope);
   CHECK(backchannel->RecvS(&r_envelope));
-  CHECK_EQ(s_tm.GetExtension(test_extn).test(),
-           r_tm.GetExtension(test_extn).test());
-  CHECK_EQ(r_tm.GetExtension(test_extn).test(), 44);
+  CHECK_EQ(SUBMSG_READ(s_tm, test, test),
+           SUBMSG_READ(r_tm, test, test));
+  CHECK_EQ(SUBMSG_READ(r_tm, test, test), 44);
   // Clean up the channels.
   backchannel->Close();
   channel->Close();

@@ -5,13 +5,8 @@
 
 package firmament;
 
-import "messages/base_message.proto";
 import "base/resource_desc.proto";
 import "base/resource_topology_node_desc.proto";
-
-extend BaseMessage {
-  optional RegistrationMessage register_extn = 103;
-}
 
 message RegistrationMessage {
   required string uuid = 1;

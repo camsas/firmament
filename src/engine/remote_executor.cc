@@ -52,8 +52,7 @@ bool RemoteExecutor::SendTaskExecutionMessage(
   // Craft a task execution message
   BaseMessage exec_message;
   TaskDescriptor* msg_td =
-      exec_message.MutableExtension(task_delegation_extn)->
-      mutable_task_descriptor();
+      exec_message.mutable_task_delegation()->mutable_task_descriptor();
   // N.B. copies task descriptor
   msg_td->CopyFrom(*td);
   SUBMSG_WRITE(exec_message, task_delegation, target_resource_id,

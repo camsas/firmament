@@ -6,11 +6,6 @@
 package firmament;
 
 import "base/task_perf_statistics_sample.proto";
-import "messages/base_message.proto";
-
-extend BaseMessage {
-  optional TaskHeartbeatMessage task_heartbeat_extn = 104;
-}
 
 message TaskHeartbeatMessage {
   required uint64 task_id = 1;

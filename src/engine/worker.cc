@@ -62,12 +62,12 @@ Worker::Worker(PlatformID platform_id)
 
 void Worker::HandleIncomingMessage(BaseMessage *bm) {
   // Registration message
-  if (bm->HasExtension(register_extn)) {
+  if (bm->has_registration()) {
     LOG(ERROR) << "Received registration message, but workers cannot have any "
                << "remote resources registered with them! Ignoring.";
   }
   // Heartbeat message
-  if (bm->HasExtension(heartbeat_extn)) {
+  if (bm->has_heartbeat()) {
     LOG(ERROR) << "Received heartbeat message, but workers cannot have any "
                << "remote resources registered with them! Ignoring.";
   }
@@ -75,11 +75,9 @@ void Worker::HandleIncomingMessage(BaseMessage *bm) {
 
 bool Worker::RegisterWithCoordinator() {
   BaseMessage bm;
-  ResourceDescriptor* rd = bm.MutableExtension(
-      register_extn)->mutable_res_desc();
+  ResourceDescriptor* rd = bm.mutable_registration()->mutable_res_desc();
   *rd = resource_desc_;  // copies current local RD!
-  bm.MutableExtension(register_extn)->set_uuid(
-      boost::uuids::to_string(uuid_));
+  SUBMSG_WRITE(bm, registration, uuid, to_string(uuid_));
   // wrap in envelope
   VLOG(2) << "Sending registration message...";
   // send heartbeat message
@@ -88,8 +86,7 @@ bool Worker::RegisterWithCoordinator() {
 
 void Worker::SendHeartbeat() {
   BaseMessage bm;
-  bm.MutableExtension(heartbeat_extn)->set_uuid(
-      boost::uuids::to_string(uuid_));
+  SUBMSG_WRITE(bm, registration, uuid, to_string(uuid_));
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
   SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());

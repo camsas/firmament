@@ -73,7 +73,7 @@ TEST_F(EnvelopeTest, StashInteger) {
 // using the protobuf Parse method.
 TEST_F(EnvelopeTest, EmptyParseProtobuf) {
   BaseMessage testMsg;
-  TestMessage* tm = testMsg.MutableExtension(test_extn);
+  TestMessage* tm = testMsg.mutable_test();
   tm->set_test(43);
   // We need to serialize the message first, since otherwise Parse() will fail.
   vector<char> buf(testMsg.ByteSize());
@@ -83,8 +83,8 @@ TEST_F(EnvelopeTest, EmptyParseProtobuf) {
   CHECK(envelope.Parse(&buf[0], testMsg.ByteSize()));
   CHECK_NE(envelope.data_, &testMsg);
   CHECK(envelope.is_owner_);
-  CHECK_EQ(envelope.data_->GetExtension(test_extn).test(),
-           testMsg.GetExtension(test_extn).test());
+  CHECK_EQ(envelope.data_->test().test(),
+           testMsg.test().test());
 }
 
 // Tests allocation of an empty envelope and puts a blank protobuf, i.e. one
@@ -98,21 +98,21 @@ TEST_F(EnvelopeTest, EmptyParseBlankProtobuf) {
   CHECK(envelope.is_owner_);
   // The value is not set, and hence takes the default. That should still be
   // identical, though!
-  CHECK_EQ(envelope.data_->GetExtension(test_extn).test(),
-           testMsg.GetExtension(test_extn).test());
+  CHECK_EQ(envelope.data_->test().test(),
+           testMsg.test().test());
 }
 
 // Tests allocation of a wrapping envelope around a protobuf. Internal pointer
 // of the envelope should point to said protobuf, not a copy thereof.
 TEST_F(EnvelopeTest, StashProtobuf) {
   BaseMessage testMsg;
-  TestMessage* tm = testMsg.MutableExtension(test_extn);
+  TestMessage* tm = testMsg.mutable_test();
   tm->set_test(43);
   Envelope<BaseMessage> envelope(&testMsg);
   CHECK_EQ(envelope.data_, &testMsg);
   CHECK(!envelope.is_owner_);
-  CHECK_EQ(envelope.data_->GetExtension(test_extn).test(),
-           testMsg.GetExtension(test_extn).test());
+  CHECK_EQ(envelope.data_->test().test(),
+           testMsg.test().test());
 }
 
 
