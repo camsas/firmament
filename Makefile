@@ -51,8 +51,8 @@ misc: messages ext
 
 messages:  base ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/messages all
-	
-storage: messages ext 	
+
+storage: messages ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/storage all
 
 # N.B.: This currently builds *all* platforms; we probably want a configure
@@ -79,5 +79,6 @@ lint-verb:
 
 clean:
 	rm -rf build
-	rm -rf src/generated/*
+	rm -rf src/generated-cxx/*
+	rm -rf src/generated-c/*
 	find src/ -depth -name .setup -type f -delete

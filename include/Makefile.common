@@ -55,11 +55,14 @@ quiet-command = $(if $(V),$1,$(if $(2),@echo $2 && $1, @$1))
 		mkdir -p $(BUILD_DIR)/$(SUFFIX); \
 		mkdir -p $(BUILD_DIR)/tests/$(SUFFIX); \
 		mkdir -p $(SRC_GEN_DIR)/$(SUFFIX); \
+		mkdir -p $(CSRC_GEN_DIR)/$(SUFFIX); \
 		touch .setup, \
 		"  SETUP   $(BUILD_DIR)/$(SUFFIX)")
 
 # Generate protobuf source.
-$(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.h: %.proto .setup
+$(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.h \
+	$(CSRC_GEN_DIR)/$(SUFFIX)/%.pb.cc \
+	$(CSRC_GEN_DIR)/$(SUFFIX)/%.pb.h: %.proto .setup
 	$(call quiet-command,$(PBC) --cpp_out=$(SRC_GEN_DIR)/ \
 		--proto_path=$(SRC_ROOT_DIR)/ \
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$<, \

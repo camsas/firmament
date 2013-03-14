@@ -15,11 +15,11 @@ SRC_ROOT_DIR ?= $(ROOT_DIR)/src
 export SRC_ROOT_DIR
 
 # Generated source code root directory
-SRC_GEN_DIR ?= $(ROOT_DIR)/src/generated
+SRC_GEN_DIR ?= $(ROOT_DIR)/src/generated-cxx
 export SRC_GEN_DIR
 
 # Generated source code root directory
-CSRC_GEN_DIR ?= $(ROOT_DIR)/src/c-generated
+CSRC_GEN_DIR ?= $(ROOT_DIR)/src/generated-c
 export CSRC_GEN_DIR
 
 # Helper scripts directory
@@ -92,7 +92,7 @@ INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) \
 # every binary to the whole world.
 #LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf -lboost_system -lboost_thread -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc
 #LIBS += $(GPERFTOOLS_LIB) -lgflags -lglog -lpthread -lprotobuf
-LIBS += -ltcmalloc -lgflags -lglog -lpthread -lprotobuf
+LIBS += -ltcmalloc -lgflags -lglog -lprotobuf -lrt -lpthread
 #LIBS += -lgflags -lglog -lpthread -lprotobuf
 
 
