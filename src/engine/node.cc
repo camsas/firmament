@@ -112,7 +112,7 @@ void Node::Run() {
 void Node::AwaitNextMessage() {
   VLOG(3) << "Waiting for next message from adapter...";
   m_adapter_->AwaitNextMessage();
-  boost::this_thread::sleep(boost::posix_time::seconds(1));
+  //boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 
 void Node::HandleRecv(const boost::system::error_code& error,
