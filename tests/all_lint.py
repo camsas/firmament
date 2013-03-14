@@ -26,8 +26,9 @@ num_bad_files = 0
 try:
   for root, subfolders, files in os.walk(source_dir):
     for filename in files:
-      if not (filename.endswith(".pb.cc") or filename.endswith(".pb.h")) and \
-          filename.endswith(".h") or filename.endswith(".cc"):
+      if not (filename.endswith(".pb.cc") or filename.endswith(".pb.h") or \
+              filename.endswith(".pb-c.c") or filename.endswith(".pb-c.h")) \
+          and filename.endswith(".h") or filename.endswith(".cc"):
         f = os.path.join(root, filename)
         # XXX(malte): Hack to ignore simulator for linting purposes (for now)
         if "/sim/" in f:
