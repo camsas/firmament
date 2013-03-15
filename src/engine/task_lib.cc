@@ -73,7 +73,7 @@ bool TaskLib::ConnectToCoordinator(const string& coordinator_uri) {
 }
 
 void TaskLib::Spawn(const ReferenceInterface& code,
-                    vector<ReferenceInterface>* dependencies,
+                    vector<ReferenceInterface>* /*dependencies*/,
                     vector<FutureReference>* outputs) {
   VLOG(1) << "Spawning a new task; code reference is " << code.desc().id();
   // Craft a task spawn message for the new task, using a newly created task

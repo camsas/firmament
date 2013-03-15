@@ -14,7 +14,7 @@
 namespace firmament {
 
 void task_main(TaskLib* task_lib, TaskID_t task_id,
-               vector<char*>* arg_vec) {
+               vector<char*>*) {
   examples::store::StoreTask t(task_lib, task_id);
   VLOG(1) << "Called task_main, starting " << t;
   // extract arguments

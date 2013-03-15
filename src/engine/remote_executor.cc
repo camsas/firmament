@@ -47,7 +47,7 @@ MessagingChannelInterface<BaseMessage>* RemoteExecutor::GetChannel() {
 
 bool RemoteExecutor::SendTaskExecutionMessage(
     MessagingChannelInterface<BaseMessage>* chan,
-    TaskDescriptor* td, bool firmament_binary) {
+    TaskDescriptor* td, bool /*firmament_binary*/) {
   CHECK_NOTNULL(chan);
   // Craft a task execution message
   BaseMessage exec_message;

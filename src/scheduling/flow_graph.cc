@@ -27,7 +27,7 @@ FlowGraph::FlowGraph()
   AddSpecialNodes();
 }
 
-void FlowGraph::AddArcsForTask(TaskDescriptor* cur,
+void FlowGraph::AddArcsForTask(TaskDescriptor*,
                                FlowGraphNode* task_node,
                                FlowGraphNode* unsched_agg_node,
                                FlowGraphArc* unsched_agg_to_sink_arc) {

@@ -60,7 +60,7 @@ QuincyScheduler::~QuincyScheduler() {
 }
 
 const ResourceID_t* QuincyScheduler::FindResourceForTask(
-    TaskDescriptor* Task_Desc) {
+    TaskDescriptor*) {
   // XXX(ionel): stub
   return NULL;
 }

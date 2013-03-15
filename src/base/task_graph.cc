@@ -23,7 +23,8 @@ TaskGraph::TaskGraph(TaskDescriptor* root_task) {
   CreateNodesForChildren(root_node_, root_task);
 }
 
-void TaskGraph::AddChildTask(TaskDescriptor* parent, TaskDescriptor* child) {
+void TaskGraph::AddChildTask(TaskDescriptor* /*parent*/,
+                             TaskDescriptor* /*child*/) {
   LOG(FATAL) << "stub";
 }
 
@@ -78,7 +79,7 @@ TaskDescriptor* TaskGraph::ParentOf(TaskDescriptor* task) {
   return (*node)->mutable_parent()->descriptor();
 }
 
-void TaskGraph::SetTaskState(TaskDescriptor* task) {
+void TaskGraph::SetTaskState(TaskDescriptor* /*task*/) {
   LOG(FATAL) << "stub";
 }
 

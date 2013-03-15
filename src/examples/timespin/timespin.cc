@@ -34,7 +34,7 @@
 
 namespace firmament {
 
-void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>* arg_vec) {
+void task_main(TaskLib*, TaskID_t task_id, vector<char*>* arg_vec) {
   int64_t dur_sec, dur_usec;
   if (arg_vec->size() < 2 ||
       (atol(arg_vec->at(1)) <= 0 && atol(arg_vec->at(2)) <= 0)) {
