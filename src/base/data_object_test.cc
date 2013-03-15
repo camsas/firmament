@@ -1,24 +1,30 @@
 // The Firmament project
-// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2011-2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
 // Data object class unit tests.
 
-#include <stdint.h>
+#include <cstdio>
+#include <cstring>
 #include <iostream>
+#include <string>
 
 #include <gtest/gtest.h>
 
 #include "base/common.h"
 #include "base/data_object.h"
 
-namespace {
+namespace firmament {
 
 using firmament::DataObject;
 
 class DataObjectTest : public ::testing::Test {
  protected:
   DataObjectTest() {
-    // Set-up work
+    // Allocate a buffer for the test name
+    test_name_ = (uint8_t*)malloc(DIOS_NAME_BYTES+1);  // NOLINT
+    uint64_t* u64_test_name = (uint64_t*)test_name_;  // NOLINT
+    for (uint32_t i = 0; i < DIOS_NAME_QWORDS; ++i)
+      (u64_test_name)[i] = 0xFEEDCAFEDEADBEEF;
   }
 
   virtual ~DataObjectTest() {
@@ -39,52 +45,38 @@ class DataObjectTest : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests in the test case for Worker.
+  const uint8_t* test_name_;
 };
 
-// Test that verifies all members are initialized correctly when setting up a
-// valid data object.
-TEST_F(DataObjectTest, CreateDOTest) {
-  uint64_t len = 4096;
-  void *buf = new char[len];
-  DataObject test_do(buf, len);
+// Create a DO from a string name (e.g. pulled from a protobuf bytes field).
+TEST_F(DataObjectTest, CreateDOFromString) {
+  string name(reinterpret_cast<const char*>(test_name_));
+  DataObject test_do(name);
 
   // Check all members are set to what we expect.
-  EXPECT_EQ(test_do.buffer(), buf);
-  EXPECT_EQ(test_do.size(), len);
-  EXPECT_TRUE(test_do.resident());
-
-  // Clean up buffer.
-  delete static_cast<char*>(buf);
+  EXPECT_EQ(memcmp(test_do.name_str(), name.c_str(), DIOS_NAME_BYTES), 0);
 }
 
-// Test that verifies that setting up a non-resident data object fails.
-TEST_F(DataObjectTest, CreateNonResidentDOTest) {
-  uint64_t len = 4096;
-  void *buf = NULL;
-  DataObject nonres_do1(buf, len);
-  EXPECT_FALSE(nonres_do1.resident());
+// Create a DO from a dios_name_t.
+TEST_F(DataObjectTest, CreateDOFromDIOSName) {
+  dios_name_t name;
+  for (uint32_t i = 0; i < 4; ++i)
+    name.value[i] = 0xFEEDCAFEDEADBEEF;
+  DataObject test_do(name);
 
-  buf = new char[len];
-  DataObject nonres_do2(buf, 0);
-  EXPECT_FALSE(nonres_do2.resident());
-
-  // Clean up buffer.
-  delete static_cast<char*>(buf);
+  // Check all members are set to what we expect.
+  EXPECT_EQ(memcmp(test_do.name(), test_name_, DIOS_NAME_BYTES), 0);
 }
 
-// Test making a data object resident.
-TEST_F(DataObjectTest, MakeDOResidentTest) {
-  DataObject nonres_do(NULL, 0);
-  EXPECT_FALSE(nonres_do.resident());
-  uint64_t len = 4096;
-  void *buf = new char[len];
-  nonres_do.set_buffer(buf, len);
-  EXPECT_TRUE(nonres_do.resident());
-  EXPECT_EQ(nonres_do.size(), len);
+// Create a DO from an existing DO.
+TEST_F(DataObjectTest, CreateDOFromBytes) {
+  DataObject test_do(test_name_);
+
+  // Check all members are set to what we expect.
+  EXPECT_EQ(memcmp(test_do.name(), test_name_, DIOS_NAME_BYTES), 0);
 }
 
-
-}  // namespace
+}  // namespace firmament
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

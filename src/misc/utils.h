@@ -6,6 +6,7 @@
 #ifndef FIRMAMENT_MISC_UTILS_H
 #define FIRMAMENT_MISC_UTILS_H
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -56,6 +57,11 @@ TaskID_t TaskIDFromString(const string& str);
 
 int32_t ExecCommandSync(const string& cmdline, vector<string> args,
                         int infd[2], int outfd[2]);
+
+uint8_t* SHA256Hash(uint8_t* bytes, uint64_t len);
+
+set<DataObjectID_t*> DataObjectIDsFromProtobuf(
+    const RepeatedPtrField<string>& pb_field);
 
 }  // namespace firmament
 

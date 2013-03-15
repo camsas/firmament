@@ -4,7 +4,7 @@ SUFFIX=examples/store_example
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lssl -lcrypto
 
 LIB =
 BINS = store_example

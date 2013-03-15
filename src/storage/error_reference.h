@@ -18,7 +18,7 @@ class ErrorReference : public ReferenceInterface {
   explicit ErrorReference(DataObjectID_t id, const string& reason,
                           const string& details)
   : ReferenceInterface(id), reason_(reason), details_(details) {
-    desc_.set_id(id);
+    desc_.set_id(*id.name_str());
     desc_.set_type(type_);
     desc_.set_inline_data(reason + ": " + details);
   }
@@ -33,7 +33,7 @@ class ErrorReference : public ReferenceInterface {
     return true;
   }
   virtual ostream& ToString(ostream* stream) const {
-    return *stream << "<Error, id=" << id_ << ", reason='"
+    return *stream << "<Error, id=" << *id_.name_str() << ", reason='"
             << reason_ << "', details='" << details_ << "'>";
   }
   // Accessor methods
@@ -50,7 +50,7 @@ class ErrorReference : public ReferenceInterface {
     CHECK(desc.has_inline_data());
   }
   void ValidateInternalDescriptor() const {
-    CHECK_EQ(id_, desc_.id());
+    CHECK_EQ(*id_.name_str(), desc_.id());
     CHECK_EQ(desc_.type(), ReferenceDescriptor::ERROR);
     CHECK(desc_.has_inline_data());
     CHECK_EQ(desc_.inline_data(), reason_ + ": " + details_);

@@ -70,7 +70,7 @@ void SimpleObjectStore::HandleIncomingMessage(BaseMessage *bm) {
 }
 
 void SimpleObjectStore::HandleIncomingHeartBeat(
-    const StorageHeartBeatMessage& msg) {
+    const StorageHeartBeatMessage&) {
     VLOG(1) << "Handle Incoming HeartBeat Message ";
     // Update object map efficiently
     // TODO(tach): implement
@@ -130,7 +130,7 @@ void SimpleObjectStore::createSharedBuffer(size_t size) {
   cache.reset(new Cache(this, size, str));
 }
 
-void SimpleObjectStore::obtain_object_remotely(DataObjectID_t id) {
+void SimpleObjectStore::obtain_object_remotely(const DataObjectID_t& id) {
   VLOG(3) << "Obtaining object remotely " << endl;
 
   // Find out location of object (could be on disk)
@@ -158,7 +158,7 @@ void SimpleObjectStore::obtain_object_remotely(DataObjectID_t id) {
       ObtainObjectMessage* msg = new ObtainObjectMessage();
       msg->set_sender_uri(listening_interface_);
       msg->set_sender_uuid(lexical_cast<string>(uuid));
-      msg->set_object_id(id);
+      msg->set_object_id(*id.name_str());
     }
   }
   // Message will be received in MessageAdapter.

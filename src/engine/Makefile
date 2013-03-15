@@ -4,8 +4,8 @@ SUFFIX=engine
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-TASK_LIB_LIBS := $(LIBS) -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc
-LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc
+TASK_LIB_LIBS := $(LIBS) -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc -lssl -lcrypto
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc -lssl -lcrypto
 HTTP_UI_LIBS += -lpion-common -lpion-net -llog4cpp $(PB2JSON_LIB) -ljansson -lctemplate
 
 LIB = libfirmament_task_lib.a
@@ -13,8 +13,8 @@ BINS = coordinator worker coordinator_sim
 OBJS = coordinator_http_ui.o coordinator.o local_executor.o node.o remote_executor.o worker.o topology_manager.o
 PBS =
 TESTS = coordinator_test local_executor_test simple_scheduler_test topology_manager_test worker_test
-TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a \
-	     $(BUILD_DIR)/misc/libfirmament_misc.a \
+TESTS_DEPS = $(BUILD_DIR)/misc/libfirmament_misc.a \
+	     $(BUILD_DIR)/base/libfirmament_base.a \
 	     $(BUILD_DIR)/messages/libfirmament_messages.a \
 	     $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 	     $(BUILD_DIR)/platforms/common.pb.o \
@@ -42,14 +42,14 @@ TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/node.o \
 			      $(BUILD_DIR)/engine/remote_executor.o \
 			      $(BUILD_DIR)/engine/topology_manager.o \
 			      $(BUILD_DIR)/messages/libfirmament_messages.a \
-			      $(BUILD_DIR)/base/libfirmament_base.a \
-			      $(BUILD_DIR)/misc/libfirmament_misc.a \
 			      $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+			      $(BUILD_DIR)/misc/libfirmament_misc.a \
+			      $(BUILD_DIR)/base/libfirmament_base.a \
 			      $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 			      $(BUILD_DIR)/storage/libfirmament_storage.a
 TESTS_local_executor_DEPS = $(BUILD_DIR)/engine/topology_manager.o \
-			    $(BUILD_DIR)/base/libfirmament_base.a \
-			    $(BUILD_DIR)/misc/libfirmament_misc.a
+			    $(BUILD_DIR)/misc/libfirmament_misc.a \
+			    $(BUILD_DIR)/base/libfirmament_base.a
 TESTS_worker_DEPS = $(BUILD_DIR)/engine/node.o \
                     $(BUILD_DIR)/base/libfirmament_base.a \
 		    $(BUILD_DIR)/platforms/unix/libfirmament_unix.a
@@ -87,8 +87,8 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
-		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) $(HTTP_UI_LIBS) \
@@ -117,8 +117,8 @@ $(OBJ_DIR)/coordinator_sim: $(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
-		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) $(HTTP_UI_LIBS) \

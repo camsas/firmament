@@ -7,6 +7,8 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #endif
 
+#include "misc/utils.h"
+
 DEFINE_int32(num_tasks, 100, "Number of simulated task spawns.");
 DEFINE_int32(spawn_interval, 5, "Mean number of seconds between spawns.");
 
@@ -45,7 +47,9 @@ void SimpleDTGGenerator::Run() {
       *rd = spawner->outputs(0);  // copy
     }
     ReferenceDescriptor* od = new_task->add_outputs();
-    od->set_id(output_id_gen_());
+    uint64_t rand_int = output_id_gen_();
+    od->set_id(to_string(SHA256Hash(reinterpret_cast<uint8_t*>(&rand_int),
+                                    sizeof(uint64_t))));
     od->set_scope(ReferenceDescriptor::PUBLIC);
     od->set_type(ReferenceDescriptor::FUTURE);
     od->set_non_deterministic(false);

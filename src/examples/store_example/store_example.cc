@@ -33,15 +33,16 @@ void StoreTask::Invoke() {
   // if (read_ptr==NULL) cout <<" Ptr is null ";
 
   cout << "Testing Put Object Start " << endl;
-  void* write_ptr = task_lib_->PutObjectStart(1234, 10);
+  DataObjectID_t do1("1234");
+  void* write_ptr = task_lib_->PutObjectStart(do1, 10);
   std::memset(write_ptr, 1, 3);
   cout << " Write ptr is " << write_ptr << endl;
   cout << " Written value: " << hex
        << *static_cast<uint64_t*>(write_ptr) << endl;
   cout << "Testing Put Object End " << endl;
-  task_lib_->PutObjectEnd(1234, 10);
+  task_lib_->PutObjectEnd(do1, 10);
   cout << "Testing Get Object Start when  object present " << endl;
-  void* read_ptr2 = task_lib_->GetObjectStart(1234);
+  void* read_ptr2 = task_lib_->GetObjectStart(do1);
   if (read_ptr2 == NULL) {
     cout << " Ptr is null " << endl;
   } else {
@@ -50,7 +51,7 @@ void StoreTask::Invoke() {
          << *static_cast<uint64_t*>(read_ptr2) << endl;
   }
   cout << "Testing Get Object End when object present " << endl;
-  task_lib_->GetObjectEnd(1234);
+  task_lib_->GetObjectEnd(do1);
 }
 
 }  // namespace store

@@ -61,7 +61,7 @@ Worker::Worker(PlatformID platform_id)
 }
 
 void Worker::HandleIncomingMessage(BaseMessage *bm,
-                                   const string& remote_endpoint) {
+                                   const string& /*remote_endpoint*/) {
   // Registration message
   if (bm->has_registration()) {
     LOG(ERROR) << "Received registration message, but workers cannot have any "

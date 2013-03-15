@@ -46,15 +46,32 @@ class UtilsTest : public ::testing::Test {
 TEST_F(UtilsTest, DataObjectIDGenerateTest) {
   TaskID_t pid = 1234;
   TaskOutputID_t oid = 0;
-  CHECK_EQ(GenerateDataObjectID(pid, oid), 175247688336ULL);
+  EXPECT_EQ(GenerateDataObjectID(pid, oid).name_printable_string(),
+            "db33daba280d8e68eea6e490723b02cea897e8ff7c66134642e989ebb17e56");
+}
+
+// Tests DO ID generation, ensuring that different inputs produce different
+// hashes.
+TEST_F(UtilsTest, DataObjectIDGenerateMultiCheckDifferentTest) {
+  TaskID_t pid1 = 1234;
+  TaskID_t pid2 = 1235;
+  TaskOutputID_t oid1 = 0;
+  TaskOutputID_t oid2 = 1;
+  EXPECT_NE(GenerateDataObjectID(pid1, oid1).name_printable_string(),
+            GenerateDataObjectID(pid2, oid1).name_printable_string());
+  EXPECT_NE(GenerateDataObjectID(pid1, oid1).name_printable_string(),
+            GenerateDataObjectID(pid1, oid2).name_printable_string());
 }
 
 // Tests DO ID generation from TD.
 TEST_F(UtilsTest, DataObjectIDGenerateFromTDTest) {
   TaskDescriptor td;
   td.set_uid(1234);
-  CHECK_EQ(GenerateDataObjectID(td), 175247688336ULL);
-  CHECK_EQ(GenerateDataObjectID(td.uid(), td.outputs_size()), 175247688336ULL);
+  EXPECT_EQ(GenerateDataObjectID(td).name_printable_string(),
+            "db33daba280d8e68eea6e490723b02cea897e8ff7c66134642e989ebb17e56");
+  EXPECT_EQ(GenerateDataObjectID(td.uid(),
+                                td.outputs_size()).name_printable_string(),
+            "db33daba280d8e68eea6e490723b02cea897e8ff7c66134642e989ebb17e56");
 }
 
 // Tests task ID parsing from string.
@@ -66,8 +83,8 @@ TEST_F(UtilsTest, TaskIDFromString) {
   // (unsigned long).
   string test2 = "16733209960240500155";
   // Test both
-  CHECK_EQ(TaskIDFromString(test1), 1234567);
-  CHECK_EQ(TaskIDFromString(test2), 16733209960240500155ULL);
+  EXPECT_EQ(TaskIDFromString(test1), 1234567ULL);
+  EXPECT_EQ(TaskIDFromString(test2), 16733209960240500155ULL);
 }
 
 

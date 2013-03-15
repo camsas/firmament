@@ -68,7 +68,7 @@ class SimpleObjectStore : public ObjectStoreInterface {
   void setUpCommunication();
   void printTopology();
 
-  void obtain_object_remotely(DataObjectID_t id);
+  void obtain_object_remotely(const DataObjectID_t& id);
 
   void HeartBeatMasterTask();
   void sendHeartBeatMasterTask();

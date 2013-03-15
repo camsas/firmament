@@ -1,36 +1,65 @@
 // The Firmament project
-// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2011-2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
 // Data object class definition. In Firmament, a data object is a chunk of
 // binary data, in memory or not, that can be read, written or executed. It is
 // globally uniquely named by a DataObjectName.
-// Populating buffers for a non-resident data object is a platform-specific
-// action and thus implemented in the object store.
+//
+// The notion of a Firmament data object is closely related to the DIOS notions
+// of a name and a reference.
 
 #ifndef FIRMAMENT_DATA_OBJECT_H
 #define FIRMAMENT_DATA_OBJECT_H
 
+#include <string>
+
 #include "base/common.h"
-#include "base/data_object_name.pb.h"
+#include "misc/printable_interface.h"
 
 namespace firmament {
 
-class DataObject {
+// Imported from libDIOS.
+#define DIOS_NAME_BITS 256
+#define DIOS_NAME_BYTES (DIOS_NAME_BITS/8)
+#define DIOS_NAME_QWORDS (DIOS_NAME_BYTES/8)
+
+typedef struct {
+  union {
+    uint64_t value[DIOS_NAME_QWORDS];
+    uint8_t raw[DIOS_NAME_BYTES];
+  };
+} dios_name_t;
+
+class DataObject : public PrintableInterface {
  public:
-  DataObject(void *buffer, uint64_t length);
-  void *buffer() { return buf_ptr_; }
-  void set_buffer(void *buf_ptr, uint64_t len) {
-    // N.B.: We are not doing any permission or ACL checking on the buffer
-    // pointer here.
-    buf_ptr_ = buf_ptr;
-    buf_len_ = len;
+  explicit DataObject(const dios_name_t& name);
+  explicit DataObject(const char* name);
+  explicit DataObject(const uint8_t* name);
+  explicit DataObject(const string& name);
+  bool operator==(const DataObject& other_do) const;
+  bool operator<(const DataObject& other_do) const;
+
+
+  inline const uint8_t* name() const {
+    return name_.raw;
   }
-  uint64_t size() { return buf_len_; }
-  bool resident() { return (buf_ptr_ != NULL && buf_len_ > 0); }
+  inline const string* name_str() const {
+    return reinterpret_cast<const string*>(name_.raw);
+  }
+  inline const string name_printable_string() const {
+    string ret = "";
+    for (uint32_t i = 0; i < DIOS_NAME_QWORDS; ++i)
+      ret += to_hex_string(name_.value[i]);
+    return ret;
+  }
+  virtual ostream& ToString(ostream* stream) const {
+    return *stream << "<DataObject, name=" << name_printable_string() << ", at="
+                   << this << ", location=" << ">";
+  }
+
  private:
-  void *buf_ptr_;
-  uint64_t buf_len_;
-  DataObjectName name_;
+  dios_name_t name_;
+  //dios_value_t location_;
 };
 
 }  // namespace firmament

@@ -82,11 +82,11 @@ class TaskLib {
   void Publish(const vector<ConcreteReference>& references);
   //virtual void TailSpawn(const ConcreteReference& code);
 
-  void* GetObjectStart(DataObjectID_t id);
-  void GetObjectEnd(DataObjectID_t id);
-  void* PutObjectStart(DataObjectID_t id, size_t size);
-  void PutObjectEnd(DataObjectID_t id, size_t size);
-  void* Extend(DataObjectID_t id, size_t old_size, size_t new_size);
+  void* GetObjectStart(const DataObjectID_t& id);
+  void GetObjectEnd(const DataObjectID_t& id);
+  void* PutObjectStart(const DataObjectID_t& id, size_t size);
+  void PutObjectEnd(const DataObjectID_t& id, size_t size);
+  void* Extend(const DataObjectID_t& id, size_t old_size, size_t new_size);
 
   Cache_t* getCache() {
     return cache;

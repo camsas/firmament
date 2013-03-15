@@ -21,14 +21,14 @@ class ConcreteReference : public ReferenceInterface {
  public:
   explicit ConcreteReference(DataObjectID_t id)
   : ReferenceInterface(id), size_(0) {
-    desc_.set_id(id);
+    desc_.set_id(*id.name_str());
     desc_.set_type(type_);
   }
   ConcreteReference(DataObjectID_t id, uint64_t size,
           const set<string>& locations)
   : ReferenceInterface(id), size_(size),
   locations_(locations.begin(), locations.end()) {
-    desc_.set_id(id);
+    desc_.set_id(*id.name_str());
     desc_.set_type(type_);
     desc_.set_size(size);
     for (set<string>::const_iterator it = locations_.begin();
@@ -52,7 +52,7 @@ class ConcreteReference : public ReferenceInterface {
     return true;
   }
   virtual ostream& ToString(ostream* stream) const {
-    return *stream << "<Concrete, id=" << id_ << ", locations={}>";
+    return *stream << "<Concrete, id=" << *id_.name_str() << ", locations={}>";
   }
   inline uint64_t size() {
     return size_;
@@ -67,7 +67,7 @@ class ConcreteReference : public ReferenceInterface {
   }
 
   void ValidateInternalDescriptor() const {
-    CHECK_EQ(id_, desc_.id());
+    CHECK_EQ(*id_.name_str(), desc_.id());
     CHECK_EQ(desc_.type(), ReferenceDescriptor::CONCRETE);
     CHECK_EQ(desc_.size(), size_);
   }

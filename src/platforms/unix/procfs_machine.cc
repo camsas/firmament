@@ -4,14 +4,15 @@
 // Simple wrapper to poll information from ProcFS.
 
 #include "platforms/unix/procfs_machine.h"
-#include "sys/types.h"
-#include "sys/sysinfo.h"
 
-#include <stdio.h>
+#include <sys/types.h>
+#include <sys/sysinfo.h>
 
+#include <cstdio>
+#include <string>
 #include <vector>
 
-using namespace std;
+#include "base/common.h"
 
 namespace firmament {
 namespace platform_unix {

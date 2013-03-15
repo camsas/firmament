@@ -456,14 +456,15 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
        ++output_iter) {
     // First set the producing task field on the task outputs
     output_iter->set_producing_task(td->uid());
-    VLOG(1) << "Considering task output " << output_iter->id() << ", "
+    DataObjectID_t output_id(output_iter->id());
+    VLOG(1) << "Considering task output " << output_id << ", "
             << "adding to local object table";
-    if (object_store_->addReference(output_iter->id(), &(*output_iter))) {
-      VLOG(1) << "Output " << output_iter->id() << " already exists in "
+    if (object_store_->addReference(output_id, &(*output_iter))) {
+      VLOG(1) << "Output " << output_id << " already exists in "
               << "local object table. Not adding again.";
     }
     // Check that the object was actually stored
-    if (object_store_->GetReference(output_iter->id()) != NULL)
+    if (object_store_->GetReference(output_id) != NULL)
       VLOG(3) << "Object is indeed in object store";
     else
       VLOG(3) << "Error: Object is not in object store";
@@ -502,14 +503,17 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   // and set the job_id field on every task.
   AddJobsTasksToTables(new_jd->mutable_root_task(), new_job_id);
   // Set up job outputs
-  for (RepeatedField<DataObjectID_t>::const_iterator output_iter =
+  for (RepeatedPtrField<string>::const_iterator output_iter =
        new_jd->output_ids().begin();
        output_iter != new_jd->output_ids().end();
        ++output_iter) {
     VLOG(1) << "Considering job output " << *output_iter;
     // The root task must produce all of the non-existent job outputs, so they
     // should all be in the object table now.
-    CHECK(object_store_->GetReference(*output_iter));
+    DataObjectID_t output_id(*output_iter);
+    CHECK(object_store_->GetReference(output_id))
+        << "Could not find reference to data object ID " << output_id
+        << ", which we just added!";
   }
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";

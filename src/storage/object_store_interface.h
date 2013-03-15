@@ -26,10 +26,12 @@ class ObjectStoreInterface : public PrintableInterface {
   virtual ostream& ToString(ostream* stream) const = 0;
   virtual void HandleStorageRegistrationRequest(
       const StorageRegistrationMessage& msg) = 0;
-  bool addReference(DataObjectID_t id, ReferenceDescriptor* rd) {
+  bool addReference(const DataObjectID_t& id, ReferenceDescriptor* rd) {
+    VLOG(1) << "Add reference to data object ID " << id;
     return !(InsertIfNotPresent(object_table_.get(), id, rd));
   }
-  ReferenceDescriptor* GetReference(DataObjectID_t id) {
+  ReferenceDescriptor* GetReference(const DataObjectID_t& id) {
+    VLOG(1) << "Lookup up data object ID " << id;
     ReferenceDescriptor** rd = FindOrNull(*object_table_, id);
     if (rd!= NULL)
       return *rd;

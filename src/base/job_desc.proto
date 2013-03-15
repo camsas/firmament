@@ -23,6 +23,6 @@ message JobDescriptor {
   optional string name = 2;
   optional JobState state = 3;
   required TaskDescriptor root_task = 4;
-  repeated uint64 output_ids = 5;
+  repeated bytes output_ids = 5;
 }
 

@@ -26,7 +26,7 @@ StorageInfo::StorageInfo(const string& node_uri_, const string& uuid_,
   : node_uri(node_uri_),  uuid(uuid_), coordinator_uuid(coo_uuid_),
     average_rtt(0), chan(chan_) { }
 
-StorageInfo::StorageInfo(const StorageInfo& orig) { }
+StorageInfo::StorageInfo(const StorageInfo&) { }
 
 StorageInfo::~StorageInfo() { }
 

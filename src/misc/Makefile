@@ -4,7 +4,7 @@ SUFFIX=misc
 include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
-LIBS += -lboost_system
+LIBS += -lboost_system -lssl -lcrypto
 
 LIB = libfirmament_misc.a
 OBJS = event_logging.o pb_utils.o utils.o

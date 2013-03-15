@@ -5,7 +5,7 @@ include $(ROOT_DIR)/include/Makefile.config
 include $(ROOT_DIR)/include/Makefile.common
 
 STDALONE_LIBS := $(LIBS)
-LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lssl -lcrypto
 
 LIB =
 BINS = packet_join_task simple_trace_analysis_task
@@ -25,9 +25,9 @@ $(OBJ_BIN): $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(SRC_ROOT_DIR)/engine/task_lib_main.cc \
 		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/engine/libfirmament_task_lib.a \
-		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
+		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$< \
 		$(LIBS) -o $@ , \

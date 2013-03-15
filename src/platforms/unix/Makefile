@@ -11,8 +11,8 @@ OBJS = async_tcp_server.o procfs_monitor.o procfs_machine.o signal_handler.o \
 TESTS = procfs_monitor_test procfs_machine_test stream_sockets_adapter_test \
         stream_sockets_channel_test
 TESTS_DEPS = $(OBJ_DIR)/../common.pb.o \
-	     $(OBJ_DIR)/../../base/libfirmament_base.a \
 	     $(OBJ_DIR)/../../messages/libfirmament_messages.a \
+	     $(OBJ_DIR)/../../base/libfirmament_base.a \
 	     $(OBJ_DIR)/$(LIB)
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))

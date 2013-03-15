@@ -104,7 +104,8 @@ TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   JobDescriptor* test_job = new JobDescriptor;
   TaskDescriptor* rtp = new TaskDescriptor;
   rtp->set_uid(GenerateTaskID(*rtp));
-  set<DataObjectID_t> output_ids(pb_to_set(test_job->output_ids()));
+  set<DataObjectID_t*> output_ids(DataObjectIDsFromProtobuf(
+      test_job->output_ids()));
   AddTaskToTaskMap(rtp);
   set<TaskID_t> runnable_tasks =
       sched_->LazyGraphReduction(output_ids, rtp);
@@ -131,7 +132,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForJob) {
 // Tests lookup of a reference in the object table.
 TEST_F(SimpleSchedulerTest, ObjectIDToReferenceDescLookup) {
   ReferenceDescriptor rd;
-  rd.set_id(1234);
+  rd.set_id("feedcafedeadbeef");
   rd.set_type(ReferenceDescriptor::CONCRETE);
   CHECK(!obj_store_->addReference(rd.id(), &rd));
   shared_ptr<ReferenceInterface> ref = sched_->ReferenceForID(rd.id());
@@ -145,7 +146,7 @@ TEST_F(SimpleSchedulerTest, ProducingTaskLookup) {
   td.set_uid(1);
   AddTaskToTaskMap(&td);
   ReferenceDescriptor rd;
-  rd.set_id(1234);
+  rd.set_id("feedcafedeadbeef");
   rd.set_type(ReferenceDescriptor::CONCRETE);
   rd.set_producing_task(1);
   CHECK(!obj_store_->addReference(rd.id(), &rd));
@@ -165,14 +166,14 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   TaskDescriptor* td1 = test_job->mutable_root_task()->add_spawned();
   td1->set_uid(GenerateTaskID(test_job->root_task()));
   ReferenceDescriptor* d0_td1 = td1->add_outputs();
-  d0_td1->set_id(GenerateDataObjectID(*td1));
+  d0_td1->set_id(*GenerateDataObjectID(*td1).name_str());
   d0_td1->set_type(ReferenceDescriptor::CONCRETE);
   d0_td1->set_producing_task(td1->uid());
   // add spawned task #2
   TaskDescriptor* td2 = test_job->mutable_root_task()->add_spawned();
   td2->set_uid(GenerateTaskID(test_job->root_task()));
   ReferenceDescriptor* d0_td2 = td2->add_outputs();
-  d0_td2->set_id(GenerateDataObjectID(*td2));
+  d0_td2->set_id(*GenerateDataObjectID(*td2).name_str());
   d0_td2->set_type(ReferenceDescriptor::FUTURE);
   d0_td2->set_producing_task(td2->uid());
   test_job->add_output_ids(d0_td2->id());
@@ -198,14 +199,14 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   test_job->mutable_root_task()->set_uid(0);
   test_job->mutable_root_task()->set_name("root_task");
   ReferenceDescriptor* o0_rt = test_job->mutable_root_task()->add_outputs();
-  o0_rt->set_id(GenerateDataObjectID(test_job->root_task()));
+  o0_rt->set_id(*GenerateDataObjectID(test_job->root_task()).name_str());
   o0_rt->set_type(ReferenceDescriptor::CONCRETE);
   o0_rt->set_producing_task(test_job->root_task().uid());
   // add spawned task #1
   TaskDescriptor* td1 = test_job->mutable_root_task()->add_spawned();
   td1->set_uid(GenerateTaskID(test_job->root_task()));
   ReferenceDescriptor* o0_td1 = td1->add_outputs();
-  o0_td1->set_id(GenerateDataObjectID(*td1));
+  o0_td1->set_id(*GenerateDataObjectID(*td1).name_str());
   o0_td1->set_type(ReferenceDescriptor::FUTURE);
   o0_td1->set_producing_task(td1->uid());
   ReferenceDescriptor* d0_td1 = td1->add_dependencies();

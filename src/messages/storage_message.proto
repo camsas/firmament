@@ -1,7 +1,7 @@
 package firmament;
 
 message ObtainObjectMessage {
-    required uint64 object_id = 1;
+    required bytes object_id = 1;
     optional bytes data = 2;
     required uint64 size = 3;
     required string sender_uuid = 4;
@@ -22,7 +22,7 @@ message StorageHeartBeatMessage {
 }
 
 message ObjectInfoMessage {
-    required uint64 obj_name = 1;
+    required bytes obj_name = 1;
 /* Should locations be resource ids or direct host:port (storage engine
 listening interface)? */
     repeated string locations = 2;

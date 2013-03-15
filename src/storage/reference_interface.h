@@ -8,13 +8,15 @@
 #define FIRMAMENT_BASE_REFERENCE_INTERFACE_H
 
 #include "base/common.h"
+#include "base/data_object.h"
 #include "base/reference_desc.pb.h"
 #include "misc/printable_interface.h"
 
 namespace firmament {
 
   typedef ReferenceDescriptor::ReferenceType ReferenceType_t;
-  typedef uint64_t DataObjectID_t;
+
+  typedef DataObject DataObjectID_t;
 
   class ReferenceInterface : public PrintableInterface {
   public:
@@ -26,14 +28,14 @@ namespace firmament {
     //    ReferenceDescriptor.
 
     explicit ReferenceInterface(DataObjectID_t id)
-    : id_(id) {
+      : id_(id) {
     }
 
     explicit ReferenceInterface(const ReferenceDescriptor& desc)
-    : id_(desc.id()) {
+      : id_(desc.id()) {
     }
-    // Non-accessor members
 
+    // Non-accessor members
     inline ReferenceDescriptor AsProtobuf() {
       return desc();
     }
@@ -41,7 +43,7 @@ namespace firmament {
     virtual ostream& ToString(ostream* stream) const = 0;
     // Accessor methods
 
-    inline DataObjectID_t id() {
+    inline const DataObjectID_t& id() {
       return id_;
     }
 
@@ -54,7 +56,7 @@ namespace firmament {
     virtual void ValidateInitDescriptor(const ReferenceDescriptor& desc) = 0;
 
     void ValidateInternalDescriptor() const {
-      CHECK_EQ(id_, desc_.id());
+      CHECK_EQ(*id_.name_str(), desc_.id());
     }
     // Fields shared between all reference types
     DataObjectID_t id_;

@@ -33,9 +33,11 @@ void FibonacciTask::Invoke(uint64_t n) {
     c = n;
     VLOG(1) << "F_" << n << " is " << c;
   } else {
-    ConcreteReference r(0);
+    DataObjectID_t rdo("0");
+    ConcreteReference r(rdo);
     // TODO(malte): args!
-    FutureReference f_tmpl(0);  // XXX(malte): hack!
+    DataObjectID_t fdo("1");
+    FutureReference f_tmpl(fdo);  // XXX(malte): hack!
     vector<FutureReference> o1(1, f_tmpl);
     vector<FutureReference> o2(1, f_tmpl);
     task_lib_->Spawn(r, NULL, &o1); // f(n-1)

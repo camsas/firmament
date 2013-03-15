@@ -192,12 +192,12 @@ void CoordinatorHTTPUI::HandleJobURI(HTTPRequestPtr& http_request,  // NOLINT
       dict.SetIntValue("JOB_NUM_OUTPUTS", jd_ptr->output_ids_size());
     else
       dict.SetIntValue("JOB_NUM_OUTPUTS", 1);
-    for (RepeatedField<DataObjectID_t>::const_iterator out_iter =
+    for (RepeatedPtrField<string>::const_iterator out_iter =
          jd_ptr->output_ids().begin();
          out_iter != jd_ptr->output_ids().end();
          ++out_iter) {
       TemplateDictionary* out_dict = dict.AddSectionDictionary("JOB_OUTPUTS");
-      out_dict->SetIntValue("JOB_OUTPUT_ID", *out_iter);
+      out_dict->SetValue("JOB_OUTPUT_ID", *out_iter);
     }
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
@@ -433,7 +433,7 @@ void CoordinatorHTTPUI::HandleReferenceURI(HTTPRequestPtr& http_request,  // NOL
       DataObjectIDFromString(*ref_id));
   TemplateDictionary dict("reference_view");
   if (rd_ptr) {
-    dict.SetIntValue("REF_ID", rd_ptr->id());
+    dict.SetValue("REF_ID", rd_ptr->id());
     dict.SetValue("REF_TYPE", ENUM_TO_STRING(ReferenceDescriptor::ReferenceType,
                                              rd_ptr->type()));
     dict.SetValue("REF_SCOPE",
@@ -488,7 +488,7 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
          dep_iter != td_ptr->dependencies().end();
          ++dep_iter) {
       TemplateDictionary* dep_dict = dict.AddSectionDictionary("TASK_DEPS");
-      dep_dict->SetIntValue("TASK_DEP_ID", dep_iter->id());
+      dep_dict->SetValue("TASK_DEP_ID", dep_iter->id());
     }
     // Spawned
     if (td_ptr->spawned_size() > 0)
@@ -514,7 +514,7 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
          out_iter != td_ptr->outputs().end();
          ++out_iter) {
       TemplateDictionary* out_dict = dict.AddSectionDictionary("TASK_OUTPUTS");
-      out_dict->SetFormattedValue("TASK_OUTPUT_ID", "%jd", out_iter->id());
+      out_dict->SetValue("TASK_OUTPUT_ID", out_iter->id());
     }
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {

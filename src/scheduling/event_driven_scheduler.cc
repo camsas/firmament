@@ -173,8 +173,9 @@ void EventDrivenScheduler::RegisterRemoteResource(ResourceID_t res_id) {
 
 const set<TaskID_t>& EventDrivenScheduler::RunnableTasksForJob(
     JobDescriptor* job_desc) {
-  // TODO(malte): check is this is broken
-  set<DataObjectID_t> outputs = pb_to_set(job_desc->output_ids());
+  // TODO(malte): check if this is broken
+  set<DataObjectID_t*> outputs =
+      DataObjectIDsFromProtobuf(job_desc->output_ids());
   TaskDescriptor* rtp = job_desc->mutable_root_task();
   return LazyGraphReduction(outputs, rtp);
 }
@@ -182,7 +183,7 @@ const set<TaskID_t>& EventDrivenScheduler::RunnableTasksForJob(
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
 // Derek Murray's thesis on CIEL.
 const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
-    const set<DataObjectID_t>& output_ids,
+    const set<DataObjectID_t*>& output_ids,
     TaskDescriptor* root_task) {
   VLOG(2) << "Performing lazy graph reduction";
   // Local data structures
@@ -191,17 +192,17 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
   // Add expected producer for object_id to queue, if the object reference is
   // not already concrete.
   VLOG(2) << "for a job with " << output_ids.size() << " outputs";
-  for (set<DataObjectID_t>::const_iterator output_id_iter = output_ids.begin();
+  for (set<DataObjectID_t*>::const_iterator output_id_iter = output_ids.begin();
        output_id_iter != output_ids.end();
        ++output_id_iter) {
-    shared_ptr<ReferenceInterface> ref = ReferenceForID(*output_id_iter);
+    shared_ptr<ReferenceInterface> ref = ReferenceForID(**output_id_iter);
     if (ref && ref->Consumable()) {
       // skip this output, as it is already present
       continue;
     }
     // otherwise, we add the producer for said output reference to the queue, if
     // it is not already scheduled.
-    TaskDescriptor* task = ProducingTaskForDataObjectID(*output_id_iter);
+    TaskDescriptor* task = ProducingTaskForDataObjectID(**output_id_iter);
     CHECK(task != NULL) << "Could not find task producing output ID "
                         << *output_id_iter;
     if (task->state() == TaskDescriptor::CREATED) {
@@ -269,7 +270,7 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
 }
 
 shared_ptr<ReferenceInterface> EventDrivenScheduler::ReferenceForID(
-    DataObjectID_t id) {
+    const DataObjectID_t& id) {
   // XXX(malte): stub
   VLOG(2) << "Looking up object " << id;
 //  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
@@ -285,7 +286,7 @@ shared_ptr<ReferenceInterface> EventDrivenScheduler::ReferenceForID(
 }
 
 TaskDescriptor* EventDrivenScheduler::ProducingTaskForDataObjectID(
-    DataObjectID_t id) {
+    const DataObjectID_t& id) {
   // XXX(malte): stub
   VLOG(2) << "Looking up producing task for object " << id;
 //  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);

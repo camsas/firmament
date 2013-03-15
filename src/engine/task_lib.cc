@@ -98,7 +98,7 @@ void TaskLib::Spawn(const ReferenceInterface& code,
     VLOG(1) << "Output " << i << "'s ID: " << new_output_id;
     ReferenceDescriptor* out_rd = new_task->add_outputs();
     out_rd->CopyFrom(out_iter->desc());
-    out_rd->set_id(new_output_id);
+    out_rd->set_id(*new_output_id.name_str());
     out_rd->set_producing_task(new_task->uid());
   }
   // Job ID field must be set on task spawn
@@ -110,7 +110,7 @@ void TaskLib::Spawn(const ReferenceInterface& code,
   SendMessageToCoordinator(&msg);
 }
 
-void TaskLib::Publish(const vector<ConcreteReference>& references) {
+void TaskLib::Publish(const vector<ConcreteReference>& /*references*/) {
   LOG(ERROR) << "Output publication currently unimplemented!";
 }
 
@@ -317,7 +317,7 @@ void TaskLib::setUpStorageEngine() {
 
 // Finds data from cache and returns pointer. Acquires shared
 // read lock. Contacts storage engine if data is not in cache
-void* TaskLib::GetObjectStart(DataObjectID_t id) {
+void* TaskLib::GetObjectStart(const DataObjectID_t& id) {
   cout << "GetObjectStart " << id << endl;
   try {
     cout << "Cache Capacity " << cache->capacity
@@ -361,7 +361,7 @@ void* TaskLib::GetObjectStart(DataObjectID_t id) {
         reference_not_t->cond_read.wait(lock_ref);
       }
       cout << "Writing Message " << endl;
-      reference_not_t->id = id;
+      reference_not_t->id = &id;
       reference_not_t->writable = false;
       reference_not_t->request_type = GET_OBJECT;
       lock_ref.unlock(); /* Not sure if this is necessary */
@@ -410,7 +410,7 @@ void* TaskLib::GetObjectStart(DataObjectID_t id) {
 }
 
 /* Releases shared read lock */
-void TaskLib::GetObjectEnd(DataObjectID_t id) {
+void TaskLib::GetObjectEnd(const DataObjectID_t& id) {
   cout << "GetObjectEnd " << endl;
   try {
     // TODO(tach): very inefficient
@@ -427,7 +427,7 @@ void TaskLib::GetObjectEnd(DataObjectID_t id) {
 }
 
 // Return null if cache is full
-void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
+void* TaskLib::PutObjectStart(const DataObjectID_t& id, size_t size) {
   try {
     cout << "PutObjectStart " << endl;
 
@@ -497,7 +497,8 @@ void* TaskLib::PutObjectStart(DataObjectID_t id, size_t size) {
 // Tries to extend file by "extend_by" bytes. Returns void if failed
 // ex: cache full. Find a way to do this without unmapping/remapping the
 // file
-void* TaskLib::Extend(DataObjectID_t id, size_t old_size, size_t new_size) {
+void* TaskLib::Extend(const DataObjectID_t& id, size_t old_size,
+                      size_t new_size) {
   void* address = NULL;
   //    named_mutex mutex_(open_only, "Cache");
   //    scoped_lock<named_mutex> cache_locks(mutex_);
@@ -527,7 +528,7 @@ void* TaskLib::Extend(DataObjectID_t id, size_t old_size, size_t new_size) {
 }
 
 /* Release exclusive lock  - value of size actually written */
-void TaskLib::PutObjectEnd(DataObjectID_t id, size_t size) {
+void TaskLib::PutObjectEnd(const DataObjectID_t& id, size_t size) {
   cout << "PutObjectEnd " << endl;
   try {
     string file_name = boost::lexical_cast<string > (id);
@@ -545,7 +546,7 @@ void TaskLib::PutObjectEnd(DataObjectID_t id, size_t size) {
       reference_not_t->cond_read.wait(lock_ref);
     }
 
-    reference_not_t->id = id;
+    reference_not_t->id = &id;
     reference_not_t->writable = false;
     reference_not_t->size = size;
     reference_not_t->request_type = PUT_OBJECT;

@@ -21,7 +21,7 @@ message ReferenceDescriptor {
     PRIVATE = 1;
   }
 
-  required uint64 id = 1;
+  required bytes id = 1;
   required ReferenceType type = 2;
   optional ReferenceScope scope = 3 [default = PUBLIC];
   optional bool non_deterministic = 4 [default = true];

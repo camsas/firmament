@@ -80,7 +80,7 @@ enum notification_types {
 };
 
 typedef struct RefNot {
-  DataObjectID_t id;
+  const DataObjectID_t* id;
   interprocess_mutex mutex;
   interprocess_condition cond_read;
   interprocess_condition cond_added;

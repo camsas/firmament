@@ -81,7 +81,7 @@ void Cache::make_space_in_cache() {
 
 // From Remote. Using a write through strategy for now
 bool Cache::write_object_to_cache(const ObtainObjectMessage& msg) {
-  DataObjectID_t id = msg.object_id();
+  DataObjectID_t id(msg.object_id());
   VLOG(3) << "Writing Object " << id << " to Cache from remote";
   const string& data = msg.data();
   size_t size = msg.size();
@@ -97,7 +97,7 @@ bool Cache::write_object_to_cache(const ObtainObjectMessage& msg) {
 }
 
 // From File on disk
-bool Cache::write_object_to_cache(DataObjectID_t id) {
+bool Cache::write_object_to_cache(const DataObjectID_t& id) {
   VLOG(3) << "Writing Object " << id << " to Cache from disk";
 
   try {
@@ -215,7 +215,7 @@ void Cache::clearCache() {
 // }
 }
 
-bool Cache::obtain_object(DataObjectID_t id) {
+bool Cache::obtain_object(const DataObjectID_t& id) {
   VLOG(1) << "ObtainObject: Unimplemented" << endl;
   /* Contact object store  */
   store->obtain_object_remotely(id);
@@ -239,8 +239,7 @@ void Cache::handle_notification_references(ReferenceNotification_t* ref) {
         case PUT_OBJECT:
         {
           VLOG(3) << "Type of message: PUT_OBJECT";
-          DataObjectID_t id = ref->id;
-          ReferenceDescriptor* rd = store->GetReference(id);
+          ReferenceDescriptor* rd = store->GetReference(*ref->id);
           switch (rd->type()) {
             case ReferenceDescriptor::CONCRETE:
             {
@@ -259,7 +258,7 @@ void Cache::handle_notification_references(ReferenceNotification_t* ref) {
               set<string> loc;
               loc.insert(store->get_listening_interface());
               ConcreteReference* conc_ref =
-                  new ConcreteReference(id, ref->size, loc);
+                  new ConcreteReference(*ref->id, ref->size, loc);
               rd = new ReferenceDescriptor(conc_ref->desc());
               ref->request_type = FREE;
               rd->set_is_modified(true);
@@ -276,8 +275,7 @@ void Cache::handle_notification_references(ReferenceNotification_t* ref) {
         {
           // TODO(tach): Make asynchronous
           VLOG(3) << "Type of message: GE_OBJECT";
-          DataObjectID_t id = ref->id;
-          ref->success = obtain_object(id);
+          ref->success = obtain_object(*ref->id);
         }
           break;
         case FREE:

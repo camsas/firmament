@@ -40,12 +40,12 @@ class Cache {
   Cache(SimpleObjectStore* obj, size_t size_,  string cache_name_);
   virtual ~Cache();
 
-  bool obtain_object(DataObjectID_t id);
+  bool obtain_object(const DataObjectID_t& id);
   void print_cache();
   // For the moment, find out size from object table
-  void remove_from_cache(DataObjectID_t id);
+  void remove_from_cache(const DataObjectID_t& id);
   bool write_object_to_cache(const ObtainObjectMessage& msg);
-  bool write_object_to_cache(DataObjectID_t id);
+  bool write_object_to_cache(const DataObjectID_t& id);
 
   inline size_t getCapacity() {
     return cache->capacity;

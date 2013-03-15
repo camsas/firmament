@@ -44,6 +44,14 @@ template <class T> inline string to_string(const T& t) {
   return ss.str();
 }
 
+// Helper function to convert an arbitrary object to a hexadecimal
+// string via the stringstream standard library class.
+template <class T> inline string to_hex_string(const T& t) {
+  stringstream ss;
+  ss << hex << t;
+  return ss.str();
+}
+
 namespace common {
 
 // Helper function to perform common init tasks for user-facing Firmament

@@ -17,7 +17,7 @@ class ValueReference : public ReferenceInterface {
  public:
   explicit ValueReference(DataObjectID_t id, const string& value)
   : ReferenceInterface(id), value_(value) {
-    desc_.set_id(id);
+    desc_.set_id(*id.name_str());
     desc_.set_type(type_);
     desc_.set_inline_data(value);
   }
@@ -30,7 +30,7 @@ class ValueReference : public ReferenceInterface {
     return true;
   }
   virtual ostream& ToString(ostream* stream) const {
-    return *stream << "<Value, id=" << id_ << ", value='"
+    return *stream << "<Value, id=" << *id_.name_str() << ", value='"
             << value_ << "'>";
   }
   // Accessor methods
@@ -44,7 +44,7 @@ class ValueReference : public ReferenceInterface {
     CHECK(desc.has_inline_data());
   }
   void ValidateInternalDescriptor() const {
-    CHECK_EQ(id_, desc_.id());
+    CHECK_EQ(*id_.name_str(), desc_.id());
     CHECK_EQ(desc_.type(), ReferenceDescriptor::VALUE);
     CHECK_EQ(desc_.inline_data(), value_);
   }

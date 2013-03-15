@@ -11,7 +11,9 @@ extern "C" {
 #include <stdio.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <openssl/sha.h>
 }
+#include <set>
 #include <string>
 #include <vector>
 
@@ -89,15 +91,19 @@ DataObjectID_t GenerateDataObjectID(
   // TODO(malte): This is not *quite* the same as CIEL's naming scheme (which is
   // a little cleverer and uses the task argument structure here), but works for
   // now. Revisit later.
-  size_t hash = 0;
-  boost::hash_combine(hash, producing_task);
-  boost::hash_combine(hash, output_id);
-  return static_cast<DataObjectID_t>(hash);
+  uint8_t hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX ctx;
+  SHA256_Init(&ctx);
+  SHA256_Update(&ctx, &producing_task, sizeof(TaskID_t));
+  SHA256_Update(&ctx, &output_id, sizeof(TaskOutputID_t));
+  SHA256_Final(hash, &ctx);
+  DataObjectID_t doid(hash);
+  return doid;
 }
 
 DataObjectID_t DataObjectIDFromString(const string& str) {
   // XXX(malte): possibly unsafe use of atol() here.
-  DataObjectID_t object_id = atol(str.c_str());
+  DataObjectID_t object_id(str);
   return object_id;
 }
 
@@ -216,6 +222,29 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       return status;
   }
   return -1;
+}
+
+uint8_t* SHA256Hash(uint8_t* bytes, uint64_t len) {
+  uint8_t* hash = new uint8_t[SHA256_DIGEST_LENGTH];
+  SHA256_CTX ctx;
+  SHA256_Init(&ctx);
+  SHA256_Update(&ctx, bytes, len);
+  SHA256_Final(hash, &ctx);
+  return hash;
+}
+
+// Helper function to convert a repeated bytes field to a set of
+// DataObjectID_t.
+// This method copies the input collection, so it is O(N) in time and space.
+set<DataObjectID_t*> DataObjectIDsFromProtobuf(
+    const RepeatedPtrField<string>& pb_field) {
+  set<DataObjectID_t*> return_set;
+  // N.B.: using GNU-style RTTI (typeof)
+  for (typeof(pb_field.begin()) iter = pb_field.begin();
+       iter != pb_field.end();
+       ++iter)
+    return_set.insert(new DataObjectID_t(*iter));
+  return return_set;
 }
 
 }  // namespace firmament

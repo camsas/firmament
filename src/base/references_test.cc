@@ -19,7 +19,11 @@ namespace firmament {
 class ReferencesTest : public ::testing::Test {
  protected:
   ReferencesTest() {
-    // Set-up work
+    // Allocate a buffer for the test name
+    test_name_ = (uint8_t*)malloc(DIOS_NAME_BYTES+1);  // NOLINT
+    uint64_t* u64_test_name = (uint64_t*)test_name_;  // NOLINT
+    for (uint32_t i = 0; i < DIOS_NAME_QWORDS; ++i)
+      u64_test_name[i] = 0xFEEDCAFEDEADBEEF;
   }
 
   virtual ~ReferencesTest() {
@@ -40,12 +44,13 @@ class ReferencesTest : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests in the test case for Worker.
+  const uint8_t* test_name_;
 };
 
 // Test that verifies all members are initialized correctly when setting up a
 // valid Future reference.
 TEST_F(ReferencesTest, CreateFutureTest) {
-  DataObjectID_t ref_id = 1234;
+  DataObjectID_t ref_id(test_name_);
   FutureReference f(ref_id);
 
   // Check all members are set to what we expect.
@@ -56,7 +61,7 @@ TEST_F(ReferencesTest, CreateFutureTest) {
 // Test that verifies all members are initialized correctly when setting up a
 // valid Error reference.
 TEST_F(ReferencesTest, CreateErrorTest) {
-  DataObjectID_t ref_id = 1234;
+  DataObjectID_t ref_id(test_name_);
   const string reason = "boom";
   const string details = "kaboom";
   ErrorReference r(ref_id, reason, details);
@@ -72,7 +77,7 @@ TEST_F(ReferencesTest, CreateErrorTest) {
 // valid Error reference.
 TEST_F(ReferencesTest, CreateConcreteTest) {
   FLAGS_v = 2;
-  DataObjectID_t ref_id = 1234;
+  DataObjectID_t ref_id(test_name_);
   set<string> locations;
   uint64_t size = 1000;
   locations.insert("here");
@@ -92,7 +97,7 @@ TEST_F(ReferencesTest, CreateConcreteTest) {
 // Test that verifies all members are initialized correctly when setting up a
 // valid Error reference.
 TEST_F(ReferencesTest, CreateValueTest) {
-  DataObjectID_t ref_id = 1234;
+  DataObjectID_t ref_id(test_name_);
   const string value = "test";
   ValueReference r(ref_id, value);
 
@@ -106,7 +111,7 @@ TEST_F(ReferencesTest, CreateValueTest) {
 // ValidateInternalDescriptor method, which checks the integrity of the mapping
 // between the reference object and its serializable protobuf descriptor.
 TEST_F(ReferencesTest, ValidateInternalDescriptors) {
-  DataObjectID_t ref_id = 1234;
+  DataObjectID_t ref_id(test_name_);
   FutureReference f(ref_id);
   ErrorReference e(ref_id, "foo", "bar");
   ConcreteReference c1(ref_id);
