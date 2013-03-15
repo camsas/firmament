@@ -82,28 +82,38 @@ vector<CpuUsage> ProcFSMachine::GetCPUUsage() {
   for (vector<CpuUsage>::size_type cpu_num = 0; cpu_num < cpu_stats_.size();
        cpu_num++) {
     double user_diff =
-      (double)(cpu_new_stats[cpu_num].user - cpu_stats_[cpu_num].user);
+      static_cast<double>(cpu_new_stats[cpu_num].user -
+                          cpu_stats_[cpu_num].user);
     double nice_diff =
-      (double)(cpu_new_stats[cpu_num].nice - cpu_stats_[cpu_num].nice);
+      static_cast<double>(cpu_new_stats[cpu_num].nice -
+                          cpu_stats_[cpu_num].nice);
     double system_diff =
-      (double)(cpu_new_stats[cpu_num].system - cpu_stats_[cpu_num].system);
+      static_cast<double>(cpu_new_stats[cpu_num].system -
+                          cpu_stats_[cpu_num].system);
     double idle_diff =
-      (double)(cpu_new_stats[cpu_num].idle - cpu_stats_[cpu_num].idle);
+      static_cast<double>(cpu_new_stats[cpu_num].idle -
+                          cpu_stats_[cpu_num].idle);
     double iowait_diff =
-      (double)(cpu_new_stats[cpu_num].iowait - cpu_stats_[cpu_num].iowait);
+      static_cast<double>(cpu_new_stats[cpu_num].iowait -
+                          cpu_stats_[cpu_num].iowait);
     double irq_diff =
-      (double)(cpu_new_stats[cpu_num].irq - cpu_stats_[cpu_num].irq);
+      static_cast<double>(cpu_new_stats[cpu_num].irq -
+                          cpu_stats_[cpu_num].irq);
     double soft_irq_diff =
-      (double)(cpu_new_stats[cpu_num].soft_irq - cpu_stats_[cpu_num].soft_irq);
+      static_cast<double>(cpu_new_stats[cpu_num].soft_irq -
+                          cpu_stats_[cpu_num].soft_irq);
     double steal_diff =
-      (double)(cpu_new_stats[cpu_num].steal - cpu_stats_[cpu_num].steal);
+      static_cast<double>(cpu_new_stats[cpu_num].steal -
+                          cpu_stats_[cpu_num].steal);
     double guest_diff =
-      (double)(cpu_new_stats[cpu_num].guest - cpu_stats_[cpu_num].guest);
+      static_cast<double>(cpu_new_stats[cpu_num].guest -
+                          cpu_stats_[cpu_num].guest);
     double guest_nice_diff =
-      (double)(cpu_new_stats[cpu_num].guest_nice -
+      static_cast<double>(cpu_new_stats[cpu_num].guest_nice -
                cpu_stats_[cpu_num].guest_nice);
     double total_diff =
-      (double)(cpu_new_stats[cpu_num].total - cpu_stats_[cpu_num].total);
+      static_cast<double>(cpu_new_stats[cpu_num].total -
+                          cpu_stats_[cpu_num].total);
     CpuUsage cur_cpu_usage;
     cur_cpu_usage.set_user(user_diff / total_diff * 100.0);
     cur_cpu_usage.set_nice(nice_diff / total_diff * 100.0);

@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <vector>
 #include <unistd.h>
 
 #include "base/common.h"
@@ -20,7 +21,6 @@ namespace platform_unix {
 
 class ProcFSMachineTest : public ::testing::Test {
  protected:
-
   ProcFSMachineTest()
     : pfsm_() { // 0.1s polling freq
     FLAGS_v = 2;
@@ -54,6 +54,8 @@ TEST_F(ProcFSMachineTest, CreateStatistics) {
   sleep(5);
   MachinePerfStatisticsSample* stats = new MachinePerfStatisticsSample;
   pfsm_.CreateStatistics(stats);
+  VLOG(1) << stats->DebugString();
+  delete stats;
 }
 
 }  // namespace platform_unix

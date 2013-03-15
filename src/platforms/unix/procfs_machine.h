@@ -6,9 +6,10 @@
 #ifndef FIRMAMENT_PLATFORMS_UNIX_PROCFS_MACHINE_H
 #define FIRMAMENT_PLATFORMS_UNIX_PROCFS_MACHINE_H
 
-#include "platforms/unix/common.h"
+#include <vector>
 
 #include "base/machine_perf_statistics_sample.pb.h"
+#include "platforms/unix/common.h"
 
 namespace firmament {
 namespace platform_unix {
