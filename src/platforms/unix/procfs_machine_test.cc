@@ -5,11 +5,13 @@
 
 #include <gtest/gtest.h>
 
+#include <unistd.h>
+
 #include "base/common.h"
+#include "base/machine_perf_statistics_sample.pb.h"
 #include "platforms/common.pb.h"
 #include "platforms/unix/common.h"
 #include "platforms/unix/procfs_machine.h"
-#include "base/machine_perf_statistics_sample.pb.h"
 
 using firmament::common::InitFirmament;
 
@@ -21,6 +23,7 @@ class ProcFSMachineTest : public ::testing::Test {
 
   ProcFSMachineTest()
     : pfsm_() { // 0.1s polling freq
+    FLAGS_v = 2;
     // You can do set-up work for each test here.
   }
 
@@ -46,10 +49,11 @@ class ProcFSMachineTest : public ::testing::Test {
 
 // Tests retrieval of simple process statistics.
 TEST_F(ProcFSMachineTest, CreateStatistics) {
+  // This is more of a joke, but it does the job for testing.
+  // Print stats to manually check.
+  sleep(5);
   MachinePerfStatisticsSample* stats = new MachinePerfStatisticsSample;
   pfsm_.CreateStatistics(stats);
-  //  CHECK_EQ(stats->get_total_ram(0), 1);
-  //  CHECK_EQ(stats->get_free_ram(0), 1);
 }
 
 }  // namespace platform_unix
@@ -57,6 +61,6 @@ TEST_F(ProcFSMachineTest, CreateStatistics) {
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  InitFirmament(argc, argv);
+  //  InitFirmament(argc, argv);
   return RUN_ALL_TESTS();
 }

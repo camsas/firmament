@@ -11,5 +11,18 @@ message MachinePerfStatisticsSample {
   required uint64 total_ram = 3;
   required uint64 free_ram = 4;
   //The first entry is the cpu usage of cpu0 and so on.
-  repeated double cpus_usage = 5;
+  repeated CpuUsage cpus_usage = 5;
+}
+
+message CpuUsage {
+  required double user = 1;
+  required double nice = 2;
+  required double system = 3;
+  required double idle = 4;
+  required double iowait = 5;
+  required double irq = 6;
+  required double soft_irq = 7;
+  required double steal = 8;
+  required double guest = 9;
+  required double guest_nice = 10;
 }

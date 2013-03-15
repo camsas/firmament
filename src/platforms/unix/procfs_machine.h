@@ -43,7 +43,7 @@ class ProcFSMachine {
   vector<cpu_stats> cpu_stats_;
   mem_stats GetMemory();
   vector<cpu_stats> GetCPUStats();
-  vector<double> GetCPUUsage();
+  vector<CpuUsage> GetCPUUsage();
 };
 
 }  // namespace platform_unix
