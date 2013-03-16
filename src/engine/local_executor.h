@@ -82,6 +82,9 @@ class LocalExecutor : public ExecutorInterface {
   // TODO(malte): Figure out what to do if this local executor is associated
   // with a dumb worker, who does not have topology support!
   shared_ptr<TopologyManager> topology_manager_;
+  // Heartbeat interval for tasks running on the associated resource, in
+  // nanoseconds.
+  uint64_t heartbeat_interval_;
 };
 
 }  // namespace executor

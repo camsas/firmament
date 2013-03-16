@@ -28,7 +28,8 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
                              const string& coordinator_uri)
     : local_resource_id_(resource_id),
       coordinator_uri_(coordinator_uri),
-      topology_manager_(shared_ptr<TopologyManager>()) {  // NULL
+      topology_manager_(shared_ptr<TopologyManager>()),  // NULL
+      heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
   VLOG(1) << "No topology manager passed, so will not bind to resource.";
 }
@@ -38,7 +39,8 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
                              shared_ptr<TopologyManager> topology_mgr)
     : local_resource_id_(resource_id),
       coordinator_uri_(coordinator_uri),
-      topology_manager_(topology_mgr) {
+      topology_manager_(topology_mgr),
+      heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
   VLOG(1) << "Tasks will be bound to the resource by the topology manager"
           << "at " << topology_manager_;
@@ -228,6 +230,8 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
   env.push_back(EnvPair_t("PERF_FNAME", PerfDataFileName(td)));
   env.push_back(EnvPair_t("FLAGS_coordinator_uri", coordinator_uri_));
   env.push_back(EnvPair_t("FLAGS_resource_id", to_string(local_resource_id_)));
+  env.push_back(EnvPair_t("FLAGS_heartbeat_interval",
+                          to_string(heartbeat_interval_)));
   // Set environment variables
   VLOG(2) << "Task's environment variables:";
   for (vector<EnvPair_t>::const_iterator env_iter = env.begin();
