@@ -25,6 +25,9 @@ class DataObjectTest : public ::testing::Test {
     uint64_t* u64_test_name = (uint64_t*)test_name_;  // NOLINT
     for (uint32_t i = 0; i < DIOS_NAME_QWORDS; ++i)
       (u64_test_name)[i] = 0xFEEDCAFEDEADBEEF;
+    // N.B.: This addition of a null char is necessary for the tests taking
+    // strings to work.
+    ((uint8_t*)test_name_)[DIOS_NAME_BYTES] = '\0';  // NOLINT
   }
 
   virtual ~DataObjectTest() {
