@@ -364,6 +364,8 @@ void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
           << " requests task information for " << msg.task_id();
   TaskDescriptor** task_desc_ptr = FindOrNull(*task_table_, msg.task_id());
   CHECK_NOTNULL(task_desc_ptr);
+  // Remember the current location of this task
+  (*task_desc_ptr)->set_last_location(remote_endpoint);
   BaseMessage resp;
   // XXX(malte): ugly hack!
   SUBMSG_WRITE(resp, task_info_response, task_id, msg.task_id());
@@ -454,16 +456,16 @@ void Coordinator::KillRunningTask(TaskID_t task_id,
                << "so cannot kill it!";
     return;
   }
-  // Find the corresponding resource status (contains endpoint URI)
-  ResourceStatus** rs = FindOrNull(*associated_resources_, *rid);
+  // Find the current remote endpoint for this task
+  TaskDescriptor** td = FindOrNull(*task_table_, task_id);
   // Manufacture the message
   BaseMessage bm;
   SUBMSG_WRITE(bm, task_kill, task_id, task_id);
   SUBMSG_WRITE(bm, task_kill, reason, reason);
   // Send the message
   LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
-            << *rid;
-  m_adapter_->SendMessageToEndpoint((*rs)->location(), bm);
+            << *rid << " (endpoint: " << (*td)->last_location()  << ")";
+  m_adapter_->SendMessageToEndpoint((*td)->last_location(), bm);
 }
 
 void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
