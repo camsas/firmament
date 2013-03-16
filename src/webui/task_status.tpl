@@ -47,6 +47,12 @@
       </ol>
     </td>
   </tr>
+  <tr>
+    <td>Actions</td>
+    <td>
+      <a href="/task/?id={{TASK_ID}}&a=kill">Kill</a></li>
+    </td>
+  </tr>
 </table>
 
 {{>PAGE_FOOTER}}
