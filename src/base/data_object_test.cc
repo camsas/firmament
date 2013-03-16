@@ -57,7 +57,8 @@ TEST_F(DataObjectTest, CreateDOFromString) {
   DataObject test_do(name);
 
   // Check all members are set to what we expect.
-  EXPECT_EQ(memcmp(test_do.name_str()->data(), name.data(), DIOS_NAME_BYTES), 0);
+  EXPECT_EQ(memcmp(test_do.name_str()->data(),
+                   name.data(), DIOS_NAME_BYTES), 0);
 }
 
 // Create a DO and comare it to itself.
