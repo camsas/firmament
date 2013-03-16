@@ -110,9 +110,9 @@ TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   set<TaskID_t> runnable_tasks =
       sched_->LazyGraphReduction(output_ids, rtp);
   // The root task should be runnable
-  CHECK_EQ(runnable_tasks.size(), 1);
+  EXPECT_EQ(runnable_tasks.size(), 1UL);
   // The only runnable task should be equivalent to the root task we pushed in.
-  CHECK_EQ(*runnable_tasks.begin(), rtp->uid());
+  EXPECT_EQ(*runnable_tasks.begin(), rtp->uid());
   delete rtp;
   delete test_job;
 }
@@ -125,7 +125,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForJob) {
   set<TaskID_t> runnable_tasks =
       sched_->RunnableTasksForJob(test_job);
   // The root task should be runnable
-  CHECK_EQ(runnable_tasks.size(), 1);
+  EXPECT_EQ(runnable_tasks.size(), 1UL);
   delete test_job;
 }
 
@@ -138,7 +138,7 @@ TEST_F(SimpleSchedulerTest, ObjectIDToReferenceDescLookup) {
   CHECK(!obj_store_->addReference(doid, &rd));
   shared_ptr<ReferenceInterface> ref = sched_->ReferenceForID(doid);
   VLOG(1) << *ref;
-  CHECK_EQ(ref->id(), rd.id());
+  EXPECT_EQ(*ref->id().name_str(), rd.id());
 }
 
 // Tests lookup of a data object's producing task via the object table.
@@ -155,7 +155,7 @@ TEST_F(SimpleSchedulerTest, ProducingTaskLookup) {
   TaskDescriptor* tdp = sched_->ProducingTaskForDataObjectID(doid);
   CHECK(tdp);
   VLOG(1) << tdp->DebugString();
-  CHECK_EQ(tdp->uid(), 1);
+  EXPECT_EQ(tdp->uid(), 1UL);
 }
 
 // Find runnable tasks for a slightly more elaborate task graph.
@@ -194,7 +194,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
       sched_->RunnableTasksForJob(test_job);
   PrintRunnableTasks(runnable_tasks);
   // Two tasks should be runnable: those spawned by the root task.
-  CHECK_EQ(runnable_tasks.size(), 2);
+  EXPECT_EQ(runnable_tasks.size(), 2UL);
   delete test_job;
 }
 
@@ -234,7 +234,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
       sched_->RunnableTasksForJob(test_job);
   // Two tasks should be runnable: those spawned by the root task.
   PrintRunnableTasks(runnable_tasks);
-  CHECK_EQ(runnable_tasks.size(), 2);
+  EXPECT_EQ(runnable_tasks.size(), 2UL);
   delete test_job;
 }
 
