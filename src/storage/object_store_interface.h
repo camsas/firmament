@@ -27,11 +27,10 @@ class ObjectStoreInterface : public PrintableInterface {
   virtual void HandleStorageRegistrationRequest(
       const StorageRegistrationMessage& msg) = 0;
   bool addReference(const DataObjectID_t& id, ReferenceDescriptor* rd) {
-    VLOG(1) << "Add reference to data object ID " << id;
-    return !(InsertIfNotPresent(object_table_.get(), id, rd));
+    bool ret = InsertIfNotPresent(object_table_.get(), id, rd);
+    return !ret;
   }
   ReferenceDescriptor* GetReference(const DataObjectID_t& id) {
-    VLOG(1) << "Lookup up data object ID " << id;
     ReferenceDescriptor** rd = FindOrNull(*object_table_, id);
     if (rd!= NULL)
       return *rd;
@@ -41,6 +40,13 @@ class ObjectStoreInterface : public PrintableInterface {
   void Flush() {
     VLOG(1) << "Flushing all objects from store " << *this;
     object_table_->clear();
+  }
+  void DumpObjectTableContents() {
+    VLOG(1) << "OBJECT TABLE:";
+    for (DataObjectMap_t::const_iterator it = object_table_->begin();
+         it != object_table_->end();
+         ++it)
+      VLOG(1) << it->first << ": " << it->second->DebugString();
   }
   inline uint64_t NumTotalReferences() {
     return object_table_->size();

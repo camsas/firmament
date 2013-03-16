@@ -54,8 +54,18 @@ TEST_F(DataObjectTest, CreateDOFromString) {
   DataObject test_do(name);
 
   // Check all members are set to what we expect.
-  EXPECT_EQ(memcmp(test_do.name_str(), name.c_str(), DIOS_NAME_BYTES), 0);
+  EXPECT_EQ(memcmp(test_do.name_str()->data(), name.data(), DIOS_NAME_BYTES), 0);
 }
+
+// Create a DO and comare it to itself.
+TEST_F(DataObjectTest, SelfSimilarity) {
+  string name(reinterpret_cast<const char*>(test_name_));
+  DataObject test_do(name);
+
+  // Check that equality comparison with itself return true.
+  EXPECT_EQ(test_do, test_do);
+}
+
 
 // Create a DO from a dios_name_t.
 TEST_F(DataObjectTest, CreateDOFromDIOSName) {

@@ -6,6 +6,7 @@
 
 #include "storage/simple_object_store.h"
 
+#include "base/data_object.h"
 #include "misc/uri_tools.h"
 #include "storage/Cache.h"
 #include "storage/StorageInfo.h"
@@ -158,7 +159,7 @@ void SimpleObjectStore::obtain_object_remotely(const DataObjectID_t& id) {
       ObtainObjectMessage* msg = new ObtainObjectMessage();
       msg->set_sender_uri(listening_interface_);
       msg->set_sender_uuid(lexical_cast<string>(uuid));
-      msg->set_object_id(*id.name_str());
+      msg->set_object_id(id.name_bytes(), DIOS_NAME_BYTES);
     }
   }
   // Message will be received in MessageAdapter.

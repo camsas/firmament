@@ -44,7 +44,13 @@ class DataObject : public PrintableInterface {
     return name_.raw;
   }
   inline const string* name_str() const {
-    return reinterpret_cast<const string*>(name_.raw);
+    char ret[DIOS_NAME_BYTES+1];
+    memcpy(ret, name_.raw, DIOS_NAME_BYTES);
+    ret[DIOS_NAME_BYTES] = '\0';
+    return new string(ret);
+  }
+  inline const char* name_bytes() const {
+    return reinterpret_cast<const char*>(name_.raw);
   }
   inline const string name_printable_string() const {
     string ret = "";

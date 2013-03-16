@@ -17,7 +17,7 @@ class ValueReference : public ReferenceInterface {
  public:
   explicit ValueReference(DataObjectID_t id, const string& value)
   : ReferenceInterface(id), value_(value) {
-    desc_.set_id(*id.name_str());
+    desc_.set_id(id.name_bytes(), DIOS_NAME_BYTES);
     desc_.set_type(type_);
     desc_.set_inline_data(value);
   }
@@ -30,8 +30,8 @@ class ValueReference : public ReferenceInterface {
     return true;
   }
   virtual ostream& ToString(ostream* stream) const {
-    return *stream << "<Value, id=" << *id_.name_str() << ", value='"
-            << value_ << "'>";
+    return *stream << "<Value, id=" << id_.name_printable_string()
+                   << ", value='" << value_ << "'>";
   }
   // Accessor methods
   inline const string value() {

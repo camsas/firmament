@@ -7,6 +7,7 @@
 #define FIRMAMENT_STORAGE_FUTURE_REFERENCE_H
 
 #include "base/common.h"
+#include "base/data_object.h"
 #include "storage/reference_interface.h"
 
 namespace firmament {
@@ -15,7 +16,7 @@ class FutureReference : public ReferenceInterface {
  public:
   explicit FutureReference(DataObjectID_t id)
     : ReferenceInterface(id) {
-    desc_.set_id(*id.name_str());
+    desc_.set_id(id.name_bytes(), DIOS_NAME_BYTES);
     desc_.set_type(type_);
   }
   explicit FutureReference(const ReferenceDescriptor& desc)
@@ -26,7 +27,7 @@ class FutureReference : public ReferenceInterface {
     return false;
   }
   virtual ostream& ToString(ostream* stream) const {
-    return *stream << "<Future, id=" << *id_.name_str() << ">";
+    return *stream << "<Future, id=" << id_.name_printable_string() << ">";
   }
 
  protected:

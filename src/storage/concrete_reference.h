@@ -21,14 +21,14 @@ class ConcreteReference : public ReferenceInterface {
  public:
   explicit ConcreteReference(DataObjectID_t id)
   : ReferenceInterface(id), size_(0) {
-    desc_.set_id(*id.name_str());
+    desc_.set_id(id.name_bytes(), DIOS_NAME_BYTES);
     desc_.set_type(type_);
   }
   ConcreteReference(DataObjectID_t id, uint64_t size,
           const set<string>& locations)
   : ReferenceInterface(id), size_(size),
   locations_(locations.begin(), locations.end()) {
-    desc_.set_id(*id.name_str());
+    desc_.set_id(id.name_bytes(), DIOS_NAME_BYTES);
     desc_.set_type(type_);
     desc_.set_size(size);
     for (set<string>::const_iterator it = locations_.begin();
@@ -52,7 +52,8 @@ class ConcreteReference : public ReferenceInterface {
     return true;
   }
   virtual ostream& ToString(ostream* stream) const {
-    return *stream << "<Concrete, id=" << *id_.name_str() << ", locations={}>";
+    return *stream << "<Concrete, id=" << id_.name_printable_string()
+                   << ", locations={}>";
   }
   inline uint64_t size() {
     return size_;

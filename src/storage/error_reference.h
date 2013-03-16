@@ -9,6 +9,7 @@
 #include <string>
 
 #include "base/common.h"
+#include "base/data_object.h"
 #include "storage/reference_interface.h"
 
 namespace firmament {
@@ -18,7 +19,7 @@ class ErrorReference : public ReferenceInterface {
   explicit ErrorReference(DataObjectID_t id, const string& reason,
                           const string& details)
   : ReferenceInterface(id), reason_(reason), details_(details) {
-    desc_.set_id(*id.name_str());
+    desc_.set_id(id.name_bytes(), DIOS_NAME_BYTES);
     desc_.set_type(type_);
     desc_.set_inline_data(reason + ": " + details);
   }
@@ -33,8 +34,9 @@ class ErrorReference : public ReferenceInterface {
     return true;
   }
   virtual ostream& ToString(ostream* stream) const {
-    return *stream << "<Error, id=" << *id_.name_str() << ", reason='"
-            << reason_ << "', details='" << details_ << "'>";
+    return *stream << "<Error, id=" << id_.name_printable_string()
+                   << ", reason='" << reason_ << "', details='" << details_
+                   << "'>";
   }
   // Accessor methods
   inline string const reason() {

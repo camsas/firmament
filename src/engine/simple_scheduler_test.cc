@@ -132,10 +132,11 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForJob) {
 // Tests lookup of a reference in the object table.
 TEST_F(SimpleSchedulerTest, ObjectIDToReferenceDescLookup) {
   ReferenceDescriptor rd;
-  rd.set_id("feedcafedeadbeef");
+  rd.set_id("feedcafedeadbeeffeedcafedeadbeef");
   rd.set_type(ReferenceDescriptor::CONCRETE);
-  CHECK(!obj_store_->addReference(rd.id(), &rd));
-  shared_ptr<ReferenceInterface> ref = sched_->ReferenceForID(rd.id());
+  DataObjectID_t doid(rd.id());
+  CHECK(!obj_store_->addReference(doid, &rd));
+  shared_ptr<ReferenceInterface> ref = sched_->ReferenceForID(doid);
   VLOG(1) << *ref;
   CHECK_EQ(ref->id(), rd.id());
 }
@@ -146,11 +147,12 @@ TEST_F(SimpleSchedulerTest, ProducingTaskLookup) {
   td.set_uid(1);
   AddTaskToTaskMap(&td);
   ReferenceDescriptor rd;
-  rd.set_id("feedcafedeadbeef");
+  rd.set_id("feedcafedeadbeeffeedcafedeadbeef");
   rd.set_type(ReferenceDescriptor::CONCRETE);
   rd.set_producing_task(1);
-  CHECK(!obj_store_->addReference(rd.id(), &rd));
-  TaskDescriptor* tdp = sched_->ProducingTaskForDataObjectID(rd.id());
+  DataObjectID_t doid(rd.id());
+  CHECK(!obj_store_->addReference(doid, &rd));
+  TaskDescriptor* tdp = sched_->ProducingTaskForDataObjectID(doid);
   CHECK(tdp);
   VLOG(1) << tdp->DebugString();
   CHECK_EQ(tdp->uid(), 1);
@@ -166,22 +168,26 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   TaskDescriptor* td1 = test_job->mutable_root_task()->add_spawned();
   td1->set_uid(GenerateTaskID(test_job->root_task()));
   ReferenceDescriptor* d0_td1 = td1->add_outputs();
-  d0_td1->set_id(*GenerateDataObjectID(*td1).name_str());
+  DataObjectID_t d0_td1_o1 = GenerateDataObjectID(*td1);
+  d0_td1->set_id(d0_td1_o1.name_bytes(), DIOS_NAME_BYTES);
   d0_td1->set_type(ReferenceDescriptor::CONCRETE);
   d0_td1->set_producing_task(td1->uid());
   // add spawned task #2
   TaskDescriptor* td2 = test_job->mutable_root_task()->add_spawned();
   td2->set_uid(GenerateTaskID(test_job->root_task()));
   ReferenceDescriptor* d0_td2 = td2->add_outputs();
-  d0_td2->set_id(*GenerateDataObjectID(*td2).name_str());
+  DataObjectID_t d0_td2_o1 = GenerateDataObjectID(*td2);
+  d0_td2->set_id(d0_td2_o1.name_bytes(), DIOS_NAME_BYTES);
   d0_td2->set_type(ReferenceDescriptor::FUTURE);
   d0_td2->set_producing_task(td2->uid());
   test_job->add_output_ids(d0_td2->id());
   test_job->add_output_ids(d0_td1->id());
   // put concrete input ref of td1 into object table
-  CHECK(!obj_store_->addReference(d0_td1->id(), d0_td1));
+  DataObjectID_t d0_td1_id(d0_td1->id());
+  DataObjectID_t d0_td2_id(d0_td2->id());
+  CHECK(!obj_store_->addReference(d0_td1_id, d0_td1));
   // put future input ref of td2 into object table
-  CHECK(!obj_store_->addReference(d0_td2->id(), d0_td2));
+  CHECK(!obj_store_->addReference(d0_td2_id, d0_td2));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks =
@@ -199,14 +205,15 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   test_job->mutable_root_task()->set_uid(0);
   test_job->mutable_root_task()->set_name("root_task");
   ReferenceDescriptor* o0_rt = test_job->mutable_root_task()->add_outputs();
-  o0_rt->set_id(*GenerateDataObjectID(test_job->root_task()).name_str());
+  o0_rt->set_id(GenerateDataObjectID(test_job->root_task()).name_bytes(),
+                DIOS_NAME_BYTES);
   o0_rt->set_type(ReferenceDescriptor::CONCRETE);
   o0_rt->set_producing_task(test_job->root_task().uid());
   // add spawned task #1
   TaskDescriptor* td1 = test_job->mutable_root_task()->add_spawned();
   td1->set_uid(GenerateTaskID(test_job->root_task()));
   ReferenceDescriptor* o0_td1 = td1->add_outputs();
-  o0_td1->set_id(*GenerateDataObjectID(*td1).name_str());
+  o0_td1->set_id(GenerateDataObjectID(*td1).name_bytes(), DIOS_NAME_BYTES);
   o0_td1->set_type(ReferenceDescriptor::FUTURE);
   o0_td1->set_producing_task(td1->uid());
   ReferenceDescriptor* d0_td1 = td1->add_dependencies();
@@ -216,9 +223,11 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   test_job->add_output_ids(o0_td1->id());
   test_job->add_output_ids(d0_td1->id());
   // put concrete input ref of td1 into object table
-  CHECK(!obj_store_->addReference(o0_td1->id(), o0_td1));
+  DataObjectID_t o0_td1_id(o0_td1->id());
+  CHECK(!obj_store_->addReference(o0_td1_id, o0_td1));
   // put future input ref of td2 into object table
-  CHECK(!obj_store_->addReference(d0_td1->id(), d0_td1));
+  DataObjectID_t d0_td1_id(d0_td1->id());
+  CHECK(!obj_store_->addReference(d0_td1_id, d0_td1));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks =

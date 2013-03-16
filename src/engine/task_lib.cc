@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "base/common.h"
+#include "base/data_object.h"
 #include "messages/registration_message.pb.h"
 #include "messages/task_heartbeat_message.pb.h"
 #include "messages/task_info_message.pb.h"
@@ -98,7 +99,7 @@ void TaskLib::Spawn(const ReferenceInterface& code,
     VLOG(1) << "Output " << i << "'s ID: " << new_output_id;
     ReferenceDescriptor* out_rd = new_task->add_outputs();
     out_rd->CopyFrom(out_iter->desc());
-    out_rd->set_id(*new_output_id.name_str());
+    out_rd->set_id(new_output_id.name_bytes(), DIOS_NAME_BYTES);
     out_rd->set_producing_task(new_task->uid());
   }
   // Job ID field must be set on task spawn
