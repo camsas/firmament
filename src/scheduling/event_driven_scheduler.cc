@@ -143,7 +143,7 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
     return false;
   }
   // Otherwise, bind the task
-  runnable_tasks_.erase(td->uid());
+  runnable_tasks_.insert(td->uid());
   InsertIfNotPresent(task_map_.get(), td->uid(), td);
   BindTaskToResource(td, rd);
   td->set_state(TaskDescriptor::DELEGATED);
