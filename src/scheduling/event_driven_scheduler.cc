@@ -82,6 +82,11 @@ void EventDrivenScheduler::BindTaskToResource(
   VLOG(1) << "Task running";
 }
 
+ResourceID_t* EventDrivenScheduler::BoundResourceForTask(TaskID_t task_id) {
+  ResourceID_t* rid = FindOrNull(task_bindings_, task_id);
+  return rid;
+}
+
 void EventDrivenScheduler::DebugPrintRunnableTasks() {
   VLOG(1) << "Runnable task queue now contains " << runnable_tasks_.size()
           << " elements:";

@@ -1,0 +1,18 @@
+// The Firmament project
+// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Task kill message.
+
+package firmament;
+
+import "base/task_desc.proto";
+
+message TaskKillMessage {
+  enum TaskKillReason {
+    USER_ABORT = 0;
+    RESOURCE_EXCEEDED = 1;
+    PREEMPTION = 2;
+  }
+  required uint64 task_id = 1;
+  optional TaskKillReason reason = 2;
+}

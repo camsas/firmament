@@ -187,6 +187,8 @@ class Coordinator : public Node,
       return object_store_;
   }
   void InformStorageEngineNewResource(ResourceDescriptor* rd);
+  void KillRunningTask(TaskID_t task_id,
+                       TaskKillMessage::TaskKillReason reason);
 
  protected:
   void AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id);

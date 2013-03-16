@@ -30,6 +30,7 @@ package firmament;
 // 012  - StorageDiscoverMessage
 // 013  - StorageHeartBeatMessage
 // 014  - ObjectInfoMessage
+// 015  - TaskKillMessage
 // ...
 
 import "messages/test_message.proto";
@@ -42,6 +43,7 @@ import "messages/storage_registration_message.proto";
 import "messages/storage_message.proto";
 import "messages/task_info_message.proto";
 import "messages/task_delegation_message.proto";
+import "messages/task_kill_message.proto";
 
 message BaseMessage {
   // TODO(malte): Think about having a type identifier in here, and use a
@@ -60,4 +62,5 @@ message BaseMessage {
   optional StorageDiscoverMessage storage_discover = 12;
   optional StorageHeartBeatMessage storage_heartbeat = 13;
   optional ObjectInfoMessage object_info = 14;
+  optional TaskKillMessage task_kill = 15;
 }

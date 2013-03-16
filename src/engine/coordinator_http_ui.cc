@@ -15,6 +15,7 @@
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
 #include "misc/utils.h"
+#include "messages/task_kill_message.pb.h"
 #include "storage/types.h"
 
 namespace firmament {
@@ -468,6 +469,13 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
     ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
+  }
+  string* action = FindOrNull(params, "a");
+  if (action) {
+    if (*action == "kill") {
+      coordinator_->KillRunningTask(TaskIDFromString(*task_id),
+                                    TaskKillMessage::USER_ABORT);
+    }
   }
   TaskDescriptor* td_ptr = coordinator_->GetTask(
       TaskIDFromString(*task_id));

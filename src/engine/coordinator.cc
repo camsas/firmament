@@ -438,6 +438,34 @@ void Coordinator::InitHTTPUI() {
 }
 #endif
 
+void Coordinator::KillRunningTask(TaskID_t task_id,
+                                  TaskKillMessage::TaskKillReason reason) {
+  // Check if this is a local task
+  TaskDescriptor** td_ptr = FindOrNull(*task_table_, task_id);
+  if (!td_ptr) {
+    LOG(ERROR) << "Tried to kill unknown task " << task_id;
+    return;
+  }
+  // Check if we have a bound resource for the task and if it is marked as
+  // running
+  ResourceID_t* rid = scheduler_->BoundResourceForTask(task_id);
+  if ((*td_ptr)->state() != TaskDescriptor::RUNNING || !rid) {
+    LOG(ERROR) << "Task " << task_id << " is not running locally, "
+               << "so cannot kill it!";
+    return;
+  }
+  // Find the corresponding resource status (contains endpoint URI)
+  ResourceStatus** rs = FindOrNull(*associated_resources_, *rid);
+  // Manufacture the message
+  BaseMessage bm;
+  SUBMSG_WRITE(bm, task_kill, task_id, task_id);
+  SUBMSG_WRITE(bm, task_kill, reason, reason);
+  // Send the message
+  LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
+            << *rid;
+  m_adapter_->SendMessageToEndpoint((*rs)->location(), bm);
+}
+
 void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
   // Set job ID field on task. We do this here since we've only just generated
   // the job ID in the job submission, which passes it in.

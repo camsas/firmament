@@ -33,6 +33,9 @@ class SchedulerInterface : public PrintableInterface {
   // TODO(malte): Determine if we actually need this, given the reactive design
   // of the scheduler.
   //void AddJob(shared_ptr<JobDescriptor> job_desc);
+  // Find the resource to which a particular task ID is currently bound. Returns
+  // NULL if the task does not exist or is not currently bound.
+  virtual ResourceID_t* BoundResourceForTask(TaskID_t task_id) = 0;
   // Unregister a resource ID from the scheduler. No-op if the resource ID is
   // not actually registered with it.
   virtual void DeregisterResource(ResourceID_t res_id) = 0;
