@@ -83,6 +83,8 @@ MessagingChannelInterface<T>* StreamSocketsAdapter<T>::GetChannelForEndpoint(
   boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
   StreamSocketsChannel<T>** chan =
       FindOrNull(endpoint_channel_map_, endpoint);
+  if (VLOG_IS_ON(3))
+    DumpActiveChannels();
   if (!chan)
     // No channel found
     return NULL;

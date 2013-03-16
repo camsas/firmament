@@ -44,7 +44,7 @@ AsyncTCPServer::AsyncTCPServer(
   acceptor_.listen();
 
   tcp::endpoint endp =  acceptor_.local_endpoint();
-  listening_interface_ = "tcp://" + endp.address().to_string() + ":"
+  listening_interface_ = "tcp:" + endp.address().to_string() + ":"
       + boost::lexical_cast<string>(endp.port());
 
   VLOG(1) << "Async TCP server listening on: " << listening_interface_;

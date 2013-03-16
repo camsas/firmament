@@ -172,8 +172,8 @@ const string StreamSocketsChannel<T>::LocalEndpointString() {
   switch (type_) {
     case SS_TCP:
       protocol = "tcp:";
-      address = client_socket_->remote_endpoint(ec).address().to_string();
-      port = to_string<uint64_t>(client_socket_->remote_endpoint(ec).port());
+      address = client_socket_->local_endpoint(ec).address().to_string();
+      port = to_string<uint64_t>(client_socket_->local_endpoint(ec).port());
       if (ec)
         return "";
       else
