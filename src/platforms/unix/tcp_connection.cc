@@ -38,19 +38,25 @@ void TCPConnection::Close() {
 
 const string TCPConnection::LocalEndpointString() {
   if (!ready_)
-    return NULL;
-  string ip_address = socket_.local_endpoint().address().to_string();
-  string port = to_string<uint16_t>(socket_.local_endpoint().port());
-  string endpoint = "tcp://" + ip_address + ":" + port;
+    return "";
+  boost::system::error_code ec;
+  string ip_address = socket_.local_endpoint(ec).address().to_string();
+  string port = to_string<uint16_t>(socket_.local_endpoint(ec).port());
+  string endpoint = "tcp:" + ip_address + ":" + port;
+  if (ec)
+    return "";
   return endpoint;
 }
 
 const string TCPConnection::RemoteEndpointString() {
   if (!ready_)
-    return NULL;
-  string ip_address = socket_.remote_endpoint().address().to_string();
-  string port = to_string<uint16_t>(socket_.remote_endpoint().port());
-  string endpoint = "tcp://" + ip_address + ":" + port;
+    return "";
+  boost::system::error_code ec;
+  string ip_address = socket_.remote_endpoint(ec).address().to_string();
+  string port = to_string<uint16_t>(socket_.remote_endpoint(ec).port());
+  if (ec)
+    return "";
+  string endpoint = "tcp:" + ip_address + ":" + port;
   return endpoint;
 }
 

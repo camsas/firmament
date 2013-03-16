@@ -152,9 +152,15 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     // XXX(malte): the below is possibly unsafe in some way, especially w.r.t.
     // concurrency
     string remote_endpoint = chan->RemoteEndpointString();
-    //boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
-    CHECK(endpoint_channel_map_.erase(remote_endpoint));
-    CHECK(channel_recv_envelopes_.erase(chan));
+    if (remote_endpoint != "") {
+      //boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
+      CHECK(endpoint_channel_map_.erase(remote_endpoint));
+      CHECK(channel_recv_envelopes_.erase(chan));
+    } else {
+      LOG(ERROR) << "Failed to receive on channel at " << chan << ", which no "
+                 << "longer has an endpoint set. Cannot remove from "
+                 << "endpoint/channel map!";
+    }
     // After we have removed the channel from the map of active channels and
     // deleted its next receive envelope, we can close it without danger.
     chan->Close();

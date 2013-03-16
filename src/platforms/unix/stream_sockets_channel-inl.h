@@ -168,12 +168,16 @@ const string StreamSocketsChannel<T>::LocalEndpointString() {
   string port;
   string protocol;
   string endpoint;
+  boost::system::error_code ec;
   switch (type_) {
     case SS_TCP:
       protocol = "tcp:";
-      address = client_socket_->local_endpoint().address().to_string();
-      port = to_string<uint64_t>(client_socket_->local_endpoint().port());
-      return protocol + address + ":" + port;
+      address = client_socket_->remote_endpoint(ec).address().to_string();
+      port = to_string<uint64_t>(client_socket_->remote_endpoint(ec).port());
+      if (ec)
+        return "";
+      else
+        return protocol + address + ":" + port;
     case SS_UNIX:
       // XXX(malte): This does not actually work (I think), because ASIO's UNIX
       // socket representation does not have an address() member. We need to
@@ -203,12 +207,16 @@ const string StreamSocketsChannel<T>::RemoteEndpointString() {
   string port;
   string protocol;
   string endpoint;
+  boost::system::error_code ec;
   switch (type_) {
     case SS_TCP:
       protocol = "tcp:";
-      address = client_socket_->remote_endpoint().address().to_string();
-      port = to_string<uint64_t>(client_socket_->remote_endpoint().port());
-      return protocol + address + ":" + port;
+      address = client_socket_->remote_endpoint(ec).address().to_string();
+      port = to_string<uint64_t>(client_socket_->remote_endpoint(ec).port());
+      if (ec)
+        return "";
+      else
+        return protocol + address + ":" + port;
     case SS_UNIX:
       // XXX(malte): This does not actually work (I think), because ASIO's UNIX
       // socket representation does not have an address() member. We need to
