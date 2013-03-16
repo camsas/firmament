@@ -46,6 +46,7 @@
 #include "platforms/unix/signal_handler.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_adapter-inl.h"
+#include "platforms/unix/procfs_machine.h"
 #ifdef __HTTP_UI__
 #include "engine/coordinator_http_ui.h"
 #endif
@@ -65,6 +66,7 @@ using machine::topology::TopologyManager;
 using platform_unix::SignalHandler;
 using platform_unix::streamsockets::StreamSocketsChannel;
 using platform_unix::streamsockets::StreamSocketsAdapter;
+using platform_unix::ProcFSMachine;
 using scheduler::SchedulerInterface;
 using scheduler::SimpleScheduler;
 using scheduler::QuincyScheduler;
@@ -213,6 +215,7 @@ class Coordinator : public Node,
 #ifdef __HTTP_UI__
   void InitHTTPUI();
 #endif
+  void SendHeartbeatToParent();
 
 #ifdef __HTTP_UI__
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;
@@ -245,6 +248,10 @@ class Coordinator : public Node,
   // which case this will be a stub that defers to another scheduler.
   // TODO(malte): Work out the detailed semantics of this.
   SchedulerInterface* scheduler_;
+  // Pointer to channel to the parent coordinator
+  StreamSocketsChannel<BaseMessage>* parent_chan_;
+  // Machine statistics monitor
+  ProcFSMachine machine_monitor_;
 
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   shared_ptr<sim::SimpleDTGGenerator> sim_dtg_generator_;

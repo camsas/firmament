@@ -93,7 +93,7 @@ void Worker::SendHeartbeat() {
   SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());
   SUBMSG_WRITE(bm, heartbeat, capacity, 1);
   // TODO(malte): report how many free resources we have
-  SUBMSG_WRITE(bm, heartbeat, load, 1);
+  //SUBMSG_WRITE(bm, heartbeat, load, 1);
   VLOG(1) << "Sending heartbeat  message!";
   SendMessageToCoordinator(&bm);
 }

@@ -53,7 +53,8 @@ Coordinator::Coordinator(PlatformID platform_id)
     job_table_(new JobMap_t),
     task_table_(new TaskMap_t),
     topology_manager_(new TopologyManager()),
-    object_store_(new store::SimpleObjectStore(uuid_)) {
+    object_store_(new store::SimpleObjectStore(uuid_)),
+    parent_chan_(NULL) {
   // Start up a coordinator according to the platform parameter
   string hostname = boost::asio::ip::host_name();
   string desc_name = "Coordinator on " + hostname;
@@ -192,22 +193,28 @@ void Coordinator::Run() {
 
   // Do we have a parent? If so, register with it now.
   if (FLAGS_parent_uri != "") {
-      StreamSocketsChannel<BaseMessage>* chan =
-          new StreamSocketsChannel<BaseMessage > (
-              StreamSocketsChannel<BaseMessage>::SS_TCP);
-      CHECK(ConnectToRemote(FLAGS_parent_uri, chan))
-              << "Failed to connect to parent!";
-      RegisterWithCoordinator(chan);
-      InformStorageEngineNewResource(&resource_desc_);
+    parent_chan_ =
+        new StreamSocketsChannel<BaseMessage > (
+            StreamSocketsChannel<BaseMessage>::SS_TCP);
+    CHECK(ConnectToRemote(FLAGS_parent_uri, parent_chan_))
+        << "Failed to connect to parent at " << FLAGS_parent_uri << "!";
+    VLOG(1) << parent_chan_->LocalEndpointString();
+    VLOG(1) << parent_chan_->RemoteEndpointString();
+    RegisterWithCoordinator(parent_chan_);
+    InformStorageEngineNewResource(&resource_desc_);
   }
 
   // Main loop
   while (!exit_) {
-      // Wait for events (i.e. messages from workers.
-      // TODO(malte): we need to think about any actions that the coordinator
-      // itself might need to take, and how they can be triggered
-      VLOG(3) << "Hello from main loop!";
-      AwaitNextMessage();
+    // Wait for events (i.e. messages from workers.
+    // TODO(malte): we need to think about any actions that the coordinator
+    // itself might need to take, and how they can be triggered
+    VLOG(3) << "Hello from main loop!";
+    AwaitNextMessage();
+    // TODO(malte): wrap this in a timer
+    if (parent_chan_ != NULL)
+      SendHeartbeatToParent();
+    boost::this_thread::sleep(boost::posix_time::seconds(1));
   }
 
   // We have dropped out of the main loop and are exiting
@@ -295,6 +302,8 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
   } else {
       LOG(INFO) << "HEARTBEAT from resource " << msg.uuid()
                 << " (last seen at " << (*rsp)->last_heartbeat() << ")";
+      if (msg.has_load())
+        VLOG(1) << "Remote resource stats: " << msg.load().DebugString();
       // Update timestamp
       (*rsp)->set_last_heartbeat(GetCurrentTimestamp());
   }
@@ -506,6 +515,23 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
        ++task_iter) {
     AddJobsTasksToTables(&(*task_iter), job_id);
   }
+}
+
+void Coordinator::SendHeartbeatToParent() {
+  BaseMessage bm;
+  // TODO(malte): we do not always need to send the location string; it
+  // sufficies to send it if our location changed (which should be rare).
+  SUBMSG_WRITE(bm, heartbeat, uuid, to_string(uuid_));
+  SUBMSG_WRITE(bm, heartbeat, location, node_uri_);
+  SUBMSG_WRITE(bm, heartbeat, capacity,
+               topology_manager_->NumProcessingUnits());
+  // TODO(malte): include resource usage
+  MachinePerfStatisticsSample* stats = bm.mutable_heartbeat()->mutable_load();
+  stats->set_timestamp(GetCurrentTimestamp());
+  stats->set_resource_id(to_string(uuid_));
+  machine_monitor_.CreateStatistics(stats);
+  VLOG(1) << "Sending heartbeat to parent coordinator!";
+  SendMessageToRemote(parent_chan_, &bm);
 }
 
 const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
