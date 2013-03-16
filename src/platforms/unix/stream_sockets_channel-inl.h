@@ -170,7 +170,7 @@ const string StreamSocketsChannel<T>::LocalEndpointString() {
   string endpoint;
   switch (type_) {
     case SS_TCP:
-      protocol = "tcp://";
+      protocol = "tcp:";
       address = client_socket_->local_endpoint().address().to_string();
       port = to_string<uint64_t>(client_socket_->local_endpoint().port());
       return protocol + address + ":" + port;
@@ -180,7 +180,7 @@ const string StreamSocketsChannel<T>::LocalEndpointString() {
       // figure out how to deal with this when implementing something other than
       // TCP. path() in local::stream_protocol::endpoint seems like a good
       // choice.
-      protocol = "unix://";
+      protocol = "unix:";
       //address = client_socket_->remote_endpoint().path();
       return protocol + address;
     default:
@@ -205,7 +205,7 @@ const string StreamSocketsChannel<T>::RemoteEndpointString() {
   string endpoint;
   switch (type_) {
     case SS_TCP:
-      protocol = "tcp://";
+      protocol = "tcp:";
       address = client_socket_->remote_endpoint().address().to_string();
       port = to_string<uint64_t>(client_socket_->remote_endpoint().port());
       return protocol + address + ":" + port;
@@ -215,7 +215,7 @@ const string StreamSocketsChannel<T>::RemoteEndpointString() {
       // figure out how to deal with this when implementing something other than
       // TCP. path() in local::stream_protocol::endpoint seems like a good
       // choice.
-      protocol = "unix://";
+      protocol = "unix:";
       //address = client_socket_->remote_endpoint().path();
       return protocol + address;
     default:

@@ -11,7 +11,7 @@
 
 namespace firmament {
 
-#define NETWORKED_REGEX "^(tcp|udp)://([a-zA-Z0-9\\.]+):([0-9]+)$"
+#define NETWORKED_REGEX "^(tcp|udp):([a-zA-Z0-9\\.]+):([0-9]+)$"
 
 class URITools {
  public:
