@@ -22,6 +22,9 @@
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
 
+DEFINE_bool(debug_flow_graph, true, "Write out a debug copy of the scheduling"
+            " flow graph to /tmp/debug.dm.");
+
 namespace firmament {
 namespace scheduler {
 
@@ -196,6 +199,8 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
 }
 
 uint64_t QuincyScheduler::RunSchedulingIteration() {
+  // Blow away any old exporter state
+  exporter_.Reset();
   // Export the current flow graph to DIMACS format
   exporter_.Export(flow_graph_);
   uint64_t num_nodes = flow_graph_.NumNodes();
@@ -212,7 +217,9 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   VLOG(1) << "Solver running, CHILD_READ: " << outfd[0] << ", PARENT_WRITE: "
           << outfd[1] << ", PARENT_READ: " << infd[0] << ", CHILD_WRITE: "
           << infd[1];
+  // Write debugging copy
   exporter_.Flush("/tmp/debug.dm");
+  // Write to pipe to solver
   exporter_.Flush(outfd[1]);
   // Parse and process the result
   vector<map<uint64_t, uint64_t> >* extracted_flow =

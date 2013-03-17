@@ -9,6 +9,8 @@
 
 #include <string>
 
+#include <boost/uuid/nil_generator.hpp>
+
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
@@ -19,9 +21,11 @@ namespace firmament {
 
 struct FlowGraphNode {
   explicit FlowGraphNode(uint64_t id)
-      : id_(id), supply_(0), demand_(0) {}
+      : id_(id), supply_(0), demand_(0),
+        resource_id_(boost::uuids::nil_uuid()), task_id_(0) {}
   FlowGraphNode(uint64_t id, uint64_t supply, uint64_t demand)
-      : id_(id), supply_(supply), demand_(demand) {
+      : id_(id), supply_(supply), demand_(demand),
+        resource_id_(boost::uuids::nil_uuid()), task_id_(0) {
   }
 
   uint64_t id_;

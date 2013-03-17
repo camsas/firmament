@@ -124,6 +124,7 @@ const string DIMACSExporter::GenerateNode(const FlowGraphNode& node) {
     CHECK_EQ(node.supply_, 0);
   int64_t value = node.supply_ - node.demand_;
   stringstream ss;
+  ss << "c nd " << node.task_id_ << " " << to_string(node.resource_id_) << "\n";
   ss << "n " << node.id_ << " " << value << "\n";
   return ss.str();
 }
