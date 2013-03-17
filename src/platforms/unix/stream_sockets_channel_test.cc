@@ -36,8 +36,8 @@ class StreamSocketsChannelTest : public ::testing::Test {
   StreamSocketsChannelTest()
     : local_adapter_(new StreamSocketsAdapter<BaseMessage>()),
       remote_adapter_(new StreamSocketsAdapter<BaseMessage>()),
-      local_uri_("tcp://localhost:7777"),
-      remote_uri_("tcp://localhost:7778") {
+      local_uri_("tcp:localhost:7777"),
+      remote_uri_("tcp:localhost:7778") {
     // You can do set-up work for each test here.
   }
 
@@ -91,12 +91,12 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
       new StreamSocketsAdapter<uint64_t>();
   StreamSocketsAdapter<uint64_t>* remote_uint_adapter =
       new StreamSocketsAdapter<uint64_t>();
-  remote_uint_adapter->ListenURI("tcp://localhost:7788");
+  remote_uint_adapter->ListenURI("tcp:localhost:7788");
   while (!remote_uint_adapter->ListenReady()) { }
   StreamSocketsChannel<uint64_t>* uint_channel =
       new StreamSocketsChannel<uint64_t>(
           StreamSocketsChannel<uint64_t>::SS_TCP);
-  local_uint_adapter->EstablishChannel("tcp://localhost:7788",
+  local_uint_adapter->EstablishChannel("tcp:localhost:7788",
                                        uint_channel);
   while (!uint_channel->Ready()) {  }
   uint64_t testInteger = 5;

@@ -58,7 +58,7 @@ class StreamSocketsAdapterTest : public ::testing::Test {
 
 // Tests channel establishment.
 TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
-  string uri = "tcp://localhost:7777";
+  string uri = "tcp:localhost:7777";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
   StreamSocketsAdapter<BaseMessage>* mess_adapter =
@@ -106,7 +106,7 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
 
 // Tests send and receive of arbitrary protobufs.
 /*TEST_F(StreamSocketsAdapterTest, ArbitraryProtobufSendRecv) {
-  string uri = "tcp://localhost:7778";
+  string uri = "tcp:localhost:7778";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
   shared_ptr<StreamSocketsAdapter> mess_adapter(new StreamSocketsAdapter());
@@ -138,7 +138,7 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
 // Tests backchannel establishment by sending a protobuf through the
 // backchannel.
 TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
-  string uri1 = "tcp://localhost:7779";
+  string uri1 = "tcp:localhost:7779";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
   StreamSocketsAdapter<BaseMessage>* mess_adapter1 =
