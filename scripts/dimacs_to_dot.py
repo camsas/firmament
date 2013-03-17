@@ -16,7 +16,7 @@ def dot_out(nodes, edges):
   print "\t{ node [shape=box]"
   print "\t",
   for n in nodes:
-    print "%d " % (n['nid']),
+    print "%d [ label = \"%d: %s\" ];" % (n['nid'], n['nid'], n['desc'])
   print "\t}"
   # edges
   print "\t{ edge [color=\"#ff0000\"]"
@@ -31,19 +31,37 @@ def dot_out(nodes, edges):
 
 nodes = []
 edges = []
+node_task_id = "0"
+node_res_id = "00000000-0000-0000-0000-000000000000"
 for line in open(inputfile).readlines():
   fields = [x.strip() for x in line.split(" ")]
   if fields[0] == 'c':
-    # comment, skip
+    # comment, check if this contains node descriptions
+    if len(fields) > 2 and fields[1] == "nd":
+      node_task_id = fields[2]
+      node_res_id = fields[3]
     continue
   if fields[0] == 'p':
     # problem descr
     continue
   if fields[0] == 'n':
     # node
+    node_desc = ""
+    if node_task_id != "0" and \
+        node_res_id == "00000000-0000-0000-0000-000000000000":
+      node_desc = node_task_id
+    elif node_task_id == "0" and \
+        node_res_id != "00000000-0000-0000-0000-000000000000":
+      node_desc = node_res_id
+    else:
+      # ignore
+      pass
     node = { 'nid': int(fields[1]),
-             'supp': int(fields[2]) }
+             'supp': int(fields[2]),
+             'desc': node_desc }
     nodes.append(node)
+    node_task_id = "0"
+    node_res_id = "00000000-0000-0000-0000-000000000000"
   if fields[0] == 'a':
     # arc
     edge = { 'src': int(fields[1]),
