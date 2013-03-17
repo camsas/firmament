@@ -76,6 +76,7 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
     else
       // XXX(malte): FIX the assumption here!
       task_node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+    task_node->task_id_ = cur->uid();  // set task ID in node
     sink_node_->demand_++;
     task_nodes_.insert(task_node->id_);
     // Arcs for this node
@@ -149,6 +150,8 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
       VLOG(2) << "Adding node " << id << " for resource "
               << c_iter->resource_desc().uuid();
       FlowGraphNode* child_node = AddNodeInternal(id);
+      child_node->resource_id_ = ResourceIDFromString(
+          c_iter->resource_desc().uuid());
       InsertIfNotPresent(&resource_to_nodeid_map_,
                          ResourceIDFromString(c_iter->resource_desc().uuid()),
                          child_node->id_);

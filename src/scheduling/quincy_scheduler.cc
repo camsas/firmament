@@ -65,9 +65,74 @@ const ResourceID_t* QuincyScheduler::FindResourceForTask(
   return NULL;
 }
 
+uint64_t QuincyScheduler::ApplySchedulingDeltas(
+    const vector<SchedulingDelta*>& deltas) {
+  // Perform the necessary actions to apply the scheduling changes passed to the
+  // method
+  VLOG(1) << "Applying " << deltas.size() << " scheduling deltas...";
+  for (vector<SchedulingDelta*>::const_iterator it = deltas.begin();
+       it != deltas.end();
+       ++it) {
+    VLOG(1) << "Processing delta of type " << (*it)->type();
+    if ((*it)->type() == SchedulingDelta::PLACE) {
+      VLOG(1) << "Trying to place task " << (*it)->task_id()
+              << " on resource " << (*it)->resource_id();
+      TaskDescriptor** td = FindOrNull(*task_map_, (*it)->task_id());
+      ResourceStatus** rs =
+          FindOrNull(*resource_map_,
+                     ResourceIDFromString((*it)->resource_id()));
+      CHECK_NOTNULL(td);
+      CHECK_NOTNULL(rs);
+      VLOG(1) << "About to bind task " << (*td)->uid() << " to resource "
+              << (*rs)->mutable_descriptor()->uuid();
+      BindTaskToResource(*td, (*rs)->mutable_descriptor());
+    }
+    delete *it;  // Remove the scheduling delta
+  }
+  return deltas.size();
+}
+
+void QuincyScheduler::NodeBindingToSchedulingDelta(
+    const FlowGraphNode& src, const FlowGraphNode& dst,
+    SchedulingDelta* delta) {
+  // Figure out what type of scheduling change this is
+  // Source must be a task node as this point
+  CHECK(src.type_.type() == FlowNodeType::SCHEDULED_TASK ||
+        src.type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+        src.type_.type() == FlowNodeType::ROOT_TASK);
+  // Destination must be a PU node
+  CHECK(dst.type_.type() == FlowNodeType::PU);
+  // Is the source (task) already placed elsewhere?
+  ResourceID_t* bound_res = FindOrNull(task_bindings_, src.task_id_);
+  if (bound_res && *bound_res != dst.resource_id_) {
+    // If so, we have a migration
+    VLOG(1) << "MIGRATION: take " << src.task_id_ << " off "
+            << *bound_res << " and move it to "
+            << dst.resource_id_;
+    delta->set_type(SchedulingDelta::MIGRATE);
+    delta->set_task_id(src.task_id_);
+    delta->set_resource_id(to_string(dst.resource_id_));
+  } else if (false) {  // Is something else bound to the same resource?
+    // If so, we have a preemption
+    // XXX(malte): This code is NOT WORKING!
+    VLOG(1) << "PREEMPTION: take " << src.task_id_ << " off "
+            << *bound_res << " and replace it with "
+            << src.task_id_;
+    delta->set_type(SchedulingDelta::PREEMPT);
+  } else {
+    // If neither, we have a scheduling event
+    VLOG(1) << "SCHEDULING: place " << src.task_id_ << " on "
+            << dst.resource_id_ << ", which was idle.";
+    delta->set_type(SchedulingDelta::PLACE);
+    delta->set_task_id(src.task_id_);
+    delta->set_resource_id(to_string(dst.resource_id_));
+  }
+}
+
 uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
   // Check if the job is already in the flow graph
   // If not, simply add the whole job
+  const set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
   flow_graph_.AddJobNodes(job_desc);
   // If it is, only add the new bits
   // Run a scheduler iteration
@@ -156,11 +221,17 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
       GetMappings(extracted_flow, flow_graph_.leaf_node_ids(),
                   flow_graph_.sink_node().id_);
   map<uint64_t, uint64_t>::iterator it;
+  vector<SchedulingDelta*> deltas;
   for (it = task_mappings->begin();
        it != task_mappings->end(); it++) {
-    VLOG(1) << it->first << " " << it->second << endl;
+    VLOG(1) << "Bind " << it->first << " to " << it->second << endl;
+    SchedulingDelta* delta = new SchedulingDelta;
+    NodeBindingToSchedulingDelta(*flow_graph_.Node(it->first),
+                                 *flow_graph_.Node(it->second), delta);
+    deltas.push_back(delta);
   }
-  return 0;
+  uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
+  return num_scheduled;
 }
 
 void QuincyScheduler::PrintGraph(vector< map<uint64_t, uint64_t> > adj_map) {

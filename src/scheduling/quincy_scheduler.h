@@ -17,10 +17,11 @@
 #include "base/task_desc.pb.h"
 #include "engine/executor_interface.h"
 #include "scheduling/dimacs_exporter.h"
+#include "scheduling/event_driven_scheduler.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_node_type.pb.h"
+#include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/scheduling_parameters.pb.h"
-#include "scheduling/event_driven_scheduler.h"
 #include "storage/reference_interface.h"
 
 namespace firmament {
@@ -50,6 +51,7 @@ class QuincyScheduler : public EventDrivenScheduler {
   const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
 
  private:
+  uint64_t ApplySchedulingDeltas(const vector<SchedulingDelta*>& deltas);
   uint64_t AssignNode(
       vector< map< uint64_t, uint64_t > >* extracted_flow,
       uint64_t node);
@@ -59,6 +61,9 @@ class QuincyScheduler : public EventDrivenScheduler {
       vector< map< uint64_t, uint64_t > >* extracted_flow,
       unordered_set<uint64_t> leaves,
       uint64_t sink);
+  void NodeBindingToSchedulingDelta(const FlowGraphNode& src,
+                                    const FlowGraphNode& dst,
+                                    SchedulingDelta* delta);
   void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);
   vector< map< uint64_t, uint64_t> >* ReadFlowGraph(
       int fd, uint64_t num_vertices);

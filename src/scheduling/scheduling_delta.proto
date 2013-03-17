@@ -1,0 +1,18 @@
+// The Firmament project
+// Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Represents a scheduling change to be applied.
+
+package firmament;
+
+message SchedulingDelta {
+  enum ChangeType {
+    PLACE = 0;
+    PREEMPT = 1;
+    MIGRATE = 2;
+  }
+
+  required uint64 task_id = 1;
+  required string resource_id = 2;
+  required ChangeType type = 3 [default = PLACE];
+}
