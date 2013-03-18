@@ -31,6 +31,21 @@ package firmament;
 // 013  - StorageHeartBeatMessage
 // 014  - ObjectInfoMessage
 // 015  - TaskKillMessage
+// -----------------------------
+// libDIOS messages
+// 016  - CopyRequest
+// 017  - CopyResponse
+// 018  - CreateRequest
+// 019  - CreateResponse
+// 020  - DeleteNotification
+// 021  - BeginReadNotification
+// 022  - EndReadNotification
+// 023  - BeginWriteNotification
+// 024  - EndWriteNotification
+// 025  - EndWriteFinalNotification
+// 026  - SelectNotification
+// 027  - LookupRequest
+// 028  - LookupResponse
 // ...
 
 import "messages/test_message.proto";
@@ -44,6 +59,11 @@ import "messages/storage_message.proto";
 import "messages/task_info_message.proto";
 import "messages/task_delegation_message.proto";
 import "messages/task_kill_message.proto";
+import "messages/copy_message.proto";
+import "messages/create_message.proto";
+import "messages/delete_message.proto";
+import "messages/io_notification_message.proto";
+import "messages/lookup_message.proto";
 
 message BaseMessage {
   // TODO(malte): Think about having a type identifier in here, and use a
@@ -63,4 +83,20 @@ message BaseMessage {
   optional StorageHeartBeatMessage storage_heartbeat = 13;
   optional ObjectInfoMessage object_info = 14;
   optional TaskKillMessage task_kill = 15;
+  // -----------------------------
+  // libDIOS messages
+  optional CopyRequest copy_request = 16;
+  optional CopyResponse copy_response = 17;
+  optional CreateRequest create_request = 18;
+  optional CreateResponse create_response = 19;
+  optional DeleteNotification delete_notification = 20;
+  optional BeginReadNotification begin_read_notification = 21;
+  optional EndReadNotification end_read_notification = 22;
+  optional BeginWriteNotification begin_write_notification = 23;
+  optional EndWriteNotification end_write_notification = 24;
+  optional EndWriteFinalNotification end_write_final_notification = 25;
+  optional SelectNotification select_notification = 26;
+  optional LookupRequest lookup_request = 27;
+  optional LookupResponse lookup_response = 28;
+
 }

@@ -1,0 +1,39 @@
+// The Firmament project
+// Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Various I/O notification messages for conveying hints between libDIOS and
+// Firmament.
+
+package firmament;
+
+import "base/reference_desc.proto";
+
+message BeginWriteNotification {
+  required ReferenceDescriptor reference = 1;
+  optional uint64 task_id = 2;
+}
+
+message EndWriteFinalNotification {
+  required ReferenceDescriptor reference = 1;
+  optional uint64 task_id = 2;
+}
+
+message EndWriteNotification {
+  required ReferenceDescriptor reference = 1;
+  optional uint64 task_id = 2;
+}
+
+message BeginReadNotification {
+  required ReferenceDescriptor reference = 1;
+  optional uint64 task_id = 2;
+}
+
+message EndReadNotification {
+  required ReferenceDescriptor reference = 1;
+  optional uint64 task_id = 2;
+}
+
+message SelectNotification {
+  repeated ReferenceDescriptor reference = 1;
+  optional uint64 task_id = 2;
+}

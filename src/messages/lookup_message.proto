@@ -1,0 +1,17 @@
+// The Firmament project
+// Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Name lookup messages; contains request and response messages.
+
+package firmament;
+
+import "base/reference_desc.proto";
+
+message LookupRequest {
+  required bytes name = 1;
+  optional uint64 task_id = 2;
+}
+
+message LookupResponse {
+  repeated ReferenceDescriptor references  = 1;
+}

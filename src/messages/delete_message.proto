@@ -1,0 +1,15 @@
+// The Firmament project
+// Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Deletion indication sent to coordinator in order for it to invalidate the
+// reference carried.
+
+package firmament;
+
+import "base/reference_desc.proto";
+
+message DeleteNotification {
+  required ReferenceDescriptor reference = 3;
+  optional uint64 task_id = 2;
+}
+

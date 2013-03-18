@@ -11,7 +11,9 @@ PBS = test_message.pb.o heartbeat_message.pb.o \
       task_delegation_message.pb.o task_heartbeat_message.pb.o \
       task_info_message.pb.o task_kill_message.pb.o \
       task_spawn_message.pb.o task_state_message.pb.o \
-      storage_message.pb.o storage_registration_message.pb.o
+      storage_message.pb.o storage_registration_message.pb.o \
+      create_message.pb.o delete_message.pb.o lookup_message.pb.o \
+      copy_message.pb.o io_notification_message.pb.o
 TESTS =
 TESTS_DEPS =
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))

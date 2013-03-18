@@ -1,0 +1,19 @@
+// The Firmament project
+// Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Name/reference creation messages; contains request and response messages.
+
+package firmament;
+
+import "base/reference_desc.proto";
+
+message CopyRequest {
+  required ReferenceDescriptor reference = 3;
+  optional uint64 task_id = 2;
+  // TODO(malte): Add any flags here as required.
+}
+
+message CopyResponse {
+  required bytes name = 1;
+  required bool success = 2;
+}
