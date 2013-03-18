@@ -155,14 +155,22 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
   char line[100];
   vector<string> vals;
 
-  FILE* fptr;
+  FILE* fptr = NULL;
+  FILE* dbg_fptr = NULL;
   if ((fptr = fdopen(fd, "r")) == NULL) {
-    LOG(ERROR) << "Failed to open FD for reading. FD " << fd;
+    LOG(ERROR) << "Failed to open FD for reading of flow graph. FD " << fd;
+  }
+  if (FLAGS_debug_flow_graph) {
+    CHECK((dbg_fptr = fopen("/tmp/debug-flow.dm", "w")) != NULL);
   }
   uint64_t l = 0;
   while (!feof(fptr) && l < 100) {
     if (fscanf(fptr, "%[^\n]%*[\n]", &line) > 0) {
       VLOG(3) << "Processing line " << l << ": " << line;
+      if (FLAGS_debug_flow_graph) {
+        fputs(line, dbg_fptr);
+        fputc('\n', dbg_fptr);
+      }
       l++;
       boost::split(vals, line, is_any_of(" "), token_compress_on);
       if (vals[0].compare("f") == 0) {
@@ -195,6 +203,8 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
     }
   }
   fclose(fptr);
+  if (FLAGS_debug_flow_graph)
+    fclose(dbg_fptr);
   return adj_list;
 }
 
@@ -214,11 +224,12 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   // Now run the solver
   vector<string> args;
   ExecCommandSync("/mnt/dev/quincy/min-flow-solver/cs2.exe", args, outfd, infd);
-  VLOG(1) << "Solver running, CHILD_READ: " << outfd[0] << ", PARENT_WRITE: "
+  VLOG(2) << "Solver running, CHILD_READ: " << outfd[0] << ", PARENT_WRITE: "
           << outfd[1] << ", PARENT_READ: " << infd[0] << ", CHILD_WRITE: "
           << infd[1];
   // Write debugging copy
-  exporter_.Flush("/tmp/debug.dm");
+  if (FLAGS_debug_flow_graph)
+    exporter_.Flush("/tmp/debug.dm");
   // Write to pipe to solver
   exporter_.Flush(outfd[1]);
   // Parse and process the result
