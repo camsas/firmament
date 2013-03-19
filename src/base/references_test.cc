@@ -78,20 +78,16 @@ TEST_F(ReferencesTest, CreateErrorTest) {
 TEST_F(ReferencesTest, CreateConcreteTest) {
   FLAGS_v = 2;
   DataObjectID_t ref_id(test_name_);
-  set<string> locations;
+  string location;
   uint64_t size = 1000;
-  locations.insert("here");
-  locations.insert("there");
-  ConcreteReference r(ref_id, size, locations);
+  location = "here";
+  ConcreteReference r(ref_id, size, location);
 
   // Check all members are set to what we expect.
   EXPECT_EQ(r.id(), ref_id);
   EXPECT_TRUE(r.Consumable());
   EXPECT_EQ(r.size(), size);
-  EXPECT_EQ(r.locations(), locations);
-  // Check that adding a location works as expected
-  r.AddLocation("elsewhere");
-  EXPECT_NE(r.locations(), locations);
+  EXPECT_EQ(r.location(), location);
 }
 
 // Test that verifies all members are initialized correctly when setting up a
@@ -115,9 +111,9 @@ TEST_F(ReferencesTest, ValidateInternalDescriptors) {
   FutureReference f(ref_id);
   ErrorReference e(ref_id, "foo", "bar");
   ConcreteReference c1(ref_id);
-  set<string> locations;
-  locations.insert("whee");
-  ConcreteReference c2(ref_id, 100, locations);
+  string location;
+  location = "whee";
+  ConcreteReference c2(ref_id, 100, location);
   ValueReference v(ref_id, "42");
 
   f.ValidateInternalDescriptor();

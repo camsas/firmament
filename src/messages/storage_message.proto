@@ -25,7 +25,7 @@ message ObjectInfoMessage {
     required bytes obj_name = 1;
 /* Should locations be resource ids or direct host:port (storage engine
 listening interface)? */
-    repeated string locations = 2;
+    optional string location = 2;
 }
 
 

@@ -170,7 +170,7 @@ StorageInfo* SimpleObjectStore::infer_best_location(ReferenceDescriptor* rd) {
   VLOG(3) << "Infer_best_location ";
   VLOG(3) << "Unimplemented, returning first location ";
 
-  string uri = rd->location(0);
+  string uri = rd->location();
 
   StorageInfo* inf = *FindOrNull(nodes, uri);
   return inf;
@@ -209,11 +209,7 @@ void SimpleObjectStore::sendHeartbeat() {
       } else {
         ObjectInfoMessage msg;
         msg.set_obj_name(rd->id());
-        int loc_size = rd->location_size();
-        int i = 0;
-        while (i < loc_size) {
-          msg.add_locations(rd->location(i++));
-        }
+        msg.set_location(rd->location());
         // Check
         ObjectInfoMessage* m = hb.add_object();
         m = &msg;

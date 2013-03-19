@@ -25,28 +25,22 @@ class ConcreteReference : public ReferenceInterface {
     desc_.set_type(type_);
   }
   ConcreteReference(DataObjectID_t id, uint64_t size,
-          const set<string>& locations)
+                    const string& location)
   : ReferenceInterface(id), size_(size),
-  locations_(locations.begin(), locations.end()) {
+    location_(location) {
     desc_.set_id(id.name_bytes(), DIOS_NAME_BYTES);
     desc_.set_type(type_);
     desc_.set_size(size);
-    for (set<string>::const_iterator it = locations_.begin();
-            it != locations_.end();
-            ++it)
-      desc_.add_location(*it);
+    desc_.set_location(location);
   }
   explicit ConcreteReference(const ReferenceDescriptor& desc)
   : ReferenceInterface(desc) {
     ValidateInitDescriptor(desc);
     size_ = desc.size();
-    for (RepeatedPtrField<string>::const_iterator it = desc.location().begin();
-            it != desc.location().end();
-            ++it)
-      locations_.insert(*it);
+    location_ = desc.location();
   }
-  void AddLocation(const string& location) {
-    locations_.insert(location);
+  void SetLocation(const string& location) {
+    location_ = location;
   }
   virtual inline bool Consumable() {
     return true;
@@ -58,8 +52,8 @@ class ConcreteReference : public ReferenceInterface {
   inline uint64_t size() {
     return size_;
   }
-  inline const set<string>& locations() {
-    return locations_;
+  inline const string& location() {
+    return location_;
   }
 
  protected:
@@ -82,7 +76,7 @@ class ConcreteReference : public ReferenceInterface {
   static const ReferenceType_t type_ = ReferenceDescriptor::CONCRETE;
   // Additional members of concrete refs
   uint64_t size_;
-  set<string> locations_;
+  string location_;
 };
 
 } // namespace firmament

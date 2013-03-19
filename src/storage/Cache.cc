@@ -246,7 +246,8 @@ void Cache::handle_notification_references(ReferenceNotification_t* ref) {
               // Was already concrete. Add this location to reference
               // Adding resource ID directly rather than listening interface for
               // now
-              rd->add_location(lexical_cast<string>(store->get_resource_id()));
+              //rd->add_location(lexical_cast<string>(
+              //store->get_resource_id()));
               ref->request_type = FREE;
               rd->set_is_modified(true);
             }
@@ -255,8 +256,7 @@ void Cache::handle_notification_references(ReferenceNotification_t* ref) {
             {
               // Was future. Make Concrete now
               VLOG(3) << "Reference was a future. Making concrete ";
-              set<string> loc;
-              loc.insert(store->get_listening_interface());
+              string loc = store->get_listening_interface();
               ConcreteReference* conc_ref =
                   new ConcreteReference(*ref->id, ref->size, loc);
               rd = new ReferenceDescriptor(conc_ref->desc());
