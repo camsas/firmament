@@ -203,6 +203,8 @@ class Coordinator : public Node,
                            const string& remote_endpoint);
   void HandleIncomingMessage(BaseMessage *bm, const string& remote_endpoint);
   void HandleHeartbeat(const HeartbeatMessage& msg);
+  void HandleLookupRequest(const LookupRequest& msg,
+                           const string& remote_endpoint);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
   void HandleTaskDelegationRequest(const TaskDelegationMessage& msg);
   void HandleTaskHeartbeat(const TaskHeartbeatMessage& msg);

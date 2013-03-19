@@ -292,6 +292,12 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
     HandleCreateRequest(msg, remote_endpoint);
     handled_extensions++;
   }
+  // DIOS syscall: lookup message
+  if (bm->has_lookup_request()) {
+    const LookupRequest& msg = bm->lookup_request();
+    HandleLookupRequest(msg, remote_endpoint);
+    handled_extensions++;
+  }
   // Check that we have handled at least one sub-message
   if (handled_extensions == 0)
     LOG(ERROR) << "Ignored incoming message, no known extension present, "
@@ -327,6 +333,24 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       // Update timestamp
       (*rsp)->set_last_heartbeat(GetCurrentTimestamp());
   }
+}
+
+void Coordinator::HandleLookupRequest(const LookupRequest& msg,
+                                      const string& remote_endpoint) {
+  // Check if the name requested exists in the object table, and return all
+  // reference descriptors for it if so.
+  // XXX(malte): This currently returns a single reference; we should return
+  // multiple if they exist.
+  ReferenceDescriptor* rd = object_store_->GetReference(
+      DataObjectID_t(msg.name()));
+  // Manufacture and send a response
+  BaseMessage resp_msg;
+  if (rd) {
+    ReferenceDescriptor* resp_rd =
+        resp_msg.mutable_lookup_response()->add_references();
+    resp_rd->CopyFrom(*rd);
+  }
+  m_adapter_->SendMessageToEndpoint(remote_endpoint, resp_msg);
 }
 
 void Coordinator::HandleRegistrationRequest(
