@@ -80,8 +80,8 @@ export PB2JSON_LIB
 # INCLUDES
 #######################################
 
-INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(GTEST_INC_DIR) \
-	   -I$(PB2JSON_INC_DIR) #-I$(GPERFTOOLS_INC_DIR)
+INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(CSRC_GEN_DIR) \
+	   -I$(GTEST_INC_DIR) -I$(PB2JSON_INC_DIR) #-I$(GPERFTOOLS_INC_DIR)
 
 
 #######################################
