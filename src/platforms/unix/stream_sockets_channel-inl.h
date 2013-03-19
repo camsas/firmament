@@ -261,7 +261,8 @@ bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
             << error.message();
     return false;
   } else {
-    VLOG(2) << "Sent " << len << " bytes of protobuf data...";
+    VLOG(2) << "Sent " << len << " bytes of protobuf data: "
+            << message;
   }
   return true;
 }
