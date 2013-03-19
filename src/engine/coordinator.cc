@@ -286,10 +286,30 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
     HandleTaskDelegationRequest(msg);
     handled_extensions++;
   }
+  // DIOS syscall: create message
+  if (bm->has_create_request()) {
+    const CreateRequest& msg = bm->create_request();
+    HandleCreateRequest(msg, remote_endpoint);
+    handled_extensions++;
+  }
   // Check that we have handled at least one sub-message
   if (handled_extensions == 0)
     LOG(ERROR) << "Ignored incoming message, no known extension present, "
                << "so cannot handle it: " << bm->DebugString();
+}
+
+void Coordinator::HandleCreateRequest(const CreateRequest& msg,
+                                      const string& remote_endpoint) {
+  // Try to insert the reference descriptor conveyed into the object table.
+  ReferenceDescriptor* new_rd = new ReferenceDescriptor;
+  new_rd->CopyFrom(msg.reference());
+  bool succ = !object_store_->addReference(DataObjectID_t(msg.reference().id()),
+                                           new_rd);
+  // Manufacture and send a response
+  BaseMessage resp_msg;
+  SUBMSG_WRITE(resp_msg, create_response, name, msg.reference().id());
+  SUBMSG_WRITE(resp_msg, create_response, success, succ);
+  m_adapter_->SendMessageToEndpoint(remote_endpoint, resp_msg);
 }
 
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
