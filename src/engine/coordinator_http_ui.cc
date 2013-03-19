@@ -232,12 +232,13 @@ void CoordinatorHTTPUI::HandleReferencesListURI(HTTPRequestPtr& http_request,  /
        r_iter != refs->end();
        ++r_iter) {
     TemplateDictionary* sect_dict = dict.AddSectionDictionary("REF_DATA");
-    sect_dict->SetValue("REF_ID", to_string(r_iter->first));
+    sect_dict->SetValue("REF_ID", r_iter->first.name_printable_string());
     sect_dict->SetFormattedValue("REF_PRODUCING_TASK_ID", "%ju",
                                  TaskID_t(r_iter->second->producing_task()));
     sect_dict->SetValue("REF_TYPE",
-                        ENUM_TO_STRING(JobDescriptor::JobState,
+                        ENUM_TO_STRING(ReferenceDescriptor::ReferenceType,
                                        r_iter->second->type()));
+    sect_dict->SetValue("REF_LOCATION", r_iter->second->location());
     ++i;
   }
   string output;
