@@ -3,6 +3,7 @@ from base import task_desc_pb2
 from base import reference_desc_pb2
 from google.protobuf import text_format
 import httplib, urllib, re, sys, random
+import binascii
 
 if len(sys.argv) < 4:
   print "usage: job_submit.py <coordinator hostname> <web UI port> " \
@@ -26,8 +27,8 @@ job_desc.root_task.args.append("0")
 #root_input1 = job_desc.root_task.dependencies.add()
 #root_input1.id = 123456789
 #root_input1.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
-output_id = "db33daba280d8e68eea6e490723b02ce"
-output2_id = "feedcafedeadbeeffeedcafedeadbeef"
+output_id = binascii.unhexlify('db33daba280d8e68eea6e490723b02cedb33daba280d8e68eea6e490723b02ce')
+output2_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 job_desc.output_ids.append(output_id)
 job_desc.output_ids.append(output2_id)
 #job_desc.root_task.binary = "/bin/echo"
