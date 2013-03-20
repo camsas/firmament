@@ -15,6 +15,8 @@
 #include <boost/uuid/uuid_io.hpp>
 #endif
 
+#include <google/protobuf/descriptor.h>
+
 #include "base/resource_desc.pb.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "storage/simple_object_store.h"
@@ -464,16 +466,26 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
 
 void Coordinator::HandleTaskStateChange(
     const TaskStateMessage& msg) {
+  VLOG(1) << "Task " << msg.id() << " now in state "
+          << ENUM_TO_STRING(TaskDescriptor::TaskState, msg.new_state())
+          << ".";
   switch (msg.new_state()) {
     case TaskDescriptor::COMPLETED:
     {
-      VLOG(1) << "Task " << msg.id() << " now in state COMPLETED.";
-      // XXX(malte): tear down the respective connection, cleanup
       TaskDescriptor** td_ptr = FindOrNull(*task_table_, msg.id());
       CHECK(td_ptr) << "Received completion message for unknown task "
-              << msg.id();
+                    << msg.id();
       (*td_ptr)->set_state(TaskDescriptor::COMPLETED);
       scheduler_->HandleTaskCompletion(*td_ptr);
+      break;
+    }
+    case TaskDescriptor::FAILED:
+    {
+      TaskDescriptor** td_ptr = FindOrNull(*task_table_, msg.id());
+      CHECK(td_ptr) << "Received failure message for unknown task "
+                    << msg.id();
+      (*td_ptr)->set_state(TaskDescriptor::FAILED);
+      //scheduler_->HandleTaskFailure(*td_ptr);
       break;
     }
     default:
@@ -481,6 +493,7 @@ void Coordinator::HandleTaskStateChange(
               << static_cast<uint64_t> (msg.new_state());
       break;
   }
+  // XXX(malte): tear down the respective connection, cleanup
 }
 
 #ifdef __HTTP_UI__
