@@ -45,7 +45,7 @@ class Cache {
   // For the moment, find out size from object table
   void remove_from_cache(const DataObjectID_t& id);
   bool write_object_to_cache(const ObtainObjectMessage& msg);
-  bool write_object_to_cache(const DataObjectID_t& id);
+  bool write_object_to_cache(const ReferenceInterface& ref);
 
   inline size_t getCapacity() {
     return cache->capacity;
@@ -65,7 +65,7 @@ class Cache {
 
   void create_cache(const char* cache_name);
   void clearCache();
-  void handle_notification_references(ReferenceNotification_t* ref);
+  //void handle_notification_references(ReferenceNotification_t* ref);
   // Currently doing LRU but could do anything else
   void make_space_in_cache();
   void write_object_to_disk(DataObjectID_t id, const char* data, size_t size);

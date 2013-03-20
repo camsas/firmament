@@ -102,13 +102,15 @@ class SimpleSchedulerTest : public ::testing::Test {
 TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   // Simple, plain, 1-task job (base case)
   JobDescriptor* test_job = new JobDescriptor;
+  JobID_t job_id = GenerateJobID();
+  test_job->set_uuid(to_string(job_id));
   TaskDescriptor* rtp = new TaskDescriptor;
   rtp->set_uid(GenerateTaskID(*rtp));
   set<DataObjectID_t*> output_ids(DataObjectIDsFromProtobuf(
       test_job->output_ids()));
   AddTaskToTaskMap(rtp);
   set<TaskID_t> runnable_tasks =
-      sched_->LazyGraphReduction(output_ids, rtp);
+      sched_->LazyGraphReduction(output_ids, rtp, job_id);
   // The root task should be runnable
   EXPECT_EQ(runnable_tasks.size(), 1UL);
   // The only runnable task should be equivalent to the root task we pushed in.
@@ -121,6 +123,7 @@ TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
 TEST_F(SimpleSchedulerTest, FindRunnableTasksForJob) {
   // Simple, plain, 1-task job (base case)
   JobDescriptor* test_job = new JobDescriptor;
+  test_job->set_uuid(to_string(GenerateJobID()));
   AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks =
       sched_->RunnableTasksForJob(test_job);
@@ -135,38 +138,43 @@ TEST_F(SimpleSchedulerTest, ObjectIDToReferenceDescLookup) {
   rd.set_id("feedcafedeadbeeffeedcafedeadbeef");
   rd.set_type(ReferenceDescriptor::CONCRETE);
   DataObjectID_t doid(rd.id());
-  CHECK(!obj_store_->addReference(doid, &rd));
-  shared_ptr<ReferenceInterface> ref = sched_->ReferenceForID(doid);
-  VLOG(1) << *ref;
-  EXPECT_EQ(*ref->id().name_str(), rd.id());
+  CHECK(!obj_store_->AddReference(doid, &rd));
+  set<ReferenceInterface*> refs = sched_->ReferencesForID(doid);
+  EXPECT_EQ(*(*refs.begin())->id().name_str(), rd.id());
 }
 
 // Tests lookup of a data object's producing task via the object table.
 TEST_F(SimpleSchedulerTest, ProducingTaskLookup) {
+  JobID_t job_id = GenerateJobID();
   TaskDescriptor td;
   td.set_uid(1);
+  td.set_job_id(to_string(job_id));
   AddTaskToTaskMap(&td);
   ReferenceDescriptor rd;
   rd.set_id("feedcafedeadbeeffeedcafedeadbeef");
   rd.set_type(ReferenceDescriptor::CONCRETE);
   rd.set_producing_task(1);
   DataObjectID_t doid(rd.id());
-  CHECK(!obj_store_->addReference(doid, &rd));
-  TaskDescriptor* tdp = sched_->ProducingTaskForDataObjectID(doid);
-  CHECK(tdp);
-  VLOG(1) << tdp->DebugString();
-  EXPECT_EQ(tdp->uid(), 1UL);
+  CHECK(!obj_store_->AddReference(doid, &rd));
+  set<TaskDescriptor*> tdps =
+      sched_->ProducingTasksForDataObjectID(doid, job_id);
+  CHECK_EQ(tdps.size(), 1);
+  VLOG(1) << (*tdps.begin())->DebugString();
+  EXPECT_EQ((*tdps.begin())->uid(), 1UL);
 }
 
 // Find runnable tasks for a slightly more elaborate task graph.
 TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   // Somewhat more complex job with 3 tasks.
   JobDescriptor* test_job = new JobDescriptor;
+  JobID_t job_id = GenerateJobID();
+  test_job->set_uuid(to_string(job_id));
   test_job->mutable_root_task()->set_uid(0);
   test_job->mutable_root_task()->set_name("root_task");
   // add spawned task #1
   TaskDescriptor* td1 = test_job->mutable_root_task()->add_spawned();
   td1->set_uid(GenerateTaskID(test_job->root_task()));
+  td1->set_job_id(to_string(job_id));
   ReferenceDescriptor* d0_td1 = td1->add_outputs();
   DataObjectID_t d0_td1_o1 = GenerateDataObjectID(*td1);
   d0_td1->set_id(d0_td1_o1.name_bytes(), DIOS_NAME_BYTES);
@@ -175,6 +183,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   // add spawned task #2
   TaskDescriptor* td2 = test_job->mutable_root_task()->add_spawned();
   td2->set_uid(GenerateTaskID(test_job->root_task()));
+  td2->set_job_id(to_string(job_id));
   ReferenceDescriptor* d0_td2 = td2->add_outputs();
   DataObjectID_t d0_td2_o1 = GenerateDataObjectID(*td2);
   d0_td2->set_id(d0_td2_o1.name_bytes(), DIOS_NAME_BYTES);
@@ -185,9 +194,9 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   // put concrete input ref of td1 into object table
   DataObjectID_t d0_td1_id(d0_td1->id());
   DataObjectID_t d0_td2_id(d0_td2->id());
-  CHECK(!obj_store_->addReference(d0_td1_id, d0_td1));
+  CHECK(!obj_store_->AddReference(d0_td1_id, d0_td1));
   // put future input ref of td2 into object table
-  CHECK(!obj_store_->addReference(d0_td2_id, d0_td2));
+  CHECK(!obj_store_->AddReference(d0_td2_id, d0_td2));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks =
@@ -202,6 +211,8 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
 TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   // Somewhat more complex job with 3 tasks.
   JobDescriptor* test_job = new JobDescriptor;
+  JobID_t job_id = GenerateJobID();
+  test_job->set_uuid(to_string(job_id));
   test_job->mutable_root_task()->set_uid(0);
   test_job->mutable_root_task()->set_name("root_task");
   ReferenceDescriptor* o0_rt = test_job->mutable_root_task()->add_outputs();
@@ -212,6 +223,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   // add spawned task #1
   TaskDescriptor* td1 = test_job->mutable_root_task()->add_spawned();
   td1->set_uid(GenerateTaskID(test_job->root_task()));
+  td1->set_job_id(to_string(job_id));
   ReferenceDescriptor* o0_td1 = td1->add_outputs();
   o0_td1->set_id(GenerateDataObjectID(*td1).name_bytes(), DIOS_NAME_BYTES);
   o0_td1->set_type(ReferenceDescriptor::FUTURE);
@@ -224,10 +236,10 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   test_job->add_output_ids(d0_td1->id());
   // put concrete input ref of td1 into object table
   DataObjectID_t o0_td1_id(o0_td1->id());
-  CHECK(!obj_store_->addReference(o0_td1_id, o0_td1));
+  CHECK(!obj_store_->AddReference(o0_td1_id, o0_td1));
   // put future input ref of td2 into object table
   DataObjectID_t d0_td1_id(d0_td1->id());
-  CHECK(!obj_store_->addReference(d0_td1_id, d0_td1));
+  CHECK(!obj_store_->AddReference(d0_td1_id, d0_td1));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks =

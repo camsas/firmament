@@ -9,6 +9,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -36,7 +37,7 @@ using namespace boost::interprocess;  // NOLINT
 // Forward declaration
 class StorageInfo;
 
-typedef map<DataObjectID_t, ReferenceDescriptor*> DataObjectMap_t;
+typedef map<DataObjectID_t, set<ReferenceInterface*> > DataObjectMap_t;
 
 //    typedef struct  mutex_struct() {
 //             sharable_lock<interprocess_mutex> read_lock(interprocess_mutex);
@@ -80,7 +81,7 @@ enum notification_types {
 };
 
 typedef struct RefNot {
-  const DataObjectID_t* id;
+  ReferenceDescriptor rd;
   interprocess_mutex mutex;
   interprocess_condition cond_read;
   interprocess_condition cond_added;

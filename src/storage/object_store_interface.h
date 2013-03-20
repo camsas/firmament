@@ -7,6 +7,7 @@
 #ifndef FIRMAMENT_STORAGE_OBJECT_STORE_INTERFACE_H
 #define FIRMAMENT_STORAGE_OBJECT_STORE_INTERFACE_H
 
+#include <set>
 #include <string>
 
 #include "base/common.h"
@@ -17,6 +18,7 @@
 #include "messages/storage_registration_message.pb.h"
 #include "storage/types.h"
 #include "storage/reference_interface.h"
+#include "storage/reference_utils.h"
 
 namespace firmament {
 namespace store {
@@ -26,14 +28,23 @@ class ObjectStoreInterface : public PrintableInterface {
   virtual ostream& ToString(ostream* stream) const = 0;
   virtual void HandleStorageRegistrationRequest(
       const StorageRegistrationMessage& msg) = 0;
-  bool addReference(const DataObjectID_t& id, ReferenceDescriptor* rd) {
-    bool ret = InsertIfNotPresent(object_table_.get(), id, rd);
+  bool AddReference(const DataObjectID_t& id, ReferenceDescriptor* rd) {
+    // Check if we have an entry for this reference already
+    set<ReferenceInterface*>* held_set = FindOrNull(*object_table_, id);
+    if (!held_set) {
+      // New reference -- insert a new set
+      set<ReferenceInterface*> set;
+      CHECK(InsertIfNotPresent(object_table_.get(), id, set));
+      held_set = FindOrNull(*object_table_, id);
+    }
+    ReferenceInterface* ref = ReferenceFromDescriptor(*rd);
+    bool ret = held_set->insert(ref).second;
     return !ret;
   }
-  ReferenceDescriptor* GetReference(const DataObjectID_t& id) {
-    ReferenceDescriptor** rd = FindOrNull(*object_table_, id);
+  set<ReferenceInterface*>* GetReferences(const DataObjectID_t& id) {
+    set<ReferenceInterface*>* rd = FindOrNull(*object_table_, id);
     if (rd!= NULL)
-      return *rd;
+      return rd;
     else
       return NULL;
   }
@@ -42,11 +53,17 @@ class ObjectStoreInterface : public PrintableInterface {
     object_table_->clear();
   }
   void DumpObjectTableContents() {
-    VLOG(1) << "OBJECT TABLE:";
+    VLOG(1) << "OBJECT TABLE (" << object_table_->size() << " elements):";
     for (DataObjectMap_t::const_iterator it = object_table_->begin();
          it != object_table_->end();
-         ++it)
-      VLOG(1) << it->first << ": " << it->second->DebugString();
+         ++it) {
+      VLOG(1) << it->first << ": " << it->second.size() << " refs";
+      for (set<ReferenceInterface*>::const_iterator rd_iter =
+           it->second.begin();
+           rd_iter != it->second.end();
+           ++rd_iter)
+        VLOG(1) << "+ " << (*rd_iter)->desc().DebugString();
+    }
   }
   inline uint64_t NumTotalReferences() {
     return object_table_->size();

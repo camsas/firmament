@@ -8,6 +8,7 @@
 #ifndef FIRMAMENT_ENGINE_SIMPLE_OBJECT_STORE_H
 #define FIRMAMENT_ENGINE_SIMPLE_OBJECT_STORE_H
 
+#include <set>
 #include <string>
 #include <map>
 
@@ -73,7 +74,7 @@ class SimpleObjectStore : public ObjectStoreInterface {
   void HeartBeatMasterTask();
   void sendHeartBeatMasterTask();
 
-  StorageInfo* infer_best_location(ReferenceDescriptor* rd);
+  StorageInfo* infer_best_location(const set<ReferenceInterface*>& refs);
 
  protected:
   shared_ptr<StreamSocketsAdapter<BaseMessage> > message_adapter_;

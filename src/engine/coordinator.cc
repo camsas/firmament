@@ -6,6 +6,7 @@
 
 #include "engine/coordinator.h"
 
+#include <set>
 #include <string>
 #include <utility>
 
@@ -309,7 +310,7 @@ void Coordinator::HandleCreateRequest(const CreateRequest& msg,
   // Try to insert the reference descriptor conveyed into the object table.
   ReferenceDescriptor* new_rd = new ReferenceDescriptor;
   new_rd->CopyFrom(msg.reference());
-  bool succ = !object_store_->addReference(DataObjectID_t(msg.reference().id()),
+  bool succ = !object_store_->AddReference(DataObjectID_t(msg.reference().id()),
                                            new_rd);
   // Manufacture and send a response
   BaseMessage resp_msg;
@@ -341,14 +342,18 @@ void Coordinator::HandleLookupRequest(const LookupRequest& msg,
   // reference descriptors for it if so.
   // XXX(malte): This currently returns a single reference; we should return
   // multiple if they exist.
-  ReferenceDescriptor* rd = object_store_->GetReference(
+  set<ReferenceInterface*>* refs = object_store_->GetReferences(
       DataObjectID_t(msg.name()));
   // Manufacture and send a response
   BaseMessage resp_msg;
-  if (rd) {
-    ReferenceDescriptor* resp_rd =
-        resp_msg.mutable_lookup_response()->add_references();
-    resp_rd->CopyFrom(*rd);
+  if (refs && refs->size() > 0) {
+    for (set<ReferenceInterface*>::const_iterator ref_iter = refs->begin();
+         ref_iter != refs->end();
+         ++ref_iter) {
+      ReferenceDescriptor* resp_rd =
+          resp_msg.mutable_lookup_response()->add_references();
+      resp_rd->CopyFrom((*ref_iter)->desc());
+    }
   }
   m_adapter_->SendMessageToEndpoint(remote_endpoint, resp_msg);
 }
@@ -542,12 +547,14 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
     DataObjectID_t output_id(output_iter->id());
     VLOG(1) << "Considering task output " << output_id << ", "
             << "adding to local object table";
-    if (object_store_->addReference(output_id, &(*output_iter))) {
+    if (object_store_->AddReference(output_id, &(*output_iter))) {
       VLOG(1) << "Output " << output_id << " already exists in "
               << "local object table. Not adding again.";
     }
+    object_store_->DumpObjectTableContents();
     // Check that the object was actually stored
-    if (object_store_->GetReference(output_id) != NULL)
+    set<ReferenceInterface*>* refs = object_store_->GetReferences(output_id);
+    if (refs && refs->size() > 0)
       VLOG(3) << "Object is indeed in object store";
     else
       VLOG(3) << "Error: Object is not in object store";
@@ -607,11 +614,13 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
        new_jd->output_ids().begin();
        output_iter != new_jd->output_ids().end();
        ++output_iter) {
-    VLOG(1) << "Considering job output " << *output_iter;
     // The root task must produce all of the non-existent job outputs, so they
     // should all be in the object table now.
     DataObjectID_t output_id(*output_iter);
-    CHECK(object_store_->GetReference(output_id))
+    VLOG(1) << "Considering job output " << output_id;
+    set<ReferenceInterface*>* refs = object_store_->GetReferences(output_id);
+    object_store_->DumpObjectTableContents();
+    CHECK(refs && refs->size() > 0)
         << "Could not find reference to data object ID " << output_id
         << ", which we just added!";
   }

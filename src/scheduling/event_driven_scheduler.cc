@@ -182,14 +182,15 @@ const set<TaskID_t>& EventDrivenScheduler::RunnableTasksForJob(
   set<DataObjectID_t*> outputs =
       DataObjectIDsFromProtobuf(job_desc->output_ids());
   TaskDescriptor* rtp = job_desc->mutable_root_task();
-  return LazyGraphReduction(outputs, rtp);
+  return LazyGraphReduction(outputs, rtp, JobIDFromString(job_desc->uuid()));
 }
 
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
 // Derek Murray's thesis on CIEL.
 const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
     const set<DataObjectID_t*>& output_ids,
-    TaskDescriptor* root_task) {
+    TaskDescriptor* root_task,
+    const JobID_t& job_id) {
   VLOG(2) << "Performing lazy graph reduction";
   // Local data structures
   deque<TaskDescriptor* > newly_active_tasks;
@@ -200,21 +201,37 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
   for (set<DataObjectID_t*>::const_iterator output_id_iter = output_ids.begin();
        output_id_iter != output_ids.end();
        ++output_id_iter) {
-    shared_ptr<ReferenceInterface> ref = ReferenceForID(**output_id_iter);
-    if (ref && ref->Consumable()) {
-      // skip this output, as it is already present
-      continue;
+    set<ReferenceInterface*> refs = ReferencesForID(**output_id_iter);
+    if (!refs.empty()) {
+      for (set<ReferenceInterface*>::const_iterator ref_iter = refs.begin();
+           ref_iter != refs.end();
+           ++ref_iter) {
+        // TODO(malte): this logic is very simple-minded; sometimes, it may be
+        // beneficial to produce locally instead of fetching remotely!
+        if ((*ref_iter)->Consumable()) {
+          // skip this output, as it is already present
+          continue;
+        }
+      }
     }
     // otherwise, we add the producer for said output reference to the queue, if
     // it is not already scheduled.
-    TaskDescriptor* task = ProducingTaskForDataObjectID(**output_id_iter);
-    CHECK(task != NULL) << "Could not find task producing output ID "
-                        << *output_id_iter;
-    if (task->state() == TaskDescriptor::CREATED) {
-      VLOG(2) << "Setting task " << task << " active as it produces output "
-              << *output_id_iter << ", which we're interested in.";
-      task->set_state(TaskDescriptor::BLOCKING);
-      newly_active_tasks.push_back(task);
+    // N.B.: by this point, we know that no concrete reference exists in the set
+    // of references available.
+    set<TaskDescriptor*> tasks =
+        ProducingTasksForDataObjectID(**output_id_iter, job_id);
+    CHECK_GT(tasks.size(), 0) << "Could not find task producing output ID "
+                             << **output_id_iter;
+    for (set<TaskDescriptor*>::const_iterator t_iter = tasks.begin();
+         t_iter != tasks.end();
+         ++t_iter) {
+      TaskDescriptor* task = *t_iter;
+      if (task->state() == TaskDescriptor::CREATED) {
+        VLOG(2) << "Setting task " << task << " active as it produces output "
+                << *output_id_iter << ", which we're interested in.";
+        task->set_state(TaskDescriptor::BLOCKING);
+        newly_active_tasks.push_back(task);
+      }
     }
   }
   // Add root task to queue
@@ -234,7 +251,7 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
          current_task->dependencies().begin();
          iter != current_task->dependencies().end();
          ++iter) {
-      shared_ptr<ReferenceInterface> ref = ReferenceFromDescriptor(*iter);
+      ReferenceInterface* ref = ReferenceFromDescriptor(*iter);
       if (ref->Consumable()) {
         // This input reference is consumable. So far, so good.
         VLOG(2) << "Task " << current_task->uid() << "'s dependency " << ref
@@ -247,18 +264,23 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
                 << " is blocking on reference " << *ref;
         will_block = true;
         // Look at predecessor task (producing this reference)
-        TaskDescriptor* producing_task =
-            ProducingTaskForDataObjectID(ref->id());
-        if (producing_task) {
-          if (producing_task->state() == TaskDescriptor::CREATED ||
-              producing_task->state() == TaskDescriptor::COMPLETED) {
-            producing_task->set_state(TaskDescriptor::BLOCKING);
-            newly_active_tasks.push_back(producing_task);
-          }
-        } else {
+        set<TaskDescriptor*> producing_tasks =
+            ProducingTasksForDataObjectID(ref->id(), job_id);
+        if (producing_tasks.size() == 0) {
           LOG(ERROR) << "Failed to find producing task for ref " << ref
                      << "; will block until it is produced.";
           continue;
+        }
+        for (set<TaskDescriptor*>::const_iterator t_iter =
+             producing_tasks.begin();
+             t_iter != producing_tasks.end();
+             ++t_iter) {
+          TaskDescriptor* task = *t_iter;
+          if (task->state() == TaskDescriptor::CREATED ||
+              task->state() == TaskDescriptor::COMPLETED) {
+            task->set_state(TaskDescriptor::BLOCKING);
+            newly_active_tasks.push_back(task);
+          }
         }
       }
     }
@@ -274,38 +296,59 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
   return runnable_tasks_;
 }
 
-shared_ptr<ReferenceInterface> EventDrivenScheduler::ReferenceForID(
+const set<ReferenceInterface*> EventDrivenScheduler::ReferencesForID(
     const DataObjectID_t& id) {
-  // XXX(malte): stub
+  // Find all locally known references for a specific object
   VLOG(2) << "Looking up object " << id;
 //  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
-  ReferenceDescriptor* rd = object_store_->GetReference(id);
+  set<ReferenceInterface*>* ref_set = object_store_->GetReferences(id);
 
-  if (!rd) {
+  if (!ref_set) {
     VLOG(2) << "... NOT FOUND";
-    return shared_ptr<ReferenceInterface>();  // NULL
+    set<ReferenceInterface*> es;  // empty set
+    return es;
   } else {
-    VLOG(2) << " ... ref has type " << rd->type();
-    return ReferenceFromDescriptor(*rd);
+    VLOG(2) << " ... FOUND, " << ref_set->size() << " references.";
+    // Return the unfiltered set of all known references to this name
+    return *ref_set;
   }
 }
 
-TaskDescriptor* EventDrivenScheduler::ProducingTaskForDataObjectID(
-    const DataObjectID_t& id) {
-  // XXX(malte): stub
+set<TaskDescriptor*> EventDrivenScheduler::ProducingTasksForDataObjectID(
+    const DataObjectID_t& id, const JobID_t& cur_job) {
+  // Find all producing tasks for an object ID, as indicated by the references
+  // stored locally.
+  set<TaskDescriptor*> producing_tasks;
   VLOG(2) << "Looking up producing task for object " << id;
-//  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
-  ReferenceDescriptor* rd = object_store_->GetReference(id);
-  if (!rd || !rd->has_producing_task()) {
-    return NULL;
-  } else {
-    TaskDescriptor** td_ptr = FindOrNull(*task_map_, rd->producing_task());
-    if (td_ptr)
-      VLOG(2) << "... is " << (*td_ptr)->uid();
-    else
-      VLOG(2) << "... NOT FOUND";
-    return (td_ptr ? *td_ptr : NULL);
+  set<ReferenceInterface*>* refs = object_store_->GetReferences(id);
+  if (!refs)
+    return producing_tasks;
+  for (set<ReferenceInterface*>::const_iterator ref_iter = refs->begin();
+       ref_iter != refs->end();
+       ++ref_iter) {
+    if ((*ref_iter)->desc().has_producing_task()) {
+      TaskDescriptor** td_ptr =
+          FindOrNull(*task_map_, (*ref_iter)->desc().producing_task());
+      if (td_ptr) {
+        if (JobIDFromString((*td_ptr)->job_id()) == cur_job) {
+          VLOG(2) << "... is " << (*td_ptr)->uid() << " (in THIS job).";
+          producing_tasks.insert(*td_ptr);
+        } else {
+          VLOG(2) << "... is " << (*td_ptr)->uid() << " (in job "
+                  << (*td_ptr)->job_id() << ").";
+          // Someone in another job is producing this object. We have a choice
+          // of making him runnable, or ignoring him.
+          // We do the former if the reference is public, and the latter if it
+          // is private.
+          if ((*ref_iter)->desc().scope() == ReferenceDescriptor::PUBLIC)
+            producing_tasks.insert(*td_ptr);
+        }
+      } else {
+        VLOG(2) << "... NOT FOUND";
+      }
+    }
   }
+  return producing_tasks;
 }
 
 }  // namespace scheduler

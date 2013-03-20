@@ -4,6 +4,7 @@
 
 #include "engine/coordinator_http_ui.h"
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -231,15 +232,22 @@ void CoordinatorHTTPUI::HandleReferencesListURI(HTTPRequestPtr& http_request,  /
        refs->begin();
        r_iter != refs->end();
        ++r_iter) {
-    TemplateDictionary* sect_dict = dict.AddSectionDictionary("REF_DATA");
-    sect_dict->SetValue("REF_ID", r_iter->first.name_printable_string());
-    sect_dict->SetFormattedValue("REF_PRODUCING_TASK_ID", "%ju",
-                                 TaskID_t(r_iter->second->producing_task()));
-    sect_dict->SetValue("REF_TYPE",
-                        ENUM_TO_STRING(ReferenceDescriptor::ReferenceType,
-                                       r_iter->second->type()));
-    sect_dict->SetValue("REF_LOCATION", r_iter->second->location());
-    ++i;
+    TemplateDictionary* sect_dict = dict.AddSectionDictionary("OBJ_DATA");
+    sect_dict->SetValue("OBJ_ID", r_iter->first.name_printable_string());
+    for (set<ReferenceInterface*>::const_iterator ref_iter =
+         r_iter->second.begin();
+         ref_iter != r_iter->second.end();
+         ++ref_iter) {
+      TemplateDictionary* sect_dict = dict.AddSectionDictionary("REF_DATA");
+      sect_dict->SetFormattedValue(
+          "REF_PRODUCING_TASK_ID", "%ju",
+          TaskID_t((*ref_iter)->desc().producing_task()));
+      sect_dict->SetValue("REF_TYPE",
+                          ENUM_TO_STRING(ReferenceDescriptor::ReferenceType,
+                                         (*ref_iter)->desc().type()));
+      sect_dict->SetValue("REF_LOCATION", (*ref_iter)->desc().location());
+      ++i;
+    }
   }
   string output;
   ExpandTemplate("src/webui/refs_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
@@ -431,19 +439,28 @@ void CoordinatorHTTPUI::HandleReferenceURI(HTTPRequestPtr& http_request,  // NOL
                   tcp_conn);
     return;
   }
-  ReferenceDescriptor* rd_ptr = coordinator_->get_object_store()->GetReference(
-      DataObjectIDFromString(*ref_id));
+  set<ReferenceInterface*>* refs =
+      coordinator_->get_object_store()->GetReferences(
+          DataObjectIDFromString(*ref_id));
   TemplateDictionary dict("reference_view");
-  if (rd_ptr) {
-    dict.SetValue("REF_ID", rd_ptr->id());
-    dict.SetValue("REF_TYPE", ENUM_TO_STRING(ReferenceDescriptor::ReferenceType,
-                                             rd_ptr->type()));
-    dict.SetValue("REF_SCOPE",
-                  ENUM_TO_STRING(ReferenceDescriptor::ReferenceScope,
-                                 rd_ptr->scope()));
-    dict.SetIntValue("REF_NONDET", rd_ptr->non_deterministic());
-    dict.SetIntValue("REF_SIZE", rd_ptr->size());
-    dict.SetFormattedValue("REF_PRODUCER", "%ju", rd_ptr->producing_task());
+  if (refs && refs->size() > 0) {
+    dict.SetValue("OBJ_ID", *ref_id);
+    for (set<ReferenceInterface*>::const_iterator ref_iter = refs->begin();
+         ref_iter != refs->end();
+         ++ref_iter) {
+      TemplateDictionary* sect_dict = dict.AddSectionDictionary("REF_DATA");
+      sect_dict->SetValue("REF_TYPE",
+                          ENUM_TO_STRING(ReferenceDescriptor::ReferenceType,
+                                         (*ref_iter)->desc().type()));
+      sect_dict->SetValue("REF_SCOPE",
+                         ENUM_TO_STRING(ReferenceDescriptor::ReferenceScope,
+                                        (*ref_iter)->desc().scope()));
+      sect_dict->SetIntValue("REF_NONDET",
+                            (*ref_iter)->desc().non_deterministic());
+      sect_dict->SetIntValue("REF_SIZE", (*ref_iter)->desc().size());
+      sect_dict->SetFormattedValue("REF_PRODUCER", "%ju",
+                                  (*ref_iter)->desc().producing_task());
+    }
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
     ErrorMessage_t err("Reference or data object not found.",
@@ -497,7 +514,8 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
          dep_iter != td_ptr->dependencies().end();
          ++dep_iter) {
       TemplateDictionary* dep_dict = dict.AddSectionDictionary("TASK_DEPS");
-      dep_dict->SetValue("TASK_DEP_ID", dep_iter->id());
+      dep_dict->SetValue("TASK_DEP_ID", DataObjectID_t(
+          dep_iter->id()).name_printable_string());
     }
     // Spawned
     if (td_ptr->spawned_size() > 0)
@@ -523,7 +541,8 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
          out_iter != td_ptr->outputs().end();
          ++out_iter) {
       TemplateDictionary* out_dict = dict.AddSectionDictionary("TASK_OUTPUTS");
-      out_dict->SetValue("TASK_OUTPUT_ID", out_iter->id());
+      out_dict->SetValue("TASK_OUTPUT_ID", DataObjectID_t(
+          out_iter->id()).name_printable_string());
     }
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {

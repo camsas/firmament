@@ -54,7 +54,7 @@ class DataObject : public PrintableInterface {
     return reinterpret_cast<const char*>(name_.raw);
   }
   inline const string name_printable_string() const {
-    char c_str[2];
+    char c_str[3];
     string ret;
     // TODO(malte): Sadly, this is very inefficient, but I couldn't figure out a
     // better way to do it while keeping the byte order correct.

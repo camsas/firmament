@@ -52,9 +52,10 @@ class EventDrivenScheduler : public SchedulerInterface {
   void DebugPrintRunnableTasks();
   const set<TaskID_t>& LazyGraphReduction(
       const set<DataObjectID_t*>& output_ids,
-      TaskDescriptor* root_task);
-  TaskDescriptor* ProducingTaskForDataObjectID(const DataObjectID_t& id);
-  shared_ptr<ReferenceInterface> ReferenceForID(const DataObjectID_t& id);
+      TaskDescriptor* root_task, const JobID_t& job_id);
+  set<TaskDescriptor*> ProducingTasksForDataObjectID(const DataObjectID_t& id,
+                                                     const JobID_t& cur_job);
+  const set<ReferenceInterface*> ReferencesForID(const DataObjectID_t& id);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
 

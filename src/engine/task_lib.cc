@@ -362,7 +362,7 @@ void* TaskLib::GetObjectStart(const DataObjectID_t& id) {
         reference_not_t->cond_read.wait(lock_ref);
       }
       cout << "Writing Message " << endl;
-      reference_not_t->id = &id;
+      reference_not_t->rd.set_id(*id.name_str());
       reference_not_t->writable = false;
       reference_not_t->request_type = GET_OBJECT;
       lock_ref.unlock(); /* Not sure if this is necessary */
@@ -547,7 +547,7 @@ void TaskLib::PutObjectEnd(const DataObjectID_t& id, size_t size) {
       reference_not_t->cond_read.wait(lock_ref);
     }
 
-    reference_not_t->id = &id;
+    reference_not_t->rd.set_id(*id.name_str());
     reference_not_t->writable = false;
     reference_not_t->size = size;
     reference_not_t->request_type = PUT_OBJECT;

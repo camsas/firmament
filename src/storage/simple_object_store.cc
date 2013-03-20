@@ -6,6 +6,8 @@
 
 #include "storage/simple_object_store.h"
 
+#include <set>
+
 #include "base/data_object.h"
 #include "misc/uri_tools.h"
 #include "storage/Cache.h"
@@ -135,12 +137,12 @@ void SimpleObjectStore::obtain_object_remotely(const DataObjectID_t& id) {
   VLOG(3) << "Obtaining object remotely " << endl;
 
   // Find out location of object (could be on disk)
-  ReferenceDescriptor* rd = GetReference(id);
+  set<ReferenceInterface*>* refs = GetReferences(id);
 
   // Either know of location in which case contact directly
   // If more than one location infer which one is best
   // Otherwise contact peers and master.
-  if (rd == NULL) {
+  if (refs->size() == 0) {
     // Location not known, send message to master first as likely that
     // if peers had had it, would have known about it.  Master will broadcast
     // message to all (if object is being used, likely that will be used again,
@@ -150,7 +152,7 @@ void SimpleObjectStore::obtain_object_remotely(const DataObjectID_t& id) {
   } else {
     // Location exists. Infer most efficient way to obtain object
     // May just be local
-    StorageInfo* info = infer_best_location(rd);
+    StorageInfo* info = infer_best_location(*refs);
     if (info == NULL) {
         LOG(ERROR) << "Error: Object Table is inconsistent ";
         // Fall back to master
@@ -166,11 +168,15 @@ void SimpleObjectStore::obtain_object_remotely(const DataObjectID_t& id) {
   // Maybe block on condition here?
 }
 
-StorageInfo* SimpleObjectStore::infer_best_location(ReferenceDescriptor* rd) {
+StorageInfo* SimpleObjectStore::infer_best_location(
+    const set<ReferenceInterface*>& refs) {
   VLOG(3) << "Infer_best_location ";
   VLOG(3) << "Unimplemented, returning first location ";
 
-  string uri = rd->location();
+  if (refs.size() == 0)
+    return NULL;
+
+  string uri = (*refs.begin())->desc().location();
 
   StorageInfo* inf = *FindOrNull(nodes, uri);
   return inf;
@@ -203,16 +209,16 @@ void SimpleObjectStore::sendHeartbeat() {
     for (DataObjectMap_t::iterator it = object_table_->begin();
          it != object_table_->end();
          ++it) {
-      ReferenceDescriptor* rd = it->second;
-      if (!rd->is_modified()) {
-        continue;
-      } else {
-        ObjectInfoMessage msg;
-        msg.set_obj_name(rd->id());
-        msg.set_location(rd->location());
-        // Check
-        ObjectInfoMessage* m = hb.add_object();
-        m = &msg;
+      set<ReferenceInterface*> refs = it->second;
+      for (set<ReferenceInterface*>::const_iterator ref_iter =
+           refs.begin();
+           ref_iter != refs.end();
+           ++ref_iter) {
+        if ((*ref_iter)->desc().is_modified()) {
+          ObjectInfoMessage* m = hb.add_object();
+          m->set_obj_name((*ref_iter)->desc().id());
+          m->set_location((*ref_iter)->desc().location());
+        }
       }
     }
 

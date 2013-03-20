@@ -13,30 +13,30 @@
 
 namespace firmament {
 
-shared_ptr<ReferenceInterface> ReferenceFromDescriptor(
-        const ReferenceDescriptor& desc) {
+static ReferenceInterface* ReferenceFromDescriptor(
+    const ReferenceDescriptor& desc) {
   switch (desc.type()) {
     case ReferenceDescriptor::TOMBSTONE:
       //return shared_ptr<ReferenceInterface>(new TombstoneReference(desc));
       LOG(FATAL) << "Unimplemented!";
       break;
     case ReferenceDescriptor::FUTURE:
-      return shared_ptr<ReferenceInterface > (new FutureReference(desc));
+      return new FutureReference(desc);
       break;
     case ReferenceDescriptor::CONCRETE:
-      return shared_ptr<ReferenceInterface > (new ConcreteReference(desc));
+      return new ConcreteReference(desc);
       break;
     case ReferenceDescriptor::ERROR:
-      return shared_ptr<ReferenceInterface > (new ErrorReference(desc));
+      return new ErrorReference(desc);
       break;
     case ReferenceDescriptor::VALUE:
-      return shared_ptr<ReferenceInterface > (new ValueReference(desc));
+      return new ValueReference(desc);
       break;
     default:
       LOG(FATAL) << "Unknown or unrecognized reference type.";
       // g++ requires this, as it otherwise warns control reaching the end of a
       // non-void function. clang recognizes that LOG(FATAL) exits.
-      return shared_ptr<ReferenceInterface > (); // N.B.: unreachable
+      return NULL; // N.B.: unreachable
   }
 }
 

@@ -40,39 +40,45 @@ void Cache::make_space_in_cache() {
   try {
     while (cleared != true || it != cache->object_list->end()) {
       DataObjectID_t id = *it;
-      ReferenceDescriptor* rd = store->GetReference(id);
-      size_t size = rd->size();
-      cache_lock->lock();
+      set<ReferenceInterface*>* refs = store->GetReferences(id);
+      for (set<ReferenceInterface*>::const_iterator ref_iter =
+           refs->begin();
+           ref_iter != refs->end();
+           ++ref_iter) {
+        ReferenceInterface* ref = *ref_iter;
+        size_t size = ref->desc().size();
+        cache_lock->lock();
 
-      VLOG(3) << "Trying to remove Object UUID: " << id;
+        VLOG(3) << "Trying to remove Object UUID: " << id;
 
-      // TODO(tach): delete other files if this one is locked
-      // Right now will only block
-      string file_name = boost::lexical_cast<string > (id);
-      string mutex_name = file_name + "mut";
-      named_upgradable_mutex mut(open_only, mutex_name.c_str());
+        // TODO(tach): delete other files if this one is locked
+        // Right now will only block
+        string file_name = boost::lexical_cast<string > (id);
+        string mutex_name = file_name + "mut";
+        named_upgradable_mutex mut(open_only, mutex_name.c_str());
 
-      WriteLock_t lock(mut, boost::interprocess::defer_lock);
+        WriteLock_t lock(mut, boost::interprocess::defer_lock);
 
-      if (!(cleared = lock.try_lock())) {
-        VLOG(3) << "Removal failed - Object in use";
-        it++;
-        continue;
+        if (!(cleared = lock.try_lock())) {
+          VLOG(3) << "Removal failed - Object in use";
+          it++;
+          continue;
+        }
+
+        file_mapping m_file(file_name.c_str(), read_only);
+        mapped_region region(m_file, read_only);
+        region.flush();
+        // file_mapping::remove(file_name.c_str());
+
+        cache->object_list->erase(cache->object_list->begin()); // LRU
+        lock.unlock();
+
+        named_mutex::remove(mutex_name.c_str());
+
+        cache->capacity += size;
+        cache_lock->unlock();
+        VLOG(3) << "Object Successfully Removed";
       }
-
-      file_mapping m_file(file_name.c_str(), read_only);
-      mapped_region region(m_file, read_only);
-      region.flush();
-      // file_mapping::remove(file_name.c_str());
-
-      cache->object_list->erase(cache->object_list->begin()); // LRU
-      lock.unlock();
-
-      named_mutex::remove(mutex_name.c_str());
-
-      cache->capacity += size;
-      cache_lock->unlock();
-      VLOG(3) << "Object Successfully Removed";
     }
   } catch (const interprocess_exception& e) {  // NOLINT
     VLOG(1) << "Error: make_space_in_cache" << endl;
@@ -80,7 +86,7 @@ void Cache::make_space_in_cache() {
 }
 
 // From Remote. Using a write through strategy for now
-bool Cache::write_object_to_cache(const ObtainObjectMessage& msg) {
+/*bool Cache::write_object_to_cache(const ObtainObjectMessage& msg) {
   DataObjectID_t id(msg.object_id());
   VLOG(3) << "Writing Object " << id << " to Cache from remote";
   const string& data = msg.data();
@@ -94,16 +100,14 @@ bool Cache::write_object_to_cache(const ObtainObjectMessage& msg) {
   os.close();
 
   return write_object_to_cache(id);
-}
+}*/
 
 // From File on disk
-bool Cache::write_object_to_cache(const DataObjectID_t& id) {
-  VLOG(3) << "Writing Object " << id << " to Cache from disk";
+bool Cache::write_object_to_cache(const ReferenceInterface& ref) {
+  VLOG(3) << "Writing Object " << ref.id() << " to Cache from disk";
 
   try {
-    ReferenceDescriptor* rd = store->GetReference(id);
-
-    size_t size = rd->size();
+    size_t size = ref.desc().size();
     // TODO(tach) concurrency control
 
     cache_lock->lock();
@@ -111,7 +115,7 @@ bool Cache::write_object_to_cache(const DataObjectID_t& id) {
       cache->capacity -= size;
 
       /* Map File Read Only */
-      string mut_name_s = boost::lexical_cast<string > (id);
+      string mut_name_s = ref.id().name_printable_string();
 
       file_mapping m_file(mut_name_s.c_str(), read_only);
       mapped_region region(m_file, read_only);
@@ -120,7 +124,7 @@ bool Cache::write_object_to_cache(const DataObjectID_t& id) {
       mut_name_s += "mut";
       named_mutex mutex(open_or_create, mut_name_s.c_str());
 
-      cache->object_list->push_back(id);
+      cache->object_list->push_back(ref.id());
 
       return true;
     }
@@ -182,12 +186,12 @@ void Cache::create_cache(const char* cache_name) {
     size_t* size_ = segment->construct<size_t > ("size")(size);
 
     /* Temporary Hack until I implement cleaner memory channel */
-    ReferenceNotification_t* reference_not_t =
+    /*ReferenceNotification_t* reference_not_t =
             segment->construct<ReferenceNotification_t>("refnot")();
     reference_not_t = new ReferenceNotification_t();
 
     boost::thread t(&Cache::handle_notification_references, *this,
-                    reference_not_t);
+                    reference_not_t);*/
     /* End of Hack */
 
     VLOG(3) << "Acquiring Cache name mutex" << endl;
@@ -222,6 +226,9 @@ bool Cache::obtain_object(const DataObjectID_t& id) {
   return false;
 }
 
+// XXX(malte): Removed due to incompatibility with new code, and as it's not
+// used.
+#if 0
 // Temporary - Move to channel abstraction in future
 void Cache::handle_notification_references(ReferenceNotification_t* ref) {
   VLOG(3) << "Setting up thread to handle notifications references";
@@ -239,7 +246,7 @@ void Cache::handle_notification_references(ReferenceNotification_t* ref) {
         case PUT_OBJECT:
         {
           VLOG(3) << "Type of message: PUT_OBJECT";
-          ReferenceDescriptor* rd = store->GetReference(*ref->id);
+          ReferenceDescriptor* rd = store->GetReferences(*ref->id);
           switch (rd->type()) {
             case ReferenceDescriptor::CONCRETE:
             {
@@ -295,6 +302,7 @@ void Cache::handle_notification_references(ReferenceNotification_t* ref) {
     VLOG(1) << "Handling Notification Reference Error " << endl;
   }
 }
+#endif
 
 } // namespace store
 } // namespace firmament

@@ -2,13 +2,10 @@
 
 {{>PAGE_HEADER}}
 
-<h1>Ref {{REF_ID}}</h1>
+<h1>Ref {{OBJ_ID}}</h1>
 
 <table border="1">
-  <tr>
-    <td>ID</td>
-    <td>{{REF_ID}}</td>
-  </tr>
+  {{#REF_DATA}}
   <tr>
     <td>Type</td>
     <td>{{REF_TYPE}}</td>
@@ -29,6 +26,7 @@
     <td>Producing task</td>
     <td><a href="/task/?id={{REF_SIZE}}">{{REF_SIZE}}</a></td>
   </tr>
+  {{/REF_DATA}}
 </table>
 
 {{>PAGE_FOOTER}}
