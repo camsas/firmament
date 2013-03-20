@@ -29,10 +29,12 @@ namespace firmament {
 
     explicit ReferenceInterface(DataObjectID_t id)
       : id_(id) {
+      desc_.set_id(id_.name_bytes());
     }
 
     explicit ReferenceInterface(const ReferenceDescriptor& desc)
-      : id_(desc.id()) {
+      : id_(desc.id()),
+        desc_(desc) {
     }
 
     // Non-accessor members
@@ -43,7 +45,7 @@ namespace firmament {
     virtual ostream& ToString(ostream* stream) const = 0;
     // Accessor methods
 
-    inline const DataObjectID_t& id() {
+    inline const DataObjectID_t& id() const {
       return id_;
     }
 
@@ -56,7 +58,7 @@ namespace firmament {
     virtual void ValidateInitDescriptor(const ReferenceDescriptor& desc) = 0;
 
     void ValidateInternalDescriptor() const {
-      CHECK_EQ(*id_.name_str(), desc_.id());
+      CHECK_EQ(memcmp(id_.name_bytes(), desc_.id().data(), DIOS_NAME_BYTES), 0);
     }
     // Fields shared between all reference types
     DataObjectID_t id_;

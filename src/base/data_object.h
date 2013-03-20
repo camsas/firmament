@@ -11,6 +11,7 @@
 #ifndef FIRMAMENT_DATA_OBJECT_H
 #define FIRMAMENT_DATA_OBJECT_H
 
+#include <cstdio>
 #include <string>
 
 #include "base/common.h"
@@ -53,9 +54,14 @@ class DataObject : public PrintableInterface {
     return reinterpret_cast<const char*>(name_.raw);
   }
   inline const string name_printable_string() const {
-    string ret = "";
-    for (uint32_t i = 0; i < DIOS_NAME_QWORDS; ++i)
-      ret += to_hex_string(name_.value[i]);
+    char c_str[2];
+    string ret;
+    // TODO(malte): Sadly, this is very inefficient, but I couldn't figure out a
+    // better way to do it while keeping the byte order correct.
+    for (uint32_t i = 0; i < DIOS_NAME_BYTES; ++i) {
+      snprintf(c_str, sizeof(c_str), "%02hhx", name_.raw[i]);
+      ret += c_str;
+    }
     return ret;
   }
   virtual ostream& ToString(ostream* stream) const {

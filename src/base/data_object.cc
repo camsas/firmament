@@ -32,13 +32,12 @@ bool DataObject::operator<(const DataObject& other_do) const {
 }
 
 DataObject::DataObject(const char* name) {
-  DataObject(reinterpret_cast<const uint8_t*>(name));
+  memcpy(name_.raw, name, DIOS_NAME_BYTES);
 }
 
 DataObject::DataObject(const uint8_t* name) {
   // Set the name
-  for (uint32_t i = 0; i < DIOS_NAME_BYTES; ++i)
-    name_.raw[i] = name[i];
+  memcpy(name_.raw, name, DIOS_NAME_BYTES);
 }
 
 
