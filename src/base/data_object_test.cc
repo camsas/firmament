@@ -54,22 +54,32 @@ class DataObjectTest : public ::testing::Test {
 // Create a DO from a string name (e.g. pulled from a protobuf bytes field).
 TEST_F(DataObjectTest, CreateDOFromString) {
   string name(reinterpret_cast<const char*>(test_name_));
-  DataObject test_do(name);
+  DataObject test_do(name, false);
 
   // Check all members are set to what we expect.
   EXPECT_EQ(memcmp(test_do.name_str()->data(),
                    name.data(), DIOS_NAME_BYTES), 0);
 }
 
+// Create a DO from a hex-encoded string name.
+TEST_F(DataObjectTest, CreateDOFromHexString) {
+  string name(
+      "feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef");
+  DataObject test_do(name, true);
+
+  // Check all members are set to what we expect.
+  EXPECT_EQ(test_do.name_printable_string(), name);
+}
+
+
 // Create a DO and comare it to itself.
 TEST_F(DataObjectTest, SelfSimilarity) {
   string name(reinterpret_cast<const char*>(test_name_));
-  DataObject test_do(name);
+  DataObject test_do(name, false);
 
   // Check that equality comparison with itself return true.
   EXPECT_EQ(test_do, test_do);
 }
-
 
 // Create a DO from a dios_name_t.
 TEST_F(DataObjectTest, CreateDOFromDIOSName) {

@@ -310,8 +310,8 @@ void Coordinator::HandleCreateRequest(const CreateRequest& msg,
   // Try to insert the reference descriptor conveyed into the object table.
   ReferenceDescriptor* new_rd = new ReferenceDescriptor;
   new_rd->CopyFrom(msg.reference());
-  bool succ = !object_store_->AddReference(DataObjectID_t(msg.reference().id()),
-                                           new_rd);
+  bool succ = !object_store_->AddReference(
+      DataObjectIDFromProtobuf(msg.reference().id()), new_rd);
   // Manufacture and send a response
   BaseMessage resp_msg;
   SUBMSG_WRITE(resp_msg, create_response, name, msg.reference().id());
@@ -343,7 +343,7 @@ void Coordinator::HandleLookupRequest(const LookupRequest& msg,
   // XXX(malte): This currently returns a single reference; we should return
   // multiple if they exist.
   set<ReferenceInterface*>* refs = object_store_->GetReferences(
-      DataObjectID_t(msg.name()));
+      DataObjectIDFromProtobuf(msg.name()));
   // Manufacture and send a response
   BaseMessage resp_msg;
   if (refs && refs->size() > 0) {
@@ -544,7 +544,7 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
        ++output_iter) {
     // First set the producing task field on the task outputs
     output_iter->set_producing_task(td->uid());
-    DataObjectID_t output_id(output_iter->id());
+    DataObjectID_t output_id(DataObjectIDFromProtobuf(output_iter->id()));
     VLOG(1) << "Considering task output " << output_id << ", "
             << "adding to local object table";
     if (object_store_->AddReference(output_id, &(*output_iter))) {
@@ -616,7 +616,7 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
        ++output_iter) {
     // The root task must produce all of the non-existent job outputs, so they
     // should all be in the object table now.
-    DataObjectID_t output_id(*output_iter);
+    DataObjectID_t output_id(DataObjectIDFromProtobuf(*output_iter));
     VLOG(1) << "Considering job output " << output_id;
     set<ReferenceInterface*>* refs = object_store_->GetReferences(output_id);
     object_store_->DumpObjectTableContents();

@@ -51,6 +51,7 @@ TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task);
 // Utility functions to parse various types from strings.
 DataObjectID_t DataObjectIDFromString(const string& str);
+DataObjectID_t DataObjectIDFromProtobuf(const string& str);
 ResourceID_t ResourceIDFromString(const string& str);
 JobID_t JobIDFromString(const string& str);
 TaskID_t TaskIDFromString(const string& str);

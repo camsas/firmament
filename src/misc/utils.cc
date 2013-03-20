@@ -102,11 +102,18 @@ DataObjectID_t GenerateDataObjectID(
 }
 
 DataObjectID_t DataObjectIDFromString(const string& str) {
-  // XXX(malte): possibly unsafe use of atol() here.
-  DataObjectID_t object_id(str);
+  // N.B.: This assumes that the string is a readable, hexadecimal
+  // representation of the ID.
+  DataObjectID_t object_id(str, true);
   return object_id;
 }
 
+DataObjectID_t DataObjectIDFromProtobuf(const string& str) {
+  // N.B.: This assumes that the string is a readable, hexadecimal
+  // representation of the ID.
+  DataObjectID_t object_id(str, false);
+  return object_id;
+}
 
 JobID_t JobIDFromString(const string& str) {
   // XXX(malte): This makes assumptions about JobID_t being a Boost UUID. We
@@ -243,7 +250,7 @@ set<DataObjectID_t*> DataObjectIDsFromProtobuf(
   for (typeof(pb_field.begin()) iter = pb_field.begin();
        iter != pb_field.end();
        ++iter)
-    return_set.insert(new DataObjectID_t(*iter));
+    return_set.insert(new DataObjectID_t(*iter, false));
   return return_set;
 }
 

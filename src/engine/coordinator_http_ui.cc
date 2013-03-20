@@ -514,7 +514,7 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
          dep_iter != td_ptr->dependencies().end();
          ++dep_iter) {
       TemplateDictionary* dep_dict = dict.AddSectionDictionary("TASK_DEPS");
-      dep_dict->SetValue("TASK_DEP_ID", DataObjectID_t(
+      dep_dict->SetValue("TASK_DEP_ID", DataObjectIDFromProtobuf(
           dep_iter->id()).name_printable_string());
     }
     // Spawned
@@ -541,7 +541,7 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
          out_iter != td_ptr->outputs().end();
          ++out_iter) {
       TemplateDictionary* out_dict = dict.AddSectionDictionary("TASK_OUTPUTS");
-      out_dict->SetValue("TASK_OUTPUT_ID", DataObjectID_t(
+      out_dict->SetValue("TASK_OUTPUT_ID", DataObjectIDFromProtobuf(
           out_iter->id()).name_printable_string());
     }
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);

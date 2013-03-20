@@ -24,6 +24,9 @@ namespace firmament {
 #define DIOS_NAME_BYTES (DIOS_NAME_BITS/8)
 #define DIOS_NAME_QWORDS (DIOS_NAME_BYTES/8)
 
+#define xtod(c) ((c>='0' && c<='9') ? c-'0' : ((c>='A' && c<='F') ? \
+                 c-'A'+10 : ((c>='a' && c<='f') ? c-'a'+10 : 0)))
+
 typedef struct {
   union {
     uint64_t value[DIOS_NAME_QWORDS];
@@ -36,7 +39,7 @@ class DataObject : public PrintableInterface {
   explicit DataObject(const dios_name_t& name);
   explicit DataObject(const char* name);
   explicit DataObject(const uint8_t* name);
-  explicit DataObject(const string& name);
+  DataObject(const string& name, bool hex_decode);
   bool operator==(const DataObject& other_do) const;
   bool operator<(const DataObject& other_do) const;
 

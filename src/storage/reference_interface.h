@@ -33,7 +33,7 @@ namespace firmament {
     }
 
     explicit ReferenceInterface(const ReferenceDescriptor& desc)
-      : id_(desc.id()),
+      : id_(desc.id(), false),
         desc_(desc) {
     }
 

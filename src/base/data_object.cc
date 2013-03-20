@@ -13,13 +13,26 @@ DataObject::DataObject(const dios_name_t& name)
   : name_(name) {
 }
 
-DataObject::DataObject(const string& name) {
-  // Check length
-  CHECK(name.size() == DIOS_NAME_BYTES) << "Name length wrong: " << name.size()
-                                        << " bytes (expected: "
-                                        << DIOS_NAME_BYTES << " bytes)";
-  // Set the name
-  memcpy(name_.raw, name.data(), DIOS_NAME_BYTES);
+DataObject::DataObject(const string& name, bool hex_decode) {
+  if (hex_decode) {
+    uint8_t name_dec[DIOS_NAME_BYTES];
+    // Check length
+    CHECK(name.size() == 2*DIOS_NAME_BYTES)
+        << "Name length wrong: " << name.size() << " hex chars (expected: "
+        << 2*DIOS_NAME_BYTES << " chars)";
+    uint32_t j = 0;
+    for (uint32_t i = 0; i < DIOS_NAME_BYTES; j += 2, ++i) {
+      name_dec[i] = (xtod(name.c_str()[j]) << 4 | xtod(name.c_str()[j+1]));
+    }
+    memcpy(name_.raw, name_dec, DIOS_NAME_BYTES);
+  } else {
+    // Check length
+    CHECK(name.size() == DIOS_NAME_BYTES) << "Name length wrong: " << name.size()
+                                          << " bytes (expected: "
+                                          << DIOS_NAME_BYTES << " bytes)";
+    // Set the name
+    memcpy(name_.raw, name.data(), DIOS_NAME_BYTES);
+  }
 }
 
 

@@ -137,7 +137,7 @@ TEST_F(SimpleSchedulerTest, ObjectIDToReferenceDescLookup) {
   ReferenceDescriptor rd;
   rd.set_id("feedcafedeadbeeffeedcafedeadbeef");
   rd.set_type(ReferenceDescriptor::CONCRETE);
-  DataObjectID_t doid(rd.id());
+  DataObjectID_t doid(DataObjectIDFromProtobuf(rd.id()));
   CHECK(!obj_store_->AddReference(doid, &rd));
   set<ReferenceInterface*> refs = sched_->ReferencesForID(doid);
   EXPECT_EQ(*(*refs.begin())->id().name_str(), rd.id());
@@ -154,7 +154,7 @@ TEST_F(SimpleSchedulerTest, ProducingTaskLookup) {
   rd.set_id("feedcafedeadbeeffeedcafedeadbeef");
   rd.set_type(ReferenceDescriptor::CONCRETE);
   rd.set_producing_task(1);
-  DataObjectID_t doid(rd.id());
+  DataObjectID_t doid(DataObjectIDFromProtobuf(rd.id()));
   CHECK(!obj_store_->AddReference(doid, &rd));
   set<TaskDescriptor*> tdps =
       sched_->ProducingTasksForDataObjectID(doid, job_id);
@@ -192,8 +192,8 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   test_job->add_output_ids(d0_td2->id());
   test_job->add_output_ids(d0_td1->id());
   // put concrete input ref of td1 into object table
-  DataObjectID_t d0_td1_id(d0_td1->id());
-  DataObjectID_t d0_td2_id(d0_td2->id());
+  DataObjectID_t d0_td1_id(DataObjectIDFromProtobuf(d0_td1->id()));
+  DataObjectID_t d0_td2_id(DataObjectIDFromProtobuf(d0_td2->id()));
   CHECK(!obj_store_->AddReference(d0_td1_id, d0_td1));
   // put future input ref of td2 into object table
   CHECK(!obj_store_->AddReference(d0_td2_id, d0_td2));
@@ -235,10 +235,10 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   test_job->add_output_ids(o0_td1->id());
   test_job->add_output_ids(d0_td1->id());
   // put concrete input ref of td1 into object table
-  DataObjectID_t o0_td1_id(o0_td1->id());
+  DataObjectID_t o0_td1_id(DataObjectIDFromProtobuf(o0_td1->id()));
   CHECK(!obj_store_->AddReference(o0_td1_id, o0_td1));
   // put future input ref of td2 into object table
-  DataObjectID_t d0_td1_id(d0_td1->id());
+  DataObjectID_t d0_td1_id(DataObjectIDFromProtobuf(d0_td1->id()));
   CHECK(!obj_store_->AddReference(d0_td1_id, d0_td1));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
