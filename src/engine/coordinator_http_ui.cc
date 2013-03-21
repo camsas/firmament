@@ -238,14 +238,14 @@ void CoordinatorHTTPUI::HandleReferencesListURI(HTTPRequestPtr& http_request,  /
          r_iter->second.begin();
          ref_iter != r_iter->second.end();
          ++ref_iter) {
-      TemplateDictionary* sect_dict = dict.AddSectionDictionary("REF_DATA");
-      sect_dict->SetFormattedValue(
+      TemplateDictionary* subsect_dict = sect_dict->AddSectionDictionary("REF_DATA");
+      subsect_dict->SetFormattedValue(
           "REF_PRODUCING_TASK_ID", "%ju",
           TaskID_t((*ref_iter)->desc().producing_task()));
-      sect_dict->SetValue("REF_TYPE",
+      subsect_dict->SetValue("REF_TYPE",
                           ENUM_TO_STRING(ReferenceDescriptor::ReferenceType,
                                          (*ref_iter)->desc().type()));
-      sect_dict->SetValue("REF_LOCATION", (*ref_iter)->desc().location());
+      subsect_dict->SetValue("REF_LOCATION", (*ref_iter)->desc().location());
       ++i;
     }
   }
