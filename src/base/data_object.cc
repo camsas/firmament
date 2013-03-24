@@ -27,8 +27,8 @@ DataObject::DataObject(const string& name, bool hex_decode) {
     memcpy(name_.raw, name_dec, DIOS_NAME_BYTES);
   } else {
     // Check length
-    CHECK(name.size() == DIOS_NAME_BYTES) << "Name length wrong: " << name.size()
-                                          << " bytes (expected: "
+    CHECK(name.size() == DIOS_NAME_BYTES) << "Name length wrong: "
+                                          << name.size() << " bytes (expected: "
                                           << DIOS_NAME_BYTES << " bytes)";
     // Set the name
     memcpy(name_.raw, name.data(), DIOS_NAME_BYTES);

@@ -29,7 +29,7 @@ namespace firmament {
 
     explicit ReferenceInterface(DataObjectID_t id)
       : id_(id) {
-      desc_.set_id(id_.name_bytes());
+        desc_.set_id(id_.name_bytes());
     }
 
     explicit ReferenceInterface(const ReferenceDescriptor& desc)
