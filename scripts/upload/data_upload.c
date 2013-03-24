@@ -71,7 +71,7 @@ static void send_coord_base_msg(Firmament__BaseMessage* base_msg) {
   free(buff);
 }
 
-static int generate_guid_name(dios_name_t* dios_name_out, char str_name_out[65]){
+static int generate_guid_name(dios_name_t* dios_name_out, char* str_name_out){
   int rand_fd = open("/dev/urandom", O_RDONLY);
   if(rand_fd < 0){
     printf("Warning, could not open /dev/urandom for generating GUID\n");
@@ -84,9 +84,8 @@ static int generate_guid_name(dios_name_t* dios_name_out, char str_name_out[65])
   }
 
   int i = 0;
-  for(; i < DIOS_NAME_QWORDS; i++){
-    sprintf(&str_name_out[0] + 16*i, "%0lX", dios_name_out->value[i] );
-    //printf("\n--> %0lX", dios_name_out->value[i] );
+  for (; i < DIOS_NAME_BYTES; ++i) {
+    sprintf(str_name_out + 2*i, "%02hhx", dios_name_out->raw[i]);
   }
 
   return 0;
@@ -124,7 +123,7 @@ int main(int argc, char** argv){
   // First generate a random name for this object
   dios_name_t name;
   char str_name[65];
-  generate_guid_name(&name, &str_name);
+  generate_guid_name(&name, &str_name[0]);
   printf("Name: %s\n", str_name);
 
   // Manufacture an object creation message
@@ -138,7 +137,7 @@ int main(int argc, char** argv){
 
   // Set up reference descriptor
   rd.id.len = sizeof(dios_name_t);
-  rd.id.data = &name;
+  rd.id.data = name.raw;
 
   // Pack and send!
   send_coord_base_msg(&bm);
