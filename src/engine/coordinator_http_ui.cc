@@ -199,7 +199,9 @@ void CoordinatorHTTPUI::HandleJobURI(HTTPRequestPtr& http_request,  // NOLINT
          out_iter != jd_ptr->output_ids().end();
          ++out_iter) {
       TemplateDictionary* out_dict = dict.AddSectionDictionary("JOB_OUTPUTS");
-      out_dict->SetValue("JOB_OUTPUT_ID", *out_iter);
+      out_dict->SetValue(
+          "JOB_OUTPUT_ID",
+          DataObjectIDFromString(*out_iter).name_printable_string());
     }
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
@@ -238,7 +240,8 @@ void CoordinatorHTTPUI::HandleReferencesListURI(HTTPRequestPtr& http_request,  /
          r_iter->second.begin();
          ref_iter != r_iter->second.end();
          ++ref_iter) {
-      TemplateDictionary* subsect_dict = sect_dict->AddSectionDictionary("REF_DATA");
+      TemplateDictionary* subsect_dict =
+          sect_dict->AddSectionDictionary("REF_DATA");
       subsect_dict->SetFormattedValue(
           "REF_PRODUCING_TASK_ID", "%ju",
           TaskID_t((*ref_iter)->desc().producing_task()));
