@@ -54,6 +54,10 @@ namespace firmament {
       return desc_;
     }
 
+    void set_producing_task(uint64_t tid) {
+      desc_.set_producing_task(tid);
+    }
+
   protected:
     virtual void ValidateInitDescriptor(const ReferenceDescriptor& desc) = 0;
 

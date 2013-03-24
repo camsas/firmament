@@ -121,6 +121,23 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
   // mark it as completed.
 }
 
+void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
+  // Find resource for task
+  ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, td_ptr->uid());
+  VLOG(1) << "Handling failure of task " << td_ptr->uid()
+          << ", freeing resource " << *res_id_ptr;
+  // Set the bound resource idle again.
+  // TODO(malte): We should probably check if the resource has failed at this
+  // point...
+  ResourceStatus** res = FindOrNull(*resource_map_, *res_id_ptr);
+  (*res)->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  // Remove the task's resource binding (as it is no longer currently bound)
+  task_bindings_.erase(td_ptr->uid());
+  // TODO(malte): Trigger the necessary re-executions as a result of this
+  // failure
+}
+
+
 bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
                                          ResourceID_t target_resource) {
   // Check if the resource is available

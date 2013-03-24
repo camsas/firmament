@@ -312,6 +312,7 @@ void Coordinator::HandleCreateRequest(const CreateRequest& msg,
   // Try to insert the reference descriptor conveyed into the object table.
   ReferenceDescriptor* new_rd = new ReferenceDescriptor;
   new_rd->CopyFrom(msg.reference());
+  new_rd->set_producing_task(msg.task_id());
   bool succ = !object_store_->AddReference(
       DataObjectIDFromProtobuf(msg.reference().id()), new_rd);
   // Manufacture and send a response
@@ -456,6 +457,21 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
   VLOG(1) << "Task graph is at " << task_graph_ptr;
   // Add task to task graph
   //task_graph_ptr->AddChildTask(spawner, spawnee)
+  // Update references with producing task, if necessary
+  // TODO(malte): implement this
+  for (RepeatedPtrField<ReferenceDescriptor>::const_iterator o_iter =
+       msg.spawned_task_desc().outputs().begin();
+       o_iter != msg.spawned_task_desc().outputs().end();
+       ++o_iter) {
+    set<ReferenceInterface*>* refs =
+        object_store_->GetReferences(DataObjectIDFromProtobuf(o_iter->id()));
+    for (set<ReferenceInterface*>::iterator r_iter = refs->begin();
+         r_iter != refs->end();
+         ++r_iter) {
+      if ((*r_iter)->desc().producing_task() == (*spawner)->uid())
+        (*r_iter)->set_producing_task(spawnee->uid());
+    }
+  }
   // Run the scheduler for this job
   JobDescriptor* job = FindOrNull(*job_table_, job_id);
   CHECK_NOTNULL(job);
@@ -485,7 +501,7 @@ void Coordinator::HandleTaskStateChange(
       CHECK(td_ptr) << "Received failure message for unknown task "
                     << msg.id();
       (*td_ptr)->set_state(TaskDescriptor::FAILED);
-      //scheduler_->HandleTaskFailure(*td_ptr);
+      scheduler_->HandleTaskFailure(*td_ptr);
       break;
     }
     default:

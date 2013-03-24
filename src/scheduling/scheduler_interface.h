@@ -42,6 +42,10 @@ class SchedulerInterface : public PrintableInterface {
   // Handle the completion of a task. This usually involves freeing up its
   // resource by setting it idle, and recording any bookkeeping data required.
   virtual void HandleTaskCompletion(TaskDescriptor* td_ptr) = 0;
+  // Handle the failure of a task. This usually involves freeing up its
+  // resource by setting it idle, and kicking off the necessary fault tolerance
+  // handling procedures.
+  virtual void HandleTaskFailure(TaskDescriptor* td_ptr) = 0;
   // TODO(malte): comment
   virtual bool PlaceDelegatedTask(TaskDescriptor* td,
                                   ResourceID_t target_resource) = 0;

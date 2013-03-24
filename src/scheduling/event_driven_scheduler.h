@@ -38,6 +38,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   void DeregisterResource(ResourceID_t res_id);
   void RegisterResource(ResourceID_t res_id, bool local);
   void HandleTaskCompletion(TaskDescriptor* td_ptr);
+  void HandleTaskFailure(TaskDescriptor* td_ptr);
   bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
   // N.B. ScheduleJob must be implemented in scheduler-specific logic
