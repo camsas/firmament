@@ -27,22 +27,31 @@ job_desc.root_task.args.append("0")
 #root_input1 = job_desc.root_task.dependencies.add()
 #root_input1.id = 123456789
 #root_input1.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
+input_id = binascii.unhexlify(sys.argv[4])
 output_id = binascii.unhexlify('db33daba280d8e68eea6e490723b02cedb33daba280d8e68eea6e490723b02ce')
 output2_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 job_desc.output_ids.append(output_id)
-job_desc.output_ids.append(output2_id)
+#job_desc.output_ids.append(output2_id)
 #job_desc.root_task.binary = "/bin/echo"
 #job_desc.root_task.args.append("Hello World!")
+input_desc = job_desc.root_task.dependencies.add()
+input_desc.id = input_id
+input_desc.scope = reference_desc_pb2.ReferenceDescriptor.PUBLIC
+input_desc.type = reference_desc_pb2.ReferenceDescriptor.CONCRETE
+input_desc.non_deterministic = False
+input_desc.location = "blob:/tmp/fib_in"
 final_output_desc = job_desc.root_task.outputs.add()
 final_output_desc.id = output_id
 final_output_desc.scope = reference_desc_pb2.ReferenceDescriptor.PUBLIC
 final_output_desc.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
 final_output_desc.non_deterministic = False
+final_output_desc.location = "blob:/tmp/out1"
 final_output2_desc = job_desc.root_task.outputs.add()
 final_output2_desc.id = output2_id
 final_output2_desc.scope = reference_desc_pb2.ReferenceDescriptor.PUBLIC
 final_output2_desc.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
 final_output2_desc.non_deterministic = False
+final_output2_desc.location = "blob:/tmp/out2"
 
 
 #params = urllib.urlencode({'test': text_format.MessageToString(job_desc)})
