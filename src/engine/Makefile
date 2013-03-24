@@ -25,6 +25,7 @@ TESTS_DEPS = $(BUILD_DIR)/misc/libfirmament_misc.a \
 # as a dependency.
 TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
 	                 $(BUILD_DIR)/engine/node.o \
+	                 $(BUILD_DIR)/engine/knowledge_base.o \
 	                 $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 	                 $(BUILD_DIR)/engine/local_executor.o \
 	                 $(BUILD_DIR)/engine/remote_executor.o \
@@ -79,6 +80,7 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
 		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/engine/coordinator.o \
+		$(BUILD_DIR)/engine/knowledge_base.o \
 		$(BUILD_DIR)/engine/node.o \
 		$(BUILD_DIR)/engine/coordinator_http_ui.o \
 		$(BUILD_DIR)/engine/local_executor.o \
@@ -109,6 +111,7 @@ $(OBJ_DIR)/coordinator_sim: $(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(OPTFLAGS) $(DEFINES) \
 		$(SRC_ROOT_DIR)/engine/coordinator.cc \
 		$(BUILD_DIR)/engine/node.o \
+		$(BUILD_DIR)/engine/knowledge_base.o \
 		$(BUILD_DIR)/engine/coordinator_http_ui.o \
 		$(BUILD_DIR)/engine/local_executor.o \
 		$(BUILD_DIR)/engine/remote_executor.o \

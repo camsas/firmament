@@ -31,6 +31,7 @@
 #include "base/resource_topology_node_desc.pb.h"
 #include "base/task_graph.h"
 #include "engine/node.h"
+#include "engine/knowledge_base.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
 #include "messages/heartbeat_message.pb.h"
@@ -188,6 +189,10 @@ class Coordinator : public Node,
   shared_ptr<ObjectStoreInterface> get_object_store() {
       return object_store_;
   }
+  const KnowledgeBase& knowledge_base() {
+    return knowledge_base_;
+  }
+
   void InformStorageEngineNewResource(ResourceDescriptor* rd);
   void KillRunningTask(TaskID_t task_id,
                        TaskKillMessage::TaskKillReason reason);
@@ -256,6 +261,8 @@ class Coordinator : public Node,
   StreamSocketsChannel<BaseMessage>* parent_chan_;
   // Machine statistics monitor
   ProcFSMachine machine_monitor_;
+  // Knowledge base
+  KnowledgeBase knowledge_base_;
 
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   shared_ptr<sim::SimpleDTGGenerator> sim_dtg_generator_;

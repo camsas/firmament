@@ -10,7 +10,7 @@
 
 #include <string>
 #include <map>
-#include <queue>
+#include <deque>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -26,10 +26,11 @@ class KnowledgeBase {
   KnowledgeBase();
   void AddMachineSample(const MachinePerfStatisticsSample& sample);
   void AddTaskSample(const TaskPerfStatisticsSample& sample);
+  void DumpMachineStats(const ResourceID_t& res_id) const;
 
  protected:
-  map<ResourceID_t, queue<MachinePerfStatisticsSample> > machine_map_;
-  map<TaskID_t, queue<TaskPerfStatisticsSample> > task_map_;
+  map<ResourceID_t, deque<MachinePerfStatisticsSample> > machine_map_;
+  map<TaskID_t, deque<TaskPerfStatisticsSample> > task_map_;
 };
 
 }  // namespace firmament

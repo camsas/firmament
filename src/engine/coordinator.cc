@@ -336,6 +336,8 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
         VLOG(1) << "Remote resource stats: " << msg.load().DebugString();
       // Update timestamp
       (*rsp)->set_last_heartbeat(GetCurrentTimestamp());
+      // Record resource statistics sample
+      knowledge_base_.AddMachineSample(msg.load());
   }
 }
 
@@ -400,7 +402,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
     LOG(INFO) << "HEARTBEAT from task " << task_id;
     // Process the profiling information submitted by the task, add it to
     // the knowledge base
-    // TODO(malte): implement this
+    knowledge_base_.AddTaskSample(msg.stats());
   }
 }
 
@@ -580,7 +582,6 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
       VLOG(1) << "Output " << output_id << " already exists in "
               << "local object table. Not adding again.";
     }
-    object_store_->DumpObjectTableContents();
     // Check that the object was actually stored
     set<ReferenceInterface*>* refs = object_store_->GetReferences(output_id);
     if (refs && refs->size() > 0)
@@ -648,7 +649,6 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
     DataObjectID_t output_id(DataObjectIDFromProtobuf(*output_iter));
     VLOG(1) << "Considering job output " << output_id;
     set<ReferenceInterface*>* refs = object_store_->GetReferences(output_id);
-    object_store_->DumpObjectTableContents();
     CHECK(refs && refs->size() > 0)
         << "Could not find reference to data object ID " << output_id
         << ", which we just added!";
