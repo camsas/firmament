@@ -7,6 +7,7 @@
       <a href="/">Home</a> &ndash;
       <a href="/jobs">Jobs</a> &ndash;
       <a href="/resources">Resources</a> &ndash;
+      <a href="/refs">References</a> &ndash;
       <a href="/shutdown"><span style="color: red;">Shutdown</span></a>
     </div>
   </div>
