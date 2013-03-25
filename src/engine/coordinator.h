@@ -207,9 +207,13 @@ class Coordinator : public Node,
   void HandleCreateRequest(const CreateRequest& msg,
                            const string& remote_endpoint);
   void HandleIncomingMessage(BaseMessage *bm, const string& remote_endpoint);
+  void HandleIncomingReceiveError(const boost::system::error_code& error,
+                                  const string& remote_endpoint);
   void HandleHeartbeat(const HeartbeatMessage& msg);
   void HandleLookupRequest(const LookupRequest& msg,
                            const string& remote_endpoint);
+  void HandleIONotification(const BaseMessage& msg,
+                            const string& remote_uri);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
   void HandleTaskDelegationRequest(const TaskDelegationMessage& msg);
   void HandleTaskHeartbeat(const TaskHeartbeatMessage& msg);

@@ -301,6 +301,11 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
     HandleLookupRequest(msg, remote_endpoint);
     handled_extensions++;
   }
+  // DIOS I/O notification
+  if (bm->has_end_write_notification()) {
+    HandleIONotification(*bm, remote_endpoint);
+    handled_extensions++;
+  }
   // Check that we have handled at least one sub-message
   if (handled_extensions == 0)
     LOG(ERROR) << "Ignored incoming message, no known extension present, "
@@ -338,6 +343,53 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       (*rsp)->set_last_heartbeat(GetCurrentTimestamp());
       // Record resource statistics sample
       knowledge_base_.AddMachineSample(msg.load());
+  }
+}
+
+void Coordinator::HandleIONotification(const BaseMessage& bm,
+                                       const string& remote_uri) {
+  if (bm.has_end_write_notification()) {
+    const EndWriteNotification msg = bm.end_write_notification();
+    DataObjectID_t id = DataObjectIDFromProtobuf(msg.reference().id());
+    set<ReferenceInterface*>* refs = object_store_->GetReferences(id);
+    vector<ReferenceInterface*> remove;
+    vector<ConcreteReference*> add;
+    object_store_->DumpObjectTableContents();
+    for (set<ReferenceInterface*>::iterator it = refs->begin();
+         it != refs->end();
+         ++it) {
+      if ((*it)->desc().type() == ReferenceDescriptor::FUTURE &&
+          (*it)->desc().producing_task() == msg.reference().producing_task()) {
+        // Upgrade to a concrete reference
+        VLOG(2) << "Found future reference for " << id
+                << ", upgrading to concrete!";
+        remove.push_back(*it);
+        // XXX(malte): skanky, skanky...
+        add.push_back(new ConcreteReference(
+            *dynamic_cast<FutureReference*>(*it)));
+      }
+    }
+    VLOG(1) << "Found " << remove.size() << " matching references for "
+            << id << ", and converted them into concrete refs.";
+    for (vector<ReferenceInterface*>::const_iterator it = remove.begin();
+         it != remove.end();
+         ++it) {
+      refs->erase(*it);
+      delete *it;
+    }
+    for (vector<ConcreteReference*>::iterator it = add.begin();
+         it != add.end();
+         ++it) {
+      refs->insert(*it);
+    }
+    object_store_->DumpObjectTableContents();
+    // Call into scheduler, as this change may have made things runnable
+    TaskDescriptor** td_ptr = FindOrNull(*task_table_,
+                                         msg.reference().producing_task());
+    CHECK_NOTNULL(td_ptr);
+    JobDescriptor* jd = FindOrNull(*job_table_,
+                                   JobIDFromString((*td_ptr)->job_id()));
+    scheduler_->ScheduleJob(jd);
   }
 }
 
@@ -487,21 +539,18 @@ void Coordinator::HandleTaskStateChange(
   VLOG(1) << "Task " << msg.id() << " now in state "
           << ENUM_TO_STRING(TaskDescriptor::TaskState, msg.new_state())
           << ".";
+  TaskDescriptor** td_ptr = FindOrNull(*task_table_, msg.id());
+  CHECK(td_ptr) << "Received task state change message for unknown task "
+                << msg.id();
   switch (msg.new_state()) {
     case TaskDescriptor::COMPLETED:
     {
-      TaskDescriptor** td_ptr = FindOrNull(*task_table_, msg.id());
-      CHECK(td_ptr) << "Received completion message for unknown task "
-                    << msg.id();
       (*td_ptr)->set_state(TaskDescriptor::COMPLETED);
       scheduler_->HandleTaskCompletion(*td_ptr);
       break;
     }
     case TaskDescriptor::FAILED:
     {
-      TaskDescriptor** td_ptr = FindOrNull(*task_table_, msg.id());
-      CHECK(td_ptr) << "Received failure message for unknown task "
-                    << msg.id();
       (*td_ptr)->set_state(TaskDescriptor::FAILED);
       scheduler_->HandleTaskFailure(*td_ptr);
       break;
@@ -511,6 +560,13 @@ void Coordinator::HandleTaskStateChange(
               << static_cast<uint64_t> (msg.new_state());
       break;
   }
+  // This task state change may have caused the job to have schedulable tasks
+  // TODO(malte): decide if we should do invoke the scheduler here, or kick off
+  // the scheduling iteration from within the earlier handler call into the
+  // scheduler
+  JobDescriptor* jd = FindOrNull(*job_table_,
+                                 JobIDFromString((*td_ptr)->job_id()));
+  scheduler_->ScheduleJob(jd);
   // XXX(malte): tear down the respective connection, cleanup
 }
 
