@@ -20,18 +20,27 @@ using google::protobuf::RepeatedPtrField;
 class ConcreteReference : public ReferenceInterface {
  public:
   explicit ConcreteReference(DataObjectID_t id)
-  : ReferenceInterface(id), size_(0) {
+    : ReferenceInterface(id), size_(0) {
     desc_.set_id(id.name_bytes(), DIOS_NAME_BYTES);
     desc_.set_type(type_);
   }
   ConcreteReference(DataObjectID_t id, uint64_t size,
                     const string& location)
-  : ReferenceInterface(id), size_(size),
-    location_(location) {
+    : ReferenceInterface(id), size_(size),
+      location_(location) {
     desc_.set_id(id.name_bytes(), DIOS_NAME_BYTES);
     desc_.set_type(type_);
     desc_.set_size(size);
     desc_.set_location(location);
+  }
+  explicit ConcreteReference(const FutureReference& fut)
+    : ReferenceInterface(fut.id()) {
+      desc_.CopyFrom(fut.desc());
+      desc_.set_type(ReferenceDescriptor::CONCRETE);
+      if (desc_.has_location())
+        location_ = desc_.location();
+      if (desc_.has_size())
+        size_ = desc_.size();
   }
   explicit ConcreteReference(const ReferenceDescriptor& desc)
   : ReferenceInterface(desc) {
