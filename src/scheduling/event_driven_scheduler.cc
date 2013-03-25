@@ -244,8 +244,8 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
          ++t_iter) {
       TaskDescriptor* task = *t_iter;
       if (task->state() == TaskDescriptor::CREATED) {
-        VLOG(2) << "Setting task " << task << " active as it produces output "
-                << *output_id_iter << ", which we're interested in.";
+        VLOG(2) << "Setting task " << task->uid() << " active as it produces output "
+                << **output_id_iter << ", which we're interested in.";
         task->set_state(TaskDescriptor::BLOCKING);
         newly_active_tasks.push_back(task);
       }
@@ -271,7 +271,7 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
       ReferenceInterface* ref = ReferenceFromDescriptor(*iter);
       if (ref->Consumable()) {
         // This input reference is consumable. So far, so good.
-        VLOG(2) << "Task " << current_task->uid() << "'s dependency " << ref
+        VLOG(2) << "Task " << current_task->uid() << "'s dependency " << *ref
                 << " is consumable.";
       } else {
         // This input reference is not consumable; set the task to block and
