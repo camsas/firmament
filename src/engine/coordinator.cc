@@ -312,6 +312,27 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
                << "so cannot handle it: " << bm->DebugString();
 }
 
+void Coordinator::HandleIncomingReceiveError(
+    const boost::system::error_code& error,
+    const string& remote_endpoint) {
+  // Notify of receive error
+  if (error.value() == boost::asio::error::eof) {
+    // Connection terminated, handle accordingly
+    LOG(INFO) << "Connection to " << remote_endpoint << " closed.";
+    // XXX(malte): Need to figure out if this relates to a resource, and if so,
+    // if we should declare it failed; or whether this is an expected job
+    // completion.
+    
+  } else {
+    LOG(WARNING) << "Failed to complete a message receive cycle from "
+                 << remote_endpoint << ". The message was discarded, or the "
+                 << "connection failed (error: " << error.message() << ", "
+                 << "code " << error.value() << ").";
+  }
+}
+
+
+
 void Coordinator::HandleCreateRequest(const CreateRequest& msg,
                                       const string& remote_endpoint) {
   // Try to insert the reference descriptor conveyed into the object table.
@@ -354,7 +375,6 @@ void Coordinator::HandleIONotification(const BaseMessage& bm,
     set<ReferenceInterface*>* refs = object_store_->GetReferences(id);
     vector<ReferenceInterface*> remove;
     vector<ConcreteReference*> add;
-    object_store_->DumpObjectTableContents();
     for (set<ReferenceInterface*>::iterator it = refs->begin();
          it != refs->end();
          ++it) {
