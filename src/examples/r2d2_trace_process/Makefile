@@ -26,8 +26,8 @@ $(OBJ_BIN): $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/engine/libfirmament_task_lib.a \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
-		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
+		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$< \
 		$(LIBS) -o $@ , \

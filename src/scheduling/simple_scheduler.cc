@@ -63,7 +63,7 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
 uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
   uint64_t total_scheduled = 0;
   VLOG(2) << "Preparing to schedule job " << job_desc->uuid();
-  scheduling_ = true;
+  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Get the set of runnable tasks for this job
   set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
   VLOG(2) << "Scheduling job " << job_desc->uuid() << ", which has "
@@ -93,7 +93,6 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
   }
   if (total_scheduled > 0)
     job_desc->set_state(JobDescriptor::RUNNING);
-  scheduling_ = false;
   return total_scheduled;
 }
 

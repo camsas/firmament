@@ -110,11 +110,17 @@ DataObjectID_t DataObjectIDFromString(const string& str) {
 }
 
 DataObjectID_t DataObjectIDFromProtobuf(const string& str) {
-  // N.B.: This assumes that the string is a readable, hexadecimal
-  // representation of the ID.
+  // N.B.: This assumes that the string is a binary representation of the ID.
   DataObjectID_t object_id(str, false);
   return object_id;
 }
+
+DataObjectID_t DataObjectIDFromProtobuf(const ReferenceDescriptor& rd) {
+  // N.B.: This assumes that the string is a binary representation of the ID.
+  DataObjectID_t object_id(rd.id(), false);
+  return object_id;
+}
+
 
 JobID_t JobIDFromString(const string& str) {
   // XXX(malte): This makes assumptions about JobID_t being a Boost UUID. We
@@ -254,5 +260,20 @@ set<DataObjectID_t*> DataObjectIDsFromProtobuf(
     return_set.insert(new DataObjectID_t(*iter, false));
   return return_set;
 }
+
+// Helper function to convert a repeated bytes field to a set of
+// DataObjectID_t.
+// This method copies the input collection, so it is O(N) in time and space.
+set<DataObjectID_t*> DataObjectIDsFromProtobuf(
+    const RepeatedPtrField<ReferenceDescriptor>& pb_field) {
+  set<DataObjectID_t*> return_set;
+  // N.B.: using GNU-style RTTI (typeof)
+  for (typeof(pb_field.begin()) iter = pb_field.begin();
+       iter != pb_field.end();
+       ++iter)
+    return_set.insert(new DataObjectID_t(iter->id(), false));
+  return return_set;
+}
+
 
 }  // namespace firmament

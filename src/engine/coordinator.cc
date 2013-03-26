@@ -46,6 +46,8 @@ DEFINE_bool(http_ui, true, "Enable HTTP interface");
 DEFINE_int32(http_ui_port, 8080,
         "The port that the HTTP UI will be served on; -1 to disable.");
 #endif
+DEFINE_uint64(heartbeat_interval, 1000000,
+              "Heartbeat interval in microseconds.");
 
 namespace firmament {
 
@@ -207,6 +209,8 @@ void Coordinator::Run() {
     InformStorageEngineNewResource(&resource_desc_);
   }
 
+  uint64_t cur_time = 0;
+  uint64_t last_heartbeat_time = 0;
   // Main loop
   while (!exit_) {
     // Wait for events (i.e. messages from workers.
@@ -215,9 +219,13 @@ void Coordinator::Run() {
     VLOG(3) << "Hello from main loop!";
     AwaitNextMessage();
     // TODO(malte): wrap this in a timer
-    if (parent_chan_ != NULL)
+    cur_time = GetCurrentTimestamp();
+    if (parent_chan_ != NULL &&
+        (cur_time - last_heartbeat_time > FLAGS_heartbeat_interval)) {
       SendHeartbeatToParent();
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+      last_heartbeat_time = cur_time;
+    }
+    //boost::this_thread::sleep(boost::posix_time::milliseconds(100));
   }
 
   // We have dropped out of the main loop and are exiting
@@ -391,22 +399,16 @@ void Coordinator::HandleIONotification(const BaseMessage& bm,
     }
     VLOG(1) << "Found " << remove.size() << " matching references for "
             << id << ", and converted them into concrete refs.";
-    for (vector<ReferenceInterface*>::const_iterator it = remove.begin();
-         it != remove.end();
-         ++it) {
-      refs->erase(*it);
-      delete *it;
-    }
-    for (vector<ConcreteReference*>::iterator it = add.begin();
-         it != add.end();
-         ++it) {
-      refs->insert(*it);
-    }
-    object_store_->DumpObjectTableContents();
-    // Call into scheduler, as this change may have made things runnable
     TaskDescriptor** td_ptr = FindOrNull(*task_table_,
                                          msg.reference().producing_task());
     CHECK_NOTNULL(td_ptr);
+    for (uint64_t i = 0; i < remove.size(); ++i) {
+      refs->erase(remove[i]);
+      refs->insert(add[i]);
+      scheduler_->HandleReferenceStateChange(*remove[i], *add[i], *td_ptr);
+      delete remove[i];
+    }
+    // Call into scheduler, as this change may have made things runnable
     JobDescriptor* jd = FindOrNull(*job_table_,
                                    JobIDFromString((*td_ptr)->job_id()));
     scheduler_->ScheduleJob(jd);
@@ -486,9 +488,14 @@ void Coordinator::HandleTaskDelegationRequest(
   // Check if there is room for this task here
   // (or maybe enqueue it?)
   TaskDescriptor* td = new TaskDescriptor(msg.task_descriptor());
-  scheduler_->PlaceDelegatedTask(
+  bool result = scheduler_->PlaceDelegatedTask(
       td, ResourceIDFromString(msg.target_resource_id()));
   // Return ACK/NACK
+  if (result) {
+    // Successfully placed
+  } else {
+    // Failure; delegator needs to try again
+  }
 }
 
 void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
@@ -578,6 +585,7 @@ void Coordinator::HandleTaskStateChange(
     default:
       VLOG(1) << "Task " << msg.id() << "'s state changed to "
               << static_cast<uint64_t> (msg.new_state());
+      (*td_ptr)->set_state(msg.new_state());
       break;
   }
   // This task state change may have caused the job to have schedulable tasks

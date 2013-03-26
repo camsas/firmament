@@ -25,6 +25,8 @@
 #include <boost/interprocess/sync/named_upgradable_mutex.hpp>
 #endif
 
+#include "../ext/thread-safe-stl-containers-svn/thread_safe_map.h"
+
 #include "storage/reference_interface.h"
 #include "storage/StorageInfo.h"
 
@@ -37,7 +39,7 @@ using namespace boost::interprocess;  // NOLINT
 // Forward declaration
 class StorageInfo;
 
-typedef map<DataObjectID_t, set<ReferenceInterface*> > DataObjectMap_t;
+typedef thread_safe::map<DataObjectID_t, set<ReferenceInterface*> > DataObjectMap_t;
 
 //    typedef struct  mutex_struct() {
 //             sharable_lock<interprocess_mutex> read_lock(interprocess_mutex);

@@ -41,8 +41,7 @@ EventDrivenScheduler::EventDrivenScheduler(
       coordinator_uri_(coordinator_uri),
       coordinator_res_id_(coordinator_res_id),
       topology_manager_(topo_mgr),
-      m_adapter_ptr_(m_adapter),
-      scheduling_(false) {
+      m_adapter_ptr_(m_adapter) {
   VLOG(1) << "EventDrivenScheduler initiated.";
 }
 
@@ -108,8 +107,11 @@ void EventDrivenScheduler::DeregisterResource(ResourceID_t res_id) {
 }
 
 void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
+  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Find resource for task
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, td_ptr->uid());
+  VLOG(1) << "Handling completion of task " << td_ptr->uid();
+  CHECK_NOTNULL(res_id_ptr);
   VLOG(1) << "Handling completion of task " << td_ptr->uid()
           << ", freeing resource " << *res_id_ptr;
   // Set the bound resource idle again.
@@ -117,11 +119,69 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
   (*res)->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
   // Remove the task's resource binding (as it is no longer currently bound)
   task_bindings_.erase(td_ptr->uid());
+  // Run scheduling algorithms from this task
+  set<DataObjectID_t*> outputs = DataObjectIDsFromProtobuf(td_ptr->outputs());
+  LazyGraphReduction(outputs, td_ptr, JobIDFromString(td_ptr->job_id()));
   // TODO(malte): Check if this job still has any outstanding tasks, otherwise
   // mark it as completed.
 }
 
+
+void EventDrivenScheduler::HandleReferenceStateChange(
+    const ReferenceInterface& old_ref,
+    const ReferenceInterface& new_ref,
+    TaskDescriptor* td_ptr) {
+  CHECK_EQ(old_ref.id(), new_ref.id());
+  // Perform the appropriate actions for a reference changing status
+  if (old_ref.Consumable() && new_ref.Consumable()) {
+    // no change, return
+    return;
+  } else if (!old_ref.Consumable() && new_ref.Consumable()) {
+    boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+    // something became available, unblock the waiting tasks
+    set<TaskDescriptor*>* tasks = FindOrNull(reference_subscriptions_,
+                                             old_ref.id());
+    if (!tasks) {
+      // Nobody cares about this ref, so we don't do anything
+      return;
+    }
+    for (set<TaskDescriptor*>::iterator it = tasks->begin();
+         it != tasks->end();
+         ++it) {
+      CHECK_NOTNULL(*it);
+      bool any_outstanding = false;
+      if ((*it)->state() == TaskDescriptor::COMPLETED ||
+          (*it)->state() == TaskDescriptor::RUNNING)
+        continue;
+      for (RepeatedPtrField<ReferenceDescriptor>::const_iterator ref_it =
+           (*it)->dependencies().begin();
+           ref_it != (*it)->dependencies().end();
+           ++ref_it) {
+        set<ReferenceInterface*>* deps = object_store_->GetReferences(
+            DataObjectIDFromProtobuf(ref_it->id()));
+        for (set<ReferenceInterface*>::const_iterator dep_it = deps->begin();
+             dep_it != deps->end();
+             ++dep_it)
+          if (!(*dep_it)->Consumable())
+            any_outstanding = true;
+      }
+      if (!any_outstanding) {
+        (*it)->set_state(TaskDescriptor::RUNNABLE);
+        runnable_tasks_.insert((*it)->uid());
+        blocked_tasks_.erase(*it);
+      }
+    }
+  } else if (old_ref.Consumable() && !new_ref.Consumable()) {
+    // failure or reference loss, re-run producing task(s)
+    // TODO(malte): implement
+  } else {
+    // neither is consumable, so no scheduling implications
+    return;
+  }
+}
+
 void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
+  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Find resource for task
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, td_ptr->uid());
   VLOG(1) << "Handling failure of task " << td_ptr->uid()
@@ -160,6 +220,7 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
     return false;
   }
   // Otherwise, bind the task
+  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   runnable_tasks_.insert(td->uid());
   InsertIfNotPresent(task_map_.get(), td->uid(), td);
   BindTaskToResource(td, rd);
@@ -176,6 +237,7 @@ void EventDrivenScheduler::RegisterResource(ResourceID_t res_id, bool local) {
 }
 
 void EventDrivenScheduler::RegisterLocalResource(ResourceID_t res_id) {
+  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Create an executor for each resource.
   VLOG(1) << "Adding executor for local resource " << res_id;
   LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_,
@@ -184,6 +246,7 @@ void EventDrivenScheduler::RegisterLocalResource(ResourceID_t res_id) {
 }
 
 void EventDrivenScheduler::RegisterRemoteResource(ResourceID_t res_id) {
+  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Create an executor for each resource.
   VLOG(1) << "Adding executor for remote resource " << res_id;
   RemoteExecutor* exec = new RemoteExecutor(res_id, coordinator_res_id_,
@@ -269,6 +332,20 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
          iter != current_task->dependencies().end();
          ++iter) {
       ReferenceInterface* ref = ReferenceFromDescriptor(*iter);
+      // Subscribe the current task to the reference, to enable it to be
+      // unblocked if it becomes available.
+      // Note that we subscribe even tasks whose dependencies are concrete, as
+      // they may later disappear and failures will be handled via the
+      // subscription relationship.
+      set<TaskDescriptor*>* subscribers = FindOrNull(
+          reference_subscriptions_, ref->id());
+      if (!subscribers) {
+        InsertIfNotPresent(&reference_subscriptions_,
+                           ref->id(), set<TaskDescriptor*>());
+        subscribers = FindOrNull(reference_subscriptions_, ref->id());
+      }
+      subscribers->insert(current_task);
+      // Now proceed to check if it is available
       if (ref->Consumable()) {
         // This input reference is consumable. So far, so good.
         VLOG(2) << "Task " << current_task->uid() << "'s dependency " << *ref

@@ -39,6 +39,10 @@ class SchedulerInterface : public PrintableInterface {
   // Unregister a resource ID from the scheduler. No-op if the resource ID is
   // not actually registered with it.
   virtual void DeregisterResource(ResourceID_t res_id) = 0;
+  // TODO(malte): comment
+  virtual void HandleReferenceStateChange(const ReferenceInterface& old_ref,
+                                          const ReferenceInterface& new_ref,
+                                          TaskDescriptor* td_ptr) = 0;
   // Handle the completion of a task. This usually involves freeing up its
   // resource by setting it idle, and recording any bookkeeping data required.
   virtual void HandleTaskCompletion(TaskDescriptor* td_ptr) = 0;

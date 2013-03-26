@@ -30,7 +30,7 @@ class ErrorReference : public ReferenceInterface {
     LOG(FATAL) << "Intializing Error refs from descriptors is not "
             << "fully implemented yet";
   }
-  virtual inline bool Consumable() {
+  virtual inline bool Consumable() const {
     return true;
   }
   virtual ostream& ToString(ostream* stream) const {

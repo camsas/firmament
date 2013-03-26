@@ -58,6 +58,7 @@ class LocalExecutor : public ExecutorInterface {
   ResourceID_t local_resource_id_;
   char* AddPerfMonitoringToCommandLine(vector<char*>* argv);
   char* AddDebuggingToCommandLine(vector<char*>* argv);
+  bool HandleTaskCompletion(const TaskDescriptor& td);
   int32_t RunProcessAsync(const string& cmdline,
                           vector<string> args,
                           bool perf_monitoring,
@@ -85,6 +86,8 @@ class LocalExecutor : public ExecutorInterface {
   // Heartbeat interval for tasks running on the associated resource, in
   // nanoseconds.
   uint64_t heartbeat_interval_;
+  boost::mutex exec_mutex_;
+  boost::condition_variable exec_condvar_;
 };
 
 }  // namespace executor

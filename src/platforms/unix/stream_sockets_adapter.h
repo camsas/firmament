@@ -92,12 +92,13 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
   //set<shared_ptr<StreamSocketsChannel<T> > > active_channels_;
   map<const string, StreamSocketsChannel<T>*>
       endpoint_channel_map_;
-  boost::mutex endpoint_channel_map_mutex_;
   map<StreamSocketsChannel<T>*, Envelope<T>*>
       channel_recv_envelopes_;
   // Synchronization variables, locks tec.
   boost::mutex message_wait_mutex_;
   boost::condition_variable message_wait_condvar_;
+  boost::mutex channel_recv_envelopes_mutex_;
+  boost::mutex endpoint_channel_map_mutex_;
   bool message_wait_ready_;
 };
 

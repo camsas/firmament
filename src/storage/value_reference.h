@@ -26,7 +26,7 @@ class ValueReference : public ReferenceInterface {
     ValidateInitDescriptor(desc);
     value_ = desc.inline_data();
   }
-  virtual inline bool Consumable() {
+  virtual inline bool Consumable() const {
     return true;
   }
   virtual ostream& ToString(ostream* stream) const {
