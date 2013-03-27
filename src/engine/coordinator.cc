@@ -367,7 +367,7 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       LOG(INFO) << "HEARTBEAT from resource " << msg.uuid()
                 << " (last seen at " << (*rsp)->last_heartbeat() << ")";
       if (msg.has_load())
-        VLOG(1) << "Remote resource stats: " << msg.load().DebugString();
+        VLOG(2) << "Remote resource stats: " << msg.load().ShortDebugString();
       // Update timestamp
       (*rsp)->set_last_heartbeat(GetCurrentTimestamp());
       // Record resource statistics sample
