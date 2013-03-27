@@ -295,7 +295,7 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
   // Task delegation message
   if (bm->has_task_delegation()) {
     const TaskDelegationMessage& msg = bm->task_delegation();
-    HandleTaskDelegationRequest(msg);
+    HandleTaskDelegationRequest(msg, remote_endpoint);
     handled_extensions++;
   }
   // DIOS syscall: create message
@@ -482,7 +482,8 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
 }
 
 void Coordinator::HandleTaskDelegationRequest(
-    const TaskDelegationMessage& msg) {
+    const TaskDelegationMessage& msg,
+    const string& remote_endpoint) {
   VLOG(1) << "Handling requested delegation of task "
           << msg.task_descriptor().uid() << " from resource "
           << msg.delegating_resource_id();
@@ -492,11 +493,19 @@ void Coordinator::HandleTaskDelegationRequest(
   bool result = scheduler_->PlaceDelegatedTask(
       td, ResourceIDFromString(msg.target_resource_id()));
   // Return ACK/NACK
+  BaseMessage response;
+  SUBMSG_WRITE(response, task_delegation_response, task_id, td->uid());
   if (result) {
     // Successfully placed
+    VLOG(1) << "Succeeded, task placed on resource " << msg.target_resource_id()
+            << "!";
+    SUBMSG_WRITE(response, task_delegation_response, success, true);
   } else {
     // Failure; delegator needs to try again
+    VLOG(1) << "Failed to place!";
+    SUBMSG_WRITE(response, task_delegation_response, success, false);
   }
+  m_adapter_->SendMessageToEndpoint(remote_endpoint, response);
 }
 
 void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
@@ -568,8 +577,15 @@ void Coordinator::HandleTaskStateChange(
           << ENUM_TO_STRING(TaskDescriptor::TaskState, msg.new_state())
           << ".";
   TaskDescriptor** td_ptr = FindOrNull(*task_table_, msg.id());
-  CHECK(td_ptr) << "Received task state change message for unknown task "
+  CHECK(td_ptr) << "Received task state change message for task "
                 << msg.id();
+  // First check if this is a delegated task, and forward the message if so
+  if ((*td_ptr)->has_delegated_from()) {
+    BaseMessage bm;
+    bm.mutable_task_state()->CopyFrom(msg);
+    m_adapter_->SendMessageToEndpoint((*td_ptr)->delegated_from(), bm);
+    return;
+  }
   switch (msg.new_state()) {
     case TaskDescriptor::COMPLETED:
     {

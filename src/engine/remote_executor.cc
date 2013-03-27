@@ -11,6 +11,9 @@
 #include "messages/base_message.pb.h"
 #include "messages/task_delegation_message.pb.h"
 
+// XXX(malte): hack
+DECLARE_string(listen_uri);
+
 namespace firmament {
 namespace executor {
 
@@ -29,7 +32,7 @@ RemoteExecutor::RemoteExecutor(
 
 void RemoteExecutor::HandleTaskCompletion(const TaskDescriptor& td,
                                           TaskFinalReport* report) {
-  LOG(FATAL) << "Unimplemented!";
+  LOG(ERROR) << "Remote task completion handler is unimplemented!";
 }
 
 void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
@@ -60,6 +63,8 @@ bool RemoteExecutor::SendTaskExecutionMessage(
       exec_message.mutable_task_delegation()->mutable_task_descriptor();
   // N.B. copies task descriptor
   msg_td->CopyFrom(*td);
+  // XXX(malte): HACK
+  msg_td->set_delegated_from(FLAGS_listen_uri);
   SUBMSG_WRITE(exec_message, task_delegation, target_resource_id,
                to_string(remote_resource_id_));
   SUBMSG_WRITE(exec_message, task_delegation, delegating_resource_id,

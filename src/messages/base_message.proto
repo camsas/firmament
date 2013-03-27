@@ -98,5 +98,6 @@ message BaseMessage {
   optional SelectNotification select_notification = 26;
   optional LookupRequest lookup_request = 27;
   optional LookupResponse lookup_response = 28;
-
+  // Tag-on
+  optional TaskDelegationResponse task_delegation_response = 29;
 }
