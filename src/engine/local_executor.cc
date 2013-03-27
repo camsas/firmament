@@ -10,6 +10,7 @@ extern "C" {
 #include <stdio.h>
 #include <sys/wait.h>
 }
+#include <boost/regex.hpp>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -67,10 +68,46 @@ char* LocalExecutor::AddDebuggingToCommandLine(vector<char*>* argv) {
   return TokenizeIntoArgv(dbg_string, argv);
 }
 
-bool HandleTaskCompletion(const TaskDescriptor& td) {
+void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
+                                        const string& line) {
+  boost::regex e("[[:space:]]*? ([0-9,.]+) ([a-zA-Z-]+) .*");
+  boost::smatch m;
+  if (boost::regex_match(line, m, e, boost::match_extra)
+      && m.size() == 3) {
+    string number = m[1].str();
+    // Remove any commas
+    number.erase(std::remove(number.begin(), number.end(), ','), number.end());
+    VLOG(1) << "matched: " << m[2] << ", " << number;
+    if (m[2] == "instructions") {
+      report->set_instructions(strtoul(number.c_str(), NULL, 10));
+    } else if (m[2] == "cycles") {
+      report->set_cycles(strtoul(number.c_str(), NULL, 10));
+    } else if (m[2] == "seconds") {
+      report->set_runtime(strtold(number.c_str(), NULL));
+    } else if (m[2] == "cache-misses") {
+      report->set_llc_misses(strtoul(number.c_str(), NULL, 10));
+    }
+  }
+}
+
+void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
+                                         TaskFinalReport* report) {
   // Load perf data, if it exists
-  //FILE* fd = fopen(PerfDataFileName(td).c_str(), "r");
-  return false;
+  if (FLAGS_perf_monitoring) {
+    FILE* fptr;
+    char line[300];
+    sleep(1);
+    if ((fptr = fopen(PerfDataFileName(td).c_str(), "r")) == NULL) {
+      LOG(ERROR) << "Failed to open FD for reading of perf data. FD " << fptr;
+    }
+    VLOG(1) << "Processing perf output in file " << PerfDataFileName(td) << "...";
+    while (!feof(fptr)) {
+      if (fgets(line, 300, fptr) != NULL) {
+        GetPerfDataFromLine(report, line);
+      }
+    }
+    fclose(fptr);
+  }
 }
 
 void LocalExecutor::RunTask(TaskDescriptor* td,

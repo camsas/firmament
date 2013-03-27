@@ -106,11 +106,11 @@ void EventDrivenScheduler::DeregisterResource(ResourceID_t res_id) {
   delete exec;
 }
 
-void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
+void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
+                                                TaskFinalReport* report) {
   boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Find resource for task
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, td_ptr->uid());
-  VLOG(1) << "Handling completion of task " << td_ptr->uid();
   CHECK_NOTNULL(res_id_ptr);
   VLOG(1) << "Handling completion of task " << td_ptr->uid()
           << ", freeing resource " << *res_id_ptr;
@@ -119,6 +119,10 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr) {
   (*res)->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
   // Remove the task's resource binding (as it is no longer currently bound)
   task_bindings_.erase(td_ptr->uid());
+  // Record final report
+  ExecutorInterface** exec = FindOrNull(executors_, *res_id_ptr);
+  CHECK_NOTNULL(exec);
+  (*exec)->HandleTaskCompletion(*td_ptr, report);
   // Run scheduling algorithms from this task
   set<DataObjectID_t*> outputs = DataObjectIDsFromProtobuf(td_ptr->outputs());
   LazyGraphReduction(outputs, td_ptr, JobIDFromString(td_ptr->job_id()));

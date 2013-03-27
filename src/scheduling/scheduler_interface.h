@@ -10,6 +10,7 @@
 
 #include "base/types.h"
 #include "base/job_desc.pb.h"
+#include "base/task_final_report.pb.h"
 #include "misc/printable_interface.h"
 #include "engine/topology_manager.h"
 #include "storage/object_store_interface.h"
@@ -45,7 +46,8 @@ class SchedulerInterface : public PrintableInterface {
                                           TaskDescriptor* td_ptr) = 0;
   // Handle the completion of a task. This usually involves freeing up its
   // resource by setting it idle, and recording any bookkeeping data required.
-  virtual void HandleTaskCompletion(TaskDescriptor* td_ptr) = 0;
+  virtual void HandleTaskCompletion(TaskDescriptor* td_ptr,
+                                    TaskFinalReport* report) = 0;
   // Handle the failure of a task. This usually involves freeing up its
   // resource by setting it idle, and kicking off the necessary fault tolerance
   // handling procedures.

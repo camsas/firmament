@@ -14,6 +14,7 @@
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
+#include "base/task_final_report.pb.h"
 #include "engine/executor_interface.h"
 #include "scheduling/scheduler_interface.h"
 #include "storage/reference_interface.h"
@@ -40,7 +41,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                   const ReferenceInterface& new_ref,
                                   TaskDescriptor* td_ptr);
-  void HandleTaskCompletion(TaskDescriptor* td_ptr);
+  void HandleTaskCompletion(TaskDescriptor* td_ptr,
+                            TaskFinalReport* report);
   void HandleTaskFailure(TaskDescriptor* td_ptr);
   bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);

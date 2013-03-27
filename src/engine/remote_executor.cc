@@ -27,6 +27,11 @@ RemoteExecutor::RemoteExecutor(
       m_adapter_ptr_(m_adapter_ptr) {
 }
 
+void RemoteExecutor::HandleTaskCompletion(const TaskDescriptor& td,
+                                          TaskFinalReport* report) {
+  LOG(FATAL) << "Unimplemented!";
+}
+
 void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
   MessagingChannelInterface<BaseMessage>* chan = GetChannel();
   SendTaskExecutionMessage(chan, td, firmament_binary);

@@ -19,6 +19,7 @@
 
 #include "base/resource_desc.pb.h"
 #include "base/resource_topology_node_desc.pb.h"
+#include "base/task_final_report.pb.h"
 #include "storage/simple_object_store.h"
 #include "messages/base_message.pb.h"
 #include "misc/pb_utils.h"
@@ -573,7 +574,8 @@ void Coordinator::HandleTaskStateChange(
     case TaskDescriptor::COMPLETED:
     {
       (*td_ptr)->set_state(TaskDescriptor::COMPLETED);
-      scheduler_->HandleTaskCompletion(*td_ptr);
+      TaskFinalReport report;
+      scheduler_->HandleTaskCompletion(*td_ptr, &report);
       break;
     }
     case TaskDescriptor::FAILED:
