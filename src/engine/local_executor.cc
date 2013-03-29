@@ -54,7 +54,7 @@ char* LocalExecutor::AddPerfMonitoringToCommandLine(vector<char*>* argv) {
   //string perf_string = "perf stat -x, -o ";
   string perf_string = "perf stat -o ";
   perf_string += getenv("PERF_FNAME");
-  perf_string += " -e instructions,cycles,cache-misses -- ";
+  perf_string += " -e instructions,cycles,cache-misses,cache-references -- ";
   return TokenizeIntoArgv(perf_string, argv);
 }
 
