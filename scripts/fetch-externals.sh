@@ -1,7 +1,7 @@
 #!/bin/bash
 source include/bash_header.sh
 
-# Valid targets: unix, scc
+# Valid targets: unix, scc, ia64
 TARGET="unix"
 
 mkdir -p ext
@@ -12,15 +12,18 @@ EXT_DIR=${PWD}
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
 BASE_PKGS="wget subversion autoconf"
-COMPILER_PKGS="clang libprotobuf-dev protobuf-compiler python-protobuf"
-GOOGLE_PKGS="google-perftools libgoogle-perftools-dev libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
+CLANG_PKGS="clang clang++"
+COMPILER_PKGS="libprotobuf-dev protobuf-compiler python-protobuf"
+GOOGLE_PKGS="libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
+PERFTOOLS_PKGS="google-perftools libgoogle-perftools"
 BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
 MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev libjansson-dev libctemplate-dev"
 
-UBUNTU_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
-DEBIAN_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
+UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
+DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
+DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 
-GFLAGS_VER="2.0-1"
+GFLAGS_VER="2.0"
 GLOG_VER="HEAD"
 HWLOC_VER="1.5"
 PROTOBUF_VER="2.4.1"
@@ -33,6 +36,8 @@ function get_arch() {
     echo "i386"
   elif [[ $1 == "amd64" || $1 == "x86_64" ]]; then
     echo "amd64"
+  elif [[ $1 == "ia64" || $1 == "IA-64" ]]; then
+    echo "ia64"
   else
     echo "unknown"
   fi
@@ -43,6 +48,8 @@ function get_archx {
     echo "x86"
   elif [[ $1 == "amd64" || $1 == "x86_64" ]]; then
     echo "x86_64"
+  elif [[ $1 == "ia64" || $1 == "IA-64" ]]; then
+    echo "ia64"
   else
     echo "unknown"
   fi
@@ -82,9 +89,21 @@ function check_os_release_compatibility() {
 function check_dpkg_packages() {
   print_subhdr "$1 PACKAGE CHECK"
   if [[ $1 == "Ubuntu" ]]; then
-    OS_PKGS=${UBUNTU_PKGS}
-  else
-    OS_PKGS=${DEBIAN_PKGS}
+    if [[ $2 == "x86" || $2 == "x86_64" ]]; then
+      OS_PKGS=${UBUNTU_x86_PKGS}
+    else
+      echo "No package list available for OS $1 on $2!"
+      echo "Sorry, you're on your own now..."
+    fi
+  elif [[ $1 == "Debian" ]]; then
+    if [[ $2 == "x86" || $2 == "x86_64" ]]; then
+      OS_PKGS=${DEBIAN_x86_PKGS}
+    elif [[ $2 == "ia64" ]]; then
+      OS_PKGS=${DEBIAN_ia64_PKGS}
+    else
+      echo "No package list available for OS $1 on $2!"
+      echo "Sorry, you're on your own now..."
+    fi
   fi
   for i in ${OS_PKGS}; do
     PKG_RES=$(dpkg-query -W -f='${Status}\n' ${i} | grep -E "^install" 2>/dev/null)
@@ -104,7 +123,7 @@ function check_dpkg_packages() {
     echo
     exit 1
   else
-    echo -n "All required Ubuntu packages are installed."
+    echo -n "All required packages are installed."
     echo_success
     echo
     touch .$1-ok
@@ -221,14 +240,14 @@ SCC_CC_SCRIPT="/opt/compilerSetupFiles/crosscompile.sh"
 # some custom stripped-down thing that does not have packages.
 if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) ]];
 then
-  echo "Detected $OS_ID..."
+  echo "Detected ${OS_ID} on ${ARCHX}..."
   check_os_release_compatibility ${OS_ID} ${OS_RELEASE}
   if [ -f "${OS_ID}-ok" ]; then
     echo -n "${OS_ID} package check previously ran successfully; skipping. "
     echo "Delete .${OS_ID}-ok file if you want to re-run it."
   else
     echo "Checking if necessary packages are installed..."
-    check_dpkg_packages ${OS_ID}
+    check_dpkg_packages ${OS_ID} ${ARCHX}
   fi
 elif [[ ${TARGET} == "scc" ]]; then
   echo "Building for the SCC. Note that you MUST build on the MCPC, and "
@@ -241,9 +260,9 @@ else
   exit 0
 fi
 
-## Google Gflags command line flag library
+# Google Gflags command line flag library
 print_subhdr "GOOGLE GFLAGS LIBRARY"
-if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) ]];
+if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) && ${ARCHX} != "ia64" ]];
 then
   PKG_RES1=$(dpkg-query -l | grep "libgflags0" 2>/dev/null)
   PKG_RES2=$(dpkg-query -l | grep "libgflags-dev" 2>/dev/null)
@@ -260,20 +279,31 @@ then
     echo "and libgflags-dev_${GFLAGS_VER}_${ARCH}.deb from the ${EXT_DIR}/ directiory:"
     echo
     echo "$ cd ${EXT_DIR}"
-    echo "$ sudo dpkg -i libgflags0_${GFLAGS_VER}_${ARCH}.deb"
-    echo "$ sudo dpkg -i libgflags-dev_${GFLAGS_VER}_${ARCH}.deb"
+    echo "$ sudo dpkg -i libgflags0_${GFLAGS_VER}-1_${ARCH}.deb"
+    echo "$ sudo dpkg -i libgflags-dev_${GFLAGS_VER}-1_${ARCH}.deb"
     exit 1
  fi
 else
   # non-deb OS -- need to get tarball and extract, config, make & install
   echo "Downloading and extracting release tarball for Google gflags library..."
-  GFLAGS_BUILD_DIR=${EXT_DIR}/google-gflags-build
-  mkdir -p ${GFLAGS_BUILD_DIR}
+#  GFLAGS_BUILD_DIR=${EXT_DIR}/google-gflags-build
+#  mkdir -p ${GFLAGS_BUILD_DIR}
   get_dep_arch "google-gflags" "http://gflags.googlecode.com/files/gflags-${GFLAGS_VER}.tar.gz"
   cd gflags-${GFLAGS_VER}
   echo -n "Building google-gflags library..."
-  RES=$(./configure --prefix=${GFLAGS_BUILD_DIR} && make --quiet && make --quiet install 2>/dev/null)
+#  RES=$(./configure && make --quiet && make --quiet install 2>/dev/null)
+  RES=$(./configure && make --quiet 2>/dev/null)
   print_succ_or_fail $RES
+  if [[ ${TARGET} != "scc" ]]; then
+    echo "google-gflags library (v${GFLAGS_VER}) was built in ${GFLAGS_DIR}. "
+    echo "Please run the following commands to install it: "
+    echo
+    echo "$ cd ${EXT_DIR}/${GFLAGS_DIR}"
+    echo "$ sudo make install"
+    echo
+    echo "... and then re-run."
+    exit 1
+  fi
   cd ${EXT_DIR}
 fi
 
@@ -297,7 +327,7 @@ if [[ ${TARGET} == "scc" || ! -f ${GLOG_INSTALL_FILE} ]]; then
   print_succ_or_fail $RES
   if [[ ${TARGET} != "scc" ]]; then
     echo "google-glog library (v${GLOG_VER}) was built in ${GLOG_DIR}. "
-    echo "Please run the following comamnds to install it: "
+    echo "Please run the following commands to install it: "
     echo
     echo "$ cd ${EXT_DIR}/${GLOG_DIR}"
     echo "$ sudo make install"
