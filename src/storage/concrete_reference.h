@@ -12,6 +12,7 @@
 
 #include "base/common.h"
 #include "storage/reference_interface.h"
+#include "storage/future_reference.h"
 
 namespace firmament {
 
@@ -51,7 +52,7 @@ class ConcreteReference : public ReferenceInterface {
   void SetLocation(const string& location) {
     location_ = location;
   }
-  virtual inline bool Consumable() {
+  virtual inline bool Consumable() const {
     return true;
   }
   virtual ostream& ToString(ostream* stream) const {

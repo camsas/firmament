@@ -23,7 +23,7 @@ class FutureReference : public ReferenceInterface {
     : ReferenceInterface(desc) {
     ValidateInitDescriptor(desc);
   }
-  virtual inline bool Consumable() {
+  virtual inline bool Consumable() const {
     return false;
   }
   virtual ostream& ToString(ostream* stream) const {
