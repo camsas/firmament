@@ -10,12 +10,15 @@ extern "C" {
 #include <stdio.h>
 #include <sys/wait.h>
 }
+#include <boost/regex.hpp>
 
 #include "base/common.h"
 #include "base/types.h"
 
 DEFINE_bool(debug_tasks, false,
             "Run tasks through a debugger (gdb).");
+DEFINE_uint64(debug_interactively, 0,
+              "Run this task ID inside an interactive debugger.");
 DEFINE_bool(perf_monitoring, true,
             "Enable performance monitoring for tasks executed.");
 
@@ -48,16 +51,63 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
 
 char* LocalExecutor::AddPerfMonitoringToCommandLine(vector<char*>* argv) {
   // Define the string prefix for performance monitoring
-  string perf_string = "perf stat -x, -o ";
+  //string perf_string = "perf stat -x, -o ";
+  string perf_string = "perf stat -o ";
   perf_string += getenv("PERF_FNAME");
-  perf_string += " -e instructions,cache-misses -- ";
+  perf_string += " -e instructions,cycles,cache-misses,cache-references -- ";
   return TokenizeIntoArgv(perf_string, argv);
 }
 
 char* LocalExecutor::AddDebuggingToCommandLine(vector<char*>* argv) {
   // Define the string prefix for debugging
-  string dbg_string = "gdb -batch -ex run --args ";
+  string dbg_string;
+  if (FLAGS_debug_tasks)
+    dbg_string = "gdb -batch -ex run --args ";
+  else if (FLAGS_debug_interactively != 0)
+    dbg_string = "gdb '-ex run --args ";
   return TokenizeIntoArgv(dbg_string, argv);
+}
+
+void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
+                                        const string& line) {
+  boost::regex e("[[:space:]]*? ([0-9,.]+) ([a-zA-Z-]+) .*");
+  boost::smatch m;
+  if (boost::regex_match(line, m, e, boost::match_extra)
+      && m.size() == 3) {
+    string number = m[1].str();
+    // Remove any commas
+    number.erase(std::remove(number.begin(), number.end(), ','), number.end());
+    VLOG(1) << "matched: " << m[2] << ", " << number;
+    if (m[2] == "instructions") {
+      report->set_instructions(strtoul(number.c_str(), NULL, 10));
+    } else if (m[2] == "cycles") {
+      report->set_cycles(strtoul(number.c_str(), NULL, 10));
+    } else if (m[2] == "seconds") {
+      report->set_runtime(strtold(number.c_str(), NULL));
+    } else if (m[2] == "cache-misses") {
+      report->set_llc_misses(strtoul(number.c_str(), NULL, 10));
+    }
+  }
+}
+
+void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
+                                         TaskFinalReport* report) {
+  // Load perf data, if it exists
+  if (FLAGS_perf_monitoring) {
+    FILE* fptr;
+    char line[300];
+    sleep(1);
+    if ((fptr = fopen(PerfDataFileName(td).c_str(), "r")) == NULL) {
+      LOG(ERROR) << "Failed to open FD for reading of perf data. FD " << fptr;
+    }
+    VLOG(1) << "Processing perf output in file " << PerfDataFileName(td) << "...";
+    while (!feof(fptr)) {
+      if (fgets(line, 300, fptr) != NULL) {
+        GetPerfDataFromLine(report, line);
+      }
+    }
+    fclose(fptr);
+  }
 }
 
 void LocalExecutor::RunTask(TaskDescriptor* td,
@@ -67,8 +117,10 @@ void LocalExecutor::RunTask(TaskDescriptor* td,
   // spawning.
   // TODO(malte): We lose the thread reference here, so we can never join this
   // thread. Need to return or store if we ever need it for anythign again.
+  boost::unique_lock<boost::mutex> lock(exec_mutex_);
   boost::thread per_task_thread(
       boost::bind(&LocalExecutor::_RunTask, this, td, firmament_binary));
+  exec_condvar_.wait(lock);
 }
 
 bool LocalExecutor::_RunTask(TaskDescriptor* td,
@@ -81,10 +133,11 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   // arguments: binary (path + name), arguments, performance monitoring on/off,
   // is this a Firmament task binary? (on/off; will cause default arugments to
   // be passed)
-  bool res = (RunProcessSync(td->binary(), args,
-                             (FLAGS_perf_monitoring && firmament_binary),
-                             FLAGS_debug_tasks,
-                             firmament_binary) == 0);
+  bool res = (RunProcessSync(
+      td->binary(), args, (FLAGS_perf_monitoring && firmament_binary),
+      (FLAGS_debug_tasks || (td->uid() == FLAGS_debug_interactively)),
+      firmament_binary) == 0);
+  VLOG(1) << "Result of RunProcessSync was " << res;
   return res;
 }
 
@@ -110,14 +163,58 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
                                       bool default_args) {
   char* perf_prefix;
   pid_t pid;
-  int pipe_to[2];    // pipe to feed input data to task
+  /*int pipe_to[2];    // pipe to feed input data to task
   int pipe_from[3];  // pipe to receive output data from task
   if (pipe(pipe_to) != 0) {
-    LOG(ERROR) << "Failed to create pipe to task.";
+    PLOG(ERROR) << "Failed to create pipe to task.";
   }
   if (pipe(pipe_from) != 0) {
-    LOG(ERROR) << "Failed to create pipe from task.";
+    PLOG(ERROR) << "Failed to create pipe from task.";
+  }*/
+  vector<char*> argv;
+  // N.B.: only one of debug and perf_monitoring can be active at a time;
+  // debug takes priority here.
+  if (debug) {
+    // task debugging is active, so reserve extra space for the
+    // gdb invocation prefix.
+    argv.reserve(args.size() + (default_args ? 4 : 3));
+    perf_prefix = AddDebuggingToCommandLine(&argv);
+  } else if (perf_monitoring) {
+    // performance monitoring is active, so reserve extra space for the
+    // "perf" invocation prefix.
+    argv.reserve(args.size() + (default_args ? 11 : 10));
+    perf_prefix = AddPerfMonitoringToCommandLine(&argv);
+  } else {
+    // no performance monitoring, so we only need to reserve space for the
+    // default and NULL args
+    argv.reserve(args.size() + (default_args ? 2 : 1));
   }
+  argv.push_back((char*)(cmdline.c_str()));  // NOLINT
+  if (default_args)
+    argv.push_back(
+        (char*)"--tryfromenv=coordinator_uri,resource_id,task_id");  // NOLINT
+  for (uint32_t i = 0; i < args.size(); ++i) {
+    // N.B.: This casts away the const qualifier on the c_str() result.
+    // This is joyfully unsafe, of course.
+    VLOG(1) << "Adding extra argument \"" << args[i] << "\"";
+    argv.push_back((char*)(args[i].c_str()));  // NOLINT
+  }
+  // The last argument to execvp is always NULL.
+  argv.push_back(NULL);
+  // Print the whole command line
+  string full_cmd_line;
+  for (vector<char*>::const_iterator arg_iter = argv.begin();
+       arg_iter != argv.end();
+       ++arg_iter) {
+    if (*arg_iter != NULL) {
+      full_cmd_line += *arg_iter;
+      full_cmd_line += " ";
+    }
+  }
+  LOG(INFO) << "COMMAND LINE for task " << getenv("FLAGS_task_id") << ": "
+            << full_cmd_line;
+  VLOG(1) << "About to fork child process for task execution of "
+          << getenv("FLAGS_task_id") << "!";
   pid = fork();
   switch (pid) {
     case -1:
@@ -137,47 +234,6 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       //close(pipe_from[1]);
       //close(pipe_from[2]);
       // Convert args from string to char*
-      vector<char*> argv;
-      // N.B.: only one of debug and perf_monitoring can be active at a time;
-      // debug takes priority here.
-      if (debug) {
-        // task debugging is active, so reserve extra space for the
-        // gdb invocation prefix.
-        argv.reserve(args.size() + (default_args ? 4 : 3));
-        perf_prefix = AddDebuggingToCommandLine(&argv);
-      } else if (perf_monitoring) {
-        // performance monitoring is active, so reserve extra space for the
-        // "perf" invocation prefix.
-        argv.reserve(args.size() + (default_args ? 11 : 10));
-        perf_prefix = AddPerfMonitoringToCommandLine(&argv);
-      } else {
-        // no performance monitoring, so we only need to reserve space for the
-        // default and NULL args
-        argv.reserve(args.size() + (default_args ? 2 : 1));
-      }
-      argv.push_back((char*)(cmdline.c_str()));  // NOLINT
-      if (default_args)
-        argv.push_back(
-            (char*)"--tryfromenv=coordinator_uri,resource_id,task_id");  // NOLINT
-      for (uint32_t i = 0; i < args.size(); ++i) {
-        // N.B.: This casts away the const qualifier on the c_str() result.
-        // This is joyfully unsafe, of course.
-        VLOG(1) << "Adding extra argument \"" << args[i] << "\"";
-        argv.push_back((char*)(args[i].c_str()));  // NOLINT
-      }
-      // The last argument to execvp is always NULL.
-      argv.push_back(NULL);
-      // Print the whole command line
-      string full_cmd_line;
-      for (vector<char*>::const_iterator arg_iter = argv.begin();
-           arg_iter != argv.end();
-           ++arg_iter) {
-        if (*arg_iter != NULL) {
-          full_cmd_line += *arg_iter;
-          full_cmd_line += " ";
-        }
-      }
-      LOG(INFO) << "COMMAND LINE: " << full_cmd_line;
       // Run the task binary
       execvp(argv[0], &argv[0]);
       // execl only returns if there was an error
@@ -204,13 +260,15 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       //ReadFromPipe(pipe_from[0]);
       //ReadFromPipe(pipe_from[1]);
       // wait for task to terminate
+      exec_condvar_.notify_one();
       int status;
-      while (!WIFEXITED(status)) {
-        // VLOG_EVERY_N(2, 1000) << "Waiting for task to exit...";
-        waitpid(pid, &status, 0);
+      waitpid(pid, &status, 0);
+      if (WIFEXITED(status)) {
+        VLOG(1) << "Task process with PID " << pid << " exited with status "
+                << WEXITSTATUS(status);
+      } else {
+        LOG(ERROR) << "Unexpected exit status: " << hex << status;
       }
-      VLOG(1) << "Task process with PID " << pid << " exited with status "
-              << WEXITSTATUS(status);
       return status;
   }
   return -1;

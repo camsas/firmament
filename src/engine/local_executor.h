@@ -23,6 +23,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "base/task_final_report.pb.h"
 #include "engine/executor_interface.h"
 #include "engine/topology_manager.h"
 
@@ -58,6 +59,10 @@ class LocalExecutor : public ExecutorInterface {
   ResourceID_t local_resource_id_;
   char* AddPerfMonitoringToCommandLine(vector<char*>* argv);
   char* AddDebuggingToCommandLine(vector<char*>* argv);
+  void GetPerfDataFromLine(TaskFinalReport* report,
+                           const string& line);
+  void HandleTaskCompletion(const TaskDescriptor& td,
+                            TaskFinalReport* report);
   int32_t RunProcessAsync(const string& cmdline,
                           vector<string> args,
                           bool perf_monitoring,
@@ -85,6 +90,8 @@ class LocalExecutor : public ExecutorInterface {
   // Heartbeat interval for tasks running on the associated resource, in
   // nanoseconds.
   uint64_t heartbeat_interval_;
+  boost::mutex exec_mutex_;
+  boost::condition_variable exec_condvar_;
 };
 
 }  // namespace executor
