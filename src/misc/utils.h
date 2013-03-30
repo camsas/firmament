@@ -63,6 +63,9 @@ uint8_t* SHA256Hash(uint8_t* bytes, uint64_t len);
 
 set<DataObjectID_t*> DataObjectIDsFromProtobuf(
     const RepeatedPtrField<string>& pb_field);
+set<DataObjectID_t*> DataObjectIDsFromProtobuf(
+    const RepeatedPtrField<ReferenceDescriptor>& pb_field);
+
 
 }  // namespace firmament
 
