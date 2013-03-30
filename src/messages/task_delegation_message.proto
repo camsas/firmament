@@ -12,3 +12,9 @@ message TaskDelegationMessage {
   optional string target_resource_id = 1;
   optional string delegating_resource_id = 3;
 }
+
+message TaskDelegationResponse {
+  required uint64 task_id = 1;
+  required bool success = 2;
+  optional string target_resource_id = 3;
+}
