@@ -14,6 +14,7 @@
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
+#include "base/task_final_report.pb.h"
 #include "engine/executor_interface.h"
 #include "scheduling/scheduler_interface.h"
 #include "storage/reference_interface.h"
@@ -37,7 +38,11 @@ class EventDrivenScheduler : public SchedulerInterface {
   ResourceID_t* BoundResourceForTask(TaskID_t task_id);
   void DeregisterResource(ResourceID_t res_id);
   void RegisterResource(ResourceID_t res_id, bool local);
-  void HandleTaskCompletion(TaskDescriptor* td_ptr);
+  void HandleReferenceStateChange(const ReferenceInterface& old_ref,
+                                  const ReferenceInterface& new_ref,
+                                  TaskDescriptor* td_ptr);
+  void HandleTaskCompletion(TaskDescriptor* td_ptr,
+                            TaskFinalReport* report);
   void HandleTaskFailure(TaskDescriptor* td_ptr);
   bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
@@ -76,6 +81,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   map<ResourceID_t, ExecutorInterface*> executors_;
   // The current task bindings managed by this scheduler.
   map<TaskID_t, ResourceID_t> task_bindings_;
+  // Map of reference subscriptions
+  map<DataObjectID_t, set<TaskDescriptor*> > reference_subscriptions_;
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
   // Pointer to messaging adapter to use for communication with remote
@@ -83,7 +90,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   MessagingAdapterInterface<BaseMessage>* m_adapter_ptr_;
   // Flag (effectively a lock) indicating if the scheduler is currently
   // in the process of making scheduling decisions.
-  bool scheduling_;
+  boost::mutex scheduling_lock_;
 };
 
 }  // namespace scheduler
