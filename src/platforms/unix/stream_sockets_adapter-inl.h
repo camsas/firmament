@@ -100,35 +100,38 @@ void StreamSocketsAdapter<T>::AwaitNextMessage() {
     DumpActiveChannels();
   // If we have no active channels, we cannot receive any messages, so we return
   // immediately.
-  //boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
   if (endpoint_channel_map_.size() == 0)
     return;
   // Otherwise, let's make sure we have an outstanding async receive request for
   // each fo them.
   bool any_outstanding = false;
-  for (typeof(endpoint_channel_map_.begin()) chan_iter =
-       endpoint_channel_map_.begin();
-       chan_iter != endpoint_channel_map_.end();
-       ++chan_iter) {
-    StreamSocketsChannel<T>* chan = chan_iter->second;
-    if (!channel_recv_envelopes_.count(chan)) {
-      // No outstanding receive request for this channel, so create one
-      Envelope<T>* envelope = new Envelope<T>();
-      channel_recv_envelopes_.insert(
-          pair<StreamSocketsChannel<T>*,
-          Envelope<T>*>(chan, envelope));
-      VLOG(2) << "MA replenishing envelope for channel " << chan
-              << " at " << envelope;
-      chan->RecvA(envelope,
-                  boost::bind(&StreamSocketsAdapter::HandleAsyncMessageRecv,
-                              this,
-                              boost::asio::placeholders::error,
-                              boost::asio::placeholders::bytes_transferred,
-                              chan));
-      any_outstanding = true;
+  {
+    boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
+    boost::lock_guard<boost::mutex> envel_lock(channel_recv_envelopes_mutex_);
+    for (typeof(endpoint_channel_map_.begin()) chan_iter =
+         endpoint_channel_map_.begin();
+         chan_iter != endpoint_channel_map_.end();
+         ++chan_iter) {
+      StreamSocketsChannel<T>* chan = chan_iter->second;
+      if (!channel_recv_envelopes_.count(chan)) {
+        // No outstanding receive request for this channel, so create one
+        Envelope<T>* envelope = new Envelope<T>();
+        channel_recv_envelopes_.insert(
+            pair<StreamSocketsChannel<T>*,
+            Envelope<T>*>(chan, envelope));
+        VLOG(2) << "MA replenishing envelope for channel " << chan
+                << " at " << envelope;
+        chan->RecvA(envelope,
+                    boost::bind(&StreamSocketsAdapter::HandleAsyncMessageRecv,
+                                this,
+                                boost::asio::placeholders::error,
+                                boost::asio::placeholders::bytes_transferred,
+                                chan));
+        any_outstanding = true;
+      }
     }
   }
-  if (any_outstanding) {
+  /*if (any_outstanding) {
     // Block until we receive a message somewhere
     VLOG(3) << "About to lock mutex...";
     boost::unique_lock<boost::mutex> lock(message_wait_mutex_);
@@ -139,7 +142,7 @@ void StreamSocketsAdapter<T>::AwaitNextMessage() {
     }
     VLOG(3) << "Message arrived, condvar signalled!";
     message_wait_ready_ = false;
-  }
+  }*/
 }
 
 template <typename T>
@@ -155,7 +158,8 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     // concurrency
     string remote_endpoint = chan->RemoteEndpointString();
     if (remote_endpoint != "") {
-      //boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
+      boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
+      boost::lock_guard<boost::mutex> envel_lock(channel_recv_envelopes_mutex_);
       CHECK(endpoint_channel_map_.erase(remote_endpoint));
       CHECK(channel_recv_envelopes_.erase(chan));
     } else {
@@ -187,8 +191,11 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
   CHECK(message_recv_handler_ != NULL);
   message_recv_handler_(envelope->data(), chan->RemoteEndpointString());
   // We've finished dealing with this message, so clean up now.
-  channel_recv_envelopes_.erase(chan);
-  delete envelope;
+  {
+    boost::lock_guard<boost::mutex> lock(channel_recv_envelopes_mutex_);
+    channel_recv_envelopes_.erase(chan);
+    delete envelope;
+  }
   {
     boost::lock_guard<boost::mutex> lock(message_wait_mutex_);
     message_wait_ready_ = true;
