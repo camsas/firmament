@@ -77,11 +77,21 @@ export PB2JSON_LIB
 
 
 #######################################
+# thread-safe-stl-containers-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for thread-safe STL containers
+TSSTLC_INC_DIR ?= $(EXT_DIR)/thread-safe-stl-containers-svn/
+export TSSTLC_INC_DIR
+
+
+#######################################
 # INCLUDES
 #######################################
 
 INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(CSRC_GEN_DIR) \
-	   -I$(GTEST_INC_DIR) -I$(PB2JSON_INC_DIR) #-I$(GPERFTOOLS_INC_DIR)
+	   -I$(GTEST_INC_DIR) -I$(PB2JSON_INC_DIR) -I$(TSSTLC_INC_DIR) \
+	   #-I$(GPERFTOOLS_INC_DIR)
 
 
 #######################################

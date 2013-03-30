@@ -12,10 +12,10 @@ EXT_DIR=${PWD}
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
 BASE_PKGS="wget subversion autoconf"
-CLANG_PKGS="clang clang++"
+CLANG_PKGS="clang"
 COMPILER_PKGS="libprotobuf-dev protobuf-compiler python-protobuf"
 GOOGLE_PKGS="libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
-PERFTOOLS_PKGS="google-perftools libgoogle-perftools"
+PERFTOOLS_PKGS="google-perftools"
 BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
 MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev libjansson-dev libctemplate-dev"
 
@@ -352,6 +352,14 @@ fi
 echo -n "Building googletest library..."
 #RES=$(make all --quiet 2>/dev/null)
 RES=$(make all)
+print_succ_or_fail ${RES}
+cd ${EXT_DIR}
+
+## Thread-safe STL containers
+print_subhdr "THREAD-SAFE STL CONTAINERS"
+get_dep_svn "thread-safe-stl-containers" "googlecode"
+cd thread-safe-stl-containers-svn
+RES=$(ls *.h)
 print_succ_or_fail ${RES}
 cd ${EXT_DIR}
 
