@@ -50,70 +50,69 @@ function pull(url)
          }});
 }
 
-			var nodes = [];
-			var links = [];
-			
-			var w = 1100, h = 800;
-			var c_width = 20
-			var labelDistance = 0;
-			
-			//TODO: Legend
-			function colour_from_state(k)
-			{
-			    switch(k)
-			    {
-				case 0: return "blue";
-				case 1: return "green";
-				case 2: return "red";
-				case 3: return "brown";
-				case 4: return "silver";
-				case 5: return "orange";
-				case 6: return "purple";
-				default: return "yellow";
-			    }
-			}
-			  
-			//Find the index of an existing node in nodes by its id
-			function find_index_by_id(id)
-			{
-			    for(var i=0; i < nodes.length; i++)
-				  if(nodes[i].id == id) return i;
-			}
-			
-			//Adds recursivelly all objects to nodes
-			function add_node(dat, parent)
-			{
-			      dat.id = dat.uid;
-			      var Member = 0;
-			      for(var j=0; j < nodes.length; j++)
-			      {
-				    if(nodes[j].id == dat.id)
-				    {
-					      Member = 1;
-					      nodes[j].state = dat.state;
-					      break;
-				    }
-			      }
-			      if ( Member == 0)
-			      { 
-				    dat.weight = 1000000; 
-				    nodes.push(dat);
-				    if(parent)
-				    {
-				      links.push(
-						  {
-						      source : parent,
-						      target : dat,
-						      weight : spawn_strength,
-						      type : 0
-						  });
-				    }
-				    else console.log("If this appears more than few times, something is wrong, pressumably force can't finish before the next step() call");
-			      }
-			      dat.shape = 0;
-			      if(dat.dependencies.length >0)
-			      {
-				  for( var i=0; i < dat.dependencies.length; i++)
+var nodes = [];
+var links = [];
+
+var w = 1100, h = 800;
+var c_width = 20
+var labelDistance = 0;
+
+//TODO: Legend
+function colour_from_state(k)
+{
+  switch(k)
+  {
+    case 0: return "blue";   // CREATED   / TOMBSTONE
+    case 1: return "green";  // BLOCKING  / FUTURE
+    case 2: return "red";    // RUNNABLE  / CONCRETE
+    case 3: return "brown";  // ASSIGNED  / STREAM
+    case 4: return "silver"; // RUNNING   / VALUE
+    case 5: return "orange"; // COMPLETED / ERROR
+    case 6: return "purple"; // FAILED    / not defined
+    default: return "yellow";
+  }
+}
+
+//Find the index of an existing node in nodes by its id
+function find_index_by_id(id)
+{
+  for(var i=0; i < nodes.length; i++)
+    if(nodes[i].id == id) return i;
+}
+
+//Adds recursivelly all objects to nodes
+function add_node(dat, parent)
+{
+      dat.id = dat.uid;
+      var Member = 0;
+      for(var j=0; j < nodes.length; j++)
+      {
+        if(nodes[j].id == dat.id)
+        {
+          Member = 1;
+          nodes[j].state = dat.state;
+          break;
+        }
+      }
+      if ( Member == 0)
+      {
+        dat.weight = 1000000;
+        nodes.push(dat);
+        if(parent)
+        {
+          links.push(
+          {
+             source : parent,
+             target : dat,
+             weight : spawn_strength,
+             type : 0
+          });
+        } else console.log("If this appears more than few times, something is wrong, pressumably force can't finish before the next step() call");
+      }
+      dat.shape = 0;
+      if(dat.dependencies.length >0)
+      {
+        for( var i=0; i < dat.dependencies.length; i++)
 				  {
 				      dat.dependencies[i].shape = 1;
 				      dat.dependencies[i].id = - dat.dependencies[i].id;
@@ -168,7 +167,7 @@ function pull(url)
 				  for( var i=0; i < dat.outputs.length; i++)
 				  {
 				      dat.outputs[i].shape = 1;
-				      dat.outputs[i].id = -dat.outputs[i].id;
+				      dat.outputs[i].id = dat.outputs[i].id;
 				      var member = 0;
 				      for(var j=0; j < nodes.length; j++)
 				      {
@@ -309,7 +308,7 @@ function recalc()
 			.attr("dx", 12)
 			.attr("dy", ".35em")
 			.style("visibility", "hidden")
-			.text(function(d) { if (d.uid) return "ID: " +  d.uid; else  return "ID: " +  (-d.id); });
+			.text(function(d) { if (d.uid) return "ID: " +  d.uid; else  return "ID: " +  (d.id); });
     
     //Make the ID labels autohide and load onMouseover the info in the textbox
     node.each(function(d)
@@ -318,7 +317,7 @@ function recalc()
 		d3.selectAll(".node").on("mouseover", function(d)
 			{
 			      var id;
-			      if (d.uid) id = "ID: " +  d.uid; else  id = "ID: " +  (-d.id) ;
+			      if (d.uid) id = "ID: " +  d.uid; else  id = "ID: " +  (d.id) ;
 			      var text = id + '\n' + "State: " + d.state + '\n' + "Name: " + d.name;
 			      d3.select(this).select("text").style("visibility", "visible")
 			      d3.select(".info").text(text);
@@ -337,21 +336,21 @@ function recalc()
 //Consisit of pull data and recalc, calls inself after 2 secs
 function step()
 {
-      url = "/job/dtg/?id={{JOB_ID}}";
-      pull(url);
-      pulled.root_task.state = 1000;
-      add_node(pulled.root_task, null);
-      recalc();
-      window.setTimeout(step, 2000);
+  url = "/job/dtg/?id={{JOB_ID}}";
+  pull(url);
+  pulled.root_task.state = 1000;
+  add_node(pulled.root_task, null);
+  recalc();
+  window.setTimeout(step, 2000);
 }
 
 //Initializating function
 function start()
 {
-      d3.select(".info").style("visibility", "visible");
-      if($('input[name=spawn]').is(':checked')) spawn_strength = 100;
-      if($('input[name=depend]').is(':checked')) dep_strength = 100;
-      step();
+  d3.select(".info").style("visibility", "visible");
+  if($('input[name=spawn]').is(':checked')) spawn_strength = 100;
+  if($('input[name=depend]').is(':checked')) dep_strength = 100;
+  step();
 }
 
 d3.select(".info").style("visibility", "hidden")
