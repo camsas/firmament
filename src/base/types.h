@@ -17,6 +17,11 @@
 #include <boost/system/error_code.hpp>
 #endif
 
+#include <thread_safe_vector.h>
+#include <thread_safe_map.h>
+#include <thread_safe_set.h>
+#include <thread_safe_deque.h>
+
 #include "base/resource_status.h"
 #include "base/resource_desc.pb.h"
 #include "base/job_desc.pb.h"
@@ -101,12 +106,15 @@ typedef uint64_t TaskID_t;
 #ifdef __PLATFORM_HAS_BOOST__
 typedef boost::uuids::uuid ResourceID_t;
 typedef boost::uuids::uuid JobID_t;
-typedef unordered_map<ResourceID_t, ResourceStatus*,
+/*typedef unordered_map<ResourceID_t, ResourceStatus*,
         boost::hash<boost::uuids::uuid> > ResourceMap_t;
 typedef unordered_map<JobID_t, JobDescriptor,
         boost::hash<boost::uuids::uuid> > JobMap_t;
 typedef unordered_map<JobID_t, TaskGraph*,
-        boost::hash<boost::uuids::uuid> > TaskGraphMap_t;
+        boost::hash<boost::uuids::uuid> > TaskGraphMap_t;*/
+typedef thread_safe::map<ResourceID_t, ResourceStatus*> ResourceMap_t;
+typedef thread_safe::map<JobID_t, JobDescriptor> JobMap_t;
+typedef thread_safe::map<JobID_t, TaskGraph*> TaskGraphMap_t;
 #else
 typedef uint64_t ResourceID_t;
 typedef uint64_t JobID_t;
@@ -117,7 +125,8 @@ typedef unordered_map<JobID_t, TaskGraph*> TaskGraphMap_t;
 // N.B.: the type of the second element here is a pointer, since the
 // TaskDescriptor objects will be part of the JobDescriptor protobuf that is
 // already held in the job table.
-typedef unordered_map<TaskID_t, TaskDescriptor*> TaskMap_t;
+//typedef unordered_map<TaskID_t, TaskDescriptor*> TaskMap_t;
+typedef thread_safe::map<TaskID_t, TaskDescriptor*> TaskMap_t;
 
 #ifdef __PLATFORM_HAS_BOOST__
 // Message handler callback type definition
