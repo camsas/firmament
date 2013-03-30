@@ -19,6 +19,7 @@
 
 #include "base/resource_desc.pb.h"
 #include "base/resource_topology_node_desc.pb.h"
+#include "base/task_final_report.pb.h"
 #include "storage/simple_object_store.h"
 #include "messages/base_message.pb.h"
 #include "misc/pb_utils.h"
@@ -46,6 +47,8 @@ DEFINE_bool(http_ui, true, "Enable HTTP interface");
 DEFINE_int32(http_ui_port, 8080,
         "The port that the HTTP UI will be served on; -1 to disable.");
 #endif
+DEFINE_uint64(heartbeat_interval, 1000000,
+              "Heartbeat interval in microseconds.");
 
 namespace firmament {
 
@@ -207,6 +210,8 @@ void Coordinator::Run() {
     InformStorageEngineNewResource(&resource_desc_);
   }
 
+  uint64_t cur_time = 0;
+  uint64_t last_heartbeat_time = 0;
   // Main loop
   while (!exit_) {
     // Wait for events (i.e. messages from workers.
@@ -215,9 +220,13 @@ void Coordinator::Run() {
     VLOG(3) << "Hello from main loop!";
     AwaitNextMessage();
     // TODO(malte): wrap this in a timer
-    if (parent_chan_ != NULL)
+    cur_time = GetCurrentTimestamp();
+    if (parent_chan_ != NULL &&
+        (cur_time - last_heartbeat_time > FLAGS_heartbeat_interval)) {
       SendHeartbeatToParent();
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+      last_heartbeat_time = cur_time;
+    }
+    //boost::this_thread::sleep(boost::posix_time::milliseconds(100));
   }
 
   // We have dropped out of the main loop and are exiting
@@ -286,7 +295,7 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
   // Task delegation message
   if (bm->has_task_delegation()) {
     const TaskDelegationMessage& msg = bm->task_delegation();
-    HandleTaskDelegationRequest(msg);
+    HandleTaskDelegationRequest(msg, remote_endpoint);
     handled_extensions++;
   }
   // DIOS syscall: create message
@@ -359,7 +368,7 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       LOG(INFO) << "HEARTBEAT from resource " << msg.uuid()
                 << " (last seen at " << (*rsp)->last_heartbeat() << ")";
       if (msg.has_load())
-        VLOG(1) << "Remote resource stats: " << msg.load().DebugString();
+        VLOG(2) << "Remote resource stats: " << msg.load().ShortDebugString();
       // Update timestamp
       (*rsp)->set_last_heartbeat(GetCurrentTimestamp());
       // Record resource statistics sample
@@ -391,22 +400,16 @@ void Coordinator::HandleIONotification(const BaseMessage& bm,
     }
     VLOG(1) << "Found " << remove.size() << " matching references for "
             << id << ", and converted them into concrete refs.";
-    for (vector<ReferenceInterface*>::const_iterator it = remove.begin();
-         it != remove.end();
-         ++it) {
-      refs->erase(*it);
-      delete *it;
-    }
-    for (vector<ConcreteReference*>::iterator it = add.begin();
-         it != add.end();
-         ++it) {
-      refs->insert(*it);
-    }
-    object_store_->DumpObjectTableContents();
-    // Call into scheduler, as this change may have made things runnable
     TaskDescriptor** td_ptr = FindOrNull(*task_table_,
                                          msg.reference().producing_task());
     CHECK_NOTNULL(td_ptr);
+    for (uint64_t i = 0; i < remove.size(); ++i) {
+      refs->erase(remove[i]);
+      refs->insert(add[i]);
+      scheduler_->HandleReferenceStateChange(*remove[i], *add[i], *td_ptr);
+      delete remove[i];
+    }
+    // Call into scheduler, as this change may have made things runnable
     JobDescriptor* jd = FindOrNull(*job_table_,
                                    JobIDFromString((*td_ptr)->job_id()));
     scheduler_->ScheduleJob(jd);
@@ -479,16 +482,30 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
 }
 
 void Coordinator::HandleTaskDelegationRequest(
-    const TaskDelegationMessage& msg) {
+    const TaskDelegationMessage& msg,
+    const string& remote_endpoint) {
   VLOG(1) << "Handling requested delegation of task "
           << msg.task_descriptor().uid() << " from resource "
           << msg.delegating_resource_id();
   // Check if there is room for this task here
   // (or maybe enqueue it?)
   TaskDescriptor* td = new TaskDescriptor(msg.task_descriptor());
-  scheduler_->PlaceDelegatedTask(
+  bool result = scheduler_->PlaceDelegatedTask(
       td, ResourceIDFromString(msg.target_resource_id()));
   // Return ACK/NACK
+  BaseMessage response;
+  SUBMSG_WRITE(response, task_delegation_response, task_id, td->uid());
+  if (result) {
+    // Successfully placed
+    VLOG(1) << "Succeeded, task placed on resource " << msg.target_resource_id()
+            << "!";
+    SUBMSG_WRITE(response, task_delegation_response, success, true);
+  } else {
+    // Failure; delegator needs to try again
+    VLOG(1) << "Failed to place!";
+    SUBMSG_WRITE(response, task_delegation_response, success, false);
+  }
+  m_adapter_->SendMessageToEndpoint(remote_endpoint, response);
 }
 
 void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
@@ -560,13 +577,21 @@ void Coordinator::HandleTaskStateChange(
           << ENUM_TO_STRING(TaskDescriptor::TaskState, msg.new_state())
           << ".";
   TaskDescriptor** td_ptr = FindOrNull(*task_table_, msg.id());
-  CHECK(td_ptr) << "Received task state change message for unknown task "
+  CHECK(td_ptr) << "Received task state change message for task "
                 << msg.id();
+  // First check if this is a delegated task, and forward the message if so
+  if ((*td_ptr)->has_delegated_from()) {
+    BaseMessage bm;
+    bm.mutable_task_state()->CopyFrom(msg);
+    m_adapter_->SendMessageToEndpoint((*td_ptr)->delegated_from(), bm);
+    return;
+  }
   switch (msg.new_state()) {
     case TaskDescriptor::COMPLETED:
     {
       (*td_ptr)->set_state(TaskDescriptor::COMPLETED);
-      scheduler_->HandleTaskCompletion(*td_ptr);
+      TaskFinalReport report;
+      scheduler_->HandleTaskCompletion(*td_ptr, &report);
       break;
     }
     case TaskDescriptor::FAILED:
@@ -578,6 +603,7 @@ void Coordinator::HandleTaskStateChange(
     default:
       VLOG(1) << "Task " << msg.id() << "'s state changed to "
               << static_cast<uint64_t> (msg.new_state());
+      (*td_ptr)->set_state(msg.new_state());
       break;
   }
   // This task state change may have caused the job to have schedulable tasks

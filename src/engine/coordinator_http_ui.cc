@@ -201,7 +201,7 @@ void CoordinatorHTTPUI::HandleJobURI(HTTPRequestPtr& http_request,  // NOLINT
       TemplateDictionary* out_dict = dict.AddSectionDictionary("JOB_OUTPUTS");
       out_dict->SetValue(
           "JOB_OUTPUT_ID",
-          DataObjectIDFromString(*out_iter).name_printable_string());
+          DataObjectIDFromProtobuf(*out_iter).name_printable_string());
     }
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
@@ -302,15 +302,15 @@ void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLI
   // Get resource information from coordinator
   HTTPTypes::QueryParams &params = http_request->getQueryParams();
   string* res_id = FindOrNull(params, "id");
+  ResourceID_t rid = ResourceIDFromString(*res_id);
   if (!res_id) {
     ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
-  ResourceDescriptor* rd_ptr = coordinator_->GetResource(
-      ResourceIDFromString(*res_id));
-  ResourceStatus* rs_ptr = coordinator_->GetResourceStatus(
-      ResourceIDFromString(*res_id));
+  ResourceDescriptor* rd_ptr = coordinator_->GetResource(rid);
+  ResourceStatus* rs_ptr = coordinator_->GetResourceStatus(rid);
+  coordinator_->knowledge_base().DumpMachineStats(rid);
   TemplateDictionary dict("resource_status");
   if (rd_ptr) {
     dict.SetValue("RES_ID", rd_ptr->uuid());
