@@ -8,6 +8,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "base/task_final_report.pb.h"
 #include "misc/printable_interface.h"
 
 namespace firmament {
@@ -18,6 +19,9 @@ class ExecutorInterface : public PrintableInterface {
   virtual ostream& ToString(ostream* stream) const = 0;
   virtual void RunTask(TaskDescriptor* td,
                        bool firmament_binary) = 0;
+  virtual void HandleTaskCompletion(const TaskDescriptor& td,
+                                    TaskFinalReport* report) = 0;
+
  protected:
 };
 
