@@ -27,6 +27,10 @@ class KnowledgeBase {
   void AddMachineSample(const MachinePerfStatisticsSample& sample);
   void AddTaskSample(const TaskPerfStatisticsSample& sample);
   void DumpMachineStats(const ResourceID_t& res_id) const;
+  const deque<MachinePerfStatisticsSample>* GetStatsForMachine(
+      ResourceID_t id) const;
+  const deque<TaskPerfStatisticsSample>* GetStatsForTask(
+      TaskID_t id) const;
 
  protected:
   map<ResourceID_t, deque<MachinePerfStatisticsSample> > machine_map_;

@@ -49,6 +49,18 @@ void KnowledgeBase::AddTaskSample(const TaskPerfStatisticsSample& sample) {
   q->push_front(sample);
 }
 
+const deque<MachinePerfStatisticsSample>* KnowledgeBase::GetStatsForMachine(
+      ResourceID_t id) const {
+  const deque<MachinePerfStatisticsSample>* res = FindOrNull(machine_map_, id);
+  return res;
+}
+
+const deque<TaskPerfStatisticsSample>* KnowledgeBase::GetStatsForTask(
+      TaskID_t id) const {
+  const deque<TaskPerfStatisticsSample>* res = FindOrNull(task_map_, id);
+  return res;
+}
+
 void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
   // Sanity checks
   const deque<MachinePerfStatisticsSample>* q = FindOrNull(machine_map_, res_id);

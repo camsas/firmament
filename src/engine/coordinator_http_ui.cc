@@ -15,6 +15,7 @@
 
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
+#include "engine/knowledge_base.h"
 #include "misc/utils.h"
 #include "messages/task_kill_message.pb.h"
 #include "storage/types.h"
@@ -310,7 +311,6 @@ void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLI
   }
   ResourceDescriptor* rd_ptr = coordinator_->GetResource(rid);
   ResourceStatus* rs_ptr = coordinator_->GetResourceStatus(rid);
-  coordinator_->knowledge_base().DumpMachineStats(rid);
   TemplateDictionary dict("resource_status");
   if (rd_ptr) {
     dict.SetValue("RES_ID", rd_ptr->uuid());
@@ -475,6 +475,41 @@ void CoordinatorHTTPUI::HandleReferenceURI(HTTPRequestPtr& http_request,  // NOL
   string output;
   ExpandTemplate("src/webui/reference_view.tpl", ctemplate::DO_NOT_STRIP,
                  &dict, &output);
+  writer->write(output);
+  FinishOkResponse(writer);
+}
+
+void CoordinatorHTTPUI::HandleStatisticsURI(HTTPRequestPtr& http_request,  // NOLINT
+                                            TCPConnectionPtr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  HTTPTypes::QueryParams &params = http_request->getQueryParams();
+  string* res_id = FindOrNull(params, "res");
+  string* task_id = FindOrNull(params, "task");
+  if (!(res_id || task_id) || (res_id && task_id)) {
+    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
+  string output = "[";
+  // Check if we have any statistics for this
+  if (res_id) {
+    const deque<MachinePerfStatisticsSample>* result =
+        coordinator_->knowledge_base().GetStatsForMachine(
+            ResourceIDFromString(*res_id));
+    if (result) {
+      for(deque<MachinePerfStatisticsSample>::const_iterator it =
+          result->begin();
+          it != result->end();
+          ++it) {
+        if (output != "[")
+          output += ", ";
+        output += pb2json(*it);
+      }
+    }
+  }
+  output += "]";
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -662,6 +697,9 @@ void CoordinatorHTTPUI::Init(uint16_t port) {
     // Reference list
     coordinator_http_server_->addResource("/refs/", boost::bind(
         &CoordinatorHTTPUI::HandleReferencesListURI, this, _1, _2));
+    // Statistics data serving pages
+    coordinator_http_server_->addResource("/stats/", boost::bind(
+        &CoordinatorHTTPUI::HandleStatisticsURI, this, _1, _2));
     // Task status
     coordinator_http_server_->addResource("/task/", boost::bind(
         &CoordinatorHTTPUI::HandleTaskURI, this, _1, _2));

@@ -73,6 +73,8 @@ class CoordinatorHTTPUI {
                           TCPConnectionPtr& tcp_conn);
   void HandleReferencesListURI(HTTPRequestPtr& http_request,  // NOLINT
                                TCPConnectionPtr& tcp_conn);
+  void HandleStatisticsURI(HTTPRequestPtr& http_request,  // NOLINT
+                           TCPConnectionPtr& tcp_conn);
   void HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
                      TCPConnectionPtr& tcp_conn);
   void HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLINT
