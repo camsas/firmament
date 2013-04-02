@@ -4,6 +4,67 @@
 
 <h1>{{RES_ID}}</h1>
 
+<script type="text/javascript">
+var ramTimeseries;
+var ramPercentTimeseries;
+var cpuAggUsrTimeseries;
+var cpuAggSysTimeseries;
+
+function getRAM(data) {
+  var ts1 = [];
+  var ts2 = [];
+  for (i = 0; i < data.length; i++) {
+    ts2.push((data[i].total_ram - data[i].free_ram) /
+             data[i].total_ram);
+    ts1.push((data[i].total_ram - data[i].free_ram) / 1024.0 / 1024.0)
+  }
+  ramTimeseries = ts1;
+  ramPercentTimeseries = ts2;
+}
+
+function getCPU(data) {
+  var ts1 = [];
+  var ts2 = [];
+  for (i = 0; i < data.length; i++) {
+    ts1.push(data[i].cpus_usage[0].user);
+    ts2.push(data[i].cpus_usage[0].system)
+  }
+  cpuAggUsrTimeseries = ts1;
+  cpuAggSysTimeseries = ts2;
+}
+
+
+function updateGraphs(data) {
+  getRAM(data);
+  getCPU(data);
+}
+
+function poll() {
+  url = "/stats/?res={{RES_ID}}";
+  $.ajax({
+    url: url,
+    async: false,
+    dataType: 'json',
+    success: function(data) {
+      updateGraphs(data);
+    }});
+}
+
+function step() {
+  poll();
+  $('#ram-sparkline').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
+  $('#ram-perc-sparkline').sparkline(ramPercentTimeseries, {chartRangeMin: 0.0, chartRangeMax: 1.0, tooltipSuffix: '%'});
+  $('#ram-sparkline').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
+  $('#cpu-agg-sys').sparkline(cpuAggSysTimeseries, {lineColor: '#ff0000', fillColor: '#ffaaaa'});
+  $('#cpu-agg-usr').sparkline(cpuAggUsrTimeseries, {lineColor: '#00ff00', fillColor: '#aaffaa'});
+  window.setTimeout(step, 10000);
+}
+
+$(function() {
+  step();
+});
+</script>
+
 <table border="1">
   <tr>
     <td>ID</td>
@@ -43,6 +104,22 @@
   <tr>
     <td>Last hearbeat</td>
     <td>{{RES_LAST_HEARTBEAT}}</td>
+  </tr>
+  <tr>
+    <td>CPU (usr)</td>
+    <td><span id="cpu-agg-usr">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>CPU (sys)</td>
+    <td><span id="cpu-agg-sys">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>RAM in use</td>
+    <td><span id="ram-sparkline">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>RAM % in use</td>
+    <td><span id="ram-perc-sparkline">Waiting for data...</span></td>
   </tr>
 </table>
 

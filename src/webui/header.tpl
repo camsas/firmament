@@ -45,5 +45,7 @@
       stroke-width: 2px;
     }
   </style>
-</title>
+  <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+  <script src="http://www.omnipotent.net/jquery.sparkline/2.1.1/jquery.sparkline.min.js"></script>
+</head>
 
