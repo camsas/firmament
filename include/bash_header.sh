@@ -49,6 +49,18 @@ echo_failure() {
   return 1
 }
 
+# Function to print the SKIPPED status message
+echo_skipped() {
+  $MOVE_TO_COL
+  echo -n "["
+  $SETCOLOR_NORMAL
+  echo -n $"SKIPPED"
+  $SETCOLOR_NORMAL
+  echo -n "]"
+  echo -ne "\r"
+  return 1
+}
+
 print_succ_or_fail() {
   if [ $1 ]; then
     echo_success
@@ -61,6 +73,7 @@ print_succ_or_fail() {
 # Function to ask the user whether he/she would like to continue.
 # Valid responses are "Y", "y", "N" and "n".
 function ask_continue() {
+  response=""
   while [[ $response != "n" && $response != "N" \
     && $response != "y" && $response != "Y" ]]
   do
@@ -75,6 +88,32 @@ function ask_continue() {
   if [[ $response == "n" || $response == "N" || $response == "" ]]
   then
     exit 1
+  fi
+}
+
+# Function to ask the user whether he/she would like to continue.
+# Valid responses are "Y", "y", "N" and "n".
+# Unlike the previous variant, this returns an indication, as opposed
+# to existing hard.
+function ask_continue_graceful() {
+  response=""
+  while [[ $response != "n" && $response != "N" \
+    && $response != "y" && $response != "Y" ]]
+  do
+    #echo -n  "Do you want to continue? [yN] "
+    read response
+    if [[ $response == "" ]]; then
+      break
+    fi
+  done
+  # if we have seen an "n", "N" or a blank response (defaults to N),
+  # we exit here
+  if [[ $response == "n" || $response == "N" || $response == "" ]]
+  then
+    echo 1
+  elif [[ $response == "y" || $response == "Y" ]]
+  then
+    echo 0
   fi
 }
 

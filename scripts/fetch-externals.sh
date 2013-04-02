@@ -448,4 +448,38 @@ cd ${EXT_DIR}
 print_subhdr "CPPLINT HELPER SCRIPT"
 get_dep_wget "cpplint" "http://google-styleguide.googlecode.com/svn/trunk/cpplint/cpplint.py"
 
+
+## Cake (for building libDIOS)
+print_subhdr "CAKE BUILD TOOL"
+get_dep_git "cake" "https://github.com/Zomojo/Cake.git"
+cd cake-git
+RES=$(ls cake)
+print_succ_or_fail ${RES}
+cd ${EXT_DIR}
+
+
+## libDIOS checkout or ask user to request tarball
+print_hdr "CHECKING OUT LIBDIOS CODE"
+echo "OPTIONAL: Do you want to check out the libDIOS code base into the 'ext' directory?"
+echo "Note that this requires access to the CL NFS server for now (as the libDIOS repo is "
+echo "hosted there). Please contact malte.schwarzkopf@cl.cam.ac.uk if you do not have access."
+echo -n "Do you want to check out the libDIOS code? [yN] "
+CONT=$(ask_continue_graceful)
+if [[ ${CONT} == "0" ]]; then
+  get_dep_git "libdios" "slogin.cl.cam.ac.uk:/usr/groups/netos/libdios/"
+  cd libdios-git
+  export PATH=${PATH}:${EXT_DIR}/cake-git/
+  RES=$(./build.sh --quiet)
+  print_succ_or_fail ${RES}
+  if [[ ! ${RES} ]]; then
+    echo "Failed to build libDIOS. Please see above for errors or warnings."
+    echo "N.B.: Please note that this script treats warnings as errors; so binaries may have nevertheless been built."
+  fi
+  cd ${EXT_DIR}
+else
+  echo_skipped
+  echo "Skipping."
+fi
+
+
 touch ${EXT_DIR}/.ext-ok
