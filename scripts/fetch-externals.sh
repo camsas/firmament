@@ -28,6 +28,7 @@ GLOG_VER="HEAD"
 HWLOC_VER="1.5"
 PROTOBUF_VER="2.4.1"
 BOOST_VER="1.46.0"
+CS2_VER="4.6"
 
 #################################
 
@@ -447,6 +448,21 @@ cd ${EXT_DIR}
 ## cpplint.py (linter script)
 print_subhdr "CPPLINT HELPER SCRIPT"
 get_dep_wget "cpplint" "http://google-styleguide.googlecode.com/svn/trunk/cpplint/cpplint.py"
+
+
+## CS2 solver code for min-flow scheduler
+print_subhdr "CS2 MIN COST FLOW SOLVER"
+get_dep_wget "cs2" "http://igsystems.com/cs2/cs2-4.6.tar"
+tar -xf cs2-${CS2_VER}.tar
+cd cs2-${CS2_VER}
+if [[ ! -f cs2.exe ]]; then
+  echo -n "Building..."
+  RES=$(make 2>/dev/null)
+else
+  RES=0
+fi
+print_succ_or_fail ${RES}
+cd ${EXT_DIR}
 
 
 ## Cake (for building libDIOS)
