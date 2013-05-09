@@ -62,7 +62,7 @@ echo_skipped() {
 }
 
 print_succ_or_fail() {
-  if [ $1 ]; then
+  if [[ $1 ]]; then
     echo_success
   else
     echo_failure
