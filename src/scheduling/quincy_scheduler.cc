@@ -223,7 +223,7 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   int infd[2];
   // Now run the solver
   vector<string> args;
-  ExecCommandSync("/mnt/dev/quincy/min-flow-solver/cs2.exe", args, outfd, infd);
+  ExecCommandSync("ext/cs2-4.6/cs2.exe", args, outfd, infd);
   VLOG(2) << "Solver running, CHILD_READ: " << outfd[0] << ", PARENT_WRITE: "
           << outfd[1] << ", PARENT_READ: " << infd[0] << ", CHILD_WRITE: "
           << infd[1];
