@@ -202,8 +202,9 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   set<TaskID_t> runnable_tasks =
       sched_->RunnableTasksForJob(test_job);
   PrintRunnableTasks(runnable_tasks);
-  // Two tasks should be runnable: those spawned by the root task.
-  EXPECT_EQ(runnable_tasks.size(), 2UL);
+  // Three tasks should be runnable: those spawned by the root task, and the
+  // root task itself.
+  EXPECT_EQ(runnable_tasks.size(), 3UL);
   delete test_job;
 }
 
@@ -215,6 +216,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   test_job->set_uuid(to_string(job_id));
   test_job->mutable_root_task()->set_uid(0);
   test_job->mutable_root_task()->set_name("root_task");
+  test_job->mutable_root_task()->set_job_id(to_string(job_id));
   ReferenceDescriptor* o0_rt = test_job->mutable_root_task()->add_outputs();
   o0_rt->set_id(GenerateDataObjectID(test_job->root_task()).name_bytes(),
                 DIOS_NAME_BYTES);

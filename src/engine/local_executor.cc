@@ -52,6 +52,7 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
 char* LocalExecutor::AddPerfMonitoringToCommandLine(vector<char*>* argv) {
   // Define the string prefix for performance monitoring
   //string perf_string = "perf stat -x, -o ";
+  VLOG(2) << "Enabling performance monitoring...";
   string perf_string = "perf stat -o ";
   perf_string += getenv("PERF_FNAME");
   perf_string += " -e instructions,cycles,cache-misses,cache-references -- ";
@@ -61,6 +62,7 @@ char* LocalExecutor::AddPerfMonitoringToCommandLine(vector<char*>* argv) {
 char* LocalExecutor::AddDebuggingToCommandLine(vector<char*>* argv) {
   // Define the string prefix for debugging
   string dbg_string;
+  VLOG(2) << "Enabling debugging...";
   if (FLAGS_debug_tasks)
     dbg_string = "gdb -batch -ex run --args ";
   else if (FLAGS_debug_interactively != 0)
@@ -135,7 +137,8 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   // be passed)
   bool res = (RunProcessSync(
       td->binary(), args, (FLAGS_perf_monitoring && firmament_binary),
-      (FLAGS_debug_tasks || (td->uid() == FLAGS_debug_interactively)),
+      (FLAGS_debug_tasks || ((FLAGS_debug_interactively != 0) &&
+                             (td->uid() == FLAGS_debug_interactively))),
       firmament_binary) == 0);
   VLOG(1) << "Result of RunProcessSync was " << res;
   return res;

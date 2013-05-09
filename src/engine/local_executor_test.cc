@@ -97,6 +97,7 @@ TEST_F(LocalExecutorTest, SimpleTaskExecutionTest) {
   ResourceID_t rid;
   LocalExecutor le(rid, "");
   TaskDescriptor* td = new TaskDescriptor;
+  td->set_uid(1234ULL);
   td->set_binary("/bin/ls");
   CHECK(le._RunTask(td, false));
 }
