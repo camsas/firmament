@@ -47,7 +47,7 @@ TEST_F(UtilsTest, DataObjectIDGenerateTest) {
   TaskID_t pid = 1234;
   TaskOutputID_t oid = 0;
   EXPECT_EQ(GenerateDataObjectID(pid, oid).name_printable_string(),
-            "db33daba280d8e68eea6e490723b02cea897e8ff7c66134642e989ebb17e56");
+            "688e0d28bada33dbce023b7290e4a6ee4613667cffe897a8567eb1eb89e94200");
 }
 
 // Tests DO ID generation, ensuring that different inputs produce different
@@ -68,10 +68,10 @@ TEST_F(UtilsTest, DataObjectIDGenerateFromTDTest) {
   TaskDescriptor td;
   td.set_uid(1234);
   EXPECT_EQ(GenerateDataObjectID(td).name_printable_string(),
-            "db33daba280d8e68eea6e490723b02cea897e8ff7c66134642e989ebb17e56");
+            "688e0d28bada33dbce023b7290e4a6ee4613667cffe897a8567eb1eb89e94200");
   EXPECT_EQ(GenerateDataObjectID(td.uid(),
                                 td.outputs_size()).name_printable_string(),
-            "db33daba280d8e68eea6e490723b02cea897e8ff7c66134642e989ebb17e56");
+            "688e0d28bada33dbce023b7290e4a6ee4613667cffe897a8567eb1eb89e94200");
 }
 
 // Tests task ID parsing from string.
