@@ -457,6 +457,8 @@ tar -xf cs2-${CS2_VER}.tar
 cd cs2-${CS2_VER}
 if [[ ! -f cs2.exe ]]; then
   echo -n "Building..."
+  # add patched makefile
+  cp ${EXT_DIR}/../scripts/cs2-custom-makefile makefile
   RES=$(make 2>/dev/null)
 else
   RES=0
