@@ -53,7 +53,7 @@ function poll() {
 function step() {
   poll();
   $('#ram-sparkline').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
-  $('#ram-perc-sparkline').sparkline(ramPercentTimeseries, {chartRangeMin: 0.0, chartRangeMax: 1.0, tooltipSuffix: '%'});
+  $('#ram-perc-sparkline').sparkline(ramPercentTimeseries, {chartRangeMin: 0.0, chartRangeMax: 1.0});
   $('#ram-sparkline').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
   $('#cpu-agg-sys').sparkline(cpuAggSysTimeseries, {lineColor: '#ff0000', fillColor: '#ffaaaa'});
   $('#cpu-agg-usr').sparkline(cpuAggUsrTimeseries, {lineColor: '#00ff00', fillColor: '#aaffaa'});
