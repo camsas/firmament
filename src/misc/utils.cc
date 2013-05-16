@@ -21,8 +21,10 @@ extern "C" {
 
 namespace firmament {
 
-boost::mt19937 ran_;
-bool ran_init_ = false;
+boost::mt19937 resource_id_rg_;
+boost::mt19937 job_id_rg_;
+bool resource_id_rg_init_ = false;
+bool job_id_rg_init_ = false;
 
 uint64_t GetCurrentTimestamp() {
   struct timeval ts;
@@ -44,20 +46,30 @@ uint64_t MakeEnsembleUID(Ensemble *ens) {
 }*/
 
 ResourceID_t GenerateUUID() {
-  if (!ran_init_) {
-    ran_.seed(time(NULL));
-    ran_init_ = true;
+  if (!resource_id_rg_init_) {
+    // TODO(malte): This crude method captures the first 100 chars of the
+    // hostname (not the FQDN). It remains to be seen if it is sufficient.
+    size_t hash = 0;
+    char hn[100];
+    bzero(&hn, 100);
+    gethostname(hn, 100);
+    // Hash the hostname (truncated to 100 characters)
+    boost::hash_combine(hash, hn);
+    VLOG(2) << "Seeing resource ID RNG with " << hash << " from hostname "
+            << hn;
+    resource_id_rg_.seed(hash);
+    resource_id_rg_init_ = true;
   }
-  boost::uuids::basic_random_generator<boost::mt19937> gen(&ran_);
+  boost::uuids::basic_random_generator<boost::mt19937> gen(&resource_id_rg_);
   return gen();
 }
 
 JobID_t GenerateJobID() {
-  if (!ran_init_) {
-    ran_.seed(time(NULL));
-    ran_init_ = true;
+  if (!job_id_rg_init_) {
+    job_id_rg_.seed(time(NULL));
+    job_id_rg_init_ = true;
   }
-  boost::uuids::basic_random_generator<boost::mt19937> gen(&ran_);
+  boost::uuids::basic_random_generator<boost::mt19937> gen(&job_id_rg_);
   return gen();
 }
 
