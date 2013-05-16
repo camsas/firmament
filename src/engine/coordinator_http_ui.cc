@@ -493,7 +493,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(HTTPRequestPtr& http_request,  // NO
     return;
   }
   string output = "[";
-  // Check if we have any statistics for this
+  // Check if we have any statistics for this resource
   if (res_id) {
     const deque<MachinePerfStatisticsSample>* result =
         coordinator_->knowledge_base().GetStatsForMachine(

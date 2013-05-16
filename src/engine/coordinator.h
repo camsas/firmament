@@ -229,7 +229,7 @@ class Coordinator : public Node,
 #ifdef __HTTP_UI__
   void InitHTTPUI();
 #endif
-  void SendHeartbeatToParent();
+  void SendHeartbeatToParent(const MachinePerfStatisticsSample& stats);
 
 #ifdef __HTTP_UI__
   scoped_ptr<CoordinatorHTTPUI> c_http_ui_;

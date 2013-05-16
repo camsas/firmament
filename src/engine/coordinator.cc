@@ -221,9 +221,16 @@ void Coordinator::Run() {
     AwaitNextMessage();
     // TODO(malte): wrap this in a timer
     cur_time = GetCurrentTimestamp();
-    if (parent_chan_ != NULL &&
-        (cur_time - last_heartbeat_time > FLAGS_heartbeat_interval)) {
-      SendHeartbeatToParent();
+    if (cur_time - last_heartbeat_time > FLAGS_heartbeat_interval) {
+      MachinePerfStatisticsSample stats;
+      stats.set_timestamp(GetCurrentTimestamp());
+      stats.set_resource_id(to_string(uuid_));
+      machine_monitor_.CreateStatistics(&stats);
+      // Record this sample locally
+      knowledge_base_.AddMachineSample(stats);
+      if (parent_chan_ != NULL) {
+        SendHeartbeatToParent(stats);
+      }
       last_heartbeat_time = cur_time;
     }
     //boost::this_thread::sleep(boost::posix_time::milliseconds(100));
@@ -700,7 +707,8 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
   }
 }
 
-void Coordinator::SendHeartbeatToParent() {
+void Coordinator::SendHeartbeatToParent(
+    const MachinePerfStatisticsSample& stats) {
   BaseMessage bm;
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
@@ -708,11 +716,8 @@ void Coordinator::SendHeartbeatToParent() {
   SUBMSG_WRITE(bm, heartbeat, location, node_uri_);
   SUBMSG_WRITE(bm, heartbeat, capacity,
                topology_manager_->NumProcessingUnits());
-  // TODO(malte): include resource usage
-  MachinePerfStatisticsSample* stats = bm.mutable_heartbeat()->mutable_load();
-  stats->set_timestamp(GetCurrentTimestamp());
-  stats->set_resource_id(to_string(uuid_));
-  machine_monitor_.CreateStatistics(stats);
+  // Include resource usage stats
+  bm.mutable_heartbeat()->mutable_load()->CopyFrom(stats);
   VLOG(1) << "Sending heartbeat to parent coordinator!";
   SendMessageToRemote(parent_chan_, &bm);
 }
