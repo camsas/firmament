@@ -115,6 +115,8 @@ vector<CpuUsage> ProcFSMachine::GetCPUUsage() {
       static_cast<double>(cpu_new_stats[cpu_num].total -
                           cpu_stats_[cpu_num].total);
     CpuUsage cur_cpu_usage;
+    if (total_diff == 0)
+      total_diff = 1;  // XXX(malte): ugly hack!
     cur_cpu_usage.set_user(user_diff / total_diff * 100.0);
     cur_cpu_usage.set_nice(nice_diff / total_diff * 100.0);
     cur_cpu_usage.set_system(system_diff / total_diff * 100.0);
