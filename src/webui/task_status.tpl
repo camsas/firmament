@@ -2,6 +2,45 @@
 
 {{>PAGE_HEADER}}
 
+<script type="text/javascript">
+var rsizeTimeseries;
+
+function getRAM(data) {
+  var ts1 = [];
+  for (i = 0; i < data.length; i++) {
+    ts1.push(data[i].rsize / 1024.0 / 1024.0)
+  }
+  ramTimeseries = ts1;
+}
+
+function updateGraphs(data) {
+  getRAM(data);
+}
+
+function poll() {
+  url = "/stats/?task={{TASK_ID}}";
+  $.ajax({
+    url: url,
+    async: false,
+    dataType: 'json',
+    success: function(data) {
+      updateGraphs(data);
+    }});
+}
+
+function step() {
+  poll();
+  $('#rsize-ts').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
+  $('#rsize-box').sparkline(ramTimeseries, {type: 'box', width: '50px'});
+  window.setTimeout(step, 10000);
+}
+
+$(function() {
+  step();
+});
+</script>
+
+
 <h1>Task {{TASK_ID}}</h1>
 
 <table border="1">
@@ -52,6 +91,14 @@
     <td>
       <a href="/task/?id={{TASK_ID}}&a=kill">Kill</a></li>
     </td>
+  </tr>
+  <tr>
+    <td>Resident memory</td>
+    <td><span id="rsize-ts">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><span id="rsize-box">Waiting for data...</span></td>
   </tr>
 </table>
 
