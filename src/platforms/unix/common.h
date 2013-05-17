@@ -7,6 +7,7 @@
 #ifndef FIRMAMENT_PLATFORMS_UNIX_COMMON_H
 #define FIRMAMENT_PLATFORMS_UNIX_COMMON_H
 
+#include <boost/asio.hpp>
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
 
@@ -21,6 +22,9 @@ namespace platform_unix {
 
 namespace streamsockets {
 class TCPConnection;  // Forward declaration
+
+string EndpointToString(boost::asio::ip::tcp::endpoint endpoint);
+string EndpointToString(boost::asio::local::stream_protocol::endpoint endpoint);
 }  // namespace streamsockets
 
 struct AcceptHandler {

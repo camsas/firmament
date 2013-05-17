@@ -100,6 +100,7 @@ void StreamSocketsChannel<T>::Close() {
     // The channel was constructed around an existing connection, so it does not
     // have ownership of the socket. Ask the connection to terminate instead.
     client_connection_->Close();
+    client_connection_.reset();
     client_socket_ = NULL;
   }
   CHECK(!(client_connection_ && client_io_service_));
@@ -199,37 +200,17 @@ bool StreamSocketsChannel<T>::Ready() {
   return (channel_ready_ && client_socket_->is_open());
 }
 
+// Get textual description of remote endpoint
 template <typename T>
 const string StreamSocketsChannel<T>::RemoteEndpointString() {
   if (client_connection_)
     return client_connection_->RemoteEndpointString();
-  string address;
-  string port;
-  string protocol;
-  string endpoint;
   boost::system::error_code ec;
-  switch (type_) {
-    case SS_TCP:
-      protocol = "tcp:";
-      address = client_socket_->remote_endpoint(ec).address().to_string();
-      port = to_string<uint64_t>(client_socket_->remote_endpoint(ec).port());
-      if (ec)
-        return "";
-      else
-        return protocol + address + ":" + port;
-    case SS_UNIX:
-      // XXX(malte): This does not actually work (I think), because ASIO's UNIX
-      // socket representation does not have an address() member. We need to
-      // figure out how to deal with this when implementing something other than
-      // TCP. path() in local::stream_protocol::endpoint seems like a good
-      // choice.
-      protocol = "unix:";
-      //address = client_socket_->remote_endpoint().path();
-      return protocol + address;
-    default:
-      LOG(FATAL) << "Unknown stream socket type " << type_;
-      return "";
-  }
+  tcp::endpoint ept = client_socket_->remote_endpoint(ec);
+  if (ec)
+    return "";
+  else
+    return EndpointToString(ept);
 }
 
 // Synchronous send

@@ -36,7 +36,7 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
                       private boost::noncopyable {
  public:
   typedef shared_ptr<TCPConnection> connection_ptr;
-  explicit TCPConnection(shared_ptr<io_service> io_service)  // NOLINT
+  explicit TCPConnection(shared_ptr<io_service> io_service)
       : socket_(*io_service), io_service_(io_service), ready_(false) { }
   virtual ~TCPConnection();
   // XXX(malte): unsafe raw pointer, fix this
@@ -46,7 +46,7 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
   const string LocalEndpointString();
   bool Ready() { return ready_; }
   const string RemoteEndpointString();
-  void Start();
+  void Start(shared_ptr<tcp::endpoint> remote_endpoint);
   void Close();
 
  private:
@@ -54,6 +54,7 @@ class TCPConnection : public boost::enable_shared_from_this<TCPConnection>,
                    size_t bytes_transferred);
   tcp::socket socket_;
   shared_ptr<io_service> io_service_;
+  shared_ptr<tcp::endpoint> remote_endpoint_;
   bool ready_;
 };
 

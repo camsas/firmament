@@ -9,9 +9,10 @@
 #include <boost/version.hpp>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
-
-#include "platforms/unix/tcp_connection.h"
 #include <boost/lexical_cast.hpp>
+
+#include "misc/map-util.h"
+#include "platforms/unix/tcp_connection.h"
 
 using boost::asio::ip::tcp;
 using boost::posix_time::ptime;
@@ -66,6 +67,10 @@ void AsyncTCPServer::StartAccept() {
   listening_ = true;
 }
 
+void AsyncTCPServer::DropConnectionForEndpoint(const string& remote_endpoint) {
+  endpoint_connection_map_.erase(remote_endpoint);
+}
+
 void AsyncTCPServer::Run() {
   // TODO(malte): Figure out if we need to reset the io_service itself here,
   // given that it may have been stopped beforehand.
@@ -95,7 +100,7 @@ void AsyncTCPServer::Stop() {
   VLOG(2) << "Terminating " << endpoint_connection_map_.size()
           << " active TCP connections.";
   acceptor_.close();
-  for (map<shared_ptr<tcp::endpoint>, TCPConnection::connection_ptr>::iterator
+  for (map<const string, TCPConnection::connection_ptr>::iterator
        c_iter = endpoint_connection_map_.begin();
        c_iter != endpoint_connection_map_.end();
        ++c_iter) {
@@ -115,13 +120,13 @@ void AsyncTCPServer::HandleAccept(TCPConnection::connection_ptr connection,
   if (!error) {
     VLOG(2) << "In HandleAccept, thread is " << boost::this_thread::get_id()
             << ", starting connection with IP " << remote_endpoint->address();
-    connection->Start();
+    connection->Start(remote_endpoint);
+    // Get string version of remote endpoint
+    string remote_ept_str = EndpointToString(*remote_endpoint);
     // Check we do not already have a connection for this endpoint
-    CHECK(!endpoint_connection_map_.count(remote_endpoint));
+    CHECK(!endpoint_connection_map_.count(remote_ept_str));
     // Record a mapping for the connection's endpoint
-    endpoint_connection_map_.insert(
-        pair<shared_ptr<tcp::endpoint>, TCPConnection::connection_ptr>(
-            remote_endpoint, connection));
+    InsertIfNotPresent(&endpoint_connection_map_, remote_ept_str, connection);
     // Once the connection is up, we invoke the callback to notify the messaging
     // adapter (which will wrap the connection into a channel).
     VLOG(2) << "Invoking accept handler...";

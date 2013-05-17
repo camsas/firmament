@@ -170,6 +170,9 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     // After we have removed the channel from the map of active channels and
     // deleted its next receive envelope, we can close it without danger.
     chan->Close();
+    // Finally, we also need to ask the TCP server to remove the connection from
+    // its map of connections
+    tcp_server_->DropConnectionForEndpoint(remote_endpoint);
     // At this point, we unlock and signal to the condition variable, so that we
     // can pick another channel to receive on, or go back to the idle loop (if
     // no other channels are available).

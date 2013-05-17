@@ -40,10 +40,10 @@ class AsyncTCPServer : public boost::enable_shared_from_this<AsyncTCPServer>,
   AsyncTCPServer(const string& endpoint_addr, const string& port,
                  AcceptHandler::type accept_callback);
   ~AsyncTCPServer();
+  void DropConnectionForEndpoint(const string& remote_endpoint);
   void Run();
   void Stop();
-  TCPConnection::connection_ptr connection(
-      const shared_ptr<tcp::endpoint> endpoint) {
+  TCPConnection::connection_ptr connection(const string& endpoint) {
     CHECK_EQ(endpoint_connection_map_.count(endpoint), 1);
     return endpoint_connection_map_[endpoint];
   }
@@ -57,8 +57,7 @@ class AsyncTCPServer : public boost::enable_shared_from_this<AsyncTCPServer>,
                     const boost::system::error_code& error,
                     shared_ptr<tcp::endpoint> remote_endpoint);
 
-  map<shared_ptr<tcp::endpoint>, TCPConnection::connection_ptr>
-      endpoint_connection_map_;
+  map<const string, TCPConnection::connection_ptr> endpoint_connection_map_;
   AcceptHandler::type accept_handler_;
   scoped_ptr<boost::thread> thread_;
   scoped_ptr<boost::asio::io_service::work> io_service_work_;

@@ -60,9 +60,11 @@ const string TCPConnection::RemoteEndpointString() {
   return endpoint;
 }
 
-void TCPConnection::Start() {
+void TCPConnection::Start(shared_ptr<tcp::endpoint> remote_endpoint) {
   VLOG(2) << "TCP connection starting!";
   ready_ = true;
+  remote_endpoint_ = remote_endpoint;
+  CHECK_EQ(*remote_endpoint, socket_.remote_endpoint());
   CHECK(socket_.is_open());
 }
 
