@@ -508,6 +508,22 @@ void CoordinatorHTTPUI::HandleStatisticsURI(HTTPRequestPtr& http_request,  // NO
         output += pb2json(*it);
       }
     }
+  } else if (task_id) {
+    const deque<TaskPerfStatisticsSample>* result =
+        coordinator_->knowledge_base().GetStatsForTask(
+            TaskIDFromString(*task_id));
+    if (result) {
+      for(deque<TaskPerfStatisticsSample>::const_iterator it =
+          result->begin();
+          it != result->end();
+          ++it) {
+        if (output != "[")
+          output += ", ";
+        output += pb2json(*it);
+      }
+    }
+  } else {
+    LOG(FATAL) << "Neither task_id nor res_id set, but they should be!";
   }
   output += "]";
   writer->write(output);
