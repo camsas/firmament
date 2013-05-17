@@ -29,8 +29,8 @@ void KnowledgeBase::AddMachineSample(
     CHECK_NOTNULL(q);
   }
   if (q->size() * sizeof(sample) >= MAX_SAMPLE_QUEUE_CAPACITY)
-    q->pop_back();  // drom from the front
-  q->push_front(sample);
+    q->pop_front();  // drom from the front
+  q->push_back(sample);
 }
 
 void KnowledgeBase::AddTaskSample(const TaskPerfStatisticsSample& sample) {
@@ -45,8 +45,8 @@ void KnowledgeBase::AddTaskSample(const TaskPerfStatisticsSample& sample) {
     CHECK_NOTNULL(q);
   }
   if (q->size() * sizeof(sample) >= MAX_SAMPLE_QUEUE_CAPACITY)
-    q->pop_back();  // drop from the front
-  q->push_front(sample);
+    q->pop_front();  // drop from the front
+  q->push_back(sample);
 }
 
 const deque<MachinePerfStatisticsSample>* KnowledgeBase::GetStatsForMachine(
