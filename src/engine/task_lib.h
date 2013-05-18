@@ -125,7 +125,7 @@ class TaskLib {
 
   Cache_t* cache;
   string storage_uri;
-  managed_shared_memory* segment;
+  //managed_shared_memory* segment;
   named_mutex* mutex;
   scoped_lock<named_mutex>* cache_lock;
   ReferenceNotification_t* reference_not_t;

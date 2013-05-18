@@ -325,8 +325,8 @@ void* TaskLib::GetObjectStart(const DataObjectID_t& id) {
          << " Cache size " << cache->size << endl;
     string nm = boost::lexical_cast<string > (id);
     if (cache->capacity != cache->size) {
-      SharedVector_t::iterator result =
-              find(cache->object_list->begin(), cache->object_list->end(), id);
+      //SharedVector_t::iterator result =
+      //        find(cache->object_list->begin(), cache->object_list->end(), id);
       // Should only be one result in theory
       cout << "Object " << id << " was  found in cache." << endl;
 
@@ -380,9 +380,9 @@ void* TaskLib::GetObjectStart(const DataObjectID_t& id) {
         cout << "Object was never found " << endl;
         return NULL;
       } else {
-        SharedVector_t::iterator result =
-                find(cache->object_list->begin(),
-                     cache->object_list->end(), id);
+        //SharedVector_t::iterator result =
+        //        find(cache->object_list->begin(),
+        //             cache->object_list->end(), id);
         // Should only be one result in theory
         cout << "Object " << id << " was now found in cache." << endl;
 

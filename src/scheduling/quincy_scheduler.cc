@@ -165,7 +165,7 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
   }
   uint64_t l = 0;
   while (!feof(fptr) && l < 100) {
-    if (fscanf(fptr, "%[^\n]%*[\n]", &line) > 0) {
+    if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
       VLOG(3) << "Processing line " << l << ": " << line;
       if (FLAGS_debug_flow_graph) {
         fputs(line, dbg_fptr);
