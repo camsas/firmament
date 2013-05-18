@@ -8,32 +8,15 @@
 namespace firmament {
 namespace platform_unix {
 
-SignalHandler::SignalHandler()
-#if (BOOST_VERSION >= 104700)
-  : signal_set_(signal_set(signal_io_service_)) {
-#else
-{  // NOLINT
-#endif
+SignalHandler::SignalHandler() {
   VLOG(1) << "Signal handler set up, ready to add signals.";
 }
 
-#if (BOOST_VERSION >= 104700)
-void SignalHandler::ConfigureSignal(int signum,
-                                    void (*legacy_fptr)(int),  // NOLINT
-                                    void* object) {
-  // Convert function pointer into callback
-  // TODO(malte): this is largely untested, and may not even compile. Test
-  // with Boost >= 1.48.0.
-  signals_.add(signum);
-  signals_.async_wait(boost::bind(legacy_fptr, object, signum));
-}
-#else
 void SignalHandler::ConfigureSignal(int signum,
                                     void (*legacy_fptr)(int),  // NOLINT
                                     void*) {
   signal(signum, legacy_fptr);
 }
-#endif
 
 }  // namespace platform_unix
 }  // namespace firmament
