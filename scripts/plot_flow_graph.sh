@@ -1,9 +1,13 @@
 #!/bin/bash
 OUTDIR="/tmp/firmament-debug"
-DOT_FILE="${OUTDIR}/${TIMESTAMP}.gv"
 TIMESTAMP=$(date '+%s')
-OUTPUT="${OUTDIR}/${TIMESTAMP}.png"
 
 mkdir -p ${OUTDIR}
-python dimacs_to_dot.py /tmp/debug.dm > ${DOT_FILE}
-dot -Tpng ${DOT_FILE} > ${OUTPUT}
+for f in `ls ${OUTDIR}/debug_*.dm`; do
+  #DOT_FILE="${f}_${TIMESTAMP}.gv"
+  #OUTPUT="${f}_${TIMESTAMP}.png"
+  DOT_FILE="${f}.gv"
+  OUTPUT="${f}.png"
+  python dimacs_to_dot.py ${f} `echo ${f} | sed -e s/debug_/debug-flow_/` > ${DOT_FILE}
+  dot -Tpng ${DOT_FILE} > ${OUTPUT}
+done
