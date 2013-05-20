@@ -18,6 +18,7 @@
 #include "storage/reference_types.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
+#include "misc/string_utils.h"
 #include "engine/local_executor.h"
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
@@ -49,7 +50,8 @@ QuincyScheduler::QuincyScheduler(
     : EventDrivenScheduler(job_map, resource_map, object_store, task_map,
                            topo_mgr, m_adapter, coordinator_res_id,
                            coordinator_uri),
-      parameters_(params) {
+      parameters_(params),
+      debug_seq_num_(0) {
   LOG(INFO) << "QuincyScheduler initiated; parameters: "
             << parameters_.ShortDebugString();
   // Generate the initial flow graph
@@ -161,7 +163,11 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
     LOG(ERROR) << "Failed to open FD for reading of flow graph. FD " << fd;
   }
   if (FLAGS_debug_flow_graph) {
-    CHECK((dbg_fptr = fopen("/tmp/debug-flow.dm", "w")) != NULL);
+    // Somewhat ugly hack to generate unique output file name.
+    string out_file_name;
+    spf(&out_file_name, "/tmp/firmament-debug/debug-flow_%ju.dm", debug_seq_num_);
+    CHECK((dbg_fptr = fopen(out_file_name.c_str(), "w")) != NULL);
+    debug_seq_num_++;
   }
   uint64_t l = 0;
   while (!feof(fptr) && l < 100) {
@@ -228,8 +234,13 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
           << outfd[1] << ", PARENT_READ: " << infd[0] << ", CHILD_WRITE: "
           << infd[1];
   // Write debugging copy
-  if (FLAGS_debug_flow_graph)
-    exporter_.Flush("/tmp/debug.dm");
+  if (FLAGS_debug_flow_graph) {
+    // TODO(malte): somewhat ugly hack to compose a unique file name for each
+    // scheduler iteration
+    string out_file_name;
+    spf(&out_file_name, "/tmp/firmament-debug/debug_%ju.dm", debug_seq_num_);
+    exporter_.Flush(out_file_name);
+  }
   // Write to pipe to solver
   exporter_.Flush(outfd[1]);
   // Parse and process the result

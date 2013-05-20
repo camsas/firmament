@@ -99,6 +99,8 @@ class QuincyScheduler : public EventDrivenScheduler {
   SchedulingParameters parameters_;
   // DIMACS exporter for interfacing to the solver
   DIMACSExporter exporter_;
+  // Debug sequence number (for solver input/output files written to /tmp)
+  uint64_t debug_seq_num_;
 };
 
 }  // namespace scheduler
