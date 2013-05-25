@@ -75,5 +75,21 @@ void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
     LOG(INFO) << it->free_ram();
   }
 }
+void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report) {
+  TaskID_t tid = report.task_id();
+  // Check if we already have a record for this task
+  deque<TaskFinalReport>* q = FindOrNull(task_exec_reports_, tid);
+  if (!q) {
+    // Add a blank queue for this task
+    CHECK(InsertOrUpdate(&task_exec_reports_, tid,
+                         deque<TaskFinalReport>()));
+    q = FindOrNull(task_exec_reports_, tid);
+    CHECK_NOTNULL(q);
+  }
+  if (q->size() * sizeof(report) >= MAX_SAMPLE_QUEUE_CAPACITY)
+    q->pop_front();  // drop from the front
+  q->push_back(report);
+
+}
 
 }  // namespace firmament

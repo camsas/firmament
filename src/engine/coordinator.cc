@@ -556,7 +556,8 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
   // Add task to task graph
   //task_graph_ptr->AddChildTask(spawner, spawnee)
   // Update references with producing task, if necessary
-  // TODO(malte): implement this
+  // TODO(malte): implement this properly; below is a hack that delegates
+  // outputs by simple modifying their producing task.
   for (RepeatedPtrField<ReferenceDescriptor>::const_iterator o_iter =
        msg.spawned_task_desc().outputs().begin();
        o_iter != msg.spawned_task_desc().outputs().end();
@@ -599,6 +600,7 @@ void Coordinator::HandleTaskStateChange(
       (*td_ptr)->set_state(TaskDescriptor::COMPLETED);
       TaskFinalReport report;
       scheduler_->HandleTaskCompletion(*td_ptr, &report);
+      knowledge_base_.ProcessTaskFinalReport(report);
       break;
     }
     case TaskDescriptor::FAILED:
@@ -729,14 +731,16 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   JobID_t new_job_id = GenerateJobID();
   LOG(INFO) << "NEW JOB: " << new_job_id;
   VLOG(2) << "Details:\n" << job_descriptor.DebugString();
-  // Clone the JD and update it with some information
+  // Clone the submitted JD and add job to local job table
   JobDescriptor* new_jd = new JobDescriptor;
   new_jd->CopyFrom(job_descriptor);
+  CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, job_descriptor));
+  // The pointer to the JD has now changed, so reassign it
+  new_jd = FindOrNull(*job_table_, new_job_id);
+  // Clone the JD and update it with some information
   new_jd->set_uuid(to_string(new_job_id));
   // Set the root task ID (which is 0 or unset on submission)
   new_jd->mutable_root_task()->set_uid(GenerateRootTaskID(*new_jd));
-  // Add job to local job table
-  CHECK(InsertIfNotPresent(job_table_.get(), new_job_id, *new_jd));
   // Create a dynamic task graph for the job
   TaskGraph* new_dtg = new TaskGraph(new_jd->mutable_root_task());
   // Store the task graph

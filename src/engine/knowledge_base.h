@@ -16,9 +16,11 @@
 #include "base/types.h"
 #include "base/machine_perf_statistics_sample.pb.h"
 #include "base/task_perf_statistics_sample.pb.h"
+#include "base/task_final_report.pb.h"
 
 namespace firmament {
 
+// Limit stats queues to 1MB each
 #define MAX_SAMPLE_QUEUE_CAPACITY 1024*1024
 
 class KnowledgeBase {
@@ -31,10 +33,14 @@ class KnowledgeBase {
       ResourceID_t id) const;
   const deque<TaskPerfStatisticsSample>* GetStatsForTask(
       TaskID_t id) const;
+  void ProcessTaskFinalReport(const TaskFinalReport& report);
 
  protected:
   map<ResourceID_t, deque<MachinePerfStatisticsSample> > machine_map_;
+  // TODO(malte): note that below sample queue has no awareness of time within a
+  // task, i.e. it mixes samples from all phases
   map<TaskID_t, deque<TaskPerfStatisticsSample> > task_map_;
+  map<TaskID_t, deque<TaskFinalReport> > task_exec_reports_;
 };
 
 }  // namespace firmament
