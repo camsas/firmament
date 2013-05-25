@@ -15,13 +15,15 @@
 #include <boost/uuid/uuid_io.hpp>
 #endif
 
-//#include "base/job.h"
-//#include "base/ensemble.h"
+#include <google/protobuf/descriptor.h>
+
 #include "base/common.h"
 #include "base/types.h"
 #include "boost/lexical_cast.hpp"
 
 namespace firmament {
+
+using google::protobuf::EnumDescriptor;
 
 #define ENUM_TO_STRING(t, v) t ## _descriptor()->FindValueByNumber(v)->name()
 
