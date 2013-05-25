@@ -43,6 +43,9 @@ void FlowGraph::AddArcsForTask(TaskDescriptor*,
 FlowGraphArc* FlowGraph::AddArcInternal(uint64_t src, uint64_t dst) {
   FlowGraphArc* arc = new FlowGraphArc(src, dst);
   arc_set_.insert(arc);
+  FlowGraphNode** src_node = FindOrNull(node_map_, src);
+  CHECK_NOTNULL(src_node);
+  (*src_node)->AddArc(arc);
   return arc;
 }
 
@@ -50,42 +53,72 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
                                         FlowGraphNode* dst) {
   FlowGraphArc* arc = new FlowGraphArc(src->id_, dst->id_);
   arc_set_.insert(arc);
+  src->AddArc(arc);
   return arc;
 }
 
 void FlowGraph::AddJobNodes(JobDescriptor* jd) {
   // First add an unscheduled aggregator node for this job
-  FlowGraphNode* unsched_agg_node = AddNodeInternal(next_id());
-  unsched_agg_node->type_.set_type(FlowNodeType::JOB_AGGREGATOR);
-  // ... and connect it directly to the sink
-  FlowGraphArc* unsched_agg_to_sink_arc =
-      AddArcInternal(unsched_agg_node, sink_node_);
-  unsched_agg_to_sink_arc->cap_upper_bound_ = 0;
+  // if none exists alread
+  FlowGraphArc* unsched_agg_to_sink_arc;
+  FlowGraphNode* unsched_agg_node;
+  uint64_t* unsched_agg_node_id = FindOrNull(job_to_nodeid_map_,
+                                             JobIDFromString(jd->uuid()));
+  if (!unsched_agg_node_id) {
+    unsched_agg_node = AddNodeInternal(next_id());
+    unsched_agg_node->type_.set_type(FlowNodeType::JOB_AGGREGATOR);
+    // ... and connect it directly to the sink
+    unsched_agg_to_sink_arc = AddArcInternal(unsched_agg_node, sink_node_);
+    unsched_agg_to_sink_arc->cap_upper_bound_ = 0;
+    // Record this for the future in the job <-> node ID lookup table
+    CHECK(InsertIfNotPresent(&job_to_nodeid_map_, JobIDFromString(jd->uuid()),
+                             unsched_agg_node->id_));
+  } else {
+    FlowGraphNode** unsched_agg_node_ptr = FindOrNull(node_map_,
+                                                      *unsched_agg_node_id);
+    unsched_agg_node = *unsched_agg_node_ptr;
+    FlowGraphArc** lookup_ptr = FindOrNull(unsched_agg_node->outgoing_arc_map_,
+                                           sink_node_->id_);
+    CHECK_NOTNULL(lookup_ptr);
+    unsched_agg_to_sink_arc = *lookup_ptr;
+  }
   // Now add the job's task nodes
-  // XXX(malte): This is a simple BFS lashup
+  // TODO(malte): This is a simple BFS lashup; maybe we can do better?
   queue<TaskDescriptor*> q;
   q.push(jd->mutable_root_task());
   while (!q.empty()) {
     TaskDescriptor* cur = q.front();
     q.pop();
-    // Add the current task's node
-    FlowGraphNode* task_node = AddNodeInternal(next_id());
-    task_node->supply_ = 1;
-    if (cur->state() == TaskDescriptor::RUNNABLE)
-      task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK);
-    else
-      // XXX(malte): FIX the assumption here!
-      task_node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
-    task_node->task_id_ = cur->uid();  // set task ID in node
-    sink_node_->demand_++;
-    task_nodes_.insert(task_node->id_);
-    // Arcs for this node
-    AddArcsForTask(cur, task_node, unsched_agg_node, unsched_agg_to_sink_arc);
+    if (cur->state() == TaskDescriptor::RUNNABLE) {
+      FlowGraphNode* task_node = AddNodeInternal(next_id());
+      task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK); 
+      // Add the current task's node
+      task_node->supply_ = 1;
+      task_node->task_id_ = cur->uid();  // set task ID in node
+      sink_node_->demand_++;
+      task_nodes_.insert(task_node->id_);
+      // Log info
+      VLOG(2) << "Adding edges for task " << cur->uid() << "'s node ("
+              << task_node->id_ << "); task state is " << cur->state();
+      // Arcs for this node
+      AddArcsForTask(cur, task_node, unsched_agg_node, unsched_agg_to_sink_arc);
+    } else if (cur->state() == TaskDescriptor::RUNNING ||
+             cur->state() == TaskDescriptor::ASSIGNED) {
+      // The task is already running, so it must have a node already
+      //task_node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+    } else {
+      VLOG(2) << "Ignoring task " << cur->uid() << " [" << hex << cur
+              << "], which is in state "
+              << ENUM_TO_STRING(TaskDescriptor::TaskState, cur->state());
+    }
     // Enqueue any existing children of this task
     for (RepeatedPtrField<TaskDescriptor>::iterator c_iter =
          cur->mutable_spawned()->begin();
          c_iter != cur->mutable_spawned()->end();
          ++c_iter) {
+      // We do actually need to push tasks even if they are already completed,
+      // failed or running, since they may have children eligible for
+      // scheduling.
       q.push(&(*c_iter));
     }
   }
@@ -127,7 +160,7 @@ void FlowGraph::AddResourceTopology(
 void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
                                 uint64_t* leaf_counter) {
   if (!rtnd->has_parent_id()) {
-    // Root node, so add it
+    // 1) Root node
     uint64_t id = next_id();
     VLOG(2) << "Adding node " << id << " for root resource "
             << rtnd->resource_desc().uuid();
@@ -141,6 +174,7 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
                                                     root_node);
   }
   if (rtnd->children_size() > 0) {
+    // 2) Node inside the tree with non-zero children (i.e. no leaf node)
     VLOG(2) << "Adding " << rtnd->children_size() << " internal resource arcs";
     for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator c_iter =
          rtnd->mutable_children()->begin();
@@ -163,13 +197,14 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
         CHECK(cur_node != NULL) << "Could not find parent node with ID "
                                 << c_iter->parent_id();
         AddArcInternal(cur_node, child_node);
+        // XXX(malte): Need to assign correct capacity here!
       } else {
         LOG(ERROR) << "Found child without parent_id set! This will lead to an "
                    << "inconsistent flow graph!";
       }
     }
   } else {
-    // Leaves of the resource topology; add an arc to the sink node
+    // 3) Leaves of the resource topology; add an arc to the sink node
     VLOG(2) << "Adding arc from leaf resource " << rtnd->resource_desc().uuid()
             << " to sink node.";
     if (rtnd->resource_desc().type() != ResourceDescriptor::RESOURCE_PU)
@@ -194,6 +229,38 @@ FlowGraphNode* FlowGraph::NodeForResourceID(const ResourceID_t& res_id) {
   VLOG(2) << "Resource " << res_id << " is represented by node " << *id;
   FlowGraphNode** node_ptr = FindOrNull(node_map_, *id);
   return (node_ptr ? *node_ptr : NULL);
+}
+
+FlowGraphNode* FlowGraph::NodeForTaskID(TaskID_t task_id) {
+  uint64_t* id = FindOrNull(task_to_nodeid_map_, task_id);
+  // Returns NULL if task unknown
+  if (!id)
+    return NULL;
+  VLOG(2) << "Task " << task_id << " is represented by node " << *id;
+  FlowGraphNode** node_ptr = FindOrNull(node_map_, *id);
+  return (node_ptr ? *node_ptr : NULL);
+}
+
+void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
+                              FlowGraphNode* res_node) {
+  // Remove all arcs apart from the task -> resource mapping;
+  // note that this effectively disables preemption!
+  for (unordered_map<TaskID_t, FlowGraphArc*>::iterator it =
+       task_node->outgoing_arc_map_.begin();
+       it != task_node->outgoing_arc_map_.end();
+       ++it) {
+    if (it->second->dst_ != task_node->id_)
+      VLOG(2) << "Deleting arc  from " << it->second->src_ << " to "
+              << it->second->dst_;
+  }
+}
+
+void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
+  FlowGraphNode* task_node = NodeForTaskID(tid);
+  FlowGraphNode* assigned_res_node = NodeForResourceID(res_id);
+  CHECK_NOTNULL(task_node);
+  CHECK_NOTNULL(assigned_res_node);
+  PinTaskToNode(task_node, assigned_res_node);
 }
 
 }  // namespace firmament

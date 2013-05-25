@@ -1,7 +1,8 @@
 // The Firmament project
-// Copyright (c) 2012-2013 Ionel Gog <ionel.gog@cl.cam.ac.uk>
+// Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2013 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
-// Implementation of a Quincy scheduler.
+// Implementation of a Quincy-style min-cost flow scheduler.
 
 #include "scheduling/quincy_scheduler.h"
 
@@ -79,18 +80,22 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
        it != deltas.end();
        ++it) {
     VLOG(1) << "Processing delta of type " << (*it)->type();
+    TaskID_t task_id = (*it)->task_id();
+    ResourceID_t res_id = ResourceIDFromString((*it)->resource_id());
     if ((*it)->type() == SchedulingDelta::PLACE) {
-      VLOG(1) << "Trying to place task " << (*it)->task_id()
+      VLOG(1) << "Trying to place task " << task_id
               << " on resource " << (*it)->resource_id();
-      TaskDescriptor** td = FindOrNull(*task_map_, (*it)->task_id());
-      ResourceStatus** rs =
-          FindOrNull(*resource_map_,
-                     ResourceIDFromString((*it)->resource_id()));
+      TaskDescriptor** td = FindOrNull(*task_map_, task_id);
+      ResourceStatus** rs = FindOrNull(*resource_map_, res_id);
       CHECK_NOTNULL(td);
       CHECK_NOTNULL(rs);
       VLOG(1) << "About to bind task " << (*td)->uid() << " to resource "
               << (*rs)->mutable_descriptor()->uuid();
       BindTaskToResource(*td, (*rs)->mutable_descriptor());
+      // After the task is bound, we now remove all of its edges into the flow
+      // graph apart from the bound resource. 
+      // N.B.: This disables preemption and migration!
+      flow_graph_.UpdateArcsForBoundTask(task_id, res_id);
     }
     delete *it;  // Remove the scheduling delta
   }
@@ -135,14 +140,19 @@ void QuincyScheduler::NodeBindingToSchedulingDelta(
 }
 
 uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
-  // Check if the job is already in the flow graph
-  // If not, simply add the whole job
+  // Check if we have any runnable tasks in this job
   const set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
-  flow_graph_.AddJobNodes(job_desc);
-  // If it is, only add the new bits
-  // Run a scheduler iteration
-  uint64_t newly_scheduled = RunSchedulingIteration();
-  return newly_scheduled;
+  if (runnable_tasks.size() > 0) {
+    // Check if the job is already in the flow graph
+    // If not, simply add the whole job
+    flow_graph_.AddJobNodes(job_desc);
+    // If it is, only add the new bits
+    // Run a scheduler iteration
+    uint64_t newly_scheduled = RunSchedulingIteration();
+    return newly_scheduled;
+  } else {
+    return 0;
+  }
 }
 
 // Returns a vector containing a nodes arcs with flow > 0.
@@ -257,6 +267,9 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
     SchedulingDelta* delta = new SchedulingDelta;
     NodeBindingToSchedulingDelta(*flow_graph_.Node(it->first),
                                  *flow_graph_.Node(it->second), delta);
+    // Mark the task as scheduled
+    flow_graph_.Node(it->first)->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+    // Remember the delta
     deltas.push_back(delta);
   }
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
@@ -292,7 +305,7 @@ uint64_t QuincyScheduler::AssignNode(
             << flow_graph_.Node(map_it->first)->type_.type() << ")";
     // Check if node = root or node = task
     if (CheckNodeType(map_it->first, FlowNodeType::ROOT_TASK) ||
-        CheckNodeType(map_it->first, FlowNodeType::SCHEDULED_TASK)) {
+        CheckNodeType(map_it->first, FlowNodeType::UNSCHEDULED_TASK)) {
       // Shouldn't really modify the collection in the iterator loop.
       // However, we don't use the iterator after modification.
       uint64_t flow = map_it->second;
@@ -321,6 +334,8 @@ uint64_t QuincyScheduler::AssignNode(
   }
   // If here it means that the leaf node will not be assigned.
   // Should not happen because it initially had flow.
+  LOG(WARNING) << "Failed to find a task mapping for node " << node
+               << ", which has flow!";
   return 0;
 }
 

@@ -27,6 +27,10 @@ struct FlowGraphNode {
       : id_(id), supply_(supply), demand_(demand),
         resource_id_(boost::uuids::nil_uuid()), task_id_(0) {
   }
+  void AddArc(FlowGraphArc* arc) {
+    CHECK_EQ(arc->src_, id_);
+    InsertIfNotPresent(&outgoing_arc_map_, arc->dst_, arc);
+  }
 
   uint64_t id_;
   uint64_t supply_;
@@ -36,6 +40,10 @@ struct FlowGraphNode {
   // somewhere.
   ResourceID_t resource_id_;
   TaskID_t task_id_;
+  // Free-form comment for debugging purposes (used to label special nodes)
+  string comment_;
+  // Outgoing arcs from this node, keyed by destination node
+  unordered_map<uint64_t, FlowGraphArc*> outgoing_arc_map_;
 };
 
 }  // namespace firmament

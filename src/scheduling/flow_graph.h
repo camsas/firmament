@@ -26,6 +26,7 @@ class FlowGraph {
                        uint64_t* leaf_counter);
   void AddResourceTopology(ResourceTopologyNodeDescriptor* resource_tree);
   void AddTaskNode();
+  void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
   inline const unordered_map<uint64_t, FlowGraphNode*>& Nodes() const {
     return node_map_;
@@ -42,13 +43,14 @@ class FlowGraph {
   }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
   inline uint64_t NumNodes() const { return node_map_.size(); }
-  inline const FlowGraphNode* Node(uint64_t id) const {
+  inline FlowGraphNode* Node(uint64_t id) {
     FlowGraphNode* const* npp = FindOrNull(node_map_, id);
     return (npp ? *npp : NULL);
   }
 
  protected:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
+  FRIEND_TEST(FlowGraphTest, AddArcToNode);
   void AddArcsForTask(TaskDescriptor* cur, FlowGraphNode* task_node,
                       FlowGraphNode* unsched_agg_node,
                       FlowGraphArc* unsched_agg_to_sink_arc);
@@ -57,6 +59,9 @@ class FlowGraph {
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   void AddSpecialNodes();
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
+  FlowGraphNode* NodeForTaskID(TaskID_t task_id);
+  void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
+
   inline uint64_t next_id() { return current_id_++; }
 
   // Graph structure containers and helper fields
@@ -70,6 +75,9 @@ class FlowGraph {
   unordered_map<TaskID_t, uint64_t> task_to_nodeid_map_;
   unordered_map<ResourceID_t, uint64_t,
       boost::hash<boost::uuids::uuid> > resource_to_nodeid_map_;
+  // The "node ID" for the job is currently the ID of the job's unscheduled node
+  unordered_map<JobID_t, uint64_t,
+      boost::hash<boost::uuids::uuid> > job_to_nodeid_map_;
   unordered_set<uint64_t> leaf_nodes_;
   unordered_set<uint64_t> task_nodes_;
 };

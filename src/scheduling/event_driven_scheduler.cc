@@ -277,7 +277,7 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
     const JobID_t& job_id) {
   VLOG(2) << "Performing lazy graph reduction";
   // Local data structures
-  deque<TaskDescriptor* > newly_active_tasks;
+  deque<TaskDescriptor*> newly_active_tasks;
   bool do_schedule = false;
   // Add expected producer for object_id to queue, if the object reference is
   // not already concrete.

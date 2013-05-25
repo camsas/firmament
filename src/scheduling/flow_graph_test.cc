@@ -12,7 +12,6 @@
 #include "scheduling/flow_graph.h"
 
 namespace firmament {
-namespace misc {
 
 // The fixture for testing the FlowGraph container class.
 class FlowGraphTest : public ::testing::Test {
@@ -45,6 +44,18 @@ class FlowGraphTest : public ::testing::Test {
   // Objects declared here can be used by all tests.
 };
 
+// Tests arc addition to node.
+TEST_F(FlowGraphTest, AddArcToNode) {
+  FlowGraph g;
+  uint64_t init_node_count = g.NumNodes();
+  FlowGraphNode* n0 = g.AddNodeInternal(g.next_id());
+  FlowGraphNode* n1 = g.AddNodeInternal(g.next_id());
+  FlowGraphArc* arc = g.AddArcInternal(n0->id_, n1->id_);
+  CHECK_EQ(g.NumNodes(), init_node_count + 2);
+  CHECK_EQ(g.NumArcs(), 1);
+  CHECK_EQ(n0->outgoing_arc_map_[n1->id_], arc);
+}
+
 // Tests allocation of an empty envelope and puts an integer into it (using
 // memcopy internally).
 TEST_F(FlowGraphTest, SimpleGraphOutput) {
@@ -65,7 +76,6 @@ TEST_F(FlowGraphTest, SimpleGraphOutput) {
   g.AddResourceTopology(&rtn_root);
 }
 
-}  // namespace misc
 }  // namespace firmament
 
 int main(int argc, char **argv) {
