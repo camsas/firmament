@@ -1,0 +1,17 @@
+// The Firmament project
+// Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Summary of a task execution's performance profile.
+
+package firmament;
+
+message TaskProfile {
+  required uint64 task_id = 1;
+  required uint64 avg_runtime = 2;
+  optional uint64 min_runtime = 3;
+  optional uint64 max_runtime = 4;
+  optional uint64 avg_vsize = 5;
+  optional uint64 avg_rsize = 6;
+  optional uint64 max_vsize = 7;
+  optional uint64 max_rsize = 8;
+}

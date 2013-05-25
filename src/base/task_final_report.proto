@@ -5,10 +5,11 @@
 package firmament;
 
 message TaskFinalReport {
-  optional uint64 start_time = 1;
-  optional uint64 finish_time = 2;
-  optional uint64 instructions = 3;
-  optional uint64 cycles = 4;
-  optional uint64 llc_misses = 5;
-  optional double runtime = 6;
+  required uint64 task_id = 1;
+  optional uint64 start_time = 2;
+  optional uint64 finish_time = 3;
+  optional uint64 instructions = 4;
+  optional uint64 cycles = 5;
+  optional uint64 llc_misses = 6;
+  optional double runtime = 7;
 }
