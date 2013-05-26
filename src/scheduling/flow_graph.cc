@@ -89,14 +89,19 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
   while (!q.empty()) {
     TaskDescriptor* cur = q.front();
     q.pop();
-    if (cur->state() == TaskDescriptor::RUNNABLE) {
-      FlowGraphNode* task_node = AddNodeInternal(next_id());
+    // Check if this node has already been added
+    uint64_t* tn_ptr = FindOrNull(task_to_nodeid_map_, cur->uid());
+    FlowGraphNode* task_node = tn_ptr ? Node(*tn_ptr) : NULL;
+    if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
+      task_node = AddNodeInternal(next_id());
       task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK); 
       // Add the current task's node
       task_node->supply_ = 1;
       task_node->task_id_ = cur->uid();  // set task ID in node
       sink_node_->demand_++;
       task_nodes_.insert(task_node->id_);
+      // Insert a record for the node representing this task's ID
+      InsertIfNotPresent(&task_to_nodeid_map_, cur->uid(), task_node->id_);
       // Log info
       VLOG(2) << "Adding edges for task " << cur->uid() << "'s node ("
               << task_node->id_ << "); task state is " << cur->state();
@@ -106,6 +111,9 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
              cur->state() == TaskDescriptor::ASSIGNED) {
       // The task is already running, so it must have a node already
       //task_node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+    } else if (task_node) {
+      VLOG(2) << "Ignoring task " << cur->uid()
+              << ", as its node already exists.";
     } else {
       VLOG(2) << "Ignoring task " << cur->uid() << " [" << hex << cur
               << "], which is in state "
@@ -221,6 +229,34 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
   }
 }
 
+void FlowGraph::DeleteArc(FlowGraphArc* arc) {
+  // First remove various meta-data relating to this arc
+  arc_set_.erase(arc);
+  // Then delete the arc itself
+  delete arc;
+}
+
+void FlowGraph::DeleteTaskNode(FlowGraphNode* node) {
+  // First remove all outgoing arcs
+  for(unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+      node->outgoing_arc_map_.begin();
+      it != node->outgoing_arc_map_.end();
+      ++it) {
+    DeleteArc(it->second);
+  }
+  node->outgoing_arc_map_.clear();
+  // Decrease the sink's demand and set this node's supply to zero
+  node->supply_ = 0;
+  sink_node_->demand_--;
+  // Find the unscheduled node for this job and decrement its outgoing capacity
+  // TODO
+  // Then remove node meta-data
+  //node_map_.erase(node->id_);
+  //task_nodes_.erase()
+  // Then remove the node itself
+  //delete node;
+}
+
 FlowGraphNode* FlowGraph::NodeForResourceID(const ResourceID_t& res_id) {
   uint64_t* id = FindOrNull(resource_to_nodeid_map_, res_id);
   // Returns NULL if resource unknown
@@ -249,10 +285,16 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
        task_node->outgoing_arc_map_.begin();
        it != task_node->outgoing_arc_map_.end();
        ++it) {
-    if (it->second->dst_ != task_node->id_)
-      VLOG(2) << "Deleting arc  from " << it->second->src_ << " to "
-              << it->second->dst_;
+    VLOG(2) << "Deleting arc from " << it->second->src_ << " to "
+            << it->second->dst_;
+    // N.B. This is a little dodgy, as it mutates the collection inside the
+    // loop. However, since nobody else is reading from it at the same time,
+    // this should be fine.
+    task_node->outgoing_arc_map_.erase(it->first);
+    DeleteArc(it->second);
   }
+  // Re-add a single arc from the task to the resource node
+  AddArcInternal(task_node, res_node);
 }
 
 void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {

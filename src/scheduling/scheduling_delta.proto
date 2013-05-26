@@ -10,9 +10,10 @@ message SchedulingDelta {
     PLACE = 0;
     PREEMPT = 1;
     MIGRATE = 2;
+    NOOP = 3;
   }
 
   required uint64 task_id = 1;
   required string resource_id = 2;
-  required ChangeType type = 3 [default = PLACE];
+  required ChangeType type = 3 [default = NOOP];
 }

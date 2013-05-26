@@ -41,6 +41,8 @@ class QuincyScheduler : public EventDrivenScheduler {
                   const string& coordinator_uri,
                   const SchedulingParameters& params);
   ~QuincyScheduler();
+  void HandleTaskCompletion(TaskDescriptor* td_ptr,
+                            TaskFinalReport* report);
   uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<QuincyScheduler, parameters: "

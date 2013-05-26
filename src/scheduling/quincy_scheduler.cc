@@ -97,9 +97,22 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
       // N.B.: This disables preemption and migration!
       flow_graph_.UpdateArcsForBoundTask(task_id, res_id);
     }
-    delete *it;  // Remove the scheduling delta
+    delete *it;  // Remove the scheduling delta -- N.B. modifies collection
+                 // within loop!
   }
   return deltas.size();
+}
+
+void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
+                                           TaskFinalReport* report) {
+  //boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+  // Find the task's node
+  FlowGraphNode* task_node = flow_graph_.NodeForTaskID(td_ptr->uid());
+  CHECK_NOTNULL(task_node);
+  // Remove the task's node from the flow graph
+  flow_graph_.DeleteTaskNode(task_node); 
+  // Call into superclass handler
+  EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
 }
 
 void QuincyScheduler::NodeBindingToSchedulingDelta(
@@ -114,7 +127,8 @@ void QuincyScheduler::NodeBindingToSchedulingDelta(
   CHECK(dst.type_.type() == FlowNodeType::PU);
   // Is the source (task) already placed elsewhere?
   ResourceID_t* bound_res = FindOrNull(task_bindings_, src.task_id_);
-  if (bound_res && *bound_res != dst.resource_id_) {
+  VLOG(2) << "task ID: " << src.task_id_ << ", bound_res: " << bound_res;
+  if (bound_res && (*bound_res != dst.resource_id_)) {
     // If so, we have a migration
     VLOG(1) << "MIGRATION: take " << src.task_id_ << " off "
             << *bound_res << " and move it to "
@@ -122,7 +136,10 @@ void QuincyScheduler::NodeBindingToSchedulingDelta(
     delta->set_type(SchedulingDelta::MIGRATE);
     delta->set_task_id(src.task_id_);
     delta->set_resource_id(to_string(dst.resource_id_));
-  } else if (false) {  // Is something else bound to the same resource?
+  } else if (bound_res && (*bound_res == dst.resource_id_)) {
+    // We were already scheduled here. No-op.
+    delta->set_type(SchedulingDelta::NOOP);
+  } else if (!bound_res && false) {  // Is something else bound to the same resource?
     // If so, we have a preemption
     // XXX(malte): This code is NOT WORKING!
     VLOG(1) << "PREEMPTION: take " << src.task_id_ << " off "
@@ -180,7 +197,7 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
     debug_seq_num_++;
   }
   uint64_t l = 0;
-  while (!feof(fptr) && l < 100) {
+  while (!feof(fptr)) {
     if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
       VLOG(3) << "Processing line " << l << ": " << line;
       if (FLAGS_debug_flow_graph) {
@@ -267,11 +284,16 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
     SchedulingDelta* delta = new SchedulingDelta;
     NodeBindingToSchedulingDelta(*flow_graph_.Node(it->first),
                                  *flow_graph_.Node(it->second), delta);
+    if (delta->type() == SchedulingDelta::NOOP)
+      continue;
     // Mark the task as scheduled
     flow_graph_.Node(it->first)->type_.set_type(FlowNodeType::SCHEDULED_TASK);
     // Remember the delta
     deltas.push_back(delta);
   }
+  // close the pipes
+  close(outfd[1]);
+  close(infd[0]);
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
   return num_scheduled;
 }

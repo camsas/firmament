@@ -26,6 +26,9 @@ class FlowGraph {
                        uint64_t* leaf_counter);
   void AddResourceTopology(ResourceTopologyNodeDescriptor* resource_tree);
   void AddTaskNode();
+  void DeleteTaskNode(FlowGraphNode* node);
+  FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
+  FlowGraphNode* NodeForTaskID(TaskID_t task_id);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
   inline const unordered_map<uint64_t, FlowGraphNode*>& Nodes() const {
@@ -58,8 +61,7 @@ class FlowGraph {
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   void AddSpecialNodes();
-  FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
-  FlowGraphNode* NodeForTaskID(TaskID_t task_id);
+  void DeleteArc(FlowGraphArc* arc);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
 
   inline uint64_t next_id() { return current_id_++; }
