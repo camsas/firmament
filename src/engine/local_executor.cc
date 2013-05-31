@@ -98,6 +98,10 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
   if (FLAGS_perf_monitoring) {
     FILE* fptr;
     char line[300];
+    // XXX(malte): This is an ugly hack that avoids a race between the data file
+    // being written by the perf utility and it being opened for reading.
+    // We really need a proper solution here, especially as this is on the
+    // critical path in the coordinator's main event handler thread.
     sleep(1);
     if ((fptr = fopen(PerfDataFileName(td).c_str(), "r")) == NULL) {
       LOG(ERROR) << "Failed to open FD for reading of perf data. FD " << fptr;
