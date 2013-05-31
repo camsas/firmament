@@ -53,6 +53,7 @@ class FlowGraph {
 
  protected:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
+  FRIEND_TEST(DIMACSExporterTest, ScalabilityTestGraphs);
   FRIEND_TEST(FlowGraphTest, AddArcToNode);
   void AddArcsForTask(TaskDescriptor* cur, FlowGraphNode* task_node,
                       FlowGraphNode* unsched_agg_node,
