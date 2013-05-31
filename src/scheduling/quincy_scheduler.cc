@@ -157,6 +157,8 @@ void QuincyScheduler::NodeBindingToSchedulingDelta(
 }
 
 uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
+  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+  LOG(INFO) << "START SCHEDULING " << job_desc->uuid();
   // Check if we have any runnable tasks in this job
   const set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
   if (runnable_tasks.size() > 0) {
@@ -166,8 +168,10 @@ uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
     // If it is, only add the new bits
     // Run a scheduler iteration
     uint64_t newly_scheduled = RunSchedulingIteration();
+    LOG(INFO) << "STOP SCHEDULING " << job_desc->uuid();
     return newly_scheduled;
   } else {
+    LOG(INFO) << "STOP SCHEDULING " << job_desc->uuid();
     return 0;
   }
 }
