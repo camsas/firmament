@@ -171,6 +171,7 @@ TaskID_t TaskIDFromString(const string& str) {
 // infd[1] == PARENT_WRITE
 int32_t ExecCommandSync(const string& cmdline, vector<string> args,
                         int infd[2], int outfd[2]) {
+  VLOG(2) << "Executing externally: " << cmdline;
   pid_t pid;
   if (pipe(infd) != 0) {
     LOG(ERROR) << "Failed to create pipe to task.";
