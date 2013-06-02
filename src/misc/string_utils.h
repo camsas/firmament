@@ -3,50 +3,22 @@
 //
 // String tools.
 
-#ifndef FIRMAMENT_MISC_STRING_TOOLS_H
-#define FIRMAMENT_MISC_STRING_TOOLS_H
+#ifndef FIRMAMENT_MISC_STRING_UTILS_H
+#define FIRMAMENT_MISC_STRING_UTILS_H
 
 #include <string>
 #include <cstdarg>
-#include <cstdio>
+
+using std::string;
 
 namespace firmament {
 
 // sprintf-like string formatter
-void spf(string* s, const std::string fmt, ...) {
-  int64_t n, size=100;
-  bool b=false;
-  va_list marker;
-
-  while (!b) {
-    s->resize(size);
-    va_start(marker, fmt);
-    // N.B. the below relies on a slightly dodgy cast via c_str()!
-    n = vsnprintf((char*)s->c_str(), size, fmt.c_str(), marker);
-    va_end(marker);
-    if ((n>0) && ((b=(n<size))==true)) s->resize(n); else size*=2;
-  }
-}
+void spf(string* s, const std::string fmt, ...);
 
 // sprintf-like string formatter with append
-void spfa(string *s, const std::string fmt, ...)
-{
-  string ss;
-  int n, size=100;
-  bool b=false;
-  va_list marker;
-
-  while (!b) {
-    ss.resize(size);
-    va_start(marker, fmt);
-    // N.B. the below relies on a slightly dodgy cast via c_str()!
-    n = vsnprintf((char*)ss.c_str(), size, fmt.c_str(), marker);
-    va_end(marker);
-    if ((n>0) && ((b=(n<size))==true)) ss.resize(n); else size*=2;
-  }
-  *s += ss;
-}
+void spfa(string* s, const std::string fmt, ...);
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_MISC_STRING_TOOLS_H
+#endif  // FIRMAMENT_MISC_STRING_UTILS_H
