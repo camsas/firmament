@@ -14,6 +14,7 @@
 #include "base/types.h"
 #include "misc/map-util.h"
 #include "misc/pb_utils.h"
+#include "misc/string_utils.h"
 #include "misc/utils.h"
 #include "scheduling/flow_graph.h"
 
@@ -67,6 +68,9 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
   if (!unsched_agg_node_id) {
     unsched_agg_node = AddNodeInternal(next_id());
     unsched_agg_node->type_.set_type(FlowNodeType::JOB_AGGREGATOR);
+    string comment;
+    spf(&comment, "UNSCHED AGG for %s", jd->uuid().c_str());
+    unsched_agg_node->comment_ = comment;
     // ... and connect it directly to the sink
     unsched_agg_to_sink_arc = AddArcInternal(unsched_agg_node, sink_node_);
     unsched_agg_to_sink_arc->cap_upper_bound_ = 0;
@@ -148,9 +152,11 @@ void FlowGraph::AddSpecialNodes() {
   // Cluster aggregator node X
   cluster_agg_node_ = AddNodeInternal(next_id());
   cluster_agg_node_->type_.set_type(FlowNodeType::GLOBAL_AGGREGATOR);
+  cluster_agg_node_->comment_ = "CLUSTER AGG";
   // Sink node
   sink_node_ = AddNodeInternal(next_id());
   sink_node_->type_.set_type(FlowNodeType::SINK);
+  sink_node_->comment_ = "SINK";
 }
 
 void FlowGraph::AddResourceTopology(
