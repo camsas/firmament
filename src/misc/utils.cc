@@ -179,11 +179,35 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
   if (pipe(outfd) != 0) {
     LOG(ERROR) << "Failed to create pipe from task.";
   }
+  // Convert args from string to char*
+  vector<char*> argv;
+  // no performance monitoring, so we only need to reserve space for the
+  // default and NULL args
+  argv.reserve(args.size() + 1);
+  argv.push_back((char*)(cmdline.c_str()));  // NOLINT
+  for (uint32_t i = 0; i < args.size(); ++i) {
+    // N.B.: This casts away the const qualifier on the c_str() result.
+    // This is joyfully unsafe, of course.
+    argv.push_back((char*)(args[i].c_str()));  // NOLINT
+  }
+  // The last argument to execvp is always NULL.
+  argv.push_back(NULL);
+  // Print the whole command line
+  string full_cmd_line;
+  for (vector<char*>::const_iterator arg_iter = argv.begin();
+       arg_iter != argv.end();
+       ++arg_iter) {
+    if (*arg_iter != NULL) {
+      full_cmd_line += *arg_iter;
+      full_cmd_line += " ";
+    }
+  }
+  LOG(INFO) << "External execution of command: " << full_cmd_line;
   pid = fork();
   switch (pid) {
     case -1:
       // Error
-      LOG(ERROR) << "Failed to fork child process.";
+      PLOG(ERROR) << "Failed to fork child process.";
       break;
     case 0: {
       // Child
@@ -196,38 +220,17 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       // close unnecessary pipe descriptors
       close(infd[0]);
       close(outfd[1]);
-      // Convert args from string to char*
-      vector<char*> argv;
-      // no performance monitoring, so we only need to reserve space for the
-      // default and NULL args
-      argv.reserve(args.size() + 1);
-      argv.push_back((char*)(cmdline.c_str()));  // NOLINT
-      for (uint32_t i = 0; i < args.size(); ++i) {
-        // N.B.: This casts away the const qualifier on the c_str() result.
-        // This is joyfully unsafe, of course.
-        argv.push_back((char*)(args[i].c_str()));  // NOLINT
-      }
-      // The last argument to execvp is always NULL.
-      argv.push_back(NULL);
-      // Print the whole command line
-      string full_cmd_line;
-      for (vector<char*>::const_iterator arg_iter = argv.begin();
-           arg_iter != argv.end();
-           ++arg_iter) {
-        if (*arg_iter != NULL) {
-          full_cmd_line += *arg_iter;
-          full_cmd_line += " ";
-        }
-      }
-      LOG(INFO) << "External execution of command: " << full_cmd_line;
       // Run the task binary
       execvp(argv[0], &argv[0]);
       // execl only returns if there was an error
       PLOG(ERROR) << "execvp failed for task command '" << full_cmd_line << "'";
       //ReportTaskExecutionFailure();
       _exit(1);
+      break;
     }
     default:
+      // Parent
+      VLOG(1) << "Subprocess with PID " << pid << " created.";
       // close unused pipe ends
       close(infd[0]);
       close(outfd[1]);
@@ -238,17 +241,30 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       // STDERR pipe this way suggest the answer is that it is not...
       //ReadFromPipe(pipe_from[0]);
       //ReadFromPipe(pipe_from[1]);
-      // wait for task to terminate
-      int status;
-      while (!WIFEXITED(status)) {
-        // VLOG_EVERY_N(2, 1000) << "Waiting for task to exit...";
-        waitpid(pid, &status, 0);
-      }
-      VLOG(1) << "Task process with PID " << pid << " exited with status "
-              << WEXITSTATUS(status);
-      return status;
+      return pid;
   }
   return -1;
+}
+
+int32_t WaitForFinish(pid_t pid) {
+  // Wait for task to terminate
+  int status;
+  while (waitpid(pid, &status, 0) != pid) {
+    VLOG(2) << "Waiting for child process " << pid << " to exit...";
+  };
+  if (WIFEXITED(status)) {
+    VLOG(1) << "Subprocess with PID " << pid << " exited with status "
+            << WEXITSTATUS(status);
+  } else if (WIFSIGNALED(status)) {
+    VLOG(1) << "Subprocess with PID " << pid << " exited due to uncaught "
+            << "signal " << WTERMSIG(status);
+  } else if (WIFSTOPPED(status)) {
+    VLOG(1) << "Subprocess with PID " << pid << " is stopped due to "
+            << "signal " << WSTOPSIG(status);
+  } else {
+    LOG(ERROR) << "Unexpected exit status: " << hex << status;
+  }
+  return status;
 }
 
 uint8_t* SHA256Hash(uint8_t* bytes, uint64_t len) {
