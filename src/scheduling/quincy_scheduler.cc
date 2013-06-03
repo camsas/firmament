@@ -258,12 +258,6 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   // outfd[1] == PARENT_WRITE
   int outfd[2];
   int infd[2];
-  // Now run the solver
-  vector<string> args;
-  ExecCommandSync("ext/cs2-4.6/cs2.exe", args, outfd, infd);
-  VLOG(2) << "Solver running, CHILD_READ: " << outfd[0] << ", PARENT_WRITE: "
-          << outfd[1] << ", PARENT_READ: " << infd[0] << ", CHILD_WRITE: "
-          << infd[1];
   // Write debugging copy
   if (FLAGS_debug_flow_graph) {
     // TODO(malte): somewhat ugly hack to compose a unique file name for each
@@ -272,11 +266,23 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
     spf(&out_file_name, "/tmp/firmament-debug/debug_%ju.dm", debug_seq_num_);
     exporter_.Flush(out_file_name);
   }
+  // Now run the solver
+  vector<string> args;
+  pid_t solver_pid = ExecCommandSync("ext/cs2-4.6/cs2.exe", args, outfd, infd);
+  VLOG(2) << "Solver running (PID: " << solver_pid << "), CHILD_READ: " << outfd[0]
+          << ", PARENT_WRITE: " << outfd[1] << ", PARENT_READ: " << infd[0]
+          << ", CHILD_WRITE: " << infd[1];
   // Write to pipe to solver
   exporter_.Flush(outfd[1]);
   // Parse and process the result
   vector<map<uint64_t, uint64_t> >* extracted_flow =
       ReadFlowGraph(infd[0], num_nodes);
+  // We're done with the solver and can let it terminate here.
+  WaitForFinish(solver_pid);
+  // close the pipes
+  close(outfd[1]);
+  close(infd[0]);
+  // Solver's dead, let's post-process the results.
   map<uint64_t, uint64_t>* task_mappings =
       GetMappings(extracted_flow, flow_graph_.leaf_node_ids(),
                   flow_graph_.sink_node().id_);
@@ -295,9 +301,6 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
     // Remember the delta
     deltas.push_back(delta);
   }
-  // close the pipes
-  close(outfd[1]);
-  close(infd[0]);
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
   return num_scheduled;
 }
