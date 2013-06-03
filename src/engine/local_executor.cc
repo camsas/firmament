@@ -266,13 +266,22 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       // STDERR pipe this way suggest the answer is that it is not...
       //ReadFromPipe(pipe_from[0]);
       //ReadFromPipe(pipe_from[1]);
-      // wait for task to terminate
+      // Notify any other threads waiting to execute processes (?)
       exec_condvar_.notify_one();
+      // Wait for task to terminate
       int status;
-      waitpid(pid, &status, 0);
+      while (waitpid(pid, &status, 0) != pid) {
+        VLOG(3) << "Waiting for child process " << pid << " to exit...";
+      };
       if (WIFEXITED(status)) {
         VLOG(1) << "Task process with PID " << pid << " exited with status "
                 << WEXITSTATUS(status);
+      } else if (WIFSIGNALED(status)) {
+        VLOG(1) << "Task process with PID " << pid << " exited due to uncaught "
+                << "signal " << WTERMSIG(status);
+      } else if (WIFSTOPPED(status)) {
+        VLOG(1) << "Task process with PID " << pid << " is stopped due to "
+                << "signal " << WSTOPSIG(status);
       } else {
         LOG(ERROR) << "Unexpected exit status: " << hex << status;
       }
