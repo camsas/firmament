@@ -161,11 +161,12 @@ void FlowGraph::AddSpecialNodes() {
 }
 
 void FlowGraph::AddResourceTopology(
-    ResourceTopologyNodeDescriptor* resource_tree) {
-  uint64_t num_leaves = 0;
+    ResourceTopologyNodeDescriptor* resource_tree,
+    uint32_t num_leaves) {
+  uint32_t num_leaves_below = num_leaves;
   TraverseResourceProtobufTreeReturnRTND(
       resource_tree,
-      boost::bind(&FlowGraph::AddResourceNode, this, _1, &num_leaves));
+      boost::bind(&FlowGraph::AddResourceNode, this, _1, &num_leaves_below));
   VLOG(2) << "Added a total of " << num_leaves << " schedulable (PU) "
           << " resources to flow graph; setting cluster aggregation node"
           << " output capacity accordingly.";
@@ -173,7 +174,7 @@ void FlowGraph::AddResourceTopology(
 }
 
 void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
-                                uint64_t* leaf_counter) {
+                                uint32_t* num_leaves_below) {
   if (!rtnd->has_parent_id()) {
     // 1) Root node
     uint64_t id = next_id();
@@ -191,6 +192,10 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
   if (rtnd->children_size() > 0) {
     // 2) Node inside the tree with non-zero children (i.e. no leaf node)
     VLOG(2) << "Adding " << rtnd->children_size() << " internal resource arcs";
+    // XXX(malte): This assumes symmetric branches in the topology!
+    if (rtnd->children_size() > 1)
+      *num_leaves_below /= rtnd->children_size();
+    // Add arcs to each child
     for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator c_iter =
          rtnd->mutable_children()->begin();
          c_iter != rtnd->mutable_children()->end();
@@ -211,8 +216,9 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
             ResourceIDFromString(c_iter->parent_id()));
         CHECK(cur_node != NULL) << "Could not find parent node with ID "
                                 << c_iter->parent_id();
-        AddArcInternal(cur_node, child_node);
-        // XXX(malte): Need to assign correct capacity here!
+        FlowGraphArc* arc = AddArcInternal(cur_node, child_node);
+        // Set correct capacity here!
+        arc->cap_upper_bound_ = *num_leaves_below;
       } else {
         LOG(ERROR) << "Found child without parent_id set! This will lead to an "
                    << "inconsistent flow graph!";
@@ -232,7 +238,6 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
     cur_node->type_.set_type(FlowNodeType::PU);
     AddArcInternal(cur_node->id_, sink_node_->id_);
     leaf_nodes_.insert(cur_node->id_);
-    (*leaf_counter)++;
   }
 }
 

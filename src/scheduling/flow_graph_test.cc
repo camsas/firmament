@@ -75,7 +75,7 @@ TEST_F(FlowGraphTest, SimpleResourceTopo) {
   FlowGraph g;
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(&rtn_root);
+  g.AddResourceTopology(&rtn_root, 2);
 }
 
 // Test correct increment/decrement of unscheduled aggregator capacities.
@@ -83,7 +83,7 @@ TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
   FlowGraph g;
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(&rtn_root);
+  g.AddResourceTopology(&rtn_root, 2);
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;

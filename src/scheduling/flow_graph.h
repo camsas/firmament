@@ -23,8 +23,9 @@ class FlowGraph {
   FlowGraph();
   void AddJobNodes(JobDescriptor* jd);
   void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
-                       uint64_t* leaf_counter);
-  void AddResourceTopology(ResourceTopologyNodeDescriptor* resource_tree);
+                       uint32_t* num_leaves_below);
+  void AddResourceTopology(ResourceTopologyNodeDescriptor* resource_tree,
+                           uint32_t num_leaves);
   void AddTaskNode();
   void DeleteTaskNode(FlowGraphNode* node);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);

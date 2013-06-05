@@ -58,7 +58,7 @@ QuincyScheduler::QuincyScheduler(
   // Generate the initial flow graph
   ResourceTopologyNodeDescriptor* root = new ResourceTopologyNodeDescriptor;
   topo_mgr->AsProtobuf(root);
-  flow_graph_.AddResourceTopology(root);
+  flow_graph_.AddResourceTopology(root, topo_mgr->NumProcessingUnits());
 }
 
 QuincyScheduler::~QuincyScheduler() {
