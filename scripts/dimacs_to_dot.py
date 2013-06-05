@@ -17,8 +17,9 @@ def dot_out(nodes, edges):
   print "\t{ node [shape=box]"
   print "\t",
   for n in nodes:
-    print "%d [ label = \"%d: %s\" ];" % (n['nid'], n['nid'], n['desc'][:3] +
-                                          "..." + n['desc'][-3:])
+    label = n['desc'] if (n['desc'] in ['SINK', 'CLUSTER_AGG']) else \
+        (n['desc'][:3] + "..." + n['desc'][-3:])
+    print "%d [ label = \"%d: %s\" ];" % (n['nid'], n['nid'], label)
   print "\t}"
   # edges WITH flow
   print "\t{ edge [color=\"#ff0000\"]"
