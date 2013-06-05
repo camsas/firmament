@@ -42,6 +42,20 @@ class FlowGraphTest : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests.
+  void CreateSimpleResourceTopo(ResourceTopologyNodeDescriptor *rtn_root) {
+    string root_id = to_string(GenerateUUID());
+    rtn_root->mutable_resource_desc()->set_uuid(root_id);
+    ResourceTopologyNodeDescriptor* rtn_c1 = rtn_root->add_children();
+    string c1_uid = to_string(GenerateUUID());
+    rtn_c1->mutable_resource_desc()->set_uuid(c1_uid);
+    rtn_c1->set_parent_id(root_id);
+    rtn_root->mutable_resource_desc()->add_children(c1_uid);
+    ResourceTopologyNodeDescriptor* rtn_c2 = rtn_root->add_children();
+    string c2_uid = to_string(GenerateUUID());
+    rtn_c2->mutable_resource_desc()->set_uuid(c2_uid);
+    rtn_c2->set_parent_id(root_id);
+    rtn_root->mutable_resource_desc()->add_children(c2_uid);
+  }
 };
 
 // Tests arc addition to node.
@@ -56,25 +70,49 @@ TEST_F(FlowGraphTest, AddArcToNode) {
   CHECK_EQ(n0->outgoing_arc_map_[n1->id_], arc);
 }
 
-// Tests allocation of an empty envelope and puts an integer into it (using
-// memcopy internally).
-TEST_F(FlowGraphTest, SimpleGraphOutput) {
+// Add simple resource topology to graph
+TEST_F(FlowGraphTest, SimpleResourceTopo) {
   FlowGraph g;
   ResourceTopologyNodeDescriptor rtn_root;
-  string root_id = to_string(GenerateUUID());
-  rtn_root.mutable_resource_desc()->set_uuid(root_id);
-  ResourceTopologyNodeDescriptor* rtn_c1 = rtn_root.add_children();
-  string c1_uid = to_string(GenerateUUID());
-  rtn_c1->mutable_resource_desc()->set_uuid(c1_uid);
-  rtn_c1->set_parent_id(root_id);
-  rtn_root.mutable_resource_desc()->add_children(c1_uid);
-  ResourceTopologyNodeDescriptor* rtn_c2 = rtn_root.add_children();
-  string c2_uid = to_string(GenerateUUID());
-  rtn_c2->mutable_resource_desc()->set_uuid(c2_uid);
-  rtn_c2->set_parent_id(root_id);
-  rtn_root.mutable_resource_desc()->add_children(c2_uid);
+  CreateSimpleResourceTopo(&rtn_root);
   g.AddResourceTopology(&rtn_root);
 }
+
+// Test correct increment/decrement of unscheduled aggregator capacities.
+TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
+  FlowGraph g;
+  ResourceTopologyNodeDescriptor rtn_root;
+  CreateSimpleResourceTopo(&rtn_root);
+  g.AddResourceTopology(&rtn_root);
+  // Now generate a job and add it
+  JobID_t jid = GenerateJobID();
+  JobDescriptor test_job;
+  test_job.mutable_root_task()->set_state(TaskDescriptor::RUNNABLE);
+  test_job.set_uuid(to_string(jid));
+  g.AddJobNodes(&test_job);
+  // Grab the unscheduled aggregator for the new job
+  uint64_t* unsched_agg_node_id = FindOrNull(g.job_to_nodeid_map_, jid);
+  CHECK_NOTNULL(unsched_agg_node_id);
+  FlowGraphArc** lookup_ptr =
+      FindOrNull(g.Node(*unsched_agg_node_id)->outgoing_arc_map_,
+                 g.sink_node_->id_);
+  CHECK_NOTNULL(lookup_ptr);
+  FlowGraphArc* unsched_agg_to_sink_arc = *lookup_ptr;
+  CHECK_EQ(unsched_agg_to_sink_arc->cap_upper_bound_, 1);
+  // Now pin the root task to the first resource leaf
+  uint64_t* root_task_node_id =
+      FindOrNull(g.task_to_nodeid_map_, test_job.root_task().uid());
+  CHECK_NOTNULL(root_task_node_id);
+  uint64_t* resource_node_id =
+      FindOrNull(g.resource_to_nodeid_map_, ResourceIDFromString(
+          rtn_root.mutable_children()->Get(0).resource_desc().uuid()));
+  CHECK_NOTNULL(resource_node_id);
+  g.PinTaskToNode(g.Node(*root_task_node_id), g.Node(*resource_node_id));
+  // The unscheduled aggregator's outbound capacity should have been
+  // decremented.
+  CHECK_EQ(unsched_agg_to_sink_arc->cap_upper_bound_, 0);
+}
+
 
 }  // namespace firmament
 

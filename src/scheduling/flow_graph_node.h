@@ -39,7 +39,10 @@ struct FlowGraphNode {
   // TODO(malte): Not sure if these should be here, but they've got to go
   // somewhere.
   ResourceID_t resource_id_;
+  // The ID of the task represented by this node.
   TaskID_t task_id_;
+  // The ID of the job that this task belongs to.
+  JobID_t job_id_;
   // Free-form comment for debugging purposes (used to label special nodes)
   string comment_;
   // Outgoing arcs from this node, keyed by destination node

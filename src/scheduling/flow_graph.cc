@@ -28,16 +28,16 @@ FlowGraph::FlowGraph()
   AddSpecialNodes();
 }
 
-void FlowGraph::AddArcsForTask(TaskDescriptor*,
-                               FlowGraphNode* task_node,
-                               FlowGraphNode* unsched_agg_node,
-                               FlowGraphArc* unsched_agg_to_sink_arc) {
+void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
+                               FlowGraphNode* unsched_agg_node) {
   // We always have an edge to the cluster aggregator node
   AddArcInternal(task_node, cluster_agg_node_);
   // We also always have an edge to our job's unscheduled node
   FlowGraphArc* unsched_arc = AddArcInternal(task_node, unsched_agg_node);
+  // Add this task's potential flow to the per-job unscheduled
+  // aggregator's outgoing edge 
+  AdjustUnscheduledAggToSinkCapacity(task_node->job_id_, 1);
   // TODO(malte): stub, read value from runtime config here
-  unsched_agg_to_sink_arc->cap_upper_bound_++;
   unsched_arc->cost_ = 1;
 }
 
@@ -102,6 +102,7 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
       // Add the current task's node
       task_node->supply_ = 1;
       task_node->task_id_ = cur->uid();  // set task ID in node
+      task_node->job_id_ = JobIDFromString(jd->uuid());
       sink_node_->demand_++;
       task_nodes_.insert(task_node->id_);
       // Insert a record for the node representing this task's ID
@@ -110,7 +111,7 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
       VLOG(2) << "Adding edges for task " << cur->uid() << "'s node ("
               << task_node->id_ << "); task state is " << cur->state();
       // Arcs for this node
-      AddArcsForTask(cur, task_node, unsched_agg_node, unsched_agg_to_sink_arc);
+      AddArcsForTask(task_node, unsched_agg_node);
     } else if (cur->state() == TaskDescriptor::RUNNING ||
              cur->state() == TaskDescriptor::ASSIGNED) {
       // The task is already running, so it must have a node already
@@ -235,6 +236,19 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
   }
 }
 
+void FlowGraph::AdjustUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta) {
+  uint64_t* unsched_agg_node_id = FindOrNull(job_to_nodeid_map_, job);
+  CHECK_NOTNULL(unsched_agg_node_id);
+  FlowGraphArc** lookup_ptr =
+      FindOrNull(Node(*unsched_agg_node_id)->outgoing_arc_map_,
+                 sink_node_->id_);
+  CHECK_NOTNULL(lookup_ptr);
+  FlowGraphArc* unsched_agg_to_sink_arc = *lookup_ptr;
+  VLOG(1) << "Before cap adjustment: " << unsched_agg_to_sink_arc->cap_upper_bound_;
+  unsched_agg_to_sink_arc->cap_upper_bound_ += delta;
+  VLOG(1) << "After cap adjustment: " << unsched_agg_to_sink_arc->cap_upper_bound_;
+}
+
 void FlowGraph::DeleteArc(FlowGraphArc* arc) {
   // First remove various meta-data relating to this arc
   arc_set_.erase(arc);
@@ -299,6 +313,9 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
     task_node->outgoing_arc_map_.erase(it->first);
     DeleteArc(it->second);
   }
+  // Remove this task's potential flow from the per-job unscheduled
+  // aggregator's outgoing edge 
+  AdjustUnscheduledAggToSinkCapacity(task_node->job_id_, -1);
   // Re-add a single arc from the task to the resource node
   AddArcInternal(task_node, res_node);
 }

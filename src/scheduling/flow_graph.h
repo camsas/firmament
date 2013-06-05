@@ -55,13 +55,14 @@ class FlowGraph {
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
   FRIEND_TEST(DIMACSExporterTest, ScalabilityTestGraphs);
   FRIEND_TEST(FlowGraphTest, AddArcToNode);
-  void AddArcsForTask(TaskDescriptor* cur, FlowGraphNode* task_node,
-                      FlowGraphNode* unsched_agg_node,
-                      FlowGraphArc* unsched_agg_to_sink_arc);
+  FRIEND_TEST(FlowGraphTest, UnschedAggCapacityAdjustment);
+  void AddArcsForTask(FlowGraphNode* task_node,
+                      FlowGraphNode* unsched_agg_node);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   void AddSpecialNodes();
+  void AdjustUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta);
   void DeleteArc(FlowGraphArc* arc);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
 
