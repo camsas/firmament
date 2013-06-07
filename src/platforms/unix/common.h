@@ -7,6 +7,8 @@
 #ifndef FIRMAMENT_PLATFORMS_UNIX_COMMON_H
 #define FIRMAMENT_PLATFORMS_UNIX_COMMON_H
 
+#include <string>
+
 #include <boost/asio.hpp>
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>

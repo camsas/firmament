@@ -311,8 +311,9 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
          ++t_iter) {
       TaskDescriptor* task = *t_iter;
       if (task->state() == TaskDescriptor::CREATED) {
-        VLOG(2) << "Setting task " << task->uid() << " active as it produces output "
-                << **output_id_iter << ", which we're interested in.";
+        VLOG(2) << "Setting task " << task->uid() << " active as it produces "
+                << "output " << **output_id_iter << ", which we're interested "
+                << "in.";
         task->set_state(TaskDescriptor::BLOCKING);
         newly_active_tasks.push_back(task);
       }

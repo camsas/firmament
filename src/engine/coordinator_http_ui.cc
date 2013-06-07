@@ -4,6 +4,7 @@
 
 #include "engine/coordinator_http_ui.h"
 
+#include <deque>
 #include <set>
 #include <string>
 #include <vector>
@@ -499,7 +500,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(HTTPRequestPtr& http_request,  // NO
         coordinator_->knowledge_base().GetStatsForMachine(
             ResourceIDFromString(*res_id));
     if (result) {
-      for(deque<MachinePerfStatisticsSample>::const_iterator it =
+      for (deque<MachinePerfStatisticsSample>::const_iterator it =
           result->begin();
           it != result->end();
           ++it) {
@@ -513,7 +514,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(HTTPRequestPtr& http_request,  // NO
         coordinator_->knowledge_base().GetStatsForTask(
             TaskIDFromString(*task_id));
     if (result) {
-      for(deque<TaskPerfStatisticsSample>::const_iterator it =
+      for (deque<TaskPerfStatisticsSample>::const_iterator it =
           result->begin();
           it != result->end();
           ++it) {

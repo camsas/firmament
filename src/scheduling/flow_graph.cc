@@ -35,7 +35,7 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
   // We also always have an edge to our job's unscheduled node
   FlowGraphArc* unsched_arc = AddArcInternal(task_node, unsched_agg_node);
   // Add this task's potential flow to the per-job unscheduled
-  // aggregator's outgoing edge 
+  // aggregator's outgoing edge
   AdjustUnscheduledAggToSinkCapacity(task_node->job_id_, 1);
   // TODO(malte): stub, read value from runtime config here
   unsched_arc->cost_ = 1;
@@ -98,7 +98,7 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
     FlowGraphNode* task_node = tn_ptr ? Node(*tn_ptr) : NULL;
     if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
       task_node = AddNodeInternal(next_id());
-      task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK); 
+      task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK);
       // Add the current task's node
       task_node->supply_ = 1;
       task_node->task_id_ = cur->uid();  // set task ID in node
@@ -249,9 +249,7 @@ void FlowGraph::AdjustUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta) {
                  sink_node_->id_);
   CHECK_NOTNULL(lookup_ptr);
   FlowGraphArc* unsched_agg_to_sink_arc = *lookup_ptr;
-  VLOG(1) << "Before cap adjustment: " << unsched_agg_to_sink_arc->cap_upper_bound_;
   unsched_agg_to_sink_arc->cap_upper_bound_ += delta;
-  VLOG(1) << "After cap adjustment: " << unsched_agg_to_sink_arc->cap_upper_bound_;
 }
 
 void FlowGraph::DeleteArc(FlowGraphArc* arc) {
@@ -263,7 +261,7 @@ void FlowGraph::DeleteArc(FlowGraphArc* arc) {
 
 void FlowGraph::DeleteTaskNode(FlowGraphNode* node) {
   // First remove all outgoing arcs
-  for(unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
       node->outgoing_arc_map_.begin();
       it != node->outgoing_arc_map_.end();
       ++it) {
@@ -321,7 +319,7 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
     DeleteArc(it->second);
   }
   // Remove this task's potential flow from the per-job unscheduled
-  // aggregator's outgoing edge 
+  // aggregator's outgoing edge
   AdjustUnscheduledAggToSinkCapacity(task_node->job_id_, -1);
   // Re-add a single arc from the task to the resource node
   AddArcInternal(task_node, res_node);

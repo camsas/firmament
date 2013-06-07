@@ -182,7 +182,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
 // into /tmp/testYYY.dm, where YYY is the number of jobs. Edit the use of f
 // below to scale the number of machines instead.
 // XXX(malte): Reduced the number of machines and jobs by two orders of
-// magnitude here, so that the tests don't take forever when run in batch mode. 
+// magnitude here, so that the tests don't take forever when run in batch mode.
 // Adapt as required :)
 TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
   for (uint64_t f = 1; f < 100; f *= 2) {

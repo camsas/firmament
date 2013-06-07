@@ -123,7 +123,7 @@ TEST_F(ReferencesTest, ValidateInternalDescriptors) {
   v.ValidateInternalDescriptor();
 }
 
-}  // namespace
+}  // namespace firmament
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

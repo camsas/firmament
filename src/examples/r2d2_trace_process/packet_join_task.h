@@ -58,7 +58,7 @@ class PacketJoinTask {
   uint64_t total_forward_steps_;
 };
 
-}  // namespace hello_world
+}  // namespace r2d2
 }  // namespace examples
 }  // namespace firmament
 

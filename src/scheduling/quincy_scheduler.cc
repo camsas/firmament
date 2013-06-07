@@ -93,7 +93,7 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
               << (*rs)->mutable_descriptor()->uuid();
       BindTaskToResource(*td, (*rs)->mutable_descriptor());
       // After the task is bound, we now remove all of its edges into the flow
-      // graph apart from the bound resource. 
+      // graph apart from the bound resource.
       // N.B.: This disables preemption and migration!
       flow_graph_.UpdateArcsForBoundTask(task_id, res_id);
     }
@@ -139,7 +139,8 @@ void QuincyScheduler::NodeBindingToSchedulingDelta(
   } else if (bound_res && (*bound_res == dst.resource_id_)) {
     // We were already scheduled here. No-op.
     delta->set_type(SchedulingDelta::NOOP);
-  } else if (!bound_res && false) {  // Is something else bound to the same resource?
+  } else if (!bound_res && false) {  // Is something else bound to the same
+                                     // resource?
     // If so, we have a preemption
     // XXX(malte): This code is NOT WORKING!
     VLOG(1) << "PREEMPTION: take " << src.task_id_ << " off "
@@ -196,7 +197,8 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
   if (FLAGS_debug_flow_graph) {
     // Somewhat ugly hack to generate unique output file name.
     string out_file_name;
-    spf(&out_file_name, "/tmp/firmament-debug/debug-flow_%ju.dm", debug_seq_num_);
+    spf(&out_file_name, "/tmp/firmament-debug/debug-flow_%ju.dm",
+        debug_seq_num_);
     CHECK((dbg_fptr = fopen(out_file_name.c_str(), "w")) != NULL);
     debug_seq_num_++;
   }
@@ -269,9 +271,9 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   // Now run the solver
   vector<string> args;
   pid_t solver_pid = ExecCommandSync("ext/cs2-4.6/cs2.exe", args, outfd, infd);
-  VLOG(2) << "Solver running (PID: " << solver_pid << "), CHILD_READ: " << outfd[0]
-          << ", PARENT_WRITE: " << outfd[1] << ", PARENT_READ: " << infd[0]
-          << ", CHILD_WRITE: " << infd[1];
+  VLOG(2) << "Solver running (PID: " << solver_pid << "), CHILD_READ: "
+          << outfd[0] << ", PARENT_WRITE: " << outfd[1] << ", PARENT_READ: "
+          << infd[0] << ", CHILD_WRITE: " << infd[1];
   // Write to pipe to solver
   exporter_.Flush(outfd[1]);
   // Parse and process the result

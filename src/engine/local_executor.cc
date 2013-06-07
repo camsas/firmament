@@ -106,7 +106,8 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
     if ((fptr = fopen(PerfDataFileName(td).c_str(), "r")) == NULL) {
       LOG(ERROR) << "Failed to open FD for reading of perf data. FD " << fptr;
     }
-    VLOG(1) << "Processing perf output in file " << PerfDataFileName(td) << "...";
+    VLOG(1) << "Processing perf output in file " << PerfDataFileName(td)
+            << "...";
     while (!feof(fptr)) {
       if (fgets(line, 300, fptr) != NULL) {
         GetPerfDataFromLine(report, line);

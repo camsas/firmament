@@ -39,7 +39,8 @@ using namespace boost::interprocess;  // NOLINT
 // Forward declaration
 class StorageInfo;
 
-typedef thread_safe::map<DataObjectID_t, set<ReferenceInterface*> > DataObjectMap_t;
+typedef thread_safe::map<DataObjectID_t, set<ReferenceInterface*> >
+    DataObjectMap_t;
 
 //    typedef struct  mutex_struct() {
 //             sharable_lock<interprocess_mutex> read_lock(interprocess_mutex);

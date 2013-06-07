@@ -128,8 +128,7 @@ inline vector<T> pb_to_vector(const RepeatedPtrField<T>& pb_field) {
   return return_vec;
 }
 
-}  // namespace firmament::common
-
+}  // namespace common
 }  // namespace firmament
 
 #endif  // FIRMAMENT_BASE_COMMON_H

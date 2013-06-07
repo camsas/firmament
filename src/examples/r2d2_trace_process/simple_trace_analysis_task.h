@@ -43,7 +43,7 @@ class SimpleTraceAnalysisTask {
   uint64_t prev_packet_timestamp_;
 };
 
-}  // namespace hello_world
+}  // namespace r2d2
 }  // namespace examples
 }  // namespace firmament
 

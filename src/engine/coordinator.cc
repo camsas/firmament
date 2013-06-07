@@ -338,7 +338,6 @@ void Coordinator::HandleIncomingReceiveError(
     // XXX(malte): Need to figure out if this relates to a resource, and if so,
     // if we should declare it failed; or whether this is an expected job
     // completion.
-    
   } else {
     LOG(WARNING) << "Failed to complete a message receive cycle from "
                  << remote_endpoint << ". The message was discarded, or the "
@@ -402,7 +401,7 @@ void Coordinator::HandleIONotification(const BaseMessage& bm,
         remove.push_back(*it);
         // XXX(malte): skanky, skanky...
         add.push_back(new ConcreteReference(
-            *dynamic_cast<FutureReference*>(*it)));
+            *dynamic_cast<FutureReference*>(*it)));  // NOLINT
       }
     }
     VLOG(1) << "Found " << remove.size() << " matching references for "

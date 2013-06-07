@@ -63,7 +63,8 @@ const deque<TaskPerfStatisticsSample>* KnowledgeBase::GetStatsForTask(
 
 void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
   // Sanity checks
-  const deque<MachinePerfStatisticsSample>* q = FindOrNull(machine_map_, res_id);
+  const deque<MachinePerfStatisticsSample>* q =
+      FindOrNull(machine_map_, res_id);
   if (!q)
     return;
   // Dump
@@ -89,7 +90,6 @@ void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report) {
   if (q->size() * sizeof(report) >= MAX_SAMPLE_QUEUE_CAPACITY)
     q->pop_front();  // drop from the front
   q->push_back(report);
-
 }
 
 }  // namespace firmament

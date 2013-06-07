@@ -93,7 +93,7 @@ class shared_ptr<T> : public yasper::ptr<T> {
 #error "No current support for scoped_ptr and weak_ptr using yasper " \
     "Smart pointers not available on this platform; this needs fixing before " \
     "we can compile. Alternatively, install Boost if available."
-}
+}  // namespace firmament
 #endif
 
 #include "storage/reference_interface.h"

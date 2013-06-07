@@ -5,6 +5,8 @@
 
 #include "platforms/unix/common.h"
 
+#include <string>
+
 namespace firmament {
 namespace platform_unix {
 
@@ -24,7 +26,8 @@ string EndpointToString(boost::asio::ip::tcp::endpoint endpoint) {
     return protocol + address + ":" + port;
 }
 
-string EndpointToString(boost::asio::local::stream_protocol::endpoint endpoint) {
+string EndpointToString(
+    boost::asio::local::stream_protocol::endpoint endpoint) {
   string address;
   string port;
   string protocol;
