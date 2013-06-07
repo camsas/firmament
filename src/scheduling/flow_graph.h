@@ -46,7 +46,8 @@ class FlowGraph {
     return *cluster_agg_node_;
   }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
-  inline uint64_t NumNodes() const { return node_map_.size(); }
+  //inline uint64_t NumNodes() const { return node_map_.size(); }
+  inline uint64_t NumNodes() const { return current_id_; }
   inline FlowGraphNode* Node(uint64_t id) {
     FlowGraphNode* const* npp = FindOrNull(node_map_, id);
     return (npp ? *npp : NULL);

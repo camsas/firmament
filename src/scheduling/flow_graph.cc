@@ -274,12 +274,14 @@ void FlowGraph::DeleteTaskNode(FlowGraphNode* node) {
   node->supply_ = 0;
   sink_node_->demand_--;
   // Find the unscheduled node for this job and decrement its outgoing capacity
-  // TODO
+  // TODO(malte): this is only relevant if we support preemption; otherwise the
+  // capcacity will already have been deducated (as part of PinTaskToNode,
+  // currently).
   // Then remove node meta-data
-  //node_map_.erase(node->id_);
-  //task_nodes_.erase()
+  node_map_.erase(node->id_);
+  task_nodes_.erase(node->task_id_);
   // Then remove the node itself
-  //delete node;
+  delete node;
 }
 
 FlowGraphNode* FlowGraph::NodeForResourceID(const ResourceID_t& res_id) {
