@@ -41,8 +41,8 @@ void TraverseResourceProtobufTreeReturnRTND(
   }
 }
 
-// Overload taking a callback that itself takes a const ResourceTopologyNodeDescriptor&
-// as its argument.
+// Overload taking a callback that itself takes a const
+// ResourceTopologyNodeDescriptor& as its argument.
 void TraverseResourceProtobufTreeReturnRTND(
     const ResourceTopologyNodeDescriptor& pb,
     boost::function<void(const ResourceTopologyNodeDescriptor&)> callback) {  // NOLINT
