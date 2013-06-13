@@ -105,12 +105,14 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
 
 void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                            TaskFinalReport* report) {
-  //boost::lock_guard<boost::mutex> lock(scheduling_lock_);
-  // Find the task's node
-  FlowGraphNode* task_node = flow_graph_.NodeForTaskID(td_ptr->uid());
-  CHECK_NOTNULL(task_node);
-  // Remove the task's node from the flow graph
-  flow_graph_.DeleteTaskNode(task_node); 
+  {
+    boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+    // Find the task's node
+    FlowGraphNode* task_node = flow_graph_.NodeForTaskID(td_ptr->uid());
+    CHECK_NOTNULL(task_node);
+    // Remove the task's node from the flow graph
+    flow_graph_.DeleteTaskNode(task_node);
+  }
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
 }
