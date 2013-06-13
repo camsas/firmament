@@ -53,6 +53,14 @@ $(function() {
     <td>{{TASK_NAME}}</td>
   </tr>
   <tr>
+    <td>Code/binary</td>
+    <td>{{TASK_BINARY}}</td>
+  </tr>
+  <tr>
+    <td>Equiv class</td>
+    <td>{{TASK_TEC}}</td>
+  </tr>
+  <tr>
     <td>Status</td>
     <td>{{TASK_STATUS}}</td>
   </tr>
