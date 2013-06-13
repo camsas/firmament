@@ -75,6 +75,10 @@ $(function() {
     <td>{{RES_FRIENDLY_NAME}}</td>
   </tr>
   <tr>
+    <td>Equiv class</td>
+    <td>{{RES_REC}}</td>
+  </tr>
+  <tr>
     <td>Type</td>
     <td>{{RES_TYPE}}</td>
   </tr>
