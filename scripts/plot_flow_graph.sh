@@ -8,6 +8,7 @@ for f in `ls ${OUTDIR}/debug_*.dm`; do
   #OUTPUT="${f}_${TIMESTAMP}.png"
   DOT_FILE="${f}.gv"
   OUTPUT="${f}.png"
+  echo ${f}
   python scripts/dimacs_to_dot.py ${f} `echo ${f} | sed -e s/debug_/debug-flow_/` > ${DOT_FILE}
   dot -Tpng ${DOT_FILE} > ${OUTPUT}
 done
