@@ -42,7 +42,8 @@ uint64_t GetCurrentTimestamp();
 //              descriptor may carry this information.
 uint64_t MakeEnsembleUID(Ensemble *ens);*/
 
-ResourceID_t GenerateUUID();
+ResourceID_t GenerateUUID();  // DEPRECATED, exists only for backwards compat
+ResourceID_t GenerateResourceID();
 JobID_t GenerateJobID();
 DataObjectID_t GenerateDataObjectID(const TaskDescriptor& task_descriptor);
 DataObjectID_t GenerateDataObjectID(TaskID_t producing_task,

@@ -26,6 +26,12 @@ void TraverseResourceProtobufTreeReturnRTND(
     ResourceTopologyNodeDescriptor* pb,
     boost::function<void(ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
 
+// Traversal implementation taking a callback that itself takes a
+// ResourceTopologyNodeDescriptor as its argument.
+void TraverseResourceProtobufTreeReturnRTND(
+    const ResourceTopologyNodeDescriptor& pb,
+    boost::function<void(const ResourceTopologyNodeDescriptor&)> callback);  // NOLINT
+
 }  // namespace firmament
 
 #endif  // FIRMAMENT_MISC_PB_UTILS_H

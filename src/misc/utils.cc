@@ -45,7 +45,12 @@ uint64_t MakeEnsembleUID(Ensemble *ens) {
   return hasher(ens->name());
 }*/
 
+// DEPRECATED wrapper for backwards compatibility
 ResourceID_t GenerateUUID() {
+  return GenerateResourceID();
+}
+
+ResourceID_t GenerateResourceID() {
   if (!resource_id_rg_init_) {
     // TODO(malte): This crude method captures the first 100 chars of the
     // hostname (not the FQDN). It remains to be seen if it is sufficient.

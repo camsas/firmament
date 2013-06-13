@@ -41,4 +41,21 @@ void TraverseResourceProtobufTreeReturnRTND(
   }
 }
 
+// Overload taking a callback that itself takes a const ResourceTopologyNodeDescriptor&
+// as its argument.
+void TraverseResourceProtobufTreeReturnRTND(
+    const ResourceTopologyNodeDescriptor& pb,
+    boost::function<void(const ResourceTopologyNodeDescriptor&)> callback) {  // NOLINT
+  VLOG(3) << "Traversal of resource topology, reached "
+          << pb.resource_desc().uuid()
+          << ", invoking callback [" << callback << "]";
+  callback(pb);
+  for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator
+       rtnd_iter = pb.children().begin();
+       rtnd_iter != pb.children().end();
+       ++rtnd_iter) {
+    TraverseResourceProtobufTreeReturnRTND(*rtnd_iter, callback);
+  }
+}
+
 }  // namespace firmament
