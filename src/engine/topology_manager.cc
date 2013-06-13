@@ -84,8 +84,9 @@ void TopologyManager::LoadAndParseSyntheticTopology(
   topology_depth_ = hwloc_topology_get_depth(topology_);
 #else
   LOG(ERROR) << "The version of hwloc used is too old to support synthetic "
-             << "topology generation. Version is " << hwloc_get_api_version()
-             << ", we require >=1.5. Topology string was: " << topology_desc;
+             << "topology generation. Version is " << hex
+             << hwloc_get_api_version() << ", we require >="
+             << 0x00010500 << ". Topology string was: " << topology_desc;
 #endif
 }
 
