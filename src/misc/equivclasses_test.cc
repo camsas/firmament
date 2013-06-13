@@ -51,6 +51,13 @@ TEST_F(EquivClassesTest, TaskEquivClassGenerate) {
   CHECK_EQ(GenerateTaskEquivClass(td), 6807036345993470132ULL);
 }
 
+TEST_F(EquivClassesTest, TaskEquivClassGenerateRootTask) {
+  JobDescriptor jd;
+  TaskDescriptor* rtd = jd.mutable_root_task();
+  rtd->set_binary("/bin/ls");
+  CHECK_EQ(GenerateTaskEquivClass(*rtd), 6807036345993470132ULL);
+}
+
 TEST_F(EquivClassesTest, ResourceEquivClassGenerate) {
   // Test resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
