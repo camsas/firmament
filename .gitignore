@@ -2,8 +2,15 @@ build
 build/*.
 ext
 ext/*.
-src/generated
-src/generated/*.
+scripts/analysis/*.csv
+scripts/analysis/*.log
+scripts/analysis/*.pdf
+scripts/job/base/*
+src/generated-c
+src/generated-c/*.
+src/generated-cxx
+src/generated-cxx/*.
+tests/*
 .setup
 *.swp
 *.INFO
