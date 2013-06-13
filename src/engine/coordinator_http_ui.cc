@@ -18,6 +18,7 @@
 #include "engine/coordinator.h"
 #include "engine/knowledge_base.h"
 #include "misc/utils.h"
+#include "misc/equivclasses.h"
 #include "messages/task_kill_message.pb.h"
 #include "storage/types.h"
 
@@ -316,6 +317,7 @@ void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLI
   if (rd_ptr) {
     dict.SetValue("RES_ID", rd_ptr->uuid());
     dict.SetValue("RES_FRIENDLY_NAME", rd_ptr->friendly_name());
+    //dict.SetValue("RES_REC", GenerateResourceTopologyEquivClass(*rd_ptr));
     dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
                                              rd_ptr->type()));
     dict.SetValue("RES_STATUS",
@@ -557,8 +559,11 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
     dict.SetFormattedValue("TASK_ID", "%ju", TaskID_t(td_ptr->uid()));
     if (td_ptr->has_name())
       dict.SetValue("TASK_NAME", td_ptr->name());
+    dict.SetValue("TASK_BINARY", td_ptr->binary());
     dict.SetValue("TASK_STATUS", ENUM_TO_STRING(TaskDescriptor::TaskState,
                                                 td_ptr->state()));
+    // Equivalence classes
+    dict.SetValue("TASK_TEC", to_string(GenerateTaskEquivClass(*td_ptr)));
     // Dependencies
     if (td_ptr->dependencies_size() > 0)
       dict.SetIntValue("TASK_NUM_DEPS", td_ptr->dependencies_size());
