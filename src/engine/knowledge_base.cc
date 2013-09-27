@@ -7,6 +7,7 @@
 
 #include <deque>
 
+#include "misc/equivclasses.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
@@ -61,6 +62,12 @@ const deque<TaskPerfStatisticsSample>* KnowledgeBase::GetStatsForTask(
   return res;
 }
 
+const deque<TaskFinalReport>* KnowledgeBase::GetFinalStatsForTask(
+      TaskEquivClass_t id) const {
+  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
+  return res;
+}
+
 void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
   // Sanity checks
   const deque<MachinePerfStatisticsSample>* q =
@@ -90,6 +97,7 @@ void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report) {
   if (q->size() * sizeof(report) >= MAX_SAMPLE_QUEUE_CAPACITY)
     q->pop_front();  // drop from the front
   q->push_back(report);
+  VLOG(1) << "Recorded final report for task " << report.task_id();
 }
 
 }  // namespace firmament

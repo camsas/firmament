@@ -33,6 +33,7 @@ class KnowledgeBase {
       ResourceID_t id) const;
   const deque<TaskPerfStatisticsSample>* GetStatsForTask(
       TaskID_t id) const;
+  const deque<TaskFinalReport>* GetFinalStatsForTask(TaskID_t id) const;
   void ProcessTaskFinalReport(const TaskFinalReport& report);
 
  protected:

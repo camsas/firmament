@@ -14,6 +14,7 @@ extern "C" {
 
 #include "base/common.h"
 #include "base/types.h"
+#include "misc/equivclasses.h"
 
 DEFINE_bool(debug_tasks, false,
             "Run tasks through a debugger (gdb).");
@@ -94,6 +95,7 @@ void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
 
 void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
                                          TaskFinalReport* report) {
+  report->set_task_id(GenerateTaskEquivClass(td));
   // Load perf data, if it exists
   if (FLAGS_perf_monitoring) {
     FILE* fptr;

@@ -495,7 +495,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(HTTPRequestPtr& http_request,  // NO
                   tcp_conn);
     return;
   }
-  string output = "[";
+  string output = "";
   // Check if we have any statistics for this resource
   if (res_id) {
     const deque<MachinePerfStatisticsSample>* result =
@@ -506,29 +506,53 @@ void CoordinatorHTTPUI::HandleStatisticsURI(HTTPRequestPtr& http_request,  // NO
           result->begin();
           it != result->end();
           ++it) {
-        if (output != "[")
+        if (output.empty())
+          output = "[";
+        else
           output += ", ";
         output += pb2json(*it);
       }
     }
   } else if (task_id) {
-    const deque<TaskPerfStatisticsSample>* result =
+    TaskDescriptor* td = coordinator_->GetTask(TaskIDFromString(*task_id));
+    CHECK_NOTNULL(td);
+    output += "{ \"samples\": [";
+    const deque<TaskPerfStatisticsSample>* samples_result =
         coordinator_->knowledge_base().GetStatsForTask(
             TaskIDFromString(*task_id));
-    if (result) {
+    if (samples_result) {
+      bool first = true;
       for (deque<TaskPerfStatisticsSample>::const_iterator it =
-          result->begin();
-          it != result->end();
+          samples_result->begin();
+          it != samples_result->end();
           ++it) {
-        if (output != "[")
+        if (!first)
           output += ", ";
         output += pb2json(*it);
+        first = false;
       }
     }
+    output += "]";
+    output += ", \"reports\": [";
+    const deque<TaskFinalReport>* report_result =
+        coordinator_->knowledge_base().GetFinalStatsForTask(
+            GenerateTaskEquivClass(*td));
+    if (report_result) {
+      bool first = true;
+      for (deque<TaskFinalReport>::const_iterator it =
+          report_result->begin();
+          it != report_result->end();
+          ++it) {
+        if (!first)
+          output += ", ";
+        output += pb2json(*it);
+        first = false;
+      }
+    }
+    output += "] }";
   } else {
     LOG(FATAL) << "Neither task_id nor res_id set, but they should be!";
   }
-  output += "]";
   writer->write(output);
   FinishOkResponse(writer);
 }
