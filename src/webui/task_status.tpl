@@ -3,18 +3,29 @@
 {{>PAGE_HEADER}}
 
 <script type="text/javascript">
-var rsizeTimeseries;
+var runtime_series = [];
+var llc_miss_series = [];
+var rsize_ts = [];
 
 function getRAM(data) {
-  var ts1 = [];
+  rsize_ts = [];
   for (i = 0; i < data.length; i++) {
-    ts1.push(data[i].rsize / 1024.0 / 1024.0)
+    rsize_ts.push(data[i].rsize / 1024.0 / 1024.0)
   }
-  ramTimeseries = ts1;
+}
+
+function getReportStats(data) {
+  runtime_series = [];
+  llc_miss_series = [];
+  for (i = 0; i < data.length; i++) {
+    runtime_series.push(data[i].runtime);
+    llc_miss_series.push(data[i].llc_misses);
+  }
 }
 
 function updateGraphs(data) {
-  getRAM(data);
+  getRAM(data['samples']);
+  getReportStats(data['reports']);
 }
 
 function poll() {
@@ -30,8 +41,10 @@ function poll() {
 
 function step() {
   poll();
-  $('#rsize-ts').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
-  $('#rsize-box').sparkline(ramTimeseries, {type: 'box', width: '50px'});
+  $('#runtime-box').sparkline(runtime_series, {type: 'box', width: '50px'});
+  $('#llc-miss-box').sparkline(llc_miss_series, {type: 'box', width: '50px'});
+  $('#rsize-ts').sparkline(rsize_ts, {tooltipSuffix: ' MB'});
+  $('#rsize-box').sparkline(rsize_ts, {type: 'box', width: '50px'});
   window.setTimeout(step, 10000);
 }
 
@@ -99,6 +112,14 @@ $(function() {
     <td>
       <a href="/task/?id={{TASK_ID}}&a=kill">Kill</a></li>
     </td>
+  </tr>
+  <tr>
+    <td>Runtime</td>
+    <td><span id="runtime-box">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>LLC misses</td>
+    <td><span id="llc-miss-box">Waiting for data...</span></td>
   </tr>
   <tr>
     <td>Resident memory</td>
