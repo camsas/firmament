@@ -66,6 +66,7 @@ class DIMACSExporterTest : public ::testing::Test {
   map<string, string> uuid_conversion_map_;
   // Enable access from tests
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
+  FRIEND_TEST(DIMACSExporterTest, ScalabilityTestGraphs);
 };
 
 // Tests allocation of an empty envelope and puts an integer into it (using
