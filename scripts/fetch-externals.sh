@@ -8,6 +8,15 @@ mkdir -p ext
 cd ext
 EXT_DIR=${PWD}
 
+# Headline versions of different libraries. These are supported; others might
+# be pulled in by specific distributions or OS versions.
+GFLAGS_VER="2.0"
+GLOG_VER="HEAD"
+HWLOC_VER="1.5"
+PROTOBUF_VER="2.4.1"
+BOOST_VER="1.49"
+CS2_VER="4.6"
+
 # If we are running on a Debian-based system, a couple of dependencies
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
@@ -16,19 +25,13 @@ CLANG_PKGS="clang"
 COMPILER_PKGS="libprotobuf-dev protobuf-compiler python-protobuf"
 GOOGLE_PKGS="libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
 PERFTOOLS_PKGS="google-perftools"
+#BOOST_PKGS="libboost-math${BOOST_VER}-dev libboost-system${BOOST_VER}-dev libboost-thread${BOOST_VER}-dev libboost-regex${BOOST_VER}-dev"
 BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
-MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev libjansson-dev libctemplate-dev"
+MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev libjansson-dev libctemplate-dev libtcmalloc-minimal4-dbg"
 
 UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
 DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
-
-GFLAGS_VER="2.0"
-GLOG_VER="HEAD"
-HWLOC_VER="1.5"
-PROTOBUF_VER="2.4.1"
-BOOST_VER="1.46.0"
-CS2_VER="4.6"
 
 #################################
 
