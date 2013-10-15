@@ -9,10 +9,11 @@ SYSTEM REQUIREMENTS
 -------------------
 
 Firmament is currently known to work on Ubuntu 10.10 (maverick), 11.10 (oneric),
-with caveats (see below) on 12.04 (precise); it does NOT work without extra
-actions on 10.04 and 11.04.
+12.10 (quantal) and 13.04 (raring); with caveats (see below) on 12.04 (precise);
+it does NOT work without extra actions on 10.04 and 11.04.
 
-Other configurations are untested - YMMV.
+Other configurations are untested - YMMV. Recent Debian versions typically work
+with a bit of fiddling.
 
 Reasons for known breakage:
 * Ubuntu 10.04 - packaged clang/LLVM version too old (requires Clang >=2.9).
@@ -22,6 +23,8 @@ Reasons for known breakage:
                  due to libpion-net relying on a deprecated (and removed) Boost
                  feature. As a workaround, disable -D__HTTP_UI__ in
                  include/Makefile.config.unix
+* Ubuntu 13.04 - segfault failures when using Boost 1.53 packages; use 1.49
+                 (default).
 
 
 BUILDING & RUNNING
