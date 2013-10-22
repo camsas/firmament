@@ -9,8 +9,8 @@ SYSTEM REQUIREMENTS
 -------------------
 
 Firmament is currently known to work on Ubuntu 10.10 (maverick), 11.10 (oneric),
-12.10 (quantal) and 13.04 (raring); with caveats (see below) on 12.04 (precise);
-it does NOT work without extra actions on 10.04 and 11.04.
+12.10 (quantal) and 13.04 (raring); with caveats (see below) on 12.04 (precise)
+and 13.10 (saucy); it does NOT work without extra actions on 10.04 and 11.04.
 
 Other configurations are untested - YMMV. Recent Debian versions typically work
 with a bit of fiddling.
@@ -25,7 +25,9 @@ Reasons for known breakage:
                  include/Makefile.config.unix
 * Ubuntu 13.04 - segfault failures when using Boost 1.53 packages; use 1.49
                  (default).
-
+* Ubuntu 13.10 - clang/LLVM include paths need to be fixed.
+                 /usr/{lib,include}/clang/3.2 should be symlinked to
+                 /usr/lib/llvm-3.2/lib/clang/3.2.
 
 BUILDING & RUNNING
 --------------------
