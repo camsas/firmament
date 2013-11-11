@@ -4,6 +4,12 @@
 
 <script type="text/javascript">
 var runtime_series = [];
+var cycles_series = [];
+var instructions_series = [];
+var cpi_series = [];
+var mai_series = [];
+var ipma_series = [];
+var llc_refs_series = [];
 var llc_miss_series = [];
 var rsize_ts = [];
 
@@ -16,9 +22,21 @@ function getRAM(data) {
 
 function getReportStats(data) {
   runtime_series = [];
+  cycles_series = [];
+  instructions_series = [];
+  cpi_series = [];
+  mai_series = [];
+  ipma_series = [];
+  llc_ref_series = [];
   llc_miss_series = [];
   for (i = 0; i < data.length; i++) {
     runtime_series.push(data[i].runtime);
+    cycles_series.push(data[i].cycles);
+    instructions_series.push(data[i].instructions);
+    cpi_series.push(data[i].cycles / data[i].instructions);
+    ipma_series.push(data[i].instructions / data[i].llc_refs);
+    mai_series.push(data[i].llc_refs / data[i].instructions);
+    llc_ref_series.push(data[i].llc_refs);
     llc_miss_series.push(data[i].llc_misses);
   }
 }
@@ -41,10 +59,16 @@ function poll() {
 
 function step() {
   poll();
-  $('#runtime-box').sparkline(runtime_series, {type: 'box', width: '50px'});
-  $('#llc-miss-box').sparkline(llc_miss_series, {type: 'box', width: '50px'});
+  $('#runtime-box').sparkline(runtime_series, {type: 'box', width: '100px'});
+  $('#cycles-box').sparkline(cycles_series, {type: 'box', width: '100px'});
+  $('#instructions-box').sparkline(instructions_series, {type: 'box', width: '100px'});
+  $('#cpi-box').sparkline(cpi_series, {type: 'box', width: '100px'});
+  $('#ipma-box').sparkline(ipma_series, {type: 'box', width: '100px'});
+  $('#mai-box').sparkline(mai_series, {type: 'box', width: '100px'});
+  $('#llc-ref-box').sparkline(llc_ref_series, {type: 'box', width: '100px'});
+  $('#llc-miss-box').sparkline(llc_miss_series, {type: 'box', width: '100px'});
   $('#rsize-ts').sparkline(rsize_ts, {tooltipSuffix: ' MB'});
-  $('#rsize-box').sparkline(rsize_ts, {type: 'box', width: '50px'});
+  $('#rsize-box').sparkline(rsize_ts, {type: 'box', width: '100px'});
   window.setTimeout(step, 10000);
 }
 
@@ -116,6 +140,30 @@ $(function() {
   <tr>
     <td>Runtime</td>
     <td><span id="runtime-box">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>Cycles</td>
+    <td><span id="cycles-box">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>Instructions</td>
+    <td><span id="instructions-box">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>CPI</td>
+    <td><span id="cpi-box">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>IPMA</td>
+    <td><span id="ipma-box">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>MAI</td>
+    <td><span id="mai-box">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>LLC references</td>
+    <td><span id="llc-ref-box">Waiting for data...</span></td>
   </tr>
   <tr>
     <td>LLC misses</td>
