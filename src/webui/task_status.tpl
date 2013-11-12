@@ -13,6 +13,23 @@ var llc_refs_series = [];
 var llc_miss_series = [];
 var rsize_ts = [];
 
+function mean(values) {
+  var sum = 0;
+  for (var i = 0; i < values.length; i++) {
+    sum += parseInt(values[i]);
+  }
+  return sum / values.length;
+}
+
+function median(values) {
+  values.sort( function(a,b) {return a - b;} );
+  var half = Math.floor(values.length/2);
+  if(values.length % 2)
+    return values[half];
+  else
+    return (values[half-1] + values[half]) / 2.0;
+}
+
 function getRAM(data) {
   rsize_ts = [];
   for (i = 0; i < data.length; i++) {
@@ -59,6 +76,7 @@ function poll() {
 
 function step() {
   poll();
+  // whisker bars
   $('#runtime-box').sparkline(runtime_series, {type: 'box', width: '100px'});
   $('#cycles-box').sparkline(cycles_series, {type: 'box', width: '100px'});
   $('#instructions-box').sparkline(instructions_series, {type: 'box', width: '100px'});
@@ -69,6 +87,15 @@ function step() {
   $('#llc-miss-box').sparkline(llc_miss_series, {type: 'box', width: '100px'});
   $('#rsize-ts').sparkline(rsize_ts, {tooltipSuffix: ' MB'});
   $('#rsize-box').sparkline(rsize_ts, {type: 'box', width: '100px'});
+  // labels
+  $('#runtime-text').text(" avg: " + mean(runtime_series) + ", median: " + median(runtime_series));
+  $('#cycles-text').text(" avg: " + mean(cycles_series) + ", median: " + median(cycles_series));
+  $('#instructions-text').text(" avg: " + mean(instructions_series) + ", median: " + median(instructions_series));
+  $('#cpi-text').text(" avg: " + mean(cpi_series) + ", median: " + median(cpi_series));
+  $('#ipma-text').text(" avg: " + mean(ipma_series) + ", median: " + median(ipma_series));
+  $('#mai-text').text(" avg: " + mean(mai_series) + ", median: " + median(mai_series));
+  $('#llc-ref-text').text(" avg: " + mean(llc_ref_series) + ", median: " + median(llc_ref_series));
+  $('#llc-miss-text').text(" avg: " + mean(llc_miss_series) + ", median: " + median(llc_miss_series));
   window.setTimeout(step, 10000);
 }
 
@@ -139,35 +166,35 @@ $(function() {
   </tr>
   <tr>
     <td>Runtime</td>
-    <td><span id="runtime-box">Waiting for data...</span></td>
+    <td><span id="runtime-box">Waiting for data...</span> <span id="runtime-text" /></td>
   </tr>
   <tr>
     <td>Cycles</td>
-    <td><span id="cycles-box">Waiting for data...</span></td>
+    <td><span id="cycles-box">Waiting for data...</span> <span id="cycles-text" /></td>
   </tr>
   <tr>
     <td>Instructions</td>
-    <td><span id="instructions-box">Waiting for data...</span></td>
+    <td><span id="instructions-box">Waiting for data...</span> <span id="instructions-text" /></td>
   </tr>
   <tr>
     <td>CPI</td>
-    <td><span id="cpi-box">Waiting for data...</span></td>
+    <td><span id="cpi-box">Waiting for data...</span> <span id="cpi-text" /></td>
   </tr>
   <tr>
     <td>IPMA</td>
-    <td><span id="ipma-box">Waiting for data...</span></td>
+    <td><span id="ipma-box">Waiting for data...</span> <span id="ipma-text" /></td>
   </tr>
   <tr>
     <td>MAI</td>
-    <td><span id="mai-box">Waiting for data...</span></td>
+    <td><span id="mai-box">Waiting for data...</span> <span id="mai-text" /></td>
   </tr>
   <tr>
     <td>LLC references</td>
-    <td><span id="llc-ref-box">Waiting for data...</span></td>
+    <td><span id="llc-ref-box">Waiting for data...</span> <span id="llc-ref-text" /></td>
   </tr>
   <tr>
     <td>LLC misses</td>
-    <td><span id="llc-miss-box">Waiting for data...</span></td>
+    <td><span id="llc-miss-box">Waiting for data...</span> <span id="llc-miss-text" /></td>
   </tr>
   <tr>
     <td>Resident memory</td>
