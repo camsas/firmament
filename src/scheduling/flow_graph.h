@@ -81,6 +81,10 @@ class FlowGraph {
   unordered_map<TaskID_t, uint64_t> task_to_nodeid_map_;
   unordered_map<ResourceID_t, uint64_t,
       boost::hash<boost::uuids::uuid> > resource_to_nodeid_map_;
+  // Hacky solution for retrieval of the parent of any particular resource
+  // (needed to assign capacities properly by back-tracking).
+  unordered_map<ResourceID_t, ResourceID_t,
+      boost::hash<boost::uuids::uuid> > resource_to_parent_map_;
   // The "node ID" for the job is currently the ID of the job's unscheduled node
   unordered_map<JobID_t, uint64_t,
       boost::hash<boost::uuids::uuid> > job_to_nodeid_map_;

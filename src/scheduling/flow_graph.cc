@@ -193,8 +193,9 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
     // 2) Node inside the tree with non-zero children (i.e. no leaf node)
     VLOG(2) << "Adding " << rtnd->children_size() << " internal resource arcs";
     // XXX(malte): This assumes symmetric branches in the topology!
-    if (rtnd->children_size() > 1)
-      *num_leaves_below /= rtnd->children_size();
+    // XXX(malte): this is buggy...
+    //if (rtnd->children_size() > 1)
+    //  *num_leaves_below /= rtnd->children_size();
     // Add arcs to each child
     for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator c_iter =
          rtnd->mutable_children()->begin();
@@ -217,12 +218,17 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
         CHECK(cur_node != NULL) << "Could not find parent node with ID "
                                 << c_iter->parent_id();
         FlowGraphArc* arc = AddArcInternal(cur_node, child_node);
-        // Set correct capacity here!
-        arc->cap_upper_bound_ = *num_leaves_below;
+        // Set initial capacity to 0; this will be updated as leaves are added
+        // below this node!
+        arc->cap_upper_bound_ = 0;
       } else {
         LOG(ERROR) << "Found child without parent_id set! This will lead to an "
                    << "inconsistent flow graph!";
       }
+      // Record the parent of this particular child
+      InsertIfNotPresent(&resource_to_parent_map_,
+                         child_node->resource_id_,
+                         ResourceIDFromString(c_iter->parent_id()));
     }
   } else {
     // 3) Leaves of the resource topology; add an arc to the sink node
@@ -238,6 +244,18 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
     cur_node->type_.set_type(FlowNodeType::PU);
     AddArcInternal(cur_node->id_, sink_node_->id_);
     leaf_nodes_.insert(cur_node->id_);
+    // Add flow capacity to parent nodes until we hit the root node
+    FlowGraphNode* parent = cur_node;
+    ResourceID_t* parent_id;
+    while ((parent_id = FindOrNull(resource_to_parent_map_,
+                                  parent->resource_id_)) != NULL) {
+      uint64_t cur_id = parent->id_;
+      parent = NodeForResourceID(*parent_id);
+      FlowGraphArc** arc = FindOrNull(parent->outgoing_arc_map_, cur_id);
+      CHECK_NOTNULL(arc);
+      CHECK_NOTNULL(*arc);
+      (*arc)->cap_upper_bound_ += 1;
+    }
   }
 }
 
