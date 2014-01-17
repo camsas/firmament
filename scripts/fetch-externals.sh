@@ -22,7 +22,7 @@ CS2_VER="4.6"
 # Currently, we support Ubuntu and Debian.
 BASE_PKGS="wget subversion autoconf"
 CLANG_PKGS="clang"
-COMPILER_PKGS="libprotobuf-dev protobuf-compiler python-protobuf"
+COMPILER_PKGS="g++ libprotobuf-dev protobuf-compiler python-protobuf"
 GOOGLE_PKGS="libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
 PERFTOOLS_PKGS="google-perftools"
 #BOOST_PKGS="libboost-math${BOOST_VER}-dev libboost-system${BOOST_VER}-dev libboost-thread${BOOST_VER}-dev libboost-regex${BOOST_VER}-dev"
