@@ -1,0 +1,17 @@
+// The Firmament project
+// Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+//
+// Simulation event descriptor protobuf.
+
+package firmament;
+
+message SimulationEvent {
+  enum SimulationEventType {
+    JOB_ARRIVED = 0;
+    JOB_COMPLETED = 1;
+  }
+
+  required double time = 1;
+  required SimulationEventType type = 2;
+}
+

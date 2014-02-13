@@ -99,7 +99,8 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		"  DYNLNK  $(BUILD_DIR)/engine/coordinator")
 
 # XXX(malte): temporary hack
-$(OBJ_DIR)/coordinator_sim: $(BUILD_DIR)/sim/simple_dtg_generator.o \
+$(OBJ_DIR)/coordinator_sim: \
+	$(BUILD_DIR)/sim/libfirmament_sim.a \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
@@ -118,13 +119,13 @@ $(OBJ_DIR)/coordinator_sim: $(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(BUILD_DIR)/engine/remote_executor.o \
 		$(BUILD_DIR)/engine/topology_manager.o \
 		$(BUILD_DIR)/platforms/common.pb.o \
-		$(BUILD_DIR)/sim/simple_dtg_generator.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(BUILD_DIR)/storage/libfirmament_storage.a \
+		$(BUILD_DIR)/sim/libfirmament_sim.a \
 		$(LIBS) $(HTTP_UI_LIBS) \
 		-o $(BUILD_DIR)/engine/coordinator_sim \
 		-D__SIMULATE_SYNTHETIC_DTG__, \
