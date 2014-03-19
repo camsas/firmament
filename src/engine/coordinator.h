@@ -102,7 +102,11 @@ class Coordinator : public Node,
     return (res ? (*res)->mutable_descriptor() : NULL);
   }
 
-  // XXX(malte): hack
+  // Hacky DFS to extract the RTND for a specific resource from the tree.
+  // We ought to have a better solution for this, however -- either a
+  // lookup table of some sort, or something else. The DFS won't scale to
+  // large numbers of resources.
+  // XXX(malte): fix this hacky implementation
   ResourceTopologyNodeDescriptor* GetResourceTreeNode(ResourceID_t res_id) {
     ResourceTopologyNodeDescriptor* root = local_resource_topology_;
     queue<ResourceTopologyNodeDescriptor*> q;
