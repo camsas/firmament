@@ -16,6 +16,7 @@ HWLOC_VER="1.5"
 PROTOBUF_VER="2.4.1"
 BOOST_VER="1.49"
 CS2_VER="4.6"
+PION_VER="5.0.5"
 
 # If we are running on a Debian-based system, a couple of dependencies
 # are packaged, so we prompt the user to allow us to install them.
@@ -26,12 +27,13 @@ COMPILER_PKGS="g++ libprotobuf-dev protobuf-compiler python-protobuf"
 GOOGLE_PKGS="libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
 PERFTOOLS_PKGS="google-perftools"
 #BOOST_PKGS="libboost-math${BOOST_VER}-dev libboost-system${BOOST_VER}-dev libboost-thread${BOOST_VER}-dev libboost-regex${BOOST_VER}-dev"
-BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
-MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev libjansson-dev libctemplate-dev libtcmalloc-minimal4-dbg"
+BOOST_PKGS="libboost-filesystem-dev libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
+PION_PKGS="liblog4cpp5-dev libssl-dev libbz2-dev"
+MISC_PKGS="hwloc-nox libhwloc-dev libjansson-dev libctemplate-dev libtcmalloc-minimal4-dbg"
 
-UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
-DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
-DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
+UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
+DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
+DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
 
 #################################
 
@@ -445,6 +447,32 @@ cd pb2json-git/
 echo -n "Building pb2json library..."
 RES=$(make)
 print_succ_or_fail ${RES}
+cd ${EXT_DIR}
+
+
+## PION library (for integrated web server)
+print_subhdr "PION HTTP SERVER LIBRARY"
+PION_BUILD_DIR=${EXT_DIR}/pion-build
+PION_INSTALL_FILE="${PION_BUILD_DIR}/lib/pkgconfig/pion.pc"
+if [[ ! -f ${PION_INSTALL_FILE} ]]; then
+  PION_DIR=pion-git
+  mkdir -p ${PION_BUILD_DIR}
+  get_dep_git "pion" "https://github.com/splunk/pion"
+  cd ${PION_DIR}/
+  git checkout -q ${PION_VER} 
+  echo -n "Generating build infrastructure..."
+  RES1=$(./autogen.sh)
+  print_succ_or_fail ${RES1}
+  echo -n "Configuring pion library..."
+  RES2=$(./configure --disable-tests --prefix=${PION_BUILD_DIR})
+  print_succ_or_fail ${RES2}
+  echo -n "Building pion library..."
+  RES3=$(make)
+  print_succ_or_fail ${RES3}
+  echo -n "Installing pion library..."
+  RES4=$(make install)
+  print_succ_or_fail ${RES4}
+fi
 cd ${EXT_DIR}
 
 
