@@ -194,7 +194,9 @@ function get_dep_git {
 
   if [ -d ${NAME}-git ]
   then
-    svn up ${NAME}-git/
+    cd ${NAME}-git
+    git fetch
+    cd ..
   else
     mkdir -p ${NAME}-git
     git clone ${REPO} ${NAME}-git/
