@@ -11,6 +11,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <queue>
 
 // XXX(malte): Think about the Boost dependency!
 #ifdef __PLATFORM_HAS_BOOST__
@@ -99,6 +100,23 @@ class Coordinator : public Node,
       return &resource_desc_;
     ResourceStatus** res = FindOrNull(*associated_resources_, res_id);
     return (res ? (*res)->mutable_descriptor() : NULL);
+  }
+
+  // XXX(malte): hack
+  ResourceTopologyNodeDescriptor* GetResourceTreeNode(ResourceID_t res_id) {
+    ResourceTopologyNodeDescriptor* root = local_resource_topology_;
+    queue<ResourceTopologyNodeDescriptor*> q;
+    q.push(root);
+    while (!q.empty()) {
+      ResourceTopologyNodeDescriptor* cur = q.front();
+      if (ResourceIDFromString(cur->resource_desc().uuid()) == res_id) {
+        return cur;
+      }
+      for (int64_t i = 0; i < cur->children_size(); ++i)
+        q.push(cur->mutable_children(i));
+      q.pop();
+    }
+    return NULL;
   }
 
   // Gets a pointer to the resource status for an associated resource.
