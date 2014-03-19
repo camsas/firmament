@@ -25,13 +25,6 @@
 namespace firmament {
 namespace webui {
 
-using pion::net::HTTPResponseWriter;
-using pion::net::HTTPResponseWriterPtr;
-using pion::net::HTTPResponse;
-using pion::net::HTTPTypes;
-using pion::net::HTTPServer;
-using pion::net::TCPConnection;
-
 using ctemplate::TemplateDictionary;
 
 using store::DataObjectMap_t;
@@ -42,7 +35,7 @@ CoordinatorHTTPUI::CoordinatorHTTPUI(shared_ptr<Coordinator> coordinator)
 
 CoordinatorHTTPUI::~CoordinatorHTTPUI() {
   // Kill the server without waiting for connections to terminate
-  if (coordinator_http_server_->isListening()) {
+  if (coordinator_http_server_->is_listening()) {
     coordinator_http_server_->stop(false);
     coordinator_http_server_->join();
     LOG(INFO) << "Coordinator HTTP UI server stopped.";
@@ -77,22 +70,21 @@ void CoordinatorHTTPUI::AddFooterToTemplate(TemplateDictionary* dict) {
   pgheader_sub_dict->SetFilename("src/webui/page_footer.tpl");
 }
 
-void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOLINT
-                                           TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleJobSubmitURI(http::request_ptr& http_request,  // NOLINT
+                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
   // Check if we have a JobDescriptor as part of the POST parameters
-  HTTPTypes::QueryParams& params = http_request->getQueryParams();
-  string* job_descriptor_param = FindOrNull(params, "test");
-  if (http_request->getMethod() != "POST" || !job_descriptor_param) {
-    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+  string job_descriptor_param = http_request->get_query("test");
+  if (http_request->get_method() != "POST" || !job_descriptor_param.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
   // We're okay to continue
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Submit the JD to the coordinator
   JobDescriptor job_descriptor;
-  google::protobuf::TextFormat::ParseFromString(*job_descriptor_param,
+  google::protobuf::TextFormat::ParseFromString(job_descriptor_param,
                                                 &job_descriptor);
   VLOG(3) << "JD:" << job_descriptor.DebugString();
   string job_id = coordinator_->SubmitJob(job_descriptor);
@@ -101,12 +93,11 @@ void CoordinatorHTTPUI::HandleJobSubmitURI(HTTPRequestPtr& http_request,  // NOL
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
-                                      TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLINT
+                                      tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Individual to this request
-  //HTTPTypes::QueryParams &params = http_request->getQueryParams();
   TemplateDictionary dict("main");
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   dict.SetValue("COORD_ID", to_string(coordinator_->uuid()));
@@ -131,17 +122,17 @@ void CoordinatorHTTPUI::HandleRootURI(HTTPRequestPtr& http_request,  // NOLINT
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleFaviconURI(HTTPRequestPtr& http_request,  // NOLINT
-                                         TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleFaviconURI(http::request_ptr& http_request,  // NOLINT
+                                         tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
-  ErrorResponse(HTTPTypes::RESPONSE_CODE_NOT_FOUND, http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  ErrorResponse(http::types::RESPONSE_CODE_NOT_FOUND, http_request, tcp_conn);
 }
 
-void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLINT
-                                          TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleJobsListURI(http::request_ptr& http_request,  // NOLINT
+                                          tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get job list from coordinator
   vector<JobDescriptor> jobs = coordinator_->active_jobs();
   uint64_t i = 0;
@@ -170,20 +161,19 @@ void CoordinatorHTTPUI::HandleJobsListURI(HTTPRequestPtr& http_request,  // NOLI
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleJobURI(HTTPRequestPtr& http_request,  // NOLINT
-                                     TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleJobURI(http::request_ptr& http_request,  // NOLINT
+                                     tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  HTTPTypes::QueryParams &params = http_request->getQueryParams();
-  string* job_id = FindOrNull(params, "id");
-  if (!job_id) {
-    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+  string job_id = http_request->get_query("id");
+  if (job_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
   JobDescriptor* jd_ptr = coordinator_->GetJob(
-      JobIDFromString(*job_id));
+      JobIDFromString(job_id));
   TemplateDictionary dict("job_status");
   if (jd_ptr) {
     dict.SetValue("JOB_ID", jd_ptr->uuid());
@@ -221,10 +211,10 @@ void CoordinatorHTTPUI::HandleJobURI(HTTPRequestPtr& http_request,  // NOLINT
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleReferencesListURI(HTTPRequestPtr& http_request,  // NOLINT
-                                                TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleReferencesListURI(http::request_ptr& http_request,  // NOLINT
+                                                tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get reference list from coordinator's object store
   // XXX(malte): This is UNSAFE with regards to concurrent modification!
   shared_ptr<DataObjectMap_t> refs =
@@ -262,10 +252,10 @@ void CoordinatorHTTPUI::HandleReferencesListURI(HTTPRequestPtr& http_request,  /
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleResourcesListURI(HTTPRequestPtr& http_request,  // NOLINT
-                                               TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleResourcesListURI(http::request_ptr& http_request,  // NOLINT
+                                               tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
   const vector<ResourceStatus*> resources =
       coordinator_->associated_resources();
@@ -298,26 +288,26 @@ void CoordinatorHTTPUI::HandleResourcesListURI(HTTPRequestPtr& http_request,  //
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLINT
-                                          TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // NOLINT
+                                          tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  HTTPTypes::QueryParams &params = http_request->getQueryParams();
-  string* res_id = FindOrNull(params, "id");
-  ResourceID_t rid = ResourceIDFromString(*res_id);
-  if (!res_id) {
-    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+  string res_id = http_request->get_query("id");
+  if (res_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
+  ResourceID_t rid = ResourceIDFromString(res_id);
   ResourceDescriptor* rd_ptr = coordinator_->GetResource(rid);
   ResourceStatus* rs_ptr = coordinator_->GetResourceStatus(rid);
   TemplateDictionary dict("resource_status");
   if (rd_ptr) {
     dict.SetValue("RES_ID", rd_ptr->uuid());
     dict.SetValue("RES_FRIENDLY_NAME", rd_ptr->friendly_name());
-    //dict.SetValue("RES_REC", GenerateResourceTopologyEquivClass(*rd_ptr));
+    ResourceTopologyNodeDescriptor* rtnd = coordinator_->GetResourceTreeNode(rid);
+    dict.SetValue("RES_REC", to_string(GenerateResourceTopologyEquivClass(*rtnd)));
     dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
                                              rd_ptr->type()));
     dict.SetValue("RES_STATUS",
@@ -351,26 +341,26 @@ void CoordinatorHTTPUI::HandleResourceURI(HTTPRequestPtr& http_request,  // NOLI
 }
 
 void CoordinatorHTTPUI::HandleResourcesTopologyURI(
-    HTTPRequestPtr& http_request,  // NOLINT
-    TCPConnectionPtr& tcp_conn) {  // NOLINT
+    http::request_ptr& http_request,  // NOLINT
+    tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
   // Get resource topology from coordinator
   const ResourceTopologyNodeDescriptor& root_rtnd =
       coordinator_->local_resource_topology();
   // Return serialized resource topology
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request,
+  http::response_writer_ptr writer = InitOkResponse(http_request,
                                                 tcp_conn);
   char *json = pb2json(root_rtnd);
   writer->write(json);
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
-                                        TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleInjectURI(http::request_ptr& http_request,  // NOLINT
+                                        tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Individual to this request
-  if (http_request->getMethod() != "POST") {
+  if (http_request->get_method() != "POST") {
     // return an error
     writer->write("POST a message to this URL to inject it.");
   } else {
@@ -379,14 +369,13 @@ void CoordinatorHTTPUI::HandleInjectURI(HTTPRequestPtr& http_request,  // NOLINT
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleJobStatusURI(HTTPRequestPtr& http_request,  // NOLINT
-                                           TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleJobStatusURI(http::request_ptr& http_request,  // NOLINT
+                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
-  HTTPTypes::QueryParams &params = http_request->getQueryParams();
-  string* job_id = FindOrNull(params, "id");
-  if (!job_id) {
-    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  string job_id = http_request->get_query("id");
+  if (job_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
@@ -394,8 +383,8 @@ void CoordinatorHTTPUI::HandleJobStatusURI(HTTPRequestPtr& http_request,  // NOL
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
   string output;
-  if (job_id) {
-    dict.SetValue("JOB_ID", *job_id);
+  if (!job_id.empty()) {
+    dict.SetValue("JOB_ID", job_id);
     ExpandTemplate("src/webui/job_dtg.tpl", ctemplate::DO_NOT_STRIP, &dict,
                    &output);
   } else {
@@ -405,52 +394,50 @@ void CoordinatorHTTPUI::HandleJobStatusURI(HTTPRequestPtr& http_request,  // NOL
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleJobDTGURI(HTTPRequestPtr& http_request,  // NOLINT
-                                        TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleJobDTGURI(http::request_ptr& http_request,  // NOLINT
+                                        tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
 
-  HTTPTypes::QueryParams &params = http_request->getQueryParams();
-  string* job_id = FindOrNull(params, "id");
-  if (job_id) {
+  string job_id = http_request->get_query("id");
+  if (!job_id.empty()) {
     // Get DTG from coordinator
-    const JobDescriptor* jd = coordinator_->DescriptorForJob(*job_id);
+    const JobDescriptor* jd = coordinator_->DescriptorForJob(job_id);
     if (!jd) {
       // Job not found here
-      VLOG(1) << "Requested DTG for non-existent job " << *job_id;
-      ErrorResponse(HTTPTypes::RESPONSE_CODE_NOT_FOUND, http_request, tcp_conn);
+      VLOG(1) << "Requested DTG for non-existent job " << job_id;
+      ErrorResponse(http::types::RESPONSE_CODE_NOT_FOUND, http_request, tcp_conn);
       return;
     }
     // Return serialized DTG
-    HTTPResponseWriterPtr writer = InitOkResponse(http_request,
+    http::response_writer_ptr writer = InitOkResponse(http_request,
                                                   tcp_conn);
     char *json = pb2json(*jd);
     writer->write(json);
     FinishOkResponse(writer);
   } else {
-    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
 }
 
-void CoordinatorHTTPUI::HandleReferenceURI(HTTPRequestPtr& http_request,  // NOLINT
-                                           TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleReferenceURI(http::request_ptr& http_request,  // NOLINT
+                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  HTTPTypes::QueryParams &params = http_request->getQueryParams();
-  string* ref_id = FindOrNull(params, "id");
-  if (!ref_id) {
-    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+  string ref_id = http_request->get_query("id");
+  if (ref_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
   set<ReferenceInterface*>* refs =
       coordinator_->get_object_store()->GetReferences(
-          DataObjectIDFromString(*ref_id));
+          DataObjectIDFromString(ref_id));
   TemplateDictionary dict("reference_view");
   if (refs && refs->size() > 0) {
-    dict.SetValue("OBJ_ID", *ref_id);
+    dict.SetValue("OBJ_ID", ref_id);
     for (set<ReferenceInterface*>::const_iterator ref_iter = refs->begin();
          ref_iter != refs->end();
          ++ref_iter) {
@@ -482,25 +469,24 @@ void CoordinatorHTTPUI::HandleReferenceURI(HTTPRequestPtr& http_request,  // NOL
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleStatisticsURI(HTTPRequestPtr& http_request,  // NOLINT
-                                            TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  // NOLINT
+                                            tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  HTTPTypes::QueryParams &params = http_request->getQueryParams();
-  string* res_id = FindOrNull(params, "res");
-  string* task_id = FindOrNull(params, "task");
-  if (!(res_id || task_id) || (res_id && task_id)) {
-    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+  string res_id = http_request->get_query("res");
+  string task_id = http_request->get_query("task");
+  if ((res_id.empty() || task_id.empty()) || !(res_id.empty() && task_id.empty())) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
   string output = "";
   // Check if we have any statistics for this resource
-  if (res_id) {
+  if (!res_id.empty()) {
     const deque<MachinePerfStatisticsSample>* result =
         coordinator_->knowledge_base().GetStatsForMachine(
-            ResourceIDFromString(*res_id));
+            ResourceIDFromString(res_id));
     if (result) {
       for (deque<MachinePerfStatisticsSample>::const_iterator it =
           result->begin();
@@ -513,13 +499,13 @@ void CoordinatorHTTPUI::HandleStatisticsURI(HTTPRequestPtr& http_request,  // NO
         output += pb2json(*it);
       }
     }
-  } else if (task_id) {
-    TaskDescriptor* td = coordinator_->GetTask(TaskIDFromString(*task_id));
+  } else if (!task_id.empty()) {
+    TaskDescriptor* td = coordinator_->GetTask(TaskIDFromString(task_id));
     CHECK_NOTNULL(td);
     output += "{ \"samples\": [";
     const deque<TaskPerfStatisticsSample>* samples_result =
         coordinator_->knowledge_base().GetStatsForTask(
-            TaskIDFromString(*task_id));
+            TaskIDFromString(task_id));
     if (samples_result) {
       bool first = true;
       for (deque<TaskPerfStatisticsSample>::const_iterator it =
@@ -557,27 +543,26 @@ void CoordinatorHTTPUI::HandleStatisticsURI(HTTPRequestPtr& http_request,  // NO
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
-                                      TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLINT
+                                      tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  HTTPTypes::QueryParams &params = http_request->getQueryParams();
-  string* task_id = FindOrNull(params, "id");
-  if (!task_id) {
-    ErrorResponse(HTTPTypes::RESPONSE_CODE_SERVER_ERROR, http_request,
+  string task_id = http_request->get_query("id");
+  if (task_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
-  string* action = FindOrNull(params, "a");
-  if (action) {
-    if (*action == "kill") {
-      coordinator_->KillRunningTask(TaskIDFromString(*task_id),
+  string action = http_request->get_query("a");
+  if (!action.empty()) {
+    if (action == "kill") {
+      coordinator_->KillRunningTask(TaskIDFromString(task_id),
                                     TaskKillMessage::USER_ABORT);
     }
   }
   TaskDescriptor* td_ptr = coordinator_->GetTask(
-      TaskIDFromString(*task_id));
+      TaskIDFromString(task_id));
   TemplateDictionary dict("task_status");
   if (td_ptr) {
     dict.SetFormattedValue("TASK_ID", "%ju", TaskID_t(td_ptr->uid()));
@@ -643,11 +628,11 @@ void CoordinatorHTTPUI::HandleTaskURI(HTTPRequestPtr& http_request,  // NOLINT
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLINT
-                                          TCPConnectionPtr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleShutdownURI(http::request_ptr& http_request,  // NOLINT
+                                          tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
-  HTTPResponseWriterPtr writer = InitOkResponse(http_request, tcp_conn);
-  string reason = "HTTP request from " + tcp_conn->getRemoteIp().to_string();
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  string reason = "HTTP request from " + tcp_conn->get_remote_ip().to_string();
   // Make the HTTP server inactive, so that the coordinator does not try to shut
   // it down.
   active_ = false;
@@ -659,39 +644,39 @@ void CoordinatorHTTPUI::HandleShutdownURI(HTTPRequestPtr& http_request,  // NOLI
   Shutdown(true);
 }
 
-HTTPResponseWriterPtr CoordinatorHTTPUI::InitOkResponse(
-    HTTPRequestPtr http_request,
-    TCPConnectionPtr tcp_conn) {
-  HTTPResponseWriterPtr writer = HTTPResponseWriter::create(
-      tcp_conn, *http_request, boost::bind(&TCPConnection::finish,
+http::response_writer_ptr CoordinatorHTTPUI::InitOkResponse(
+    http::request_ptr http_request,
+    tcp::connection_ptr tcp_conn) {
+  http::response_writer_ptr writer = http::response_writer::create(
+      tcp_conn, *http_request, boost::bind(&tcp::connection::finish,
                                            tcp_conn));
-  HTTPResponse& r = writer->getResponse();
-  r.setStatusCode(HTTPTypes::RESPONSE_CODE_OK);
-  r.setStatusMessage(HTTPTypes::RESPONSE_MESSAGE_OK);
+  http::response& r = writer->get_response();
+  r.set_status_code(http::types::RESPONSE_CODE_OK);
+  r.set_status_message(http::types::RESPONSE_MESSAGE_OK);
   // Hack to allow file:// access
-  r.addHeader("Access-Control-Allow-Origin", "*");
+  r.add_header("Access-Control-Allow-Origin", "*");
   return writer;
 }
 
 void CoordinatorHTTPUI::ErrorResponse(
     const unsigned int error_code,
-    HTTPRequestPtr http_request,
-    TCPConnectionPtr tcp_conn) {
-  HTTPResponseWriterPtr writer = HTTPResponseWriter::create(
-      tcp_conn, *http_request, boost::bind(&TCPConnection::finish,
+    http::request_ptr http_request,
+    tcp::connection_ptr tcp_conn) {
+  http::response_writer_ptr writer = http::response_writer::create(
+      tcp_conn, *http_request, boost::bind(&tcp::connection::finish,
                                            tcp_conn));
-  HTTPResponse& r = writer->getResponse();
-  r.setStatusCode(error_code);
-  //r.setStatusMessage("test");
+  http::response& r = writer->get_response();
+  r.set_status_code(error_code);
+  //r.set_status_message("test");
   writer->send();
 }
 
-void CoordinatorHTTPUI::FinishOkResponse(HTTPResponseWriterPtr writer) {
+void CoordinatorHTTPUI::FinishOkResponse(http::response_writer_ptr writer) {
   writer->send();
 }
 
-void CoordinatorHTTPUI::LogRequest(const HTTPRequestPtr& http_request) {
-  LOG(INFO) << "[HTTPREQ] Serving " << http_request->getResource();
+void CoordinatorHTTPUI::LogRequest(const http::request_ptr& http_request) {
+  LOG(INFO) << "[HTTPREQ] Serving " << http_request->get_resource();
 }
 
 void CoordinatorHTTPUI::Init(uint16_t port) {
@@ -702,55 +687,55 @@ void CoordinatorHTTPUI::Init(uint16_t port) {
                  << "been initialized!";
     }
     // Otherwise, make such an object and store it.
-    coordinator_http_server_.reset(new HTTPServer(port));
+    coordinator_http_server_.reset(new http::server(port));
     // Bind handlers for different kinds of entry points
     // Root URI
-    coordinator_http_server_->addResource("/", boost::bind(
+    coordinator_http_server_->add_resource("/", boost::bind(
         &CoordinatorHTTPUI::HandleRootURI, this, _1, _2));
     // Root URI
-    coordinator_http_server_->addResource("/favicon.ico", boost::bind(
+    coordinator_http_server_->add_resource("/favicon.ico", boost::bind(
         &CoordinatorHTTPUI::HandleFaviconURI, this, _1, _2));
     // Job submission
-    coordinator_http_server_->addResource("/jobs/", boost::bind(
+    coordinator_http_server_->add_resource("/jobs/", boost::bind(
         &CoordinatorHTTPUI::HandleJobsListURI, this, _1, _2));
     // Job submission
-    coordinator_http_server_->addResource("/job/submit/", boost::bind(
+    coordinator_http_server_->add_resource("/job/submit/", boost::bind(
         &CoordinatorHTTPUI::HandleJobSubmitURI, this, _1, _2));
     // Job status
-    coordinator_http_server_->addResource("/job/status/", boost::bind(
+    coordinator_http_server_->add_resource("/job/status/", boost::bind(
         &CoordinatorHTTPUI::HandleJobURI, this, _1, _2));
     // Job task graph visualization
-    coordinator_http_server_->addResource("/job/dtg-view/", boost::bind(
+    coordinator_http_server_->add_resource("/job/dtg-view/", boost::bind(
         &CoordinatorHTTPUI::HandleJobStatusURI, this, _1, _2));
     // Job task graph
-    coordinator_http_server_->addResource("/job/dtg/", boost::bind(
+    coordinator_http_server_->add_resource("/job/dtg/", boost::bind(
         &CoordinatorHTTPUI::HandleJobDTGURI, this, _1, _2));
     // Resource list
-    coordinator_http_server_->addResource("/resources/", boost::bind(
+    coordinator_http_server_->add_resource("/resources/", boost::bind(
         &CoordinatorHTTPUI::HandleResourcesListURI, this, _1, _2));
     // Resource topology
-    coordinator_http_server_->addResource("/resources/topology/", boost::bind(
+    coordinator_http_server_->add_resource("/resources/topology/", boost::bind(
         &CoordinatorHTTPUI::HandleResourcesTopologyURI, this, _1, _2));
     // Resource page
-    coordinator_http_server_->addResource("/resource/", boost::bind(
+    coordinator_http_server_->add_resource("/resource/", boost::bind(
         &CoordinatorHTTPUI::HandleResourceURI, this, _1, _2));
     // Message injection
-    coordinator_http_server_->addResource("/inject/", boost::bind(
+    coordinator_http_server_->add_resource("/inject/", boost::bind(
         &CoordinatorHTTPUI::HandleInjectURI, this, _1, _2));
     // Reference status
-    coordinator_http_server_->addResource("/ref/", boost::bind(
+    coordinator_http_server_->add_resource("/ref/", boost::bind(
         &CoordinatorHTTPUI::HandleReferenceURI, this, _1, _2));
     // Reference list
-    coordinator_http_server_->addResource("/refs/", boost::bind(
+    coordinator_http_server_->add_resource("/refs/", boost::bind(
         &CoordinatorHTTPUI::HandleReferencesListURI, this, _1, _2));
     // Statistics data serving pages
-    coordinator_http_server_->addResource("/stats/", boost::bind(
+    coordinator_http_server_->add_resource("/stats/", boost::bind(
         &CoordinatorHTTPUI::HandleStatisticsURI, this, _1, _2));
     // Task status
-    coordinator_http_server_->addResource("/task/", boost::bind(
+    coordinator_http_server_->add_resource("/task/", boost::bind(
         &CoordinatorHTTPUI::HandleTaskURI, this, _1, _2));
     // Shutdown request
-    coordinator_http_server_->addResource("/shutdown/", boost::bind(
+    coordinator_http_server_->add_resource("/shutdown/", boost::bind(
         &CoordinatorHTTPUI::HandleShutdownURI, this, _1, _2));
     // Start the HTTP server
     coordinator_http_server_->start();  // spawns a thread!

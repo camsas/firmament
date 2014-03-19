@@ -6,7 +6,7 @@ include $(ROOT_DIR)/include/Makefile.common
 
 TASK_LIB_LIBS := $(LIBS) -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc -lssl -lcrypto
 LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc -lssl -lcrypto
-HTTP_UI_LIBS += -lpion-common -lpion-net -llog4cpp $(PB2JSON_LIB) -ljansson -lctemplate
+HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -llog4cpp -ljansson -lctemplate
 
 LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim
