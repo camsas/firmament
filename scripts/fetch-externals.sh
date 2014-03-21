@@ -28,7 +28,7 @@ GOOGLE_PKGS="libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
 PERFTOOLS_PKGS="google-perftools"
 #BOOST_PKGS="libboost-math${BOOST_VER}-dev libboost-system${BOOST_VER}-dev libboost-thread${BOOST_VER}-dev libboost-regex${BOOST_VER}-dev"
 BOOST_PKGS="libboost-filesystem-dev libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
-PION_PKGS="liblog4cpp5-dev libssl-dev libbz2-dev"
+PION_PKGS="liblog4cpp5-dev libssl-dev libbz2-dev libtool"
 MISC_PKGS="hwloc-nox libhwloc-dev libjansson-dev libctemplate-dev libtcmalloc-minimal4-dbg"
 
 UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
