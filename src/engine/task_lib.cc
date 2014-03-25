@@ -372,7 +372,7 @@ void* TaskLib::GetObjectStart(const DataObjectID_t& id) {
                                                 // only one waiting on this
 
       while (!reference_not_t->writable ||
-             !reference_not_t->request_type == GET_OBJECT ) {
+             !(reference_not_t->request_type == GET_OBJECT )) {
         cout << "Wait for reply " << endl;
         reference_not_t->cond_read.wait(lock_ref);
       }
