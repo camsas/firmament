@@ -56,7 +56,7 @@ TEST_F(ProcFSMonitorTest, SimpleProcessStatsTest) {
       pfsm_.ProcessInformation(pid, NULL);
   CHECK_EQ(stats->pid, pid);
   malloc(getpagesize());
-  // Should have more pags allocated now...
+  // Should have more pages allocated now...
   CHECK_LT(stats->rss, pfsm_.ProcessInformation(pid, NULL)->rss);
 }
 
@@ -67,6 +67,17 @@ TEST_F(ProcFSMonitorTest, SimpleSysInfoTest) {
   sleep(1);
   pfsm_.Stop();
   t.join();
+}
+
+// Tests retrieval of simple process statistics.
+TEST_F(ProcFSMonitorTest, SchedStatsTest) {
+  pid_t pid = getpid();
+  const ProcFSMonitor::ProcessStatistics_t* stats =
+      pfsm_.ProcessInformation(pid, NULL);
+  CHECK_EQ(stats->pid, pid);
+  sleep(1);
+  CHECK_LT(stats->sched_run_ticks,
+           pfsm_.ProcessInformation(pid, NULL)->sched_run_ticks);
 }
 
 
