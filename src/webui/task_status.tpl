@@ -12,6 +12,8 @@ var ipma_series = [];
 var llc_refs_series = [];
 var llc_miss_series = [];
 var rsize_ts = [];
+var sched_run_ts = [];
+var sched_wait_runnable_ts = [];
 
 function mean(values) {
   var sum = 0;
@@ -34,6 +36,15 @@ function getRAM(data) {
   rsize_ts = [];
   for (i = 0; i < data.length; i++) {
     rsize_ts.push(data[i].rsize / 1024.0 / 1024.0)
+  }
+}
+
+function getSchedStats(data) {
+  sched_run_ts = [];
+  sched_wait_runnable_ts = [];
+  for (i = 0; i < data.length; i++) {
+    sched_run_ts.push(data[i].sched_run);
+    sched_wait_runnable_ts.push(data[i].sched_wait);
   }
 }
 
@@ -60,6 +71,7 @@ function getReportStats(data) {
 
 function updateGraphs(data) {
   getRAM(data['samples']);
+  getSchedStats(data['samples']);
   getReportStats(data['reports']);
 }
 
@@ -87,6 +99,8 @@ function step() {
   $('#llc-miss-box').sparkline(llc_miss_series, {type: 'box', width: '100px'});
   $('#rsize-ts').sparkline(rsize_ts, {tooltipSuffix: ' MB'});
   $('#rsize-box').sparkline(rsize_ts, {type: 'box', width: '100px'});
+  $('#sched_run-ts').sparkline(sched_run_ts, {tooltipSuffix: ' '});
+  $('#sched_wait_runnable-ts').sparkline(sched_wait_runnable_ts, {tooltipSuffix: ' '});
   // labels
   $('#runtime-text').text(" avg: " + mean(runtime_series) + ", median: " + median(runtime_series));
   $('#cycles-text').text(" avg: " + mean(cycles_series) + ", median: " + median(cycles_series));
@@ -203,6 +217,14 @@ $(function() {
   <tr>
     <td></td>
     <td><span id="rsize-box">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>Time running on CPU per heartbeat interval (1s)</td>
+    <td><span id="sched_run-ts">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>Time waiting for CPU(while runnable) per heartbeat interval (1s)</td>
+    <td><span id="sched_wait_runnable-ts">Waiting for data...</span></td>
   </tr>
 </table>
 
