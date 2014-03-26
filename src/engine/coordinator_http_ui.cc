@@ -476,9 +476,10 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   // Get resource information from coordinator
   string res_id = http_request->get_query("res");
   string task_id = http_request->get_query("task");
-  if ((res_id.empty() || task_id.empty()) || !(res_id.empty() && task_id.empty())) {
+  if (!(res_id.empty() || task_id.empty()) || (res_id.empty() && task_id.empty())) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
+    LOG(WARNING) << "Invalid stats request!";
     return;
   }
   string output = "";
