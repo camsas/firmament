@@ -62,6 +62,9 @@ void TaskLib::AddTaskStatisticsToHeartbeat(
   // Memory allocated and used
   stats->set_vsize(proc_stats.vsize);
   stats->set_rsize(proc_stats.rss * getpagesize());
+  // Scheduler statistics
+  stats->set_sched_run(proc_stats.sched_run_ticks);
+  stats->set_sched_wait(proc_stats.sched_wait_runnable_ticks);
 }
 
 void TaskLib::AwaitNextMessage() {
