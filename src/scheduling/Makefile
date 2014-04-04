@@ -7,7 +7,9 @@ include $(ROOT_DIR)/include/Makefile.common
 LIBS += -lboost_system -lboost_thread -lboost_regex -lhwloc -lssl -lcrypto
 
 LIB = libfirmament_scheduling.a
-OBJS = dimacs_exporter.o event_driven_scheduler.o flow_graph.o quincy_scheduler.o simple_scheduler.o
+OBJS = dimacs_exporter.o event_driven_scheduler.o flow_graph.o \
+       quincy_cost_model.o quincy_scheduler.o simple_scheduler.o \
+       trivial_cost_model.o
 PBS = flow_node_type.pb.o scheduling_parameters.pb.o scheduling_delta.pb.o
 TESTS = dimacs_exporter_test flow_graph_test
 TESTS_DEPS = $(OBJ_DIR)/../base/libfirmament_base.a

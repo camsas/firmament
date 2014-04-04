@@ -3,8 +3,8 @@
 //
 // Representation of a Quincy-style scheduling flow graph.
 
-#ifndef FIRMAMENT_MISC_FLOW_GRAPH_H
-#define FIRMAMENT_MISC_FLOW_GRAPH_H
+#ifndef FIRMAMENT_SCHEDULING_FLOW_GRAPH_H
+#define FIRMAMENT_SCHEDULING_FLOW_GRAPH_H
 
 #include <string>
 
@@ -12,6 +12,7 @@
 #include "base/types.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "engine/topology_manager.h"
+#include "misc/equivclasses.h"
 #include "misc/map-util.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
@@ -63,6 +64,7 @@ class FlowGraph {
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
+  FlowGraphNode* AddEquivClassAggregator(TaskEquivClass_t equivclass);
   void AddSpecialNodes();
   void AdjustUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta);
   void DeleteArc(FlowGraphArc* arc);
@@ -85,6 +87,8 @@ class FlowGraph {
   // (needed to assign capacities properly by back-tracking).
   unordered_map<ResourceID_t, ResourceID_t,
       boost::hash<boost::uuids::uuid> > resource_to_parent_map_;
+  // Hacky equivalence class node map
+  unordered_map<TaskEquivClass_t, uint64_t> equiv_class_to_nodeid_map_;
   // The "node ID" for the job is currently the ID of the job's unscheduled node
   unordered_map<JobID_t, uint64_t,
       boost::hash<boost::uuids::uuid> > job_to_nodeid_map_;
@@ -94,4 +98,4 @@ class FlowGraph {
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_MISC_FLOW_GRAPH_H
+#endif  // FIRMAMENT_SCHEDULING_FLOW_GRAPH_H

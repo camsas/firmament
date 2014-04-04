@@ -12,11 +12,13 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "misc/equivclasses.h"
 #include "misc/map-util.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 #include "scheduling/flow_graph.h"
+#include "scheduling/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
 
@@ -31,14 +33,16 @@ FlowGraph::FlowGraph()
 void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
                                FlowGraphNode* unsched_agg_node) {
   // We always have an edge to the cluster aggregator node
-  AddArcInternal(task_node, cluster_agg_node_);
+  FlowGraphArc* cluster_agg_arc = AddArcInternal(task_node, cluster_agg_node_);
+  // TODO(malte): stub, read value from runtime config here
+  cluster_agg_arc->cost_ = 2;
   // We also always have an edge to our job's unscheduled node
   FlowGraphArc* unsched_arc = AddArcInternal(task_node, unsched_agg_node);
   // Add this task's potential flow to the per-job unscheduled
   // aggregator's outgoing edge
   AdjustUnscheduledAggToSinkCapacity(task_node->job_id_, 1);
   // TODO(malte): stub, read value from runtime config here
-  unsched_arc->cost_ = 1;
+  unsched_arc->cost_ = 5;
 }
 
 FlowGraphArc* FlowGraph::AddArcInternal(uint64_t src, uint64_t dst) {
@@ -56,6 +60,52 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
   arc_set_.insert(arc);
   src->AddArc(arc);
   return arc;
+}
+
+FlowGraphNode* FlowGraph::AddEquivClassAggregator(
+    TaskEquivClass_t equivclass) {
+  uint64_t* equiv_class_node_id = FindOrNull(equiv_class_to_nodeid_map_,
+                                             equivclass);
+  if (!equiv_class_node_id) {
+    // Need to add the equiv class aggregator first
+    FlowGraphNode* ec_node = AddNodeInternal(next_id());
+    equiv_class_node_id = &(ec_node->id_);
+    InsertIfNotPresent(&equiv_class_to_nodeid_map_,
+                       equivclass, *equiv_class_node_id);
+  }
+  // XXX(malte): HACK!
+  if (equivclass == 9726732246984505783ULL) {
+    // matmult
+    VLOG(1) << "Adding EQUIV CLASS PREFERENCE EDGES for MATMULT!";
+    string res[] = {"8fc55627-896e-4006-a716-e1c55507b384",
+                    "a8169544-2709-4c80-82ca-f19879391b36"};
+    //string res[] = {"8fc55627-896e-4006-a716-e1c55507b384",
+    //                "377a2a8b-0ad7-4f4c-960a-884a6e00a06a"};
+    for (uint64_t i = 0; i < 2; ++i) {
+      uint64_t* res_node = FindOrNull(resource_to_nodeid_map_,
+                                      ResourceIDFromString(res[i]));
+      CHECK_NOTNULL(res_node);
+      AddArcInternal(*equiv_class_node_id, *res_node);
+    }
+  } else if (equivclass == 1717579855873226448ULL) {
+    VLOG(1) << "Adding EQUIV CLASS PREFERENCE EDGES for PIAPP!";
+    // pi_app
+    string res[] = {"377a2a8b-0ad7-4f4c-960a-884a6e00a06a",
+                    "a3c93f23-798d-4b84-8683-c3ccacc38702"};
+    //string res[] = {"a8169544-2709-4c80-82ca-f19879391b36",
+    //                "a3c93f23-798d-4b84-8683-c3ccacc38702"};
+    for (uint64_t i = 0; i < 2; ++i) {
+      uint64_t* res_node = FindOrNull(resource_to_nodeid_map_,
+                                      ResourceIDFromString(res[i]));
+      CHECK_NOTNULL(res_node);
+      AddArcInternal(*equiv_class_node_id, *res_node);
+    }
+  } else {
+    // unknown, just rought through cluster agg
+    VLOG(1) << "Adding NO EQUIV CLASS PREFERENCE EDGES as task UNKOWN!";
+    AddArcInternal(*equiv_class_node_id, cluster_agg_node_->id_);
+  }
+  return Node(*equiv_class_node_id);
 }
 
 void FlowGraph::AddJobNodes(JobDescriptor* jd) {
@@ -112,6 +162,14 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
               << task_node->id_ << "); task state is " << cur->state();
       // Arcs for this node
       AddArcsForTask(task_node, unsched_agg_node);
+      // XXX(malte): hack to add equiv class aggregator nodes
+      VLOG(2) << "Equiv class for task " << cur->uid() << " is "
+              << GenerateTaskEquivClass(*cur);
+      FlowGraphNode* ec_node = 
+          AddEquivClassAggregator(GenerateTaskEquivClass(*cur));
+      FlowGraphArc* ec_arc = AddArcInternal(task_node->id_,
+                                            ec_node->id_);
+      ec_arc->cost_ = 0;
     } else if (cur->state() == TaskDescriptor::RUNNING ||
              cur->state() == TaskDescriptor::ASSIGNED) {
       // The task is already running, so it must have a node already
