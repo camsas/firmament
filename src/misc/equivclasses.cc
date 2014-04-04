@@ -32,7 +32,7 @@ void GenerateResourceTopologyEquivClassHelper(
   boost::hash_combine(*hash, rtn_desc.resource_desc().type());
   // XXX(malte): the below is a hack; we shouldn't be taking the free-form name
   // here (as it confuses RECs e.g. with hostnames)!
-  boost::hash_combine(*hash, rtn_desc.resource_desc().friendly_name());
+  //boost::hash_combine(*hash, rtn_desc.resource_desc().friendly_name());
 }
 
 }  // namespace firmament
