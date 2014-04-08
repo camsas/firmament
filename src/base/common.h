@@ -79,7 +79,7 @@ template <typename T>
 inline set<T> pb_to_set(const RepeatedField<T>& pb_field) {
   set<T> return_set;
   // N.B.: using GNU-style RTTI (typeof)
-  for (typeof(pb_field.begin()) iter = pb_field.begin();
+  for (__typeof__(pb_field.begin()) iter = pb_field.begin();
        iter != pb_field.end();
        ++iter)
     return_set.insert(*iter);
@@ -93,7 +93,7 @@ template <typename T>
 inline set<T> pb_to_set(const RepeatedPtrField<T>& pb_field) {
   set<T> return_set;
   // N.B.: using GNU-style RTTI (typeof)
-  for (typeof(pb_field.begin()) iter = pb_field.begin();
+  for (__typeof__(pb_field.begin()) iter = pb_field.begin();
        iter != pb_field.end();
        ++iter)
     return_set.insert(*iter);
@@ -107,7 +107,7 @@ template <typename T>
 inline vector<T> pb_to_vector(const RepeatedField<T>& pb_field) {
   vector<T> return_vec;
   // N.B.: using GNU-style RTTI (typeof)
-  for (typeof(pb_field.begin()) iter = pb_field.begin();
+  for (__typeof__(pb_field.begin()) iter = pb_field.begin();
        iter != pb_field.end();
        ++iter)
     return_vec.push_back(*iter);
@@ -121,7 +121,7 @@ template <typename T>
 inline vector<T> pb_to_vector(const RepeatedPtrField<T>& pb_field) {
   vector<T> return_vec;
   // N.B.: using GNU-style RTTI (typeof)
-  for (typeof(pb_field.begin()) iter = pb_field.begin();
+  for (__typeof__(pb_field.begin()) iter = pb_field.begin();
        iter != pb_field.end();
        ++iter)
     return_vec.push_back(*iter);

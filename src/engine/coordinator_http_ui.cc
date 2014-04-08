@@ -683,7 +683,7 @@ void CoordinatorHTTPUI::LogRequest(const http::request_ptr& http_request) {
 void CoordinatorHTTPUI::Init(uint16_t port) {
   try {
     // Fail if we are not assured that no existing server object is stored.
-    if (coordinator_http_server_ != NULL) {
+    if (coordinator_http_server_) {
       LOG(FATAL) << "Trying to initialized an HTTP server that has already "
                  << "been initialized!";
     }

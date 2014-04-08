@@ -15,7 +15,7 @@ namespace firmament {
 template <typename T>
 bool RepeatedContainsPtr(RepeatedPtrField<T>* pbf, T* item) {
   // N.B.: using GNU-style RTTI
-  for (typeof(pbf->pointer_begin()) iter =
+  for (__typeof__(pbf->pointer_begin()) iter =
        pbf->pointer_begin();
        iter != pbf->pointer_end();
        ++iter) {

@@ -857,9 +857,9 @@ void Coordinator::InformStorageEngineNewResource(ResourceDescriptor* rd_new) {
  */
 void Coordinator::HandleStorageRegistrationRequest(
         const StorageRegistrationMessage& msg) {
-  if (object_store_ == NULL) { // In theory, each node should have an object
-                               // store which has already been instantiated. So
-                               // this case should never happen.
+  if (!object_store_) { // In theory, each node should have an object
+                        // store which has already been instantiated. So
+                        // this case should never happen.
       VLOG(1) << "No object store detected for this node. Storage Registration"
               << "Message discarded";
   } else {
