@@ -382,17 +382,27 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
                               FlowGraphNode* res_node) {
   // Remove all arcs apart from the task -> resource mapping;
   // note that this effectively disables preemption!
+  // ----
+  // N.B.: we need to collect a set of pointers here rather than
+  // deleting things inside the loop, as otherwise the iterator
+  // gets confused
+  set<TaskID_t> to_delete;
   for (unordered_map<TaskID_t, FlowGraphArc*>::iterator it =
        task_node->outgoing_arc_map_.begin();
        it != task_node->outgoing_arc_map_.end();
        ++it) {
     VLOG(2) << "Deleting arc from " << it->second->src_ << " to "
             << it->second->dst_;
-    // N.B. This is a little dodgy, as it mutates the collection inside the
-    // loop. However, since nobody else is reading from it at the same time,
-    // this should be fine.
-    task_node->outgoing_arc_map_.erase(it->first);
     DeleteArc(it->second);
+    to_delete.insert(it->first);
+  }
+  // N.B. This is a little dodgy, as it mutates the collection inside the
+  // loop. However, since nobody else is reading from it at the same time,
+  // this should be fine.
+  for (set<TaskID_t>::iterator it = to_delete.begin();
+       it != to_delete.end();
+       ++it) {
+    task_node->outgoing_arc_map_.erase(*it);
   }
   // Remove this task's potential flow from the per-job unscheduled
   // aggregator's outgoing edge
