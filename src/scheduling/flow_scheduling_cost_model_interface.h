@@ -15,9 +15,16 @@ namespace firmament {
 
 typedef uint64_t Cost_t;
 
+// List of cost models supported
+enum FlowSchedulingCostModelType {
+  COST_MODEL_TRIVIAL = 0,
+  COST_MODEL_QUINCY = 1,
+};
+
 class FlowSchedulingCostModelInterface {
  public:
-  FlowSchedulingCostModelInterface();
+  FlowSchedulingCostModelInterface() {};
+  virtual ~FlowSchedulingCostModelInterface() {};
 
   // Costs pertaining to leaving tasks unscheduled
   virtual Cost_t TaskToUnscheduledAggCost(TaskID_t task_id) = 0;

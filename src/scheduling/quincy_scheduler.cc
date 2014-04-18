@@ -23,9 +23,13 @@
 #include "engine/local_executor.h"
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
+#include "scheduling/flow_scheduling_cost_model_interface.h"
 
 DEFINE_bool(debug_flow_graph, true, "Write out a debug copy of the scheduling"
             " flow graph to /tmp/debug.dm.");
+DEFINE_int32(flow_scheduling_cost_model, 0,
+             "Flow scheduler cost model to use. "
+             "Values: 0 = TRIVIAL, 1 = QUINCY");
 
 namespace firmament {
 namespace scheduler {
@@ -51,6 +55,7 @@ QuincyScheduler::QuincyScheduler(
     : EventDrivenScheduler(job_map, resource_map, object_store, task_map,
                            topo_mgr, m_adapter, coordinator_res_id,
                            coordinator_uri),
+      flow_graph_(FlowSchedulingCostModelType(FLAGS_flow_scheduling_cost_model)),
       parameters_(params),
       debug_seq_num_(0) {
   LOG(INFO) << "QuincyScheduler initiated; parameters: "

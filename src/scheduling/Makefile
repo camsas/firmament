@@ -15,9 +15,13 @@ TESTS = dimacs_exporter_test flow_graph_test
 TESTS_DEPS = $(OBJ_DIR)/../base/libfirmament_base.a
 TESTS_dimacs_exporter_DEPS = $(OBJ_DIR)/flow_graph.o \
 			     $(OBJ_DIR)/flow_node_type.pb.o \
+ 			     $(OBJ_DIR)/trivial_cost_model.o \
+ 			     $(OBJ_DIR)/quincy_cost_model.o \
 			     $(OBJ_DIR)/../misc/libfirmament_misc.a \
 			     $(OBJ_DIR)/../base/libfirmament_base.a
 TESTS_flow_graph_DEPS = $(OBJ_DIR)/flow_node_type.pb.o \
+ 			$(OBJ_DIR)/trivial_cost_model.o \
+ 			$(OBJ_DIR)/quincy_cost_model.o \
 			$(OBJ_DIR)/../misc/libfirmament_misc.a \
 			$(OBJ_DIR)/../base/libfirmament_base.a
 

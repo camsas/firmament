@@ -16,12 +16,14 @@
 #include "misc/map-util.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
+#include "scheduling/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
 
 class FlowGraph {
  public:
-  FlowGraph();
+  FlowGraph(FlowSchedulingCostModelType cost_model);
+  virtual ~FlowGraph();
   void AddJobNodes(JobDescriptor* jd);
   void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
                        uint32_t* num_leaves_below);
@@ -71,6 +73,9 @@ class FlowGraph {
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
 
   inline uint64_t next_id() { return current_id_++; }
+
+  // Flow scheduling cost model used
+  FlowSchedulingCostModelInterface* cost_model_;
 
   // Graph structure containers and helper fields
   uint64_t current_id_;

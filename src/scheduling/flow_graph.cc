@@ -19,30 +19,52 @@
 #include "misc/utils.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/trivial_cost_model.h"
+#include "scheduling/quincy_cost_model.h"
 
 namespace firmament {
 
 using machine::topology::TopologyManager;
 
-FlowGraph::FlowGraph()
+FlowGraph::FlowGraph(FlowSchedulingCostModelType cost_model)
     : current_id_(1) {
   // Add sink and cluster aggregator node
   AddSpecialNodes();
+  // Set up cost model for flow graph
+  VLOG(1) << "Set cost model to use in flow graph to \""
+          << cost_model << "\"";
+  switch (cost_model) {
+    case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
+      cost_model_ = new TrivialCostModel(); 
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
+      cost_model_ = new QuincyCostModel(); 
+      break;
+    default:
+      LOG(FATAL) << "Unknown flow scheduling cost model specificed "
+                 << "(" << cost_model << ")";
+  }
+}
+
+FlowGraph::~FlowGraph() {
+  delete cost_model_;
 }
 
 void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
                                FlowGraphNode* unsched_agg_node) {
   // We always have an edge to the cluster aggregator node
   FlowGraphArc* cluster_agg_arc = AddArcInternal(task_node, cluster_agg_node_);
-  // TODO(malte): stub, read value from runtime config here
-  cluster_agg_arc->cost_ = 2;
+  // Assign cost to the (task -> cluster agg) edge from cost model
+  cluster_agg_arc->cost_ =
+      cost_model_->TaskToClusterAggCost(task_node->task_id_);
   // We also always have an edge to our job's unscheduled node
   FlowGraphArc* unsched_arc = AddArcInternal(task_node, unsched_agg_node);
   // Add this task's potential flow to the per-job unscheduled
   // aggregator's outgoing edge
   AdjustUnscheduledAggToSinkCapacity(task_node->job_id_, 1);
-  // TODO(malte): stub, read value from runtime config here
-  unsched_arc->cost_ = 5;
+  // Assign cost to the (task -> unscheduled agg) edge from cost model
+  unsched_arc->cost_ =
+      cost_model_->TaskToUnscheduledAggCost(task_node->task_id_);
 }
 
 FlowGraphArc* FlowGraph::AddArcInternal(uint64_t src, uint64_t dst) {
