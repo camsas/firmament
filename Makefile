@@ -5,11 +5,13 @@
 ifeq ("$(wildcard include/Makefile.config)","")
 	# Determine the current architecture.
 ARCH := $(shell uname -m)
+OS_ID := $(shell lsb_release -s -i)
+OS_RELEASE := $(shell lsb_release -s -r)
 
 	ifeq ($(ARCH), ia64)
 		MAKECFG := "Makefile.config.ia64"
 	else
-		MAKECFG := "Makefile.config.unix"
+		MAKECFG := "Makefile.config.$(OS_ID)-$(OS_RELEASE)"
 	endif
 
 	# Symlink the correct file.

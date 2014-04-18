@@ -1,5 +1,10 @@
 #!/bin/bash
-source include/bash_header.sh
+if [[ ! -f include/bash_header.sh ]]; then
+  echo "Please run this script from the Firmament root directory."
+  exit
+else
+  source include/bash_header.sh
+fi
 
 # Valid targets: unix, scc, ia64
 TARGET="unix"
@@ -18,50 +23,28 @@ BOOST_VER="1.49"
 CS2_VER="4.6"
 PION_VER="5.0.5"
 
+OS_ID=$(lsb_release -i -s)
+OS_RELEASE=$(lsb_release -r -s)
+ARCH_UNAME=$(uname -m)
+ARCH=$(get_arch "${ARCH_UNAME}")
+ARCHX=$(get_archx "${ARCH_UNAME}")
+
 # If we are running on a Debian-based system, a couple of dependencies
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
-BASE_PKGS="wget subversion autoconf"
-CLANG_PKGS="clang"
-COMPILER_PKGS="g++ libprotobuf-dev protobuf-compiler python-protobuf"
-GOOGLE_PKGS="libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
-PERFTOOLS_PKGS="google-perftools"
-#BOOST_PKGS="libboost-math${BOOST_VER}-dev libboost-system${BOOST_VER}-dev libboost-thread${BOOST_VER}-dev libboost-regex${BOOST_VER}-dev"
-BOOST_PKGS="libboost-filesystem-dev libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
-PION_PKGS="liblog4cpp5-dev libssl-dev libbz2-dev libtool"
-MISC_PKGS="hwloc-nox libhwloc-dev libjansson-dev libctemplate-dev libtcmalloc-minimal4-dbg"
+if [[ -f ../include/pkglist.${OS_ID}-${OS_RELEASE} ]]; then
+  source ../include/pkglist.${OS_ID}-${OS_RELEASE}
+elif [[ -f ../include/pkglist.${OS_ID}-generic ]]; then
+  source ../include/pkglist.${OS_ID}-generic
+else
+  source ../include/pkglist.generic
+fi
 
 UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
 DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
 DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
 
 #################################
-
-function get_arch() {
-  if [[ $1 == "i368" || $1 == "i468" || $1 == "i568" || $1 == "i686" || $1 == "IA-32" ]]; then
-    echo "i386"
-  elif [[ $1 == "amd64" || $1 == "x86_64" ]]; then
-    echo "amd64"
-  elif [[ $1 == "ia64" || $1 == "IA-64" ]]; then
-    echo "ia64"
-  else
-    echo "unknown"
-  fi
-}
-
-function get_archx {
-  if [[ $1 == "i368" || $1 == "i468" || $1 == "i568" || $1 == "i686" || $1 == "IA-32" ]]; then
-    echo "x86"
-  elif [[ $1 == "amd64" || $1 == "x86_64" ]]; then
-    echo "x86_64"
-  elif [[ $1 == "ia64" || $1 == "IA-64" ]]; then
-    echo "ia64"
-  else
-    echo "unknown"
-  fi
-}
-
-##################################
 
 function check_os_release_compatibility() {
   print_subhdr "OS COMPATIBILITY CHECK ($1 $2)"
@@ -235,12 +218,6 @@ function get_dep_wget {
 
 print_hdr "FETCHING & INSTALLING EXTERNAL DEPENDENCIES"
 
-OS_ID=$(lsb_release -i -s)
-OS_RELEASE=$(lsb_release -r -s)
-ARCH_UNAME=$(uname -m)
-ARCH=$(get_arch "${ARCH_UNAME}")
-ARCHX=$(get_archx "${ARCH_UNAME}")
-
 SCC_CC_SCRIPT="/opt/compilerSetupFiles/crosscompile.sh"
 
 # N.B.: We explicitly exclude the SCC here since we need to build on the MCPC
@@ -354,7 +331,7 @@ print_subhdr "GOOGLE TEST LIBRARY FOR C++"
 get_dep_svn "googletest" "googlecode"
 cd googletest-svn/make
 if [[ ${OS_ID} == 'Ubuntu' && ( ${OS_RELEASE} == '11.10' || ${OS_RELEASE} == '12.04' ) ]]; then
-  echo "Applying Ubuntu 11.10-specific patch to googletest library..."
+  echo "Applying Ubuntu 11.10/12.04-specific patch to googletest library..."
   patch -p0 -s -N -r - < ${EXT_DIR}/../scripts/fix-gtest-ubuntu.diff
 fi
 echo -n "Building googletest library..."
