@@ -130,11 +130,11 @@ LIBS += -ltcmalloc -lgflags -lglog -lprotobuf -lrt -lpthread
 CXX = clang++
 
 # optimization flags
-OPTFLAGS = -g -O0  # debug
-#OPTFLAGS = -O3    # release
+OPTFLAGS = -g -O0 -fsanitize=address -fno-omit-frame-pointer  # debug
+#OPTFLAGS = -O3                         # release
 
 # for clang++, uncomment this line
-CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-language-extension-token -Wno-deprecated -Wno-error=unused-function -Wno-vla
+CPPFLAGS = $(INCLUDES) -std=c++11 -Wall -Wextra -Werror -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-error=language-extension-token -Wno-deprecated -Wno-error=unused-function -Wno-vla -Wno-unused-parameter
 # for g++, uncomment this line
 #CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-deprecated -Wno-error=unused-function -Wno-vla
 
@@ -147,7 +147,7 @@ CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -pedantic -Wno-error=unused-paramet
 
 # XXX(malte): this is a hack to enable support for configuration #defines; we
 # should move this to a proper configuration stage
-DEFINES = -D__FIRMAMENT__ -D__HTTP_UI__ -D__PLATFORM_HAS_BOOST__
+DEFINES = -D__FIRMAMENT__ -D__HTTP_UI__ -D__PLATFORM_HAS_BOOST__ -D_GNU_SOURCE
 
 #######################################
 # PROTOBUF COMPILER
