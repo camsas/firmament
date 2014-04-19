@@ -46,7 +46,7 @@ export GTEST_LIB
 
 # This is necessary to work around a compilation issue with googletest when
 # using clang and (presumably) libstdc++4.4
-GTEST_FLAGS=-DGTEST_HAS_TR1_TUPLE=0
+GTEST_FLAGS=-DGTEST_HAS_TR1_TUPLE=1
 
 
 #######################################
@@ -105,8 +105,8 @@ export PION_LIB
 
 INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(CSRC_GEN_DIR) \
 	   -I$(GTEST_INC_DIR) -I$(PB2JSON_INC_DIR) -I$(TSSTLC_INC_DIR) \
-           -I$(PION_INC_DIR)
-           #-I/usr/lib/llvm-3.2/lib/clang/3.2/include/
+	   -I$(PION_INC_DIR)
+     #-I/usr/lib/llvm-3.2/lib/clang/3.2/include/
 	   #-I$(GPERFTOOLS_INC_DIR)
 
 
