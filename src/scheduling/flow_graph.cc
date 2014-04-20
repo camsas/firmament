@@ -145,7 +145,9 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
     unsched_agg_node->comment_ = comment;
     // ... and connect it directly to the sink
     unsched_agg_to_sink_arc = AddArcInternal(unsched_agg_node, sink_node_);
-    unsched_agg_to_sink_arc->cap_upper_bound_ = 0;
+    unsched_agg_to_sink_arc->cap_upper_bound_ = 0; 
+    unsched_agg_to_sink_arc->cost_ =
+        cost_model_->UnscheduledAggToSinkCost(JobIDFromString(jd->uuid()));
     // Record this for the future in the job <-> node ID lookup table
     CHECK(InsertIfNotPresent(&job_to_nodeid_map_, JobIDFromString(jd->uuid()),
                              unsched_agg_node->id_));
@@ -268,6 +270,8 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
     // Arc from cluster aggregator to resource topo root node
     cluster_agg_into_res_topo_arc_ = AddArcInternal(cluster_agg_node_,
                                                     root_node);
+    cluster_agg_into_res_topo_arc_->cost_ =
+        cost_model_->ClusterAggToResourceNodeCost(root_node->resource_id_);
   }
   if (rtnd->children_size() > 0) {
     // 2) Node inside the tree with non-zero children (i.e. no leaf node)
@@ -301,6 +305,9 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
         // Set initial capacity to 0; this will be updated as leaves are added
         // below this node!
         arc->cap_upper_bound_ = 0;
+        arc->cost_ =
+            cost_model_->ResourceNodeToResourceNodeCost(
+                cur_node->resource_id_, child_node->resource_id_);
       } else {
         LOG(ERROR) << "Found child without parent_id set! This will lead to an "
                    << "inconsistent flow graph!";
@@ -322,13 +329,15 @@ void FlowGraph::AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
     CHECK(cur_node != NULL) << "Could not find leaf node with ID "
                             << rtnd->resource_desc().uuid();
     cur_node->type_.set_type(FlowNodeType::PU);
-    AddArcInternal(cur_node->id_, sink_node_->id_);
+    FlowGraphArc* arc = AddArcInternal(cur_node->id_, sink_node_->id_);
+    arc->cost_ =
+        cost_model_->LeafResourceNodeToSinkCost(cur_node->resource_id_);
     leaf_nodes_.insert(cur_node->id_);
     // Add flow capacity to parent nodes until we hit the root node
     FlowGraphNode* parent = cur_node;
     ResourceID_t* parent_id;
     while ((parent_id = FindOrNull(resource_to_parent_map_,
-                                  parent->resource_id_)) != NULL) {
+                                   parent->resource_id_)) != NULL) {
       uint64_t cur_id = parent->id_;
       parent = NodeForResourceID(*parent_id);
       FlowGraphArc** arc = FindOrNull(parent->outgoing_arc_map_, cur_id);

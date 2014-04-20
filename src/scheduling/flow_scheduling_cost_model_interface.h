@@ -32,11 +32,11 @@ class FlowSchedulingCostModelInterface {
   // Per-task costs (into the resource topology)
   virtual Cost_t TaskToClusterAggCost(TaskID_t task_id) = 0;
   virtual Cost_t TaskToResourceNodeCost(TaskID_t task_id,
-                                ResourceID_t resource_id) = 0;
+                                        ResourceID_t resource_id) = 0;
   // Costs within the resource topology
   virtual Cost_t ClusterAggToResourceNodeCost(ResourceID_t target) = 0;
   virtual Cost_t ResourceNodeToResourceNodeCost(ResourceID_t source,
-                                        ResourceID_t destination) = 0;
+                                                ResourceID_t destination) = 0;
   virtual Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id) = 0;
   // Costs pertaining to preemption (i.e. already running tasks)
   virtual Cost_t TaskContinuationCost(TaskID_t task_id) = 0;
