@@ -242,7 +242,7 @@ elif [[ ${TARGET} == "scc" ]]; then
 else
   echo "Operating systems other than Ubuntu (>=10.04) and Debian are not"
   echo "currently supported for automatic configuration."
-  exit 0
+  ask_continue
 fi
 
 # Google Gflags command line flag library
