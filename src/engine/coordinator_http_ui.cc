@@ -489,16 +489,16 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
         coordinator_->knowledge_base().GetStatsForMachine(
             ResourceIDFromString(res_id));
     if (result) {
+      output += "[";
       for (deque<MachinePerfStatisticsSample>::const_iterator it =
           result->begin();
           it != result->end();
           ++it) {
-        if (output.empty())
-          output = "[";
-        else
+        if (output != "[")
           output += ", ";
         output += pb2json(*it);
       }
+      output += "]";
     }
   } else if (!task_id.empty()) {
     TaskDescriptor* td = coordinator_->GetTask(TaskIDFromString(task_id));
