@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << "Firmament coordinator starting (Platform: " << platform_id
             << ") ...";
-  shared_ptr<Coordinator> coordinator(new Coordinator(platform_id));
+  boost::shared_ptr<Coordinator> coordinator(new Coordinator(platform_id));
 
   coordinator->Run();
 

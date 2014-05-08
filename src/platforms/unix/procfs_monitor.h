@@ -65,6 +65,11 @@ struct ProcessStatistics {
   uint64_t cpu;
   uint64_t rt_priority;
   uint64_t policy;
+
+  // scheduler statistics
+  uint64_t sched_run_ticks;
+  uint64_t sched_wait_runnable_ticks;
+  uint64_t sched_run_timeslices;
 };
 
 struct SystemStatistics {
@@ -99,6 +104,7 @@ class ProcFSMonitor {
   // Find a line matching the regular expression provided
   vector<string>* FindMatchingLine(const string& regexp, const string& data);
   void ProcessPIDStat(pid_t pid, ProcessStatistics_t* stats);
+  void ProcessPIDSchedStat(pid_t pid, ProcessStatistics_t* stats);
   inline void readone(FILE* input, uint64_t *x) { fscanf(input, "%ju ", x); }
   inline void readunsigned(FILE* input, uint64_t *x) {
     fscanf(input, "%ju ", x);

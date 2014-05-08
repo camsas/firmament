@@ -108,7 +108,7 @@ void StreamSocketsAdapter<T>::AwaitNextMessage() {
   {
     boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
     boost::lock_guard<boost::mutex> envel_lock(channel_recv_envelopes_mutex_);
-    for (typeof(endpoint_channel_map_.begin()) chan_iter =
+    for (__typeof__(endpoint_channel_map_.begin()) chan_iter =
          endpoint_channel_map_.begin();
          chan_iter != endpoint_channel_map_.end();
          ++chan_iter) {
@@ -309,7 +309,7 @@ bool StreamSocketsAdapter<T>::SendMessageToEndpoint(
 template <typename T>
 void StreamSocketsAdapter<T>::StopListen() {
   if (tcp_server_) {
-    for (typeof(endpoint_channel_map_.begin()) chan_iter =
+    for (__typeof__(endpoint_channel_map_.begin()) chan_iter =
          endpoint_channel_map_.begin();
          chan_iter != endpoint_channel_map_.end();
          ++chan_iter) {

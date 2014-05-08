@@ -1,6 +1,23 @@
 .PHONY: clean test ext help info
 .DEFAULT: all
 
+# Symlink correct makefile config if isn't already linked.
+ifeq ("$(wildcard include/Makefile.config)","")
+	# Determine the current architecture.
+ARCH := $(shell uname -m)
+OS_ID := $(shell lsb_release -s -i)
+OS_RELEASE := $(shell lsb_release -s -r)
+
+	ifeq ($(ARCH), ia64)
+		MAKECFG := "Makefile.config.ia64"
+	else
+		MAKECFG := "Makefile.config.$(OS_ID)-$(OS_RELEASE)"
+	endif
+
+	# Symlink the correct file.
+	DUMMY:="$(shell ln -s $(MAKECFG) include/Makefile.config)"
+endif
+
 # Get common build settings
 include include/Makefile.config
 

@@ -66,8 +66,11 @@ TEST_F(EquivClassesTest, ResourceEquivClassGenerate) {
   close(fd);
   // TODO(malte): update below as we fix the REC generation to no longer use
   // resources' friendly names.
+  //CHECK_EQ(GenerateResourceTopologyEquivClass(machine_tmpl),
+  //         3470876451359758593ULL);
+  // Version without friendly name being included in hash
   CHECK_EQ(GenerateResourceTopologyEquivClass(machine_tmpl),
-           3470876451359758593ULL);
+           11206154957596880893ULL);
 }
 
 }  // namespace firmament

@@ -10,4 +10,6 @@ message TaskPerfStatisticsSample {
   required uint64 timestamp = 2;
   optional uint64 vsize = 3;
   optional uint64 rsize = 4;
+  optional uint64 sched_run = 5;
+  optional uint64 sched_wait = 6;
 }

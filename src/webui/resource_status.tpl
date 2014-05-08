@@ -44,13 +44,20 @@ function poll() {
   $.ajax({
     url: url,
     async: false,
+    cache: false,
     dataType: 'json',
     success: function(data) {
+      console.debug("Poll succeeded -- updating graphs.");
       updateGraphs(data);
-    }});
+    },
+    error: function(jqxhr, text_status, error_thrown) {
+      console.error("Failed to poll statistics: " + text_status);
+    }
+  });
 }
 
 function step() {
+  console.debug("Polling statistics...");
   poll();
   $('#ram-sparkline').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
   $('#ram-perc-sparkline').sparkline(ramPercentTimeseries, {chartRangeMin: 0.0, chartRangeMax: 1.0});

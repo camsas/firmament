@@ -60,7 +60,7 @@ class FlowGraphTest : public ::testing::Test {
 
 // Tests arc addition to node.
 TEST_F(FlowGraphTest, AddArcToNode) {
-  FlowGraph g;
+  FlowGraph g(FlowSchedulingCostModelType::COST_MODEL_TRIVIAL);
   uint64_t init_node_count = g.NumNodes();
   FlowGraphNode* n0 = g.AddNodeInternal(g.next_id());
   FlowGraphNode* n1 = g.AddNodeInternal(g.next_id());
@@ -72,7 +72,7 @@ TEST_F(FlowGraphTest, AddArcToNode) {
 
 // Add simple resource topology to graph
 TEST_F(FlowGraphTest, SimpleResourceTopo) {
-  FlowGraph g;
+  FlowGraph g(FlowSchedulingCostModelType::COST_MODEL_TRIVIAL);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   g.AddResourceTopology(&rtn_root, 2);
@@ -80,7 +80,7 @@ TEST_F(FlowGraphTest, SimpleResourceTopo) {
 
 // Test correct increment/decrement of unscheduled aggregator capacities.
 TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
-  FlowGraph g;
+  FlowGraph g(FlowSchedulingCostModelType::COST_MODEL_TRIVIAL);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   g.AddResourceTopology(&rtn_root, 2);

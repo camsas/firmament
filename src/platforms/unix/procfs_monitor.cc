@@ -40,6 +40,17 @@ vector<string>* ProcFSMonitor::FindMatchingLine(
   }
 }
 
+void ProcFSMonitor::ProcessPIDSchedStat(pid_t pid, ProcessStatistics_t* stats) {
+  // /proc/[pid]/schedstat parsing
+  string filename = "/proc/" + to_string(pid) + "/schedstat";
+  FILE* input = fopen(filename.c_str(), "r");
+  CHECK_NOTNULL(input);
+  readunsigned(input, &stats->sched_run_ticks);
+  readunsigned(input, &stats->sched_wait_runnable_ticks);
+  readunsigned(input, &stats->sched_run_timeslices);
+  fclose(input);
+}
+
 void ProcFSMonitor::ProcessPIDStat(pid_t pid, ProcessStatistics_t* stats) {
   // /proc/[pid]/stat parsing
   string filename = "/proc/" + to_string(pid) + "/stat";
@@ -95,6 +106,8 @@ const ProcFSMonitor::ProcessStatistics_t* ProcFSMonitor::ProcessInformation(
     stats = new ProcessStatistics_t;
   // Grab information from /proc/[pid]/stat
   ProcessPIDStat(pid, stats);
+  // Grab information from /proc/[pid]/schedstat
+  ProcessPIDSchedStat(pid, stats);
   return stats;
 }
 

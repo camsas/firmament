@@ -117,4 +117,33 @@ function ask_continue_graceful() {
   fi
 }
 
+##################################
+# Functions to extract machine architecture
+
+function get_arch() {
+  if [[ $1 == "i368" || $1 == "i468" || $1 == "i568" || $1 == "i686" || $1 == "IA-32" ]]; then
+    echo "i386"
+  elif [[ $1 == "amd64" || $1 == "x86_64" ]]; then
+    echo "amd64"
+  elif [[ $1 == "ia64" || $1 == "IA-64" ]]; then
+    echo "ia64"
+  else
+    echo "unknown"
+  fi
+}
+
+function get_archx {
+  if [[ $1 == "i368" || $1 == "i468" || $1 == "i568" || $1 == "i686" || $1 == "IA-32" ]]; then
+    echo "x86"
+  elif [[ $1 == "amd64" || $1 == "x86_64" ]]; then
+    echo "x86_64"
+  elif [[ $1 == "ia64" || $1 == "IA-64" ]]; then
+    echo "ia64"
+  else
+    echo "unknown"
+  fi
+}
+
+##################################
+
 

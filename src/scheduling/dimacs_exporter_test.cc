@@ -72,7 +72,7 @@ class DIMACSExporterTest : public ::testing::Test {
 // Tests allocation of an empty envelope and puts an integer into it (using
 // memcopy internally).
 TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
-  FlowGraph g;
+  FlowGraph g(FlowSchedulingCostModelType::COST_MODEL_TRIVIAL);
   // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
   string root_id = to_string(GenerateUUID());
@@ -111,7 +111,7 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
 //  - 100 jobs of 100 tasks each
 //  - 20 preference edges per task
 TEST_F(DIMACSExporterTest, LargeGraph) {
-  FlowGraph g;
+  FlowGraph g(FlowSchedulingCostModelType::COST_MODEL_TRIVIAL);
   // Test resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
   int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
@@ -187,7 +187,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
 // Adapt as required :)
 TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
   for (uint64_t f = 1; f < 100; f *= 2) {
-    FlowGraph g;
+    FlowGraph g(FlowSchedulingCostModelType::COST_MODEL_TRIVIAL);
     // Test resource topology
     ResourceTopologyNodeDescriptor machine_tmpl;
     int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);

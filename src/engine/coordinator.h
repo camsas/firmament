@@ -11,6 +11,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <queue>
 
 // XXX(malte): Think about the Boost dependency!
 #ifdef __PLATFORM_HAS_BOOST__
@@ -99,6 +100,27 @@ class Coordinator : public Node,
       return &resource_desc_;
     ResourceStatus** res = FindOrNull(*associated_resources_, res_id);
     return (res ? (*res)->mutable_descriptor() : NULL);
+  }
+
+  // Hacky DFS to extract the RTND for a specific resource from the tree.
+  // We ought to have a better solution for this, however -- either a
+  // lookup table of some sort, or something else. The DFS won't scale to
+  // large numbers of resources.
+  // XXX(malte): fix this hacky implementation
+  ResourceTopologyNodeDescriptor* GetResourceTreeNode(ResourceID_t res_id) {
+    ResourceTopologyNodeDescriptor* root = local_resource_topology_;
+    queue<ResourceTopologyNodeDescriptor*> q;
+    q.push(root);
+    while (!q.empty()) {
+      ResourceTopologyNodeDescriptor* cur = q.front();
+      if (ResourceIDFromString(cur->resource_desc().uuid()) == res_id) {
+        return cur;
+      }
+      for (int64_t i = 0; i < cur->children_size(); ++i)
+        q.push(cur->mutable_children(i));
+      q.pop();
+    }
+    return NULL;
   }
 
   // Gets a pointer to the resource status for an associated resource.

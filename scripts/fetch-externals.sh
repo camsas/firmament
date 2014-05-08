@@ -1,5 +1,10 @@
 #!/bin/bash
-source include/bash_header.sh
+if [[ ! -f include/bash_header.sh ]]; then
+  echo "Please run this script from the Firmament root directory."
+  exit
+else
+  source include/bash_header.sh
+fi
 
 # Valid targets: unix, scc, ia64
 TARGET="unix"
@@ -16,50 +21,30 @@ HWLOC_VER="1.5"
 PROTOBUF_VER="2.4.1"
 BOOST_VER="1.49"
 CS2_VER="4.6"
+PION_VER="5.0.5"
+
+OS_ID=$(lsb_release -i -s)
+OS_RELEASE=$(lsb_release -r -s)
+ARCH_UNAME=$(uname -m)
+ARCH=$(get_arch "${ARCH_UNAME}")
+ARCHX=$(get_archx "${ARCH_UNAME}")
 
 # If we are running on a Debian-based system, a couple of dependencies
 # are packaged, so we prompt the user to allow us to install them.
 # Currently, we support Ubuntu and Debian.
-BASE_PKGS="wget subversion autoconf"
-CLANG_PKGS="clang"
-COMPILER_PKGS="libprotobuf-dev protobuf-compiler python-protobuf"
-GOOGLE_PKGS="libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
-PERFTOOLS_PKGS="google-perftools"
-#BOOST_PKGS="libboost-math${BOOST_VER}-dev libboost-system${BOOST_VER}-dev libboost-thread${BOOST_VER}-dev libboost-regex${BOOST_VER}-dev"
-BOOST_PKGS="libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev"
-MISC_PKGS="hwloc-nox libhwloc-dev libpion-net-dev liblog4cpp5-dev libssl-dev libjansson-dev libctemplate-dev libtcmalloc-minimal4-dbg"
+if [[ -f ../include/pkglist.${OS_ID}-${OS_RELEASE} ]]; then
+  source ../include/pkglist.${OS_ID}-${OS_RELEASE}
+elif [[ -f ../include/pkglist.${OS_ID}-generic ]]; then
+  source ../include/pkglist.${OS_ID}-generic
+else
+  source ../include/pkglist.generic
+fi
 
-UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
-DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
-DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS}"
+UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
+DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
+DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
 
 #################################
-
-function get_arch() {
-  if [[ $1 == "i368" || $1 == "i468" || $1 == "i568" || $1 == "i686" || $1 == "IA-32" ]]; then
-    echo "i386"
-  elif [[ $1 == "amd64" || $1 == "x86_64" ]]; then
-    echo "amd64"
-  elif [[ $1 == "ia64" || $1 == "IA-64" ]]; then
-    echo "ia64"
-  else
-    echo "unknown"
-  fi
-}
-
-function get_archx {
-  if [[ $1 == "i368" || $1 == "i468" || $1 == "i568" || $1 == "i686" || $1 == "IA-32" ]]; then
-    echo "x86"
-  elif [[ $1 == "amd64" || $1 == "x86_64" ]]; then
-    echo "x86_64"
-  elif [[ $1 == "ia64" || $1 == "IA-64" ]]; then
-    echo "ia64"
-  else
-    echo "unknown"
-  fi
-}
-
-##################################
 
 function check_os_release_compatibility() {
   print_subhdr "OS COMPATIBILITY CHECK ($1 $2)"
@@ -192,7 +177,9 @@ function get_dep_git {
 
   if [ -d ${NAME}-git ]
   then
-    svn up ${NAME}-git/
+    cd ${NAME}-git
+    git fetch
+    cd ..
   else
     mkdir -p ${NAME}-git
     git clone ${REPO} ${NAME}-git/
@@ -230,12 +217,6 @@ function get_dep_wget {
 ###############################################################################
 
 print_hdr "FETCHING & INSTALLING EXTERNAL DEPENDENCIES"
-
-OS_ID=$(lsb_release -i -s)
-OS_RELEASE=$(lsb_release -r -s)
-ARCH_UNAME=$(uname -m)
-ARCH=$(get_arch "${ARCH_UNAME}")
-ARCHX=$(get_archx "${ARCH_UNAME}")
 
 SCC_CC_SCRIPT="/opt/compilerSetupFiles/crosscompile.sh"
 
@@ -350,7 +331,7 @@ print_subhdr "GOOGLE TEST LIBRARY FOR C++"
 get_dep_svn "googletest" "googlecode"
 cd googletest-svn/make
 if [[ ${OS_ID} == 'Ubuntu' && ( ${OS_RELEASE} == '11.10' || ${OS_RELEASE} == '12.04' ) ]]; then
-  echo "Applying Ubuntu 11.10-specific patch to googletest library..."
+  echo "Applying Ubuntu 11.10/12.04-specific patch to googletest library..."
   patch -p0 -s -N -r - < ${EXT_DIR}/../scripts/fix-gtest-ubuntu.diff
 fi
 echo -n "Building googletest library..."
@@ -445,6 +426,32 @@ cd pb2json-git/
 echo -n "Building pb2json library..."
 RES=$(make)
 print_succ_or_fail ${RES}
+cd ${EXT_DIR}
+
+
+## PION library (for integrated web server)
+print_subhdr "PION HTTP SERVER LIBRARY"
+PION_BUILD_DIR=${EXT_DIR}/pion-build
+PION_INSTALL_FILE="${PION_BUILD_DIR}/lib/pkgconfig/pion.pc"
+if [[ ! -f ${PION_INSTALL_FILE} ]]; then
+  PION_DIR=pion-git
+  mkdir -p ${PION_BUILD_DIR}
+  get_dep_git "pion" "https://github.com/splunk/pion"
+  cd ${PION_DIR}/
+  git checkout -q ${PION_VER} 
+  echo -n "Generating build infrastructure..."
+  RES1=$(./autogen.sh)
+  print_succ_or_fail ${RES1}
+  echo -n "Configuring pion library..."
+  RES2=$(./configure --disable-tests --prefix=${PION_BUILD_DIR})
+  print_succ_or_fail ${RES2}
+  echo -n "Building pion library..."
+  RES3=$(make)
+  print_succ_or_fail ${RES3}
+  echo -n "Installing pion library..."
+  RES4=$(make install)
+  print_succ_or_fail ${RES4}
+fi
 cd ${EXT_DIR}
 
 

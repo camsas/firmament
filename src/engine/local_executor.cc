@@ -87,6 +87,8 @@ void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
       report->set_cycles(strtoul(number.c_str(), NULL, 10));
     } else if (m[2] == "seconds") {
       report->set_runtime(strtold(number.c_str(), NULL));
+    } else if (m[2] == "cache-references") {
+      report->set_llc_refs(strtoul(number.c_str(), NULL, 10));
     } else if (m[2] == "cache-misses") {
       report->set_llc_misses(strtoul(number.c_str(), NULL, 10));
     }

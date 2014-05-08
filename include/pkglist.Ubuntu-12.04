@@ -1,0 +1,12 @@
+#!/bin/bash
+
+BASE_PKGS="wget subversion autoconf"
+CLANG_PKGS="clang"
+COMPILER_PKGS="g++ libprotobuf-dev protobuf-compiler python-protobuf"
+GOOGLE_PKGS="libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
+PERFTOOLS_PKGS="google-perftools"
+#BOOST_PKGS="libboost-math${BOOST_VER}-dev libboost-system${BOOST_VER}-dev libboost-thread${BOOST_VER}-dev libboost-regex${BOOST_VER}-dev"
+BOOST_PKGS="libboost-filesystem1.48-dev libboost-math1.48-dev libboost-system1.48-dev libboost-thread1.48-dev libboost-regex1.48-dev"
+PION_PKGS="liblog4cpp5-dev libssl-dev libbz2-dev libtool"
+MISC_PKGS="hwloc-nox libhwloc-dev libjansson-dev libctemplate-dev libtcmalloc-minimal0-dbg"
+
