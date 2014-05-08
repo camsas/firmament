@@ -292,7 +292,8 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
            ++ref_iter) {
         // TODO(malte): this logic is very simple-minded; sometimes, it may be
         // beneficial to produce locally instead of fetching remotely!
-        if ((*ref_iter)->Consumable()) {
+        if ((*ref_iter)->Consumable() &&
+            !(*ref_iter)->desc().non_deterministic()) {
           // skip this output, as it is already present
           continue;
         }
