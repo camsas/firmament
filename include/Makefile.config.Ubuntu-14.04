@@ -130,7 +130,7 @@ LIBS += -lgflags -lglog -lprotobuf -lrt -lpthread -l:libtcmalloc.so.4
 CXX = clang++
 
 # optimization flags
-OPTFLAGS = -g -O0 -fsanitize=address -fno-omit-frame-pointer  # debug
+OPTFLAGS = -g -O0 -fno-omit-frame-pointer  # debug
 #OPTFLAGS = -O3                         # release
 
 # for clang++, uncomment this line

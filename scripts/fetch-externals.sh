@@ -445,7 +445,10 @@ if [[ ! -f ${PION_INSTALL_FILE} ]]; then
   echo -n "Configuring pion library..."
   # Ensure pion compiles with C++11 support as to not confuse Boost
   # ASIO when used with firmament.
-  RES2=$(CXXFLAGS="${CXXFLAGS} -std=c++11" ./configure --disable-tests --prefix=${PION_BUILD_DIR})
+  if [[ -f '/usr/share/lintian/overrides/libboost1.55-dev' ]]; then
+    PION_EXTRA_CXXFLAGS=" -std=c++11"
+  fi
+  RES2=$(CXXFLAGS="${CXXFLAGS}${PION_EXTRA_CXXFLAGS}" ./configure --disable-tests --prefix=${PION_BUILD_DIR})
   print_succ_or_fail ${RES2}
   echo -n "Building pion library..."
   RES3=$(make)
