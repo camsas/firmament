@@ -242,7 +242,7 @@ elif [[ ${TARGET} == "scc" ]]; then
 else
   echo "Operating systems other than Ubuntu (>=10.04) and Debian are not"
   echo "currently supported for automatic configuration."
-  exit 0
+  ask_continue
 fi
 
 # Google Gflags command line flag library
@@ -438,12 +438,14 @@ if [[ ! -f ${PION_INSTALL_FILE} ]]; then
   mkdir -p ${PION_BUILD_DIR}
   get_dep_git "pion" "https://github.com/splunk/pion"
   cd ${PION_DIR}/
-  git checkout -q ${PION_VER} 
+  git checkout -q ${PION_VER}
   echo -n "Generating build infrastructure..."
   RES1=$(./autogen.sh)
   print_succ_or_fail ${RES1}
   echo -n "Configuring pion library..."
-  RES2=$(./configure --disable-tests --prefix=${PION_BUILD_DIR})
+  # Ensure pion compiles with C++11 support as to not confuse Boost
+  # ASIO when used with firmament.
+  RES2=$(CXXFLAGS="${CXXFLAGS} -std=c++11" ./configure --disable-tests --prefix=${PION_BUILD_DIR})
   print_succ_or_fail ${RES2}
   echo -n "Building pion library..."
   RES3=$(make)
