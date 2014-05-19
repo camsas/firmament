@@ -104,7 +104,7 @@ $(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(OBJ_LIB) $($(subst x,%,TESTS_
 		$(TESTS_DEPS) $($(subst x,$*,TESTS_x_DEPS)) \
 		-o $@ $(GTEST_FLAGS) $(LIBS); \
 		echo "$@" >> $(BUILD_DIR)/tests/all_tests.txt, \
-		"  TESTLNK1 $@")
+		"  TESTLNK $@")
 
 # This case deals with inline-only class implementations (i.e. those that only
 # have an -inl.h file, no .cc file).
@@ -118,7 +118,7 @@ $(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_LIB) $($(subst x,%,TESTS_x_DEPS)) $(TEST
 		$(TESTS_DEPS) $($(subst x,$*,TESTS_x_DEPS)) \
 		-o $@ $(GTEST_FLAGS) $(LIBS); \
 		echo "$@" >> $(BUILD_DIR)/tests/all_tests.txt, \
-		"  TESTLNK2 $@")
+		"  TESTLNK $@")
 
 # Generic rule to make a statically linked library using AR. No dependencies,
 # add those by writing a more specific rule with the exact .a file as its
