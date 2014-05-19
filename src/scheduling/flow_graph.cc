@@ -34,10 +34,18 @@ FlowGraph::FlowGraph(FlowSchedulingCostModelType cost_model)
   VLOG(1) << "Set cost model to use in flow graph to \""
           << cost_model << "\"";
   switch (cost_model) {
+#ifdef __CPP11_MODE__
     case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
+#else
+    case COST_MODEL_TRIVIAL:
+#endif
       cost_model_ = new TrivialCostModel(); 
       break;
+#ifdef __CPP11_MODE__
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
+#else
+    case COST_MODEL_QUINCY:
+#endif
       cost_model_ = new QuincyCostModel(); 
       break;
     default:

@@ -60,7 +60,11 @@ class FlowGraphTest : public ::testing::Test {
 
 // Tests arc addition to node.
 TEST_F(FlowGraphTest, AddArcToNode) {
+#ifdef __CPP11_MODE__
   FlowGraph g(FlowSchedulingCostModelType::COST_MODEL_TRIVIAL);
+#else
+  FlowGraph g(COST_MODEL_TRIVIAL);
+#endif
   uint64_t init_node_count = g.NumNodes();
   FlowGraphNode* n0 = g.AddNodeInternal(g.next_id());
   FlowGraphNode* n1 = g.AddNodeInternal(g.next_id());
@@ -72,7 +76,11 @@ TEST_F(FlowGraphTest, AddArcToNode) {
 
 // Add simple resource topology to graph
 TEST_F(FlowGraphTest, SimpleResourceTopo) {
+#ifdef __CPP11_MODE__
   FlowGraph g(FlowSchedulingCostModelType::COST_MODEL_TRIVIAL);
+#else
+  FlowGraph g(COST_MODEL_TRIVIAL);
+#endif
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   g.AddResourceTopology(&rtn_root, 2);
@@ -80,7 +88,11 @@ TEST_F(FlowGraphTest, SimpleResourceTopo) {
 
 // Test correct increment/decrement of unscheduled aggregator capacities.
 TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
+#ifdef __CPP11_MODE__
   FlowGraph g(FlowSchedulingCostModelType::COST_MODEL_TRIVIAL);
+#else
+  FlowGraph g(COST_MODEL_TRIVIAL);
+#endif
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   g.AddResourceTopology(&rtn_root, 2);
