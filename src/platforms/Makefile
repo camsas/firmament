@@ -2,7 +2,6 @@ ROOT_DIR=../..
 SUFFIX=platforms
 
 include $(ROOT_DIR)/include/Makefile.config
-include $(ROOT_DIR)/include/Makefile.common
 
 PBS = common.pb.o
 # TODO(malte): This is a temporary hack to force building of the unix platform
@@ -10,6 +9,8 @@ PBS = common.pb.o
 # platform, or auto-detect it.
 LIB = libfirmament_unix.a
 OBJ_LIB = $(addprefix $(OBJ_DIR)/unix/, $(LIB))
+
+include $(ROOT_DIR)/include/Makefile.common
 
 #all: protobufs $(OBJ_LIB) .setup
 

@@ -2,7 +2,6 @@ ROOT_DIR=../..
 SUFFIX=messages
 
 include $(ROOT_DIR)/include/Makefile.config
-include $(ROOT_DIR)/include/Makefile.common
 
 LIB = libfirmament_messages.a
 OBJS =
@@ -17,6 +16,8 @@ PBS = test_message.pb.o heartbeat_message.pb.o \
 TESTS =
 TESTS_DEPS =
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
+
+include $(ROOT_DIR)/include/Makefile.common
 
 all: protobufs $(OBJ_LIB) .setup
 
