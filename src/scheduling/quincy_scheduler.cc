@@ -281,6 +281,8 @@ void QuincyScheduler::RegisterResource(ResourceID_t res_id, bool local) {
   // Obtain information about resource using topology manager
   //topo_mgr_.ParentForResource(res_id);
   // Add new resource to flow graph
+  // Call into superclass method to do scheduler resource initialisation
+  EventDrivenScheduler::RegisterResource(res_id, local);
 }
 
 uint64_t QuincyScheduler::RunSchedulingIteration() {
