@@ -305,6 +305,7 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
     string out_file_name;
     spf(&out_file_name, "%s/debug_%ju.dm", FLAGS_debug_output_dir.c_str(),
         debug_seq_num_);
+    LOG(INFO) << "Writing flow graph debug info into " << out_file_name;
     exporter_.Flush(out_file_name);
   }
   // Now run the solver
@@ -365,9 +366,9 @@ void QuincyScheduler::SolverBinaryName(const string& solver, string* binary) {
   // New solvers need to have their binary registered here.
   // Paths are relative to the Firmament root directory.
   if (solver == "cs2") {
-    *binary = "ext/cs2/cs2.exe";
+    *binary = "ext/cs2-4.6/cs2.exe";
   } else if (solver == "flowlessly") {
-    *binary = "ext/flowlessly/solver";
+    *binary = "ext/flowlessly-git/flow_scheduler";
   } else {
    LOG(FATAL) << "Non-existed flow network solver specified: "
               << solver;
