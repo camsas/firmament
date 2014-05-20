@@ -27,9 +27,14 @@
 
 DEFINE_bool(debug_flow_graph, true, "Write out a debug copy of the scheduling"
             " flow graph to /tmp/debug.dm.");
+DECLARE_string(debug_output_dir);
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = QUINCY");
+DEFINE_string(flow_scheduling_solver, "cs2",
+              "Solver to use for flow network optimization. Possible values:"
+              "\"cs2\": Goldberg solver, \"flowlessly\": local Flowlessly"
+              "solver reimplementation.");
 
 namespace firmament {
 namespace scheduler {
@@ -204,7 +209,7 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
   if (FLAGS_debug_flow_graph) {
     // Somewhat ugly hack to generate unique output file name.
     string out_file_name;
-    spf(&out_file_name, "/tmp/firmament-debug/debug-flow_%ju.dm",
+    spf(&out_file_name, "%s/debug-flow_%ju.dm", FLAGS_debug_output_dir.c_str(),
         debug_seq_num_);
     CHECK((dbg_fptr = fopen(out_file_name.c_str(), "w")) != NULL);
     debug_seq_num_++;
@@ -272,13 +277,18 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
     // TODO(malte): somewhat ugly hack to compose a unique file name for each
     // scheduler iteration
     string out_file_name;
-    spf(&out_file_name, "/tmp/firmament-debug/debug_%ju.dm", debug_seq_num_);
+    spf(&out_file_name, "%s/debug_%ju.dm", FLAGS_debug_output_dir.c_str(),
+        debug_seq_num_);
     exporter_.Flush(out_file_name);
   }
   // Now run the solver
   vector<string> args;
-  pid_t solver_pid = ExecCommandSync("ext/cs2-4.6/cs2.exe", args, outfd, infd);
-  VLOG(2) << "Solver running (PID: " << solver_pid << "), CHILD_READ: "
+  string solver_binary;
+  // Get the binary name of the solver
+  SolverBinaryName(FLAGS_flow_scheduling_solver, &solver_binary);
+  pid_t solver_pid = ExecCommandSync(solver_binary, args, outfd, infd);
+  VLOG(2) << "Solver (" << FLAGS_flow_scheduling_solver << "running "
+          << "(PID: " << solver_pid << "), CHILD_READ: "
           << outfd[0] << ", PARENT_WRITE: " << outfd[1] << ", PARENT_READ: "
           << infd[0] << ", CHILD_WRITE: " << infd[1];
   // Write to pipe to solver
@@ -322,6 +332,19 @@ void QuincyScheduler::PrintGraph(vector< map<uint64_t, uint64_t> > adj_map) {
          it != adj_map[i].end(); it++) {
       cout << i << " " << it->first << " " << it->second << endl;
     }
+  }
+}
+
+void QuincyScheduler::SolverBinaryName(const string& solver, string* binary) {
+  // New solvers need to have their binary registered here.
+  // Paths are relative to the Firmament root directory.
+  if (solver == "cs2") {
+    *binary = "ext/cs2/cs2.exe";
+  } else if (solver == "flowlessly") {
+    *binary = "ext/flowlessly/solver";
+  } else {
+   LOG(FATAL) << "Non-existed flow network solver specified: "
+              << solver;
   }
 }
 

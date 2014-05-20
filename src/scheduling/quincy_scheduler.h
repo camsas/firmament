@@ -67,13 +67,14 @@ class QuincyScheduler : public EventDrivenScheduler {
                                     const FlowGraphNode& dst,
                                     SchedulingDelta* delta);
   void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);
+  TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   vector< map< uint64_t, uint64_t> >* ReadFlowGraph(
       int fd, uint64_t num_vertices);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
   uint64_t RunSchedulingIteration();
+  void SolverBinaryName(const string& solver, string* binary);
 
-  TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction. Note that this set includes tasks from all
   // jobs.
