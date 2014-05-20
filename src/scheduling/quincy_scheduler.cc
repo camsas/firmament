@@ -259,6 +259,12 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
   return adj_list;
 }
 
+void QuincyScheduler::RegisterResource(ResourceID_t res_id, bool local) {
+  // Obtain information about resource using topology manager
+  //topo_mgr_.ParentForResource(res_id);
+  // Add new resource to flow graph
+}
+
 uint64_t QuincyScheduler::RunSchedulingIteration() {
   // Blow away any old exporter state
   exporter_.Reset();

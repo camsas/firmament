@@ -43,6 +43,7 @@ class QuincyScheduler : public EventDrivenScheduler {
   ~QuincyScheduler();
   void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
+  virtual void RegisterResource(ResourceID_t res_id, bool local);
   uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<QuincyScheduler, parameters: "

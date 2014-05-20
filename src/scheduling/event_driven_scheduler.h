@@ -36,8 +36,8 @@ class EventDrivenScheduler : public SchedulerInterface {
                       const string& coordinator_uri);
   ~EventDrivenScheduler();
   ResourceID_t* BoundResourceForTask(TaskID_t task_id);
-  void DeregisterResource(ResourceID_t res_id);
-  void RegisterResource(ResourceID_t res_id, bool local);
+  virtual void DeregisterResource(ResourceID_t res_id);
+  virtual void RegisterResource(ResourceID_t res_id, bool local);
   void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                   const ReferenceInterface& new_ref,
                                   TaskDescriptor* td_ptr);
