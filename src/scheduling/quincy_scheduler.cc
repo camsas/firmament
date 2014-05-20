@@ -24,6 +24,8 @@
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/trivial_cost_model.h"
+#include "scheduling/quincy_cost_model.h"
 
 DEFINE_bool(debug_flow_graph, true, "Write out a debug copy of the scheduling"
             " flow graph to /tmp/debug.dm.");
@@ -55,15 +57,31 @@ QuincyScheduler::QuincyScheduler(
     : EventDrivenScheduler(job_map, resource_map, object_store, task_map,
                            topo_mgr, m_adapter, coordinator_res_id,
                            coordinator_uri),
-      flow_graph_(FlowSchedulingCostModelType(FLAGS_flow_scheduling_cost_model)),
       parameters_(params),
       debug_seq_num_(0) {
+
+  VLOG(1) << "Set cost model to use in flow graph to \""
+          << FLAGS_flow_scheduling_cost_model << "\"";
+  switch (FLAGS_flow_scheduling_cost_model) {
+    case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
+      flow_graph_.reset(new FlowGraph(new TrivialCostModel()));
+      VLOG(1) << "Using the trivial cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
+      flow_graph_.reset(new FlowGraph(new QuincyCostModel()));
+      VLOG(1) << "Using the quincy cost model";
+      break;
+    default:
+      LOG(FATAL) << "Unknown flow scheduling cost model specificed "
+                 << "(" << FLAGS_flow_scheduling_cost_model << ")";
+  }
+
   LOG(INFO) << "QuincyScheduler initiated; parameters: "
             << parameters_.ShortDebugString();
   // Generate the initial flow graph
   ResourceTopologyNodeDescriptor* root = new ResourceTopologyNodeDescriptor;
   topo_mgr->AsProtobuf(root);
-  flow_graph_.AddResourceTopology(root, topo_mgr->NumProcessingUnits());
+  flow_graph_->AddResourceTopology(root, topo_mgr->NumProcessingUnits());
 }
 
 QuincyScheduler::~QuincyScheduler() {
@@ -100,7 +118,7 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
       // After the task is bound, we now remove all of its edges into the flow
       // graph apart from the bound resource.
       // N.B.: This disables preemption and migration!
-      flow_graph_.UpdateArcsForBoundTask(task_id, res_id);
+      flow_graph_->UpdateArcsForBoundTask(task_id, res_id);
     }
     delete *it;  // Remove the scheduling delta -- N.B. modifies collection
                  // within loop!
@@ -113,10 +131,10 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   {
     boost::lock_guard<boost::mutex> lock(scheduling_lock_);
     // Find the task's node
-    FlowGraphNode* task_node = flow_graph_.NodeForTaskID(td_ptr->uid());
+    FlowGraphNode* task_node = flow_graph_->NodeForTaskID(td_ptr->uid());
     CHECK_NOTNULL(task_node);
     // Remove the task's node from the flow graph
-    flow_graph_.DeleteTaskNode(task_node);
+    flow_graph_->DeleteTaskNode(task_node);
   }
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
@@ -172,7 +190,7 @@ uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
   if (runnable_tasks.size() > 0) {
     // Check if the job is already in the flow graph
     // If not, simply add the whole job
-    flow_graph_.AddJobNodes(job_desc);
+    flow_graph_->AddJobNodes(job_desc);
     // If it is, only add the new bits
     // Run a scheduler iteration
     uint64_t newly_scheduled = RunSchedulingIteration();
@@ -258,8 +276,8 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   // Blow away any old exporter state
   exporter_.Reset();
   // Export the current flow graph to DIMACS format
-  exporter_.Export(flow_graph_);
-  uint64_t num_nodes = flow_graph_.NumNodes();
+  exporter_.Export(*flow_graph_);
+  uint64_t num_nodes = flow_graph_->NumNodes();
   // Pipe setup
   // infd[0] == PARENT_READ
   // infd[1] == CHILD_WRITE
@@ -293,20 +311,20 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   close(infd[0]);
   // Solver's dead, let's post-process the results.
   map<uint64_t, uint64_t>* task_mappings =
-      GetMappings(extracted_flow, flow_graph_.leaf_node_ids(),
-                  flow_graph_.sink_node().id_);
+      GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
+                  flow_graph_->sink_node().id_);
   map<uint64_t, uint64_t>::iterator it;
   vector<SchedulingDelta*> deltas;
   for (it = task_mappings->begin();
        it != task_mappings->end(); it++) {
     VLOG(1) << "Bind " << it->first << " to " << it->second << endl;
     SchedulingDelta* delta = new SchedulingDelta;
-    NodeBindingToSchedulingDelta(*flow_graph_.Node(it->first),
-                                 *flow_graph_.Node(it->second), delta);
+    NodeBindingToSchedulingDelta(*flow_graph_->Node(it->first),
+                                 *flow_graph_->Node(it->second), delta);
     if (delta->type() == SchedulingDelta::NOOP)
       continue;
     // Mark the task as scheduled
-    flow_graph_.Node(it->first)->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+    flow_graph_->Node(it->first)->type_.set_type(FlowNodeType::SCHEDULED_TASK);
     // Remember the delta
     deltas.push_back(delta);
   }
@@ -326,7 +344,7 @@ void QuincyScheduler::PrintGraph(vector< map<uint64_t, uint64_t> > adj_map) {
 }
 
 bool QuincyScheduler::CheckNodeType(uint64_t node, FlowNodeType_NodeType type) {
-  FlowNodeType_NodeType node_type = flow_graph_.Node(node)->type_.type();
+  FlowNodeType_NodeType node_type = flow_graph_->Node(node)->type_.type();
   return (node_type == type);
 }
 
@@ -340,7 +358,7 @@ uint64_t QuincyScheduler::AssignNode(
   for (map_it = (*extracted_flow)[node].begin();
        map_it != (*extracted_flow)[node].end(); map_it++) {
     VLOG(2) << "Checking direct edge back to " << map_it->first << " (type: "
-            << flow_graph_.Node(map_it->first)->type_.type() << ")";
+            << flow_graph_->Node(map_it->first)->type_.type() << ")";
     // Check if node = root or node = task
     if (CheckNodeType(map_it->first, FlowNodeType::ROOT_TASK) ||
         CheckNodeType(map_it->first, FlowNodeType::UNSCHEDULED_TASK)) {

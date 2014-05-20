@@ -96,7 +96,7 @@ class QuincyScheduler : public EventDrivenScheduler {
   // in the process of making scheduling decisions.
   bool scheduling_;
   // Local storage of the current flow graph
-  FlowGraph flow_graph_;
+  shared_ptr<FlowGraph> flow_graph_;
   // Flow scheduler parameters (passed in as protobuf to constructor)
   SchedulingParameters parameters_;
   // DIMACS exporter for interfacing to the solver
