@@ -19,7 +19,7 @@ GFLAGS_VER="2.0"
 GLOG_VER="HEAD"
 HWLOC_VER="1.5"
 PROTOBUF_VER="2.4.1"
-BOOST_VER="1.49"
+BOOST_VER="1.55"
 CS2_VER="4.6"
 PION_VER="5.0.5"
 
@@ -28,6 +28,11 @@ OS_RELEASE=$(lsb_release -r -s)
 ARCH_UNAME=$(uname -m)
 ARCH=$(get_arch "${ARCH_UNAME}")
 ARCHX=$(get_archx "${ARCH_UNAME}")
+
+# Setting compiler variables globally for the ext packages.
+export CC=clang
+export CXX=clang++
+export CXXFLAGS="$CXXFLAGS -std=c++11"
 
 # If we are running on a Debian-based system, a couple of dependencies
 # are packaged, so we prompt the user to allow us to install them.
@@ -242,7 +247,7 @@ elif [[ ${TARGET} == "scc" ]]; then
 else
   echo "Operating systems other than Ubuntu (>=10.04) and Debian are not"
   echo "currently supported for automatic configuration."
-  exit 0
+  ask_continue
 fi
 
 # Google Gflags command line flag library
@@ -438,7 +443,7 @@ if [[ ! -f ${PION_INSTALL_FILE} ]]; then
   mkdir -p ${PION_BUILD_DIR}
   get_dep_git "pion" "https://github.com/splunk/pion"
   cd ${PION_DIR}/
-  git checkout -q ${PION_VER} 
+  git checkout -q ${PION_VER}
   echo -n "Generating build infrastructure..."
   RES1=$(./autogen.sh)
   print_succ_or_fail ${RES1}

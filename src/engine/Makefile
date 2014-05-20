@@ -2,13 +2,13 @@ ROOT_DIR=../..
 SUFFIX=engine
 
 include $(ROOT_DIR)/include/Makefile.config
-include $(ROOT_DIR)/include/Makefile.common
 
 TASK_LIB_LIBS := $(LIBS) -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc -lssl -lcrypto
 LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc -lssl -lcrypto
 HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -llog4cpp -ljansson -lctemplate
 
-LIB = libfirmament_task_lib.a
+LIB = libfirmament_engine.a
+TASK_LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim
 OBJS = coordinator_http_ui.o coordinator.o knowledge_base.o local_executor.o node.o remote_executor.o worker.o topology_manager.o
 PBS =
@@ -53,16 +53,22 @@ TESTS_local_executor_DEPS = $(BUILD_DIR)/engine/topology_manager.o \
 			    $(BUILD_DIR)/misc/libfirmament_misc.a \
 			    $(BUILD_DIR)/base/libfirmament_base.a
 TESTS_worker_DEPS = $(BUILD_DIR)/engine/node.o \
-                    $(BUILD_DIR)/base/libfirmament_base.a \
-		    $(BUILD_DIR)/platforms/unix/libfirmament_unix.a
-
+		    $(BUILD_DIR)/engine/topology_manager.o \
+		    $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
+		    $(BUILD_DIR)/messages/libfirmament_messages.a \
+		    $(BUILD_DIR)/misc/libfirmament_misc.a \
+		    $(BUILD_DIR)/storage/libfirmament_storage.a \
+		    $(BUILD_DIR)/base/libfirmament_base.a
 
 OBJ_BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
+TASK_OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(TASK_LIB))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
-all: protobufs $(OBJ_BIN) $(TESTS_BIN) $(OBJ_LIB) .setup
+include $(ROOT_DIR)/include/Makefile.common
+
+all: protobufs $(OBJ_BIN) $(TESTS_BIN) $(TASK_OBJ_LIB) .setup
 
 protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 
@@ -99,7 +105,7 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		"  DYNLNK  $(BUILD_DIR)/engine/coordinator")
 
 # XXX(malte): temporary hack
-$(OBJ_DIR)/coordinator_sim: \
+$(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(BUILD_DIR)/sim/libfirmament_sim.a \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
@@ -133,6 +139,8 @@ $(OBJ_DIR)/coordinator_sim: \
 
 $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
+	$(BUILD_DIR)/messages/libfirmament_messages.a \
+	$(BUILD_DIR)/storage/libfirmament_storage.a \
 	$(BUILD_DIR)/base/libfirmament_base.a
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
@@ -150,7 +158,9 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 #		$(BUILD_DIR)/engine/local_executor.o \
 
 
+$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS))
+
 # Task interface library
 # ---------------------------
 # This needs to be linked into task binaries.
-$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, task_lib.o)
+$(TASK_OBJ_LIB): $(addprefix $(OBJ_DIR)/, task_lib.o)

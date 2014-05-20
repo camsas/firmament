@@ -61,8 +61,8 @@ quiet-command = $(if $(V),$1,$(if $(2),@echo $2 && $1, @$1))
 
 # Generate protobuf source.
 $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.cc $(SRC_GEN_DIR)/$(SUFFIX)/%.pb.h \
-	$(CSRC_GEN_DIR)/$(SUFFIX)/%.pb.cc \
-	$(CSRC_GEN_DIR)/$(SUFFIX)/%.pb.h: %.proto .setup
+	$(CSRC_GEN_DIR)/$(SUFFIX)/%.pb-c.c \
+	$(CSRC_GEN_DIR)/$(SUFFIX)/%.pb-c.h: %.proto .setup
 	$(call quiet-command,$(PBC) --cpp_out=$(SRC_GEN_DIR)/ \
 		--proto_path=$(SRC_ROOT_DIR)/ \
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$<, \
@@ -96,7 +96,7 @@ $(OBJ_DIR)/%.o: %.cc %.h .setup
 		"  CXX     $@")
 
 # Make unit test binary and add it to the test list run by global "make test".
-$(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_%_DEPS) $(TESTS_DEPS)
+$(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(OBJ_LIB) $($(subst x,%,TESTS_x_DEPS)) $(TESTS_DEPS)
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) $(OPTFLAGS) $(DEFINES) \
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$< \
@@ -110,11 +110,11 @@ $(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_DIR)/%.o $(TESTS_%_DEPS) $(TESTS_DEPS)
 # have an -inl.h file, no .cc file).
 # TODO(malte): We may get rid of this in favour of supplying empty/skeleton
 # .cc files for such cases.
-$(TEST_OBJ_DIR)/%_test: %_test.cc $(TESTS_%_DEPS) $(TESTS_DEPS)
+$(TEST_OBJ_DIR)/%_test: %_test.cc $(OBJ_LIB) $($(subst x,%,TESTS_x_DEPS)) $(TESTS_DEPS)
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) $(OPTFLAGS) $(DEFINES) \
 		$(SRC_ROOT_DIR)/$(SUFFIX)/$< \
-		$(GTEST_LIB) \
+		$(GTEST_LIB) $(OBJ_LIB) \
 		$(TESTS_DEPS) $($(subst x,$*,TESTS_x_DEPS)) \
 		-o $@ $(GTEST_FLAGS) $(LIBS); \
 		echo "$@" >> $(BUILD_DIR)/tests/all_tests.txt, \

@@ -36,6 +36,13 @@ using google::protobuf::RepeatedField;
 #define SUBMSG_WRITE_PTR(obj, submsg, member, val) \
     obj->mutable ## _ ## submsg()->set_ ## member(val)
 
+// C++11 mode switch macro
+#if __cplusplus >= 201103L
+#define __CPP11_MODE__
+#else
+#undef __CPP11_MODE__
+#endif
+
 // Helper function to convert an arbitrary object to a string via the
 // stringstream standard library class.
 template <class T> inline string to_string(const T& t) {

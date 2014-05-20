@@ -19,31 +19,16 @@
 #include "misc/utils.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
-#include "scheduling/trivial_cost_model.h"
-#include "scheduling/quincy_cost_model.h"
 
 namespace firmament {
 
 using machine::topology::TopologyManager;
 
-FlowGraph::FlowGraph(FlowSchedulingCostModelType cost_model)
-    : current_id_(1) {
+FlowGraph::FlowGraph(FlowSchedulingCostModelInterface *cost_model)
+    : cost_model_(cost_model),
+    current_id_(1) {
   // Add sink and cluster aggregator node
   AddSpecialNodes();
-  // Set up cost model for flow graph
-  VLOG(1) << "Set cost model to use in flow graph to \""
-          << cost_model << "\"";
-  switch (cost_model) {
-    case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
-      cost_model_ = new TrivialCostModel(); 
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
-      cost_model_ = new QuincyCostModel(); 
-      break;
-    default:
-      LOG(FATAL) << "Unknown flow scheduling cost model specificed "
-                 << "(" << cost_model << ")";
-  }
 }
 
 FlowGraph::~FlowGraph() {
@@ -145,7 +130,7 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
     unsched_agg_node->comment_ = comment;
     // ... and connect it directly to the sink
     unsched_agg_to_sink_arc = AddArcInternal(unsched_agg_node, sink_node_);
-    unsched_agg_to_sink_arc->cap_upper_bound_ = 0; 
+    unsched_agg_to_sink_arc->cap_upper_bound_ = 0;
     unsched_agg_to_sink_arc->cost_ =
         cost_model_->UnscheduledAggToSinkCost(JobIDFromString(jd->uuid()));
     // Record this for the future in the job <-> node ID lookup table
@@ -189,7 +174,7 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
       // XXX(malte): hack to add equiv class aggregator nodes
       VLOG(2) << "Equiv class for task " << cur->uid() << " is "
               << GenerateTaskEquivClass(*cur);
-      FlowGraphNode* ec_node = 
+      FlowGraphNode* ec_node =
           AddEquivClassAggregator(GenerateTaskEquivClass(*cur));
       FlowGraphArc* ec_arc = AddArcInternal(task_node->id_,
                                             ec_node->id_);
