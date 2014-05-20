@@ -19,7 +19,7 @@ GFLAGS_VER="2.0"
 GLOG_VER="HEAD"
 HWLOC_VER="1.5"
 PROTOBUF_VER="2.4.1"
-BOOST_VER="1.49"
+BOOST_VER="1.55"
 CS2_VER="4.6"
 PION_VER="5.0.5"
 
@@ -28,6 +28,11 @@ OS_RELEASE=$(lsb_release -r -s)
 ARCH_UNAME=$(uname -m)
 ARCH=$(get_arch "${ARCH_UNAME}")
 ARCHX=$(get_archx "${ARCH_UNAME}")
+
+# Setting compiler variables globally for the ext packages.
+export CC=clang
+export CXX=clang++
+export CXXFLAGS="$CXXFLAGS -std=c++11"
 
 # If we are running on a Debian-based system, a couple of dependencies
 # are packaged, so we prompt the user to allow us to install them.
@@ -443,12 +448,7 @@ if [[ ! -f ${PION_INSTALL_FILE} ]]; then
   RES1=$(./autogen.sh)
   print_succ_or_fail ${RES1}
   echo -n "Configuring pion library..."
-  # Ensure pion compiles with C++11 support as to not confuse Boost
-  # ASIO when used with firmament.
-  if [[ -f '/usr/share/lintian/overrides/libboost1.55-dev' ]]; then
-    PION_EXTRA_CXXFLAGS=" -std=c++11"
-  fi
-  RES2=$(CXXFLAGS="${CXXFLAGS}${PION_EXTRA_CXXFLAGS}" ./configure --disable-tests --prefix=${PION_BUILD_DIR})
+  RES2=$(./configure --disable-tests --prefix=${PION_BUILD_DIR})
   print_succ_or_fail ${RES2}
   echo -n "Building pion library..."
   RES3=$(make)
