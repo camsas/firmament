@@ -276,7 +276,6 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
 }
 
 void QuincyScheduler::RegisterResource(ResourceID_t res_id, bool local) {
-  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Update the flow graph
   UpdateResourceTopology(topology_manager_);
   // Call into superclass method to do scheduler resource initialisation.
@@ -376,8 +375,6 @@ void QuincyScheduler::SolverBinaryName(const string& solver, string* binary) {
 
 void QuincyScheduler::UpdateResourceTopology(
     shared_ptr<TopologyManager> topo_mgr) {
-  // Scheduler lock will be held when entering here, but check anyway
-  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Load the current topology from the topology manager
   ResourceTopologyNodeDescriptor* root = new ResourceTopologyNodeDescriptor;
   topo_mgr->AsProtobuf(root);

@@ -244,7 +244,6 @@ void EventDrivenScheduler::RegisterResource(ResourceID_t res_id, bool local) {
 }
 
 void EventDrivenScheduler::RegisterLocalResource(ResourceID_t res_id) {
-  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Create an executor for each resource.
   VLOG(1) << "Adding executor for local resource " << res_id;
   LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_,
@@ -253,7 +252,6 @@ void EventDrivenScheduler::RegisterLocalResource(ResourceID_t res_id) {
 }
 
 void EventDrivenScheduler::RegisterRemoteResource(ResourceID_t res_id) {
-  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Create an executor for each resource.
   VLOG(1) << "Adding executor for remote resource " << res_id;
   RemoteExecutor* exec = new RemoteExecutor(res_id, coordinator_res_id_,
