@@ -446,19 +446,21 @@ void FlowGraph::UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd,
   uint64_t* found_node = FindOrNull(resource_to_nodeid_map_, res_id);
   if (found_node) {
     // Check if its parent is identical
-    ResourceID_t* old_parent_id = FindOrNull(resource_to_parent_map_, res_id);
-    ResourceID_t new_parent_id = ResourceIDFromString(rtnd->parent_id());
-    if (*old_parent_id != new_parent_id) {
-      // If not, we need to move it to the new parent
-      InsertOrUpdate(&resource_to_parent_map_, res_id, new_parent_id);
-      // Remove arc corresponding to the old parent/child relationship
-      uint64_t* new_parent_node =
-          FindOrNull(resource_to_nodeid_map_, new_parent_id);
-      uint64_t* old_parent_node =
-          FindOrNull(resource_to_nodeid_map_, *old_parent_id);
-      CHECK_NOTNULL(old_parent_node);
-      CHECK_NOTNULL(new_parent_node);
-      // TODO
+    if (!rtnd->parent_id().empty()) {
+      ResourceID_t* old_parent_id = FindOrNull(resource_to_parent_map_, res_id);
+      ResourceID_t new_parent_id = ResourceIDFromString(rtnd->parent_id());
+      if (*old_parent_id != new_parent_id) {
+        // If not, we need to move it to the new parent
+        InsertOrUpdate(&resource_to_parent_map_, res_id, new_parent_id);
+        // Remove arc corresponding to the old parent/child relationship
+        uint64_t* new_parent_node =
+            FindOrNull(resource_to_nodeid_map_, new_parent_id);
+        uint64_t* old_parent_node =
+            FindOrNull(resource_to_nodeid_map_, *old_parent_id);
+        CHECK_NOTNULL(old_parent_node);
+        CHECK_NOTNULL(new_parent_node);
+        // TODO
+      }
     }
     // Check if its children are identical
     // TODO 

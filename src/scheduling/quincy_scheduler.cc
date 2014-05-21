@@ -62,6 +62,7 @@ QuincyScheduler::QuincyScheduler(
     : EventDrivenScheduler(job_map, resource_map, object_store, task_map,
                            topo_mgr, m_adapter, coordinator_res_id,
                            coordinator_uri),
+      topology_manager_(topo_mgr),
       parameters_(params),
       debug_seq_num_(0) {
 
