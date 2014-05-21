@@ -1,4 +1,5 @@
 // The Firmament project
+// Copyright (c) 2012-2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 // Copyright (c) 2012-2013 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Quincy scheduler.
@@ -75,6 +76,7 @@ class QuincyScheduler : public EventDrivenScheduler {
   void RegisterRemoteResource(ResourceID_t res_id);
   uint64_t RunSchedulingIteration();
   void SolverBinaryName(const string& solver, string* binary);
+  void UpdateResourceTopology(shared_ptr<TopologyManager> topo_mgr);
 
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction. Note that this set includes tasks from all

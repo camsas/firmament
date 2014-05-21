@@ -26,13 +26,15 @@ using machine::topology::TopologyManager;
 
 FlowGraph::FlowGraph(FlowSchedulingCostModelInterface *cost_model)
     : cost_model_(cost_model),
-    current_id_(1) {
+      current_id_(1) {
   // Add sink and cluster aggregator node
   AddSpecialNodes();
 }
 
 FlowGraph::~FlowGraph() {
   delete cost_model_;
+  // XXX(malte): N.B. this leaks memory as we haven't destroyed all of the
+  // nodes and arcs in the flow graph (which are allocated on the heap)
 }
 
 void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
@@ -80,6 +82,7 @@ FlowGraphNode* FlowGraph::AddEquivClassAggregator(
     InsertIfNotPresent(&equiv_class_to_nodeid_map_,
                        equivclass, *equiv_class_node_id);
   }
+#if 0
   // XXX(malte): HACK!
   if (equivclass == 9726732246984505783ULL) {
     // matmult
@@ -112,6 +115,7 @@ FlowGraphNode* FlowGraph::AddEquivClassAggregator(
     VLOG(1) << "Adding NO EQUIV CLASS PREFERENCE EDGES as task UNKOWN!";
     AddArcInternal(*equiv_class_node_id, cluster_agg_node_->id_);
   }
+#endif
   return Node(*equiv_class_node_id);
 }
 
@@ -434,5 +438,54 @@ void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
   CHECK_NOTNULL(assigned_res_node);
   PinTaskToNode(task_node, assigned_res_node);
 }
+
+void FlowGraph::UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd,
+                                   uint32_t* num_leaves_below) {
+  ResourceID_t res_id = ResourceIDFromString(rtnd->resource_desc().uuid());
+  // First of all, check if this node already exists in our resource topology
+  uint64_t* found_node = FindOrNull(resource_to_nodeid_map_, res_id);
+  if (found_node) {
+    // Check if its parent is identical
+    ResourceID_t* old_parent_id = FindOrNull(resource_to_parent_map_, res_id);
+    ResourceID_t new_parent_id = ResourceIDFromString(rtnd->parent_id());
+    if (*old_parent_id != new_parent_id) {
+      // If not, we need to move it to the new parent
+      InsertOrUpdate(&resource_to_parent_map_, res_id, new_parent_id);
+      // Remove arc corresponding to the old parent/child relationship
+      uint64_t* new_parent_node =
+          FindOrNull(resource_to_nodeid_map_, new_parent_id);
+      uint64_t* old_parent_node =
+          FindOrNull(resource_to_nodeid_map_, *old_parent_id);
+      CHECK_NOTNULL(old_parent_node);
+      CHECK_NOTNULL(new_parent_node);
+      // TODO
+    }
+    // Check if its children are identical
+    // TODO 
+  } else {
+    // It does not already exist, so add it.
+    // N.B.: We need to ensure we hook in at the right place here by setting the
+    // parent ID appropriately if it is not already.
+    AddResourceNode(rtnd, num_leaves_below);
+  }
+}
+
+void FlowGraph::UpdateResourceTopology(
+    ResourceTopologyNodeDescriptor* resource_tree,
+    uint32_t num_leaves) {
+  CHECK_NOTNULL(cluster_agg_into_res_topo_arc_);
+  uint32_t old_num_leaves = cluster_agg_into_res_topo_arc_->cap_upper_bound_;
+  uint32_t num_leaves_below = num_leaves;
+  // N.B.: This only considers ADDITION of resources currently; if resources
+  // are removed from the topology (e.g. due to a failure), they won't
+  // disappear via this method.
+  TraverseResourceProtobufTreeReturnRTND(
+      resource_tree,
+      boost::bind(&FlowGraph::UpdateResourceNode, this, _1, &num_leaves_below));
+  VLOG(2) << "Updated resource topology in flow scheduler. Change to "
+          << "number of schedulable leaves: " << (old_num_leaves - num_leaves);
+  cluster_agg_into_res_topo_arc_->cap_upper_bound_ = num_leaves;
+}
+
 
 }  // namespace firmament

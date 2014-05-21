@@ -24,6 +24,7 @@ class FlowGraph {
  public:
   FlowGraph(FlowSchedulingCostModelInterface* cost_model);
   virtual ~FlowGraph();
+  // Public API
   void AddJobNodes(JobDescriptor* jd);
   void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd,
                        uint32_t* num_leaves_below);
@@ -34,6 +35,11 @@ class FlowGraph {
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
+  void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd,
+                          uint32_t* num_leaves_below);
+  void UpdateResourceTopology(ResourceTopologyNodeDescriptor* resource_tree,
+                              uint32_t num_leaves);
+  // Simple accessor methods
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
   inline const unordered_map<uint64_t, FlowGraphNode*>& Nodes() const {
     return node_map_;
@@ -50,7 +56,7 @@ class FlowGraph {
   }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
   //inline uint64_t NumNodes() const { return node_map_.size(); }
-  inline uint64_t NumNodes() const { return current_id_; }
+  inline uint64_t NumNodes() const { return current_id_ - 1; }
   inline FlowGraphNode* Node(uint64_t id) {
     FlowGraphNode* const* npp = FindOrNull(node_map_, id);
     return (npp ? *npp : NULL);

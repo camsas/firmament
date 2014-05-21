@@ -123,6 +123,8 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   ExecutorInterface** exec = FindOrNull(executors_, *res_id_ptr);
   CHECK_NOTNULL(exec);
   (*exec)->HandleTaskCompletion(*td_ptr, report);
+  // Mark task ask completed
+  td_ptr->set_state(TaskDescriptor::COMPLETED);
   // Run scheduling algorithms from this task
   set<DataObjectID_t*> outputs = DataObjectIDsFromProtobuf(td_ptr->outputs());
   LazyGraphReduction(outputs, td_ptr, JobIDFromString(td_ptr->job_id()));
@@ -234,6 +236,7 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
 
 // Simple 2-argument wrapper
 void EventDrivenScheduler::RegisterResource(ResourceID_t res_id, bool local) {
+  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   if (local)
     RegisterLocalResource(res_id);
   else
