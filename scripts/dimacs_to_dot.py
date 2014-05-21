@@ -12,7 +12,7 @@ flowinputfile = sys.argv[2]
 def dot_out(nodes, edges):
   # dot header
   print "digraph G {"
-  print "\tgraph [center rankdir=LR]"
+  print "\tgraph [rankdir=\"LR\"]"
   # nodes
   print "\t{ node [shape=box]"
   print "\t",
