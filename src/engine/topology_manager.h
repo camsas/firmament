@@ -39,7 +39,7 @@ class TopologyManager {
   void LoadAndParseTopology();
   void LoadAndParseSyntheticTopology(const string& topology_desc);
   void DebugPrintRawTopology();
-  uint32_t NumProcessingUnits();
+  uint32_t NumProcessingUnits() const;
 
  protected:
   string DebugCPUSet(hwloc_const_cpuset_t cpuset);
@@ -47,7 +47,7 @@ class TopologyManager {
                         ResourceTopologyNodeDescriptor* obj_pb,
                         ResourceTopologyNodeDescriptor* parent_pb);
   ResourceDescriptor::ResourceType TranslateHwlocType(
-      hwloc_obj_type_t obj_type);
+      hwloc_obj_type_t obj_type) const;
   // Local fields holding topology information
   hwloc_topology_t topology_;
   hwloc_cpuset_t cpuset_;

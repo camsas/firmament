@@ -113,7 +113,7 @@ void TopologyManager::MakeProtobufTree(
   char obj_string[128];
   // Add this object
   hwloc_obj_snprintf(obj_string, sizeof(obj_string), topology_, node, " #", 0);
-  ResourceID_t* res_id = FindOrNull(obj_to_resourceID_, node);
+  const ResourceID_t* res_id = FindOrNull(obj_to_resourceID_, node);
   string obj_id;
   if (!res_id) {
     // If this object is not already known, we generate a new resource ID.
@@ -146,7 +146,7 @@ void TopologyManager::MakeProtobufTree(
   }
 }
 
-uint32_t TopologyManager::NumProcessingUnits() {
+uint32_t TopologyManager::NumProcessingUnits() const {
   hwloc_obj_t obj = NULL;
   uint32_t count = 0;
   do {
@@ -158,7 +158,7 @@ uint32_t TopologyManager::NumProcessingUnits() {
 }
 
 ResourceDescriptor::ResourceType TopologyManager::TranslateHwlocType(
-    hwloc_obj_type_t obj_type) {
+    hwloc_obj_type_t obj_type) const {
   switch (obj_type) {
     case HWLOC_OBJ_MACHINE:
       return ResourceDescriptor::RESOURCE_MACHINE;
