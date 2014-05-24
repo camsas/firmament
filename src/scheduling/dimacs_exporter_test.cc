@@ -98,7 +98,7 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   TaskDescriptor* ct2 = rt->add_spawned();
   ct2->set_uid(GenerateTaskID(*rt));
   // Add resources and job to flow graph
-  g.AddResourceTopology(&rtn_root, 2);
+  g.AddResourceTopology(rtn_root);
   g.AddJobNodes(&jd);
   // Export
   DIMACSExporter exp;
@@ -134,7 +134,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   }
   VLOG(1) << "Added " << n << " machines.";
   // Add resources and job to flow graph
-  g.AddResourceTopology(&rtn_root, n*8);
+  g.AddResourceTopology(rtn_root);
   // Test job
   uint64_t j = 100;
   uint64_t t = 100;
@@ -210,7 +210,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     }
     VLOG(1) << "Added " << n << " machines.";
     // Add resources and job to flow graph
-    g.AddResourceTopology(&rtn_root, n*8);
+    g.AddResourceTopology(rtn_root);
     // Test job
     uint64_t j = f;
     uint64_t t = 100;

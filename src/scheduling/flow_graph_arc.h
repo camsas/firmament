@@ -16,7 +16,7 @@ namespace firmament {
 struct FlowGraphArc {
   FlowGraphArc(uint64_t src, uint64_t dst)
       : src_(src), dst_(dst), cap_lower_bound_(0),
-        cap_upper_bound_(1), cost_(0) {}
+        cap_upper_bound_(0), cost_(0) {}
   FlowGraphArc(uint64_t src, uint64_t dst, uint64_t clb, uint64_t cub,
                uint64_t cost)
       : src_(src), dst_(dst), cap_lower_bound_(clb), cap_upper_bound_(cub),

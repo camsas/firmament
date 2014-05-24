@@ -34,7 +34,8 @@ class QuincyScheduler : public EventDrivenScheduler {
  public:
   QuincyScheduler(shared_ptr<JobMap_t> job_map,
                   shared_ptr<ResourceMap_t> resource_map,
-                  shared_ptr<store::ObjectStoreInterface> object_store,
+                  const ResourceTopologyNodeDescriptor& resource_topology,
+                  shared_ptr<ObjectStoreInterface> object_store,
                   shared_ptr<TaskMap_t> task_map,
                   shared_ptr<TopologyManager> topo_mgr,
                   MessagingAdapterInterface<BaseMessage>* m_adapter,
@@ -76,7 +77,8 @@ class QuincyScheduler : public EventDrivenScheduler {
   void RegisterRemoteResource(ResourceID_t res_id);
   uint64_t RunSchedulingIteration();
   void SolverBinaryName(const string& solver, string* binary);
-  void UpdateResourceTopology(shared_ptr<TopologyManager> topo_mgr);
+  void UpdateResourceTopology(
+      const ResourceTopologyNodeDescriptor& resource_tree);
 
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction. Note that this set includes tasks from all

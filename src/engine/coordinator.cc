@@ -75,16 +75,17 @@ Coordinator::Coordinator(PlatformID platform_id)
     // Simple random first-available scheduler
     LOG(INFO) << "Using simple random scheduler.";
     scheduler_ = new SimpleScheduler(
-        job_table_, associated_resources_, object_store_, task_table_,
-        topology_manager_, m_adapter_, uuid_, FLAGS_listen_uri);
+        job_table_, associated_resources_, *local_resource_topology_,
+        object_store_, task_table_, topology_manager_, m_adapter_,
+        uuid_, FLAGS_listen_uri);
   } else if (FLAGS_scheduler == "quincy") {
     // Quincy-style flow-based scheduling
     LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
     SchedulingParameters params;
     scheduler_ = new QuincyScheduler(
-        job_table_, associated_resources_, object_store_, task_table_,
-        topology_manager_, m_adapter_, uuid_, FLAGS_listen_uri,
-        params);
+        job_table_, associated_resources_, *local_resource_topology_,
+        object_store_, task_table_, topology_manager_, m_adapter_, uuid_,
+        FLAGS_listen_uri, params);
   } else {
     // Unknown scheduler specified, error.
     LOG(FATAL) << "Unknown or unrecognized scheduler '" << FLAGS_scheduler

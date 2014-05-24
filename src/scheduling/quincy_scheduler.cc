@@ -52,6 +52,7 @@ using store::ObjectStoreInterface;
 QuincyScheduler::QuincyScheduler(
     shared_ptr<JobMap_t> job_map,
     shared_ptr<ResourceMap_t> resource_map,
+    const ResourceTopologyNodeDescriptor& resource_topology,
     shared_ptr<ObjectStoreInterface> object_store,
     shared_ptr<TaskMap_t> task_map,
     shared_ptr<TopologyManager> topo_mgr,
@@ -59,9 +60,9 @@ QuincyScheduler::QuincyScheduler(
     ResourceID_t coordinator_res_id,
     const string& coordinator_uri,
     const SchedulingParameters& params)
-    : EventDrivenScheduler(job_map, resource_map, object_store, task_map,
-                           topo_mgr, m_adapter, coordinator_res_id,
-                           coordinator_uri),
+    : EventDrivenScheduler(job_map, resource_map, resource_topology,
+                           object_store, task_map, topo_mgr, m_adapter,
+                           coordinator_res_id, coordinator_uri),
       topology_manager_(topo_mgr),
       parameters_(params),
       debug_seq_num_(0) {
@@ -85,7 +86,7 @@ QuincyScheduler::QuincyScheduler(
   LOG(INFO) << "QuincyScheduler initiated; parameters: "
             << parameters_.ShortDebugString();
   // Set up the initial flow graph
-  UpdateResourceTopology(topo_mgr);
+  UpdateResourceTopology(resource_topology);
 }
 
 QuincyScheduler::~QuincyScheduler() {
@@ -278,7 +279,7 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
 
 void QuincyScheduler::RegisterResource(ResourceID_t res_id, bool local) {
   // Update the flow graph
-  UpdateResourceTopology(topology_manager_);
+  UpdateResourceTopology(resource_topology_);
   // Call into superclass method to do scheduler resource initialisation.
   // This will create the executor for the new resource.
   EventDrivenScheduler::RegisterResource(res_id, local);
@@ -375,17 +376,14 @@ void QuincyScheduler::SolverBinaryName(const string& solver, string* binary) {
 }
 
 void QuincyScheduler::UpdateResourceTopology(
-    shared_ptr<TopologyManager> topo_mgr) {
-  // Load the current topology from the topology manager
-  ResourceTopologyNodeDescriptor* root = new ResourceTopologyNodeDescriptor;
-  topo_mgr->AsProtobuf(root);
+    const ResourceTopologyNodeDescriptor& root) {
   // Run a topology refresh (somewhat expensive!); if only two nodes exist, the
   // flow graph is empty apart from cluster aggregator and sink.
   VLOG(1) << "Num nodes in flow graph is: " << flow_graph_->NumNodes();
-  if (flow_graph_->NumNodes() == 2)
-    flow_graph_->AddResourceTopology(root, topo_mgr->NumProcessingUnits());
+  if (flow_graph_->NumNodes() == 1)
+    flow_graph_->AddResourceTopology(root);
   else
-    flow_graph_->UpdateResourceTopology(root, topo_mgr->NumProcessingUnits());
+    flow_graph_->UpdateResourceTopology(root);
 }
 
 bool QuincyScheduler::CheckNodeType(uint64_t node, FlowNodeType_NodeType type) {

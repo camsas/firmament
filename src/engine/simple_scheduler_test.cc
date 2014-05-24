@@ -50,7 +50,8 @@ class SimpleSchedulerTest : public ::testing::Test {
     res_map_->clear();
     job_map_->clear();
     obj_store_->Flush();
-    sched_.reset(new SimpleScheduler(job_map_, res_map_, obj_store_, task_map_,
+    sched_.reset(new SimpleScheduler(job_map_, res_map_, res_topo_, 
+                                     obj_store_, task_map_,
                                      shared_ptr<TopologyManager>(), NULL,
                                      GenerateUUID(), ""));
   }
@@ -93,6 +94,7 @@ class SimpleSchedulerTest : public ::testing::Test {
   scoped_ptr<SimpleScheduler> sched_;
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<ResourceMap_t> res_map_;
+  ResourceTopologyNodeDescriptor res_topo_;
   shared_ptr<store::SimpleObjectStore> obj_store_;
   shared_ptr<TaskMap_t> task_map_;
 };

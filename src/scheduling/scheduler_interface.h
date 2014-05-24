@@ -20,16 +20,18 @@ namespace scheduler {
 
 using machine::topology::TopologyManager;
 using store::DataObjectMap_t;
+using store::ObjectStoreInterface;
 
 class SchedulerInterface : public PrintableInterface {
  public:
   // Constructor.
   SchedulerInterface(shared_ptr<JobMap_t> job_map,
                      shared_ptr<ResourceMap_t> resource_map,
-                     shared_ptr<store::ObjectStoreInterface> store,
+                     const ResourceTopologyNodeDescriptor& resource_topology,
+                     shared_ptr<ObjectStoreInterface> object_store,
                      shared_ptr<TaskMap_t> task_map)
       : job_map_(job_map),  resource_map_(resource_map), task_map_(task_map),
-        object_store_(store) {}
+        object_store_(object_store), resource_topology_(resource_topology) {}
   // Adds a job to the set of active jobs that are considered for scheduling.
   // TODO(malte): Determine if we actually need this, given the reactive design
   // of the scheduler.
@@ -88,6 +90,8 @@ class SchedulerInterface : public PrintableInterface {
   shared_ptr<ResourceMap_t> resource_map_;
   shared_ptr<TaskMap_t> task_map_;
   shared_ptr<store::ObjectStoreInterface> object_store_;
+  // Resource topology (including any registered remote resources)
+  const ResourceTopologyNodeDescriptor& resource_topology_;
 };
 
 }  // namespace scheduler

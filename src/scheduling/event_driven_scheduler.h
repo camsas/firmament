@@ -28,12 +28,13 @@ class EventDrivenScheduler : public SchedulerInterface {
  public:
   EventDrivenScheduler(shared_ptr<JobMap_t> job_map,
                        shared_ptr<ResourceMap_t> resource_map,
+                       const ResourceTopologyNodeDescriptor& resource_topology,
                        shared_ptr<store::ObjectStoreInterface> object_store,
                        shared_ptr<TaskMap_t> task_map,
                        shared_ptr<TopologyManager> topo_mgr,
                        MessagingAdapterInterface<BaseMessage>* m_adapter,
                        ResourceID_t coordinator_res_id,
-                      const string& coordinator_uri);
+                       const string& coordinator_uri);
   ~EventDrivenScheduler();
   ResourceID_t* BoundResourceForTask(TaskID_t task_id);
   virtual void DeregisterResource(ResourceID_t res_id);
