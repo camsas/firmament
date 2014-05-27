@@ -335,7 +335,8 @@ void FlowGraph::ConfigureResourceBranchNode(
     arc->cost_ =
         cost_model_->ResourceNodeToResourceNodeCost(
             parent_node->resource_id_, new_node->resource_id_);
-  } else {
+  } else if (new_node->type_.type() != FlowNodeType::GLOBAL_AGGREGATOR) {
+    // Having no parent is only okay if we're the root node
     LOG(FATAL) << "Found child without parent_id set! This will lead to an "
                << "inconsistent flow graph! child ID: "
                << rtnd.resource_desc().uuid();
