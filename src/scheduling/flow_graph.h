@@ -73,6 +73,12 @@ class FlowGraph {
   FlowGraphNode* AddEquivClassAggregator(TaskEquivClass_t equivclass);
   void AddSpecialNodes();
   void AdjustUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta);
+  void ConfigureResourceRootNode(const ResourceTopologyNodeDescriptor& rtnd,
+                                 FlowGraphNode* new_node);
+  void ConfigureResourceBranchNode(const ResourceTopologyNodeDescriptor& rtnd,
+                                   FlowGraphNode* new_node);
+  void ConfigureResourceLeafNode(const ResourceTopologyNodeDescriptor& rtnd,
+                                 FlowGraphNode* new_node);
   void DeleteArc(FlowGraphArc* arc);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
 
