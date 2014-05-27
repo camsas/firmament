@@ -17,7 +17,7 @@ EXT_DIR=${PWD}
 # be pulled in by specific distributions or OS versions.
 GFLAGS_VER="2.0"
 GLOG_VER="HEAD"
-HWLOC_VER="1.5"
+HWLOC_VER="1.9"
 PROTOBUF_VER="2.4.1"
 BOOST_VER="1.55"
 CS2_VER="4.6"
