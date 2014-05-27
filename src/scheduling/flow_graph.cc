@@ -257,7 +257,8 @@ void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
     // Record the parent if we have one
     if (rtnd.has_parent_id()) {
       // Add arc from parent to us if it doesn't already exist
-      FlowGraphNode* parent_node = NodeForResourceID(ResourceIDFromString(rtnd.parent_id()));
+      FlowGraphNode* parent_node =
+        NodeForResourceID(ResourceIDFromString(rtnd.parent_id()));
       FlowGraphArc** arc = FindOrNull(parent_node->outgoing_arc_map_, id);
       if (!arc) {
         VLOG(2) << "Adding missing arc from parent "
@@ -271,13 +272,14 @@ void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
                          ResourceIDFromString(rtnd.parent_id()));
     }
   } else {
-    new_node = NodeForResourceID(ResourceIDFromString(rtnd.resource_desc().uuid()));
+    new_node = NodeForResourceID(
+        ResourceIDFromString(rtnd.resource_desc().uuid()));
   }
   // Consider different cases: root node, internal node and leaf node
   if (!rtnd.has_parent_id()) {
     // 1) Root node
-    // N.B. a root node without parent is always automatically taken as the cluster
-    // aggregator.
+    // N.B. a root node without parent is always automatically taken as the
+    // cluster aggregator.
     new_node->type_.set_type(FlowNodeType::GLOBAL_AGGREGATOR);
     new_node->comment_ = "CLUSTER_AGG";
     // Reset cluster aggregator to this node
@@ -287,8 +289,8 @@ void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
     // 2) Node inside the tree with non-zero children (i.e. no leaf node)
     VLOG(2) << "Adding " << rtnd.children_size() << " internal resource arcs";
     // Add arcs to each child
-    for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator c_iter =
-         rtnd.children().begin();
+    for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator
+         c_iter = rtnd.children().begin();
          c_iter != rtnd.children().end();
          ++c_iter) {
       uint64_t id = next_id();
@@ -300,7 +302,8 @@ void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
       InsertIfNotPresent(&resource_to_nodeid_map_,
                          ResourceIDFromString(c_iter->resource_desc().uuid()),
                          child_node->id_);
-      VLOG(2) << "Inserted mapping into resource map for " << c_iter->resource_desc().uuid();
+      VLOG(2) << "Inserted mapping into resource map for "
+              << c_iter->resource_desc().uuid();
       // If we do not have a parent_id set, this is a root node, so it has no
       // incoming internal resource topology edges
       if (c_iter->has_parent_id()) {
@@ -326,7 +329,9 @@ void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
                          ResourceIDFromString(c_iter->parent_id()));
     }
   } else if (rtnd.has_parent_id()) {
-    VLOG(2) << "Considering node " << rtnd.resource_desc().uuid() << ", which has parent " << rtnd.has_parent_id();
+    VLOG(2) << "Considering node " << rtnd.resource_desc().uuid()
+            << ", which has parent "
+            << (rtnd.has_parent_id() ? rtnd.parent_id() : "NONE");
     // 3) Leaves of the resource topology; add an arc to the sink node
     VLOG(2) << "Adding arc from leaf resource " << rtnd.resource_desc().uuid()
             << " to sink node.";
@@ -354,9 +359,9 @@ void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
       CHECK_NOTNULL(arc);
       CHECK_NOTNULL(*arc);
       VLOG(2) << "Adding capacity on edge from " << *parent_id << " ("
-              << parent->id_ << ") to " << cur_id << "("
+              << parent->id_ << ") to " << cur_id << " ("
               << (*arc)->cap_upper_bound_ << " -> "
-              << (*arc)->cap_upper_bound_ + 1;
+              << (*arc)->cap_upper_bound_ + 1 << ")";
       (*arc)->cap_upper_bound_ += 1;
     }
   } 
