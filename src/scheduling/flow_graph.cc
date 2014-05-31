@@ -461,7 +461,8 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
   // aggregator's outgoing edge
   AdjustUnscheduledAggToSinkCapacity(task_node->job_id_, -1);
   // Re-add a single arc from the task to the resource node
-  AddArcInternal(task_node, res_node);
+  FlowGraphArc* new_arc = AddArcInternal(task_node, res_node);
+  new_arc->cap_upper_bound_ = 1;
 }
 
 void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
