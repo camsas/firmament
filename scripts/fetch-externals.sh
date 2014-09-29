@@ -448,7 +448,7 @@ if [[ ! -f ${PION_INSTALL_FILE} ]]; then
   RES1=$(./autogen.sh)
   print_succ_or_fail ${RES1}
   echo -n "Configuring pion library..."
-  RES2=$(./configure --disable-tests --prefix=${PION_BUILD_DIR})
+  RES2=$(CC=clang CXX=clang++ CXXFLAGS=-std=c++11 ./configure --with-pic --with-ostream-logging --disable-doxygen-html --disable-tests --prefix=${PION_BUILD_DIR})
   print_succ_or_fail ${RES2}
   echo -n "Building pion library..."
   RES3=$(make)
