@@ -93,8 +93,8 @@ export TSSTLC_INC_DIR
 PION_INC_DIR ?= $(EXT_DIR)/pion-build/include/
 export PION_INC_DIR
 
-# Path to the compiled googletest library (usually under
-# "make" in the googletest directory in "ext").
+# Path to the compiled pion library (usually under
+# "make" in the pion-git directory in "ext").
 PION_LIB ?= $(EXT_DIR)/pion-build/lib/libpion.a
 export PION_LIB
 
@@ -134,9 +134,9 @@ OPTFLAGS = -g -O0 -fno-omit-frame-pointer  # debug
 #OPTFLAGS = -O3                         # release
 
 # for clang++, uncomment this line
-CPPFLAGS = $(INCLUDES) -std=c++11 -Wall -Wextra -Werror -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-error=language-extension-token -Wno-deprecated -Wno-error=unused-function -Wno-vla -Wno-unused-parameter
+CPPFLAGS = $(INCLUDES) -fPIC -std=c++11 -Wall -Wextra -Werror -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-error=language-extension-token -Wno-deprecated -Wno-error=unused-function -Wno-vla -Wno-unused-parameter
 # for g++, uncomment this line
-#CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-deprecated -Wno-error=unused-function -Wno-vla
+#CPPFLAGS = $(INCLUDES) -fPIC -std=c++11 -Wall -Wextra -Werror -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-deprecated -Wno-error=unused-function -Wno-vla -Wno-unused-parameter -Wno-error=unused-but-set-variable
 
 # To build statically linked executables, uncomment the following line AND make
 # sure that tcmalloc is NOT linked.
