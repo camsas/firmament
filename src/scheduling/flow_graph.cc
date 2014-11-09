@@ -7,6 +7,7 @@
 #include <queue>
 
 #include <cstdio>
+#include <cstdlib>
 
 #include <boost/bind.hpp>
 
@@ -187,7 +188,7 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
           AddEquivClassAggregator(GenerateTaskEquivClass(*cur));
       FlowGraphArc* ec_arc = AddArcInternal(task_node->id_,
                                             ec_node->id_);
-      ec_arc->cost_ = 0;
+      ec_arc->cost_ = cost_model_->TaskToEquivClassAggregator(task_node->id_);
     } else if (cur->state() == TaskDescriptor::RUNNING ||
              cur->state() == TaskDescriptor::ASSIGNED) {
       // The task is already running, so it must have a node already
