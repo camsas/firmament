@@ -50,4 +50,8 @@ Cost_t TrivialCostModel::TaskPreemptionCost(TaskID_t task_id) {
   return 0ULL;
 }
 
+Cost_t TrivialCostModel::TaskToEquivClassAggregator(TaskID_t task_id) {
+  return 0ULL;
+}
+
 }  // namespace firmament

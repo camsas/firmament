@@ -35,6 +35,8 @@ class TrivialCostModel : public FlowSchedulingCostModelInterface {
   // Costs pertaining to preemption (i.e. already running tasks)
   Cost_t TaskContinuationCost(TaskID_t task_id);
   Cost_t TaskPreemptionCost(TaskID_t task_id);
+  // Costs to equivalence class aggregators
+  Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
 };
 
 }  // namespace firmament
