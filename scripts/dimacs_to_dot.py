@@ -17,7 +17,7 @@ def dot_out(nodes, edges):
   print "\t{ node [shape=box]"
   print "\t",
   for n in nodes:
-    label = n['desc'] if (n['desc'] in ['SINK', 'CLUSTER_AGG']) else \
+    label = n['desc'] if (len(n['desc']) < 8) else \
         (n['desc'][:3] + "..." + n['desc'][-3:])
     print "%d [ label = \"%d: %s\" ];" % (n['nid'], n['nid'], label)
   print "\t}"
@@ -54,26 +54,30 @@ nodes = []
 edges = {}
 node_task_id = "0"
 node_res_id = "00000000-0000-0000-0000-000000000000"
-
+node_desc = ""
 # read and process graph specification
 for line in open(inputfile).readlines():
   fields = [x.strip() for x in line.split(" ")]
   if fields[0] == 'c':
     # comment, check if this contains node descriptions
-    if len(fields) > 2 and fields[1] == "nd":
+    if len(fields) == 3 and fields[1] == "nd":
+      node_desc = fields[2]
+    elif len(fields) > 2 and fields[1] == "nd":
+      node_desc = ""
       node_task_id = fields[2]
       node_res_id = fields[3]
+    else:
+      node_desc = ""
     continue
   if fields[0] == 'p':
     # problem descr
     continue
   if fields[0] == 'n':
     # node
-    node_desc = ""
-    if node_task_id != "0" and \
+    if node_desc == "" and node_task_id != "0" and \
         node_res_id == "00000000-0000-0000-0000-000000000000":
       node_desc = node_task_id
-    elif node_task_id == "0" and \
+    elif node_desc == "" and node_task_id == "0" and \
         node_res_id != "00000000-0000-0000-0000-000000000000":
       node_desc = node_res_id
     else:
