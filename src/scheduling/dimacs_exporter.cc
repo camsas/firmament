@@ -129,6 +129,8 @@ const string DIMACSExporter::GenerateNode(const FlowGraphNode& node) {
        << "\n";
   else if (node.comment_ != "")
     ss << "c nd " << node.task_id_ << " " << node.comment_ << "\n";
+  else if (node.task_id_)
+    ss << "c nd T_" << node.task_id_ << "\n";
   ss << "n " << node.id_ << " " << value << "\n";
   return ss.str();
 }
