@@ -23,13 +23,15 @@ class GoogleTraceExtractor {
                             ResourceTopologyNodeDescriptor* rtn_root);
 
   ResourceTopologyNodeDescriptor& LoadInitialMachines(int64_t max_num);
-  vector<JobDescriptor*>& LoadInitialJobs(int64_t max_jobs);
-  void LoadInitalTasks();
+  unordered_map<uint64_t, JobDescriptor*>& LoadInitialJobs(int64_t max_jobs);
+  void LoadInitalTasks(
+      const unordered_map<uint64_t, JobDescriptor*>& initial_jobs);
 
   void PopulateJob(JobDescriptor* jd, uint64_t job_id);
 
   uint64_t ReadJobsFile(vector<uint64_t>* jobs, int64_t num_jobs);
   uint64_t ReadMachinesFile(vector<uint64_t>* machines, int64_t num_jobs);
+  uint64_t ReadTasksFile(const unordered_map<uint64_t, JobDescriptor*>& jobs);
 
   void reset_uuid(ResourceTopologyNodeDescriptor* rtnd);
 
