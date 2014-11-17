@@ -65,7 +65,7 @@ uint64_t GoogleTraceExtractor::ReadMachinesFile(vector<uint64_t>* machines,
   int64_t l = 0;
   while (!feof(fptr)) {
     if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-      VLOG(2) << "Processing line " << l << ": " << line;
+      VLOG(3) << "Processing line " << l << ": " << line;
       boost::split(vals, line, is_any_of(","), token_compress_off);
       uint64_t time = lexical_cast<uint64_t>(vals[0]);
       if (time > 0 || (num_machines >= 0 && l >= num_machines)) {
@@ -103,7 +103,7 @@ uint64_t GoogleTraceExtractor::ReadJobsFile(vector<uint64_t>* jobs,
     int64_t l = 0;
     while (!feof(fptr)) {
       if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-        VLOG(2) << "Processing line " << l << ": " << line;
+        VLOG(3) << "Processing line " << l << ": " << line;
         boost::split(vals, line, is_any_of(","), token_compress_off);
         uint64_t time = lexical_cast<uint64_t>(vals[0]);
         if (time > 0 || (num_jobs >= 0 && l >= num_jobs)) {
@@ -149,7 +149,7 @@ uint64_t GoogleTraceExtractor::ReadTasksFile(
     int64_t l = 0;
     while (!feof(fptr)) {
       if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-        VLOG(2) << "Processing line " << l << ": " << line;
+        VLOG(3) << "Processing line " << l << ": " << line;
         boost::split(vals, line, is_any_of(","), token_compress_off);
         uint64_t time = lexical_cast<uint64_t>(vals[0]);
         if (time > 0) {
