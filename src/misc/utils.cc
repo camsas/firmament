@@ -54,17 +54,23 @@ ResourceID_t GenerateResourceID() {
   if (!resource_id_rg_init_) {
     // TODO(malte): This crude method captures the first 100 chars of the
     // hostname (not the FQDN). It remains to be seen if it is sufficient.
-    size_t hash = 0;
     char hn[100];
     bzero(&hn, 100);
     gethostname(hn, 100);
-    // Hash the hostname (truncated to 100 characters)
-    boost::hash_combine(hash, hn);
-    VLOG(2) << "Seeing resource ID RNG with " << hash << " from hostname "
-            << hn;
-    resource_id_rg_.seed(hash);
-    resource_id_rg_init_ = true;
+    return GenerateRootResourceID(string(hn));
   }
+  boost::uuids::basic_random_generator<boost::mt19937> gen(&resource_id_rg_);
+  return gen();
+}
+
+ResourceID_t GenerateRootResourceID(const string& hostname) {
+  size_t hash = 0;
+  // Hash the hostname
+  boost::hash_combine(hash, hostname);
+  VLOG(2) << "Seeing resource ID RNG with " << hash << " from hostname "
+          << hostname;
+  resource_id_rg_.seed(hash);
+  resource_id_rg_init_ = true;
   boost::uuids::basic_random_generator<boost::mt19937> gen(&resource_id_rg_);
   return gen();
 }
