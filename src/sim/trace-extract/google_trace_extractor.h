@@ -35,7 +35,7 @@ class GoogleTraceExtractor {
 
   void reset_uuid(ResourceTopologyNodeDescriptor* rtnd);
 
-  map<string, string> uuid_conversion_map_;
+  unordered_map<string, string> uuid_conversion_map_;
   string trace_path_;
 };
 
