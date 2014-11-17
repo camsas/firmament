@@ -36,13 +36,30 @@ DEFINE_int32(runtime, -1, "Time to extract data for (from start of trace, in "
              "seconds); -1 for everything.");
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 
-void GoogleTraceExtractor::reset_uuid(ResourceTopologyNodeDescriptor* rtnd) {
-  string old_parent_id = rtnd->parent_id();
-  rtnd->set_parent_id(*FindOrNull(uuid_conversion_map_, rtnd->parent_id()));
-  string new_uuid = to_string(GenerateUUID());
+void GoogleTraceExtractor::reset_uuid(
+    ResourceTopologyNodeDescriptor* rtnd,
+    const string& hostname, const string& root_uuid) {
+  string new_uuid;
+  if (rtnd->has_parent_id()) {
+    // This is an intermediate node, so translate the parent UUID via the lookup
+    // table
+    const string& old_parent_id = rtnd->parent_id();
+    string* new_parent_id = FindOrNull(uuid_conversion_map_, rtnd->parent_id());
+    CHECK_NOTNULL(new_parent_id);
+    VLOG(2) << "Resetting parent UUID for " << rtnd->resource_desc().uuid()
+            << ", parent was " << old_parent_id
+            << ", is now " << *new_parent_id;
+    rtnd->set_parent_id(*new_parent_id);
+    // Grab a new UUID for the node itself
+    new_uuid = to_string(GenerateResourceID());
+  } else {
+    // This is the top of a machine topology, so generate a first UUID for its
+    // topology based on its hostname and link it into the root
+    rtnd->set_parent_id(root_uuid);
+    new_uuid = to_string(GenerateRootResourceID(hostname));
+  }
   VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid()
-          << " to " << new_uuid << ", parent is " << rtnd->parent_id()
-          << ", was " << old_parent_id;
+          << " to " << new_uuid;
   InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(),
                  new_uuid);
   rtnd->mutable_resource_desc()->set_uuid(new_uuid);
@@ -200,12 +217,17 @@ void GoogleTraceExtractor::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
 
 void GoogleTraceExtractor::AddMachineToTopology(
     const ResourceTopologyNodeDescriptor& machine_tmpl,
+    uint64_t machine_id,
     ResourceTopologyNodeDescriptor* rtn_root) {
   ResourceTopologyNodeDescriptor* child = rtn_root->add_children();
   child->CopyFrom(machine_tmpl);
-  child->set_parent_id(rtn_root->resource_desc().uuid());
+  const string& root_uuid = rtn_root->resource_desc().uuid();
+  char hn[100];
+  sprintf(hn, "h%ju", machine_id);
   TraverseResourceProtobufTreeReturnRTND(
-      child, boost::bind(&GoogleTraceExtractor::reset_uuid, this, _1));
+      child, boost::bind(&GoogleTraceExtractor::reset_uuid, this, _1,
+                         string(hn), root_uuid));
+  child->mutable_resource_desc()->set_friendly_name(hn);
 }
 
 ResourceTopologyNodeDescriptor&
@@ -225,15 +247,18 @@ GoogleTraceExtractor::LoadInitialMachines(int64_t max_num) {
   // Create the machines
   ResourceTopologyNodeDescriptor* rtn_root = new 
       ResourceTopologyNodeDescriptor();
-  ResourceID_t root_uuid = GenerateUUID();
+  ResourceID_t root_uuid = GenerateRootResourceID("XXXgoogleXXX");
   rtn_root->mutable_resource_desc()->set_uuid(to_string(root_uuid));
+  LOG(INFO) << "Root res ID is " << to_string(root_uuid);
   InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
                      to_string(root_uuid));
   // Create each machine and add it to the graph
+  uint64_t i = 0;
   for (vector<uint64_t>::const_iterator iter = machines.begin();
        iter != machines.end();
        ++iter) {
-    AddMachineToTopology(machine_tmpl, rtn_root);
+    AddMachineToTopology(machine_tmpl, i, rtn_root);
+    ++i;
   }
   LOG(INFO) << "Added " << machines.size() << " machines.";
 

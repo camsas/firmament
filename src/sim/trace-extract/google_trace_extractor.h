@@ -20,6 +20,7 @@ class GoogleTraceExtractor {
   void Run();
  private:
   void AddMachineToTopology(const ResourceTopologyNodeDescriptor& machine_tmpl,
+                            uint64_t machine_id,
                             ResourceTopologyNodeDescriptor* rtn_root);
 
   ResourceTopologyNodeDescriptor& LoadInitialMachines(int64_t max_num);
@@ -33,7 +34,8 @@ class GoogleTraceExtractor {
   uint64_t ReadMachinesFile(vector<uint64_t>* machines, int64_t num_jobs);
   uint64_t ReadTasksFile(const unordered_map<uint64_t, JobDescriptor*>& jobs);
 
-  void reset_uuid(ResourceTopologyNodeDescriptor* rtnd);
+  void reset_uuid(ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
+      const string& root_uuid);
 
   unordered_map<string, string> uuid_conversion_map_;
   string trace_path_;
