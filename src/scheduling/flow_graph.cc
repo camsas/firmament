@@ -248,18 +248,27 @@ void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
   // Add the node if it does not already exist
   if (!NodeForResourceID(ResourceIDFromString(rtnd.resource_desc().uuid()))) {
     uint64_t id = next_id();
-    VLOG(2) << "Adding node " << id << " for resource "
-            << rtnd.resource_desc().uuid();
+    if (rtnd.resource_desc().has_friendly_name()) {
+      VLOG(2) << "Adding node " << id << " for resource "
+              << rtnd.resource_desc().uuid() << " ("
+              << rtnd.resource_desc().friendly_name() << ")";
+    } else {
+      VLOG(2) << "Adding node " << id << " for resource "
+              << rtnd.resource_desc().uuid();
+    }
     new_node = AddNodeInternal(id);
     InsertIfNotPresent(&resource_to_nodeid_map_,
                        ResourceIDFromString(rtnd.resource_desc().uuid()),
                        new_node->id_);
     new_node->resource_id_ = ResourceIDFromString(rtnd.resource_desc().uuid());
+    if (rtnd.resource_desc().has_friendly_name())
+      new_node->comment_ = rtnd.resource_desc().friendly_name();
     // Record the parent if we have one
     if (rtnd.has_parent_id()) {
       // Add arc from parent to us if it doesn't already exist
       FlowGraphNode* parent_node =
         NodeForResourceID(ResourceIDFromString(rtnd.parent_id()));
+      CHECK_NOTNULL(parent_node);
       FlowGraphArc** arc = FindOrNull(parent_node->outgoing_arc_map_, id);
       if (!arc) {
         VLOG(2) << "Adding missing arc from parent "
@@ -314,6 +323,7 @@ void FlowGraph::ConfigureResourceRootNode(
   new_node->type_.set_type(FlowNodeType::GLOBAL_AGGREGATOR);
   new_node->comment_ = "CLUSTER_AGG";
   // Reset cluster aggregator to this node
+  CHECK(cluster_agg_node_ == NULL);
   cluster_agg_node_ = new_node;
 }
 
