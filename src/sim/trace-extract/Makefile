@@ -38,7 +38,7 @@ $(BIN): $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \
 		$(BUILD_DIR)/scheduling/flow_graph.o \
 		$(BUILD_DIR)/scheduling/flow_node_type.pb.o \
-		$(BUILD_DIR)/scheduling/trivial_cost_model.o \
+		$(BUILD_DIR)/scheduling/quincy_cost_model.o \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(LIBS) \

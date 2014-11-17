@@ -15,7 +15,7 @@
 #include "sim/trace-extract/google_trace_extractor.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/dimacs_exporter.h"
-#include "scheduling/trivial_cost_model.h"
+#include "scheduling/quincy_cost_model.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
@@ -286,7 +286,7 @@ void GoogleTraceExtractor::Run() {
       LoadInitialJobs(FLAGS_num_jobs);
   LoadInitalTasks(initial_jobs);
 
-  FlowGraph g(new TrivialCostModel());
+  FlowGraph g(new QuincyCostModel());
   // Add resources and job to flow graph
   g.AddResourceTopology(initial_resource_topology);
   // Add initial jobs
