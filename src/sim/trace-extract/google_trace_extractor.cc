@@ -37,6 +37,7 @@ DEFINE_int32(runtime, -1, "Time to extract data for (from start of trace, in "
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 DEFINE_bool(tasks_preemption_bins, false, "Compute bins of number of preempted tasks.");
 DEFINE_int32(bin_time_duration, 10, "Bin size in seconds.");
+DEFINE_string(task_bins_output, "bins.out", "The file in which the task bins are written.");
 
 void GoogleTraceExtractor::reset_uuid(
     ResourceTopologyNodeDescriptor* rtnd,
@@ -376,7 +377,7 @@ void GoogleTraceExtractor::Run() {
   VLOG(1) << "Output written to " << outname;
   exp.Flush(outname);
   if (FLAGS_tasks_preemption_bins) {
-    ofstream out_file("bins.out");
+    ofstream out_file(FLAGS_task_bins_output);
     if (out_file.is_open()) {
       BinTasks(out_file);
       out_file.close();
