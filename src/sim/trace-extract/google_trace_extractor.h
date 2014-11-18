@@ -6,6 +6,8 @@
 #ifndef FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_EXTRACTOR_H
 #define FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_EXTRACTOR_H
 
+#include <fstream>
+
 #include "base/common.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "misc/utils.h"
@@ -32,7 +34,8 @@ class GoogleTraceExtractor {
 
   uint64_t ReadJobsFile(vector<uint64_t>* jobs, int64_t num_jobs);
   uint64_t ReadMachinesFile(vector<uint64_t>* machines, int64_t num_jobs);
-  uint64_t ReadTasksFile(const unordered_map<uint64_t, JobDescriptor*>& jobs);
+  uint64_t ReadInitialTasksFile(const unordered_map<uint64_t, JobDescriptor*>& jobs);
+  void BinTasks(ofstream& out_file);
 
   void reset_uuid(ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
       const string& root_uuid);

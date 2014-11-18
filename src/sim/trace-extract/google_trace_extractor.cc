@@ -35,6 +35,8 @@ DEFINE_int64(num_jobs, -1, "Number of initial jobs to extract; -1 for all.");
 DEFINE_int32(runtime, -1, "Time to extract data for (from start of trace, in "
              "seconds); -1 for everything.");
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
+DEFINE_bool(tasks_preemption_bins, false, "Compute bins of number of preempted tasks.");
+DEFINE_int32(bin_time_duration, 10, "Bin size in seconds.");
 
 void GoogleTraceExtractor::reset_uuid(
     ResourceTopologyNodeDescriptor* rtnd,
@@ -149,7 +151,7 @@ uint64_t GoogleTraceExtractor::ReadJobsFile(vector<uint64_t>* jobs,
   return j;
 }
 
-uint64_t GoogleTraceExtractor::ReadTasksFile(
+uint64_t GoogleTraceExtractor::ReadInitialTasksFile(
     const unordered_map<uint64_t, JobDescriptor*>& jobs) {
   bool done = false;
   char line[200];
@@ -200,6 +202,50 @@ uint64_t GoogleTraceExtractor::ReadTasksFile(
       return t;
   }
   return t;
+}
+
+void GoogleTraceExtractor::BinTasks(ofstream& out_file) {
+  char line[200];
+  vector<string> vals;
+  FILE* fptr = NULL;
+  uint64_t time_interval_bound = FLAGS_bin_time_duration;
+  uint64_t num_preempted_tasks = 0;
+  for (uint64_t file_num = 0; file_num < 500; file_num++) {
+    string fname;
+    spf(&fname, "%s/task_events/part-%05ld-of-00500.csv", trace_path_.c_str(), file_num);
+    if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
+      LOG(ERROR) << "Failed to open trace for reading of task events.";
+    }
+    while (!feof(fptr)) {
+      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
+        boost::split(vals, line, is_any_of(","), token_compress_off);
+        if (vals.size() != 13) {
+          LOG(ERROR) << "Unexpected structure of task event row: found "
+                     << vals.size() << " columns.";
+        } else {
+          uint64_t task_time = lexical_cast<uint64_t>(vals[0]);
+          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
+          if (event_type == 2) {
+            if (task_time <= time_interval_bound) {
+              num_preempted_tasks++;
+            } else {
+              out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
+                time_interval_bound << "]: " << num_preempted_tasks << "\n";
+              time_interval_bound += FLAGS_bin_time_duration;
+              while (time_interval_bound < task_time) {
+                out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
+                  time_interval_bound << "]: 0\n";
+                time_interval_bound += FLAGS_bin_time_duration;
+              }
+              num_preempted_tasks = 1;
+            }
+          }
+        }
+      }
+    }
+  }
+  out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
+    time_interval_bound << "]: " << num_preempted_tasks << "\n";
 }
 
 void GoogleTraceExtractor::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
@@ -290,7 +336,7 @@ void GoogleTraceExtractor::LoadInitalTasks(
     const unordered_map<uint64_t, JobDescriptor*>& initial_jobs) {
   // Read initial tasks from trace
   // and add tasks to jobs in initial_jobs
-  uint64_t num_tasks = ReadTasksFile(initial_jobs);
+  uint64_t num_tasks = ReadInitialTasksFile(initial_jobs);
   LOG(INFO) << "Added " << num_tasks << " initial tasks to "
             << initial_jobs.size() << " initial jobs.";
 }
@@ -329,6 +375,15 @@ void GoogleTraceExtractor::Run() {
   string outname = FLAGS_output_dir + "/test.dm";
   VLOG(1) << "Output written to " << outname;
   exp.Flush(outname);
+  if (FLAGS_tasks_preemption_bins) {
+    ofstream out_file("bins.out");
+    if (out_file.is_open()) {
+      BinTasks(out_file);
+      out_file.close();
+    } else {
+      LOG(ERROR) << "Could not open bin output file.";
+    }
+  }
 }
 
 }  // namespace sim
