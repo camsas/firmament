@@ -27,7 +27,8 @@ using machine::topology::TopologyManager;
 
 FlowGraph::FlowGraph(FlowSchedulingCostModelInterface *cost_model)
     : cost_model_(cost_model),
-      current_id_(1) {
+      current_id_(1),
+      cluster_agg_node_(NULL) {
   // Add sink and cluster aggregator node
   AddSpecialNodes();
 }
