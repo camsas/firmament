@@ -283,7 +283,7 @@ void GoogleTraceExtractor::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* co
   FlowGraphArc** arc_to_sink = FindOrNull(unsched_agg->outgoing_arc_map_, 1);
   CHECK_NOTNULL(arc_to_sink);
   CHECK_NOTNULL(*arc_to_sink);
-  out_file << "x " << unsched_agg->id_ << " " << (*arc_to_sink)->cap_lower_bound_ << " " <<
+  out_file << "x " << unsched_agg->id_ << " 1 " << (*arc_to_sink)->cap_lower_bound_ << " " <<
     (++(*arc_to_sink)->cap_upper_bound_) << " " << (*arc_to_sink)->cost_ << "\n";
 }
 
