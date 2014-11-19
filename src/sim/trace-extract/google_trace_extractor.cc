@@ -13,8 +13,10 @@
 #include <fcntl.h>
 
 #include "sim/trace-extract/google_trace_extractor.h"
-#include "scheduling/flow_graph.h"
 #include "scheduling/dimacs_exporter.h"
+#include "scheduling/flow_graph.h"
+#include "scheduling/flow_graph_arc.h"
+#include "scheduling/flow_graph_node.h"
 #include "scheduling/quincy_cost_model.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
@@ -32,12 +34,13 @@ namespace sim {
 
 DEFINE_int64(num_machines, -1, "Number of machines to extract; -1 for all.");
 DEFINE_int64(num_jobs, -1, "Number of initial jobs to extract; -1 for all.");
-DEFINE_int32(runtime, -1, "Time to extract data for (from start of trace, in "
+DEFINE_int64(runtime, -1, "Time to extract data for (from start of trace, in "
              "seconds); -1 for everything.");
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 DEFINE_bool(tasks_preemption_bins, false, "Compute bins of number of preempted tasks.");
 DEFINE_int32(bin_time_duration, 10, "Bin size in seconds.");
 DEFINE_string(task_bins_output, "bins.out", "The file in which the task bins are written.");
+DEFINE_bool(gen_graph_deltas, false, "Generate dimacs delta files. One for each bin.");
 
 void GoogleTraceExtractor::reset_uuid(
     ResourceTopologyNodeDescriptor* rtnd,
@@ -205,6 +208,85 @@ uint64_t GoogleTraceExtractor::ReadInitialTasksFile(
   return t;
 }
 
+void GoogleTraceExtractor::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
+                                       const string& file_base) {
+  char line[200];
+  vector<string> vals;
+  FILE* fptr = NULL;
+  int64_t time_interval_bound = FLAGS_bin_time_duration;
+  ofstream out_file(file_base + lexical_cast<string>(0));
+  for (uint64_t file_num = 0; file_num < 500; file_num++) {
+    string fname;
+    spf(&fname, "%s/task_events/part-%05ld-of-00500.csv", trace_path_.c_str(), file_num);
+    if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
+      LOG(ERROR) << "Failed to open trace for reading of task events.";
+    }
+    while (!feof(fptr)) {
+      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
+        boost::split(vals, line, is_any_of(","), token_compress_off);
+        if (vals.size() != 13) {
+          LOG(ERROR) << "Unexpected structure of task event row: found "
+                     << vals.size() << " columns.";
+        } else {
+          int64_t task_time = lexical_cast<uint64_t>(vals[0]);
+          uint64_t job_id = lexical_cast<uint64_t>(vals[2]);
+          // TODO(ionel): The task_id should be a unique task id. However, this is not a problem
+          // if we use the random cost model.
+          uint64_t task_id = lexical_cast<uint64_t>(vals[3]);
+          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
+          if (task_time == 0) {
+            continue;
+          }
+          if (FLAGS_runtime < task_time) {
+            LOG(INFO) << "Terminating at : " << task_time;
+            out_file.close();
+            return;
+          }
+          if (event_type == 0) {
+            if (task_time <= time_interval_bound) {
+              AddNewTask(flow_graph, cost_model, job_id, task_id, out_file);
+            } else {
+              out_file.close();
+              time_interval_bound += FLAGS_bin_time_duration;
+              while (time_interval_bound < task_time) {
+                time_interval_bound += FLAGS_bin_time_duration;
+              }
+              out_file.open(file_base + lexical_cast<string>(time_interval_bound));
+              AddNewTask(flow_graph, cost_model, job_id, task_id, out_file);
+            }
+          }
+        }
+      }
+    }
+  }
+  out_file.close();
+}
+
+void GoogleTraceExtractor::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* cost_model,
+                                      uint64_t job_id, uint64_t task_id, ofstream& out_file) {
+  JobID_t* jdp = FindOrNull(job_id_conversion_map_, job_id);
+  if (!jdp) {
+    // Add new job to the graph
+    JobDescriptor* jd = new JobDescriptor();
+    PopulateJob(jd, job_id);
+    flow_graph->AddJobNodes(jd);
+    jdp = FindOrNull(job_id_conversion_map_, job_id);
+    CHECK_NOTNULL(jdp);
+    out_file << "d 0 0 1\n";
+    out_file << "a 0 2 0 1 0\n";
+  }
+  FlowGraphNode* unsched_agg = flow_graph->GetUnschedAggForJob(*jdp);
+  out_file << "d 1 0 2\n";
+  out_file << "a 0 2 0 1 " << cost_model->TaskToClusterAggCost(task_id) << "\n";
+  out_file << "a 0 " << unsched_agg->id_ << " 0 1 " <<
+    cost_model->TaskToUnscheduledAggCost(task_id) << "\n";
+  FlowGraphArc** arc_to_sink = FindOrNull(unsched_agg->outgoing_arc_map_, 1);
+  CHECK_NOTNULL(arc_to_sink);
+  CHECK_NOTNULL(*arc_to_sink);
+  out_file << "x " << unsched_agg->id_ << " " << (*arc_to_sink)->cap_lower_bound_ << " " <<
+    (++(*arc_to_sink)->cap_upper_bound_) << " " << (*arc_to_sink)->cost_ << "\n";
+}
+
 void GoogleTraceExtractor::BinTasks(ofstream& out_file) {
   char line[200];
   vector<string> vals;
@@ -252,7 +334,9 @@ void GoogleTraceExtractor::BinTasks(ofstream& out_file) {
 void GoogleTraceExtractor::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
   // XXX(malte): job_id argument is discareded and replaced by randomly
   // generated ID at the moment.
-  jd->set_uuid(to_string(GenerateJobID()));
+  JobID_t new_job_id = GenerateJobID();
+  InsertOrUpdate(&job_id_conversion_map_, job_id, new_job_id);
+  jd->set_uuid(to_string(new_job_id));
   TaskDescriptor* rt = jd->mutable_root_task();
   string bin;
   // XXX(malte): hack, should use logical job name
@@ -358,7 +442,8 @@ void GoogleTraceExtractor::Run() {
       LoadInitialJobs(FLAGS_num_jobs);
   LoadInitalTasks(initial_jobs);
 
-  FlowGraph g(new QuincyCostModel());
+  QuincyCostModel* cost_model = new QuincyCostModel();
+  FlowGraph g(cost_model);
   // Add resources and job to flow graph
   g.AddResourceTopology(initial_resource_topology);
   // Add initial jobs
@@ -377,13 +462,16 @@ void GoogleTraceExtractor::Run() {
   VLOG(1) << "Output written to " << outname;
   exp.Flush(outname);
   if (FLAGS_tasks_preemption_bins) {
-    ofstream out_file(FLAGS_task_bins_output);
+    ofstream out_file(FLAGS_output_dir + "/" + FLAGS_task_bins_output);
     if (out_file.is_open()) {
       BinTasks(out_file);
       out_file.close();
     } else {
       LOG(ERROR) << "Could not open bin output file.";
     }
+  }
+  if (FLAGS_gen_graph_deltas) {
+    ReplayTrace(&g, cost_model, FLAGS_output_dir + "/delta_");
   }
 }
 
