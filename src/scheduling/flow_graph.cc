@@ -126,6 +126,14 @@ FlowGraphNode* FlowGraph::AddEquivClassAggregator(
   return Node(*equiv_class_node_id);
 }
 
+FlowGraphNode* FlowGraph::GetUnschedAggForJob(JobID_t job_id) {
+  uint64_t* unsched_agg_node_id = FindOrNull(job_to_nodeid_map_, job_id);
+  if (unsched_agg_node_id == NULL) {
+    return NULL;
+  }
+  return Node(*unsched_agg_node_id);
+}
+
 void FlowGraph::AddJobNodes(JobDescriptor* jd) {
   // First add an unscheduled aggregator node for this job
   // if none exists alread

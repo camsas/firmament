@@ -31,6 +31,7 @@ class FlowGraph {
       const ResourceTopologyNodeDescriptor& resource_tree);
   void AddTaskNode();
   void DeleteTaskNode(FlowGraphNode* node);
+  FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
