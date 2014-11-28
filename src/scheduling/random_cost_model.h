@@ -1,10 +1,8 @@
 // The Firmament project
-// Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
-//
-// Quincy scheduling cost model, as described in the SOSP 2009 paper.
+// Copyright (c) 2014 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#ifndef FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
-#define FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
+#ifndef FIRMAMENT_SCHEDULING_RANDOM_COST_MODEL_H
+#define FIRMAMENT_SCHEDULING_RANDOM_COST_MODEL_H
 
 #include <string>
 
@@ -17,9 +15,9 @@ namespace firmament {
 
 typedef uint64_t Cost_t;
 
-class QuincyCostModel : public FlowSchedulingCostModelInterface {
+class RandomCostModel : public FlowSchedulingCostModelInterface {
  public:
-  QuincyCostModel();
+  RandomCostModel();
 
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
@@ -42,4 +40,4 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
+#endif  // FIRMAMENT_SCHEDULING_RANDOM_COST_MODEL_H

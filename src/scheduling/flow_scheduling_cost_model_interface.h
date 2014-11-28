@@ -10,6 +10,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "scheduling/common.h"
 
 namespace firmament {
 
@@ -19,6 +20,7 @@ typedef uint64_t Cost_t;
 enum FlowSchedulingCostModelType {
   COST_MODEL_TRIVIAL = 0,
   COST_MODEL_QUINCY = 1,
+  COST_MODEL_RANDOM = 2,
 };
 
 class FlowSchedulingCostModelInterface {
