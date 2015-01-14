@@ -35,6 +35,7 @@ $(BIN): $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(SRC_ROOT_DIR)/sim/trace-extract/google_trace_extractor_main.cc \
 		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_extractor.o \
+		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \
 		$(BUILD_DIR)/scheduling/flow_graph.o \
 		$(BUILD_DIR)/scheduling/flow_node_type.pb.o \

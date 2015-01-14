@@ -2,6 +2,7 @@ build
 build/*.
 ext
 ext/*.
+include/Makefile.config
 scripts/analysis/*.csv
 scripts/analysis/*.log
 scripts/analysis/*.pdf
@@ -19,3 +20,4 @@ tests/*
 *.FATAL
 simulation.*
 *~
+.*project
