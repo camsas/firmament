@@ -15,7 +15,7 @@ namespace sim {
 class DatasetParser {
 	fs::path dataset_path;
 	std::ifstream csv_file;
-	unsigned int current_index, last_index;
+	unsigned int current_index, num_files;
 
 	void openFile();
 protected:

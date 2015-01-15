@@ -15,24 +15,24 @@ DatasetParser::DatasetParser(std::string trace_path,
 				: dataset_path(trace_path), current_index(0) {
 	dataset_path /= fs::path(dataset_name);
 	fs::directory_iterator end_it;
-	unsigned int num_files_seen = 0, index, last_index;
+	unsigned int num_files_seen = 0, index, num_files;
 	for (fs::directory_iterator it(dataset_path); it != end_it; ++it) {
 		std::string fname = it->path().filename().string();
 		int num_matches = sscanf(fname.c_str(), "part-%5u-of-%5u.csv",
-				 	 	 	 	 &index, &last_index);
+				 	 	 	 	 &index, &num_files);
 		CHECK_EQ(num_matches, 2) << "unrecognized file format " << fname;
 
 		if (num_files_seen == 0) {
 			// first filename we have read
-			this->last_index = last_index;
+			this->num_files = num_files;
 		}
-		CHECK_EQ(this->last_index, last_index)
+		CHECK_EQ(this->num_files, num_files)
 			<< "corrupt cluster trace? disagreement on number of files";
 
 		num_files_seen++;
 	}
 	CHECK_NE(num_files_seen, 0) << "empty directory";
-	CHECK_EQ(last_index + 1, num_files_seen)
+	CHECK_EQ(num_files, num_files_seen)
 		<< "number of files in directory disagrees with filename";
 
 	openFile();
@@ -43,7 +43,7 @@ void DatasetParser::openFile() {
 		csv_file.close();
 	}
 	std::string fname = str(boost::format("part-%5u-of-%5u.csv")
-							% current_index % last_index);
+							% current_index % num_files);
 	VLOG(1) << "Opening " << fname;
 	std::string path = (dataset_path / fname).string();
 	csv_file.open(path);
@@ -60,7 +60,7 @@ bool DatasetParser::nextRow() {
 
 	// EOF in file
 	current_index++;
-	if (current_index > last_index) {
+	if (current_index >= num_files) {
 		// end of dataset
 		return false;
 	}
