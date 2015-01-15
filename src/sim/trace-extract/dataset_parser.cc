@@ -73,7 +73,7 @@ bool DatasetParser::nextRow() {
 DatasetParser::~DatasetParser() { }
 
 bool MachineParser::nextRow() {
-	bool success = nextRow();
+	bool success = DatasetParser::nextRow();
 	if (success) {
 		// attempt to parse
 		if (values.size() != 6) {
@@ -88,7 +88,7 @@ bool MachineParser::nextRow() {
 }
 
 bool JobParser::nextRow() {
-	bool success = nextRow();
+	bool success = DatasetParser::nextRow();
 	if (success) {
 		// attempt to parser
 		if (values.size() != 8) {
@@ -103,7 +103,7 @@ bool JobParser::nextRow() {
 }
 
 bool TaskParser::nextRow() {
-	bool success = nextRow();
+	bool success = DatasetParser::nextRow();
 	if (success) {
 		// attempt to parser
 		if (values.size() != 13) {
