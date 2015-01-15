@@ -21,7 +21,6 @@
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
-#include "dataset_parser.h"
 
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;
@@ -42,6 +41,11 @@ DEFINE_bool(tasks_preemption_bins, false, "Compute bins of number of preempted t
 DEFINE_int32(bin_time_duration, 10, "Bin size in seconds.");
 DEFINE_string(task_bins_output, "bins.out", "The file in which the task bins are written.");
 DEFINE_bool(gen_graph_deltas, false, "Generate dimacs delta files. One for each bin.");
+
+GoogleTraceExtractor::GoogleTraceExtractor(string& trace_path)
+					: max_machines_(FLAGS_num_machines), max_jobs_(FLAGS_num_jobs),
+					  trace_path_(trace_path), machine_parser_(trace_path_),
+					  job_parser_(trace_path_), task_parser_(trace_path_) { }
 
 void GoogleTraceExtractor::reset_uuid(
     ResourceTopologyNodeDescriptor* rtnd,
@@ -72,22 +76,16 @@ void GoogleTraceExtractor::reset_uuid(
   rtnd->mutable_resource_desc()->set_uuid(new_uuid);
 }
 
-
-GoogleTraceExtractor::GoogleTraceExtractor(string& trace_path)
-												  : trace_path_(trace_path) { }
-
-uint64_t GoogleTraceExtractor::ReadMachinesFile(vector<uint64_t>* machines,
-                                                int64_t num_machines) {
+uint64_t GoogleTraceExtractor::ReadMachinesFile(vector<uint64_t>* machines) {
 	int64_t l = 0;
-	MachineParser mp(trace_path_);
-	while (mp.nextRow()) {
-		const MachineEvent &machine = mp.getMachine();
+	while (machine_parser_.nextRow()) {
+		const MachineEvent &machine = machine_parser_.getMachine();
 		if (machine.event_type == MachineEvent::ADD_TYPE) {
 			if (machine.timestamp > 0) {
 				// we only care about the initial machines here
 				break;
 			}
-			if  (num_machines >= 0 && l >= num_machines) {
+			if  (max_machines_ >= 0 && l >= max_machines_) {
 				// read as many machines as user requested
 				break;
 			}
@@ -98,8 +96,7 @@ uint64_t GoogleTraceExtractor::ReadMachinesFile(vector<uint64_t>* machines,
 	return l;
 }
 
-uint64_t GoogleTraceExtractor::ReadJobsFile(vector<uint64_t>* jobs,
-                                            int64_t num_jobs) {
+uint64_t GoogleTraceExtractor::ReadJobsFile(vector<uint64_t>* jobs) {
 	int64_t j = 0;
 
 	JobParser jp(trace_path_);
@@ -110,7 +107,7 @@ uint64_t GoogleTraceExtractor::ReadJobsFile(vector<uint64_t>* jobs,
 				// we only care about the initial machines here
 				break;
 			}
-			if  (num_jobs >= 0 && j >= num_jobs) {
+			if  (max_jobs_ >= 0 && j >= max_jobs_) {
 				// read as many machines as user requested
 				break;
 			}
@@ -151,6 +148,11 @@ uint64_t GoogleTraceExtractor::ReadInitialTasksFile(
 }
 
 void GoogleTraceExtractor::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
+                                       const string& file_base) {
+	// no out_file at the moment: we're just reading the trace
+}
+
+/*void GoogleTraceExtractor::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
                                        const string& file_base) {
   char line[200];
   vector<string> vals;
@@ -202,7 +204,7 @@ void GoogleTraceExtractor::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* c
     }
   }
   out_file.close();
-}
+}*/
 
 void GoogleTraceExtractor::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* cost_model,
                                       uint64_t job_id, uint64_t task_id, ofstream& out_file) {
@@ -292,10 +294,10 @@ void GoogleTraceExtractor::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
 void GoogleTraceExtractor::AddMachineToTopology(
     const ResourceTopologyNodeDescriptor& machine_tmpl,
     uint64_t machine_id,
-    ResourceTopologyNodeDescriptor* rtn_root) {
-  ResourceTopologyNodeDescriptor* child = rtn_root->add_children();
+    ResourceTopologyNodeDescriptor &rtn_root) {
+  ResourceTopologyNodeDescriptor* child = rtn_root.add_children();
   child->CopyFrom(machine_tmpl);
-  const string& root_uuid = rtn_root->resource_desc().uuid();
+  const string& root_uuid = rtn_root.resource_desc().uuid();
   char hn[100];
   sprintf(hn, "h%ju", machine_id);
   TraverseResourceProtobufTreeReturnRTND(
@@ -305,47 +307,48 @@ void GoogleTraceExtractor::AddMachineToTopology(
 }
 
 ResourceTopologyNodeDescriptor&
-GoogleTraceExtractor::LoadInitialMachines(int64_t max_num) {
-  vector<uint64_t> machines;
-
-  // Read the initial machine events from trace
-  uint64_t num_machines = ReadMachinesFile(&machines, max_num);
-  LOG(INFO) << "Loaded " << num_machines << " machines!";
-
+GoogleTraceExtractor::LoadInitialTopology() {
   // Import a fictional machine resource topology
-  ResourceTopologyNodeDescriptor machine_tmpl;
   int fd = open(MACHINE_TMPL_FILE, O_RDONLY);
   machine_tmpl.ParseFromFileDescriptor(fd);
   close(fd);
 
-  // Create the machines
-  ResourceTopologyNodeDescriptor* rtn_root = new 
+  // Create the root node
+  ResourceTopologyNodeDescriptor* rtn_root = new
       ResourceTopologyNodeDescriptor();
   ResourceID_t root_uuid = GenerateRootResourceID("XXXgoogleXXX");
   rtn_root->mutable_resource_desc()->set_uuid(to_string(root_uuid));
   LOG(INFO) << "Root res ID is " << to_string(root_uuid);
   InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
                      to_string(root_uuid));
-  // Create each machine and add it to the graph
-  uint64_t i = 0;
-  for (vector<uint64_t>::const_iterator iter = machines.begin();
-       iter != machines.end();
-       ++iter) {
-    AddMachineToTopology(machine_tmpl, i, rtn_root);
-    ++i;
-  }
-  LOG(INFO) << "Added " << machines.size() << " machines.";
 
   return *rtn_root;
 }
 
-unordered_map<uint64_t, JobDescriptor*>& GoogleTraceExtractor::LoadInitialJobs(
-    int64_t max_jobs) {
+void GoogleTraceExtractor::LoadInitialMachines(
+										ResourceTopologyNodeDescriptor &root) {
+	vector<uint64_t> machines;
+	// Read the initial machine events from trace
+	uint64_t num_machines = ReadMachinesFile(&machines);
+	LOG(INFO) << "Loaded " << num_machines << " machines!";
+
+	// Create each machine and add it to the graph
+	uint64_t i = 0;
+	for (vector<uint64_t>::const_iterator iter = machines.begin();
+	   iter != machines.end();
+	   ++iter) {
+		AddMachineToTopology(machine_tmpl, i, root);
+		++i;
+	}
+	LOG(INFO) << "Added " << machines.size() << " machines.";
+}
+
+unordered_map<uint64_t, JobDescriptor*>& GoogleTraceExtractor::LoadInitialJobs() {
   vector<uint64_t> job_ids;
   unordered_map<uint64_t, JobDescriptor*>* jobs;
 
   // Read the initial machine events from trace
-  uint64_t num_jobs_read = ReadJobsFile(&job_ids, max_jobs);
+  uint64_t num_jobs_read = ReadJobsFile(&job_ids);
   LOG(INFO) << "Read " << num_jobs_read << " initial jobs.";
   jobs = new unordered_map<uint64_t, JobDescriptor*>();
 
@@ -370,19 +373,14 @@ void GoogleTraceExtractor::LoadInitalTasks(
 }
 
 void GoogleTraceExtractor::Run() {
-  // command line argument sanity checking
-  if (trace_path_.empty()) {
-    LOG(FATAL) << "Please specify a path to the Google trace!";
-  }
-
   LOG(INFO) << "Starting Google Trace extraction!";
   LOG(INFO) << "Number of machines to extract: " << FLAGS_num_machines;
   LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " seconds.";
 
   ResourceTopologyNodeDescriptor& initial_resource_topology =
-      LoadInitialMachines(FLAGS_num_machines);
+      LoadInitialTopology();
   unordered_map<uint64_t, JobDescriptor*>& initial_jobs =
-      LoadInitialJobs(FLAGS_num_jobs);
+      LoadInitialJobs();
   LoadInitalTasks(initial_jobs);
 
   QuincyCostModel* cost_model = new QuincyCostModel();
@@ -398,6 +396,7 @@ void GoogleTraceExtractor::Run() {
             << " child tasks of root task";
     g.AddJobNodes(iter->second);
   }
+
   // Export initial graph
   DIMACSExporter exp;
   exp.Export(g);

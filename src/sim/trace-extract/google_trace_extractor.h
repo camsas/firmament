@@ -14,6 +14,7 @@
 #include "misc/map-util.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/quincy_cost_model.h"
+#include "dataset_parser.h"
 
 namespace firmament {
 namespace sim {
@@ -23,21 +24,36 @@ class GoogleTraceExtractor {
   explicit GoogleTraceExtractor(string& trace_path);
   void Run();
  private:
+  // parameters
+  int64_t max_machines_, max_jobs_;
+  string trace_path_;
+
+  // CSV parsers
+  MachineParser machine_parser_;
+  JobParser job_parser_;
+  TaskParser task_parser_;
+
+  // state
+  ResourceTopologyNodeDescriptor machine_tmpl;
+  unordered_map<string, string> uuid_conversion_map_;
+  unordered_map<uint64_t, JobID_t> job_id_conversion_map_;
+
   void AddMachineToTopology(const ResourceTopologyNodeDescriptor& machine_tmpl,
                             uint64_t machine_id,
-                            ResourceTopologyNodeDescriptor* rtn_root);
+                            ResourceTopologyNodeDescriptor& rtn_root);
   void AddNewTask(FlowGraph* flow_graph, QuincyCostModel* cost_model, uint64_t job_id,
                   uint64_t task_id, ofstream& out_file);
   void BinTasks(ofstream& out_file);
-  ResourceTopologyNodeDescriptor& LoadInitialMachines(int64_t max_num);
-  unordered_map<uint64_t, JobDescriptor*>& LoadInitialJobs(int64_t max_jobs);
+  ResourceTopologyNodeDescriptor& LoadInitialTopology();
+  void LoadInitialMachines(ResourceTopologyNodeDescriptor &);
+  unordered_map<uint64_t, JobDescriptor*>& LoadInitialJobs();
   void LoadInitalTasks(
       const unordered_map<uint64_t, JobDescriptor*>& initial_jobs);
 
   void PopulateJob(JobDescriptor* jd, uint64_t job_id);
 
-  uint64_t ReadJobsFile(vector<uint64_t>* jobs, int64_t num_jobs);
-  uint64_t ReadMachinesFile(vector<uint64_t>* machines, int64_t num_jobs);
+  uint64_t ReadJobsFile(vector<uint64_t>* jobs);
+  uint64_t ReadMachinesFile(vector<uint64_t>* machines);
   uint64_t ReadInitialTasksFile(const unordered_map<uint64_t, JobDescriptor*>& jobs);
 
   void ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
@@ -45,10 +61,6 @@ class GoogleTraceExtractor {
 
   void reset_uuid(ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
       const string& root_uuid);
-
-  unordered_map<string, string> uuid_conversion_map_;
-  unordered_map<uint64_t, JobID_t> job_id_conversion_map_;
-  string trace_path_;
 };
 
 }  // namespace sim

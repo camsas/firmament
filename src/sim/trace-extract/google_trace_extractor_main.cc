@@ -13,6 +13,10 @@ int main(int argc, char *argv[]) {
   VLOG(1) << "Calling common::InitFirmament";
   common::InitFirmament(argc, argv);
 
+  // command line argument sanity checking
+  if (FLAGS_trace_path.empty()) {
+	LOG(FATAL) << "Please specify a path to the Google trace!";
+  }
   sim::GoogleTraceExtractor gte(FLAGS_trace_path);
 
   gte.Run();
