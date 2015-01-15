@@ -3,11 +3,11 @@ SUFFIX=sim/trace-extract
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_thread -lboost_system -lboost_regex -lssl -lcrypto
+LIBS += -lboost_thread -lboost_filesystem -lboost_system -lboost_regex -lssl -lcrypto
 
 BINS = google-trace-extractor
 LIB =
-OBJS = google_trace_extractor.o
+OBJS = google_trace_extractor.o dataset_parser.o
 PBS =
 TESTS =
 TESTS_DEPS =
@@ -35,6 +35,7 @@ $(BIN): $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(SRC_ROOT_DIR)/sim/trace-extract/google_trace_extractor_main.cc \
 		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_extractor.o \
+		$(BUILD_DIR)/sim/trace-extract/dataset_parser.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \
 		$(BUILD_DIR)/scheduling/flow_graph.o \

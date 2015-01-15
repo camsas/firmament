@@ -21,6 +21,7 @@
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
+#include "dataset_parser.h"
 
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;
@@ -72,140 +73,81 @@ void GoogleTraceExtractor::reset_uuid(
 }
 
 
-GoogleTraceExtractor::GoogleTraceExtractor(string& trace_path) :
-    trace_path_(trace_path) {
-}
+GoogleTraceExtractor::GoogleTraceExtractor(string& trace_path)
+												  : trace_path_(trace_path) { }
 
 uint64_t GoogleTraceExtractor::ReadMachinesFile(vector<uint64_t>* machines,
                                                 int64_t num_machines) {
-  char line[200];
-  vector<string> vals;
-  FILE* fptr = NULL;
-  string fname = trace_path_ + "/machine_events/part-00000-of-00001.csv"; 
-  if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
-    LOG(ERROR) << "Failed to open trace for reading of machine events.";
-  }
-  int64_t l = 0;
-  while (!feof(fptr)) {
-    if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-      VLOG(3) << "Processing line " << l << ": " << line;
-      boost::split(vals, line, is_any_of(","), token_compress_off);
-      uint64_t time = lexical_cast<uint64_t>(vals[0]);
-      if (time > 0 || (num_machines >= 0 && l >= num_machines)) {
-        // We only care about the initial machines here
-        break;
-      }
-      if (vals.size() != 6) {
-        LOG(ERROR) << "Unexpected structure of machine event row";
-      } else {
-        uint64_t machine_id = lexical_cast<uint64_t>(vals[1]);
-        uint64_t event_type = lexical_cast<uint64_t>(vals[2]);
-        if (event_type == 0)
-          machines->push_back(machine_id);
-      }
-    }
-    l++;
-  }
-  return l;
+	int64_t l = 0;
+	MachineParser mp(trace_path_);
+	while (mp.nextRow()) {
+		const MachineEvent &machine = mp.getMachine();
+		if (machine.event_type == MachineEvent::ADD_TYPE) {
+			if (machine.timestamp > 0) {
+				// we only care about the initial machines here
+				break;
+			}
+			if  (num_machines >= 0 && l >= num_machines) {
+				// read as many machines as user requested
+				break;
+			}
+			machines->push_back(machine.machine_id);
+			l++;
+		}
+	}
+	return l;
 }
 
 uint64_t GoogleTraceExtractor::ReadJobsFile(vector<uint64_t>* jobs,
                                             int64_t num_jobs) {
-  bool done = false;
-  char line[200];
-  vector<string> vals;
-  FILE* fptr = NULL;
-  int64_t j = 0;
-  for (uint64_t f = 0; f < 500; f++) {
-    string fname;
-    spf(&fname, "%s/job_events/part-%05ld-of-00500.csv",
-        trace_path_.c_str(), f);
-    if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open trace for reading of job events.";
-    }
-    int64_t l = 0;
-    while (!feof(fptr)) {
-      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-        VLOG(3) << "Processing line " << l << ": " << line;
-        boost::split(vals, line, is_any_of(","), token_compress_off);
-        uint64_t time = lexical_cast<uint64_t>(vals[0]);
-        if (time > 0 || (num_jobs >= 0 && l >= num_jobs)) {
-          // We only care about the initial jobs here, so break once
-          // the time is non-zero
-          done = true;
-          break;
-        }
-        if (vals.size() != 8) {
-          LOG(ERROR) << "Unexpected structure of job event row: found "
-                     << vals.size() << " columns.";
-        } else {
-          uint64_t job_id = lexical_cast<uint64_t>(vals[2]);
-          uint64_t event_type = lexical_cast<uint64_t>(vals[3]);
-          if (event_type == 0) {
-            jobs->push_back(job_id);
-            j++;
-          }
-        }
-      }
-      l++;
-    }
-    if (done)
-      return j;
-  }
-  return j;
+	int64_t j = 0;
+
+	JobParser jp(trace_path_);
+	while (jp.nextRow()) {
+		const JobEvent &job = jp.getJob();
+		if (job.event_type == JobEvent::ADD_TYPE) {
+			if (job.timestamp > 0) {
+				// we only care about the initial machines here
+				break;
+			}
+			if  (num_jobs >= 0 && j >= num_jobs) {
+				// read as many machines as user requested
+				break;
+			}
+			jobs->push_back(job.job_id);
+			j++;
+		}
+	}
+
+	return j;
 }
 
 uint64_t GoogleTraceExtractor::ReadInitialTasksFile(
     const unordered_map<uint64_t, JobDescriptor*>& jobs) {
-  bool done = false;
-  char line[200];
-  vector<string> vals;
-  FILE* fptr = NULL;
-  int64_t t = 0;
-  for (uint64_t f = 0; f < 500; f++) {
-    string fname;
-    spf(&fname, "%s/task_events/part-%05ld-of-00500.csv",
-        trace_path_.c_str(), f);
-    if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open trace for reading of task events.";
-    }
-    int64_t l = 0;
-    while (!feof(fptr)) {
-      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-        VLOG(3) << "Processing line " << l << ": " << line;
-        boost::split(vals, line, is_any_of(","), token_compress_off);
-        uint64_t time = lexical_cast<uint64_t>(vals[0]);
-        if (time > 0) {
-          // We only care about the initial tasks here, so break once
-          // the time is non-zero
-          done = true;
-          break;
-        }
-        if (vals.size() != 13) {
-          LOG(ERROR) << "Unexpected structure of task event row: found "
-                     << vals.size() << " columns.";
-        } else {
-          uint64_t job_id = lexical_cast<uint64_t>(vals[2]);
-          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
-          if (event_type == 0) {
-            if (JobDescriptor* jd = FindPtrOrNull(jobs, job_id)) {
-              // This is a job we're interested in
-              CHECK_NOTNULL(jd);
-              TaskDescriptor* root_task = jd->mutable_root_task();
-              TaskDescriptor* new_task = root_task->add_spawned();
-              new_task->set_uid(GenerateTaskID(*root_task));
-              new_task->set_state(TaskDescriptor::RUNNABLE);
-              t++;
-            }
-          }
-        }
-      }
-      l++;
-    }
-    if (done)
-      return t;
-  }
-  return t;
+	uint64_t t = 0;
+
+	TaskParser tp(trace_path_);
+	while (tp.nextRow()) {
+		const TaskEvent &task = tp.getTask();
+
+		if (task.event_type == TaskEvent::ADD_TYPE) {
+			if (task.timestamp > 0) {
+				// we only care about initial tasks
+				break;
+			}
+			if (JobDescriptor* jd = FindPtrOrNull(jobs, task.job_id)) {
+				// This is a job we're interested in
+				CHECK_NOTNULL(jd);
+				TaskDescriptor* root_task = jd->mutable_root_task();
+				TaskDescriptor* new_task = root_task->add_spawned();
+				new_task->set_uid(GenerateTaskID(*root_task));
+				new_task->set_state(TaskDescriptor::RUNNABLE);
+				t++;
+			}
+		}
+	}
+
+	return t;
 }
 
 void GoogleTraceExtractor::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
@@ -270,6 +212,7 @@ void GoogleTraceExtractor::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* co
     JobDescriptor* jd = new JobDescriptor();
     PopulateJob(jd, job_id);
     flow_graph->AddJobNodes(jd);
+    // internal job ID is updated by PopulateJob
     jdp = FindOrNull(job_id_conversion_map_, job_id);
     CHECK_NOTNULL(jdp);
     out_file << "d 0 0 1\n";
