@@ -1,6 +1,6 @@
+#include <stdio.h>
 #include <glog/logging.h>
 #include <boost/algorithm/string.hpp>
-#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include "dataset_parser.h"
@@ -42,11 +42,14 @@ void DatasetParser::openFile() {
 	if (csv_file.is_open()) {
 		csv_file.close();
 	}
-	std::string fname = str(boost::format("part-%5u-of-%5u.csv")
-							% current_index % num_files);
+	char fname[128];
+	snprintf(fname, sizeof(fname) - 1, "part-%.5u-of-%.5u.csv",
+			 current_index, num_files);
 	VLOG(1) << "Opening " << fname;
 	std::string path = (dataset_path / fname).string();
 	csv_file.open(path);
+
+	CHECK(csv_file.good()) << "Could not open " << fname;
 }
 
 bool DatasetParser::nextRow() {
@@ -56,6 +59,8 @@ bool DatasetParser::nextRow() {
 		boost::split(values, line, boost::is_any_of(","),
 				     boost::token_compress_off);
 		return true;
+	} else {
+		VLOG(3) << "EOF read";
 	}
 
 	// EOF in file

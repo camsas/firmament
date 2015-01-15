@@ -374,13 +374,18 @@ void GoogleTraceExtractor::LoadInitalTasks(
 
 void GoogleTraceExtractor::Run() {
   LOG(INFO) << "Starting Google Trace extraction!";
-  LOG(INFO) << "Number of machines to extract: " << FLAGS_num_machines;
+  LOG(INFO) << "Number of machines to extract: " << max_machines_;
   LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " seconds.";
 
+  VLOG(1) << "Initializing resource topology";
   ResourceTopologyNodeDescriptor& initial_resource_topology =
       LoadInitialTopology();
+  VLOG(1) << "Loading machines";
+  LoadInitialMachines(initial_resource_topology);
+  VLOG(1) << "Loading jobs";
   unordered_map<uint64_t, JobDescriptor*>& initial_jobs =
       LoadInitialJobs();
+  VLOG(1) << "Loading tasks";
   LoadInitalTasks(initial_jobs);
 
   QuincyCostModel* cost_model = new QuincyCostModel();
