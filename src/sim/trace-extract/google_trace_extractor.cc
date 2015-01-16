@@ -46,7 +46,8 @@ DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 GoogleTraceExtractor::GoogleTraceExtractor(string& trace_path)
 					: //max_machines_(FLAGS_num_machines),
 					  trace_path_(trace_path), machine_parser_(trace_path_),
-					  job_parser_(trace_path_), task_parser_(trace_path_) { }
+						job_parser_(trace_path_),	task_parser_(trace_path_),
+					  current_time_(0), num_machines_seen_(0) { }
 
 void GoogleTraceExtractor::reset_uuid(
     ResourceTopologyNodeDescriptor* rtnd,
@@ -98,8 +99,8 @@ uint64_t GoogleTraceExtractor::ReadMachinesFile(vector<uint64_t>* machines) {
 }
 
 // returns timestamp of earliest unprocessed event, UINT64_MAX if no more events
-uint64_t GoogleTraceExtractor::ReplayMachineEvents(FlowGraph* flow_graph,
-	    				QuincyCostModel* cost_model, uint64_t max_runtime) {
+uint64_t GoogleTraceExtractor::ReplayMachineEvents(
+		               ResourceTopologyNodeDescriptor& root, uint64_t max_runtime) {
 	const MachineEvent *machine = &machine_parser_.getMachine();
 	while (machine->timestamp <= max_runtime) {
 		switch (machine->event_type) {
@@ -126,8 +127,8 @@ uint64_t GoogleTraceExtractor::ReplayMachineEvents(FlowGraph* flow_graph,
 	return machine->timestamp;
 }
 
-uint64_t GoogleTraceExtractor::ReplayJobEvents(FlowGraph* flow_graph,
-	    				QuincyCostModel* cost_model, uint64_t max_runtime) {
+uint64_t GoogleTraceExtractor::ReplayJobEvents(
+		               ResourceTopologyNodeDescriptor& root, uint64_t max_runtime) {
 	const JobEvent* job = &job_parser_.getJob();
 	while (job->timestamp <= max_runtime) {
 		switch (job->event_type) {
@@ -141,14 +142,15 @@ uint64_t GoogleTraceExtractor::ReplayJobEvents(FlowGraph* flow_graph,
 			} else {
 				JobDescriptor* jd = new JobDescriptor();
 				PopulateJob(jd, job_id);
-				VLOG(2) << "Adding job " << job_id;
+				VLOG(1) << "Adding job " << job_id;
 				jobs_[job_id] = jd;
-				flow_graph->AddJobNodes(jd);
+				//flow_graph->AddJobNodes(jd);
 			}
 			break;
 		}
 		case JobTaskEventTypes::SCHEDULE:
 			// transition to RUNNING
+			VLOG(2) << "Job schedule unsupported";
 			break;
 		case JobTaskEventTypes::EVICT:
 		case JobTaskEventTypes::FAIL:
@@ -156,10 +158,12 @@ uint64_t GoogleTraceExtractor::ReplayJobEvents(FlowGraph* flow_graph,
 		case JobTaskEventTypes::KILL:
 		case JobTaskEventTypes::LOST:
 			// transition to DEAD
+			VLOG(2) << "Job kill/evict/etc unsupported";
 			break;
 		case JobTaskEventTypes::UPDATE_PENDING:
 		case JobTaskEventTypes::UPDATE_RUNNING:
 			// stay in same state (PENDING or RUNNING). ignore this
+			VLOG(3) << "ignoring " << job->event_type;
 			break;
 		default:
 			LOG(FATAL) << "Unexpected event type code " << job->event_type;
@@ -175,8 +179,8 @@ uint64_t GoogleTraceExtractor::ReplayJobEvents(FlowGraph* flow_graph,
 	return job->timestamp;
 }
 
-uint64_t GoogleTraceExtractor::ReplayTaskEvents(FlowGraph* flow_graph,
-	    				QuincyCostModel* cost_model, uint64_t max_runtime) {
+uint64_t GoogleTraceExtractor::ReplayTaskEvents(
+					         ResourceTopologyNodeDescriptor& root, uint64_t max_runtime) {
 	const TaskEvent* task = &task_parser_.getTask();
 	while (task->timestamp <= max_runtime) {
 		switch (task->event_type) {
@@ -184,11 +188,13 @@ uint64_t GoogleTraceExtractor::ReplayTaskEvents(FlowGraph* flow_graph,
 		case JobTaskEventTypes::SUBMIT:
 		{
 			// transition to PENDING
-			JobDescriptor* jd = FindPtrOrNull(jobs_, task->job_id);
+			uint64_t job_id = task->job_id;
+			JobDescriptor* jd = FindPtrOrNull(jobs_, job_id);
 			if (!jd) {
-				LOG(WARNING) << "Task with unrecognized job ID " << task->job_id
+				LOG(WARNING) << "Task with unrecognized job ID " << job_id
 						         << " (out of order events?)";
 			} else {
+				VLOG(1) << "Adding task for " << job_id;
 				TaskDescriptor* root_task = jd->mutable_root_task();
 				TaskDescriptor* new_task = root_task->add_spawned();
 				new_task->set_uid(GenerateTaskID(*root_task));
@@ -198,6 +204,7 @@ uint64_t GoogleTraceExtractor::ReplayTaskEvents(FlowGraph* flow_graph,
 		}
 		case JobTaskEventTypes::SCHEDULE:
 			// transition to RUNNING
+			VLOG(2) << "Task schedule unsupported";
 			break;
 		case JobTaskEventTypes::EVICT:
 		case JobTaskEventTypes::FAIL:
@@ -205,10 +212,12 @@ uint64_t GoogleTraceExtractor::ReplayTaskEvents(FlowGraph* flow_graph,
 		case JobTaskEventTypes::KILL:
 		case JobTaskEventTypes::LOST:
 			// transition to DEAD
+			VLOG(2) << "Task kill/evict/etc unsupported";
 			break;
 		case JobTaskEventTypes::UPDATE_PENDING:
 		case JobTaskEventTypes::UPDATE_RUNNING:
 			// stay in same state (PENDING or RUNNING). ignore this
+			VLOG(3) << "ignoring " << task->event_type;
 			break;
 		default:
 			LOG(FATAL) << "Unexpected event type code " << task->event_type;
@@ -224,45 +233,29 @@ uint64_t GoogleTraceExtractor::ReplayTaskEvents(FlowGraph* flow_graph,
 	return task->timestamp;
 }
 
-void GoogleTraceExtractor::ReplayTrace(FlowGraph* flow_graph,
-						    QuincyCostModel* cost_model, uint64_t max_runtime) {
+void GoogleTraceExtractor::ReplayTrace(ResourceTopologyNodeDescriptor& root,
+						                           uint64_t max_runtime) {
 	// TODO(adam): incremental output
 	// TODO(adam): periodic snapshots
+
+	// Replay{Machine,Job,Task}Events all expect there to be an event loaded
+	// TODO(adam): there will be a machine event, but it will already have been
+	// processed by LoadInitialMachines.
+	// Currently ReplayMachineEvents does nothing, however.
+	CHECK(job_parser_.nextRow()) << "no job events in trace";
+	CHECK(task_parser_.nextRow()) << "no task events in trace";
+
 	uint64_t next_machine_time, next_job_time, next_task_time;
 	while (current_time_ <= max_runtime && current_time_ < UINT64_MAX) {
+		VLOG(2) << "Current time: " << current_time_;
 		// max_runtime may be UINT64_MAX, in which case 1st inequality always holds
-		next_machine_time = ReplayMachineEvents(flow_graph, cost_model, current_time_);
-		next_job_time = ReplayJobEvents(flow_graph, cost_model, current_time_);
-		next_task_time = ReplayTaskEvents(flow_graph, cost_model, current_time_);
+		next_machine_time = ReplayMachineEvents(root, current_time_);
+		next_job_time = ReplayJobEvents(root, current_time_);
+		next_task_time = ReplayTaskEvents(root, current_time_);
 
 		current_time_ = std::min({next_machine_time, next_job_time, next_task_time});
 	}
-}
-
-void GoogleTraceExtractor::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* cost_model,
-                                      uint64_t job_id, uint64_t task_id, ofstream& out_file) {
-  JobID_t* jdp = FindOrNull(job_id_conversion_map_, job_id);
-  if (!jdp) {
-    // Add new job to the graph
-    JobDescriptor* jd = new JobDescriptor();
-    PopulateJob(jd, job_id);
-    flow_graph->AddJobNodes(jd);
-    // internal job ID is updated by PopulateJob
-    jdp = FindOrNull(job_id_conversion_map_, job_id);
-    CHECK_NOTNULL(jdp);
-    out_file << "d 0 0 1\n";
-    out_file << "a 0 2 0 1 0\n";
-  }
-  FlowGraphNode* unsched_agg = flow_graph->GetUnschedAggForJob(*jdp);
-  out_file << "d 1 0 2\n";
-  out_file << "a 0 2 0 1 " << cost_model->TaskToClusterAggCost(task_id) << "\n";
-  out_file << "a 0 " << unsched_agg->id_ << " 0 1 " <<
-    cost_model->TaskToUnscheduledAggCost(task_id) << "\n";
-  FlowGraphArc** arc_to_sink = FindOrNull(unsched_agg->outgoing_arc_map_, 1);
-  CHECK_NOTNULL(arc_to_sink);
-  CHECK_NOTNULL(*arc_to_sink);
-  out_file << "x " << unsched_agg->id_ << " 1 " << (*arc_to_sink)->cap_lower_bound_ << " " <<
-    (++(*arc_to_sink)->cap_upper_bound_) << " " << (*arc_to_sink)->cost_ << "\n";
+	LOG(INFO) << "Terminating at " << current_time_;
 }
 
 void GoogleTraceExtractor::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
@@ -343,13 +336,21 @@ void GoogleTraceExtractor::Run() {
   VLOG(1) << "Loading initial machines";
   LoadInitialMachines(initial_resource_topology);
 
+  uint64_t max_runtime = FLAGS_runtime >= 0 ? FLAGS_runtime : UINT64_MAX;
+  ReplayTrace(initial_resource_topology, max_runtime);
+
   QuincyCostModel* cost_model = new QuincyCostModel();
   FlowGraph g(cost_model);
   // Add resources and job to flow graph
   g.AddResourceTopology(initial_resource_topology);
-
-  uint64_t max_runtime = FLAGS_runtime >= 0 ? FLAGS_runtime : UINT64_MAX;
-  ReplayTrace(&g, cost_model, max_runtime);
+  for (unordered_map<uint64_t, JobDescriptor*>::const_iterator
+  		iter = jobs_.begin();
+  		iter != jobs_.end();
+  		++iter) {
+		VLOG(1) << "Add job with " << iter->second->root_task().spawned_size()
+		<< " child tasks of root task";
+		g.AddJobNodes(iter->second);
+  }
 
   // Export initial graph
   DIMACSExporter exp;
