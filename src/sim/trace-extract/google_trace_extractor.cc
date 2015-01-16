@@ -78,26 +78,6 @@ void GoogleTraceExtractor::reset_uuid(
   rtnd->mutable_resource_desc()->set_uuid(new_uuid);
 }
 
-uint64_t GoogleTraceExtractor::ReadMachinesFile(vector<uint64_t>* machines) {
-	int64_t l = 0;
-	while (machine_parser_.nextRow()) {
-		const MachineEvent &machine = machine_parser_.getMachine();
-		if (machine.event_type == MachineEvent::Types::ADD) {
-			if (machine.timestamp > 0) {
-				// we only care about the initial machines here
-				break;
-			}
-			/*if  (max_machines_ >= 0 && l >= max_machines_) {
-				// read as many machines as user requested
-				break;
-			}*/
-			machines->push_back(machine.machine_id);
-			l++;
-		}
-	}
-	return l;
-}
-
 // returns timestamp of earliest unprocessed event, UINT64_MAX if no more events
 uint64_t GoogleTraceExtractor::ReplayMachineEvents(
 		               ResourceTopologyNodeDescriptor& root, uint64_t max_runtime) {
@@ -106,7 +86,8 @@ uint64_t GoogleTraceExtractor::ReplayMachineEvents(
 		switch (machine->event_type) {
 		// TODO(adam): handle machine events
 		case MachineEvent::Types::ADD:
-			LOG(WARNING) << "Machine add event unsupported: " << machine->timestamp;
+			AddMachineToTopology(machine_tmpl_, num_machines_seen_, root);
+			num_machines_seen_++;
 			break;
 		case MachineEvent::Types::REMOVE:
 			LOG(WARNING) << "Machine remove event unsupported: " << machine->timestamp;
@@ -242,6 +223,7 @@ void GoogleTraceExtractor::ReplayTrace(ResourceTopologyNodeDescriptor& root,
 	// TODO(adam): there will be a machine event, but it will already have been
 	// processed by LoadInitialMachines.
 	// Currently ReplayMachineEvents does nothing, however.
+	CHECK(machine_parser_.nextRow()) << "no machine events in trace";
 	CHECK(job_parser_.nextRow()) << "no job events in trace";
 	CHECK(task_parser_.nextRow()) << "no task events in trace";
 
@@ -308,23 +290,6 @@ GoogleTraceExtractor::LoadInitialTopology() {
   return *rtn_root;
 }
 
-void GoogleTraceExtractor::LoadInitialMachines(
-										ResourceTopologyNodeDescriptor &root) {
-	vector<uint64_t> machines;
-	// Read the initial machine events from trace
-	uint64_t num_machines = ReadMachinesFile(&machines);
-	LOG(INFO) << "Loaded " << num_machines << " machines!";
-
-	// Create each machine and add it to the graph
-	for (vector<uint64_t>::const_iterator iter = machines.begin();
-	   iter != machines.end();
-	   ++iter) {
-		AddMachineToTopology(machine_tmpl_, num_machines_seen_, root);
-		num_machines_seen_++;
-	}
-	LOG(INFO) << "Added " << num_machines_seen_ << " machines.";
-}
-
 void GoogleTraceExtractor::Run() {
   LOG(INFO) << "Starting Google Trace extraction!";
   //LOG(INFO) << "Number of machines to extract: " << max_machines_;
@@ -333,8 +298,6 @@ void GoogleTraceExtractor::Run() {
   VLOG(1) << "Initializing resource topology";
   ResourceTopologyNodeDescriptor& initial_resource_topology =
       LoadInitialTopology();
-  VLOG(1) << "Loading initial machines";
-  LoadInitialMachines(initial_resource_topology);
 
   uint64_t max_runtime = FLAGS_runtime >= 0 ? FLAGS_runtime : UINT64_MAX;
   ReplayTrace(initial_resource_topology, max_runtime);

@@ -44,8 +44,6 @@ class GoogleTraceExtractor {
                             uint64_t machine_id,
                             ResourceTopologyNodeDescriptor& rtn_root);
   ResourceTopologyNodeDescriptor& LoadInitialTopology();
-  uint64_t ReadMachinesFile(vector<uint64_t>* machines);
-  void LoadInitialMachines(ResourceTopologyNodeDescriptor &);
 
   void PopulateJob(JobDescriptor* jd, uint64_t job_id);
 
