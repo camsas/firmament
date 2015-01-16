@@ -29,17 +29,18 @@ public:
 };
 
 struct MachineEvent {
+	struct Types {
+		enum types_t { ADD, REMOVE, UPDATE };
+	};
+
 	// timestamp 64-bit
 	uint64_t timestamp;
 	// machine ID a UUID, also 64-bit
 	uint64_t machine_id;
-	// will be small positive integer
-	unsigned int event_type;
+	Types::types_t event_type;
 
 	// other attributes are:
 	// platform ID, CPU capacity, memory capacity
-
-	static const unsigned int ADD_TYPE = 0;
 };
 
 class MachineParser : public DatasetParser {
@@ -55,15 +56,17 @@ public:
 	}
 };
 
+struct JobTaskEventTypes {
+	enum types_t { SUBMIT, SCHEDULE, EVICT, FAIL, FINISH, KILL, LOST,
+			 	 	 	 	   UPDATE_PENDING, UPDATE_RUNNING };
+};
+
 struct JobEvent {
 	// timestamp 64-bit
 	uint64_t timestamp;
 	// job ID a UUID, also 64-bit
 	uint64_t job_id;
-	// will be small positive integer
-	unsigned int event_type;
-
-	static const unsigned int ADD_TYPE = 0;
+	JobTaskEventTypes::types_t event_type;
 };
 
 class JobParser : public DatasetParser {
@@ -83,10 +86,7 @@ struct TaskEvent {
 	uint64_t timestamp;
 	// job ID a UUID, also 64-bit
 	uint64_t job_id;
-	// will be small positive integer
-	unsigned int event_type;
-
-	static const unsigned int ADD_TYPE = 0;
+	JobTaskEventTypes::types_t event_type;
 };
 
 class TaskParser : public DatasetParser {

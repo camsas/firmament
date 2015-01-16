@@ -87,7 +87,8 @@ bool MachineParser::nextRow() {
 		}
 		machine.timestamp = boost::lexical_cast<uint64_t>(values[0]);
 		machine.machine_id = boost::lexical_cast<uint64_t>(values[1]);
-		machine.event_type = boost::lexical_cast<unsigned int>(values[2]);
+		machine.event_type = (MachineEvent::Types::types_t)
+												 boost::lexical_cast<unsigned int>(values[2]);
 	}
 	return success;
 }
@@ -102,7 +103,8 @@ bool JobParser::nextRow() {
 		}
 		job.timestamp = boost::lexical_cast<uint64_t>(values[0]);
 		job.job_id = boost::lexical_cast<uint64_t>(values[2]);
-		job.event_type = boost::lexical_cast<unsigned int>(values[3]);
+		job.event_type = (JobTaskEventTypes::types_t)
+						         boost::lexical_cast<unsigned int>(values[3]);
 	}
 	return success;
 }
@@ -117,7 +119,8 @@ bool TaskParser::nextRow() {
 		}
 		task.timestamp = boost::lexical_cast<uint64_t>(values[0]);
 		task.job_id = boost::lexical_cast<uint64_t>(values[2]);
-		task.event_type = boost::lexical_cast<unsigned int>(values[5]);
+		task.event_type = (JobTaskEventTypes::types_t)
+				               boost::lexical_cast<unsigned int>(values[5]);
 	}
 	return success;
 }

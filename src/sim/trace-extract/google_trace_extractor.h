@@ -25,7 +25,7 @@ class GoogleTraceExtractor {
   void Run();
  private:
   // parameters
-  int64_t max_machines_, max_jobs_;
+  //int64_t max_machines_;
   string trace_path_;
 
   // CSV parsers
@@ -34,7 +34,10 @@ class GoogleTraceExtractor {
   TaskParser task_parser_;
 
   // state
-  ResourceTopologyNodeDescriptor machine_tmpl;
+  uint64_t current_time_, max_time_;
+  uint64_t num_machines_seen_;
+  ResourceTopologyNodeDescriptor machine_tmpl_;
+  unordered_map<uint64_t, JobDescriptor*> jobs_;
   unordered_map<string, string> uuid_conversion_map_;
   unordered_map<uint64_t, JobID_t> job_id_conversion_map_;
 
@@ -45,19 +48,19 @@ class GoogleTraceExtractor {
                   uint64_t task_id, ofstream& out_file);
   void BinTasks(ofstream& out_file);
   ResourceTopologyNodeDescriptor& LoadInitialTopology();
+  uint64_t ReadMachinesFile(vector<uint64_t>* machines);
   void LoadInitialMachines(ResourceTopologyNodeDescriptor &);
-  unordered_map<uint64_t, JobDescriptor*>& LoadInitialJobs();
-  void LoadInitalTasks(
-      const unordered_map<uint64_t, JobDescriptor*>& initial_jobs);
 
   void PopulateJob(JobDescriptor* jd, uint64_t job_id);
 
-  uint64_t ReadJobsFile(vector<uint64_t>* jobs);
-  uint64_t ReadMachinesFile(vector<uint64_t>* machines);
-  uint64_t ReadInitialTasksFile(const unordered_map<uint64_t, JobDescriptor*>& jobs);
-
+  uint64_t ReplayMachineEvents(FlowGraph* flow_graph,
+  		                     QuincyCostModel* cost_model, uint64_t max_runtime);
+  uint64_t ReplayJobEvents(FlowGraph* flow_graph, QuincyCostModel* cost_model,
+  		                     uint64_t max_runtime);
+  uint64_t ReplayTaskEvents(FlowGraph* flow_graph, QuincyCostModel* cost_model,
+  		                      uint64_t max_runtime);
   void ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
-                   const string& file_base);
+		           uint64_t max_runtime);
 
   void reset_uuid(ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
       const string& root_uuid);
