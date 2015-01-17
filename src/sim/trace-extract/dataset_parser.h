@@ -86,6 +86,10 @@ struct TaskEvent {
 	uint64_t timestamp;
 	// job ID a UUID, also 64-bit
 	uint64_t job_id;
+	// identifier within the job
+	uint32_t task_index;
+	// machine ID a UUID, also 64-bit
+	uint64_t machine_id;
 	JobTaskEventTypes::types_t event_type;
 };
 

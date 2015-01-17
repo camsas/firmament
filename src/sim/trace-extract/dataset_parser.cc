@@ -119,8 +119,27 @@ bool TaskParser::nextRow() {
 		}
 		task.timestamp = boost::lexical_cast<uint64_t>(values[0]);
 		task.job_id = boost::lexical_cast<uint64_t>(values[2]);
+		task.task_index = boost::lexical_cast<uint32_t>(values[3]);
 		task.event_type = (JobTaskEventTypes::types_t)
 				               boost::lexical_cast<unsigned int>(values[5]);
+		// machine ID will only be present when in state RUNNING or DEAD
+		switch (task.event_type) {
+		case JobTaskEventTypes::SUBMIT:
+		case JobTaskEventTypes::UPDATE_PENDING:
+			// PENDING state
+			task.machine_id = 0;
+			break;
+		case JobTaskEventTypes::SCHEDULE:
+		case JobTaskEventTypes::UPDATE_RUNNING:
+			// RUNNING state
+		case JobTaskEventTypes::EVICT:
+		case JobTaskEventTypes::FAIL:
+		case JobTaskEventTypes::FINISH:
+		case JobTaskEventTypes::KILL:
+		case JobTaskEventTypes::LOST:
+			// DEAD state
+			task.machine_id = boost::lexical_cast<uint64_t>(values[4]);
+		}
 	}
 	return success;
 }

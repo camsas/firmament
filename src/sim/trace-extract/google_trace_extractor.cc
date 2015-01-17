@@ -84,11 +84,11 @@ uint64_t GoogleTraceExtractor::ReplayMachineEvents(
 	const MachineEvent *machine = &machine_parser_.getMachine();
 	while (machine->timestamp <= max_runtime) {
 		switch (machine->event_type) {
-		// TODO(adam): handle machine events
 		case MachineEvent::Types::ADD:
 			AddMachineToTopology(machine_tmpl_, num_machines_seen_, root);
 			num_machines_seen_++;
 			break;
+		// SOMEDAY(adam): handle machine remove & update events
 		case MachineEvent::Types::REMOVE:
 			LOG(WARNING) << "Machine remove event unsupported: " << machine->timestamp;
 			break;
@@ -125,7 +125,7 @@ uint64_t GoogleTraceExtractor::ReplayJobEvents(
 				PopulateJob(jd, job_id);
 				VLOG(1) << "Adding job " << job_id;
 				jobs_[job_id] = jd;
-				//flow_graph->AddJobNodes(jd);
+				tasks_[job_id] = unordered_map<uint32_t, TaskDescriptor*>();
 			}
 			break;
 		}
@@ -164,29 +164,49 @@ uint64_t GoogleTraceExtractor::ReplayTaskEvents(
 					         ResourceTopologyNodeDescriptor& root, uint64_t max_runtime) {
 	const TaskEvent* task = &task_parser_.getTask();
 	while (task->timestamp <= max_runtime) {
+		uint64_t job_id = task->job_id;
+		uint64_t task_index = task->task_index;
+		JobDescriptor* jd = FindPtrOrNull(jobs_, job_id);
+		if (!jd) {
+			LOG(WARNING) << "Task with unrecognized job ID " << job_id
+									 << " for event type " << task->event_type;
+			continue;
+		}
+		CHECK_GT(tasks_.count(job_id), 0);
+		unordered_map<uint32_t, TaskDescriptor*>& tasks = tasks_[job_id];
+
 		switch (task->event_type) {
 		// TODO(adam): support transition to RUNNING, DEAD
 		case JobTaskEventTypes::SUBMIT:
 		{
 			// transition to PENDING
-			uint64_t job_id = task->job_id;
-			JobDescriptor* jd = FindPtrOrNull(jobs_, job_id);
-			if (!jd) {
-				LOG(WARNING) << "Task with unrecognized job ID " << job_id
-						         << " (out of order events?)";
-			} else {
-				VLOG(1) << "Adding task for " << job_id;
-				TaskDescriptor* root_task = jd->mutable_root_task();
-				TaskDescriptor* new_task = root_task->add_spawned();
-				new_task->set_uid(GenerateTaskID(*root_task));
-				new_task->set_state(TaskDescriptor::RUNNABLE);
-			}
+			VLOG(1) << "Adding task " << job_id << ":" << task_index;
+			TaskDescriptor* root_task = jd->mutable_root_task();
+			TaskDescriptor* new_task = root_task->add_spawned();
+			new_task->set_uid(GenerateTaskID(*root_task));
+			new_task->set_state(TaskDescriptor::RUNNABLE);
+			tasks[task_index] = new_task;
 			break;
 		}
 		case JobTaskEventTypes::SCHEDULE:
+		{
 			// transition to RUNNING
-			VLOG(2) << "Task schedule unsupported";
+			if (tasks.count(task_index) == 0) {
+				LOG(WARNING) << "Unrecognized task index " << task_index
+						         << "within job " << job_id;
+				continue;
+			}
+
+			uint64_t machine_id = task->machine_id;
+			VLOG(1) << "Scheduling task " << job_id << ":" << task_index
+					    << "onto " << machine_id;
+			TaskDescriptor *scheduled_task = tasks[task_index];
+			scheduled_task->set_state(TaskDescriptor::ASSIGNED);
+			//XXX(adam): specify which machine it is scheduled to
+			//This will currently break FlowGraph badly, since it assumes any node
+			//in state ASSIGNED was already added, so will not create appropriate arcs
 			break;
+		}
 		case JobTaskEventTypes::EVICT:
 		case JobTaskEventTypes::FAIL:
 		case JobTaskEventTypes::FINISH:
@@ -299,7 +319,8 @@ void GoogleTraceExtractor::Run() {
   ResourceTopologyNodeDescriptor& initial_resource_topology =
       LoadInitialTopology();
 
-  uint64_t max_runtime = FLAGS_runtime >= 0 ? FLAGS_runtime : UINT64_MAX;
+  uint64_t max_runtime = (FLAGS_runtime >= 0) ? FLAGS_runtime * 1000 * 1000 :
+  		                                          UINT64_MAX;
   ReplayTrace(initial_resource_topology, max_runtime);
 
   QuincyCostModel* cost_model = new QuincyCostModel();

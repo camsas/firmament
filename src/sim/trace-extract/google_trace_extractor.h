@@ -37,6 +37,7 @@ class GoogleTraceExtractor {
   uint64_t current_time_, num_machines_seen_;
   ResourceTopologyNodeDescriptor machine_tmpl_;
   unordered_map<uint64_t, JobDescriptor*> jobs_;
+  unordered_map<uint64_t, unordered_map<uint32_t, TaskDescriptor*>> tasks_;
   unordered_map<string, string> uuid_conversion_map_;
   unordered_map<uint64_t, JobID_t> job_id_conversion_map_;
 
