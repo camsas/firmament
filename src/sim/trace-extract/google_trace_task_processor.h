@@ -44,6 +44,8 @@ namespace sim {
     TaskResourceUsage* MaxTaskUsage(vector<TaskResourceUsage*>& resource_usage);
     TaskResourceUsage* MinTaskUsage(vector<TaskResourceUsage*>& resource_usage);
     TaskResourceUsage* StandardDevTaskUsage(vector<TaskResourceUsage*>& resource_usage);
+    void PrintStats(FILE* usage_stat_file, uint64_t job_id, uint64_t task_index,
+                    vector<TaskResourceUsage*>& task_resource);
     void AggregateTaskUsage();
     map<uint64_t, string>& ReadLogicalJobsName();
     void ExpandTaskEvents();

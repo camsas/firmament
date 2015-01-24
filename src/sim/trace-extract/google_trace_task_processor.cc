@@ -467,12 +467,35 @@ namespace sim {
     return task_resource_sd;
   }
 
+  void GoogleTraceTaskProcessor::PrintStats(FILE* usage_stat_file, uint64_t job_id,
+                                            uint64_t task_index,
+                                            vector<TaskResourceUsage*>& task_resource) {
+    TaskResourceUsage* avg_task_usage = AvgTaskUsage(task_resource);
+    TaskResourceUsage* min_task_usage = MinTaskUsage(task_resource);
+    TaskResourceUsage* max_task_usage = MaxTaskUsage(task_resource);
+    TaskResourceUsage* sd_task_usage = StandardDevTaskUsage(task_resource);
+    fprintf(usage_stat_file,
+            "%" PRId64 " %" PRId64 " %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+            job_id, task_index,
+            min_task_usage->mean_cpu_usage, max_task_usage->mean_cpu_usage, avg_task_usage->mean_cpu_usage, sd_task_usage->mean_cpu_usage,
+            min_task_usage->canonical_mem_usage, max_task_usage->canonical_mem_usage, avg_task_usage->canonical_mem_usage, sd_task_usage->canonical_mem_usage,
+            min_task_usage->assigned_mem_usage, max_task_usage->assigned_mem_usage, avg_task_usage->assigned_mem_usage, sd_task_usage->assigned_mem_usage,
+            min_task_usage->unmapped_page_cache, max_task_usage->unmapped_page_cache, avg_task_usage->unmapped_page_cache, sd_task_usage->unmapped_page_cache,
+            min_task_usage->total_page_cache, max_task_usage->total_page_cache, avg_task_usage->total_page_cache, sd_task_usage->total_page_cache,
+            min_task_usage->mean_disk_io_time, max_task_usage->mean_disk_io_time, avg_task_usage->mean_disk_io_time, sd_task_usage->mean_disk_io_time,
+            min_task_usage->mean_local_disk_used, max_task_usage->mean_local_disk_used, avg_task_usage->mean_local_disk_used, sd_task_usage->mean_local_disk_used,
+            min_task_usage->cpi, max_task_usage->cpi, avg_task_usage->cpi, sd_task_usage->cpi,
+            min_task_usage->mai, max_task_usage->mai, avg_task_usage->mai, sd_task_usage->mai);
+    delete avg_task_usage;
+    delete min_task_usage;
+    delete max_task_usage;
+    delete sd_task_usage;
+  }
+
   void GoogleTraceTaskProcessor::AggregateTaskUsage() {
     map<uint64_t, vector<TaskSchedulingEvent*> >& scheduling_events = ReadTaskSchedulingEvents();
     // Map job id to map of task id to vector of resource usage.
     map<uint64_t, map<uint64_t, vector<TaskResourceUsage*> > > task_usage;
-    // Map job id to map of task id to last timestamp.
-    map<uint64_t, map<uint64_t, uint64_t> > task_last_timestamp;
     char line[200];
     vector<string> line_cols;
     FILE* usage_file = NULL;
@@ -498,7 +521,6 @@ namespace sim {
                        << line_cols.size() << " columns.";
           } else {
             uint64_t start_timestamp = lexical_cast<uint64_t>(line_cols[0]);
-            uint64_t end_timestamp = lexical_cast<uint64_t>(line_cols[1]);
             uint64_t job_id = lexical_cast<uint64_t>(line_cols[2]);
             uint64_t task_index = lexical_cast<uint64_t>(line_cols[3]);
             if (last_timestamp < start_timestamp) {
@@ -512,26 +534,9 @@ namespace sim {
                     if ((*evt_it)->event_type == TASK_FINISH) {
                       uint64_t job_id = (*evt_it)->job_id;
                       uint64_t task_index = (*evt_it)->task_index;
-                      TaskResourceUsage* avg_task_usage =
-                        AvgTaskUsage(task_usage[job_id][task_index]);
-                      TaskResourceUsage* min_task_usage =
-                        MinTaskUsage(task_usage[job_id][task_index]);
-                      TaskResourceUsage* max_task_usage =
-                        MaxTaskUsage(task_usage[job_id][task_index]);
-                      TaskResourceUsage* sd_task_usage =
-                        StandardDevTaskUsage(task_usage[job_id][task_index]);
-                      fprintf(usage_stat_file,
-                              "%" PRId64 " %" PRId64 " %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-                              job_id, task_index,
-                              min_task_usage->mean_cpu_usage, max_task_usage->mean_cpu_usage, avg_task_usage->mean_cpu_usage, sd_task_usage->mean_cpu_usage,
-                              min_task_usage->canonical_mem_usage, max_task_usage->canonical_mem_usage, avg_task_usage->canonical_mem_usage, sd_task_usage->canonical_mem_usage,
-                              min_task_usage->assigned_mem_usage, max_task_usage->assigned_mem_usage, avg_task_usage->assigned_mem_usage, sd_task_usage->assigned_mem_usage,
-                              min_task_usage->unmapped_page_cache, max_task_usage->unmapped_page_cache, avg_task_usage->unmapped_page_cache, sd_task_usage->unmapped_page_cache,
-                              min_task_usage->total_page_cache, max_task_usage->total_page_cache, avg_task_usage->total_page_cache, sd_task_usage->total_page_cache,
-                              min_task_usage->mean_disk_io_time, max_task_usage->mean_disk_io_time, avg_task_usage->mean_disk_io_time, sd_task_usage->mean_disk_io_time,
-                              min_task_usage->mean_local_disk_used, max_task_usage->mean_local_disk_used, avg_task_usage->mean_local_disk_used, sd_task_usage->mean_local_disk_used,
-                              min_task_usage->cpi, max_task_usage->cpi, avg_task_usage->cpi, sd_task_usage->cpi,
-                              min_task_usage->mai, max_task_usage->mai, avg_task_usage->mai, sd_task_usage->mai);
+                      PrintStats(usage_stat_file, job_id, task_index,
+                                 task_usage[job_id][task_index]);
+                      // Free task resource usage memory.
                       vector<TaskResourceUsage*>::iterator res_it =
                         task_usage[job_id][task_index].begin();
                       vector<TaskResourceUsage*>::iterator end_it =
@@ -541,9 +546,12 @@ namespace sim {
                       }
                       task_usage[job_id][task_index].clear();
                       task_usage[job_id].erase(task_index);
+                      if (task_usage[job_id].empty()) {
+                        task_usage.erase(job_id);
+                      }
                     }
                   }
-                  // Free memory.
+                  // Free task scheduling event memory.
                   vector<TaskSchedulingEvent*>::iterator schd_it = first_entry->second.begin();
                   vector<TaskSchedulingEvent*>::iterator end_it = first_entry->second.end();
                   for (; schd_it != end_it; schd_it++) {
@@ -560,26 +568,20 @@ namespace sim {
 
             TaskResourceUsage* task_resource_usage = BuildTaskResourceUsage(line_cols);
 
-            if (task_last_timestamp.find(job_id) == task_last_timestamp.end()) {
+            if (task_usage.find(job_id) == task_usage.end()) {
               // New job id.
-              map<uint64_t, uint64_t> task_to_time;
               map<uint64_t, vector<TaskResourceUsage*> > task_to_usage;
-              task_last_timestamp.insert(
-                  pair<uint64_t, map<uint64_t, uint64_t> >(job_id, task_to_time));
               task_usage.insert(
                   pair<uint64_t, map<uint64_t, vector<TaskResourceUsage*> > >(job_id,
                                                                               task_to_usage));
             }
-            if (task_last_timestamp[job_id].find(task_index) == task_last_timestamp[job_id].end()) {
+            if (task_usage[job_id].find(task_index) == task_usage[job_id].end()) {
               // New task index.
               vector<TaskResourceUsage*> resource_usage;
               resource_usage.push_back(task_resource_usage);
-              task_last_timestamp[job_id].insert(
-                  pair<uint64_t, uint64_t>(task_index, end_timestamp));
               task_usage[job_id].insert(
                   pair<uint64_t, vector<TaskResourceUsage*> >(task_index, resource_usage));
             } else {
-              task_last_timestamp[job_id][task_index] = end_timestamp;
               task_usage[job_id][task_index].push_back(task_resource_usage);
             }
           }
@@ -587,6 +589,15 @@ namespace sim {
         num_line++;
       }
     }
+    // Write stats for tasks that are still running.
+    for (map<uint64_t, map<uint64_t, vector<TaskResourceUsage*> > >::iterator job_it = task_usage.begin();
+         job_it != task_usage.end(); job_it++) {
+      for (map<uint64_t, vector<TaskResourceUsage*> >::iterator task_it = job_it->second.begin();
+           task_it != job_it->second.end(); task_it++) {
+        PrintStats(usage_stat_file, job_it->first, task_it->first, task_it->second);
+      }
+    }
+    // TODO(ionel): Free the memory occupied by the jobs running at the end of the trace.
     fclose(usage_stat_file);
   }
 
