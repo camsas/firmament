@@ -33,6 +33,13 @@ namespace sim {
     double mai;
   } TaskResourceUsage;
 
+  typedef struct TaskRuntime_st {
+    int64_t start_time;
+    uint64_t num_runs;
+    int64_t last_schedule_time;
+    int64_t total_runtime;
+  } TaskRuntime;
+
   class GoogleTraceTaskProcessor {
 
   public:
@@ -48,6 +55,9 @@ namespace sim {
                     vector<TaskResourceUsage*>& task_resource);
     void AggregateTaskUsage();
     map<uint64_t, string>& ReadLogicalJobsName();
+    void PrintTaskRuntime(FILE* out_events_file, TaskRuntime* task_runtime, uint64_t job_id,
+                          uint64_t task_index, string logical_job_name, uint64_t runtime,
+                          vector<string>& cols);
     void ExpandTaskEvents();
 
   private:

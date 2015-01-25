@@ -631,11 +631,40 @@ namespace sim {
     return *job_id_to_name;
   }
 
+  void GoogleTraceTaskProcessor::PrintTaskRuntime(FILE* out_events_file, TaskRuntime* task_runtime,
+                                                  uint64_t job_id, uint64_t task_index,
+                                                  string logical_job_name, uint64_t runtime,
+                                                  vector<string>& cols) {
+    for (uint32_t index = 7; index < 13; ++index) {
+      if (!cols[index].compare("")) {
+        cols[index] = "-1";
+      }
+    }
+    int64_t scheduling_class = lexical_cast<uint64_t>(cols[7]);
+    int64_t priority = lexical_cast<uint64_t>(cols[8]);
+    double cpu_request = lexical_cast<double>(cols[9]);
+    double ram_request = lexical_cast<double>(cols[10]);
+    double disk_request = lexical_cast<double>(cols[11]);
+    int32_t machine_constraint = lexical_cast<int32_t>(cols[12]);
+    fprintf(out_events_file, "%" PRId64 " %" PRId64 " %s %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %lf %lf %lf %d\n",
+            job_id, task_index, logical_job_name.c_str(),
+            task_runtime->start_time, task_runtime->total_runtime, runtime, task_runtime->num_runs,
+            scheduling_class, priority, cpu_request, ram_request, disk_request, machine_constraint);
+
+  }
+
   void GoogleTraceTaskProcessor::ExpandTaskEvents() {
     map<uint64_t, string> job_id_to_name = ReadLogicalJobsName();
+    map<uint64_t, map<uint64_t, TaskRuntime*> > tasks_runtime;
     char line[200];
     vector<string> line_cols;
     FILE* events_file = NULL;
+    FILE* out_events_file = NULL;
+    string out_file_name;
+    spf(&out_file_name, "%s/task_runtime_events/task_runtime_events.csv", trace_path_.c_str());
+    if ((out_events_file = fopen(out_file_name.c_str(), "w")) == NULL) {
+      LOG(ERROR) << "Failed to open task_runtime_events file for writing";
+    }
     for (uint64_t file_num = 0; file_num < 500; file_num++) {
       string file_name;
       spf(&file_name, "%s/task_events/part-%05ld-of-00500.csv", trace_path_.c_str(), file_num);
@@ -650,18 +679,76 @@ namespace sim {
             LOG(ERROR) << "Unexpected structure of task event on line " << num_line << ": found "
                        << line_cols.size() << " columns.";
           } else {
-            // uint64_t job_id = lexical_cast<uint64_t>(line_cols[2]);
-            // TODO(ionel): Get the logical job name from the map.
+            uint64_t timestamp = lexical_cast<uint64_t>(line_cols[0]);
+            uint64_t job_id = lexical_cast<uint64_t>(line_cols[2]);
+            uint64_t task_index = lexical_cast<uint64_t>(line_cols[3]);
+            int32_t event_type = lexical_cast<int32_t>(line_cols[5]);
+            if (tasks_runtime.find(job_id) == tasks_runtime.end()) {
+              // New job id.
+              map<uint64_t, TaskRuntime*> task_runtime;
+              tasks_runtime.insert(pair<uint64_t, map<uint64_t, TaskRuntime*> >(job_id,
+                                                                                task_runtime));
+            }
+            if (event_type == TASK_SCHEDULE) {
+              if (tasks_runtime[job_id].find(task_index) == tasks_runtime[job_id].end()) {
+                // New task.
+                TaskRuntime* task_runtime = new TaskRuntime();
+                task_runtime->start_time = timestamp;
+                task_runtime->last_schedule_time = timestamp;
+                tasks_runtime[job_id].insert(pair<uint64_t, TaskRuntime*>(task_index,
+                                                                          task_runtime));
+              } else {
+                tasks_runtime[job_id][task_index]->last_schedule_time = timestamp;
+              }
+            } else if (event_type == TASK_EVICT || event_type == TASK_FAIL ||
+                       event_type == TASK_KILL) {
+              if (tasks_runtime[job_id].find(task_index) == tasks_runtime[job_id].end()) {
+                // First event for this task.
+                TaskRuntime* task_runtime = new TaskRuntime();
+                task_runtime->start_time = 0;
+                task_runtime->num_runs = 1;
+                task_runtime->total_runtime = timestamp;
+                tasks_runtime[job_id].insert(pair<uint64_t, TaskRuntime*>(task_index,
+                                                                          task_runtime));
+              } else {
+                TaskRuntime* task_runtime = tasks_runtime[job_id][task_index];
+                task_runtime->num_runs++;
+                task_runtime->total_runtime += timestamp - task_runtime->last_schedule_time;
+              }
+            } else if (event_type == TASK_FINISH) {
+              string logical_job_name = job_id_to_name[job_id];
+              if (tasks_runtime[job_id].find(task_index) == tasks_runtime[job_id].end()) {
+                // First event for this task.
+                TaskRuntime* task_runtime = new TaskRuntime();
+                task_runtime->start_time =0;
+                task_runtime->num_runs = 1;
+                task_runtime->total_runtime = timestamp;
+                tasks_runtime[job_id].insert(pair<uint64_t, TaskRuntime*>(task_index,
+                                                                          task_runtime));
+                PrintTaskRuntime(out_events_file, task_runtime, job_id, task_index,
+                                 logical_job_name, timestamp, line_cols);
+              } else {
+                TaskRuntime* task_runtime = tasks_runtime[job_id][task_index];
+                task_runtime->num_runs++;
+                task_runtime->total_runtime += timestamp - task_runtime->last_schedule_time;
+                PrintTaskRuntime(out_events_file, task_runtime, job_id, task_index,
+                                 logical_job_name, timestamp - task_runtime->last_schedule_time,
+                                 line_cols);
+              }
+            }
           }
         }
         num_line++;
       }
     }
+    // TODO(ionel): Free memory.
+    fclose(out_events_file);
   }
 
   void GoogleTraceTaskProcessor::Run() {
     // TODO(ionel): Implement.
-    AggregateTaskUsage();
+    //    AggregateTaskUsage();
+    ExpandTaskEvents();
   }
 
 } // sim
