@@ -86,6 +86,40 @@ void GoogleTraceSimulator::reset_uuid(ResourceTopologyNodeDescriptor* rtnd,
 GoogleTraceSimulator::GoogleTraceSimulator(string& trace_path) : trace_path_(trace_path) {
 }
 
+unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& GoogleTraceSimulator::LoadTasksRunningTime() {
+  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher> *task_runtime =
+    new unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>();
+  char line[200];
+  vector<string> cols;
+  FILE* tasks_file = NULL;
+  string tasks_file_name = trace_path_ + "/task_runtime_events/task_runtime_events.csv";
+  if ((tasks_file = fopen(tasks_file_name.c_str(), "r")) == NULL) {
+    LOG(ERROR) << "Failed to open trace runtime events file.";
+  }
+  int64_t num_line = 1;
+  while (!feof(tasks_file)) {
+    if (fscanf(tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
+      boost::split(cols, line, is_any_of(" "), token_compress_off);
+      if (cols.size() != 13) {
+        LOG(ERROR) << "Unexpected structure of task runtime row on line: " << num_line;
+      } else {
+        TaskIdentifier task_id;
+        task_id.job_id = lexical_cast<uint64_t>(cols[0]);
+        task_id.task_index = lexical_cast<uint64_t>(cols[1]);
+        uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
+        if (task_runtime->find(task_id) == task_runtime->end()) {
+          task_runtime->insert(pair<TaskIdentifier, uint64_t>(task_id, runtime));
+        } else {
+          LOG(ERROR) << "There should not be more than an entry for job " << task_id.job_id <<
+            ", task " << task_id.task_index;
+        }
+      }
+    }
+    num_line++;
+  }
+  return *task_runtime;
+}
+
 uint64_t GoogleTraceSimulator::ReadMachinesFile(vector<uint64_t>* machines, int64_t num_machines) {
   char line[200];
   vector<string> vals;
@@ -116,6 +150,46 @@ uint64_t GoogleTraceSimulator::ReadMachinesFile(vector<uint64_t>* machines, int6
     l++;
   }
   return l;
+}
+
+multimap<uint64_t, MachineEvent>& GoogleTraceSimulator::LoadMachineEvents() {
+  multimap<uint64_t, MachineEvent> *machine_events =
+    new multimap<uint64_t, MachineEvent>();
+  char line[200];
+  vector<string> cols;
+  FILE* machines_file;
+  for (uint64_t file_num = 0; file_num < 500; file_num++) {
+    string machines_file_name;
+    spf(&machines_file_name, "%s/machine_events/part-%05ld-of-00500.csv", trace_path_.c_str(),
+        file_num);
+    if ((machines_file = fopen(machines_file_name.c_str(), "r")) == NULL) {
+      LOG(ERROR) << "Failed to open trace for reading machine events.";
+    }
+    int64_t num_line = 1;
+    while (!feof(machines_file)) {
+      if (fscanf(machines_file, "%[^\n]%*[\n]", &line[0]) > 0) {
+        boost::split(cols, line, is_any_of(","), token_compress_off);
+        if (cols.size() != 6) {
+          LOG(ERROR) << "Unexpected structure of machine events on line " << num_line << ": found "
+                     << cols.size() << " columns.";
+        } else {
+          // row schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
+          MachineEvent machine_event;
+          uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
+          machine_event.machine_id = lexical_cast<uint64_t>(cols[1]);
+          machine_event.event_type = lexical_cast<int32_t>(cols[2]);
+          if (machine_event.event_type == MACHINE_ADD ||
+              machine_event.event_type == MACHINE_REMOVE) {
+            machine_events->insert(pair<uint64_t, MachineEvent>(timestamp, machine_event));
+          } else {
+            // TODO(ionel): Handle machine update events.
+          }
+        }
+      }
+      num_line++;
+    }
+  }
+  return *machine_events;
 }
 
 uint64_t GoogleTraceSimulator::ReadJobsFile(vector<uint64_t>* jobs, int64_t num_jobs) {

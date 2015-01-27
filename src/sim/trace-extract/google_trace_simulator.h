@@ -18,6 +18,26 @@
 namespace firmament {
 namespace sim {
 
+struct TaskIdentifier {
+  uint64_t job_id;
+  uint64_t task_index;
+
+  bool operator==(const TaskIdentifier& other) const {
+    return job_id == other.job_id && task_index == other.task_index;
+  }
+};
+
+struct TaskIdentifierHasher {
+  size_t operator()(const TaskIdentifier& key) const {
+    return hash<uint64_t>()(key.job_id) * 17 + hash<uint64_t>()(key.task_index);
+  }
+};
+
+struct MachineEvent {
+  uint64_t machine_id;
+  int32_t event_type;
+};
+
 class GoogleTraceSimulator {
  public:
   explicit GoogleTraceSimulator(string& trace_path);
@@ -39,6 +59,9 @@ class GoogleTraceSimulator {
   uint64_t ReadJobsFile(vector<uint64_t>* jobs, int64_t num_jobs);
   uint64_t ReadMachinesFile(vector<uint64_t>* machines, int64_t num_jobs);
   uint64_t ReadInitialTasksFile(const unordered_map<uint64_t, JobDescriptor*>& jobs);
+
+  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& LoadTasksRunningTime();
+  multimap<uint64_t, MachineEvent>& LoadMachineEvents();
 
   void ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
                    const string& file_base);
