@@ -48,7 +48,7 @@ class MachineParser : public DatasetParser {
 public:
 	explicit MachineParser(std::string trace_path) :
 				  	  	  	    DatasetParser(trace_path, "machine_events") { }
-	bool nextRow();
+	bool nextRow() override;
 	// note the returned Machine reference is invalided upon the next call to
 	// nextRow()
 	const MachineEvent &getMachine() {
@@ -74,7 +74,7 @@ class JobParser : public DatasetParser {
 public:
 	explicit JobParser(std::string trace_path) :
 					  	  	  	    DatasetParser(trace_path, "job_events") { }
-	bool nextRow();
+	bool nextRow() override;
 	// note the returned Job reference is invalidated upon the next call
 	const JobEvent &getJob() {
 		return job;
@@ -98,7 +98,7 @@ class TaskParser : public DatasetParser {
 public:
 	explicit TaskParser(std::string trace_path) :
 						  	  	   DatasetParser(trace_path, "task_events") { }
-	bool nextRow();
+	bool nextRow() override;
 	// note the returned Task reference is invalidated upon the next call
 	const TaskEvent &getTask() {
 		return task;
