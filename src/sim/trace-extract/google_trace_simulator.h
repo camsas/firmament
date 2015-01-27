@@ -1,10 +1,10 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// Google cluster trace extractor tool.
+// Google cluster trace simulator tool.
 
-#ifndef FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_EXTRACTOR_H
-#define FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_EXTRACTOR_H
+#ifndef FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_SIMULATOR_H
+#define FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_SIMULATOR_H
 
 #include <fstream>
 
@@ -18,9 +18,9 @@
 namespace firmament {
 namespace sim {
 
-class GoogleTraceExtractor {
+class GoogleTraceSimulator {
  public:
-  explicit GoogleTraceExtractor(string& trace_path);
+  explicit GoogleTraceSimulator(string& trace_path);
   void Run();
  private:
   void AddMachineToTopology(const ResourceTopologyNodeDescriptor& machine_tmpl,
@@ -54,4 +54,4 @@ class GoogleTraceExtractor {
 }  // namespace sim
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_EXTRACTOR_H
+#endif  // FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_SIMULATOR_H

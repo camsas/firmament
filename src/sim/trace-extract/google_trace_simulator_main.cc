@@ -3,7 +3,7 @@
 //
 
 #include "base/common.h"
-#include "sim/trace-extract/google_trace_extractor.h"
+#include "sim/trace-extract/google_trace_simulator.h"
 
 using namespace firmament;  // NOLINT
 
@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
   VLOG(1) << "Calling common::InitFirmament";
   common::InitFirmament(argc, argv);
 
-  sim::GoogleTraceExtractor gte(FLAGS_trace_path);
+  sim::GoogleTraceSimulator gts(FLAGS_trace_path);
 
-  gte.Run();
+  gts.Run();
 }

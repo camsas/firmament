@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// Google cluster trace extractor tool.
+// Google cluster trace simulator tool.
 
 #include <cstdio>
 #include <string>
@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "sim/trace-extract/google_trace_extractor.h"
+#include "sim/trace-extract/google_trace_simulator.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
@@ -29,6 +29,18 @@ using boost::token_compress_off;
 namespace firmament {
 namespace sim {
 
+#define SUBMIT_EVENT 0
+#define SCHEDULE_EVENT 1
+#define EVICT_EVENT 2
+#define FAIL_EVENT 3
+#define FINISH_EVENT 4
+#define KILL_EVENT 5
+#define LOST_EVENT 6
+
+#define MACHINE_ADD 0
+#define MACHINE_REMOVE 1
+#define MACHINE_UPDATE 2
+
 #define MACHINE_TMPL_FILE "../../../tests/testdata/machine_topo.pbin"
 //#define MACHINE_TMPL_FILE "/tmp/mach_test.pbin"
 
@@ -42,8 +54,7 @@ DEFINE_int32(bin_time_duration, 10, "Bin size in seconds.");
 DEFINE_string(task_bins_output, "bins.out", "The file in which the task bins are written.");
 DEFINE_bool(gen_graph_deltas, false, "Generate dimacs delta files. One for each bin.");
 
-void GoogleTraceExtractor::reset_uuid(
-    ResourceTopologyNodeDescriptor* rtnd,
+void GoogleTraceSimulator::reset_uuid(ResourceTopologyNodeDescriptor* rtnd,
     const string& hostname, const string& root_uuid) {
   string new_uuid;
   if (rtnd->has_parent_id()) {
@@ -72,16 +83,14 @@ void GoogleTraceExtractor::reset_uuid(
 }
 
 
-GoogleTraceExtractor::GoogleTraceExtractor(string& trace_path) :
-    trace_path_(trace_path) {
+GoogleTraceSimulator::GoogleTraceSimulator(string& trace_path) : trace_path_(trace_path) {
 }
 
-uint64_t GoogleTraceExtractor::ReadMachinesFile(vector<uint64_t>* machines,
-                                                int64_t num_machines) {
+uint64_t GoogleTraceSimulator::ReadMachinesFile(vector<uint64_t>* machines, int64_t num_machines) {
   char line[200];
   vector<string> vals;
   FILE* fptr = NULL;
-  string fname = trace_path_ + "/machine_events/part-00000-of-00001.csv"; 
+  string fname = trace_path_ + "/machine_events/part-00000-of-00001.csv";
   if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
     LOG(ERROR) << "Failed to open trace for reading of machine events.";
   }
@@ -100,7 +109,7 @@ uint64_t GoogleTraceExtractor::ReadMachinesFile(vector<uint64_t>* machines,
       } else {
         uint64_t machine_id = lexical_cast<uint64_t>(vals[1]);
         uint64_t event_type = lexical_cast<uint64_t>(vals[2]);
-        if (event_type == 0)
+        if (event_type == MACHINE_ADD)
           machines->push_back(machine_id);
       }
     }
@@ -109,8 +118,7 @@ uint64_t GoogleTraceExtractor::ReadMachinesFile(vector<uint64_t>* machines,
   return l;
 }
 
-uint64_t GoogleTraceExtractor::ReadJobsFile(vector<uint64_t>* jobs,
-                                            int64_t num_jobs) {
+uint64_t GoogleTraceSimulator::ReadJobsFile(vector<uint64_t>* jobs, int64_t num_jobs) {
   bool done = false;
   char line[200];
   vector<string> vals;
@@ -141,7 +149,7 @@ uint64_t GoogleTraceExtractor::ReadJobsFile(vector<uint64_t>* jobs,
         } else {
           uint64_t job_id = lexical_cast<uint64_t>(vals[2]);
           uint64_t event_type = lexical_cast<uint64_t>(vals[3]);
-          if (event_type == 0) {
+          if (event_type == SUBMIT_EVENT) {
             jobs->push_back(job_id);
             j++;
           }
@@ -155,7 +163,7 @@ uint64_t GoogleTraceExtractor::ReadJobsFile(vector<uint64_t>* jobs,
   return j;
 }
 
-uint64_t GoogleTraceExtractor::ReadInitialTasksFile(
+uint64_t GoogleTraceSimulator::ReadInitialTasksFile(
     const unordered_map<uint64_t, JobDescriptor*>& jobs) {
   bool done = false;
   char line[200];
@@ -187,7 +195,7 @@ uint64_t GoogleTraceExtractor::ReadInitialTasksFile(
         } else {
           uint64_t job_id = lexical_cast<uint64_t>(vals[2]);
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
-          if (event_type == 0) {
+          if (event_type == SUBMIT_EVENT) {
             if (JobDescriptor* jd = FindPtrOrNull(jobs, job_id)) {
               // This is a job we're interested in
               CHECK_NOTNULL(jd);
@@ -208,7 +216,7 @@ uint64_t GoogleTraceExtractor::ReadInitialTasksFile(
   return t;
 }
 
-void GoogleTraceExtractor::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
+void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
                                        const string& file_base) {
   char line[200];
   vector<string> vals;
@@ -262,7 +270,7 @@ void GoogleTraceExtractor::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* c
   out_file.close();
 }
 
-void GoogleTraceExtractor::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* cost_model,
+void GoogleTraceSimulator::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* cost_model,
                                       uint64_t job_id, uint64_t task_id, ofstream& out_file) {
   JobID_t* jdp = FindOrNull(job_id_conversion_map_, job_id);
   if (!jdp) {
@@ -287,7 +295,7 @@ void GoogleTraceExtractor::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* co
     (++(*arc_to_sink)->cap_upper_bound_) << " " << (*arc_to_sink)->cost_ << "\n";
 }
 
-void GoogleTraceExtractor::BinTasks(ofstream& out_file) {
+void GoogleTraceSimulator::BinTasks(ofstream& out_file) {
   char line[200];
   vector<string> vals;
   FILE* fptr = NULL;
@@ -331,7 +339,7 @@ void GoogleTraceExtractor::BinTasks(ofstream& out_file) {
     time_interval_bound << "]: " << num_preempted_tasks << "\n";
 }
 
-void GoogleTraceExtractor::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
+void GoogleTraceSimulator::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
   // XXX(malte): job_id argument is discareded and replaced by randomly
   // generated ID at the moment.
   JobID_t new_job_id = GenerateJobID();
@@ -346,23 +354,20 @@ void GoogleTraceExtractor::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
   rt->set_state(TaskDescriptor::RUNNABLE);
 }
 
-void GoogleTraceExtractor::AddMachineToTopology(
-    const ResourceTopologyNodeDescriptor& machine_tmpl,
-    uint64_t machine_id,
-    ResourceTopologyNodeDescriptor* rtn_root) {
+void GoogleTraceSimulator::AddMachineToTopology(const ResourceTopologyNodeDescriptor& machine_tmpl,
+    uint64_t machine_id, ResourceTopologyNodeDescriptor* rtn_root) {
   ResourceTopologyNodeDescriptor* child = rtn_root->add_children();
   child->CopyFrom(machine_tmpl);
   const string& root_uuid = rtn_root->resource_desc().uuid();
   char hn[100];
   sprintf(hn, "h%ju", machine_id);
   TraverseResourceProtobufTreeReturnRTND(
-      child, boost::bind(&GoogleTraceExtractor::reset_uuid, this, _1,
+      child, boost::bind(&GoogleTraceSimulator::reset_uuid, this, _1,
                          string(hn), root_uuid));
   child->mutable_resource_desc()->set_friendly_name(hn);
 }
 
-ResourceTopologyNodeDescriptor&
-GoogleTraceExtractor::LoadInitialMachines(int64_t max_num) {
+ResourceTopologyNodeDescriptor& GoogleTraceSimulator::LoadInitialMachines(int64_t max_num) {
   vector<uint64_t> machines;
 
   // Read the initial machine events from trace
@@ -376,7 +381,7 @@ GoogleTraceExtractor::LoadInitialMachines(int64_t max_num) {
   close(fd);
 
   // Create the machines
-  ResourceTopologyNodeDescriptor* rtn_root = new 
+  ResourceTopologyNodeDescriptor* rtn_root = new
       ResourceTopologyNodeDescriptor();
   ResourceID_t root_uuid = GenerateRootResourceID("XXXgoogleXXX");
   rtn_root->mutable_resource_desc()->set_uuid(to_string(root_uuid));
@@ -396,8 +401,7 @@ GoogleTraceExtractor::LoadInitialMachines(int64_t max_num) {
   return *rtn_root;
 }
 
-unordered_map<uint64_t, JobDescriptor*>& GoogleTraceExtractor::LoadInitialJobs(
-    int64_t max_jobs) {
+unordered_map<uint64_t, JobDescriptor*>& GoogleTraceSimulator::LoadInitialJobs(int64_t max_jobs) {
   vector<uint64_t> job_ids;
   unordered_map<uint64_t, JobDescriptor*>* jobs;
 
@@ -417,16 +421,15 @@ unordered_map<uint64_t, JobDescriptor*>& GoogleTraceExtractor::LoadInitialJobs(
   return *jobs;
 }
 
-void GoogleTraceExtractor::LoadInitalTasks(
+void GoogleTraceSimulator::LoadInitalTasks(
     const unordered_map<uint64_t, JobDescriptor*>& initial_jobs) {
-  // Read initial tasks from trace
-  // and add tasks to jobs in initial_jobs
+  // Read initial tasks from trace and add tasks to jobs in initial_jobs
   uint64_t num_tasks = ReadInitialTasksFile(initial_jobs);
   LOG(INFO) << "Added " << num_tasks << " initial tasks to "
             << initial_jobs.size() << " initial jobs.";
 }
 
-void GoogleTraceExtractor::Run() {
+void GoogleTraceSimulator::Run() {
   // command line argument sanity checking
   if (trace_path_.empty()) {
     LOG(FATAL) << "Please specify a path to the Google trace!";
@@ -447,10 +450,8 @@ void GoogleTraceExtractor::Run() {
   // Add resources and job to flow graph
   g.AddResourceTopology(initial_resource_topology);
   // Add initial jobs
-  for (unordered_map<uint64_t, JobDescriptor*>::const_iterator
-       iter = initial_jobs.begin();
-       iter != initial_jobs.end();
-       ++iter) {
+  for (unordered_map<uint64_t, JobDescriptor*>::const_iterator iter = initial_jobs.begin();
+       iter != initial_jobs.end(); ++iter) {
     VLOG(1) << "Add job with " << iter->second->root_task().spawned_size()
             << " child tasks of root task";
     g.AddJobNodes(iter->second);
