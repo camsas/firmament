@@ -46,7 +46,7 @@ struct MachineEvent {
 class MachineParser : public DatasetParser {
 	MachineEvent machine;
 public:
-	MachineParser(std::string trace_path) :
+	explicit MachineParser(std::string trace_path) :
 				  	  	  	    DatasetParser(trace_path, "machine_events") { }
 	bool nextRow();
 	// note the returned Machine reference is invalided upon the next call to
@@ -72,7 +72,7 @@ struct JobEvent {
 class JobParser : public DatasetParser {
 	JobEvent job;
 public:
-	JobParser(std::string trace_path) :
+	explicit JobParser(std::string trace_path) :
 					  	  	  	    DatasetParser(trace_path, "job_events") { }
 	bool nextRow();
 	// note the returned Job reference is invalidated upon the next call
@@ -96,7 +96,7 @@ struct TaskEvent {
 class TaskParser : public DatasetParser {
 	TaskEvent task;
 public:
-	TaskParser(std::string trace_path) :
+	explicit TaskParser(std::string trace_path) :
 						  	  	   DatasetParser(trace_path, "task_events") { }
 	bool nextRow();
 	// note the returned Task reference is invalidated upon the next call
