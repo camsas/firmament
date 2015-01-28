@@ -8,6 +8,8 @@
 
 #include <string>
 #include <utility>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid_generators.hpp>
@@ -55,6 +57,13 @@ Node::Node(PlatformID platform_id, ResourceID_t uuid)
     }
     default:
       LOG(FATAL) << "Unimplemented!";
+  }
+
+  // Set up debug directory if it doesn't exist
+  struct stat st;
+  if (!FLAGS_debug_output_dir.empty() &&
+      stat(FLAGS_debug_output_dir.c_str(), &st) == -1) {
+    mkdir(FLAGS_debug_output_dir.c_str(), 0700);
   }
 }
 
