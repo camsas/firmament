@@ -10,6 +10,8 @@ src/generated-c
 src/generated-c/*.
 src/generated-cxx
 src/generated-cxx/*.
+src/tags
+src/types_c.taghl
 tests/*
 .setup
 *.swp
