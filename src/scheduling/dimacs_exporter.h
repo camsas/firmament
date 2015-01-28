@@ -24,7 +24,7 @@ class DIMACSExporter {
  public:
   DIMACSExporter();
   void Export(const FlowGraph& graph);
-  void ExportIncremental(const vector<DIMACSChange>& changes);
+  void ExportIncremental(const vector<DIMACSChange*>& changes);
   void Flush(const string& filename);
   void Flush(int fd);
   void Reset() { output_ = ""; }

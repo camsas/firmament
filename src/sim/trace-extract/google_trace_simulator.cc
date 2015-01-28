@@ -350,7 +350,7 @@ void GoogleTraceSimulator::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* co
     // Add new job to the graph
     JobDescriptor* jd = new JobDescriptor();
     PopulateJob(jd, job_id);
-    flow_graph->AddJobNodes(jd);
+    flow_graph->AddOrUpdateJobNodes(jd);
     jdp = FindOrNull(job_id_conversion_map_, job_id);
     CHECK_NOTNULL(jdp);
     out_file << "d 0 0 1\n";
@@ -525,7 +525,7 @@ void GoogleTraceSimulator::Run() {
        iter != initial_jobs.end(); ++iter) {
     VLOG(1) << "Add job with " << iter->second->root_task().spawned_size()
             << " child tasks of root task";
-    g.AddJobNodes(iter->second);
+    g.AddOrUpdateJobNodes(iter->second);
   }
   // Export initial graph
   DIMACSExporter exp;

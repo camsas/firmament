@@ -195,7 +195,7 @@ uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
   if (runnable_tasks.size() > 0) {
     // Check if the job is already in the flow graph
     // If not, simply add the whole job
-    flow_graph_->AddJobNodes(job_desc);
+    flow_graph_->AddOrUpdateJobNodes(job_desc);
     // If it is, only add the new bits
     // Run a scheduler iteration
     uint64_t newly_scheduled = RunSchedulingIteration();

@@ -18,6 +18,9 @@
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
 #include "misc/utils.h"
+#include "scheduling/dimacs_add_node.h"
+#include "scheduling/dimacs_change_arc.h"
+#include "scheduling/dimacs_remove_node.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
 
@@ -136,7 +139,7 @@ FlowGraphNode* FlowGraph::GetUnschedAggForJob(JobID_t job_id) {
   return Node(*unsched_agg_node_id);
 }
 
-void FlowGraph::AddJobNodes(JobDescriptor* jd) {
+void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
   // First add an unscheduled aggregator node for this job
   // if none exists alread
   FlowGraphArc* unsched_agg_to_sink_arc;
@@ -201,7 +204,7 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
                                             ec_node->id_);
       ec_arc->cost_ = cost_model_->TaskToEquivClassAggregator(task_node->id_);
     } else if (cur->state() == TaskDescriptor::RUNNING ||
-             cur->state() == TaskDescriptor::ASSIGNED) {
+               cur->state() == TaskDescriptor::ASSIGNED) {
       // The task is already running, so it must have a node already
       //task_node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
     } else if (task_node) {
@@ -403,6 +406,13 @@ void FlowGraph::ConfigureResourceLeafNode(
   }
 }
 
+void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc) {
+  arc->cap_lower_bound_ = 0;
+  arc->cap_upper_bound_ = 0;
+  graph_changes_.push_back(new DIMACSChangeArc(*arc));
+  DeleteArc(arc);
+}
+
 void FlowGraph::DeleteArc(FlowGraphArc* arc) {
   // First remove various meta-data relating to this arc
   arc_set_.erase(arc);
@@ -428,6 +438,7 @@ void FlowGraph::DeleteNode(FlowGraphNode* node) {
   }
   node->incoming_arc_map_.clear();
   node_map_.erase(node->id_);
+  graph_changes_.push_back(new DIMACSRemoveNode(*node));
   delete node;
 }
 

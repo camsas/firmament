@@ -74,9 +74,9 @@ void DIMACSExporter::Export(const FlowGraph& graph) {
     output_ += GenerateArc(**a_iter);
 }
 
-void DIMACSExporter::ExportIncremental(const vector<DIMACSChange>& changes) {
-  for (vector<DIMACSChange>::const_iterator it = changes.begin(); it != changes.end(); ++it) {
-    output_ += it->GenerateChange();
+void DIMACSExporter::ExportIncremental(const vector<DIMACSChange*>& changes) {
+  for (vector<DIMACSChange*>::const_iterator it = changes.begin(); it != changes.end(); ++it) {
+    output_ += (*it)->GenerateChange();
   }
 }
 
