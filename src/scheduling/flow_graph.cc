@@ -178,10 +178,10 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
       task_node = AddNodeInternal(next_id());
       task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK);
       // Add the current task's node
-      task_node->supply_ = 1;
+      task_node->excess_ = 1;
       task_node->task_id_ = cur->uid();  // set task ID in node
       task_node->job_id_ = JobIDFromString(jd->uuid());
-      sink_node_->demand_++;
+      sink_node_->excess_--;
       task_nodes_.insert(task_node->id_);
       // Insert a record for the node representing this task's ID
       InsertIfNotPresent(&task_to_nodeid_map_, cur->uid(), task_node->id_);
@@ -221,12 +221,12 @@ void FlowGraph::AddJobNodes(JobDescriptor* jd) {
       q.push(&(*c_iter));
     }
   }
-  // Set the supply on the unscheduled node to the difference between the
+  // Set the excess on the unscheduled node to the difference between the
   // maximum number of running tasks for this job and the number of tasks
   // (F_j - N_j in Quincy terms).
   // TODO(malte): Stub -- this currently allows an unlimited number of tasks per
   // job to be scheduled.
-  unsched_agg_node->supply_ = 0;
+  unsched_agg_node->excess_ = 0;
 }
 
 FlowGraphNode* FlowGraph::AddNodeInternal(uint64_t id) {
@@ -310,7 +310,7 @@ void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
   } else {
     LOG(WARNING) << "Orphan node in resource toplogy: it has neither children "
                  << "nor a parent! (resource id: " << rtnd.resource_desc().uuid();
-  } 
+  }
 }
 
 void FlowGraph::AdjustUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta) {
@@ -417,9 +417,9 @@ void FlowGraph::DeleteTaskNode(FlowGraphNode* node) {
     DeleteArc(it->second);
   }
   node->outgoing_arc_map_.clear();
-  // Decrease the sink's demand and set this node's supply to zero
-  node->supply_ = 0;
-  sink_node_->demand_--;
+  // Increase the sink's excess and set this node's excess to zero
+  node->excess_ = 0;
+  sink_node_->excess_++;
   // Find the unscheduled node for this job and decrement its outgoing capacity
   // TODO(malte): this is only relevant if we support preemption; otherwise the
   // capcacity will already have been deducted (as part of PinTaskToNode,
@@ -520,7 +520,7 @@ void FlowGraph::UpdateResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
       }
     }
     // Check if its children are identical
-    // TODO 
+    // TODO
   } else {
     // It does not already exist, so add it.
     VLOG(1) << "Adding new resource " << res_id << " to flow graph.";
@@ -539,7 +539,7 @@ void FlowGraph::UpdateResourceTopology(
       resource_tree,
       boost::bind(&FlowGraph::UpdateResourceNode, this, _1));
   uint32_t new_num_leaves = 0;
-  for (unordered_map<uint64_t, FlowGraphArc*>::const_iterator it = 
+  for (unordered_map<uint64_t, FlowGraphArc*>::const_iterator it =
        cluster_agg_node_->outgoing_arc_map_.begin();
        it != cluster_agg_node_->outgoing_arc_map_.end();
        ++it) {

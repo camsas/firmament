@@ -21,11 +21,11 @@ namespace firmament {
 
 struct FlowGraphNode {
   explicit FlowGraphNode(uint64_t id)
-      : id_(id), supply_(0), demand_(0),
-        resource_id_(boost::uuids::nil_uuid()), task_id_(0) {}
-  FlowGraphNode(uint64_t id, uint64_t supply, uint64_t demand)
-      : id_(id), supply_(supply), demand_(demand),
-        resource_id_(boost::uuids::nil_uuid()), task_id_(0) {
+      : id_(id), excess_(0), resource_id_(boost::uuids::nil_uuid()),
+    task_id_(0) {}
+  FlowGraphNode(uint64_t id, uint64_t excess)
+      : id_(id), excess_(excess), resource_id_(boost::uuids::nil_uuid()),
+    task_id_(0) {
   }
   void AddArc(FlowGraphArc* arc) {
     CHECK_EQ(arc->src_, id_);
@@ -33,8 +33,7 @@ struct FlowGraphNode {
   }
 
   uint64_t id_;
-  uint64_t supply_;
-  uint64_t demand_;
+  int64_t excess_;
   FlowNodeType type_;
   // TODO(malte): Not sure if these should be here, but they've got to go
   // somewhere.

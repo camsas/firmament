@@ -74,6 +74,12 @@ void DIMACSExporter::Export(const FlowGraph& graph) {
     output_ += GenerateArc(**a_iter);
 }
 
+void DIMACSExporter::ExportIncremental(const vector<DIMACSChange>& changes) {
+  for (vector<DIMACSChange>::const_iterator it = changes.begin(); it != changes.end(); ++it) {
+    output_ += it->GenerateChange();
+  }
+}
+
 void DIMACSExporter::Flush(const string& filename) {
   // TODO(malte): Sanity checks
   // Write the cached DIMACS graph string out to the file
@@ -118,11 +124,6 @@ const string DIMACSExporter::GenerateHeader(uint64_t num_nodes,
 }
 
 const string DIMACSExporter::GenerateNode(const FlowGraphNode& node) {
-  if (node.supply_ > 0)
-    CHECK_EQ(node.demand_, 0);
-  if (node.demand_ > 0)
-    CHECK_EQ(node.supply_, 0);
-  int64_t value = node.supply_ - node.demand_;
   stringstream ss;
   if (node.comment_ != "")
     ss << "c nd " << node.task_id_ << " " << node.comment_ << "\n";
@@ -131,7 +132,7 @@ const string DIMACSExporter::GenerateNode(const FlowGraphNode& node) {
        << "\n";
   else if (node.task_id_)
     ss << "c nd T_" << node.task_id_ << "\n";
-  ss << "n " << node.id_ << " " << value << "\n";
+  ss << "n " << node.id_ << " " << node.excess_ << "\n";
   return ss.str();
 }
 

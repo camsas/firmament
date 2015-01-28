@@ -37,6 +37,7 @@ DEFINE_string(flow_scheduling_solver, "cs2",
               "Solver to use for flow network optimization. Possible values:"
               "\"cs2\": Goldberg solver, \"flowlessly\": local Flowlessly"
               "solver reimplementation.");
+DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 
 namespace firmament {
 namespace scheduler {
@@ -59,13 +60,15 @@ QuincyScheduler::QuincyScheduler(
     MessagingAdapterInterface<BaseMessage>* m_adapter,
     ResourceID_t coordinator_res_id,
     const string& coordinator_uri,
-    const SchedulingParameters& params)
+    const SchedulingParameters& params,
+    bool initial_solver_run)
     : EventDrivenScheduler(job_map, resource_map, resource_topology,
                            object_store, task_map, topo_mgr, m_adapter,
                            coordinator_res_id, coordinator_uri),
       topology_manager_(topo_mgr),
       parameters_(params),
-      debug_seq_num_(0) {
+      debug_seq_num_(0),
+      initial_solver_run_(initial_solver_run) {
 
   VLOG(1) << "Set cost model to use in flow graph to \""
           << FLAGS_flow_scheduling_cost_model << "\"";
@@ -288,8 +291,15 @@ void QuincyScheduler::RegisterResource(ResourceID_t res_id, bool local) {
 uint64_t QuincyScheduler::RunSchedulingIteration() {
   // Blow away any old exporter state
   exporter_.Reset();
-  // Export the current flow graph to DIMACS format
-  exporter_.Export(*flow_graph_);
+  if (FLAGS_incremental_flow && initial_solver_run_) {
+    exporter_.ExportIncremental(graph_changes_);
+    graph_changes_.clear();
+  } else {
+    // Export the current flow graph to DIMACS format
+    exporter_.Export(*flow_graph_);
+    initial_solver_run_ = true;
+    graph_changes_.clear();
+  }
   uint64_t num_nodes = flow_graph_->NumNodes();
   // Pipe setup
   // infd[0] == PARENT_READ

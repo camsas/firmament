@@ -1,6 +1,6 @@
 // The Firmament project
 // Copyright (c) 2012-2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
-// Copyright (c) 2012-2013 Ionel Gog <ionel.gog@cl.cam.ac.uk>
+// Copyright (c) 2012-2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Quincy scheduler.
 
@@ -41,7 +41,8 @@ class QuincyScheduler : public EventDrivenScheduler {
                   MessagingAdapterInterface<BaseMessage>* m_adapter,
                   ResourceID_t coordinator_res_id,
                   const string& coordinator_uri,
-                  const SchedulingParameters& params);
+                  const SchedulingParameters& params,
+                  bool initial_solver_run);
   ~QuincyScheduler();
   void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
@@ -109,6 +110,11 @@ class QuincyScheduler : public EventDrivenScheduler {
   DIMACSExporter exporter_;
   // Debug sequence number (for solver input/output files written to /tmp)
   uint64_t debug_seq_num_;
+  // Vector storing the graph changes occured since the last scheduling round.
+  vector<DIMACSChange> graph_changes_;
+  // Boolean that indicates if the solver has knowledge of the flow graph (i.e.
+  // it is set after the initial from scratch run of the solver).
+  bool initial_solver_run_;
 };
 
 }  // namespace scheduler
