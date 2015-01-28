@@ -330,12 +330,14 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   // Parse and process the result
   vector<map<uint64_t, uint64_t> >* extracted_flow =
       ReadFlowGraph(infd[0], num_nodes);
-  // We're done with the solver and can let it terminate here.
-  WaitForFinish(solver_pid);
-  // close the pipes
-  close(outfd[1]);
-  close(infd[0]);
-  // Solver's dead, let's post-process the results.
+  if (!FLAGS_incremental_flow) {
+    // We're done with the solver and can let it terminate here.
+    WaitForFinish(solver_pid);
+    // close the pipes
+    close(outfd[1]);
+    close(infd[0]);
+  }
+  // Solver's done, let's post-process the results.
   map<uint64_t, uint64_t>* task_mappings =
       GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
                   flow_graph_->sink_node().id_);
