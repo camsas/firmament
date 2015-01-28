@@ -16,21 +16,14 @@
 #include "base/resource_desc.pb.h"
 #include "base/task_desc.pb.h"
 #include "scheduling/flow_node_type.pb.h"
+#include "scheduling/flow_graph_arc.h"
 
 namespace firmament {
 
 struct FlowGraphNode {
-  explicit FlowGraphNode(uint64_t id)
-      : id_(id), excess_(0), resource_id_(boost::uuids::nil_uuid()),
-    task_id_(0) {}
-  FlowGraphNode(uint64_t id, uint64_t excess)
-      : id_(id), excess_(excess), resource_id_(boost::uuids::nil_uuid()),
-    task_id_(0) {
-  }
-  void AddArc(FlowGraphArc* arc) {
-    CHECK_EQ(arc->src_, id_);
-    InsertIfNotPresent(&outgoing_arc_map_, arc->dst_, arc);
-  }
+  explicit FlowGraphNode(uint64_t id);
+  FlowGraphNode(uint64_t id, uint64_t excess);
+  void AddArc(FlowGraphArc* arc);
 
   uint64_t id_;
   int64_t excess_;
@@ -46,6 +39,8 @@ struct FlowGraphNode {
   string comment_;
   // Outgoing arcs from this node, keyed by destination node
   unordered_map<uint64_t, FlowGraphArc*> outgoing_arc_map_;
+  // Incoming arcs to this node, keyed by source node
+  unordered_map<uint64_t, FlowGraphArc*> incoming_arc_map_;
 };
 
 }  // namespace firmament

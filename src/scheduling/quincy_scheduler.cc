@@ -138,11 +138,8 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                            TaskFinalReport* report) {
   {
     boost::lock_guard<boost::mutex> lock(scheduling_lock_);
-    // Find the task's node
-    FlowGraphNode* task_node = flow_graph_->NodeForTaskID(td_ptr->uid());
-    CHECK_NOTNULL(task_node);
     // Remove the task's node from the flow graph
-    flow_graph_->DeleteTaskNode(task_node);
+    flow_graph_->DeleteTaskNode(*td_ptr);
   }
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
@@ -292,13 +289,13 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   // Blow away any old exporter state
   exporter_.Reset();
   if (FLAGS_incremental_flow && initial_solver_run_) {
-    exporter_.ExportIncremental(graph_changes_);
-    graph_changes_.clear();
+    exporter_.ExportIncremental(flow_graph_->graph_changes());
+    flow_graph_->ResetChanges();
   } else {
     // Export the current flow graph to DIMACS format
     exporter_.Export(*flow_graph_);
     initial_solver_run_ = true;
-    graph_changes_.clear();
+    flow_graph_->ResetChanges();
   }
   uint64_t num_nodes = flow_graph_->NumNodes();
   // Pipe setup

@@ -110,8 +110,6 @@ class QuincyScheduler : public EventDrivenScheduler {
   DIMACSExporter exporter_;
   // Debug sequence number (for solver input/output files written to /tmp)
   uint64_t debug_seq_num_;
-  // Vector storing the graph changes occured since the last scheduling round.
-  vector<DIMACSChange> graph_changes_;
   // Boolean that indicates if the solver has knowledge of the flow graph (i.e.
   // it is set after the initial from scratch run of the solver).
   bool initial_solver_run_;

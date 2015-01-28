@@ -59,17 +59,19 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
 }
 
 FlowGraphArc* FlowGraph::AddArcInternal(uint64_t src, uint64_t dst) {
-  FlowGraphArc* arc = new FlowGraphArc(src, dst);
-  arc_set_.insert(arc);
-  FlowGraphNode** src_node = FindOrNull(node_map_, src);
+  FlowGraphNode* src_node = FindPtrOrNull(node_map_, src);
   CHECK_NOTNULL(src_node);
-  (*src_node)->AddArc(arc);
+  FlowGraphNode* dst_node = FindPtrOrNull(node_map_, dst);
+  CHECK_NOTNULL(dst_node);
+  FlowGraphArc* arc = new FlowGraphArc(src, dst, src_node, dst_node);
+  arc_set_.insert(arc);
+  src_node->AddArc(arc);
   return arc;
 }
 
 FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
                                         FlowGraphNode* dst) {
-  FlowGraphArc* arc = new FlowGraphArc(src->id_, dst->id_);
+  FlowGraphArc* arc = new FlowGraphArc(src->id_, dst->id_, src, dst);
   arc_set_.insert(arc);
   src->AddArc(arc);
   return arc;
@@ -408,7 +410,7 @@ void FlowGraph::DeleteArc(FlowGraphArc* arc) {
   delete arc;
 }
 
-void FlowGraph::DeleteTaskNode(FlowGraphNode* node) {
+void FlowGraph::DeleteNode(FlowGraphNode* node) {
   // First remove all outgoing arcs
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
       node->outgoing_arc_map_.begin();
@@ -417,6 +419,27 @@ void FlowGraph::DeleteTaskNode(FlowGraphNode* node) {
     DeleteArc(it->second);
   }
   node->outgoing_arc_map_.clear();
+  // Remove all incoming arcs.
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+      node->incoming_arc_map_.begin();
+      it != node->incoming_arc_map_.end();
+      ++it) {
+    DeleteArc(it->second);
+  }
+  node->incoming_arc_map_.clear();
+  node_map_.erase(node->id_);
+  delete node;
+}
+
+void FlowGraph::DeleteTaskNode(const TaskDescriptor& td) {
+  TaskID_t task_id = td.uid();
+  DeleteTaskNode(task_id);
+}
+
+void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
+  uint64_t* node_id = FindOrNull(task_to_nodeid_map_, task_id);
+  CHECK_NOTNULL(node_id);
+  FlowGraphNode* node = Node(*node_id);
   // Increase the sink's excess and set this node's excess to zero
   node->excess_ = 0;
   sink_node_->excess_++;
@@ -425,10 +448,40 @@ void FlowGraph::DeleteTaskNode(FlowGraphNode* node) {
   // capcacity will already have been deducted (as part of PinTaskToNode,
   // currently).
   // Then remove node meta-data
-  node_map_.erase(node->id_);
   task_nodes_.erase(node->task_id_);
+  unused_ids_.push(node->id_);
+  task_to_nodeid_map_.erase(task_id);
   // Then remove the node itself
-  delete node;
+  DeleteNode(node);
+}
+
+void FlowGraph::DeleteResourceNode(const ResourceDescriptor& rd) {
+  ResourceID_t res_id = ResourceIDFromString(rd.uuid());
+  uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
+  CHECK_NOTNULL(node_id);
+  FlowGraphNode* node = Node(*node_id);
+  resource_to_nodeid_map_.erase(res_id);
+  unused_ids_.push(node->id_);
+  leaf_nodes_.erase(*node_id);
+  DeleteNode(node);
+}
+
+void FlowGraph::DeleteNodesForJob(const JobDescriptor& jd) {
+  JobID_t job_id = JobIDFromString(jd.uuid());
+  uint64_t* node_id = FindOrNull(job_to_nodeid_map_, job_id);
+  CHECK_NOTNULL(node_id);
+  FlowGraphNode* node = Node(*node_id);
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it = node->incoming_arc_map_.begin();
+       it != node->incoming_arc_map_.end(); it++) {
+    FlowGraphArc* arc = it->second;
+    FlowGraphNode* task_node = arc->src_node_;
+    CHECK_EQ(task_node->job_id_, job_id);
+    DeleteTaskNode(task_node->task_id_);
+  }
+  job_to_nodeid_map_.erase(job_id);
+  unused_ids_.push(node->id_);
+  DeleteNode(node);
+  // TODO(ionel): Delete the job related equivalence class aggregators.
 }
 
 FlowGraphNode* FlowGraph::NodeForResourceID(const ResourceID_t& res_id) {
@@ -550,5 +603,8 @@ void FlowGraph::UpdateResourceTopology(
           << (new_num_leaves);
 }
 
+void FlowGraph::ResetChanges() {
+  graph_changes_.clear();
+}
 
 }  // namespace firmament
