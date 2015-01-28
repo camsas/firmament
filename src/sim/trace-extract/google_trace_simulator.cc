@@ -107,9 +107,8 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& GoogleTraceSimula
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
-        if (task_runtime->find(task_id) == task_runtime->end()) {
-          task_runtime->insert(pair<TaskIdentifier, uint64_t>(task_id, runtime));
-        } else {
+        bool inserted = InsertIfNotPresent(task_runtime, task_id, runtime);
+        if (!inserted) {
           LOG(ERROR) << "There should not be more than an entry for job " << task_id.job_id <<
             ", task " << task_id.task_index;
         }
@@ -158,7 +157,8 @@ multimap<uint64_t, MachineEvent>& GoogleTraceSimulator::LoadMachineEvents() {
   char line[200];
   vector<string> cols;
   FILE* machines_file;
-  for (uint64_t file_num = 0; file_num < 500; file_num++) {
+  // There's only one machine events file.
+  for (uint64_t file_num = 0; file_num < 1; file_num++) {
     string machines_file_name;
     spf(&machines_file_name, "%s/machine_events/part-%05ld-of-00500.csv", trace_path_.c_str(),
         file_num);
@@ -200,8 +200,7 @@ uint64_t GoogleTraceSimulator::ReadJobsFile(vector<uint64_t>* jobs, int64_t num_
   int64_t j = 0;
   for (uint64_t f = 0; f < 500; f++) {
     string fname;
-    spf(&fname, "%s/job_events/part-%05ld-of-00500.csv",
-        trace_path_.c_str(), f);
+    spf(&fname, "%s/job_events/part-%05ld-of-00500.csv", trace_path_.c_str(), f);
     if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
       LOG(ERROR) << "Failed to open trace for reading of job events.";
     }
@@ -324,7 +323,7 @@ void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* c
             out_file.close();
             return;
           }
-          if (event_type == 0) {
+          if (event_type == SUBMIT_EVENT) {
             if (task_time <= time_interval_bound) {
               AddNewTask(flow_graph, cost_model, job_id, task_id, out_file);
             } else {
@@ -485,9 +484,7 @@ unordered_map<uint64_t, JobDescriptor*>& GoogleTraceSimulator::LoadInitialJobs(i
   jobs = new unordered_map<uint64_t, JobDescriptor*>();
 
   // Add jobs
-  for (vector<uint64_t>::const_iterator iter = job_ids.begin();
-       iter != job_ids.end();
-       ++iter) {
+  for (vector<uint64_t>::const_iterator iter = job_ids.begin(); iter != job_ids.end(); ++iter) {
     JobDescriptor* jd = new JobDescriptor();
     PopulateJob(jd, *iter);
     CHECK(InsertOrUpdate(jobs, *iter, jd));
