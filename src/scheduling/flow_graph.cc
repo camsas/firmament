@@ -252,13 +252,15 @@ void FlowGraph::AddSpecialNodes() {
 
 void FlowGraph::AddResourceTopology(
     const ResourceTopologyNodeDescriptor& resource_tree) {
-  TraverseResourceProtobufTreeReturnRTND(
-      resource_tree,
+  BFSTraverseResourceProtobufTreeReturnRTND(
+      &resource_tree,
       boost::bind(&FlowGraph::AddResourceNode, this, _1));
 }
 
-void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
+void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd_ptr) {
   FlowGraphNode* new_node;
+  CHECK_NOTNULL(rtnd_ptr);
+  const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
   // Add the node if it does not already exist
   if (!NodeForResourceID(ResourceIDFromString(rtnd.resource_desc().uuid()))) {
     uint64_t id = next_id();
@@ -557,7 +559,10 @@ void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
   PinTaskToNode(task_node, assigned_res_node);
 }
 
-void FlowGraph::UpdateResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
+void FlowGraph::UpdateResourceNode(
+    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  CHECK_NOTNULL(rtnd_ptr);
+  const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
   ResourceID_t res_id = ResourceIDFromString(rtnd.resource_desc().uuid());
   // First of all, check if this node already exists in our resource topology
   uint64_t* found_node = FindOrNull(resource_to_nodeid_map_, res_id);
@@ -590,7 +595,7 @@ void FlowGraph::UpdateResourceNode(const ResourceTopologyNodeDescriptor& rtnd) {
     VLOG(1) << "Adding new resource " << res_id << " to flow graph.";
     // N.B.: We need to ensure we hook in at the right place here by setting the
     // parent ID appropriately if it is not already.
-    AddResourceNode(rtnd);
+    AddResourceNode(rtnd_ptr);
   }
 }
 
@@ -599,8 +604,8 @@ void FlowGraph::UpdateResourceTopology(
   // N.B.: This only considers ADDITION of resources currently; if resources
   // are removed from the topology (e.g. due to a failure), they won't
   // disappear via this method.
-  TraverseResourceProtobufTreeReturnRTND(
-      resource_tree,
+  BFSTraverseResourceProtobufTreeReturnRTND(
+      &resource_tree,
       boost::bind(&FlowGraph::UpdateResourceNode, this, _1));
   uint32_t new_num_leaves = 0;
   for (unordered_map<uint64_t, FlowGraphArc*>::const_iterator it =

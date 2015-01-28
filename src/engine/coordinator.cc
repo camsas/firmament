@@ -147,7 +147,7 @@ void Coordinator::DetectLocalResources() {
   root_node->set_parent_id(to_string(uuid_));
   root_node->mutable_resource_desc()->set_parent(to_string(uuid_));
   resource_desc_.add_children(root_node->resource_desc().uuid());
-  TraverseResourceProtobufTree(
+  DFSTraverseResourceProtobufTree(
       local_resource_topology_,
       boost::bind(&Coordinator::AddResource, this, _1, node_uri_, true));
 }
@@ -464,7 +464,7 @@ void Coordinator::HandleRegistrationRequest(
     rtnd->mutable_resource_desc()->set_parent(resource_desc_.uuid());
     resource_desc_.add_children(rtnd->resource_desc().uuid());
     // Recursively add its child resources to resource map and topology tree
-    TraverseResourceProtobufTree(
+    DFSTraverseResourceProtobufTree(
         rtnd, boost::bind(&Coordinator::AddResource, this, _1,
                           msg.location(), false));
     InformStorageEngineNewResource(rd);

@@ -129,7 +129,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
     ResourceTopologyNodeDescriptor* child = rtn_root.add_children();
     child->CopyFrom(machine_tmpl);
     child->set_parent_id(rtn_root.resource_desc().uuid());
-    TraverseResourceProtobufTreeReturnRTND(
+    DFSTraverseResourceProtobufTreeReturnRTND(
         child, boost::bind(&DIMACSExporterTest::reset_uuid, this, _1));
   }
   VLOG(1) << "Added " << n << " machines.";
@@ -205,7 +205,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
       ResourceTopologyNodeDescriptor* child = rtn_root.add_children();
       child->CopyFrom(machine_tmpl);
       child->set_parent_id(rtn_root.resource_desc().uuid());
-      TraverseResourceProtobufTreeReturnRTND(
+      DFSTraverseResourceProtobufTreeReturnRTND(
           child, boost::bind(&DIMACSExporterTest::reset_uuid, this, _1));
     }
     VLOG(1) << "Added " << n << " machines.";

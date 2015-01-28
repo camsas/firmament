@@ -28,7 +28,7 @@ class FlowGraph {
   virtual ~FlowGraph();
   // Public API
   void AddOrUpdateJobNodes(JobDescriptor* jd);
-  void AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd);
+  void AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void AddResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
   void DeleteTaskNode(const TaskDescriptor& td);
@@ -39,7 +39,7 @@ class FlowGraph {
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
-  void UpdateResourceNode(const ResourceTopologyNodeDescriptor& rtnd);
+  void UpdateResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void UpdateResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
   void ResetChanges();

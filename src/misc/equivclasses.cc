@@ -22,7 +22,7 @@ ResourceEquivClass_t GenerateResourceTopologyEquivClass(
     const ResourceTopologyNodeDescriptor& rtn_desc) {
   // A REC is the hash of the entire topology tree below this resource.
   size_t hash = 0;
-  TraverseResourceProtobufTreeReturnRTND(rtn_desc,
+  DFSTraverseResourceProtobufTreeReturnRTND(rtn_desc,
       boost::bind(&GenerateResourceTopologyEquivClassHelper, _1, &hash));
   return static_cast<ResourceEquivClass_t>(hash);
 }

@@ -16,21 +16,29 @@ namespace firmament {
 
 // Traversal implementation taking a callback that itself takes a
 // ResourceDescriptor as its argument.
-void TraverseResourceProtobufTree(
+void DFSTraverseResourceProtobufTree(
     ResourceTopologyNodeDescriptor* pb,
     boost::function<void(ResourceDescriptor*)> callback);  // NOLINT
 
 // Traversal implementation taking a callback that itself takes a
 // ResourceTopologyNodeDescriptor as its argument.
-void TraverseResourceProtobufTreeReturnRTND(
+void DFSTraverseResourceProtobufTreeReturnRTND(
     ResourceTopologyNodeDescriptor* pb,
     boost::function<void(ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
 
 // Traversal implementation taking a callback that itself takes a
 // ResourceTopologyNodeDescriptor as its argument.
-void TraverseResourceProtobufTreeReturnRTND(
+void DFSTraverseResourceProtobufTreeReturnRTND(
     const ResourceTopologyNodeDescriptor& pb,
     boost::function<void(const ResourceTopologyNodeDescriptor&)> callback);  // NOLINT
+
+void BFSTraverseResourceProtobufTree(
+    ResourceTopologyNodeDescriptor* pb,
+    boost::function<void(ResourceDescriptor*)> callback);  // NOLINT
+
+void BFSTraverseResourceProtobufTreeReturnRTND(
+    const ResourceTopologyNodeDescriptor* pb,
+    boost::function<void(const ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
 
 }  // namespace firmament
 
