@@ -27,11 +27,10 @@ class FlowGraph {
   FlowGraph(FlowSchedulingCostModelInterface* cost_model);
   virtual ~FlowGraph();
   // Public API
-  void AddJobNodes(JobDescriptor* jd);
+  void AddOrUpdateJobNodes(JobDescriptor* jd);
   void AddResourceNode(const ResourceTopologyNodeDescriptor& rtnd);
   void AddResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
-  void AddTaskNode();
   void DeleteTaskNode(const TaskDescriptor& td);
   void DeleteTaskNode(TaskID_t task_id);
   void DeleteResourceNode(const ResourceDescriptor& rd);
@@ -67,7 +66,7 @@ class FlowGraph {
     FlowGraphNode* const* npp = FindOrNull(node_map_, id);
     return (npp ? *npp : NULL);
   }
-  inline vector<DIMACSChange>& graph_changes() { return graph_changes_; };
+  inline vector<DIMACSChange*>& graph_changes() { return graph_changes_; };
 
  protected:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
@@ -88,12 +87,19 @@ class FlowGraph {
                                    FlowGraphNode* new_node);
   void ConfigureResourceLeafNode(const ResourceTopologyNodeDescriptor& rtnd,
                                  FlowGraphNode* new_node);
+  void DeleteArcGeneratingDelta(FlowGraphArc* arc);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
 
   uint64_t next_id() {
-    return current_id_++;
+    if (unused_ids_.empty()) {
+      return current_id_++;
+    } else {
+      uint64_t new_id = unused_ids_.front();
+      unused_ids_.pop();
+      return new_id;
+    }
   }
 
   // Flow scheduling cost model used
@@ -121,7 +127,7 @@ class FlowGraph {
   unordered_set<uint64_t> leaf_nodes_;
   unordered_set<uint64_t> task_nodes_;
   // Vector storing the graph changes occured since the last scheduling round.
-  vector<DIMACSChange> graph_changes_;
+  vector<DIMACSChange*> graph_changes_;
   // Vector storing the ids of the nodes we've previously removed.
   queue<uint64_t> unused_ids_;
 };

@@ -16,13 +16,13 @@ namespace firmament {
   class DIMACSRemoveNode : public DIMACSChange {
 
   public:
-  DIMACSRemoveNode(const FlowGraphNode& node): DIMACSChange(), node_(node) {
+  DIMACSRemoveNode(const FlowGraphNode& node): DIMACSChange(), node_id_(node.id_) {
     }
 
     const string GenerateChange() const;
 
   private:
-    const FlowGraphNode& node_;
+    uint64_t node_id_;
 
   };
 
