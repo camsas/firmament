@@ -9,6 +9,9 @@ namespace firmament {
   class DIMACSChange {
 
   public:
+    virtual ~DIMACSChange() {
+    };
+
     virtual const string GenerateChange() const = 0;
 
   };

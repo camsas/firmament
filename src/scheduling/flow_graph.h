@@ -31,6 +31,8 @@ class FlowGraph {
   void AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void AddResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
+  void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
+                 uint64_t cap_upper_bound, uint64_t cost);
   void DeleteTaskNode(const TaskDescriptor& td);
   void DeleteTaskNode(TaskID_t task_id);
   void DeleteResourceNode(const ResourceDescriptor& rd);
@@ -73,14 +75,15 @@ class FlowGraph {
   FRIEND_TEST(DIMACSExporterTest, ScalabilityTestGraphs);
   FRIEND_TEST(FlowGraphTest, AddArcToNode);
   FRIEND_TEST(FlowGraphTest, UnschedAggCapacityAdjustment);
-  void AddArcsForTask(FlowGraphNode* task_node,
-                      FlowGraphNode* unsched_agg_node);
+  void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
+                      vector<FlowGraphArc*>& task_arcs);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   FlowGraphNode* AddEquivClassAggregator(TaskEquivClass_t equivclass);
   void AddSpecialNodes();
-  void AdjustUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta);
+  void AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
+      JobID_t job, int64_t delta);
   void ConfigureResourceRootNode(const ResourceTopologyNodeDescriptor& rtnd,
                                  FlowGraphNode* new_node);
   void ConfigureResourceBranchNode(const ResourceTopologyNodeDescriptor& rtnd,

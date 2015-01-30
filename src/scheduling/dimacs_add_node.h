@@ -16,15 +16,19 @@ namespace firmament {
   class DIMACSAddNode : public DIMACSChange {
 
   public:
-  DIMACSAddNode(const FlowGraphNode& node, const vector<FlowGraphArc*>& arcs):
+  DIMACSAddNode(const FlowGraphNode& node, vector<FlowGraphArc*>* arcs):
     DIMACSChange(), node_(node), arcs_(arcs) {
+    }
+
+    ~DIMACSAddNode() {
+      delete arcs_;
     }
 
     const string GenerateChange() const;
 
   private:
     const FlowGraphNode& node_;
-    const vector<FlowGraphArc*>& arcs_;
+    vector<FlowGraphArc*>* arcs_;
 
   };
 
