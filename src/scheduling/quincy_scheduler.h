@@ -74,6 +74,7 @@ class QuincyScheduler : public EventDrivenScheduler {
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   vector< map< uint64_t, uint64_t> >* ReadFlowGraph(
       int fd, uint64_t num_vertices);
+  map<uint64_t, uint64_t>* ReadTaskMappingChanges(int fd);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
   uint64_t RunSchedulingIteration();

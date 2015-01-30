@@ -84,6 +84,8 @@ void DIMACSExporter::Flush(const string& filename) {
   // TODO(malte): Sanity checks
   // Write the cached DIMACS graph string out to the file
   FILE* outfd = fopen(filename.c_str(), "w");
+  // Add end of iteration comment.
+  output_ += GenerateComment("EOI");
   fprintf(outfd, "%s", output_.c_str());
   fclose(outfd);
 }
@@ -95,6 +97,8 @@ void DIMACSExporter::Flush(int fd) {
   if ((stream = fdopen(fd, "w")) == NULL) {
     LOG(ERROR) << "Failed to open FD to solver for writing. FD: " << fd;
   } else {
+    // Add end of iteration comment.
+    output_ += GenerateComment("EOI");
     fprintf(stream, "%s", output_.c_str());
     fflush(stream);
   }

@@ -38,6 +38,8 @@ DEFINE_string(flow_scheduling_solver, "cs2",
               "\"cs2\": Goldberg solver, \"flowlessly\": local Flowlessly"
               "solver reimplementation.");
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
+DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
+            " assignments.");
 
 namespace firmament {
 namespace scheduler {
@@ -244,7 +246,7 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
       boost::split(vals, line, is_any_of(" "), token_compress_on);
       if (vals[0].compare("f") == 0) {
         if (vals.size() != 4) {
-          LOG(ERROR) << "Unexpected structured of flow row";
+          LOG(ERROR) << "Unexpected structure of flow row";
         } else {
           uint64_t src = lexical_cast<uint64_t>(vals[1]);
           uint64_t dest = lexical_cast<uint64_t>(vals[2]);
@@ -275,6 +277,39 @@ vector<map< uint64_t, uint64_t> >* QuincyScheduler::ReadFlowGraph(
   if (FLAGS_debug_flow_graph)
     fclose(dbg_fptr);
   return adj_list;
+}
+
+map<uint64_t, uint64_t>* QuincyScheduler::ReadTaskMappingChanges(int fd) {
+  map<uint64_t, uint64_t>* task_node = new map<uint64_t, uint64_t>();
+  char line[100];
+  vector<string> vals;
+  FILE* fptr;
+  if ((fptr = fdopen(fd, "r")) == NULL) {
+    LOG(ERROR) << "Failed to open FD for reading of task mapping changes. FD "
+               << fd;
+  }
+  bool end_of_iteration = false;
+  while (!end_of_iteration) {
+    if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
+      boost::split(vals, line, is_any_of(" "), token_compress_on);
+      if (vals[0].compare("m")) {
+        if (vals.size() != 3) {
+          LOG(ERROR) << "Unexpected structure of task mapping changes row";
+        }
+        uint64_t task_id = lexical_cast<uint64_t>(vals[1]);
+        uint64_t core_id = lexical_cast<uint64_t>(vals[2]);
+        (*task_node)[task_id] = core_id;
+      } else if (vals[0].compare("c")) {
+        if (vals[1].compare("EOI")) {
+          end_of_iteration = true;
+        }
+      } else {
+        LOG(ERROR) << "Unknown type of row in flow graph.";
+      }
+    }
+  }
+  fclose(fptr);
+  return task_node;
 }
 
 void QuincyScheduler::RegisterResource(ResourceID_t res_id, bool local) {
@@ -327,9 +362,17 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
           << infd[0] << ", CHILD_WRITE: " << infd[1];
   // Write to pipe to solver
   exporter_.Flush(outfd[1]);
-  // Parse and process the result
-  vector<map<uint64_t, uint64_t> >* extracted_flow =
+  map<uint64_t, uint64_t>* task_mappings;
+  if (FLAGS_only_read_assignment_changes) {
+    task_mappings = ReadTaskMappingChanges(infd[0]);
+  } else {
+    // Parse and process the result
+    vector<map<uint64_t, uint64_t> >* extracted_flow =
       ReadFlowGraph(infd[0], num_nodes);
+    task_mappings =
+      GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
+                  flow_graph_->sink_node().id_);
+  }
   if (!FLAGS_incremental_flow) {
     // We're done with the solver and can let it terminate here.
     WaitForFinish(solver_pid);
@@ -338,9 +381,6 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
     close(infd[0]);
   }
   // Solver's done, let's post-process the results.
-  map<uint64_t, uint64_t>* task_mappings =
-      GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
-                  flow_graph_->sink_node().id_);
   map<uint64_t, uint64_t>::iterator it;
   vector<SchedulingDelta*> deltas;
   for (it = task_mappings->begin();
