@@ -84,6 +84,16 @@ JobID_t GenerateJobID() {
   return gen();
 }
 
+JobID_t GenerateJobID(uint64_t job_id) {
+  size_t hash = 0;
+  // Hash the hostname
+  boost::hash_combine(hash, job_id);
+  job_id_rg_.seed(hash);
+  job_id_rg_init_ = true;
+  boost::uuids::basic_random_generator<boost::mt19937> gen(&job_id_rg_);
+  return gen();
+}
+
 TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc) {
   size_t hash = 0;
   //boost::hash_combine(hash, job_desc.uuid());

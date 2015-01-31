@@ -54,36 +54,182 @@ DEFINE_int32(bin_time_duration, 10, "Bin size in seconds.");
 DEFINE_string(task_bins_output, "bins.out", "The file in which the task bins are written.");
 DEFINE_bool(gen_graph_deltas, false, "Generate dimacs delta files. One for each bin.");
 
-void GoogleTraceSimulator::reset_uuid(ResourceTopologyNodeDescriptor* rtnd,
-    const string& hostname, const string& root_uuid) {
-  string new_uuid;
-  if (rtnd->has_parent_id()) {
-    // This is an intermediate node, so translate the parent UUID via the lookup
-    // table
-    const string& old_parent_id = rtnd->parent_id();
-    string* new_parent_id = FindOrNull(uuid_conversion_map_, rtnd->parent_id());
-    CHECK_NOTNULL(new_parent_id);
-    VLOG(2) << "Resetting parent UUID for " << rtnd->resource_desc().uuid()
-            << ", parent was " << old_parent_id
-            << ", is now " << *new_parent_id;
-    rtnd->set_parent_id(*new_parent_id);
-    // Grab a new UUID for the node itself
-    new_uuid = to_string(GenerateResourceID());
-  } else {
-    // This is the top of a machine topology, so generate a first UUID for its
-    // topology based on its hostname and link it into the root
-    rtnd->set_parent_id(root_uuid);
-    new_uuid = to_string(GenerateRootResourceID(hostname));
-  }
-  VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid()
-          << " to " << new_uuid;
-  InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(),
-                 new_uuid);
-  rtnd->mutable_resource_desc()->set_uuid(new_uuid);
+GoogleTraceSimulator::GoogleTraceSimulator(string& trace_path) : trace_path_(trace_path) {
 }
 
+void GoogleTraceSimulator::AddMachineToTopologyAndResetUuid(
+    const ResourceTopologyNodeDescriptor& machine_tmpl, uint64_t machine_id,
+    ResourceTopologyNodeDescriptor* rtn_root) {
+  ResourceTopologyNodeDescriptor* child = rtn_root->add_children();
+  child->CopyFrom(machine_tmpl);
+  const string& root_uuid = rtn_root->resource_desc().uuid();
+  char hn[100];
+  sprintf(hn, "h%ju", machine_id);
+  DFSTraverseResourceProtobufTreeReturnRTND(
+      child, boost::bind(&GoogleTraceSimulator::ResetUuid, this, _1, string(hn), root_uuid));
+  child->mutable_resource_desc()->set_friendly_name(hn);
+}
 
-GoogleTraceSimulator::GoogleTraceSimulator(string& trace_path) : trace_path_(trace_path) {
+void GoogleTraceSimulator::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* cost_model,
+                                      uint64_t job_id, uint64_t task_id, ofstream& out_file) {
+  // TODO(ionel): Implement.
+
+  // JobID_t* jdp = FindOrNull(job_id_conversion_map_, job_id);
+  // if (!jdp) {
+  //   // Add new job to the graph
+  //   JobDescriptor* jd = new JobDescriptor();
+  //   PopulateJob(jd, job_id);
+  //   flow_graph->AddOrUpdateJobNodes(jd);
+  //   jdp = FindOrNull(job_id_conversion_map_, job_id);
+  //   CHECK_NOTNULL(jdp);
+  //   out_file << "d 0 0 1\n";
+  //   out_file << "a 0 2 0 1 0\n";
+  // }
+  // FlowGraphNode* unsched_agg = flow_graph->GetUnschedAggForJob(*jdp);
+  // out_file << "d 1 0 2\n";
+  // out_file << "a 0 2 0 1 " << cost_model->TaskToClusterAggCost(task_id) << "\n";
+  // out_file << "a 0 " << unsched_agg->id_ << " 0 1 " <<
+  //   cost_model->TaskToUnscheduledAggCost(task_id) << "\n";
+  // FlowGraphArc** arc_to_sink = FindOrNull(unsched_agg->outgoing_arc_map_, 1);
+  // CHECK_NOTNULL(arc_to_sink);
+  // CHECK_NOTNULL(*arc_to_sink);
+  // out_file << "x " << unsched_agg->id_ << " 1 " << (*arc_to_sink)->cap_lower_bound_ << " " <<
+  //   (++(*arc_to_sink)->cap_upper_bound_) << " " << (*arc_to_sink)->cost_ << "\n";
+}
+
+void GoogleTraceSimulator::BinTasksByEventType(uint64_t event, ofstream& out_file) {
+  char line[200];
+  vector<string> vals;
+  FILE* fptr = NULL;
+  uint64_t time_interval_bound = FLAGS_bin_time_duration;
+  uint64_t num_tasks = 0;
+  for (uint64_t file_num = 0; file_num < 500; file_num++) {
+    string fname;
+    spf(&fname, "%s/task_events/part-%05ld-of-00500.csv", trace_path_.c_str(), file_num);
+    if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
+      LOG(ERROR) << "Failed to open trace for reading of task events.";
+    }
+    while (!feof(fptr)) {
+      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
+        boost::split(vals, line, is_any_of(","), token_compress_off);
+        if (vals.size() != 13) {
+          LOG(ERROR) << "Unexpected structure of task event row: found "
+                     << vals.size() << " columns.";
+        } else {
+          uint64_t task_time = lexical_cast<uint64_t>(vals[0]);
+          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
+          if (event_type == event) {
+            if (task_time <= time_interval_bound) {
+              num_tasks++;
+            } else {
+              out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
+                time_interval_bound << "]: " << num_tasks << "\n";
+              time_interval_bound += FLAGS_bin_time_duration;
+              while (time_interval_bound < task_time) {
+                out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
+                  time_interval_bound << "]: 0\n";
+                time_interval_bound += FLAGS_bin_time_duration;
+              }
+              num_tasks = 1;
+            }
+          }
+        }
+      }
+    }
+  }
+  out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
+    time_interval_bound << "]: " << num_tasks << "\n";
+}
+
+unordered_map<uint64_t, JobDescriptor*>& GoogleTraceSimulator::LoadInitialJobs(int64_t max_jobs) {
+  vector<uint64_t> job_ids;
+  unordered_map<uint64_t, JobDescriptor*>* jobs;
+
+  // Read the initial machine events from trace
+  uint64_t num_jobs_read = ReadJobsFile(&job_ids, max_jobs);
+  LOG(INFO) << "Read " << num_jobs_read << " initial jobs.";
+  jobs = new unordered_map<uint64_t, JobDescriptor*>();
+
+  // Add jobs
+  for (vector<uint64_t>::const_iterator iter = job_ids.begin(); iter != job_ids.end(); ++iter) {
+    JobDescriptor* jd = new JobDescriptor();
+    PopulateJob(jd, *iter);
+    CHECK(InsertOrUpdate(jobs, *iter, jd));
+  }
+  return *jobs;
+}
+
+ResourceTopologyNodeDescriptor& GoogleTraceSimulator::LoadInitialMachines(int64_t max_num_machines) {
+  vector<uint64_t> machines;
+
+  // Read the initial machine events from trace
+  uint64_t num_machines = ReadMachinesFile(&machines, max_num_machines);
+  LOG(INFO) << "Loaded " << num_machines << " machines!";
+
+  // Import a fictional machine resource topology
+  ResourceTopologyNodeDescriptor machine_tmpl;
+  int fd = open(MACHINE_TMPL_FILE, O_RDONLY);
+  machine_tmpl.ParseFromFileDescriptor(fd);
+  close(fd);
+
+  // Create the machines
+  ResourceTopologyNodeDescriptor* rtn_root = new ResourceTopologyNodeDescriptor();
+  ResourceID_t root_uuid = GenerateRootResourceID("XXXgoogleXXX");
+  rtn_root->mutable_resource_desc()->set_uuid(to_string(root_uuid));
+  LOG(INFO) << "Root res ID is " << to_string(root_uuid);
+  InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid), to_string(root_uuid));
+  // Create each machine and add it to the graph
+  uint64_t i = 0;
+  for (vector<uint64_t>::const_iterator iter = machines.begin(); iter != machines.end(); ++iter) {
+    AddMachineToTopologyAndResetUuid(machine_tmpl, i, rtn_root);
+    ++i;
+  }
+  LOG(INFO) << "Added " << machines.size() << " machines.";
+
+  return *rtn_root;
+}
+
+void GoogleTraceSimulator::LoadInitalTasks(
+    const unordered_map<uint64_t, JobDescriptor*>& initial_jobs) {
+  // Read initial tasks from trace and add tasks to jobs in initial_jobs
+  uint64_t num_tasks = ReadInitialTasksFile(initial_jobs);
+  LOG(INFO) << "Added " << num_tasks << " initial tasks to "
+            << initial_jobs.size() << " initial jobs.";
+}
+
+multimap<uint64_t, MachineEvent>& GoogleTraceSimulator::LoadMachineEvents() {
+  multimap<uint64_t, MachineEvent> *machine_events = new multimap<uint64_t, MachineEvent>();
+  char line[200];
+  vector<string> cols;
+  FILE* machines_file;
+  string machines_file_name = trace_path_ + "/machine_events/part-00001-of-00500.csv";
+  if ((machines_file = fopen(machines_file_name.c_str(), "r")) == NULL) {
+    LOG(ERROR) << "Failed to open trace for reading machine events.";
+  }
+  int64_t num_line = 1;
+  while (!feof(machines_file)) {
+    if (fscanf(machines_file, "%[^\n]%*[\n]", &line[0]) > 0) {
+      boost::split(cols, line, is_any_of(","), token_compress_off);
+      if (cols.size() != 6) {
+        LOG(ERROR) << "Unexpected structure of machine events on line " << num_line << ": found "
+                   << cols.size() << " columns.";
+      } else {
+        // row schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
+        MachineEvent machine_event;
+        uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
+        machine_event.machine_id = lexical_cast<uint64_t>(cols[1]);
+        machine_event.event_type = lexical_cast<int32_t>(cols[2]);
+        if (machine_event.event_type == MACHINE_ADD ||
+            machine_event.event_type == MACHINE_REMOVE) {
+          machine_events->insert(pair<uint64_t, MachineEvent>(timestamp, machine_event));
+        } else {
+          // TODO(ionel): Handle machine update events.
+        }
+      }
+    }
+    num_line++;
+  }
+  return *machine_events;
 }
 
 unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& GoogleTraceSimulator::LoadTasksRunningTime() {
@@ -117,79 +263,6 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& GoogleTraceSimula
     num_line++;
   }
   return *task_runtime;
-}
-
-uint64_t GoogleTraceSimulator::ReadMachinesFile(vector<uint64_t>* machines, int64_t num_machines) {
-  char line[200];
-  vector<string> vals;
-  FILE* fptr = NULL;
-  string fname = trace_path_ + "/machine_events/part-00000-of-00001.csv";
-  if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
-    LOG(ERROR) << "Failed to open trace for reading of machine events.";
-  }
-  int64_t l = 0;
-  while (!feof(fptr)) {
-    if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-      VLOG(3) << "Processing line " << l << ": " << line;
-      boost::split(vals, line, is_any_of(","), token_compress_off);
-      uint64_t time = lexical_cast<uint64_t>(vals[0]);
-      if (time > 0 || (num_machines >= 0 && l >= num_machines)) {
-        // We only care about the initial machines here
-        break;
-      }
-      if (vals.size() != 6) {
-        LOG(ERROR) << "Unexpected structure of machine event row";
-      } else {
-        uint64_t machine_id = lexical_cast<uint64_t>(vals[1]);
-        uint64_t event_type = lexical_cast<uint64_t>(vals[2]);
-        if (event_type == MACHINE_ADD)
-          machines->push_back(machine_id);
-      }
-    }
-    l++;
-  }
-  return l;
-}
-
-multimap<uint64_t, MachineEvent>& GoogleTraceSimulator::LoadMachineEvents() {
-  multimap<uint64_t, MachineEvent> *machine_events =
-    new multimap<uint64_t, MachineEvent>();
-  char line[200];
-  vector<string> cols;
-  FILE* machines_file;
-  // There's only one machine events file.
-  for (uint64_t file_num = 0; file_num < 1; file_num++) {
-    string machines_file_name;
-    spf(&machines_file_name, "%s/machine_events/part-%05ld-of-00500.csv", trace_path_.c_str(),
-        file_num);
-    if ((machines_file = fopen(machines_file_name.c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open trace for reading machine events.";
-    }
-    int64_t num_line = 1;
-    while (!feof(machines_file)) {
-      if (fscanf(machines_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-        boost::split(cols, line, is_any_of(","), token_compress_off);
-        if (cols.size() != 6) {
-          LOG(ERROR) << "Unexpected structure of machine events on line " << num_line << ": found "
-                     << cols.size() << " columns.";
-        } else {
-          // row schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
-          MachineEvent machine_event;
-          uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
-          machine_event.machine_id = lexical_cast<uint64_t>(cols[1]);
-          machine_event.event_type = lexical_cast<int32_t>(cols[2]);
-          if (machine_event.event_type == MACHINE_ADD ||
-              machine_event.event_type == MACHINE_REMOVE) {
-            machine_events->insert(pair<uint64_t, MachineEvent>(timestamp, machine_event));
-          } else {
-            // TODO(ionel): Handle machine update events.
-          }
-        }
-      }
-      num_line++;
-    }
-  }
-  return *machine_events;
 }
 
 uint64_t GoogleTraceSimulator::ReadJobsFile(vector<uint64_t>* jobs, int64_t num_jobs) {
@@ -234,6 +307,38 @@ uint64_t GoogleTraceSimulator::ReadJobsFile(vector<uint64_t>* jobs, int64_t num_
       return j;
   }
   return j;
+}
+
+uint64_t GoogleTraceSimulator::ReadMachinesFile(vector<uint64_t>* machines, int64_t num_machines) {
+  char line[200];
+  vector<string> vals;
+  FILE* fptr = NULL;
+  string fname = trace_path_ + "/machine_events/part-00000-of-00001.csv";
+  if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
+    LOG(ERROR) << "Failed to open trace for reading of machine events.";
+  }
+  int64_t l = 0;
+  while (!feof(fptr)) {
+    if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
+      VLOG(3) << "Processing line " << l << ": " << line;
+      boost::split(vals, line, is_any_of(","), token_compress_off);
+      uint64_t time = lexical_cast<uint64_t>(vals[0]);
+      if (time > 0 || (num_machines >= 0 && l >= num_machines)) {
+        // We only care about the initial machines here
+        break;
+      }
+      if (vals.size() != 6) {
+        LOG(ERROR) << "Unexpected structure of machine event row";
+      } else {
+        uint64_t machine_id = lexical_cast<uint64_t>(vals[1]);
+        uint64_t event_type = lexical_cast<uint64_t>(vals[2]);
+        if (event_type == MACHINE_ADD)
+          machines->push_back(machine_id);
+      }
+    }
+    l++;
+  }
+  return l;
 }
 
 uint64_t GoogleTraceSimulator::ReadInitialTasksFile(
@@ -289,6 +394,46 @@ uint64_t GoogleTraceSimulator::ReadInitialTasksFile(
   return t;
 }
 
+void GoogleTraceSimulator::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
+  // Generate a hash out of the trace job_id.
+  JobID_t new_job_id = GenerateJobID(job_id);
+  // Maintain a mapping between the trace job_id and the generated job_id.
+  InsertOrUpdate(&job_id_conversion_map_, job_id, new_job_id);
+  jd->set_uuid(to_string(new_job_id));
+  TaskDescriptor* rt = jd->mutable_root_task();
+  string bin;
+  // XXX(malte): hack, should use logical job name
+  spf(&bin, "%jd", job_id);
+  rt->set_binary(bin);
+  rt->set_uid(GenerateRootTaskID(*jd));
+  rt->set_state(TaskDescriptor::RUNNABLE);
+}
+
+void GoogleTraceSimulator::ResetUuid(ResourceTopologyNodeDescriptor* rtnd,
+    const string& hostname, const string& root_uuid) {
+  string new_uuid;
+  if (rtnd->has_parent_id()) {
+    // This is an intermediate node, so translate the parent UUID via the lookup table
+    const string& old_parent_id = rtnd->parent_id();
+    string* new_parent_id = FindOrNull(uuid_conversion_map_, rtnd->parent_id());
+    CHECK_NOTNULL(new_parent_id);
+    VLOG(2) << "Resetting parent UUID for " << rtnd->resource_desc().uuid()
+            << ", parent was " << old_parent_id
+            << ", is now " << *new_parent_id;
+    rtnd->set_parent_id(*new_parent_id);
+    // Grab a new UUID for the node itself
+    new_uuid = to_string(GenerateResourceID());
+  } else {
+    // This is the top of a machine topology, so generate a first UUID for its
+    // topology based on its hostname and link it into the root
+    rtnd->set_parent_id(root_uuid);
+    new_uuid = to_string(GenerateRootResourceID(hostname));
+  }
+  VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid() << " to " << new_uuid;
+  InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(), new_uuid);
+  rtnd->mutable_resource_desc()->set_uuid(new_uuid);
+}
+
 void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
                                        const string& file_base) {
   char line[200];
@@ -315,9 +460,11 @@ void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* c
           // if we use the random cost model.
           uint64_t task_id = lexical_cast<uint64_t>(vals[3]);
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
+          // The initial tasks have already been added.
           if (task_time == 0) {
             continue;
           }
+          // We only want to generate deltas for the first FLAGS_runtime seconds.
           if (FLAGS_runtime < task_time) {
             LOG(INFO) << "Terminating at : " << task_time;
             out_file.close();
@@ -341,163 +488,6 @@ void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* c
     }
   }
   out_file.close();
-}
-
-void GoogleTraceSimulator::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* cost_model,
-                                      uint64_t job_id, uint64_t task_id, ofstream& out_file) {
-  JobID_t* jdp = FindOrNull(job_id_conversion_map_, job_id);
-  if (!jdp) {
-    // Add new job to the graph
-    JobDescriptor* jd = new JobDescriptor();
-    PopulateJob(jd, job_id);
-    flow_graph->AddOrUpdateJobNodes(jd);
-    jdp = FindOrNull(job_id_conversion_map_, job_id);
-    CHECK_NOTNULL(jdp);
-    out_file << "d 0 0 1\n";
-    out_file << "a 0 2 0 1 0\n";
-  }
-  FlowGraphNode* unsched_agg = flow_graph->GetUnschedAggForJob(*jdp);
-  out_file << "d 1 0 2\n";
-  out_file << "a 0 2 0 1 " << cost_model->TaskToClusterAggCost(task_id) << "\n";
-  out_file << "a 0 " << unsched_agg->id_ << " 0 1 " <<
-    cost_model->TaskToUnscheduledAggCost(task_id) << "\n";
-  FlowGraphArc** arc_to_sink = FindOrNull(unsched_agg->outgoing_arc_map_, 1);
-  CHECK_NOTNULL(arc_to_sink);
-  CHECK_NOTNULL(*arc_to_sink);
-  out_file << "x " << unsched_agg->id_ << " 1 " << (*arc_to_sink)->cap_lower_bound_ << " " <<
-    (++(*arc_to_sink)->cap_upper_bound_) << " " << (*arc_to_sink)->cost_ << "\n";
-}
-
-void GoogleTraceSimulator::BinTasks(ofstream& out_file) {
-  char line[200];
-  vector<string> vals;
-  FILE* fptr = NULL;
-  uint64_t time_interval_bound = FLAGS_bin_time_duration;
-  uint64_t num_preempted_tasks = 0;
-  for (uint64_t file_num = 0; file_num < 500; file_num++) {
-    string fname;
-    spf(&fname, "%s/task_events/part-%05ld-of-00500.csv", trace_path_.c_str(), file_num);
-    if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open trace for reading of task events.";
-    }
-    while (!feof(fptr)) {
-      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-        boost::split(vals, line, is_any_of(","), token_compress_off);
-        if (vals.size() != 13) {
-          LOG(ERROR) << "Unexpected structure of task event row: found "
-                     << vals.size() << " columns.";
-        } else {
-          uint64_t task_time = lexical_cast<uint64_t>(vals[0]);
-          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
-          if (event_type == 2) {
-            if (task_time <= time_interval_bound) {
-              num_preempted_tasks++;
-            } else {
-              out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
-                time_interval_bound << "]: " << num_preempted_tasks << "\n";
-              time_interval_bound += FLAGS_bin_time_duration;
-              while (time_interval_bound < task_time) {
-                out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
-                  time_interval_bound << "]: 0\n";
-                time_interval_bound += FLAGS_bin_time_duration;
-              }
-              num_preempted_tasks = 1;
-            }
-          }
-        }
-      }
-    }
-  }
-  out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
-    time_interval_bound << "]: " << num_preempted_tasks << "\n";
-}
-
-void GoogleTraceSimulator::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
-  // XXX(malte): job_id argument is discareded and replaced by randomly
-  // generated ID at the moment.
-  JobID_t new_job_id = GenerateJobID();
-  InsertOrUpdate(&job_id_conversion_map_, job_id, new_job_id);
-  jd->set_uuid(to_string(new_job_id));
-  TaskDescriptor* rt = jd->mutable_root_task();
-  string bin;
-  // XXX(malte): hack, should use logical job name
-  spf(&bin, "%jd", job_id);
-  rt->set_binary(bin);
-  rt->set_uid(GenerateRootTaskID(*jd));
-  rt->set_state(TaskDescriptor::RUNNABLE);
-}
-
-void GoogleTraceSimulator::AddMachineToTopology(const ResourceTopologyNodeDescriptor& machine_tmpl,
-    uint64_t machine_id, ResourceTopologyNodeDescriptor* rtn_root) {
-  ResourceTopologyNodeDescriptor* child = rtn_root->add_children();
-  child->CopyFrom(machine_tmpl);
-  const string& root_uuid = rtn_root->resource_desc().uuid();
-  char hn[100];
-  sprintf(hn, "h%ju", machine_id);
-  TraverseResourceProtobufTreeReturnRTND(
-      child, boost::bind(&GoogleTraceSimulator::reset_uuid, this, _1,
-                         string(hn), root_uuid));
-  child->mutable_resource_desc()->set_friendly_name(hn);
-}
-
-ResourceTopologyNodeDescriptor& GoogleTraceSimulator::LoadInitialMachines(int64_t max_num) {
-  vector<uint64_t> machines;
-
-  // Read the initial machine events from trace
-  uint64_t num_machines = ReadMachinesFile(&machines, max_num);
-  LOG(INFO) << "Loaded " << num_machines << " machines!";
-
-  // Import a fictional machine resource topology
-  ResourceTopologyNodeDescriptor machine_tmpl;
-  int fd = open(MACHINE_TMPL_FILE, O_RDONLY);
-  machine_tmpl.ParseFromFileDescriptor(fd);
-  close(fd);
-
-  // Create the machines
-  ResourceTopologyNodeDescriptor* rtn_root = new
-      ResourceTopologyNodeDescriptor();
-  ResourceID_t root_uuid = GenerateRootResourceID("XXXgoogleXXX");
-  rtn_root->mutable_resource_desc()->set_uuid(to_string(root_uuid));
-  LOG(INFO) << "Root res ID is " << to_string(root_uuid);
-  InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
-                     to_string(root_uuid));
-  // Create each machine and add it to the graph
-  uint64_t i = 0;
-  for (vector<uint64_t>::const_iterator iter = machines.begin();
-       iter != machines.end();
-       ++iter) {
-    AddMachineToTopology(machine_tmpl, i, rtn_root);
-    ++i;
-  }
-  LOG(INFO) << "Added " << machines.size() << " machines.";
-
-  return *rtn_root;
-}
-
-unordered_map<uint64_t, JobDescriptor*>& GoogleTraceSimulator::LoadInitialJobs(int64_t max_jobs) {
-  vector<uint64_t> job_ids;
-  unordered_map<uint64_t, JobDescriptor*>* jobs;
-
-  // Read the initial machine events from trace
-  uint64_t num_jobs_read = ReadJobsFile(&job_ids, max_jobs);
-  LOG(INFO) << "Read " << num_jobs_read << " initial jobs.";
-  jobs = new unordered_map<uint64_t, JobDescriptor*>();
-
-  // Add jobs
-  for (vector<uint64_t>::const_iterator iter = job_ids.begin(); iter != job_ids.end(); ++iter) {
-    JobDescriptor* jd = new JobDescriptor();
-    PopulateJob(jd, *iter);
-    CHECK(InsertOrUpdate(jobs, *iter, jd));
-  }
-  return *jobs;
-}
-
-void GoogleTraceSimulator::LoadInitalTasks(
-    const unordered_map<uint64_t, JobDescriptor*>& initial_jobs) {
-  // Read initial tasks from trace and add tasks to jobs in initial_jobs
-  uint64_t num_tasks = ReadInitialTasksFile(initial_jobs);
-  LOG(INFO) << "Added " << num_tasks << " initial tasks to "
-            << initial_jobs.size() << " initial jobs.";
 }
 
 void GoogleTraceSimulator::Run() {
@@ -536,7 +526,7 @@ void GoogleTraceSimulator::Run() {
   if (FLAGS_tasks_preemption_bins) {
     ofstream out_file(FLAGS_output_dir + "/" + FLAGS_task_bins_output);
     if (out_file.is_open()) {
-      BinTasks(out_file);
+      BinTasksByEventType(EVICT_EVENT, out_file);
       out_file.close();
     } else {
       LOG(ERROR) << "Could not open bin output file.";

@@ -39,6 +39,12 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator): $(addprefix $(OBJ_DIR)/, $(SIM
 		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \
+		$(BUILD_DIR)/scheduling/dimacs_add_node.o \
+		$(BUILD_DIR)/scheduling/dimacs_change_arc.o \
+		$(BUILD_DIR)/scheduling/dimacs_new_arc.o \
+		$(BUILD_DIR)/scheduling/dimacs_remove_node.o \
+		$(BUILD_DIR)/scheduling/flow_graph_arc.o \
+		$(BUILD_DIR)/scheduling/flow_graph_node.o \
 		$(BUILD_DIR)/scheduling/flow_graph.o \
 		$(BUILD_DIR)/scheduling/flow_node_type.pb.o \
 		$(BUILD_DIR)/scheduling/quincy_cost_model.o \
