@@ -33,6 +33,7 @@ class FlowGraph {
       const ResourceTopologyNodeDescriptor& resource_tree);
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                  uint64_t cap_upper_bound, uint64_t cost);
+  bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
   void DeleteTaskNode(const TaskDescriptor& td);
   void DeleteTaskNode(TaskID_t task_id);
   void DeleteResourceNode(const ResourceDescriptor& rd);

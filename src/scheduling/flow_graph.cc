@@ -437,6 +437,11 @@ void FlowGraph::ConfigureResourceLeafNode(
   }
 }
 
+bool FlowGraph::CheckNodeType(uint64_t node, FlowNodeType_NodeType type) {
+  FlowNodeType_NodeType node_type = Node(node)->type_.type();
+  return (node_type == type);
+}
+
 void FlowGraph::ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                           uint64_t cap_upper_bound, uint64_t cost) {
   arc->cap_lower_bound_ = cap_lower_bound;
