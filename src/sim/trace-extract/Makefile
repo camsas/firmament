@@ -5,9 +5,10 @@ include $(ROOT_DIR)/include/Makefile.config
 
 LIBS += -lboost_thread -lboost_filesystem -lboost_system -lboost_regex -lssl -lcrypto
 
-BINS = google-trace-extractor
+BINS =  google-trace-simulator google-trace-processor
 LIB =
-OBJS = google_trace_extractor.o dataset_parser.o
+SIMULATOR_OBJS = google_trace_simulator.o dataset_parser.o
+PROCESSOR_OBJS = google_trace_processor.o dataset_parser.o
 PBS =
 TESTS =
 TESTS_DEPS =
@@ -25,24 +26,50 @@ all: .setup $(BIN)
 
 #$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS)) $(addprefix $(OBJ_DIR)/, $(PBS))
 
-$(BIN): $(addprefix $(OBJ_DIR)/, $(OBJS)) \
+$(addprefix $(OBJ_DIR)/, google-trace-simulator): \
+  $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a
+	
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
-		$(SRC_ROOT_DIR)/sim/trace-extract/google_trace_extractor_main.cc \
+		$(SRC_ROOT_DIR)/sim/trace-extract/google_trace_simulator_main.cc \
 		$(OPTFLAGS) $(DEFINES) \
-		$(BUILD_DIR)/sim/trace-extract/google_trace_extractor.o \
+		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
 		$(BUILD_DIR)/sim/trace-extract/dataset_parser.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \
+		$(BUILD_DIR)/scheduling/dimacs_add_node.o \
+		$(BUILD_DIR)/scheduling/dimacs_change_arc.o \
+		$(BUILD_DIR)/scheduling/dimacs_new_arc.o \
+		$(BUILD_DIR)/scheduling/dimacs_remove_node.o \
+		$(BUILD_DIR)/scheduling/flow_graph_arc.o \
+		$(BUILD_DIR)/scheduling/flow_graph_node.o \
 		$(BUILD_DIR)/scheduling/flow_graph.o \
 		$(BUILD_DIR)/scheduling/flow_node_type.pb.o \
 		$(BUILD_DIR)/scheduling/quincy_cost_model.o \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(LIBS) \
-		-o $(BUILD_DIR)/sim/trace-extract/google_trace_extractor, \
-		"  DYNLNK  $(BUILD_DIR)/sim/trace-extract/google_trace_extractor")
+		-o $(BUILD_DIR)/sim/trace-extract/google_trace_simulator, \
+		"  DYNLNK  $(BUILD_DIR)/sim/trace-extract/google_trace_simulator")
+
+$(addprefix $(OBJ_DIR)/, google-trace-processor): \
+  $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
+	$(BUILD_DIR)/base/libfirmament_base.a \
+	$(BUILD_DIR)/misc/libfirmament_misc.a \
+	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+	$(BUILD_DIR)/storage/libfirmament_storage.a
+	
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) \
+		$(SRC_ROOT_DIR)/sim/trace-extract/google_trace_processor_main.cc \
+		$(OPTFLAGS) $(DEFINES) \
+		$(BUILD_DIR)/sim/trace-extract/google_trace_task_processor.o \
+		$(BUILD_DIR)/sim/trace-extract/dataset_parser.o \
+		$(BUILD_DIR)/misc/libfirmament_misc.a \
+		$(LIBS) \
+		-o $(BUILD_DIR)/sim/trace-extract/google_trace_processor, \
+		"  DYNLNK  $(BUILD_DIR)/sim/trace-extract/google_trace_processor")
