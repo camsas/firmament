@@ -105,6 +105,7 @@ bool JobParser::nextRow() {
 		job.job_id = boost::lexical_cast<uint64_t>(values[2]);
 		job.event_type = (JobTaskEventTypes::types_t)
 						         boost::lexical_cast<unsigned int>(values[3]);
+		job.logical_job_name = boost::lexical_cast<std::string>(values[7]);
 	}
 	return success;
 }
@@ -122,6 +123,20 @@ bool TaskParser::nextRow() {
 		task.task_index = boost::lexical_cast<uint32_t>(values[3]);
 		task.event_type = (JobTaskEventTypes::types_t)
 				               boost::lexical_cast<unsigned int>(values[5]);
+
+		// fields may be missing
+		for (uint32_t index = 7; index < 13; ++index) {
+			if (!values[index].compare("")) {
+				values[index] = "-1";
+			}
+		}
+		task.scheduling_class = boost::lexical_cast<int64_t>(values[7]);
+		task.priority = boost::lexical_cast<int64_t>(values[8]);
+		task.cpu_request = boost::lexical_cast<double>(values[9]);
+		task.ram_request = boost::lexical_cast<double>(values[10]);
+		task.disk_request = boost::lexical_cast<double>(values[11]);
+		task.machine_constraint = boost::lexical_cast<int32_t>(values[12]);
+
 		// machine ID will only be present when in state RUNNING or DEAD
 		switch (task.event_type) {
 		case JobTaskEventTypes::SUBMIT:

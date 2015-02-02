@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "dataset_parser.h"
+
 using namespace std;
 
 namespace firmament {
@@ -15,7 +17,7 @@ namespace sim {
   typedef struct TaskSchedulingEvent_st {
     uint64_t job_id;
     uint64_t task_index;
-    int32_t event_type;
+    JobTaskEventTypes::types_t event_type;
   } TaskSchedulingEvent;
 
   typedef struct TaskResourceUsage_st {
@@ -55,9 +57,9 @@ namespace sim {
                     vector<TaskResourceUsage*>& task_resource);
     void AggregateTaskUsage();
     map<uint64_t, string>& ReadLogicalJobsName();
-    void PrintTaskRuntime(FILE* out_events_file, TaskRuntime* task_runtime, uint64_t job_id,
-                          uint64_t task_index, string logical_job_name, uint64_t runtime,
-                          vector<string>& cols);
+    void PrintTaskRuntime(FILE* out_events_file, TaskRuntime* task_runtime,
+    		                  string logical_job_name, uint64_t runtime,
+													const TaskEvent &task);
     void ExpandTaskEvents();
 
   private:

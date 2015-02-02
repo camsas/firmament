@@ -66,6 +66,8 @@ struct JobEvent {
 	uint64_t timestamp;
 	// job ID a UUID, also 64-bit
 	uint64_t job_id;
+	// opaque name
+	std::string logical_job_name;
 	JobTaskEventTypes::types_t event_type;
 };
 
@@ -90,6 +92,15 @@ struct TaskEvent {
 	uint32_t task_index;
 	// machine ID a UUID, also 64-bit
 	uint64_t machine_id;
+
+	// scheduling parameters
+	int64_t scheduling_class;
+	int64_t priority;
+	double cpu_request;
+	double ram_request;
+	double disk_request;
+	int32_t machine_constraint;
+
 	JobTaskEventTypes::types_t event_type;
 };
 

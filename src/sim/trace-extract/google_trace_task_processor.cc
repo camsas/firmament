@@ -9,19 +9,12 @@
 
 #include "sim/trace-extract/google_trace_task_processor.h"
 #include "misc/string_utils.h"
+#include "dataset_parser.h"
 
 using namespace std;
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;
 using boost::token_compress_off;
-
-#define TASK_SUBMIT 0
-#define TASK_SCHEDULE 1
-#define TASK_EVICT 2
-#define TASK_FAIL 3
-#define TASK_FINISH 4
-#define TASK_KILL 5
-#define TASK_LOST 6
 
 namespace firmament {
 namespace sim {
@@ -33,52 +26,40 @@ namespace sim {
     // Store the scheduling events for every timestamp.
     map<uint64_t, vector<TaskSchedulingEvent*> > *scheduling_events =
       new map<uint64_t, vector<TaskSchedulingEvent*> >();
-    char line[200];
-    vector<string> line_cols;
-    FILE* events_file = NULL;
-    for (uint64_t file_num = 0; file_num < 500; file_num++) {
-      string file_name;
-      spf(&file_name, "%s/task_events/part-%05ld-of-00500.csv", trace_path_.c_str(), file_num);
-      if ((events_file = fopen(file_name.c_str(), "r")) == NULL) {
-        LOG(ERROR) << "Failed to open trace for reading of task events.";
-      }
-      int64_t num_line = 1;
-      while (!feof(events_file)) {
-        if (fscanf(events_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-          boost::split(line_cols, line, is_any_of(","), token_compress_off);
-          if (line_cols.size() != 13) {
-            LOG(ERROR) << "Unexpected structure of task event on line " << num_line << ": found "
-                       << line_cols.size() << " columns.";
-          } else {
-            uint64_t timestamp = lexical_cast<uint64_t>(line_cols[0]);
-            uint64_t job_id = lexical_cast<uint64_t>(line_cols[2]);
-            uint64_t task_index = lexical_cast<uint64_t>(line_cols[3]);
-            int32_t task_event = lexical_cast<int32_t>(line_cols[5]);
-            // Only handle the events we're interested in. We do not care about about
-            // TASK_SUBMIT because that's not the event that starts a task. The events
-            // we are interested in are the ones that change the state of a task to/from
-            // running.
-            if (task_event == TASK_SCHEDULE || task_event == TASK_EVICT ||
-                task_event == TASK_FAIL || task_event == TASK_FINISH ||
-                task_event == TASK_KILL || task_event == TASK_LOST) {
-              if (scheduling_events->find(timestamp) == scheduling_events->end()) {
-                vector<TaskSchedulingEvent*> events_during_timestamp;
-                scheduling_events->insert(
-                    pair<uint64_t, vector<TaskSchedulingEvent*> >(timestamp,
-                                                                  events_during_timestamp));
-              }
-              TaskSchedulingEvent* event = new TaskSchedulingEvent();
-              event->job_id = job_id;
-              event->task_index = task_index;
-              event->event_type = task_event;
-              map<uint64_t, vector<TaskSchedulingEvent*> >::iterator it =
-                scheduling_events->find(timestamp);
-              it->second.push_back(event);
-            }
-          }
-        }
-        num_line++;
-      }
+    TaskParser tp(trace_path_);
+    while (tp.nextRow()) {
+    	const TaskEvent &task = tp.getTask();
+
+    	switch (task.event_type) {
+    	case JobTaskEventTypes::SCHEDULE:
+    	case JobTaskEventTypes::EVICT:
+    	case JobTaskEventTypes::FAIL:
+    	case JobTaskEventTypes::FINISH:
+    	case JobTaskEventTypes::KILL:
+    	case JobTaskEventTypes::LOST:
+    	{
+    		int64_t timestamp = task.timestamp;
+    		if (scheduling_events->find(timestamp) == scheduling_events->end()) {
+					vector<TaskSchedulingEvent*> events_during_timestamp;
+					scheduling_events->insert(
+							pair<uint64_t, vector<TaskSchedulingEvent*>>(timestamp,
+																											events_during_timestamp));
+				}
+				TaskSchedulingEvent* event = new TaskSchedulingEvent();
+				event->job_id = task.job_id;
+				event->task_index = task.task_index;
+				event->event_type = task.event_type;
+				map<uint64_t, vector<TaskSchedulingEvent*> >::iterator it =
+					scheduling_events->find(timestamp);
+				it->second.push_back(event);
+    		break;
+    	}
+    	case JobTaskEventTypes::SUBMIT:
+    	case JobTaskEventTypes::UPDATE_PENDING:
+    	case JobTaskEventTypes::UPDATE_RUNNING:
+    		// ignore
+    		break;
+    	}
     }
     return *scheduling_events;
   }
@@ -531,7 +512,7 @@ namespace sim {
                   for (vector<TaskSchedulingEvent*>::iterator evt_it = first_entry->second.begin();
                        evt_it != first_entry->second.end(); ++evt_it) {
                     // TODO(ionel): Which events should I handle here?
-                    if ((*evt_it)->event_type == TASK_FINISH) {
+                    if ((*evt_it)->event_type == JobTaskEventTypes::FINISH) {
                       uint64_t job_id = (*evt_it)->job_id;
                       uint64_t task_index = (*evt_it)->task_index;
                       PrintStats(usage_stat_file, job_id, task_index,
@@ -604,143 +585,113 @@ namespace sim {
   // Returns a mapping job id to logical job name.
   map<uint64_t, string>& GoogleTraceTaskProcessor::ReadLogicalJobsName() {
     map<uint64_t, string> *job_id_to_name = new map<uint64_t, string>();
-    char line[200];
-    vector<string> line_cols;
-    FILE* events_file = NULL;
-    for (uint64_t file_num = 0; file_num < 500; file_num++) {
-      string file_name;
-      spf(&file_name, "%s/job_events/part-%05ld-of-00500.csv", trace_path_.c_str(), file_num);
-      if ((events_file = fopen(file_name.c_str(), "r")) == NULL) {
-        LOG(ERROR) << "Failed to open trace for reading of job events.";
-      }
-      int64_t num_line = 1;
-      while (!feof(events_file)) {
-        if (fscanf(events_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-          boost::split(line_cols, line, is_any_of(","), token_compress_off);
-          if (line_cols.size() != 8) {
-            LOG(ERROR) << "Unexpected structure of job event on line " << num_line << ": found "
-                       << line_cols.size() << " columns.";
-          } else {
-            uint64_t job_id = lexical_cast<uint64_t>(line_cols[2]);
-            job_id_to_name->insert(pair<uint64_t, string>(job_id, line_cols[7]));
-          }
-        }
-        num_line++;
-      }
+    JobParser jp(trace_path_);
+    while (jp.nextRow()) {
+    	const JobEvent &job = jp.getJob();
+
+    	job_id_to_name->insert(pair<uint64_t, string>
+    												  (job.job_id, job.logical_job_name));
     }
+
     return *job_id_to_name;
   }
 
-  void GoogleTraceTaskProcessor::PrintTaskRuntime(FILE* out_events_file, TaskRuntime* task_runtime,
-                                                  uint64_t job_id, uint64_t task_index,
-                                                  string logical_job_name, uint64_t runtime,
-                                                  vector<string>& cols) {
-    for (uint32_t index = 7; index < 13; ++index) {
-      if (!cols[index].compare("")) {
-        cols[index] = "-1";
-      }
-    }
-    int64_t scheduling_class = lexical_cast<uint64_t>(cols[7]);
-    int64_t priority = lexical_cast<uint64_t>(cols[8]);
-    double cpu_request = lexical_cast<double>(cols[9]);
-    double ram_request = lexical_cast<double>(cols[10]);
-    double disk_request = lexical_cast<double>(cols[11]);
-    int32_t machine_constraint = lexical_cast<int32_t>(cols[12]);
-    fprintf(out_events_file, "%" PRId64 " %" PRId64 " %s %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %lf %lf %lf %d\n",
-            job_id, task_index, logical_job_name.c_str(),
+  void GoogleTraceTaskProcessor::PrintTaskRuntime(FILE* out_events_file,
+  		TaskRuntime* task_runtime, string logical_job_name, uint64_t runtime,
+			const TaskEvent &task) {
+    fprintf(out_events_file, "%" PRId64 " %" PRId32 " %s %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %lf %lf %lf %d\n",
+            task.job_id, task.task_index, logical_job_name.c_str(),
             task_runtime->start_time, task_runtime->total_runtime, runtime, task_runtime->num_runs,
-            scheduling_class, priority, cpu_request, ram_request, disk_request, machine_constraint);
+            task.scheduling_class, task.priority, task.cpu_request,
+						task.ram_request, task.disk_request, task.machine_constraint);
 
   }
 
   void GoogleTraceTaskProcessor::ExpandTaskEvents() {
     map<uint64_t, string> job_id_to_name = ReadLogicalJobsName();
     map<uint64_t, map<uint64_t, TaskRuntime*> > tasks_runtime;
-    char line[200];
-    vector<string> line_cols;
-    FILE* events_file = NULL;
     FILE* out_events_file = NULL;
     string out_file_name;
     spf(&out_file_name, "%s/task_runtime_events/task_runtime_events.csv", trace_path_.c_str());
     if ((out_events_file = fopen(out_file_name.c_str(), "w")) == NULL) {
       LOG(ERROR) << "Failed to open task_runtime_events file for writing";
     }
-    for (uint64_t file_num = 0; file_num < 500; file_num++) {
-      string file_name;
-      spf(&file_name, "%s/task_events/part-%05ld-of-00500.csv", trace_path_.c_str(), file_num);
-      if ((events_file = fopen(file_name.c_str(), "r")) == NULL) {
-        LOG(ERROR) << "Failed to open trace for reading of task events.";
-      }
-      int64_t num_line = 1;
-      while (!feof(events_file)) {
-        if (fscanf(events_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-          boost::split(line_cols, line, is_any_of(","), token_compress_off);
-          if (line_cols.size() != 13) {
-            LOG(ERROR) << "Unexpected structure of task event on line " << num_line << ": found "
-                       << line_cols.size() << " columns.";
-          } else {
-            uint64_t timestamp = lexical_cast<uint64_t>(line_cols[0]);
-            uint64_t job_id = lexical_cast<uint64_t>(line_cols[2]);
-            uint64_t task_index = lexical_cast<uint64_t>(line_cols[3]);
-            int32_t event_type = lexical_cast<int32_t>(line_cols[5]);
-            if (tasks_runtime.find(job_id) == tasks_runtime.end()) {
-              // New job id.
-              map<uint64_t, TaskRuntime*> task_runtime;
-              tasks_runtime.insert(pair<uint64_t, map<uint64_t, TaskRuntime*> >(job_id,
-                                                                                task_runtime));
-            }
-            if (event_type == TASK_SCHEDULE) {
-              if (tasks_runtime[job_id].find(task_index) == tasks_runtime[job_id].end()) {
-                // New task.
-                TaskRuntime* task_runtime = new TaskRuntime();
-                task_runtime->start_time = timestamp;
-                task_runtime->last_schedule_time = timestamp;
-                tasks_runtime[job_id].insert(pair<uint64_t, TaskRuntime*>(task_index,
-                                                                          task_runtime));
-              } else {
-                tasks_runtime[job_id][task_index]->last_schedule_time = timestamp;
-              }
-            } else if (event_type == TASK_EVICT || event_type == TASK_FAIL ||
-                       event_type == TASK_KILL) {
-              if (tasks_runtime[job_id].find(task_index) == tasks_runtime[job_id].end()) {
-                // First event for this task.
-                TaskRuntime* task_runtime = new TaskRuntime();
-                task_runtime->start_time = 0;
-                task_runtime->num_runs = 1;
-                task_runtime->total_runtime = timestamp;
-                tasks_runtime[job_id].insert(pair<uint64_t, TaskRuntime*>(task_index,
-                                                                          task_runtime));
-              } else {
-                TaskRuntime* task_runtime = tasks_runtime[job_id][task_index];
-                task_runtime->num_runs++;
-                task_runtime->total_runtime += timestamp - task_runtime->last_schedule_time;
-              }
-            } else if (event_type == TASK_FINISH) {
-              string logical_job_name = job_id_to_name[job_id];
-              if (tasks_runtime[job_id].find(task_index) == tasks_runtime[job_id].end()) {
-                // First event for this task.
-                TaskRuntime* task_runtime = new TaskRuntime();
-                task_runtime->start_time =0;
-                task_runtime->num_runs = 1;
-                task_runtime->total_runtime = timestamp;
-                tasks_runtime[job_id].insert(pair<uint64_t, TaskRuntime*>(task_index,
-                                                                          task_runtime));
-                PrintTaskRuntime(out_events_file, task_runtime, job_id, task_index,
-                                 logical_job_name, timestamp, line_cols);
-              } else {
-                TaskRuntime* task_runtime = tasks_runtime[job_id][task_index];
-                task_runtime->num_runs++;
-                task_runtime->total_runtime += timestamp - task_runtime->last_schedule_time;
-                PrintTaskRuntime(out_events_file, task_runtime, job_id, task_index,
-                                 logical_job_name, timestamp - task_runtime->last_schedule_time,
-                                 line_cols);
-              }
-            }
-          }
-        }
-        num_line++;
-      }
+
+    TaskParser tp(trace_path_);
+    while (tp.nextRow()) {
+    	const TaskEvent &task = tp.getTask();
+    	uint64_t job_id = task.job_id;
+
+    	if (tasks_runtime.find(job_id) == tasks_runtime.end()) {
+    		// New job id.
+				map<uint64_t, TaskRuntime*> task_runtime;
+				tasks_runtime.insert(pair<uint64_t, map<uint64_t, TaskRuntime*>>
+						                  (job_id, task_runtime));
+    	}
+
+    	uint64_t timestamp = task.timestamp;
+    	uint32_t task_index = task.task_index;
+    	switch (task.event_type) {
+    	case JobTaskEventTypes::SCHEDULE:
+    		if (tasks_runtime[job_id].find(task_index) == tasks_runtime[job_id].end()) {
+					// New task.
+					TaskRuntime* task_runtime = new TaskRuntime();
+					task_runtime->start_time = timestamp;
+					task_runtime->last_schedule_time = timestamp;
+					tasks_runtime[job_id].insert(pair<uint64_t, TaskRuntime*>(task_index,
+																																		task_runtime));
+				} else {
+					tasks_runtime[job_id][task_index]->last_schedule_time = timestamp;
+				}
+    		break;
+    	case JobTaskEventTypes::EVICT:
+    	case JobTaskEventTypes::FAIL:
+    	case JobTaskEventTypes::KILL:
+    	case JobTaskEventTypes::LOST:
+    		if (tasks_runtime[job_id].find(task_index) == tasks_runtime[job_id].end()) {
+					// First event for this task.
+					TaskRuntime* task_runtime = new TaskRuntime();
+					task_runtime->start_time = 0;
+					task_runtime->num_runs = 1;
+					task_runtime->total_runtime = timestamp;
+					tasks_runtime[job_id].insert(pair<uint64_t, TaskRuntime*>(task_index,
+																																		task_runtime));
+				} else {
+					TaskRuntime* task_runtime = tasks_runtime[job_id][task_index];
+					task_runtime->num_runs++;
+					task_runtime->total_runtime += timestamp - task_runtime->last_schedule_time;
+				}
+    		break;
+    	case JobTaskEventTypes::FINISH:
+    	{
+    		string logical_job_name = job_id_to_name[job_id];
+				if (tasks_runtime[job_id].find(task_index) == tasks_runtime[job_id].end()) {
+					// First event for this task.
+					TaskRuntime* task_runtime = new TaskRuntime();
+					task_runtime->start_time =0;
+					task_runtime->num_runs = 1;
+					task_runtime->total_runtime = timestamp;
+					tasks_runtime[job_id].insert(pair<uint64_t, TaskRuntime*>(task_index,
+																																		task_runtime));
+					PrintTaskRuntime(out_events_file, task_runtime, logical_job_name,
+							             timestamp, task);
+				} else {
+					TaskRuntime* task_runtime = tasks_runtime[job_id][task_index];
+					task_runtime->num_runs++;
+					task_runtime->total_runtime += timestamp - task_runtime->last_schedule_time;
+					PrintTaskRuntime(out_events_file, task_runtime, logical_job_name,
+							             timestamp - task_runtime->last_schedule_time, task);
+				}
+				break;
+    	}
+    	case JobTaskEventTypes::SUBMIT:
+    	case JobTaskEventTypes::UPDATE_PENDING:
+			case JobTaskEventTypes::UPDATE_RUNNING:
+				// ignore
+				break;
+    	}
     }
+
     // TODO(ionel): Free memory.
     fclose(out_events_file);
   }
