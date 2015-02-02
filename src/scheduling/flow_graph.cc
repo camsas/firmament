@@ -488,11 +488,6 @@ void FlowGraph::DeleteNode(FlowGraphNode* node) {
   delete node;
 }
 
-void FlowGraph::DeleteTaskNode(const TaskDescriptor& td) {
-  TaskID_t task_id = td.uid();
-  DeleteTaskNode(task_id);
-}
-
 void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   uint64_t* node_id = FindOrNull(task_to_nodeid_map_, task_id);
   CHECK_NOTNULL(node_id);
@@ -512,8 +507,7 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   DeleteNode(node);
 }
 
-void FlowGraph::DeleteResourceNode(const ResourceDescriptor& rd) {
-  ResourceID_t res_id = ResourceIDFromString(rd.uuid());
+void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
   uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
   CHECK_NOTNULL(node_id);
   FlowGraphNode* node = Node(*node_id);
@@ -523,8 +517,7 @@ void FlowGraph::DeleteResourceNode(const ResourceDescriptor& rd) {
   DeleteNode(node);
 }
 
-void FlowGraph::DeleteNodesForJob(const JobDescriptor& jd) {
-  JobID_t job_id = JobIDFromString(jd.uuid());
+void FlowGraph::DeleteNodesForJob(JobID_t job_id) {
   uint64_t* node_id = FindOrNull(job_to_nodeid_map_, job_id);
   CHECK_NOTNULL(node_id);
   FlowGraphNode* node = Node(*node_id);

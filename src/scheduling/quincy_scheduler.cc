@@ -25,10 +25,6 @@
 #include "scheduling/trivial_cost_model.h"
 #include "scheduling/quincy_cost_model.h"
 
-DEFINE_bool(debug_flow_graph, true, "Write out a debug copy of the scheduling"
-            " flow graph to /tmp/debug.dm.");
-
-DECLARE_string(debug_output_dir);
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = QUINCY");
@@ -128,7 +124,7 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   {
     boost::lock_guard<boost::mutex> lock(scheduling_lock_);
     // Remove the task's node from the flow graph
-    flow_graph_->DeleteTaskNode(*td_ptr);
+    flow_graph_->DeleteTaskNode(td_ptr->uid());
   }
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);

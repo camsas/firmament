@@ -3,21 +3,25 @@
 
 #include "scheduling/quincy_dispatcher.h"
 
+#include <sys/stat.h>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 
-DECLARE_bool(debug_flow_graph);
-DECLARE_string(debug_output_dir);
+DEFINE_bool(debug_flow_graph, true, "Write out a debug copy of the scheduling"
+            " flow graph to /tmp/debug.dm.");
+DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
+              "The directory to write debug output to.");
 DEFINE_string(flow_scheduling_solver, "cs2",
               "Solver to use for flow network optimization. Possible values:"
               "\"cs2\": Goldberg solver, \"flowlessly\": local Flowlessly"
               "solver reimplementation.");
+DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
-DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 
 namespace firmament {
 namespace scheduler {
@@ -27,6 +31,12 @@ namespace scheduler {
   using boost::token_compress_on;
 
   map<uint64_t, uint64_t>* QuincyDispatcher::Run() {
+    // Set up debug directory if it doesn't exist
+    struct stat st;
+    if (!FLAGS_debug_output_dir.empty() &&
+        stat(FLAGS_debug_output_dir.c_str(), &st) == -1) {
+      mkdir(FLAGS_debug_output_dir.c_str(), 0700);
+    }
     // Blow away any old exporter state
     exporter_.Reset();
     if (FLAGS_incremental_flow && initial_solver_run_) {

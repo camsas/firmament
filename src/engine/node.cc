@@ -8,7 +8,7 @@
 
 #include <string>
 #include <utility>
-#include <sys/stat.h>
+
 #include <sys/types.h>
 
 #ifdef __PLATFORM_HAS_BOOST__
@@ -26,8 +26,6 @@ DEFINE_string(platform, "PL_UNIX", "The platform we are running on, or AUTO "
               "for attempting automatic discovery.");
 DEFINE_string(listen_uri, "tcp:localhost:9998",
               "The name/address/port to listen on.");
-DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
-              "The directory to write debug output to.");
 
 namespace firmament {
 
@@ -57,13 +55,6 @@ Node::Node(PlatformID platform_id, ResourceID_t uuid)
     }
     default:
       LOG(FATAL) << "Unimplemented!";
-  }
-
-  // Set up debug directory if it doesn't exist
-  struct stat st;
-  if (!FLAGS_debug_output_dir.empty() &&
-      stat(FLAGS_debug_output_dir.c_str(), &st) == -1) {
-    mkdir(FLAGS_debug_output_dir.c_str(), 0700);
   }
 }
 

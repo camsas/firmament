@@ -34,10 +34,9 @@ class FlowGraph {
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                  uint64_t cap_upper_bound, uint64_t cost);
   bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
-  void DeleteTaskNode(const TaskDescriptor& td);
   void DeleteTaskNode(TaskID_t task_id);
-  void DeleteResourceNode(const ResourceDescriptor& rd);
-  void DeleteNodesForJob(const JobDescriptor& jd);
+  void DeleteResourceNode(ResourceID_t res_id);
+  void DeleteNodesForJob(JobID_t job_id);
   FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
