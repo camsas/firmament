@@ -13,6 +13,7 @@
 #include "base/types.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "engine/topology_manager.h"
+#include "scheduling/dimacs_change.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
@@ -23,6 +24,7 @@ class DIMACSExporter {
  public:
   DIMACSExporter();
   void Export(const FlowGraph& graph);
+  void ExportIncremental(const vector<DIMACSChange*>& changes);
   void Flush(const string& filename);
   void Flush(int fd);
   void Reset() { output_ = ""; }
@@ -30,12 +32,11 @@ class DIMACSExporter {
  private:
   const string GenerateArc(const FlowGraphArc& arc);
   const string GenerateComment(const string& text);
-  const string GenerateHeader(uint64_t num_nodes,
-                              uint64_t num_arcs);
+  const string GenerateHeader(uint64_t num_nodes, uint64_t num_arcs);
   const string GenerateNode(const FlowGraphNode& node);
   const string GenerateTaskNode();
-  void GenerateResourceNode(ResourceDescriptor* rd,
-                            string* output);
+  void GenerateResourceNode(ResourceDescriptor* rd, string* output);
+
 
   string output_;
 };

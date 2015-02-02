@@ -13,21 +13,22 @@
 
 namespace firmament {
 
+// Forward declaration.
+struct FlowGraphNode;
+
 struct FlowGraphArc {
-  FlowGraphArc(uint64_t src, uint64_t dst)
-      : src_(src), dst_(dst), cap_lower_bound_(0),
-        cap_upper_bound_(0), cost_(0) {}
+  FlowGraphArc(uint64_t src, uint64_t dst, FlowGraphNode* src_node, FlowGraphNode* dst_node);
   FlowGraphArc(uint64_t src, uint64_t dst, uint64_t clb, uint64_t cub,
-               uint64_t cost)
-      : src_(src), dst_(dst), cap_lower_bound_(clb), cap_upper_bound_(cub),
-        cost_(cost) {
-  }
+               uint64_t cost, FlowGraphNode* src_node, FlowGraphNode* dst_node);
 
   uint64_t src_;
   uint64_t dst_;
   uint64_t cap_lower_bound_;
   uint64_t cap_upper_bound_;
   uint64_t cost_;
+  FlowGraphNode* src_node_;
+  FlowGraphNode* dst_node_;
+
 };
 
 }  // namespace firmament

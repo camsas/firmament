@@ -9,6 +9,8 @@
 #include <string>
 #include <utility>
 
+#include <sys/types.h>
+
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -24,8 +26,6 @@ DEFINE_string(platform, "PL_UNIX", "The platform we are running on, or AUTO "
               "for attempting automatic discovery.");
 DEFINE_string(listen_uri, "tcp:localhost:9998",
               "The name/address/port to listen on.");
-DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
-              "The directory to write debug output to.");
 
 namespace firmament {
 

@@ -1,6 +1,6 @@
 // The Firmament project
 // Copyright (c) 2012-2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
-// Copyright (c) 2012-2013 Ionel Gog <ionel.gog@cl.cam.ac.uk>
+// Copyright (c) 2012-2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Quincy scheduler.
 
@@ -21,6 +21,7 @@
 #include "scheduling/event_driven_scheduler.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_node_type.pb.h"
+#include "scheduling/quincy_dispatcher.h"
 #include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/scheduling_parameters.pb.h"
 #include "storage/reference_interface.h"
@@ -57,26 +58,15 @@ class QuincyScheduler : public EventDrivenScheduler {
 
  private:
   uint64_t ApplySchedulingDeltas(const vector<SchedulingDelta*>& deltas);
-  uint64_t AssignNode(
-      vector< map< uint64_t, uint64_t > >* extracted_flow,
-      uint64_t node);
   void ApplyDeltas();
-  bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
-  map<uint64_t, uint64_t>* GetMappings(
-      vector< map< uint64_t, uint64_t > >* extracted_flow,
-      unordered_set<uint64_t> leaves,
-      uint64_t sink);
   void NodeBindingToSchedulingDelta(const FlowGraphNode& src,
                                     const FlowGraphNode& dst,
                                     SchedulingDelta* delta);
   void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
-  vector< map< uint64_t, uint64_t> >* ReadFlowGraph(
-      int fd, uint64_t num_vertices);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
   uint64_t RunSchedulingIteration();
-  void SolverBinaryName(const string& solver, string* binary);
   void UpdateResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
 
@@ -105,10 +95,7 @@ class QuincyScheduler : public EventDrivenScheduler {
   shared_ptr<FlowGraph> flow_graph_;
   // Flow scheduler parameters (passed in as protobuf to constructor)
   SchedulingParameters parameters_;
-  // DIMACS exporter for interfacing to the solver
-  DIMACSExporter exporter_;
-  // Debug sequence number (for solver input/output files written to /tmp)
-  uint64_t debug_seq_num_;
+  QuincyDispatcher* quincy_dispatcher_;
 };
 
 }  // namespace scheduler

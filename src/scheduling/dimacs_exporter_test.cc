@@ -99,7 +99,7 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   ct2->set_uid(GenerateTaskID(*rt));
   // Add resources and job to flow graph
   g.AddResourceTopology(rtn_root);
-  g.AddJobNodes(&jd);
+  g.AddOrUpdateJobNodes(&jd);
   // Export
   DIMACSExporter exp;
   exp.Export(g);
@@ -129,7 +129,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
     ResourceTopologyNodeDescriptor* child = rtn_root.add_children();
     child->CopyFrom(machine_tmpl);
     child->set_parent_id(rtn_root.resource_desc().uuid());
-    TraverseResourceProtobufTreeReturnRTND(
+    DFSTraverseResourceProtobufTreeReturnRTND(
         child, boost::bind(&DIMACSExporterTest::reset_uuid, this, _1));
   }
   VLOG(1) << "Added " << n << " machines.";
@@ -154,7 +154,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
       ct->set_uid(GenerateTaskID(*rt));
       ct->set_state(TaskDescriptor::RUNNABLE);
     }
-    g.AddJobNodes(&jd);
+    g.AddOrUpdateJobNodes(&jd);
   }
   VLOG(1) << "Added " << j*t << " tasks in " << j << " jobs (" << t
           << " tasks each).";
@@ -205,7 +205,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
       ResourceTopologyNodeDescriptor* child = rtn_root.add_children();
       child->CopyFrom(machine_tmpl);
       child->set_parent_id(rtn_root.resource_desc().uuid());
-      TraverseResourceProtobufTreeReturnRTND(
+      DFSTraverseResourceProtobufTreeReturnRTND(
           child, boost::bind(&DIMACSExporterTest::reset_uuid, this, _1));
     }
     VLOG(1) << "Added " << n << " machines.";
@@ -230,7 +230,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
         ct->set_uid(GenerateTaskID(*rt));
         ct->set_state(TaskDescriptor::RUNNABLE);
       }
-      g.AddJobNodes(&jd);
+      g.AddOrUpdateJobNodes(&jd);
     }
     VLOG(1) << "Added " << j*t << " tasks in " << j << " jobs (" << t
             << " tasks each).";

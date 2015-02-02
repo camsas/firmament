@@ -93,7 +93,7 @@ TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
   JobDescriptor test_job;
   test_job.mutable_root_task()->set_state(TaskDescriptor::RUNNABLE);
   test_job.set_uuid(to_string(jid));
-  g.AddJobNodes(&test_job);
+  g.AddOrUpdateJobNodes(&test_job);
   // Grab the unscheduled aggregator for the new job
   uint64_t* unsched_agg_node_id = FindOrNull(g.job_to_nodeid_map_, jid);
   CHECK_NOTNULL(unsched_agg_node_id);
