@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// Google cluster trace extractor tool.
+// Google cluster trace simulator tool.
 
 #include <cstdio>
 #include <string>
@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "sim/trace-extract/google_trace_extractor.h"
+#include "sim/trace-extract/google_trace_simulator.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
@@ -43,19 +43,17 @@ DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 //DEFINE_string(task_bins_output, "bins.out", "The file in which the task bins are written.");
 //DEFINE_bool(gen_graph_deltas, false, "Generate dimacs delta files. One for each bin.");
 
-GoogleTraceExtractor::GoogleTraceExtractor(string& trace_path)
+GoogleTraceSimulator::GoogleTraceSimulator(string& trace_path)
 					: //max_machines_(FLAGS_num_machines),
 					  trace_path_(trace_path), machine_parser_(trace_path_),
 						job_parser_(trace_path_),	task_parser_(trace_path_),
 					  current_time_(0), num_machines_seen_(0) { }
 
-void GoogleTraceExtractor::reset_uuid(
-    ResourceTopologyNodeDescriptor* rtnd,
+void GoogleTraceSimulator::ResetUuid(ResourceTopologyNodeDescriptor* rtnd,
     const string& hostname, const string& root_uuid) {
   string new_uuid;
   if (rtnd->has_parent_id()) {
-    // This is an intermediate node, so translate the parent UUID via the lookup
-    // table
+    // This is an intermediate node, so translate the parent UUID via the lookup table
     const string& old_parent_id = rtnd->parent_id();
     string* new_parent_id = FindOrNull(uuid_conversion_map_, rtnd->parent_id());
     CHECK_NOTNULL(new_parent_id);
@@ -71,21 +69,65 @@ void GoogleTraceExtractor::reset_uuid(
     rtnd->set_parent_id(root_uuid);
     new_uuid = to_string(GenerateRootResourceID(hostname));
   }
-  VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid()
-          << " to " << new_uuid;
-  InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(),
-                 new_uuid);
+  VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid() << " to " << new_uuid;
+  InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(), new_uuid);
   rtnd->mutable_resource_desc()->set_uuid(new_uuid);
 }
 
+void GoogleTraceSimulator::AddMachineToTopologyAndResetUuid(
+    const ResourceTopologyNodeDescriptor& machine_tmpl, uint64_t machine_id,
+    ResourceTopologyNodeDescriptor& rtn_root) {
+  ResourceTopologyNodeDescriptor* child = rtn_root.add_children();
+  child->CopyFrom(machine_tmpl);
+  const string& root_uuid = rtn_root.resource_desc().uuid();
+  char hn[100];
+  sprintf(hn, "h%ju", machine_id);
+  DFSTraverseResourceProtobufTreeReturnRTND(
+      child, boost::bind(&GoogleTraceSimulator::ResetUuid, this, _1, string(hn), root_uuid));
+  child->mutable_resource_desc()->set_friendly_name(hn);
+}
+
+unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& GoogleTraceSimulator::LoadTasksRunningTime() {
+  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher> *task_runtime =
+    new unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>();
+  char line[200];
+  vector<string> cols;
+  FILE* tasks_file = NULL;
+  string tasks_file_name = trace_path_ + "/task_runtime_events/task_runtime_events.csv";
+  if ((tasks_file = fopen(tasks_file_name.c_str(), "r")) == NULL) {
+    LOG(ERROR) << "Failed to open trace runtime events file.";
+  }
+  int64_t num_line = 1;
+  while (!feof(tasks_file)) {
+    if (fscanf(tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
+      boost::split(cols, line, is_any_of(" "), token_compress_off);
+      if (cols.size() != 13) {
+        LOG(ERROR) << "Unexpected structure of task runtime row on line: " << num_line;
+      } else {
+        TaskIdentifier task_id;
+        task_id.job_id = lexical_cast<uint64_t>(cols[0]);
+        task_id.task_index = lexical_cast<uint64_t>(cols[1]);
+        uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
+        bool inserted = InsertIfNotPresent(task_runtime, task_id, runtime);
+        if (!inserted) {
+          LOG(ERROR) << "There should not be more than an entry for job " << task_id.job_id <<
+            ", task " << task_id.task_index;
+        }
+      }
+    }
+    num_line++;
+  }
+  return *task_runtime;
+}
+
 // returns timestamp of earliest unprocessed event, UINT64_MAX if no more events
-uint64_t GoogleTraceExtractor::ReplayMachineEvents(
+uint64_t GoogleTraceSimulator::ReplayMachineEvents(
 		               ResourceTopologyNodeDescriptor& root, uint64_t max_runtime) {
 	const MachineEvent *machine = &machine_parser_.getMachine();
 	while (machine->timestamp <= max_runtime) {
 		switch (machine->event_type) {
 		case MachineEvent::Types::ADD:
-			AddMachineToTopology(machine_tmpl_, num_machines_seen_, root);
+			AddMachineToTopologyAndResetUuid(machine_tmpl_, num_machines_seen_, root);
 			num_machines_seen_++;
 			break;
 		// SOMEDAY(adam): handle machine remove & update events
@@ -108,7 +150,7 @@ uint64_t GoogleTraceExtractor::ReplayMachineEvents(
 	return machine->timestamp;
 }
 
-uint64_t GoogleTraceExtractor::ReplayJobEvents(
+uint64_t GoogleTraceSimulator::ReplayJobEvents(
 		               ResourceTopologyNodeDescriptor& root, uint64_t max_runtime) {
 	const JobEvent* job = &job_parser_.getJob();
 	while (job->timestamp <= max_runtime) {
@@ -160,7 +202,7 @@ uint64_t GoogleTraceExtractor::ReplayJobEvents(
 	return job->timestamp;
 }
 
-uint64_t GoogleTraceExtractor::ReplayTaskEvents(
+uint64_t GoogleTraceSimulator::ReplayTaskEvents(
 					         ResourceTopologyNodeDescriptor& root, uint64_t max_runtime) {
 	const TaskEvent* task = &task_parser_.getTask();
 	while (task->timestamp <= max_runtime) {
@@ -234,7 +276,7 @@ uint64_t GoogleTraceExtractor::ReplayTaskEvents(
 	return task->timestamp;
 }
 
-void GoogleTraceExtractor::ReplayTrace(ResourceTopologyNodeDescriptor& root,
+void GoogleTraceSimulator::ReplayTrace(ResourceTopologyNodeDescriptor& root,
 						                           uint64_t max_runtime) {
 	// TODO(adam): incremental output
 	// TODO(adam): periodic snapshots
@@ -260,7 +302,7 @@ void GoogleTraceExtractor::ReplayTrace(ResourceTopologyNodeDescriptor& root,
 	LOG(INFO) << "Terminating at " << current_time_;
 }
 
-void GoogleTraceExtractor::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
+void GoogleTraceSimulator::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
   // XXX(malte): job_id argument is discareded and replaced by randomly
   // generated ID at the moment.
   JobID_t new_job_id = GenerateJobID();
@@ -276,23 +318,8 @@ void GoogleTraceExtractor::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
 	rt->set_state(TaskDescriptor::RUNNABLE);
 }
 
-void GoogleTraceExtractor::AddMachineToTopology(
-    const ResourceTopologyNodeDescriptor& machine_tmpl,
-    uint64_t machine_id,
-    ResourceTopologyNodeDescriptor &rtn_root) {
-  ResourceTopologyNodeDescriptor* child = rtn_root.add_children();
-  child->CopyFrom(machine_tmpl);
-  const string& root_uuid = rtn_root.resource_desc().uuid();
-  char hn[100];
-  sprintf(hn, "h%ju", machine_id);
-  TraverseResourceProtobufTreeReturnRTND(
-      child, boost::bind(&GoogleTraceExtractor::reset_uuid, this, _1,
-                         string(hn), root_uuid));
-  child->mutable_resource_desc()->set_friendly_name(hn);
-}
-
 ResourceTopologyNodeDescriptor&
-GoogleTraceExtractor::LoadInitialTopology() {
+GoogleTraceSimulator::LoadInitialTopology() {
   // Import a fictional machine resource topology
   int fd = open(MACHINE_TMPL_FILE, O_RDONLY);
   machine_tmpl_.ParseFromFileDescriptor(fd);
@@ -310,7 +337,7 @@ GoogleTraceExtractor::LoadInitialTopology() {
   return *rtn_root;
 }
 
-void GoogleTraceExtractor::Run() {
+void GoogleTraceSimulator::Run() {
   LOG(INFO) << "Starting Google Trace extraction!";
   //LOG(INFO) << "Number of machines to extract: " << max_machines_;
   LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " seconds.";
@@ -333,7 +360,7 @@ void GoogleTraceExtractor::Run() {
   		++iter) {
 		VLOG(1) << "Add job with " << iter->second->root_task().spawned_size()
 		<< " child tasks of root task";
-		g.AddJobNodes(iter->second);
+		g.AddOrUpdateJobNodes(iter->second);
   }
 
   // Export initial graph

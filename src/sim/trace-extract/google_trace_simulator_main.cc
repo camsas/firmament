@@ -3,7 +3,7 @@
 //
 
 #include "base/common.h"
-#include "sim/trace-extract/google_trace_extractor.h"
+#include "sim/trace-extract/google_trace_simulator.h"
 
 using namespace firmament;  // NOLINT
 
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   if (FLAGS_trace_path.empty()) {
 	LOG(FATAL) << "Please specify a path to the Google trace!";
   }
-  sim::GoogleTraceExtractor gte(FLAGS_trace_path);
+  sim::GoogleTraceSimulator gte(FLAGS_trace_path);
 
   gte.Run();
 }

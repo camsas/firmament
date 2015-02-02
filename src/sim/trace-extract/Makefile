@@ -8,7 +8,7 @@ LIBS += -lboost_thread -lboost_filesystem -lboost_system -lboost_regex -lssl -lc
 BINS =  google-trace-simulator google-trace-processor
 LIB =
 SIMULATOR_OBJS = google_trace_simulator.o dataset_parser.o
-PROCESSOR_OBJS = google_trace_processor.o dataset_parser.o
+PROCESSOR_OBJS = google_trace_task_processor.o dataset_parser.o
 PBS =
 TESTS =
 TESTS_DEPS =
@@ -57,7 +57,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator): \
 		"  DYNLNK  $(BUILD_DIR)/sim/trace-extract/google_trace_simulator")
 
 $(addprefix $(OBJ_DIR)/, google-trace-processor): \
-  $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
+  $(addprefix $(OBJ_DIR)/, $(PROCESSOR_OBJS)) \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \

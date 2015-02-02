@@ -9,7 +9,7 @@ DEFINE_string(trace_path, "", "Path where the trace files are.");
 
 inline void init(int argc, char *argv[]) {
   // Set up usage message.
-  string usage("Sample usage:\nsun_simple_cost_scaling");
+  string usage("usage: -trace-path <google trace directory>");
   google::SetUsageMessage(usage);
 
   // Use gflags to parse command line flags
