@@ -18,6 +18,7 @@
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
 #include "scheduling/quincy_cost_model.h"
+#include "scheduling/quincy_dispatcher.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
@@ -46,55 +47,59 @@ namespace sim {
 
 DEFINE_int64(num_machines, -1, "Number of machines to extract; -1 for all.");
 DEFINE_int64(num_jobs, -1, "Number of initial jobs to extract; -1 for all.");
-DEFINE_int64(runtime, -1, "Time to extract data for (from start of trace, in "
+DEFINE_uint64(runtime, -1, "Time to extract data for (from start of trace, in "
              "seconds); -1 for everything.");
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 DEFINE_bool(tasks_preemption_bins, false, "Compute bins of number of preempted tasks.");
-DEFINE_int32(bin_time_duration, 10, "Bin size in seconds.");
+DEFINE_uint64(bin_time_duration, 10, "Bin size in seconds.");
 DEFINE_string(task_bins_output, "bins.out", "The file in which the task bins are written.");
-DEFINE_bool(gen_graph_deltas, false, "Generate dimacs delta files. One for each bin.");
+DEFINE_bool(run_incremental_scheduler, false, "Run the Flowlessly incremental scheduler.");
 
 GoogleTraceSimulator::GoogleTraceSimulator(string& trace_path) : trace_path_(trace_path) {
 }
 
-void GoogleTraceSimulator::AddMachineToTopologyAndResetUuid(
+ResourceID_t GoogleTraceSimulator::AddMachineToTopologyAndResetUuid(
     const ResourceTopologyNodeDescriptor& machine_tmpl, uint64_t machine_id,
-    ResourceTopologyNodeDescriptor* rtn_root) {
-  ResourceTopologyNodeDescriptor* child = rtn_root->add_children();
-  child->CopyFrom(machine_tmpl);
-  const string& root_uuid = rtn_root->resource_desc().uuid();
+    ResourceTopologyNodeDescriptor* new_machine) {
+  new_machine = rtn_root_.add_children();
+  new_machine->CopyFrom(machine_tmpl);
+  const string& root_uuid = rtn_root_.resource_desc().uuid();
   char hn[100];
   sprintf(hn, "h%ju", machine_id);
   DFSTraverseResourceProtobufTreeReturnRTND(
-      child, boost::bind(&GoogleTraceSimulator::ResetUuid, this, _1, string(hn), root_uuid));
-  child->mutable_resource_desc()->set_friendly_name(hn);
+      new_machine, boost::bind(&GoogleTraceSimulator::ResetUuid, this, _1, string(hn), root_uuid));
+  new_machine->mutable_resource_desc()->set_friendly_name(hn);
+  return ResourceIDFromString(new_machine->resource_desc().uuid());
 }
 
-void GoogleTraceSimulator::AddNewTask(FlowGraph* flow_graph, QuincyCostModel* cost_model,
-                                      uint64_t job_id, uint64_t task_id, ofstream& out_file) {
-  // TODO(ionel): Implement.
+TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
+  CHECK_NOTNULL(jd_ptr);
+  TaskDescriptor* root_task = jd_ptr->mutable_root_task();
+  TaskDescriptor* new_task = root_task->add_spawned();
+  new_task->set_uid(GenerateTaskID(*root_task));
+  new_task->set_state(TaskDescriptor::RUNNABLE);
+  // TODO(ionel): Task doesn't get added to the flow graph.
+  return new_task;
+}
 
-  // JobID_t* jdp = FindOrNull(job_id_conversion_map_, job_id);
-  // if (!jdp) {
-  //   // Add new job to the graph
-  //   JobDescriptor* jd = new JobDescriptor();
-  //   PopulateJob(jd, job_id);
-  //   flow_graph->AddOrUpdateJobNodes(jd);
-  //   jdp = FindOrNull(job_id_conversion_map_, job_id);
-  //   CHECK_NOTNULL(jdp);
-  //   out_file << "d 0 0 1\n";
-  //   out_file << "a 0 2 0 1 0\n";
-  // }
-  // FlowGraphNode* unsched_agg = flow_graph->GetUnschedAggForJob(*jdp);
-  // out_file << "d 1 0 2\n";
-  // out_file << "a 0 2 0 1 " << cost_model->TaskToClusterAggCost(task_id) << "\n";
-  // out_file << "a 0 " << unsched_agg->id_ << " 0 1 " <<
-  //   cost_model->TaskToUnscheduledAggCost(task_id) << "\n";
-  // FlowGraphArc** arc_to_sink = FindOrNull(unsched_agg->outgoing_arc_map_, 1);
-  // CHECK_NOTNULL(arc_to_sink);
-  // CHECK_NOTNULL(*arc_to_sink);
-  // out_file << "x " << unsched_agg->id_ << " 1 " << (*arc_to_sink)->cap_lower_bound_ << " " <<
-  //   (++(*arc_to_sink)->cap_upper_bound_) << " " << (*arc_to_sink)->cost_ << "\n";
+TaskDescriptor* GoogleTraceSimulator::AddNewTask(
+    FlowGraph* flow_graph, TaskIdentifier task_identifier,
+    unordered_map<uint64_t, TaskIdentifier>* flow_id_to_task_id) {
+  JobDescriptor** jdpp = FindOrNull(job_id_to_jd_, task_identifier.job_id);
+  JobDescriptor* jd_ptr;
+  if (!jdpp) {
+    // Add new job to the graph
+    jd_ptr = new JobDescriptor();
+    PopulateJob(jd_ptr, task_identifier.job_id);
+    jdpp = FindOrNull(job_id_to_jd_, task_identifier.job_id);
+    CHECK_NOTNULL(jdpp);
+  } else {
+    jd_ptr = *jdpp;
+  }
+  TaskDescriptor* td_ptr = AddTaskToJob(jd_ptr);
+  flow_graph->AddOrUpdateJobNodes(jd_ptr);
+  InsertOrUpdate(flow_id_to_task_id, td_ptr->uid(), task_identifier);
+  return td_ptr;
 }
 
 void GoogleTraceSimulator::BinTasksByEventType(uint64_t event, ofstream& out_file) {
@@ -141,30 +146,28 @@ void GoogleTraceSimulator::BinTasksByEventType(uint64_t event, ofstream& out_fil
     time_interval_bound << "]: " << num_tasks << "\n";
 }
 
-unordered_map<uint64_t, JobDescriptor*>& GoogleTraceSimulator::LoadInitialJobs(int64_t max_jobs) {
-  vector<uint64_t> job_ids;
-  unordered_map<uint64_t, JobDescriptor*>* jobs;
+void GoogleTraceSimulator::LoadInitialJobs(int64_t max_jobs) {
+  set<uint64_t> job_ids;
 
-  // Read the initial machine events from trace
+  // Read the initial job events from trace
   uint64_t num_jobs_read = ReadJobsFile(&job_ids, max_jobs);
-  LOG(INFO) << "Read " << num_jobs_read << " initial jobs.";
-  jobs = new unordered_map<uint64_t, JobDescriptor*>();
+  LOG(INFO) << "Loaded " << num_jobs_read << " initial jobs.";
 
   // Add jobs
-  for (vector<uint64_t>::const_iterator iter = job_ids.begin(); iter != job_ids.end(); ++iter) {
+  for (set<uint64_t>::const_iterator iter = job_ids.begin(); iter != job_ids.end(); ++iter) {
     JobDescriptor* jd = new JobDescriptor();
     PopulateJob(jd, *iter);
-    CHECK(InsertOrUpdate(jobs, *iter, jd));
+    CHECK(InsertOrUpdate(&job_id_to_jd_, *iter, jd));
   }
-  return *jobs;
 }
 
-ResourceTopologyNodeDescriptor& GoogleTraceSimulator::LoadInitialMachines(int64_t max_num_machines) {
-  vector<uint64_t> machines;
+void GoogleTraceSimulator::LoadInitialMachines(
+    int64_t max_num_machines) {
+  set<uint64_t> machines;
 
   // Read the initial machine events from trace
   uint64_t num_machines = ReadMachinesFile(&machines, max_num_machines);
-  LOG(INFO) << "Loaded " << num_machines << " machines!";
+  LOG(INFO) << "Loaded " << num_machines << " machines.";
 
   // Import a fictional machine resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
@@ -173,32 +176,29 @@ ResourceTopologyNodeDescriptor& GoogleTraceSimulator::LoadInitialMachines(int64_
   close(fd);
 
   // Create the machines
-  ResourceTopologyNodeDescriptor* rtn_root = new ResourceTopologyNodeDescriptor();
   ResourceID_t root_uuid = GenerateRootResourceID("XXXgoogleXXX");
-  rtn_root->mutable_resource_desc()->set_uuid(to_string(root_uuid));
+  rtn_root_.mutable_resource_desc()->set_uuid(to_string(root_uuid));
   LOG(INFO) << "Root res ID is " << to_string(root_uuid);
   InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid), to_string(root_uuid));
   // Create each machine and add it to the graph
-  uint64_t i = 0;
-  for (vector<uint64_t>::const_iterator iter = machines.begin(); iter != machines.end(); ++iter) {
-    AddMachineToTopologyAndResetUuid(machine_tmpl, i, rtn_root);
-    ++i;
+  for (set<uint64_t>::const_iterator iter = machines.begin(); iter != machines.end(); ++iter) {
+    ResourceTopologyNodeDescriptor* new_machine = NULL;
+    ResourceID_t res_id = AddMachineToTopologyAndResetUuid(machine_tmpl, *iter, new_machine);
+    CHECK(InsertOrUpdate(&machine_id_to_res_id_, *iter, res_id));
   }
   LOG(INFO) << "Added " << machines.size() << " machines.";
-
-  return *rtn_root;
 }
 
-void GoogleTraceSimulator::LoadInitalTasks(
-    const unordered_map<uint64_t, JobDescriptor*>& initial_jobs) {
+void GoogleTraceSimulator::LoadInitialTasks() {
   // Read initial tasks from trace and add tasks to jobs in initial_jobs
-  uint64_t num_tasks = ReadInitialTasksFile(initial_jobs);
+  uint64_t num_tasks = ReadInitialTasksFile();
   LOG(INFO) << "Added " << num_tasks << " initial tasks to "
-            << initial_jobs.size() << " initial jobs.";
+            << job_id_to_jd_.size() << " initial jobs.";
 }
 
 multimap<uint64_t, MachineEvent>& GoogleTraceSimulator::LoadMachineEvents() {
   multimap<uint64_t, MachineEvent> *machine_events = new multimap<uint64_t, MachineEvent>();
+
   char line[200];
   vector<string> cols;
   FILE* machines_file;
@@ -253,8 +253,7 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& GoogleTraceSimula
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
-        bool inserted = InsertIfNotPresent(task_runtime, task_id, runtime);
-        if (!inserted) {
+        if (!InsertIfNotPresent(task_runtime, task_id, runtime)) {
           LOG(ERROR) << "There should not be more than an entry for job " << task_id.job_id <<
             ", task " << task_id.task_index;
         }
@@ -265,7 +264,7 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& GoogleTraceSimula
   return *task_runtime;
 }
 
-uint64_t GoogleTraceSimulator::ReadJobsFile(vector<uint64_t>* jobs, int64_t num_jobs) {
+uint64_t GoogleTraceSimulator::ReadJobsFile(set<uint64_t>* jobs, int64_t num_jobs) {
   bool done = false;
   char line[200];
   vector<string> vals;
@@ -296,8 +295,12 @@ uint64_t GoogleTraceSimulator::ReadJobsFile(vector<uint64_t>* jobs, int64_t num_
           uint64_t job_id = lexical_cast<uint64_t>(vals[2]);
           uint64_t event_type = lexical_cast<uint64_t>(vals[3]);
           if (event_type == SUBMIT_EVENT) {
-            jobs->push_back(job_id);
+            jobs->insert(job_id);
             j++;
+          } else if (event_type == KILL_EVENT) {
+            if (jobs->erase(job_id)) {
+              j--;
+            }
           }
         }
       }
@@ -309,7 +312,7 @@ uint64_t GoogleTraceSimulator::ReadJobsFile(vector<uint64_t>* jobs, int64_t num_
   return j;
 }
 
-uint64_t GoogleTraceSimulator::ReadMachinesFile(vector<uint64_t>* machines, int64_t num_machines) {
+uint64_t GoogleTraceSimulator::ReadMachinesFile(set<uint64_t>* machines, int64_t num_machines) {
   char line[200];
   vector<string> vals;
   FILE* fptr = NULL;
@@ -332,8 +335,13 @@ uint64_t GoogleTraceSimulator::ReadMachinesFile(vector<uint64_t>* machines, int6
       } else {
         uint64_t machine_id = lexical_cast<uint64_t>(vals[1]);
         uint64_t event_type = lexical_cast<uint64_t>(vals[2]);
-        if (event_type == MACHINE_ADD)
-          machines->push_back(machine_id);
+        if (event_type == MACHINE_ADD) {
+          machines->insert(machine_id);
+        } else if (event_type == MACHINE_REMOVE) {
+          machines->erase(machine_id);
+        } else if (event_type == MACHINE_UPDATE) {
+          // TODO(ionel): Handle machine update event.
+        }
       }
     }
     l++;
@@ -341,8 +349,7 @@ uint64_t GoogleTraceSimulator::ReadMachinesFile(vector<uint64_t>* machines, int6
   return l;
 }
 
-uint64_t GoogleTraceSimulator::ReadInitialTasksFile(
-    const unordered_map<uint64_t, JobDescriptor*>& jobs) {
+uint64_t GoogleTraceSimulator::ReadInitialTasksFile() {
   bool done = false;
   char line[200];
   vector<string> vals;
@@ -372,18 +379,21 @@ uint64_t GoogleTraceSimulator::ReadInitialTasksFile(
                      << vals.size() << " columns.";
         } else {
           uint64_t job_id = lexical_cast<uint64_t>(vals[2]);
+          uint64_t task_index = lexical_cast<uint64_t>(vals[3]);
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
           if (event_type == SUBMIT_EVENT) {
-            if (JobDescriptor* jd = FindPtrOrNull(jobs, job_id)) {
+            if (JobDescriptor* jd = FindPtrOrNull(job_id_to_jd_, job_id)) {
               // This is a job we're interested in
-              CHECK_NOTNULL(jd);
-              TaskDescriptor* root_task = jd->mutable_root_task();
-              TaskDescriptor* new_task = root_task->add_spawned();
-              new_task->set_uid(GenerateTaskID(*root_task));
-              new_task->set_state(TaskDescriptor::RUNNABLE);
+              TaskDescriptor* new_task = AddTaskToJob(jd);
+              TaskIdentifier task_id;
+              task_id.job_id = job_id;
+              task_id.task_index = task_index;
+              InsertIfNotPresent(&task_id_to_td_, task_id, new_task);
               t++;
             }
           }
+          // TODO(ionel): Can there be a situation in which a task is
+          // submitted and killed at timestamp 0?
         }
       }
       l++;
@@ -398,8 +408,8 @@ void GoogleTraceSimulator::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
   // Generate a hash out of the trace job_id.
   JobID_t new_job_id = GenerateJobID(job_id);
   // Maintain a mapping between the trace job_id and the generated job_id.
-  InsertOrUpdate(&job_id_conversion_map_, job_id, new_job_id);
   jd->set_uuid(to_string(new_job_id));
+  InsertOrUpdate(&job_id_to_jd_, job_id, jd);
   TaskDescriptor* rt = jd->mutable_root_task();
   string bin;
   // XXX(malte): hack, should use logical job name
@@ -434,60 +444,92 @@ void GoogleTraceSimulator::ResetUuid(ResourceTopologyNodeDescriptor* rtnd,
   rtnd->mutable_resource_desc()->set_uuid(new_uuid);
 }
 
-void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph, QuincyCostModel* cost_model,
-                                       const string& file_base) {
+void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph) {
+  // Load all the machine events.
+  multimap<uint64_t, MachineEvent>& machine_events = LoadMachineEvents();
+  // Load tasks' runtime.
+  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime =
+    LoadTasksRunningTime();
+  // Multimap from timestamp to task. The key represents the timestamp at which the task ends.
+  multimap<uint64_t, TaskDescriptor*> task_end_runtime;
+  // Mapping from flow graph task uid to trace task id.
+  unordered_map<uint64_t, TaskIdentifier> flow_id_to_task_id;
+
+  // Import a fictional machine resource topology
+  ResourceTopologyNodeDescriptor machine_tmpl;
+  int fd = open(MACHINE_TMPL_FILE, O_RDONLY);
+  machine_tmpl.ParseFromFileDescriptor(fd);
+  close(fd);
+
+  scheduler::QuincyDispatcher quincy_dispatcher =
+    scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph), false);
+  // The first time the solver runs from scratch.
+  map<uint64_t, uint64_t>* task_mappings = quincy_dispatcher.Run();
+  UpdateFlowGraph(flow_graph, task_mappings, task_runtime, task_end_runtime);
+
   char line[200];
   vector<string> vals;
-  FILE* fptr = NULL;
-  int64_t time_interval_bound = FLAGS_bin_time_duration;
-  ofstream out_file(file_base + lexical_cast<string>(0));
+  FILE* f_task_events_ptr = NULL;
+  uint64_t time_interval_bound = FLAGS_bin_time_duration;
+  uint64_t last_timestamp = 0;
   for (uint64_t file_num = 0; file_num < 500; file_num++) {
     string fname;
     spf(&fname, "%s/task_events/part-%05ld-of-00500.csv", trace_path_.c_str(), file_num);
-    if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
+    if ((f_task_events_ptr = fopen(fname.c_str(), "r")) == NULL) {
       LOG(ERROR) << "Failed to open trace for reading of task events.";
     }
-    while (!feof(fptr)) {
-      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
+    while (!feof(f_task_events_ptr)) {
+      if (fscanf(f_task_events_ptr, "%[^\n]%*[\n]", &line[0]) > 0) {
         boost::split(vals, line, is_any_of(","), token_compress_off);
         if (vals.size() != 13) {
           LOG(ERROR) << "Unexpected structure of task event row: found "
                      << vals.size() << " columns.";
         } else {
-          int64_t task_time = lexical_cast<uint64_t>(vals[0]);
-          uint64_t job_id = lexical_cast<uint64_t>(vals[2]);
-          // TODO(ionel): The task_id should be a unique task id. However, this is not a problem
-          // if we use the random cost model.
-          uint64_t task_id = lexical_cast<uint64_t>(vals[3]);
+          TaskIdentifier task_identifier;
+          uint64_t task_time = lexical_cast<uint64_t>(vals[0]);
+          task_identifier.job_id = lexical_cast<uint64_t>(vals[2]);
+          task_identifier.task_index = lexical_cast<uint64_t>(vals[3]);
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
-          // The initial tasks have already been added.
+
           if (task_time == 0) {
+            // The task is already present in the graph.
             continue;
           }
-          // We only want to generate deltas for the first FLAGS_runtime seconds.
+
+          // We only run for the first FLAGS_runtime seconds.
           if (FLAGS_runtime < task_time) {
             LOG(INFO) << "Terminating at : " << task_time;
-            out_file.close();
             return;
           }
+
+          if (task_time > last_timestamp) {
+            // Apply all the machine events.
+            ApplyMachineEvents(last_timestamp, task_time, &machine_events, flow_graph,
+                               machine_tmpl);
+            last_timestamp = task_time;
+          }
+
           if (event_type == SUBMIT_EVENT) {
             if (task_time <= time_interval_bound) {
-              AddNewTask(flow_graph, cost_model, job_id, task_id, out_file);
+              AddNewTask(flow_graph, task_identifier, &flow_id_to_task_id);
             } else {
-              out_file.close();
+              task_mappings = quincy_dispatcher.Run();
+              UpdateFlowGraph(flow_graph, task_mappings, task_runtime, task_end_runtime);
+
+              // Update current time.
               time_interval_bound += FLAGS_bin_time_duration;
               while (time_interval_bound < task_time) {
                 time_interval_bound += FLAGS_bin_time_duration;
               }
-              out_file.open(file_base + lexical_cast<string>(time_interval_bound));
-              AddNewTask(flow_graph, cost_model, job_id, task_id, out_file);
+
+              AddNewTask(flow_graph, task_identifier, &flow_id_to_task_id);
             }
           }
+
         }
       }
     }
   }
-  out_file.close();
 }
 
 void GoogleTraceSimulator::Run() {
@@ -499,30 +541,21 @@ void GoogleTraceSimulator::Run() {
   LOG(INFO) << "Starting Google Trace extraction!";
   LOG(INFO) << "Number of machines to extract: " << FLAGS_num_machines;
   LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " seconds.";
-
-  ResourceTopologyNodeDescriptor& initial_resource_topology =
-      LoadInitialMachines(FLAGS_num_machines);
-  unordered_map<uint64_t, JobDescriptor*>& initial_jobs =
-      LoadInitialJobs(FLAGS_num_jobs);
-  LoadInitalTasks(initial_jobs);
+  LoadInitialMachines(FLAGS_num_machines);
+  LoadInitialJobs(FLAGS_num_jobs);
+  LoadInitialTasks();
 
   QuincyCostModel* cost_model = new QuincyCostModel();
   FlowGraph g(cost_model);
   // Add resources and job to flow graph
-  g.AddResourceTopology(initial_resource_topology);
+  g.AddResourceTopology(rtn_root_);
   // Add initial jobs
-  for (unordered_map<uint64_t, JobDescriptor*>::const_iterator iter = initial_jobs.begin();
-       iter != initial_jobs.end(); ++iter) {
+  for (unordered_map<uint64_t, JobDescriptor*>::const_iterator iter = job_id_to_jd_.begin();
+       iter != job_id_to_jd_.end(); ++iter) {
     VLOG(1) << "Add job with " << iter->second->root_task().spawned_size()
             << " child tasks of root task";
     g.AddOrUpdateJobNodes(iter->second);
   }
-  // Export initial graph
-  DIMACSExporter exp;
-  exp.Export(g);
-  string outname = FLAGS_output_dir + "/test.dm";
-  VLOG(1) << "Output written to " << outname;
-  exp.Flush(outname);
   if (FLAGS_tasks_preemption_bins) {
     ofstream out_file(FLAGS_output_dir + "/" + FLAGS_task_bins_output);
     if (out_file.is_open()) {
@@ -532,8 +565,56 @@ void GoogleTraceSimulator::Run() {
       LOG(ERROR) << "Could not open bin output file.";
     }
   }
-  if (FLAGS_gen_graph_deltas) {
-    ReplayTrace(&g, cost_model, FLAGS_output_dir + "/delta_");
+  if (FLAGS_run_incremental_scheduler) {
+    ReplayTrace(&g);
+  }
+}
+
+void GoogleTraceSimulator::UpdateFlowGraph(
+    FlowGraph* flow_graph, map<uint64_t, uint64_t>* task_mappings,
+    unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime,
+    multimap<uint64_t, TaskDescriptor*>& task_end_runtime) {
+  // TODO(ionel): Implement.
+}
+
+void GoogleTraceSimulator::ApplyMachineEvents(
+    uint64_t last_time, uint64_t cur_time,
+    multimap<uint64_t, MachineEvent>* machine_events,
+    FlowGraph* flow_graph,
+    const ResourceTopologyNodeDescriptor& machine_tmpl) {
+  for (; last_time <= cur_time; last_time++) {
+    pair<multimap<uint64_t, MachineEvent>::iterator,
+         multimap<uint64_t, MachineEvent>::iterator> range_events =
+      machine_events->equal_range(last_time);
+    for (multimap<uint64_t, MachineEvent>::iterator it = range_events.first;
+         it != range_events.second; ++it) {
+      if (it->second.event_type == MACHINE_ADD) {
+        ResourceID_t* res_id_ptr = FindOrNull(machine_id_to_res_id_, it->second.machine_id);
+        if (res_id_ptr) {
+          LOG(ERROR) << "Already added machine " << it->second.machine_id;
+          continue;
+        }
+        // Create a new machine topology descriptor.
+        ResourceTopologyNodeDescriptor* new_machine = NULL;
+        ResourceID_t res_id = AddMachineToTopologyAndResetUuid(machine_tmpl, it->second.machine_id,
+                                                               new_machine);
+        // Add mapping from machine_id to the new resource_id.
+        InsertOrUpdate(&machine_id_to_res_id_, it->second.machine_id, res_id);
+        // Add the new machine to the flow graph.
+        flow_graph->AddResourceNode(new_machine);
+      } else if (it->second.event_type == MACHINE_REMOVE) {
+        ResourceID_t* res_id_ptr = FindOrNull(machine_id_to_res_id_, it->second.machine_id);
+        CHECK_NOTNULL(res_id_ptr);
+        // Delete the machine from the flow graph.
+        flow_graph->DeleteResourceNode(*res_id_ptr);
+        machine_id_to_res_id_.erase(it->second.machine_id);
+      } else if (it->second.event_type == MACHINE_UPDATE) {
+        // TODO(ionel): Handle machine update event.
+      } else {
+        LOG(ERROR) << "Unexpected machine event";
+      }
+    }
+    machine_events->erase(last_time);
   }
 }
 

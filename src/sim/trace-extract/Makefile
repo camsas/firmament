@@ -48,6 +48,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator): $(addprefix $(OBJ_DIR)/, $(SIM
 		$(BUILD_DIR)/scheduling/flow_graph.o \
 		$(BUILD_DIR)/scheduling/flow_node_type.pb.o \
 		$(BUILD_DIR)/scheduling/quincy_cost_model.o \
+		$(BUILD_DIR)/scheduling/quincy_dispatcher.o \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(LIBS) \
