@@ -70,27 +70,9 @@ class QuincyScheduler : public EventDrivenScheduler {
   void UpdateResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
 
-  // Cached sets of runnable and blocked tasks; these are updated on each
-  // execution of LazyGraphReduction. Note that this set includes tasks from all
-  // jobs.
-  set<TaskID_t> runnable_tasks_;
-  set<TaskDescriptor*> blocked_tasks_;
-  // Initialized to hold the URI of the (currently unique) coordinator this
-  // scheduler is associated with. This is passed down to the executor and to
-  // tasks so that they can find the coordinator at runtime.
-  const string coordinator_uri_;
-  // We also record the resource ID of the owning coordinator.
-  ResourceID_t coordinator_res_id_;
-  map<ResourceID_t, ExecutorInterface*> executors_;
   map<TaskID_t, ResourceID_t> task_bindings_;
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
-  // Pointer to messaging adapter to use for communication with remote
-  // resources.
-  MessagingAdapterInterface<BaseMessage>* m_adapter_ptr_;
-  // Flag (effectively a lock) indicating if the scheduler is currently
-  // in the process of making scheduling decisions.
-  bool scheduling_;
   // Local storage of the current flow graph
   shared_ptr<FlowGraph> flow_graph_;
   // Flow scheduler parameters (passed in as protobuf to constructor)
