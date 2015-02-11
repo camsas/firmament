@@ -5,6 +5,8 @@
     body {
       margin: none;
       font-family: sans-serif;
+      padding-top: 70px;
+      padding-bottom: 30px;
     }
     table {
       border: 1px solid black;
@@ -44,8 +46,26 @@
       stroke: #ccc;
       stroke-width: 2px;
     }
+
+    .theme-dropdown .dropdown-menu {
+      position: static;
+      display: block;
+      margin-bottom: 20px;
+    }
   </style>
+
+  <!-- JQuery -->
   <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+
+  <!-- Bootstrap -->
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+
+  <!-- Sparklines for resource consumption -->
   <script src="http://www.omnipotent.net/jquery.sparkline/2.1.1/jquery.sparkline.min.js"></script>
 </head>
 

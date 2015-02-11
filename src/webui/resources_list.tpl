@@ -6,25 +6,29 @@
 
 <h2>Overview</h2>
 
-<table border="1">
-  <tr>
-    <th>#</th>
-    <th>Resource ID</th>
-    <th>Friendly name</th>
-    <th>State</th>
-    <th>Options</th>
-  </tr>
-  {{#RES_DATA}}
-  <tr {{#RES_NON_SCHEDULABLE}}style="background-color: lightgray;"{{/RES_NON_SCHEDULABLE}}>
-    <td>{{RES_NUM}}</td>
-    <td>{{RES_ID}}</td>
-    <td>{{RES_FRIENDLY_NAME}}</td>
-    <td>{{RES_STATE}}</td>
-    <td>
-      <a href="/resource/?id={{RES_ID}}">Status</a>
-    </td>
-  </tr>
-  {{/RES_DATA}}
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Resource ID</th>
+      <th>Friendly name</th>
+      <th>State</th>
+      <th>Options</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#RES_DATA}}
+    <tr {{#RES_NON_SCHEDULABLE}}style="background-color: lightgray;"{{/RES_NON_SCHEDULABLE}}>
+      <td>{{RES_NUM}}</td>
+      <td>{{RES_ID}}</td>
+      <td>{{RES_FRIENDLY_NAME}}</td>
+      <td>{{RES_STATE}}</td>
+      <td>
+        <a href="/resource/?id={{RES_ID}}">Status</a>
+      </td>
+    </tr>
+    {{/RES_DATA}}
+  </tbody>
 </table>
 
 <h2>Topology</h2>

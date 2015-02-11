@@ -4,7 +4,7 @@
 
 <h1>Job {{JOB_ID}}</h1>
 
-<table border="1">
+<table class="table table-bordered">
   <tr>
     <td>ID</td>
     <td>{{JOB_ID}}</td>

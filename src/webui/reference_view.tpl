@@ -4,7 +4,7 @@
 
 <h1>Ref {{OBJ_ID}}</h1>
 
-<table border="1">
+<table class="table table-bordered">
   {{#REF_DATA}}
   <tr>
     <td>Type</td>

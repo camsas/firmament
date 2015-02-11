@@ -72,7 +72,7 @@ $(function() {
 });
 </script>
 
-<table border="1">
+<table class="table table-bordered">
   <tr>
     <td>ID</td>
     <td>{{RES_ID}}</td>

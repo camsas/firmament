@@ -121,7 +121,7 @@ $(function() {
 
 <h1>Task {{TASK_ID}}</h1>
 
-<table border="1">
+<table class="table table-bordered">
   <tr>
     <td>ID</td>
     <td>{{TASK_ID}}</td>
