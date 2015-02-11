@@ -7,7 +7,7 @@ import binascii
 
 if len(sys.argv) < 4:
   print "usage: job_submit.py <coordinator hostname> <web UI port> " \
-      "<task binary>"
+      "<task binary> [<input object>]"
   sys.exit(1)
 
 hostname = sys.argv[1]
@@ -21,13 +21,17 @@ job_desc.root_task.uid = 0
 job_desc.root_task.name = "root_task"
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
 job_desc.root_task.binary = sys.argv[3]
-job_desc.root_task.args.append("--v=2")
-job_desc.root_task.args.append("0")
+#job_desc.root_task.args.append("--v=2")
+job_desc.root_task.uses_gflags = False
+job_desc.root_task.args.append("10")
 job_desc.root_task.args.append("100000")
 #root_input1 = job_desc.root_task.dependencies.add()
 #root_input1.id = 123456789
 #root_input1.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
-input_id = binascii.unhexlify(sys.argv[4])
+if len(sys.argv) == 5:
+  input_id = binascii.unhexlify(sys.argv[4])
+else:
+  input_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 output_id = binascii.unhexlify('db33daba280d8e68eea6e490723b02cedb33daba280d8e68eea6e490723b02ce')
 output2_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 job_desc.output_ids.append(output_id)
@@ -44,13 +48,13 @@ final_output_desc = job_desc.root_task.outputs.add()
 final_output_desc.id = output_id
 final_output_desc.scope = reference_desc_pb2.ReferenceDescriptor.PUBLIC
 final_output_desc.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
-final_output_desc.non_deterministic = False
+final_output_desc.non_deterministic = True
 final_output_desc.location = "blob:/tmp/out1"
 final_output2_desc = job_desc.root_task.outputs.add()
 final_output2_desc.id = output2_id
 final_output2_desc.scope = reference_desc_pb2.ReferenceDescriptor.PUBLIC
 final_output2_desc.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
-final_output2_desc.non_deterministic = False
+final_output2_desc.non_deterministic = True
 final_output2_desc.location = "blob:/tmp/out2"
 
 
