@@ -41,6 +41,6 @@ message TaskDescriptor {
   /* TODO(malte): move these to sub-messages */
   optional uint64 port = 17;
   optional uint64 input_size = 18;
-  optional bool uses_gflags = 19;
+  optional bool inject_task_lib = 19 [default = false];
 }
 
