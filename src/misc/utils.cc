@@ -54,13 +54,27 @@ ResourceID_t GenerateResourceID() {
   if (!resource_id_rg_init_) {
     // TODO(malte): This crude method captures the first 100 chars of the
     // hostname (not the FQDN). It remains to be seen if it is sufficient.
-    char hn[100];
-    bzero(&hn, 100);
-    gethostname(hn, 100);
-    return GenerateRootResourceID(string(hn));
+    SetupResourceID(&resource_id_rg_, NULL);
+    resource_id_rg_init_ = true;
   }
   boost::uuids::basic_random_generator<boost::mt19937> gen(&resource_id_rg_);
   return gen();
+}
+
+void SetupResourceID(boost::mt19937 *resource_id, const char *hostname) {
+  size_t hash = 0;
+  char hn[100];
+  bzero(&hn, 100);
+  if (hostname == NULL) {
+    gethostname(hn, 100);
+  } else {
+    strcpy(hn, hostname);
+  }
+  // Hash the hostname (truncated to 100 characters)
+  boost::hash_combine(hash, hn);
+  VLOG(2) << "Seeing resource ID RNG with " << hash << " from hostname "
+          << hn;
+  resource_id->seed(hash);
 }
 
 ResourceID_t GenerateRootResourceID(const string& hostname) {
@@ -98,6 +112,8 @@ TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc) {
   size_t hash = 0;
   //boost::hash_combine(hash, job_desc.uuid());
   boost::hash_combine(hash, job_desc.root_task().binary());
+  boost::hash_combine(hash, job_desc.root_task().name());
+
   return static_cast<TaskID_t>(hash);
 }
 
@@ -180,8 +196,9 @@ ResourceID_t ResourceIDFromString(const string& str) {
 }
 
 TaskID_t TaskIDFromString(const string& str) {
-  // XXX(malte): possibly unsafe use of atol() here.
-  TaskID_t task_uuid = strtoul(str.c_str(), NULL, 10);
+  stringstream strm(str);
+  TaskID_t task_uuid;
+  strm >> task_uuid;
   return task_uuid;
 }
 

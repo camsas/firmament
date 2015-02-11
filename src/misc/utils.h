@@ -59,6 +59,7 @@ DataObjectID_t DataObjectIDFromString(const string& str);
 DataObjectID_t DataObjectIDFromProtobuf(const string& str);
 ResourceID_t ResourceIDFromString(const string& str);
 JobID_t JobIDFromString(const string& str);
+void SetupResourceID(boost::mt19937 *resource_id, const char *hostname);
 TaskID_t TaskIDFromString(const string& str);
 
 int32_t ExecCommandSync(const string& cmdline, vector<string> args,
