@@ -22,9 +22,9 @@ job_desc.root_task.name = "root_task"
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
 job_desc.root_task.binary = sys.argv[3]
 #job_desc.root_task.args.append("--v=2")
-job_desc.root_task.uses_gflags = False
+job_desc.root_task.inject_task_lib = True
 job_desc.root_task.args.append("10")
-job_desc.root_task.args.append("100000")
+#job_desc.root_task.args.append("100000")
 #root_input1 = job_desc.root_task.dependencies.add()
 #root_input1.id = 123456789
 #root_input1.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
