@@ -37,8 +37,13 @@ class EventDrivenScheduler : public SchedulerInterface {
                        const string& coordinator_uri);
   ~EventDrivenScheduler();
   ResourceID_t* BoundResourceForTask(TaskID_t task_id);
+  bool UnbindResourceForTask(TaskID_t task_id);
+
   virtual void DeregisterResource(ResourceID_t res_id);
   virtual void RegisterResource(ResourceID_t res_id, bool local);
+  void KillRunningTask(TaskID_t task_id,
+                       TaskKillMessage::TaskKillReason reason);
+  ExecutorInterface* GetExecutorForTask(TaskID_t task_id);
   void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                   const ReferenceInterface& new_ref,
                                   TaskDescriptor* td_ptr);
@@ -53,13 +58,14 @@ class EventDrivenScheduler : public SchedulerInterface {
     return *stream << "<EventDrivenScheduler>";
   }
 
+
  protected:
   void BindTaskToResource(TaskDescriptor* task_desc,
                           ResourceDescriptor* res_desc);
   void DebugPrintRunnableTasks();
-  const set<TaskID_t>& LazyGraphReduction(
-      const set<DataObjectID_t*>& output_ids,
-      TaskDescriptor* root_task, const JobID_t& job_id);
+  uint64_t LazyGraphReduction(const set<DataObjectID_t*>& output_ids,
+                              TaskDescriptor* root_task,
+                              const JobID_t& job_id);
   set<TaskDescriptor*> ProducingTasksForDataObjectID(const DataObjectID_t& id,
                                                      const JobID_t& cur_job);
   const set<ReferenceInterface*> ReferencesForID(const DataObjectID_t& id);

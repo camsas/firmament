@@ -56,6 +56,40 @@ EventDrivenScheduler::~EventDrivenScheduler() {
   executors_.clear();
 }
 
+void EventDrivenScheduler::KillRunningTask(
+    TaskID_t task_id,
+    TaskKillMessage::TaskKillReason reason) {
+  // Check if this task is managed by this coordinator
+  TaskDescriptor** td_ptr = FindOrNull(*task_map_, task_id);
+  if (!td_ptr) {
+    LOG(ERROR) << "Tried to kill unknown task " << task_id;
+    return;
+  }
+  // Check if we have a bound resource for the task and if it is marked as
+  // running
+  ResourceID_t* rid = BoundResourceForTask(task_id);
+  if ((*td_ptr)->state() != TaskDescriptor::RUNNING || !rid) {
+    LOG(ERROR) << "Task " << task_id << " is not running locally, "
+               << "so cannot kill it!";
+    return;
+  }
+  // Find the current remote endpoint for this task
+  TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
+  // Manufacture the message
+  BaseMessage bm;
+  SUBMSG_WRITE(bm, task_kill, task_id, task_id);
+  SUBMSG_WRITE(bm, task_kill, reason, reason);
+  // Send the message
+  LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
+            << *rid << " (endpoint: " << td->last_location()  << ")";
+  m_adapter_ptr_->SendMessageToEndpoint(td->last_location(), bm);
+
+  // Remove the bound resource, if any.
+  if (rid) {
+    UnbindResourceForTask(task_id);
+  }
+}
+
 void EventDrivenScheduler::BindTaskToResource(
     TaskDescriptor* task_desc,
     ResourceDescriptor* res_desc) {
@@ -74,18 +108,28 @@ void EventDrivenScheduler::BindTaskToResource(
   if (VLOG_IS_ON(1))
     DebugPrintRunnableTasks();
   // Find an executor for this resource.
-  ExecutorInterface** exec =
-      FindOrNull(executors_, ResourceIDFromString(res_desc->uuid()));
-  CHECK(exec);
+  ExecutorInterface* exec =
+      FindPtrOrNull(executors_, ResourceIDFromString(res_desc->uuid()));
+  CHECK_NOTNULL(exec);
   // Actually kick off the task
   // N.B. This is an asynchronous call, as the executor will spawn a thread.
-  (*exec)->RunTask(task_desc, true);
+  exec->RunTask(task_desc, !task_desc->inject_task_lib());
   VLOG(1) << "Task running";
 }
 
 ResourceID_t* EventDrivenScheduler::BoundResourceForTask(TaskID_t task_id) {
   ResourceID_t* rid = FindOrNull(task_bindings_, task_id);
   return rid;
+}
+
+bool EventDrivenScheduler::UnbindResourceForTask(TaskID_t task_id) {
+  ResourceID_t* rid = FindOrNull(task_bindings_, task_id);
+  if (rid) {
+    task_bindings_.erase(task_id);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void EventDrivenScheduler::DebugPrintRunnableTasks() {
@@ -100,12 +144,23 @@ void EventDrivenScheduler::DebugPrintRunnableTasks() {
 void EventDrivenScheduler::DeregisterResource(ResourceID_t res_id) {
   VLOG(1) << "Removing executor for resource " << res_id
           << " which is now deregistered from this scheduler.";
-  ExecutorInterface** exec = FindOrNull(executors_, res_id);
+  ExecutorInterface* exec = FindPtrOrNull(executors_, res_id);
+  CHECK_NOTNULL(exec);
   // Terminate any running tasks on the resource.
-  //(*exec)->TerminateAllTasks();
+  // exec->TerminateAllTasks();
   // Remove the executor for the resource.
   CHECK(executors_.erase(res_id));
   delete exec;
+}
+
+ExecutorInterface *EventDrivenScheduler::GetExecutorForTask(TaskID_t task_id) {
+  ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
+  CHECK_NOTNULL(res_id_ptr);
+
+  // Record final report
+  ExecutorInterface** exec = FindOrNull(executors_, *res_id_ptr);
+  CHECK_NOTNULL(exec);
+  return *exec;
 }
 
 void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
@@ -127,13 +182,23 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   (*exec)->HandleTaskCompletion(*td_ptr, report);
   // Mark task ask completed
   td_ptr->set_state(TaskDescriptor::COMPLETED);
-  // Run scheduling algorithms from this task
-  set<DataObjectID_t*> outputs = DataObjectIDsFromProtobuf(td_ptr->outputs());
-  LazyGraphReduction(outputs, td_ptr, JobIDFromString(td_ptr->job_id()));
-  // TODO(malte): Check if this job still has any outstanding tasks, otherwise
-  // mark it as completed.
+  // We only need to run the scheduler if the task was not delegated from
+  // elsewhere, i.e. if it is managed by the local scheduler instance.
+  if (!td_ptr->has_delegated_from()) {
+    // Run scheduling algorithms from this task
+    set<DataObjectID_t*> outputs = DataObjectIDsFromProtobuf(td_ptr->outputs());
+    uint64_t num_incomplete_tasks =
+      LazyGraphReduction(outputs, td_ptr, JobIDFromString(td_ptr->job_id()));
+    // Check if this job still has any outstanding tasks, otherwise mark it as
+    // completed.
+    if (num_incomplete_tasks == 0) {
+      JobDescriptor* jd =
+        FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
+      CHECK_NOTNULL(jd);
+      jd->set_state(JobDescriptor::COMPLETED);
+    }
+  }
 }
-
 
 void EventDrivenScheduler::HandleReferenceStateChange(
     const ReferenceInterface& old_ref,
@@ -269,12 +334,17 @@ const set<TaskID_t>& EventDrivenScheduler::RunnableTasksForJob(
   set<DataObjectID_t*> outputs =
       DataObjectIDsFromProtobuf(job_desc->output_ids());
   TaskDescriptor* rtp = job_desc->mutable_root_task();
-  return LazyGraphReduction(outputs, rtp, JobIDFromString(job_desc->uuid()));
+  uint64_t num_incomplete_tasks =
+    LazyGraphReduction(outputs, rtp, JobIDFromString(job_desc->uuid()));
+  // If there are no incomplete tasks left, mark the job as completed
+  if (num_incomplete_tasks == 0)
+    job_desc->set_state(JobDescriptor::COMPLETED);
+  return runnable_tasks_;
 }
 
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
 // Derek Murray's thesis on CIEL.
-const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
+uint64_t EventDrivenScheduler::LazyGraphReduction(
     const set<DataObjectID_t*>& output_ids,
     TaskDescriptor* root_task,
     const JobID_t& job_id) {
@@ -282,6 +352,9 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
   // Local data structures
   deque<TaskDescriptor*> newly_active_tasks;
   bool do_schedule = false;
+  // Counter of tasks that have not yet completed (used to set job completion
+  // state)
+  uint64_t incomplete_tasks = 0;
   // Add expected producer for object_id to queue, if the object reference is
   // not already concrete.
   VLOG(2) << "for a job with " << output_ids.size() << " outputs";
@@ -324,16 +397,22 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
     }
   }
   // Add root task to queue
-  TaskDescriptor** rtd_ptr = FindOrNull(*task_map_, root_task->uid());
-  CHECK(rtd_ptr);
+  TaskDescriptor* rtd_ptr = FindPtrOrNull(*task_map_, root_task->uid());
+  CHECK_NOTNULL(rtd_ptr);
   // Only add the root task if it is not already scheduled, running, done
   // or failed.
-  if ((*rtd_ptr)->state() == TaskDescriptor::CREATED)
-    newly_active_tasks.push_back(*rtd_ptr);
+  if (rtd_ptr->state() == TaskDescriptor::CREATED) {
+    newly_active_tasks.push_back(rtd_ptr);
+    incomplete_tasks++;
+  }
+  // Keep iterating over tasks as long as there are more to visit
   while (!newly_active_tasks.empty()) {
     TaskDescriptor* current_task = newly_active_tasks.front();
     VLOG(2) << "Next active task considered is " << current_task->uid();
     newly_active_tasks.pop_front();
+    // Count the tasks if it is not completed
+    if (current_task->state() != TaskDescriptor::COMPLETED)
+      incomplete_tasks++;
     // Find any unfulfilled dependencies
     bool will_block = false;
     for (RepeatedPtrField<ReferenceDescriptor>::const_iterator iter =
@@ -396,7 +475,7 @@ const set<TaskID_t>& EventDrivenScheduler::LazyGraphReduction(
   }
   VLOG(1) << "do_schedule is " << do_schedule << ", runnable_task set "
           << "contains " << runnable_tasks_.size() << " tasks.";
-  return runnable_tasks_;
+  return incomplete_tasks;
 }
 
 const set<ReferenceInterface*> EventDrivenScheduler::ReferencesForID(
