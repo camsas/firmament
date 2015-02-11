@@ -8,6 +8,8 @@
 package firmament;
 
 import "base/task_desc.proto";
+import "base/task_final_report.proto";
+
 
 message TaskStateMessage {
   optional uint64 id = 1;
