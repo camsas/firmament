@@ -21,12 +21,26 @@ message TaskDescriptor {
   required TaskState state = 3;
   optional string job_id = 4;
   optional uint64 index = 5;
+  /* Inputs/outputs */
   repeated ReferenceDescriptor dependencies = 6;
   repeated ReferenceDescriptor outputs = 7;
+  /* Command and arguments */
   required bytes binary = 8;
   repeated string args = 9;
+  /* Children */
   repeated TaskDescriptor spawned = 10;
+  /* Runtime meta-data */
   optional string last_location = 11;
   optional string delegated_from = 12;
+  optional uint64 started = 13;
+  /* Deadlines */
+  optional uint64 relative_deadline = 14;
+  optional uint64 absolute_deadline = 15;
+  optional uint64 equivalence_class = 16;
+  /* Application-specific fields */
+  /* TODO(malte): move these to sub-messages */
+  optional uint64 port = 17;
+  optional uint64 input_size = 18;
+  optional bool uses_gflags = 19;
 }
 

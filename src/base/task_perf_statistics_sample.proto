@@ -12,4 +12,6 @@ message TaskPerfStatisticsSample {
   optional uint64 rsize = 4;
   optional uint64 sched_run = 5;
   optional uint64 sched_wait = 6;
+  optional bool completed = 7;
+  optional string hostname = 8;
 }
