@@ -19,7 +19,7 @@ template <typename T>
 class Envelope : public PrintableInterface {
  public:
   Envelope() : data_(NULL), is_owner_(false) {}
-  explicit Envelope(T *data) : data_(data), is_owner_(false) {}
+  explicit Envelope(T* data) : data_(data), is_owner_(false) {}
   virtual ~Envelope() {
     if (is_owner_)
       // de-allocate buffer
@@ -41,7 +41,7 @@ class Envelope : public PrintableInterface {
   // binary data over.
   // Will allocate memory as required.
   // Returns boolean indication if parse/copy succeeded.
-  virtual bool Parse(void *buffer, size_t length) {
+  virtual bool Parse(void* buffer, size_t length) {
     if (!data_) {
       // XXX(malte): check if we can use smart pointers instead here.
       data_ = new T();
@@ -57,7 +57,7 @@ class Envelope : public PrintableInterface {
   // argument.
   // Will fail if no internal buffer is set.
   // Returns boolean indication if parse/copy succeeded.
-  virtual bool Serialize(void *buffer, size_t length) const {
+  virtual bool Serialize(void* buffer, size_t length) const {
     CHECK(data_ != NULL) << "Tried to serialize a message envelope with "
                          << "NULL contents.";
     // XXX(malte): Totally unsafe :)
@@ -75,7 +75,7 @@ class Envelope : public PrintableInterface {
   FRIEND_TEST(EnvelopeTest, EmptyParseInteger);
   FRIEND_TEST(EnvelopeTest, StashInteger);
   // fields
-  T *data_;
+  T* data_;
   bool is_owner_;
 };
 
