@@ -292,7 +292,7 @@ void StreamSocketsAdapter<T>::RegisterAsyncErrorPathCallback(
 
 template <typename T>
 bool StreamSocketsAdapter<T>::SendMessageToEndpoint(
-    const string& endpoint_uri, const T& message) {
+    const string& endpoint_uri, T& message) {  // NOLINT
   StreamSocketsChannel<T>** chan =
       FindOrNull(endpoint_channel_map_, endpoint_uri);
   if (!chan) {

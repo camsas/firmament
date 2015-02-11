@@ -58,7 +58,7 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
       typename AsyncMessageRecvHandler<T>::type callback);
   void RegisterAsyncErrorPathCallback(
       typename AsyncErrorPathHandler<T>::type callback);
-  bool SendMessageToEndpoint(const string& endpoint_uri, const T& message);
+  bool SendMessageToEndpoint(const string& endpoint_uri, T& message);  // NOLINT
   void StopListen();
   virtual ostream& ToString(ostream* stream) const;
 
