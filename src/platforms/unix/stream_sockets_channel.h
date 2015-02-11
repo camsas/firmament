@@ -62,7 +62,7 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
                         Envelope<T>* final_envelope,
                         typename AsyncRecvHandler<T>::type final_callback);
   void RecvAThirdStage(const boost::system::error_code& error,
-                       const size_t bytes_read, size_t message_size,
+                       const size_t bytes_read, uint64_t message_size,
                        Envelope<T>* final_envelope,
                        typename AsyncRecvHandler<T>::type final_callback);
 

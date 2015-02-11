@@ -58,11 +58,11 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
       typename AsyncMessageRecvHandler<T>::type callback);
   void RegisterAsyncErrorPathCallback(
       typename AsyncErrorPathHandler<T>::type callback);
-  bool SendMessageToEndpoint(const string& endpoint_uri, T& message);
+  bool SendMessageToEndpoint(const string& endpoint_uri, const T& message);
   void StopListen();
   virtual ostream& ToString(ostream* stream) const;
 
-  size_t NumActiveChannels() {
+  uint32_t NumActiveChannels() {
     return endpoint_channel_map_.size();
   }
   void DumpActiveChannels() {
@@ -80,7 +80,7 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
 
  private:
   void HandleAsyncMessageRecv(
-      const boost::system::error_code& error, size_t bytes_transferred,
+      const boost::system::error_code& error, uint64_t bytes_transferred,
       StreamSocketsChannel<T>* chan);
   bool _EstablishChannel(const string& endpoint_uri,
                          StreamSocketsChannel<T>* chan);

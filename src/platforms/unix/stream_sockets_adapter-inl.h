@@ -148,7 +148,7 @@ void StreamSocketsAdapter<T>::AwaitNextMessage() {
 template <typename T>
 void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     const boost::system::error_code& error,
-    size_t bytes_transferred,
+    uint64_t bytes_transferred,
     StreamSocketsChannel<T>* chan) {
   if (error) {
     VLOG(1) << "Failed to receive message on MA " << *this;
@@ -292,7 +292,7 @@ void StreamSocketsAdapter<T>::RegisterAsyncErrorPathCallback(
 
 template <typename T>
 bool StreamSocketsAdapter<T>::SendMessageToEndpoint(
-    const string& endpoint_uri, T& message) {
+    const string& endpoint_uri, const T& message) {
   StreamSocketsChannel<T>** chan =
       FindOrNull(endpoint_channel_map_, endpoint_uri);
   if (!chan) {
