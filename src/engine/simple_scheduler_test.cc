@@ -111,12 +111,13 @@ TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   set<DataObjectID_t*> output_ids(DataObjectIDsFromProtobuf(
       test_job->output_ids()));
   AddTaskToTaskMap(rtp);
-  set<TaskID_t> runnable_tasks =
+  uint64_t num_incomplete_tasks =
       sched_->LazyGraphReduction(output_ids, rtp, job_id);
   // The root task should be runnable
-  EXPECT_EQ(runnable_tasks.size(), 1UL);
+  EXPECT_EQ(num_incomplete_tasks, 1UL);
+  EXPECT_EQ(sched_->runnable_tasks_.size(), 1UL);
   // The only runnable task should be equivalent to the root task we pushed in.
-  EXPECT_EQ(*runnable_tasks.begin(), rtp->uid());
+  EXPECT_EQ(*(sched_->runnable_tasks_.begin()), rtp->uid());
   delete rtp;
   delete test_job;
 }
