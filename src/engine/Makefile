@@ -68,7 +68,8 @@ TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
 include $(ROOT_DIR)/include/Makefile.common
 
-all: protobufs $(OBJ_BIN) $(TESTS_BIN) $(TASK_OBJ_LIB) .setup
+all: protobufs $(OBJ_BIN) $(TESTS_BIN) $(TASK_OBJ_LIB) \
+	   $(BUILD_DIR)/engine/task_lib_inject.so .setup
 
 protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 
@@ -162,5 +163,19 @@ $(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS))
 
 # Task interface library
 # ---------------------------
-# This needs to be linked into task binaries.
+# This can be linked into task binaries directly.
 $(TASK_OBJ_LIB): $(addprefix $(OBJ_DIR)/, task_lib.o)
+
+# Injector library for LD_PRELOAD trick to instrument legacy processes
+$(BUILD_DIR)/engine/task_lib_inject.so: task_lib_main.cc task_lib.cc \
+	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
+	$(BUILD_DIR)/misc/libfirmament_misc.a \
+	$(BUILD_DIR)/messages/libfirmament_messages.a \
+	$(BUILD_DIR)/storage/libfirmament_storage.a \
+	$(BUILD_DIR)/base/libfirmament_base.a
+	# echo $(NGINX_INCLUDES) #echo $(addprefix(-I $(SRC_ROOT_DIR)/examples/nginx/src, core))
+	$(call quiet-command, \
+		$(CXX) -fPIC -shared -std=c++11 -fvisibility=default $(OPTFLAGS) \
+		$(INCLUDES) $(DEFINES) \
+		-o $(BUILD_DIR)/engine/task_lib_inject.so $^ -ldl $(TASK_LIB_LIBS), \
+		"  DYNLNK  $(BUILD_DIR)/engine/task_lib_inject.so")
