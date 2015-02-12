@@ -42,6 +42,7 @@ class SchedulerInterface : public PrintableInterface {
   // Unregister a resource ID from the scheduler. No-op if the resource ID is
   // not actually registered with it.
   virtual void DeregisterResource(ResourceID_t res_id) = 0;
+  virtual executor::ExecutorInterface *GetExecutorForTask(TaskID_t task_id) = 0;
   // TODO(malte): comment
   virtual void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                           const ReferenceInterface& new_ref,
@@ -57,6 +58,9 @@ class SchedulerInterface : public PrintableInterface {
   // TODO(malte): comment
   virtual bool PlaceDelegatedTask(TaskDescriptor* td,
                                   ResourceID_t target_resource) = 0;
+  // Kills a running task.
+  virtual void KillRunningTask(TaskID_t task_id,
+                               TaskKillMessage::TaskKillReason reason) = 0;
   // Registers a resource ID with the scheduler, who may subsequently assign
   // work to this resource. A resource may be registered with multiple
   // schedulers.
@@ -73,6 +77,8 @@ class SchedulerInterface : public PrintableInterface {
   // TODO(malte): Determine if the need this, given the reactive design of the
   // scheduler.
   //void ScheduleAllJobs();
+
+
  protected:
   // Binds a task to a resource, i.e. effects a scheduling assignment. This will
   // modify various bits of meta-data tracking assignments. It will then
