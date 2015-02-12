@@ -401,10 +401,8 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
   CHECK_NOTNULL(rtd_ptr);
   // Only add the root task if it is not already scheduled, running, done
   // or failed.
-  if (rtd_ptr->state() == TaskDescriptor::CREATED) {
+  if (rtd_ptr->state() == TaskDescriptor::CREATED)
     newly_active_tasks.push_back(rtd_ptr);
-    incomplete_tasks++;
-  }
   // Keep iterating over tasks as long as there are more to visit
   while (!newly_active_tasks.empty()) {
     TaskDescriptor* current_task = newly_active_tasks.front();
