@@ -8,8 +8,13 @@
 #ifndef FIRMAMENT_ENGINE_TASK_LIB_H
 #define FIRMAMENT_ENGINE_TASK_LIB_H
 
+#include <memory>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string>
 #include <vector>
+
+
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -70,10 +75,11 @@ using store::FREE;
 class TaskLib {
  public:
   TaskLib();
-  void Run(int argc, char *argv[]);
+  ~TaskLib();
+
+  void RunMonitor(boost::thread::id main_thread_id);
   void AwaitNextMessage();
   bool ConnectToCoordinator(const string& coordinator_uri);
-  void RunTask(int argc, char *argv[]);
   // CIEL programming model
   //virtual const string Construct(const DataObject& object);
   void Spawn(const ReferenceInterface& code,
@@ -87,6 +93,11 @@ class TaskLib {
   void* PutObjectStart(const DataObjectID_t& id, size_t size);
   void PutObjectEnd(const DataObjectID_t& id, size_t size);
   void* Extend(const DataObjectID_t& id, size_t old_size, size_t new_size);
+
+  void SetCompleted(double completed);
+
+  // Terminate tasklib.
+  void Stop();
 
   Cache_t* getCache() {
     return cache;
@@ -115,12 +126,17 @@ class TaskLib {
   bool SendMessageToCoordinator(BaseMessage* msg);
 
   void setUpStorageEngine();
-
+  void AddCompletionStatistics(TaskPerfStatisticsSample *ts);
  private:
   pid_t pid_;
-  bool task_error_;
-  bool task_running_;
+  volatile bool task_running_;
   uint64_t heartbeat_seq_number_;
+  bool use_procfs_;
+  string hostname_;
+  volatile bool stop_;
+  bool internal_completed_;
+  // If set, gives the fraction of task completed.
+  volatile double completed_;
   ProcFSMonitor task_perf_monitor_;
 
   Cache_t* cache;
@@ -129,6 +145,8 @@ class TaskLib {
   named_mutex* mutex;
   scoped_lock<named_mutex>* cache_lock;
   ReferenceNotification_t* reference_not_t;
+
+  unique_ptr<FILE> completion_file_;
 };
 
 }  // namespace firmament

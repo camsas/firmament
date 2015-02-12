@@ -7,7 +7,12 @@
 
 #include "engine/task_lib.h"
 
+#include <jansson.h>
 #include <vector>
+#include <stdlib.h>
+#include <iostream>
+#include <unistd.h>
+#include <string>
 
 #include "base/common.h"
 #include "base/data_object.h"
@@ -29,28 +34,81 @@ DEFINE_int32(heartbeat_interval, 1,
         "The interval, in seconds, between heartbeats sent to the"
         "coordinator.");
 
+DEFINE_string(tasklib_application, "",
+              "The application running alongside tasklib");
+
+DEFINE_string(completion_filename, "",
+              "A file which to read completion status from.");
+
+#define SET_PROTO_IF_DICT_HAS_INT(proto, dict, member, val) \
+  val = json_object_get(dict, # member); \
+  if (val) proto->set ## _ ## member(json_integer_value(val));
+
+#define SET_PROTO_IF_DICT_HAS_DOUBLE(proto, dict, member, val) \
+  val = json_object_get(dict, # member); \
+  if (val) proto->set ## _ ## member(json_real_value(val));
+
+
 namespace firmament {
 
-  TaskLib::TaskLib()
+TaskLib::TaskLib()
   : m_adapter_(new StreamSocketsAdapter<BaseMessage>()),
     chan_(new StreamSocketsChannel<BaseMessage>(
         StreamSocketsChannel<BaseMessage>::SS_TCP)),
-    coordinator_uri_(FLAGS_coordinator_uri),
-    resource_id_(ResourceIDFromString(FLAGS_resource_id)),
+    coordinator_uri_(getenv("FLAGS_coordinator_uri")),
+    resource_id_(ResourceIDFromString(getenv("FLAGS_resource_id"))),
     pid_(getpid()),
-    task_error_(false),
     task_running_(false),
     heartbeat_seq_number_(0),
+    stop_(false),
+    internal_completed_(false),
+    completed_(0),
     task_perf_monitor_(1000000) {
-  const char* task_id_env;
-  if (FLAGS_task_id.empty())
-    task_id_env = getenv("TASK_ID");
-  else
-    task_id_env = FLAGS_task_id.c_str();
+  const char* task_id_env = getenv("FLAGS_task_id");
+
+  hostname_ = boost::asio::ip::host_name();
+
+  if (!FLAGS_completion_filename.empty()) {
+    // Open a completion file if the flag is set.
+    completion_file_.reset(fopen(FLAGS_completion_filename.c_str(), "r"));
+  }
+
   VLOG(1) << "Task ID is " << task_id_env;
   CHECK_NOTNULL(task_id_env);
   task_id_ = TaskIDFromString(task_id_env);
   setUpStorageEngine();
+
+  stringstream ss;
+  ss << "/tmp/" << task_id_env << ".pid";
+  string pid_filename = ss.str();
+
+  ofstream pid_file;
+  pid_file.open(pid_filename);
+  pid_file << getpid();
+}
+
+TaskLib::~TaskLib() {
+  // Close the completion file if open
+  if (completion_file_) {
+    fclose(completion_file_.get());
+  }
+}
+
+void TaskLib::Stop() {
+  printf("STOP CALLED\n");
+  fflush(stdout);
+  stop_ = true;
+  //while (task_running_) {
+  //  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+  //   //Wait until the monitor has stopped before sending the finalize message.
+  //}
+  sleep(1);
+  printf("Sending finalize message\n");
+  fflush(stdout);
+  SendFinalizeMessage(true);
+  printf("Finalise message sent\n");
+  fflush(stdout);
+  //exit(0);
 }
 
 void TaskLib::AddTaskStatisticsToHeartbeat(
@@ -59,17 +117,55 @@ void TaskLib::AddTaskStatisticsToHeartbeat(
   // Task ID and timestamp
   stats->set_task_id(task_id_);
   stats->set_timestamp(GetCurrentTimestamp());
-  // Memory allocated and used
-  stats->set_vsize(proc_stats.vsize);
-  stats->set_rsize(proc_stats.rss * getpagesize());
-  // Scheduler statistics
-  stats->set_sched_run(proc_stats.sched_run_ticks);
-  stats->set_sched_wait(proc_stats.sched_wait_runnable_ticks);
+  stats->set_hostname(hostname_);
+
+  if (use_procfs_) {
+    // Memory allocated and used
+    stats->set_vsize(proc_stats.vsize);
+    stats->set_rsize(proc_stats.rss * getpagesize());
+    // Scheduler statistics
+    stats->set_sched_run(proc_stats.sched_run_ticks);
+    stats->set_sched_wait(proc_stats.sched_wait_runnable_ticks);
+  }
+
+  if (!FLAGS_completion_filename.empty() || internal_completed_) {
+    VLOG(3) << "Adding completion stats!";
+    AddCompletionStatistics(stats);
+  } else {
+    VLOG(3) << "NOT ADDING COMPLETION STATS :(";
+  }
+}
+
+void TaskLib::AddCompletionStatistics(TaskPerfStatisticsSample *ts) {
+  // Retrieve the completion stats externally if the completion filename is set
+  // and simply use the set value otherwise.
+  if (!FLAGS_completion_filename.empty()) {
+    CHECK(completion_file_);
+
+    char str[20];
+    int num_bytes = fread(str, 1, 20, completion_file_.get());
+    rewind(completion_file_.get());
+    str[num_bytes] = '\0';
+    if (num_bytes) {
+    completed_ = strtod(str, NULL);
+    }
+  }
+  ts->set_completed(completed_);
+  // Mark ourselves as ready to stop once the task progress has been completed.
+  if (completed_ >= 1.0) {
+    exit_ = true;
+  }
 }
 
 void TaskLib::AwaitNextMessage() {
   // Finally, call back into ourselves.
   //AwaitNextMessage();
+}
+
+void TaskLib::SetCompleted(double completed) {
+  completed_ = completed;
+  // Mark us as getting updates within the internals.
+  internal_completed_ = true;
 }
 
 bool TaskLib::ConnectToCoordinator(const string& coordinator_uri) {
@@ -163,77 +259,50 @@ bool TaskLib::PullTaskInformationFromCoordinator(TaskID_t task_id,
   return true;
 }
 
-void TaskLib::Run(int argc, char *argv[]) {
-  // TODO(malte): Any setup work goes here
-  CHECK(ConnectToCoordinator(coordinator_uri_))
-          << "Failed to connect to coordinator; is it reachable?";
 
-  // Pull task information from coordinator if we do not have it already
-  PullTaskInformationFromCoordinator(task_id_, &task_descriptor_);
-
-  // Async receive -- the handler is responsible for invoking this again.
-  AwaitNextMessage();
-
-  // Run task -- this will only return when the task thread has finished.
-  task_running_ = true;
-  RunTask(argc, argv);
-
-  // We have dropped out of the main loop and are exiting
-  // TODO(malte): any cleanup we need to do; terminate running
-  // tasks etc.
-  VLOG(1) << "Dropped out of main loop -- cleaning up...";
-  // task_error_ will be set if the task failed for some reason.
-  SendFinalizeMessage(!task_error_);
-  chan_->Close();
-}
-
-void TaskLib::RunTask(int argc, char *argv[]) {
-  //CHECK(task_desc_.code_dependency.is_consumable());
-  LOG(INFO) << "Invoking task code...";
-  const char* task_id_env;
-  if (FLAGS_task_id.empty())
-    task_id_env = getenv("TASK_ID");
-  else
-    task_id_env = FLAGS_task_id.c_str();
-  VLOG(1) << "Task ID is " << task_id_env;
-  CHECK_NOTNULL(task_id_env);
-  task_id_ = TaskIDFromString(task_id_env);
-  // Convert the arguments
-  vector<char*>* task_arg_vec = new vector<char*>;
-  ConvertTaskArgs(argc, argv, task_arg_vec);
-  // task_main blocks until the task has exited
-  //  exec(task_desc_.code_dependency());
-
-  // Set up Storage Engine here, returning a void* to the Cache
-  // Alternate way of doing this: set up cache here and just pass the
-  // various pointers.
+void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
+  FLAGS_logtostderr=true;
+  FLAGS_v=3;
+  //VLOG(3) << "COORDINATOR URI: " << FLAGS_coordinator_uri;
+  ConnectToCoordinator(coordinator_uri_);
+  VLOG(3) << "Setting up storage engine";
   setUpStorageEngine();
+  VLOG(2) << "Finished setting up storage engine";
 
-  boost::thread task_thread(boost::bind(task_main, this, task_id_,
-          task_arg_vec));
   task_running_ = true;
+  VLOG(3) << "Setting up process statistics\n";
+
   ProcFSMonitor::ProcessStatistics_t current_stats;
+  VLOG(3) << "Finished setting up process statistics\n";
+
+  int FLAGS_heartbeat_interval = 1;
+
   // This will check if the task thread has joined once every heartbeat
   // interval, and go back to sleep if it has not.
   // TODO(malte): think about whether we'd like some kind of explicit
   // notification scheme in case the heartbeat interval is large.
-  while (!task_thread.timed_join(
-          boost::posix_time::seconds(FLAGS_heartbeat_interval))) {
-    // TODO(malte): Check if we've exited with an error
-    // if(error)
-    //   task_error_ = true;
-    // Notify the coordinator that we're still running happily
-    VLOG(1) << "Task thread has not yet joined, sending heartbeat...";
-    task_perf_monitor_.ProcessInformation(pid_, &current_stats);
-    SendHeartbeat(current_stats);
-    // TODO(malte): We'll need to receive any potential messages from the
-    // coordinator here, too. This is probably best done by a simple RecvA on
-    // the channel.
-  }
+
+  while (!stop_) {
+      // TODO(malte): Check if we've exited with an error
+      // if(error)
+      //   task_error_ = true;
+      // Notify the coordinator that we're still running happily
+
+      VLOG(1) << "Task thread has not yet joined, sending heartbeat...";
+
+      if (use_procfs_) {
+        task_perf_monitor_.ProcessInformation(pid_, &current_stats);
+      }
+      SendHeartbeat(current_stats);
+
+      sleep(FLAGS_heartbeat_interval);
+      // TODO(malte): We'll need to receive any potential messages from the
+      // coordinator here, too. This is probably best done by a simple RecvA on
+      // the channel.
+    }
+  printf("STOPPING HEARTBEATS\n");
+  fflush(stdout);
   task_running_ = false;
-  delete task_arg_vec;
-  // The finalizing message, reporting task success or failure, will be sent by
-  // the main loop once we drop out here.
 }
 
 void TaskLib::SendFinalizeMessage(bool success) {
@@ -253,17 +322,21 @@ void TaskLib::SendFinalizeMessage(bool success) {
 }
 
 void TaskLib::SendHeartbeat(
-    const ProcFSMonitor::ProcessStatistics_t& proc_stats) {
+  const ProcFSMonitor::ProcessStatistics_t& proc_stats) {
   BaseMessage bm;
   SUBMSG_WRITE(bm, task_heartbeat, task_id, task_id_);
   // Add current set of procfs statistics
-  TaskPerfStatisticsSample* stats =
+
+  TaskPerfStatisticsSample* taskperf_stats =
       bm.mutable_task_heartbeat()->mutable_stats();
-  AddTaskStatisticsToHeartbeat(proc_stats, stats);
+
+  AddTaskStatisticsToHeartbeat(proc_stats, taskperf_stats);
+
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
   SUBMSG_WRITE(bm, task_heartbeat, location, chan_->LocalEndpointString());
   SUBMSG_WRITE(bm, task_heartbeat, sequence_number, heartbeat_seq_number_++);
+
   VLOG(1) << "Sending heartbeat message!";
   SendMessageToCoordinator(&bm);
 }
@@ -375,7 +448,7 @@ void* TaskLib::GetObjectStart(const DataObjectID_t& id) {
                                                 // only one waiting on this
 
       while (!reference_not_t->writable ||
-             !(reference_not_t->request_type == GET_OBJECT )) {
+             !(reference_not_t->request_type == GET_OBJECT)) {
         cout << "Wait for reply " << endl;
         reference_not_t->cond_read.wait(lock_ref);
       }

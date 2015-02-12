@@ -8,29 +8,56 @@
 
 #include "base/common.h"
 #include "engine/task_lib.h"
-//#include "platforms/common.h"
+#include <cstdlib>
 
-//#include "platforms/common.pb.h"
-
-DECLARE_string(coordinator_uri);
+//DECLARE_string(coordinator_uri);
 DECLARE_string(resource_id);
 DECLARE_string(cache_name);
+extern char **environ;
 
 using namespace firmament;  // NOLINT
 
-// The main method: initializes, parses arguments and sets up a worker for
-// the platform we're running on.
-int main(int argc, char *argv[]) {
-  // N.B.: We must always call InitFirmament from any main(), since it performs
-  // setup work for command line flags, logging, etc.
-  VLOG(2) << "Calling common::InitFirmament";
-  common::InitFirmament(argc, argv);
+TaskLib *task_lib;
 
-  LOG(INFO) << "Firmament task library starting for resource "
-            << FLAGS_resource_id;
-  TaskLib task_lib;
+void TerminationCleanup() {
+  if (task_lib) {
+    task_lib->Stop();
+  }
+}
 
-  task_lib.Run(argc, argv);
+void LaunchTasklib() {
+  /* Sets up and runs a TaskLib monitor in the current thread. */
+  // Read these important variables from the environment.
+  sleep(1);
 
-  LOG(INFO) << "Executor's Run() method returned; terminating...";
+  string sargs = "--logtostderr";
+  string progargs = "task_lib";
+  boost::thread::id task_thread_id = boost::this_thread::get_id();
+
+  char* argv[2];
+  argv[0] = const_cast<char*>(progargs.c_str());
+
+  argv[1] = const_cast<char*>(sargs.c_str());
+    firmament::common::InitFirmament(2, argv);
+
+  task_lib = new TaskLib();
+  task_lib->RunMonitor(task_thread_id);
+}
+
+__attribute__((constructor)) static void task_lib_main() {
+  /*
+  Launched through the LD_PRELOAD environment variable.
+  Starts a new thread to run the TaskLib monitoring and lets
+  the main program continue execution in the current thread.
+  */
+
+  // Unset LD_PRELOAD to avoid us from starting launching monitors in
+  // child processes.
+  setenv("LD_PRELOAD", "", 1);
+
+  // Cleanup task lib before terminating the process.
+  atexit(TerminationCleanup);
+
+  VLOG(2) << "Starting tasklib monitor thread\n";
+  boost::thread t1(&LaunchTasklib);
 }
