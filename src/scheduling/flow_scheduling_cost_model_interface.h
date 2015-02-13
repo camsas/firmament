@@ -25,8 +25,8 @@ enum FlowSchedulingCostModelType {
 
 class FlowSchedulingCostModelInterface {
  public:
-  FlowSchedulingCostModelInterface() {};
-  virtual ~FlowSchedulingCostModelInterface() {};
+  FlowSchedulingCostModelInterface() {}
+  virtual ~FlowSchedulingCostModelInterface() {}
 
   // Costs pertaining to leaving tasks unscheduled
   virtual Cost_t TaskToUnscheduledAggCost(TaskID_t task_id) = 0;

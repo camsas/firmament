@@ -8,6 +8,7 @@
 #define FIRMAMENT_MISC_DIMACS_EXPORTER_H
 
 #include <string>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"

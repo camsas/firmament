@@ -4,6 +4,8 @@
 #ifndef FIRMAMENT_SCHEDULING_DIMACS_REMOVE_NODE_H
 #define FIRMAMENT_SCHEDULING_DIMACS_REMOVE_NODE_H
 
+#include <string>
+
 #include "base/types.h"
 #include "misc/map-util.h"
 #include "scheduling/flow_graph_arc.h"
@@ -13,18 +15,17 @@
 
 namespace firmament {
 
-  class DIMACSRemoveNode : public DIMACSChange {
+class DIMACSRemoveNode : public DIMACSChange {
+ public:
+  explicit DIMACSRemoveNode(const FlowGraphNode& node): DIMACSChange(),
+    node_id_(node.id_) {
+  }
 
-  public:
-  DIMACSRemoveNode(const FlowGraphNode& node): DIMACSChange(), node_id_(node.id_) {
-    }
+  const string GenerateChange() const;
 
-    const string GenerateChange() const;
-
-  private:
-    uint64_t node_id_;
-
-  };
+ private:
+  uint64_t node_id_;
+};
 
 } // namespace firmament
 

@@ -23,4 +23,4 @@ namespace firmament {
     InsertIfNotPresent(&arc->dst_node_->incoming_arc_map_, arc->src_, arc);
   }
 
-}
+} // namespace firmament

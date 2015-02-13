@@ -59,9 +59,6 @@ class QuincyScheduler : public EventDrivenScheduler {
  private:
   uint64_t ApplySchedulingDeltas(const vector<SchedulingDelta*>& deltas);
   void ApplyDeltas();
-  void NodeBindingToSchedulingDelta(const FlowGraphNode& src,
-                                    const FlowGraphNode& dst,
-                                    SchedulingDelta* delta);
   void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   void RegisterLocalResource(ResourceID_t res_id);

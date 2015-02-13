@@ -277,7 +277,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       int status;
       while (waitpid(pid, &status, 0) != pid) {
         VLOG(3) << "Waiting for child process " << pid << " to exit...";
-      };
+      }
       if (WIFEXITED(status)) {
         VLOG(1) << "Task process with PID " << pid << " exited with status "
                 << WEXITSTATUS(status);

@@ -289,7 +289,7 @@ int32_t WaitForFinish(pid_t pid) {
   int status;
   while (waitpid(pid, &status, 0) != pid) {
     VLOG(2) << "Waiting for child process " << pid << " to exit...";
-  };
+  }
   if (WIFEXITED(status)) {
     VLOG(1) << "Subprocess with PID " << pid << " exited with status "
             << WEXITSTATUS(status);

@@ -127,6 +127,7 @@ class TaskLib {
 
   void setUpStorageEngine();
   void AddCompletionStatistics(TaskPerfStatisticsSample *ts);
+
  private:
   pid_t pid_;
   volatile bool task_running_;

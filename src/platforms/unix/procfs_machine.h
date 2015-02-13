@@ -36,7 +36,7 @@ typedef struct {
 
 class ProcFSMachine {
  public:
-  explicit ProcFSMachine();
+  ProcFSMachine();
   const MachinePerfStatisticsSample* CreateStatistics(
       MachinePerfStatisticsSample* stats);
 

@@ -4,17 +4,17 @@
 #ifndef FIRMAMENT_SCHEDULING_DIMACS_CHANGE_H
 #define FIRMAMENT_SCHEDULING_DIMACS_CHANGE_H
 
+#include <string>
+
 namespace firmament {
 
-  class DIMACSChange {
+class DIMACSChange {
+ public:
+  virtual ~DIMACSChange() {
+  }
 
-  public:
-    virtual ~DIMACSChange() {
-    };
-
-    virtual const string GenerateChange() const = 0;
-
-  };
+  virtual const string GenerateChange() const = 0;
+};
 
 } // namespace firmament
 

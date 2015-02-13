@@ -9,21 +9,25 @@ namespace firmament {
 
 RandomCostModel::RandomCostModel() { }
 
-// The cost of leaving a task unscheduled should be higher than the cost of scheduling it.
+// The cost of leaving a task unscheduled should be higher than the cost of
+// scheduling it.
 Cost_t RandomCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
+  uint32_t seed = 0;
   int64_t half_max_arc_cost = FLAGS_flow_max_arc_cost / 2;
-  return half_max_arc_cost + rand() % half_max_arc_cost + 1;
+  return half_max_arc_cost + rand_r(&seed) % half_max_arc_cost + 1;
 }
 
-// The costfrom the unscheduled to the sink is 0. Setting it to a value greater than
-// zero affects all the unscheduled tasks. It is better to affect the cost of not running
-// a task through the cost from the task to the unscheduled aggregator.
+// The costfrom the unscheduled to the sink is 0. Setting it to a value greater
+// than zero affects all the unscheduled tasks. It is better to affect the cost
+// of not running a task through the cost from the task to the unscheduled
+// aggregator.
 Cost_t RandomCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
   return 0ULL;
 }
 
-// The cost from the task to the cluster aggregator models how expensive is a task to run
-// on any node in the cluster. The cost of the topology's arcs are the same for all the tasks.
+// The cost from the task to the cluster aggregator models how expensive is a
+// task to run on any node in the cluster. The cost of the topology's arcs are
+// the same for all the tasks.
 Cost_t RandomCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }

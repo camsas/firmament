@@ -4,7 +4,7 @@
 // Naive fibonacci series computation.
 
 #include "storage/reference_types.h"
-#include "examples/fibonacci/fibonacci.h"
+#include "examples/store_example/fibonacci/fibonacci.h"
 
 #include <iostream>  // NOLINT
 #include <cstdlib>

@@ -838,10 +838,11 @@ void Coordinator::InformStorageEngineNewResource(ResourceDescriptor* rd_new) {
     // storage engines.
     if (rs->descriptor().type() != ResourceDescriptor::RESOURCE_MACHINE)
       continue;
-    if (rs->descriptor().storage_engine() != "")
+    if (rs->descriptor().storage_engine() != "") {
       VLOG(2) << "Resource " << rs->descriptor().uuid() << " does not have a "
               << "storage engine URI set; skipping notification!";
       continue;
+    }
     const string& uri = rs->descriptor().storage_engine();
     CHECK_NE(uri, "") << "Missing storage engine URI on RD for "
                       << rs->descriptor().uuid();
