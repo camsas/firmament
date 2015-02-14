@@ -9,12 +9,17 @@ extern "C" {
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 }
 #include <boost/regex.hpp>
 
 #include "base/common.h"
 #include "base/types.h"
 #include "misc/equivclasses.h"
+#include "misc/utils.h"
+#include "misc/map-util.h"
 
 DEFINE_bool(debug_tasks, false,
             "Run tasks through a debugger (gdb).");
@@ -22,6 +27,8 @@ DEFINE_uint64(debug_interactively, 0,
               "Run this task ID inside an interactive debugger.");
 DEFINE_bool(perf_monitoring, true,
             "Enable performance monitoring for tasks executed.");
+DEFINE_string(task_lib_path, "",
+              "Path where task_lib.a and task_lib_inject.so are.");
 
 namespace firmament {
 namespace executor {
@@ -97,23 +104,34 @@ void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
 
 void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
                                          TaskFinalReport* report) {
+  uint64_t end_time = GetCurrentTimestamp();
+  uint64_t *start_time = FindOrNull(task_start_times_, td.uid());
+  // _SHOULD_ be in the start time from before!
+  CHECK_NOTNULL(start_time);
   report->set_task_id(GenerateTaskEquivClass(td));
+  report->set_start_time(*start_time);
+  report->set_finish_time(end_time);
+   // Remove the start time from the map
+  task_start_times_.erase(td.uid());
+
+
   // Load perf data, if it exists
   if (FLAGS_perf_monitoring) {
     FILE* fptr;
-    char line[300];
+    char line[1024];
     // XXX(malte): This is an ugly hack that avoids a race between the data file
     // being written by the perf utility and it being opened for reading.
     // We really need a proper solution here, especially as this is on the
     // critical path in the coordinator's main event handler thread.
-    sleep(1);
+    sleep(3);
     if ((fptr = fopen(PerfDataFileName(td).c_str(), "r")) == NULL) {
       LOG(ERROR) << "Failed to open FD for reading of perf data. FD " << fptr;
     }
     VLOG(1) << "Processing perf output in file " << PerfDataFileName(td)
             << "...";
     while (!feof(fptr)) {
-      if (fgets(line, 300, fptr) != NULL) {
+      char* lptr = fgets(line, 1024, fptr);
+      if (lptr != NULL) {
         GetPerfDataFromLine(report, line);
       }
     }
@@ -124,6 +142,11 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
 void LocalExecutor::RunTask(TaskDescriptor* td,
                             bool firmament_binary) {
   CHECK(td);
+  // Save the start time.
+  uint64_t start_time = GetCurrentTimestamp();
+  InsertIfNotPresent(&task_start_times_, td->uid(), start_time);
+  // Mark the start time of the task.
+  td->set_started(start_time);
   // XXX(malte): Move this over to use RunProcessAsync, instead of custom thread
   // spawning.
   // TODO(malte): We lose the thread reference here, so we can never join this
@@ -145,7 +168,7 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   // is this a Firmament task binary? (on/off; will cause default arugments to
   // be passed)
   bool res = (RunProcessSync(
-      td->binary(), args, (FLAGS_perf_monitoring && firmament_binary),
+      td->binary(), args, FLAGS_perf_monitoring,
       (FLAGS_debug_tasks || ((FLAGS_debug_interactively != 0) &&
                              (td->uid() == FLAGS_debug_interactively))),
       firmament_binary) == 0);
@@ -215,6 +238,10 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
   argv.push_back(NULL);
   // Print the whole command line
   string full_cmd_line;
+  if (!default_args) {
+    setenv("LD_LIBRARY_PATH", FLAGS_task_lib_path.c_str(), 1);
+    setenv("LD_PRELOAD", "task_lib_inject.so", 1);
+  }
   for (vector<char*>::const_iterator arg_iter = argv.begin();
        arg_iter != argv.end();
        ++arg_iter) {
@@ -235,17 +262,11 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       break;
     case 0: {
       // Child
-      // set up pipes
-      //dup2(pipe_to[0], STDIN_FILENO);
-      //dup2(pipe_from[1], STDOUT_FILENO);
-      //dup2(pipe_from[2], STDERR_FILENO);
-      // close unnecessary pipe descriptors
-      //close(pipe_to[0]);
-      //close(pipe_to[1]);
-      //close(pipe_from[0]);
-      //close(pipe_from[1]);
-      //close(pipe_from[2]);
-      // Convert args from string to char*
+      // Set up stderr and stdout log redirections to files
+      int fd = open("/tmp/tasklog", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+      dup2(fd, STDOUT_FILENO);
+      dup2(fd, STDERR_FILENO);
+      close(fd);
       // Run the task binary
       execvp(argv[0], &argv[0]);
       // execl only returns if there was an error
@@ -259,18 +280,6 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       // Pin the task to the appropriate resource
       if (topology_manager_)
         topology_manager_->BindPIDToResource(pid, local_resource_id_);
-      // close unused pipe ends
-      //close(pipe_to[0]);
-      //close(pipe_from[1]);
-      // TODO(malte): fix the pipe stuff to work properly
-      //close(pipe_to[1]);
-      // TODO(malte): ReadFromPipe is a synchronous call that will only return
-      // once the pipe has been closed! Check if this is actually the semantic
-      // we want.
-      // The fact that we cannot concurrently read from the STDOUT and the
-      // STDERR pipe this way suggest the answer is that it is not...
-      //ReadFromPipe(pipe_from[0]);
-      //ReadFromPipe(pipe_from[1]);
       // Notify any other threads waiting to execute processes (?)
       exec_condvar_.notify_one();
       // Wait for task to terminate

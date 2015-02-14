@@ -15,7 +15,7 @@
 
 namespace firmament {
 
-typedef uint64_t Cost_t;
+typedef int64_t Cost_t;
 
 class QuincyCostModel : public FlowSchedulingCostModelInterface {
  public:

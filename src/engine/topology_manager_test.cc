@@ -5,6 +5,8 @@
 
 #include <gtest/gtest.h>
 
+#include <fcntl.h>
+
 #include "base/common.h"
 #include "engine/topology_manager.h"
 #include "misc/utils.h"
@@ -53,8 +55,15 @@ TEST_F(TopologyManagerTest, ParseSyntheticTopology) {
   //  * 2 sockets in each of them,
   //  * 2 physical cores with private L2 per socket,
   //  * 2 threads per core (sharing L2).
-  t.LoadAndParseSyntheticTopology("n:2 2 2 1 p:2");
+  t.LoadAndParseSyntheticTopology("n:2 2 3 1 p:2");
   t.DebugPrintRawTopology();
+  ResourceTopologyNodeDescriptor res_desc;
+  t.AsProtobuf(&res_desc);
+  LOG(INFO) << res_desc.DebugString();
+  FILE* fd = fopen("/tmp/mach_test.pbin", "w");
+  CHECK(res_desc.SerializePartialToFileDescriptor(fileno(fd)));
+  fflush(fd);
+  fclose(fd);
 }
 
 // Tests that we can parse a synthetic topology.

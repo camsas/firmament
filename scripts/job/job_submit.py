@@ -4,10 +4,11 @@ from base import reference_desc_pb2
 from google.protobuf import text_format
 import httplib, urllib, re, sys, random
 import binascii
+import time
 
 if len(sys.argv) < 4:
   print "usage: job_submit.py <coordinator hostname> <web UI port> " \
-      "<task binary> [<input object>]"
+      "<task binary> [<job name>] [<input object>]"
   sys.exit(1)
 
 hostname = sys.argv[1]
@@ -16,19 +17,32 @@ port = int(sys.argv[2])
 job_desc = job_desc_pb2.JobDescriptor()
 
 job_desc.uuid = "" # UUID will be set automatically on submission
-job_desc.name = "testjob"
+if len(sys.argv) > 4:
+  job_desc.name = sys.argv[4]
+else:
+  job_desc.name = "anonymous_job_at_%d" % (int(time.time()))
 job_desc.root_task.uid = 0
 job_desc.root_task.name = "root_task"
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
 job_desc.root_task.binary = sys.argv[3]
 #job_desc.root_task.args.append("--v=2")
 job_desc.root_task.inject_task_lib = True
+# NGINX
+#job_desc.root_task.args.append("-p")
+#job_desc.root_task.args.append("/tmp")
+#job_desc.root_task.args.append("-c")
+#job_desc.root_task.args.append("/tmp/nginx.conf")
+# NAIAD
+#job_desc.root_task.args.append("connectedcomponents")
+#job_desc.root_task.args.append("100000")
+#job_desc.root_task.args.append("200000")
+# SLEEP
 job_desc.root_task.args.append("10")
 #job_desc.root_task.args.append("100000")
 #root_input1 = job_desc.root_task.dependencies.add()
 #root_input1.id = 123456789
 #root_input1.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
-if len(sys.argv) == 5:
+if len(sys.argv) == 6:
   input_id = binascii.unhexlify(sys.argv[4])
 else:
   input_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')

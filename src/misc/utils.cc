@@ -111,8 +111,8 @@ JobID_t GenerateJobID(uint64_t job_id) {
 TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc) {
   size_t hash = 0;
   //boost::hash_combine(hash, job_desc.uuid());
+  boost::hash_combine(hash, job_desc.name());
   boost::hash_combine(hash, job_desc.root_task().binary());
-  boost::hash_combine(hash, job_desc.root_task().name());
 
   return static_cast<TaskID_t>(hash);
 }

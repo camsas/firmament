@@ -60,16 +60,18 @@ Coordinator::Coordinator(PlatformID platform_id)
     task_table_(new TaskMap_t),
     topology_manager_(new TopologyManager()),
     object_store_(new store::SimpleObjectStore(uuid_)),
-    parent_chan_(NULL) {
+    parent_chan_(NULL),
+    knowledge_base_(new KnowledgeBase()),
+    hostname_(boost::asio::ip::host_name()) {
   // Start up a coordinator according to the platform parameter
-  string hostname = boost::asio::ip::host_name();
-  string desc_name = "Coordinator on " + hostname;
+  string desc_name = "Coordinator on " + hostname_;
   resource_desc_.set_uuid(to_string(uuid_));
   resource_desc_.set_friendly_name(desc_name);
   resource_desc_.set_type(ResourceDescriptor::RESOURCE_MACHINE);
   resource_desc_.set_storage_engine(object_store_->get_listening_interface());
   local_resource_topology_->mutable_resource_desc()->CopyFrom(
       resource_desc_);
+
   // Set up the scheduler
   if (FLAGS_scheduler == "simple") {
     // Simple random first-available scheduler
@@ -230,13 +232,12 @@ void Coordinator::Run() {
       stats.set_resource_id(to_string(uuid_));
       machine_monitor_.CreateStatistics(&stats);
       // Record this sample locally
-      knowledge_base_.AddMachineSample(stats);
+      knowledge_base_->AddMachineSample(stats);
       if (parent_chan_ != NULL) {
         SendHeartbeatToParent(stats);
       }
       last_heartbeat_time = cur_time;
     }
-    //boost::this_thread::sleep(boost::posix_time::milliseconds(100));
   }
 
   // We have dropped out of the main loop and are exiting
@@ -381,9 +382,20 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       // Update timestamp
       (*rsp)->set_last_heartbeat(GetCurrentTimestamp());
       // Record resource statistics sample
-      knowledge_base_.AddMachineSample(msg.load());
+      knowledge_base_->AddMachineSample(msg.load());
   }
 }
+
+void Coordinator::HandleTaskFinalReport(const TaskFinalReport& report) {
+  VLOG(1) << "Handling task final report!";
+  TaskDescriptor *td_ptr = FindPtrOrNull(*task_table_, report.task_id());
+
+  if (parent_chan_ == NULL) {
+    CHECK_NOTNULL(td_ptr);
+    knowledge_base_->ProcessTaskFinalReport(report);
+  }
+}
+
 
 void Coordinator::HandleIONotification(const BaseMessage& bm,
                                        const string& remote_uri) {
@@ -480,15 +492,27 @@ void Coordinator::HandleRegistrationRequest(
 
 void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
   TaskID_t task_id = msg.task_id();
-  TaskDescriptor** tdp = FindOrNull(*task_table_, task_id);
+  TaskDescriptor* tdp = FindPtrOrNull(*task_table_, task_id);
   if (!tdp) {
     LOG(WARNING) << "HEARTBEAT from UNKNOWN task (ID: "
                  << task_id << ")!";
   } else {
     LOG(INFO) << "HEARTBEAT from task " << task_id;
+    tdp->set_last_location(msg.location());
+    // Remember the current location of this task
     // Process the profiling information submitted by the task, add it to
     // the knowledge base
-    knowledge_base_.AddTaskSample(msg.stats());
+    knowledge_base_->AddTaskSample(msg.stats());
+  }
+
+  // If we have a parent coordinator on whose behalf we are managing this task,
+  // forward the message
+  if (parent_chan_ != NULL) {
+    BaseMessage bm;
+    bm.mutable_task_heartbeat()->CopyFrom(msg);
+    SendMessageToRemote(parent_chan_, &bm);
+  } else {
+    knowledge_base_->AddTaskSample(msg.stats());
   }
 }
 
@@ -588,43 +612,64 @@ void Coordinator::HandleTaskStateChange(
   VLOG(1) << "Task " << msg.id() << " now in state "
           << ENUM_TO_STRING(TaskDescriptor::TaskState, msg.new_state())
           << ".";
-  TaskDescriptor** td_ptr = FindOrNull(*task_table_, msg.id());
+  TaskDescriptor* td_ptr = FindPtrOrNull(*task_table_, msg.id());
   CHECK(td_ptr) << "Received task state change message for task "
                 << msg.id();
-  // First check if this is a delegated task, and forward the message if so
-  if ((*td_ptr)->has_delegated_from()) {
-    BaseMessage bm;
-    bm.mutable_task_state()->CopyFrom(msg);
-    m_adapter_->SendMessageToEndpoint((*td_ptr)->delegated_from(), bm);
-    return;
-  }
+
   switch (msg.new_state()) {
     case TaskDescriptor::COMPLETED:
     {
-      (*td_ptr)->set_state(TaskDescriptor::COMPLETED);
+      td_ptr->set_state(TaskDescriptor::COMPLETED);
       TaskFinalReport report;
-      scheduler_->HandleTaskCompletion(*td_ptr, &report);
-      knowledge_base_.ProcessTaskFinalReport(report);
+      scheduler_->HandleTaskCompletion(td_ptr, &report);
+      // First check if this is a delegated task, and forward the message if so
+      if (td_ptr->has_delegated_from()) {
+        BaseMessage bm;
+        bm.mutable_task_state()->CopyFrom(msg);
+
+        // Send along completion statistics to the coordinator as well.
+        // TODO make this all const incuding hantle taskcompletion method and remove duplication from
+        // Switch statement below.
+        TaskFinalReport *sending_rep = bm.mutable_taskfinal_report();
+        sending_rep->CopyFrom(report);
+        sending_rep->set_task_id(td_ptr->uid());
+
+        m_adapter_->SendMessageToEndpoint(td_ptr->delegated_from(), bm);
+      }
+
+      // TODO(malte): Fix! This fills the report queue with rubbish for the
+      // master (top-level) coordinator. For now, we ignore the reports: no
+      // local resources -> the job must have been delegated to a child
+      // coordinator.
+      if (FLAGS_include_local_resources) {
+        knowledge_base_->ProcessTaskFinalReport(report);
+      }
+
       break;
     }
     case TaskDescriptor::FAILED:
     {
-      (*td_ptr)->set_state(TaskDescriptor::FAILED);
-      scheduler_->HandleTaskFailure(*td_ptr);
+      td_ptr->set_state(TaskDescriptor::FAILED);
+      scheduler_->HandleTaskFailure(td_ptr);
       break;
     }
     default:
       VLOG(1) << "Task " << msg.id() << "'s state changed to "
               << static_cast<uint64_t> (msg.new_state());
-      (*td_ptr)->set_state(msg.new_state());
+      td_ptr->set_state(msg.new_state());
       break;
   }
+  // Do not run if delegated
+  if (td_ptr->has_delegated_from()) {
+    return;
+  }
+
   // This task state change may have caused the job to have schedulable tasks
   // TODO(malte): decide if we should do invoke the scheduler here, or kick off
   // the scheduling iteration from within the earlier handler call into the
   // scheduler
   JobDescriptor* jd = FindOrNull(*job_table_,
-                                 JobIDFromString((*td_ptr)->job_id()));
+                                 JobIDFromString(td_ptr->job_id()));
   scheduler_->ScheduleJob(jd);
   // XXX(malte): tear down the respective connection, cleanup
 }
@@ -681,6 +726,10 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
   if (!InsertIfNotPresent(task_table_.get(), td->uid(), td)) {
     VLOG(1) << "Task " << td->uid() << " already exists in "
             << "task table, so not adding it again.";
+    TaskDescriptor* existing_td = FindPtrOrNull(*task_table_, td->uid());
+    CHECK_NOTNULL(existing_td);
+    CHECK_EQ(existing_td->state(), TaskDescriptor::COMPLETED);
+    InsertOrUpdate(task_table_.get(), td->uid(), td);
   }
   // Adds its outputs to the object table and generate future references for
   // them.
@@ -743,17 +792,26 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   new_jd = FindOrNull(*job_table_, new_job_id);
   // Clone the JD and update it with some information
   new_jd->set_uuid(to_string(new_job_id));
+
   // Set the root task ID (which is 0 or unset on submission)
-  new_jd->mutable_root_task()->set_uid(GenerateRootTaskID(*new_jd));
+  TaskDescriptor *root_task = new_jd->mutable_root_task();
+  root_task->set_uid(GenerateRootTaskID(*new_jd));
+
+  // Compute the absolute deadline for the root task if it has a deadline
+  // set.
+  if (root_task->has_relative_deadline()) {
+    root_task->set_absolute_deadline(GetCurrentTimestamp() + root_task->relative_deadline() * 1000000);
+  }
+
   // Create a dynamic task graph for the job
-  TaskGraph* new_dtg = new TaskGraph(new_jd->mutable_root_task());
+  TaskGraph* new_dtg = new TaskGraph(root_task);
   // Store the task graph
   InsertIfNotPresent(&task_graph_table_, new_job_id, new_dtg);
   // Add itself and its spawned tasks (if any) to the relevant tables:
   // - tasks to the task_table_
   // - inputs/outputs to the object_table_
   // and set the job_id field on every task.
-  AddJobsTasksToTables(new_jd->mutable_root_task(), new_job_id);
+  AddJobsTasksToTables(root_task, new_job_id);
   // Set up job outputs
   for (RepeatedPtrField<string>::const_iterator output_iter =
        new_jd->output_ids().begin();

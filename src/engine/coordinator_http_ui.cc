@@ -490,7 +490,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   // Check if we have any statistics for this resource
   if (!res_id.empty()) {
     const deque<MachinePerfStatisticsSample>* result =
-        coordinator_->knowledge_base().GetStatsForMachine(
+        coordinator_->knowledge_base()->GetStatsForMachine(
             ResourceIDFromString(res_id));
     if (result) {
       output += "[";
@@ -509,7 +509,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     CHECK_NOTNULL(td);
     output += "{ \"samples\": [";
     const deque<TaskPerfStatisticsSample>* samples_result =
-        coordinator_->knowledge_base().GetStatsForTask(
+        coordinator_->knowledge_base()->GetStatsForTask(
             TaskIDFromString(task_id));
     if (samples_result) {
       bool first = true;
@@ -526,7 +526,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     output += "]";
     output += ", \"reports\": [";
     const deque<TaskFinalReport>* report_result =
-        coordinator_->knowledge_base().GetFinalStatsForTask(
+        coordinator_->knowledge_base()->GetFinalStatsForTask(
             GenerateTaskEquivClass(*td));
     if (report_result) {
       bool first = true;

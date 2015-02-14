@@ -211,7 +211,7 @@ class Coordinator : public Node,
   shared_ptr<ObjectStoreInterface> get_object_store() {
       return object_store_;
   }
-  const KnowledgeBase& knowledge_base() {
+  const KnowledgeBase* knowledge_base() {
     return knowledge_base_;
   }
 
@@ -239,6 +239,7 @@ class Coordinator : public Node,
   void HandleRegistrationRequest(const RegistrationMessage& msg);
   void HandleTaskDelegationRequest(const TaskDelegationMessage& msg,
                                    const string& endpoint);
+  void HandleTaskFinalReport(const TaskFinalReport& report);
   void HandleTaskHeartbeat(const TaskHeartbeatMessage& msg);
   void HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
                              const string& remote_endpoint);
@@ -289,7 +290,9 @@ class Coordinator : public Node,
   // Machine statistics monitor
   ProcFSMachine machine_monitor_;
   // Knowledge base
-  KnowledgeBase knowledge_base_;
+  KnowledgeBase* knowledge_base_;
+  // Local machine's host name
+  const string hostname_;
 
 #ifdef __SIMULATE_SYNTHETIC_DTG__
   shared_ptr<sim::SimpleDTGGenerator> sim_dtg_generator_;
