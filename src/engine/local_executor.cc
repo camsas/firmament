@@ -102,23 +102,34 @@ void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
 
 void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
                                          TaskFinalReport* report) {
+  uint64_t end_time = GetCurrentTimestamp();
+  uint64_t *start_time = FindOrNull(task_start_times_, td.uid());
+  // _SHOULD_ be in the start time from before!
+  CHECK_NOTNULL(start_time);
   report->set_task_id(GenerateTaskEquivClass(td));
+  report->set_start_time(*start_time);
+  report->set_finish_time(end_time);
+   // Remove the start time from the map
+  task_start_times_.erase(td.uid());
+
+
   // Load perf data, if it exists
   if (FLAGS_perf_monitoring) {
     FILE* fptr;
-    char line[300];
+    char line[1024];
     // XXX(malte): This is an ugly hack that avoids a race between the data file
     // being written by the perf utility and it being opened for reading.
     // We really need a proper solution here, especially as this is on the
     // critical path in the coordinator's main event handler thread.
-    sleep(1);
+    sleep(3);
     if ((fptr = fopen(PerfDataFileName(td).c_str(), "r")) == NULL) {
       LOG(ERROR) << "Failed to open FD for reading of perf data. FD " << fptr;
     }
     VLOG(1) << "Processing perf output in file " << PerfDataFileName(td)
             << "...";
     while (!feof(fptr)) {
-      if (fgets(line, 300, fptr) != NULL) {
+      char* lptr = fgets(line, 1024, fptr);
+      if (lptr != NULL) {
         GetPerfDataFromLine(report, line);
       }
     }
