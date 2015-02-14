@@ -15,6 +15,7 @@
 #include "misc/map-util.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/quincy_cost_model.h"
+#include "sim/trace-extract/event_desc.pb.h"
 
 namespace firmament {
 namespace sim {
@@ -55,7 +56,6 @@ class GoogleTraceSimulator {
   TaskDescriptor* AddTaskToJob(JobDescriptor* jd_ptr);
 
   void ApplyMachineEvents(uint64_t last_time, uint64_t cur_time,
-                          multimap<uint64_t, MachineEvent>* machine_events,
                           FlowGraph* flow_graph,
                           const ResourceTopologyNodeDescriptor& machine_tmpl);
 
@@ -66,7 +66,7 @@ class GoogleTraceSimulator {
   void LoadInitialMachines(int64_t max_num);
   void LoadInitialTasks();
   // Loads all the machine events and returns a multimap timestamp -> event.
-  multimap<uint64_t, MachineEvent>& LoadMachineEvents();
+  void LoadMachineEvents();
   // Loads all the task runtimes and returns map task_identifier -> runtime.
   unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& LoadTasksRunningTime();
 
@@ -92,6 +92,8 @@ class GoogleTraceSimulator {
                        unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime,
                        multimap<uint64_t, TaskDescriptor*>& task_end_runtime);
 
+  EventDescriptor_EventType TranslateMachineEventToEventType(int32_t machine_event);
+
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.
   unordered_map<string, string> uuid_conversion_map_;
@@ -103,6 +105,9 @@ class GoogleTraceSimulator {
   unordered_map<uint64_t, ResourceID_t> machine_id_to_res_id_;
   // Map used to convert between the google trace task_ids and the Firmament task descriptors.
   unordered_map<TaskIdentifier, TaskDescriptor*, TaskIdentifierHasher> task_id_to_td_;
+
+  // The map storing the simulator events. Maps from timestamp to simulator event.
+  multimap<uint64_t, EventDescriptor*> events_;
 
   string trace_path_;
   // The root node of the machine topology.
