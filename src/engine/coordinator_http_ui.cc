@@ -306,8 +306,8 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
   if (rd_ptr) {
     dict.SetValue("RES_ID", rd_ptr->uuid());
     dict.SetValue("RES_FRIENDLY_NAME", rd_ptr->friendly_name());
-    ResourceTopologyNodeDescriptor* rtnd = coordinator_->GetResourceTreeNode(rid);
-    dict.SetValue("RES_REC", to_string(GenerateResourceTopologyEquivClass(*rtnd)));
+    ResourceTopologyNodeDescriptor* rtnd = coordinator_->GetResourceTreeNode(rid); // NOLINT
+    dict.SetValue("RES_REC", to_string(GenerateResourceTopologyEquivClass(*rtnd))); // NOLINT
     dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
                                              rd_ptr->type()));
     dict.SetValue("RES_STATUS",
@@ -405,7 +405,7 @@ void CoordinatorHTTPUI::HandleJobDTGURI(http::request_ptr& http_request,  // NOL
     if (!jd) {
       // Job not found here
       VLOG(1) << "Requested DTG for non-existent job " << job_id;
-      ErrorResponse(http::types::RESPONSE_CODE_NOT_FOUND, http_request, tcp_conn);
+      ErrorResponse(http::types::RESPONSE_CODE_NOT_FOUND, http_request, tcp_conn); // NOLINT
       return;
     }
     // Return serialized DTG
@@ -476,7 +476,8 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   // Get resource information from coordinator
   string res_id = http_request->get_query("res");
   string task_id = http_request->get_query("task");
-  if (!(res_id.empty() || task_id.empty()) || (res_id.empty() && task_id.empty())) {
+  if (!(res_id.empty() || task_id.empty()) ||
+      (res_id.empty() && task_id.empty())) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     LOG(WARNING) << "Invalid stats request!";
@@ -486,7 +487,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   // Check if we have any statistics for this resource
   if (!res_id.empty()) {
     const deque<MachinePerfStatisticsSample>* result =
-        coordinator_->knowledge_base().GetStatsForMachine(
+        coordinator_->knowledge_base()->GetStatsForMachine(
             ResourceIDFromString(res_id));
     if (result) {
       output += "[";
@@ -505,7 +506,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     CHECK_NOTNULL(td);
     output += "{ \"samples\": [";
     const deque<TaskPerfStatisticsSample>* samples_result =
-        coordinator_->knowledge_base().GetStatsForTask(
+        coordinator_->knowledge_base()->GetStatsForTask(
             TaskIDFromString(task_id));
     if (samples_result) {
       bool first = true;
@@ -522,7 +523,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     output += "]";
     output += ", \"reports\": [";
     const deque<TaskFinalReport>* report_result =
-        coordinator_->knowledge_base().GetFinalStatsForTask(
+        coordinator_->knowledge_base()->GetFinalStatsForTask(
             GenerateTaskEquivClass(*td));
     if (report_result) {
       bool first = true;
