@@ -1,0 +1,20 @@
+// The Firmament project
+// Copyright (c) 2015-2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
+//
+// Simulator event descriptor protobuf.
+
+package firmament;
+
+message EventDescriptor {
+  enum EventType {
+    ADD_MACHINE = 0;
+    REMOVE_MACHINE = 1;
+    UPDATE_MACHINE = 2;
+    TASK_END_RUNTIME = 3;
+  }
+
+  required EventType type = 1;
+  optional uint64 machine_id = 2;
+  optional uint64 task_id = 3;
+  optional uint64 job_id = 4;
+}

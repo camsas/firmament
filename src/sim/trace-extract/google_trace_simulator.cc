@@ -196,9 +196,19 @@ void GoogleTraceSimulator::LoadInitialTasks() {
             << job_id_to_jd_.size() << " initial jobs.";
 }
 
-multimap<uint64_t, MachineEvent>& GoogleTraceSimulator::LoadMachineEvents() {
-  multimap<uint64_t, MachineEvent> *machine_events = new multimap<uint64_t, MachineEvent>();
+EventDescriptor_EventType GoogleTraceSimulator::TranslateMachineEventToEventType(int32_t machine_event) {
+  if (machine_event == MACHINE_ADD) {
+    return EventDescriptor::ADD_MACHINE;
+  } else if (machine_event == MACHINE_REMOVE) {
+    return EventDescriptor::REMOVE_MACHINE;
+  } else if (machine_event == MACHINE_UPDATE) {
+    return EventDescriptor::UPDATE_MACHINE;
+  } else {
+    LOG(FATAL) << "Unexpected machine event type: " << machine_event;
+  }
+}
 
+void GoogleTraceSimulator::LoadMachineEvents() {
   char line[200];
   vector<string> cols;
   FILE* machines_file;
@@ -215,13 +225,13 @@ multimap<uint64_t, MachineEvent>& GoogleTraceSimulator::LoadMachineEvents() {
                    << cols.size() << " columns.";
       } else {
         // row schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
-        MachineEvent machine_event;
+        EventDescriptor* event_desc = new EventDescriptor();
+        event_desc->set_machine_id(lexical_cast<uint64_t>(cols[1]));
+        event_desc->set_type(TranslateMachineEventToEventType(lexical_cast<int32_t>(cols[2])));
         uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
-        machine_event.machine_id = lexical_cast<uint64_t>(cols[1]);
-        machine_event.event_type = lexical_cast<int32_t>(cols[2]);
-        if (machine_event.event_type == MACHINE_ADD ||
-            machine_event.event_type == MACHINE_REMOVE) {
-          machine_events->insert(pair<uint64_t, MachineEvent>(timestamp, machine_event));
+        if (event_desc->type() == EventDescriptor::REMOVE_MACHINE ||
+            event_desc->type() == EventDescriptor::ADD_MACHINE) {
+          events_.insert(pair<uint64_t, EventDescriptor*>(timestamp, event_desc));
         } else {
           // TODO(ionel): Handle machine update events.
         }
@@ -229,7 +239,6 @@ multimap<uint64_t, MachineEvent>& GoogleTraceSimulator::LoadMachineEvents() {
     }
     num_line++;
   }
-  return *machine_events;
 }
 
 unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& GoogleTraceSimulator::LoadTasksRunningTime() {
@@ -446,7 +455,7 @@ void GoogleTraceSimulator::ResetUuid(ResourceTopologyNodeDescriptor* rtnd,
 
 void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph) {
   // Load all the machine events.
-  multimap<uint64_t, MachineEvent>& machine_events = LoadMachineEvents();
+  LoadMachineEvents();
   // Load tasks' runtime.
   unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime =
     LoadTasksRunningTime();
@@ -504,8 +513,7 @@ void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph) {
 
           if (task_time > last_timestamp) {
             // Apply all the machine events.
-            ApplyMachineEvents(last_timestamp, task_time, &machine_events, flow_graph,
-                               machine_tmpl);
+            ApplyMachineEvents(last_timestamp, task_time, flow_graph, machine_tmpl);
             last_timestamp = task_time;
           }
 
@@ -578,43 +586,41 @@ void GoogleTraceSimulator::UpdateFlowGraph(
 }
 
 void GoogleTraceSimulator::ApplyMachineEvents(
-    uint64_t last_time, uint64_t cur_time,
-    multimap<uint64_t, MachineEvent>* machine_events,
-    FlowGraph* flow_graph,
+    uint64_t last_time, uint64_t cur_time, FlowGraph* flow_graph,
     const ResourceTopologyNodeDescriptor& machine_tmpl) {
   for (; last_time <= cur_time; last_time++) {
-    pair<multimap<uint64_t, MachineEvent>::iterator,
-         multimap<uint64_t, MachineEvent>::iterator> range_events =
-      machine_events->equal_range(last_time);
-    for (multimap<uint64_t, MachineEvent>::iterator it = range_events.first;
+    pair<multimap<uint64_t, EventDescriptor*>::iterator,
+         multimap<uint64_t, EventDescriptor*>::iterator> range_events =
+      events_.equal_range(last_time);
+    for (multimap<uint64_t, EventDescriptor*>::iterator it = range_events.first;
          it != range_events.second; ++it) {
-      if (it->second.event_type == MACHINE_ADD) {
-        ResourceID_t* res_id_ptr = FindOrNull(machine_id_to_res_id_, it->second.machine_id);
+      if (it->second->type() == EventDescriptor::ADD_MACHINE) {
+        ResourceID_t* res_id_ptr = FindOrNull(machine_id_to_res_id_, it->second->machine_id());
         if (res_id_ptr) {
-          LOG(ERROR) << "Already added machine " << it->second.machine_id;
+          LOG(ERROR) << "Already added machine " << it->second->machine_id();
           continue;
         }
         // Create a new machine topology descriptor.
         ResourceTopologyNodeDescriptor* new_machine = NULL;
-        ResourceID_t res_id = AddMachineToTopologyAndResetUuid(machine_tmpl, it->second.machine_id,
-                                                               new_machine);
+        ResourceID_t res_id =
+          AddMachineToTopologyAndResetUuid(machine_tmpl, it->second->machine_id(), new_machine);
         // Add mapping from machine_id to the new resource_id.
-        InsertOrUpdate(&machine_id_to_res_id_, it->second.machine_id, res_id);
+        InsertOrUpdate(&machine_id_to_res_id_, it->second->machine_id(), res_id);
         // Add the new machine to the flow graph.
         flow_graph->AddResourceNode(new_machine);
-      } else if (it->second.event_type == MACHINE_REMOVE) {
-        ResourceID_t* res_id_ptr = FindOrNull(machine_id_to_res_id_, it->second.machine_id);
+      } else if (it->second->type() == EventDescriptor::REMOVE_MACHINE) {
+        ResourceID_t* res_id_ptr = FindOrNull(machine_id_to_res_id_, it->second->machine_id());
         CHECK_NOTNULL(res_id_ptr);
         // Delete the machine from the flow graph.
         flow_graph->DeleteResourceNode(*res_id_ptr);
-        machine_id_to_res_id_.erase(it->second.machine_id);
-      } else if (it->second.event_type == MACHINE_UPDATE) {
+        machine_id_to_res_id_.erase(it->second->machine_id());
+      } else if (it->second->type() == EventDescriptor::UPDATE_MACHINE) {
         // TODO(ionel): Handle machine update event.
       } else {
         LOG(ERROR) << "Unexpected machine event";
       }
     }
-    machine_events->erase(last_time);
+    events_.erase(last_time);
   }
 }
 
