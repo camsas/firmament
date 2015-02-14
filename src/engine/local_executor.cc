@@ -27,6 +27,8 @@ DEFINE_uint64(debug_interactively, 0,
               "Run this task ID inside an interactive debugger.");
 DEFINE_bool(perf_monitoring, true,
             "Enable performance monitoring for tasks executed.");
+DEFINE_string(task_lib_path, "",
+              "Path where task_lib.a and task_lib_inject.so are.");
 
 namespace firmament {
 namespace executor {
@@ -236,6 +238,10 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
   argv.push_back(NULL);
   // Print the whole command line
   string full_cmd_line;
+  if (!default_args) {
+    setenv("LD_LIBRARY_PATH", FLAGS_task_lib_path.c_str(), 1);
+    setenv("LD_PRELOAD", "task_lib_inject.so", 1);
+  }
   for (vector<char*>::const_iterator arg_iter = argv.begin();
        arg_iter != argv.end();
        ++arg_iter) {
