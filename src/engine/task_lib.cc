@@ -85,6 +85,8 @@ TaskLib::TaskLib()
   ofstream pid_file;
   pid_file.open(pid_filename);
   pid_file << getpid();
+
+  use_procfs_ = true;
 }
 
 TaskLib::~TaskLib() {
