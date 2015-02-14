@@ -26,6 +26,8 @@
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
 
+DEFINE_bool(preemption, false, "Enable preemption and migration of tasks");
+
 namespace firmament {
 
 using machine::topology::TopologyManager;
@@ -55,6 +57,7 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
       cost_model_->TaskToClusterAggCost(task_node->task_id_);
   cluster_agg_arc->cap_upper_bound_ = 1;
   task_arcs->push_back(cluster_agg_arc);
+
   // We also always have an edge to our job's unscheduled node
   FlowGraphArc* unsched_arc = AddArcInternal(task_node, unsched_agg_node);
   // Add this task's potential flow to the per-job unscheduled
@@ -63,6 +66,7 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
   // Assign cost to the (task -> unscheduled agg) edge from cost model
   unsched_arc->cost_ =
       cost_model_->TaskToUnscheduledAggCost(task_node->task_id_);
+
   unsched_arc->cap_upper_bound_ = 1;
   task_arcs->push_back(unsched_arc);
 }
@@ -180,6 +184,9 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
     CHECK_NOTNULL(lookup_ptr);
     unsched_agg_to_sink_arc = *lookup_ptr;
   }
+  // TODO(gustafa): Maybe clear this and just fill it up on every iteration instead of this first time.
+  unsched_agg_nodes_.insert(unsched_agg_node->id_);
+
   // Now add the job's task nodes
   // TODO(malte): This is a simple BFS lashup; maybe we can do better?
   queue<TaskDescriptor*> q;
@@ -505,6 +512,8 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   // capcacity will already have been deducted (as part of PinTaskToNode,
   // currently).
   // Then remove node meta-data
+  VLOG(2) << "Deleting task node with id " << node->id_ << ", task id " << node->task_id_;
+  node_map_.erase(node->id_);
   task_nodes_.erase(node->task_id_);
   unused_ids_.push(node->id_);
   task_to_nodeid_map_.erase(task_id);
@@ -557,6 +566,7 @@ FlowGraphNode* FlowGraph::NodeForTaskID(TaskID_t task_id) {
     return NULL;
   VLOG(2) << "Task " << task_id << " is represented by node " << *id;
   FlowGraphNode** node_ptr = FindOrNull(node_map_, *id);
+
   return (node_ptr ? *node_ptr : NULL);
 }
 
@@ -600,7 +610,16 @@ void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
   FlowGraphNode* assigned_res_node = NodeForResourceID(res_id);
   CHECK_NOTNULL(task_node);
   CHECK_NOTNULL(assigned_res_node);
-  PinTaskToNode(task_node, assigned_res_node);
+
+  if (!FLAGS_preemption) {
+    // After the task is bound, we now remove all of its edges into the flow
+    // graph apart from the bound resource.
+    // N.B.: This disables preemption and migration!
+    VLOG(2) << "Disabling preemption for " << tid;
+    // Disable preemption
+    PinTaskToNode(task_node, assigned_res_node);
+  }
+
 }
 
 void FlowGraph::UpdateResourceNode(

@@ -21,6 +21,8 @@
 #include "scheduling/flow_graph_node.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
 
+DECLARE_bool(preemption);
+
 namespace firmament {
 
 class FlowGraph {
@@ -57,6 +59,9 @@ class FlowGraph {
   }
   inline const unordered_set<uint64_t>& task_node_ids() const {
     return task_nodes_;
+  }
+  inline const unordered_set<uint64_t>& unsched_agg_ids() const {
+    return unsched_agg_nodes_;
   }
   inline const FlowGraphNode& sink_node() const { return *sink_node_; }
   inline const FlowGraphNode& cluster_agg_node() const {
@@ -130,8 +135,14 @@ class FlowGraph {
       boost::hash<boost::uuids::uuid> > job_to_nodeid_map_;
   unordered_set<uint64_t> leaf_nodes_;
   unordered_set<uint64_t> task_nodes_;
+  unordered_set<uint64_t> unsched_agg_nodes_;
+
   // Vector storing the graph changes occured since the last scheduling round.
   vector<DIMACSChange*> graph_changes_;
+  // Pointer to map of all jobs that the coordinator currently knows about.
+  shared_ptr<JobMap_t> job_table_;
+  // Pointer to map of all tasks that the coordinator currently knows about.
+  shared_ptr<TaskMap_t> task_table_;
   // Vector storing the ids of the nodes we've previously removed.
   queue<uint64_t> unused_ids_;
 };

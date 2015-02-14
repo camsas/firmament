@@ -62,7 +62,9 @@ QuincyScheduler::QuincyScheduler(
       VLOG(1) << "Using the trivial cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
-      flow_graph_.reset(new FlowGraph(new QuincyCostModel()));
+      flow_graph_.reset(
+          new FlowGraph(new QuincyCostModel(resource_map, job_map, task_map,
+                                            &task_bindings_)));
       VLOG(1) << "Using the quincy cost model";
       break;
     default:

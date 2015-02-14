@@ -6,11 +6,15 @@
 #ifndef FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
 
+
 #include <string>
+#include <unordered_map>
 
 #include "base/common.h"
 #include "base/types.h"
+#include "engine/knowledge_base.h"
 #include "scheduling/common.h"
+#include "misc/utils.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
@@ -19,8 +23,10 @@ typedef int64_t Cost_t;
 
 class QuincyCostModel : public FlowSchedulingCostModelInterface {
  public:
-  QuincyCostModel();
-
+  QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
+                  shared_ptr<JobMap_t> job_map,
+                  shared_ptr<TaskMap_t> task_map,
+                  map<TaskID_t, ResourceID_t> *task_bindings);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -38,6 +44,16 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskPreemptionCost(TaskID_t task_id);
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
+
+ private:
+  // Lookup maps for various resources from the scheduler.
+  shared_ptr<ResourceMap_t> resource_map_;
+
+  // Information regarding tasks.
+  shared_ptr<JobMap_t> job_map_;
+  shared_ptr<TaskMap_t> task_map_;
+
+  map<TaskID_t, ResourceID_t> *task_bindings_;
 };
 
 }  // namespace firmament
