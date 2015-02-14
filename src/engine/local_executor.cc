@@ -155,7 +155,7 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   // is this a Firmament task binary? (on/off; will cause default arugments to
   // be passed)
   bool res = (RunProcessSync(
-      td->binary(), args, (FLAGS_perf_monitoring && firmament_binary),
+      td->binary(), args, FLAGS_perf_monitoring,
       (FLAGS_debug_tasks || ((FLAGS_debug_interactively != 0) &&
                              (td->uid() == FLAGS_debug_interactively))),
       firmament_binary) == 0);
