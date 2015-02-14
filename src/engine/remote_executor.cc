@@ -10,6 +10,8 @@
 #include "misc/map-util.h"
 #include "messages/base_message.pb.h"
 #include "messages/task_delegation_message.pb.h"
+#include "misc/utils.h"
+
 
 // XXX(malte): hack
 DECLARE_string(listen_uri);
@@ -38,6 +40,8 @@ void RemoteExecutor::HandleTaskCompletion(const TaskDescriptor& td,
 void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
   MessagingChannelInterface<BaseMessage>* chan = GetChannel();
   SendTaskExecutionMessage(chan, td, firmament_binary);
+
+  td->set_started(GetCurrentTimestamp());
 }
 
 MessagingChannelInterface<BaseMessage>* RemoteExecutor::GetChannel() {
