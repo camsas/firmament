@@ -92,6 +92,8 @@ class LocalExecutor : public ExecutorInterface {
   uint64_t heartbeat_interval_;
   boost::mutex exec_mutex_;
   boost::condition_variable exec_condvar_;
+
+  unordered_map<TaskID_t, uint64_t> task_start_times_;
 };
 
 }  // namespace executor
