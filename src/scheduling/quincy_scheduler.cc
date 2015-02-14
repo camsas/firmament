@@ -130,48 +130,6 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
 }
 
-void QuincyScheduler::NodeBindingToSchedulingDelta(
-    const FlowGraphNode& src, const FlowGraphNode& dst,
-    SchedulingDelta* delta) {
-  // Figure out what type of scheduling change this is
-  // Source must be a task node as this point
-  CHECK(src.type_.type() == FlowNodeType::SCHEDULED_TASK ||
-        src.type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
-        src.type_.type() == FlowNodeType::ROOT_TASK);
-  // Destination must be a PU node
-  CHECK(dst.type_.type() == FlowNodeType::PU);
-  // Is the source (task) already placed elsewhere?
-  ResourceID_t* bound_res = FindOrNull(task_bindings_, src.task_id_);
-  VLOG(2) << "task ID: " << src.task_id_ << ", bound_res: " << bound_res;
-  if (bound_res && (*bound_res != dst.resource_id_)) {
-    // If so, we have a migration
-    VLOG(1) << "MIGRATION: take " << src.task_id_ << " off "
-            << *bound_res << " and move it to "
-            << dst.resource_id_;
-    delta->set_type(SchedulingDelta::MIGRATE);
-    delta->set_task_id(src.task_id_);
-    delta->set_resource_id(to_string(dst.resource_id_));
-  } else if (bound_res && (*bound_res == dst.resource_id_)) {
-    // We were already scheduled here. No-op.
-    delta->set_type(SchedulingDelta::NOOP);
-  } else if (!bound_res && false) {  // Is something else bound to the same
-                                     // resource?
-    // If so, we have a preemption
-    // XXX(malte): This code is NOT WORKING!
-    VLOG(1) << "PREEMPTION: take " << src.task_id_ << " off "
-            << *bound_res << " and replace it with "
-            << src.task_id_;
-    delta->set_type(SchedulingDelta::PREEMPT);
-  } else {
-    // If neither, we have a scheduling event
-    VLOG(1) << "SCHEDULING: place " << src.task_id_ << " on "
-            << dst.resource_id_ << ", which was idle.";
-    delta->set_type(SchedulingDelta::PLACE);
-    delta->set_task_id(src.task_id_);
-    delta->set_resource_id(to_string(dst.resource_id_));
-  }
-}
-
 uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
   boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   LOG(INFO) << "START SCHEDULING " << job_desc->uuid();
@@ -208,8 +166,9 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   for (it = task_mappings->begin(); it != task_mappings->end(); it++) {
     VLOG(1) << "Bind " << it->first << " to " << it->second << endl;
     SchedulingDelta* delta = new SchedulingDelta;
-    NodeBindingToSchedulingDelta(*flow_graph_->Node(it->first),
-                                 *flow_graph_->Node(it->second), delta);
+    quincy_dispatcher_->NodeBindingToSchedulingDelta(
+        *flow_graph_->Node(it->first), *flow_graph_->Node(it->second),
+        &task_bindings_, delta);
     if (delta->type() == SchedulingDelta::NOOP)
       continue;
     // Mark the task as scheduled

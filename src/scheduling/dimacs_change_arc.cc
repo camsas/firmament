@@ -1,6 +1,8 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
+#include <string>
+
 #include "scheduling/dimacs_change_arc.h"
 
 namespace firmament {

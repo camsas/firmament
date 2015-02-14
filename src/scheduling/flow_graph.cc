@@ -3,8 +3,9 @@
 //
 // Representation of a Quincy-style scheduling flow graph.
 
-#include <string>
 #include <queue>
+#include <set>
+#include <string>
 
 #include <cstdio>
 #include <cstdlib>
@@ -46,14 +47,14 @@ FlowGraph::~FlowGraph() {
 
 void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
                                FlowGraphNode* unsched_agg_node,
-                               vector<FlowGraphArc*>& task_arcs) {
+                               vector<FlowGraphArc*>* task_arcs) {
   // We always have an edge to the cluster aggregator node
   FlowGraphArc* cluster_agg_arc = AddArcInternal(task_node, cluster_agg_node_);
   // Assign cost to the (task -> cluster agg) edge from cost model
   cluster_agg_arc->cost_ =
       cost_model_->TaskToClusterAggCost(task_node->task_id_);
   cluster_agg_arc->cap_upper_bound_ = 1;
-  task_arcs.push_back(cluster_agg_arc);
+  task_arcs->push_back(cluster_agg_arc);
   // We also always have an edge to our job's unscheduled node
   FlowGraphArc* unsched_arc = AddArcInternal(task_node, unsched_agg_node);
   // Add this task's potential flow to the per-job unscheduled
@@ -63,7 +64,7 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
   unsched_arc->cost_ =
       cost_model_->TaskToUnscheduledAggCost(task_node->task_id_);
   unsched_arc->cap_upper_bound_ = 1;
-  task_arcs.push_back(unsched_arc);
+  task_arcs->push_back(unsched_arc);
 }
 
 FlowGraphArc* FlowGraph::AddArcInternal(uint64_t src, uint64_t dst) {
@@ -168,7 +169,8 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
     // Add new job unscheduled agg to the graph changes.
     vector<FlowGraphArc*> *unsched_arcs = new vector<FlowGraphArc*>();
     unsched_arcs->push_back(unsched_agg_to_sink_arc);
-    graph_changes_.push_back(new DIMACSAddNode(*unsched_agg_node, unsched_arcs));
+    graph_changes_.push_back(new DIMACSAddNode(*unsched_agg_node,
+                                               unsched_arcs));
   } else {
     FlowGraphNode** unsched_agg_node_ptr = FindOrNull(node_map_,
                                                       *unsched_agg_node_id);
@@ -204,7 +206,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
       VLOG(2) << "Adding edges for task " << cur->uid() << "'s node ("
               << task_node->id_ << "); task state is " << cur->state();
       // Arcs for this node
-      AddArcsForTask(task_node, unsched_agg_node, *task_arcs);
+      AddArcsForTask(task_node, unsched_agg_node, task_arcs);
       // Add the new task node to the graph changes
       graph_changes_.push_back(new DIMACSAddNode(*task_node, task_arcs));
       // XXX(malte): hack to add equiv class aggregator nodes
@@ -275,7 +277,8 @@ void FlowGraph::AddResourceTopology(
       boost::bind(&FlowGraph::AddResourceNode, this, _1));
 }
 
-void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+void FlowGraph::AddResourceNode(
+    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
   FlowGraphNode* new_node;
   CHECK_NOTNULL(rtnd_ptr);
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
@@ -337,7 +340,8 @@ void FlowGraph::AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd_ptr) 
     ConfigureResourceLeafNode(rtnd, new_node);
   } else {
     LOG(WARNING) << "Orphan node in resource toplogy: it has neither children "
-                 << "nor a parent! (resource id: " << rtnd.resource_desc().uuid();
+                 << "nor a parent! (resource id: "
+                 << rtnd.resource_desc().uuid();
   }
 }
 
@@ -413,7 +417,8 @@ void FlowGraph::ConfigureResourceLeafNode(
                           << rtnd.resource_desc().uuid();
   cur_node->type_.set_type(FlowNodeType::PU);
   FlowGraphArc* arc = AddArcInternal(cur_node->id_, sink_node_->id_);
-  arc->cap_upper_bound_ = 1;  // TODO(malte): change this if support time-sharing
+  arc->cap_upper_bound_ = 1;
+  // TODO(malte): change this if support time-sharing
   arc->cost_ =
       cost_model_->LeafResourceNodeToSinkCost(cur_node->resource_id_);
   leaf_nodes_.insert(cur_node->id_);
@@ -521,7 +526,8 @@ void FlowGraph::DeleteNodesForJob(JobID_t job_id) {
   uint64_t* node_id = FindOrNull(job_to_nodeid_map_, job_id);
   CHECK_NOTNULL(node_id);
   FlowGraphNode* node = Node(*node_id);
-  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it = node->incoming_arc_map_.begin();
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator
+         it = node->incoming_arc_map_.begin();
        it != node->incoming_arc_map_.end(); it++) {
     FlowGraphArc* arc = it->second;
     FlowGraphNode* task_node = arc->src_node_;
@@ -624,11 +630,11 @@ void FlowGraph::UpdateResourceNode(
         uint64_t* old_parent_node =
             FindOrNull(resource_to_nodeid_map_, *old_parent_id);
         CHECK_NOTNULL(old_parent_node);
-        // TODO
+        // TODO(malte):
       }
     }
     // Check if its children are identical
-    // TODO
+    // TODO(malte):
   } else {
     // It does not already exist, so add it.
     VLOG(1) << "Adding new resource " << res_id << " to flow graph.";

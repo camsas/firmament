@@ -8,6 +8,7 @@
 
 #include <queue>
 #include <string>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -24,7 +25,7 @@ namespace firmament {
 
 class FlowGraph {
  public:
-  FlowGraph(FlowSchedulingCostModelInterface* cost_model);
+  explicit FlowGraph(FlowSchedulingCostModelInterface* cost_model);
   virtual ~FlowGraph();
   // Public API
   void AddOrUpdateJobNodes(JobDescriptor* jd);
@@ -68,7 +69,7 @@ class FlowGraph {
     FlowGraphNode* const* npp = FindOrNull(node_map_, id);
     return (npp ? *npp : NULL);
   }
-  inline vector<DIMACSChange*>& graph_changes() { return graph_changes_; };
+  inline vector<DIMACSChange*>& graph_changes() { return graph_changes_; }
 
  protected:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
@@ -76,7 +77,7 @@ class FlowGraph {
   FRIEND_TEST(FlowGraphTest, AddArcToNode);
   FRIEND_TEST(FlowGraphTest, UnschedAggCapacityAdjustment);
   void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
-                      vector<FlowGraphArc*>& task_arcs);
+                      vector<FlowGraphArc*>* task_arcs);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);

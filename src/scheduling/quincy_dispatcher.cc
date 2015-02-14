@@ -83,7 +83,8 @@ namespace scheduler {
       task_mappings = ReadTaskMappingChanges(infd[0]);
     } else {
       // Parse and process the result
-      vector<map<uint64_t, uint64_t> >* extracted_flow = ReadFlowGraph(infd[0], num_nodes);
+      vector<map<uint64_t, uint64_t> >* extracted_flow =
+        ReadFlowGraph(infd[0], num_nodes);
       task_mappings = GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
                                   flow_graph_->sink_node().id_);
     }
@@ -97,11 +98,54 @@ namespace scheduler {
     return task_mappings;
   }
 
-  // Assigns a leaf node to a worker|root task. At each step it checks if there is
-  // an arc to a worker|root task, if not then it goes one layer up in the graph.
+  void QuincyDispatcher::NodeBindingToSchedulingDelta(
+      const FlowGraphNode& src, const FlowGraphNode& dst,
+      map<TaskID_t, ResourceID_t>* task_bindings, SchedulingDelta* delta) {
+    // Figure out what type of scheduling change this is
+    // Source must be a task node as this point
+    CHECK(src.type_.type() == FlowNodeType::SCHEDULED_TASK ||
+          src.type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+          src.type_.type() == FlowNodeType::ROOT_TASK);
+    // Destination must be a PU node
+    CHECK(dst.type_.type() == FlowNodeType::PU);
+    // Is the source (task) already placed elsewhere?
+    ResourceID_t* bound_res = FindOrNull(*task_bindings, src.task_id_);
+    VLOG(2) << "task ID: " << src.task_id_ << ", bound_res: " << bound_res;
+    if (bound_res && (*bound_res != dst.resource_id_)) {
+      // If so, we have a migration
+      VLOG(1) << "MIGRATION: take " << src.task_id_ << " off "
+              << *bound_res << " and move it to "
+              << dst.resource_id_;
+      delta->set_type(SchedulingDelta::MIGRATE);
+      delta->set_task_id(src.task_id_);
+      delta->set_resource_id(to_string(dst.resource_id_));
+    } else if (bound_res && (*bound_res == dst.resource_id_)) {
+      // We were already scheduled here. No-op.
+      delta->set_type(SchedulingDelta::NOOP);
+    } else if (!bound_res && false) {  // Is something else bound to the same
+      // resource?
+      // If so, we have a preemption
+      // XXX(malte): This code is NOT WORKING!
+      VLOG(1) << "PREEMPTION: take " << src.task_id_ << " off "
+              << *bound_res << " and replace it with "
+              << src.task_id_;
+      delta->set_type(SchedulingDelta::PREEMPT);
+    } else {
+      // If neither, we have a scheduling event
+      VLOG(1) << "SCHEDULING: place " << src.task_id_ << " on "
+              << dst.resource_id_ << ", which was idle.";
+      delta->set_type(SchedulingDelta::PLACE);
+      delta->set_task_id(src.task_id_);
+      delta->set_resource_id(to_string(dst.resource_id_));
+    }
+  }
+
+  // Assigns a leaf node to a worker|root task. At each step it checks if there
+  // is an arc to a worker|root task, if not then it goes one layer up in the
+  // graph.
   // NOTE: The extracted_flow is changed by the method.
-  uint64_t QuincyDispatcher::AssignNode(vector< map< uint64_t, uint64_t > >* extracted_flow,
-                                        uint64_t node) {
+  uint64_t QuincyDispatcher::AssignNode(
+      vector< map< uint64_t, uint64_t > >* extracted_flow, uint64_t node) {
     map<uint64_t, uint64_t>::iterator map_it;
     for (map_it = (*extracted_flow)[node].begin();
          map_it != (*extracted_flow)[node].end(); map_it++) {
@@ -109,7 +153,8 @@ namespace scheduler {
               << flow_graph_->Node(map_it->first)->type_.type() << ")";
       // Check if node = root or node = task
       if (flow_graph_->CheckNodeType(map_it->first, FlowNodeType::ROOT_TASK) ||
-          flow_graph_->CheckNodeType(map_it->first, FlowNodeType::UNSCHEDULED_TASK)) {
+          flow_graph_->CheckNodeType(map_it->first,
+                                     FlowNodeType::UNSCHEDULED_TASK)) {
         // Shouldn't really modify the collection in the iterator loop.
         // However, we don't use the iterator after modification.
         uint64_t flow = map_it->second;
@@ -143,8 +188,8 @@ namespace scheduler {
     return 0;
   }
 
-  // Maps worker|root tasks to leaves. It expects a extracted_flow containing only
-  // the arcs with positive flow (i.e. what ReadFlowGraph returns).
+  // Maps worker|root tasks to leaves. It expects a extracted_flow containing
+  // only the arcs with positive flow (i.e. what ReadFlowGraph returns).
   map<uint64_t, uint64_t>* QuincyDispatcher::GetMappings(
       vector< map< uint64_t, uint64_t > >* extracted_flow,
       unordered_set<uint64_t> leaves, uint64_t sink) {
@@ -196,8 +241,8 @@ namespace scheduler {
     if (FLAGS_debug_flow_graph) {
       // Somewhat ugly hack to generate unique output file name.
       string out_file_name;
-      spf(&out_file_name, "%s/debug-flow_%ju.dm", FLAGS_debug_output_dir.c_str(),
-          debug_seq_num_);
+      spf(&out_file_name, "%s/debug-flow_%ju.dm",
+          FLAGS_debug_output_dir.c_str(), debug_seq_num_);
       CHECK((dbg_fptr = fopen(out_file_name.c_str(), "w")) != NULL);
       debug_seq_num_++;
     }
@@ -279,7 +324,8 @@ namespace scheduler {
     return task_node;
   }
 
-  void QuincyDispatcher::SolverBinaryName(const string& solver, string* binary) {
+  void QuincyDispatcher::SolverBinaryName(const string& solver,
+                                          string* binary) {
     // New solvers need to have their binary registered here.
     // Paths are relative to the Firmament root directory.
     if (solver == "cs2") {
@@ -291,5 +337,5 @@ namespace scheduler {
     }
   }
 
-}
-}
+} // namespace scheduler
+} // namespace firmament

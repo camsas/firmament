@@ -183,7 +183,7 @@ class Coordinator : public Node,
       res_vec.push_back(res_iter->second);
     }
     return res_vec;
-  };
+  }
   vector<JobDescriptor> active_jobs() {
     vector<JobDescriptor> jd_vec;
     for (JobMap_t::const_iterator job_iter =

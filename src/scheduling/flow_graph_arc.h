@@ -17,7 +17,8 @@ namespace firmament {
 struct FlowGraphNode;
 
 struct FlowGraphArc {
-  FlowGraphArc(uint64_t src, uint64_t dst, FlowGraphNode* src_node, FlowGraphNode* dst_node);
+  FlowGraphArc(uint64_t src, uint64_t dst, FlowGraphNode* src_node,
+               FlowGraphNode* dst_node);
   FlowGraphArc(uint64_t src, uint64_t dst, uint64_t clb, uint64_t cub,
                uint64_t cost, FlowGraphNode* src_node, FlowGraphNode* dst_node);
 
@@ -28,9 +29,8 @@ struct FlowGraphArc {
   uint64_t cost_;
   FlowGraphNode* src_node_;
   FlowGraphNode* dst_node_;
-
 };
 
-}  // namespace firmament
+} // namespace firmament
 
 #endif  // FIRMAMENT_MISC_FLOW_GRAPH_ARC_H
