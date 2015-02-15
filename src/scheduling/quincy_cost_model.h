@@ -48,11 +48,9 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
  private:
   // Lookup maps for various resources from the scheduler.
   shared_ptr<ResourceMap_t> resource_map_;
-
-  // Information regarding tasks.
+  // Information regarding jobs and tasks.
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<TaskMap_t> task_map_;
-
   map<TaskID_t, ResourceID_t> *task_bindings_;
 };
 

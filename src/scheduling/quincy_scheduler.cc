@@ -54,8 +54,6 @@ QuincyScheduler::QuincyScheduler(
                            coordinator_res_id, coordinator_uri),
       topology_manager_(topo_mgr),
       parameters_(params) {
-  // Set up the dispatcher, which starts the flow solver
-  quincy_dispatcher_ = new QuincyDispatcher(flow_graph_, false);
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
           << FLAGS_flow_scheduling_cost_model << "\"";
@@ -83,6 +81,8 @@ QuincyScheduler::QuincyScheduler(
             << parameters_.ShortDebugString();
   // Set up the initial flow graph
   UpdateResourceTopology(resource_topology);
+  // Set up the dispatcher, which starts the flow solver
+  quincy_dispatcher_ = new QuincyDispatcher(flow_graph_, false);
 }
 
 QuincyScheduler::~QuincyScheduler() {
