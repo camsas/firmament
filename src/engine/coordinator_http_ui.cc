@@ -503,10 +503,20 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
         output += pb2json(*it);
       }
       output += "]";
+    } else {
+      ErrorResponse(http::types::RESPONSE_CODE_NOT_FOUND, http_request,
+                    tcp_conn);
+      LOG(WARNING) << "Stats request for non-existent resource " << res_id;
+      return;
     }
   } else if (!task_id.empty()) {
     TaskDescriptor* td = coordinator_->GetTask(TaskIDFromString(task_id));
-    CHECK_NOTNULL(td);
+    if (!td) {
+      ErrorResponse(http::types::RESPONSE_CODE_NOT_FOUND, http_request,
+                    tcp_conn);
+      LOG(WARNING) << "Stats request for non-existent task " << task_id;
+      return;
+    }
     output += "{ \"samples\": [";
     const deque<TaskPerfStatisticsSample>* samples_result =
         coordinator_->knowledge_base()->GetStatsForTask(
