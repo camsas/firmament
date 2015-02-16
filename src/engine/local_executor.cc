@@ -111,9 +111,8 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
   report->set_task_id(GenerateTaskEquivClass(td));
   report->set_start_time(*start_time);
   report->set_finish_time(end_time);
-   // Remove the start time from the map
+  // Remove the start time from the map
   task_start_times_.erase(td.uid());
-
 
   // Load perf data, if it exists
   if (FLAGS_perf_monitoring) {

@@ -4,10 +4,6 @@
 // Quincy scheduling cost model, as described in the SOSP 2009 paper.
 
 #include <string>
-
-#include "scheduling/quincy_cost_model.h"
-
-#include <string>
 #include <unordered_map>
 
 #include "base/common.h"
@@ -15,6 +11,7 @@
 #include "engine/knowledge_base.h"
 #include "misc/utils.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/quincy_cost_model.h"
 
 namespace firmament {
 

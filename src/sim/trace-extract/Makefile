@@ -3,7 +3,7 @@ SUFFIX=sim/trace-extract
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_thread -lboost_system -lboost_regex -lssl -lcrypto -lgtest
+LIBS += -lboost_thread -lboost_system -lboost_regex -lssl -lcrypto
 
 BINS = google-trace-simulator google-trace-processor google-trace-simulator-test
 
@@ -72,7 +72,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator-test): $(addprefix $(OBJ_DIR)/, 
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/sim/trace-extract/google_trace_simulator_test.cc \
-		$(OPTFLAGS) $(DEFINES) \
+		$(GTEST_LIB) $(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
 		$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
 		$(BUILD_DIR)/scheduling/common.o \
