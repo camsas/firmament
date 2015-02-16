@@ -15,6 +15,7 @@
 #include "misc/map-util.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/quincy_cost_model.h"
+#include "scheduling/quincy_dispatcher.h"
 #include "sim/trace-extract/event_desc.pb.h"
 
 namespace firmament {
@@ -35,64 +36,106 @@ struct TaskIdentifierHasher {
   }
 };
 
-struct MachineEvent {
-  uint64_t machine_id;
-  int32_t event_type;
-};
-
 class GoogleTraceSimulator {
  public:
   explicit GoogleTraceSimulator(string& trace_path);
   void Run();
 
  private:
-  ResourceID_t AddMachineToTopologyAndResetUuid(const ResourceTopologyNodeDescriptor& machine_tmpl,
-                                                uint64_t machine_id,
-                                                ResourceTopologyNodeDescriptor* new_machine);
-  TaskDescriptor* AddNewTask(
-      FlowGraph* flow_graph, TaskIdentifier task_identifier,
-      unordered_map<uint64_t, TaskIdentifier>* flow_id_to_task_id);
 
+  /**
+   * Add new machine to the topology. The method updates simulator's mapping state.
+   * @param machine_tmp the topology descriptor of the new machine
+   * @param machine_id the google trace machine id
+   * @return a pointer to the resource descriptor of the new machine
+   */
+  ResourceDescriptor* AddMachine(
+      const ResourceTopologyNodeDescriptor& machine_tmpl, uint64_t machine_id);
+
+  /**
+   * Adds a new task to the flow graph. Updates the internal mappings as well.
+   * @param task_identifier the google trace identifier of the task
+   * @return a pointer to the descriptor of the task
+   */
+  TaskDescriptor* AddNewTask(const TaskIdentifier& task_identifier);
+
+  void AddTaskEndEvent(uint64_t cur_timestamp,
+                       TaskIdentifier task_identifier,
+                       unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime);
+
+  /**
+   * Creates a new task for a job.
+   * @param jd_ptr the job descriptor of the job for which to create a new task
+   * @return a pointer to the task descriptor of the new task
+   */
   TaskDescriptor* AddTaskToJob(JobDescriptor* jd_ptr);
 
-  void ApplyMachineEvents(uint64_t last_time, uint64_t cur_time,
-                          FlowGraph* flow_graph,
-                          const ResourceTopologyNodeDescriptor& machine_tmpl);
-
-  // Compute the number of events of a particular type withing each time interval.
+  /**
+   * Compute the number of events of a particular type withing each time interval.
+   */
   void BinTasksByEventType(uint64_t event_type, ofstream& out_file);
 
-  void LoadInitialJobs(int64_t max_jobs);
-  void LoadInitialMachines(int64_t max_num);
-  void LoadInitialTasks();
-  // Loads all the machine events and returns a multimap timestamp -> event.
+  /**
+   * Populate and add the root node of the topology.
+   */
+  void CreateRootResource();
+
+  void JobCompleted(uint64_t simulator_job_id, JobID_t job_id);
+
+  /**
+   * Loads all the machine events and returns a multimap timestamp -> event.
+   */
   void LoadMachineEvents();
-  // Loads all the task runtimes and returns map task_identifier -> runtime.
+
+  void LoadJobsNumTasks();
+
+  /**
+   * Loads all the task runtimes and returns map task_identifier -> runtime.
+   */
   unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& LoadTasksRunningTime();
 
-  // Read the jobs that are running or waiting to be scheduled at the beginning of the simulation.
-  // Read num_jobs if it's specified.
-  uint64_t ReadJobsFile(set<uint64_t>* jobs, int64_t num_jobs);
-  // Read the machines that are alive at the beginning of the simulation.
-  // Read num_machines if it's specified.
-  uint64_t ReadMachinesFile(set<uint64_t>* machines, int64_t num_machines);
-  // Read the tasks events from the beginning of the trace that are related to the jobs passed
-  // in as an argument.
-  uint64_t ReadInitialTasksFile();
+  /**
+   * Create and populate a new job.
+   * @param job_id the Google trace job id
+   * @return a pointer to the job descriptor
+   */
+  JobDescriptor* PopulateJob(uint64_t job_id);
 
-  void PopulateJob(JobDescriptor* jd, uint64_t job_id);
-  // The resource topology is build from the same protobuf file. The function changes the
-  // uuids to make sure that there's no two identical uuids.
+  /**
+   * Processes all the simulator events that happen at a given time.
+   * @param cur_time the timestamp for which to process the simulator events
+   * @param machine_tmpl topology to use in case new machines are added
+   */
+  void ProcessSimulatorEvents(uint64_t cur_time, const ResourceTopologyNodeDescriptor& machine_tmpl);
+
+  /**
+   * Process the given task event.
+   * @param cut_time the timestamp of the event
+   * @param task_identifier the Google trace identifier of the task
+   * @param event_type the type of the event
+   */
+  void ProcessTaskEvent(uint64_t cur_time,
+                        const TaskIdentifier& task_identifier, uint64_t event_type);
+
+  void RemoveMachine(uint64_t machine_id);
+
+  /**
+   * The resource topology is build from the same protobuf file. The function changes the
+   * uuids to make sure that there's no two identical uuids.
+   */
   void ResetUuid(ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
                  const string& root_uuid);
 
-  void ReplayTrace(FlowGraph* flow_graph);
+  void ReplayTrace();
 
-  void UpdateFlowGraph(FlowGraph* flow_graph, map<uint64_t, uint64_t>* task_mappings,
-                       unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime,
-                       multimap<uint64_t, TaskDescriptor*>& task_end_runtime);
+  void TaskCompleted(const TaskIdentifier& task_identifier);
 
   EventDescriptor_EventType TranslateMachineEventToEventType(int32_t machine_event);
+
+  void UpdateFlowGraph(
+    uint64_t scheduling_timestamp,
+    unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime,
+    map<uint64_t, uint64_t>* task_mappings);
 
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.
@@ -100,18 +143,35 @@ class GoogleTraceSimulator {
 
   // Map used to convert between the google trace job_ids and the Firmament job descriptors.
   unordered_map<uint64_t, JobDescriptor*> job_id_to_jd_;
-  // Map used to convert between the google trace machine_ids and the Firmament resource
-  // descriptors.
-  unordered_map<uint64_t, ResourceID_t> machine_id_to_res_id_;
   // Map used to convert between the google trace task_ids and the Firmament task descriptors.
   unordered_map<TaskIdentifier, TaskDescriptor*, TaskIdentifierHasher> task_id_to_td_;
+  // Map used to convert between the google trace machine_ids and the Firmament resource
+  // descriptors.
+  unordered_map<uint64_t, ResourceDescriptor*> machine_id_to_rd_;
+
+  unordered_map<TaskID_t, TaskIdentifier> task_id_to_identifier_;
+
+  unordered_map<uint64_t, uint64_t> job_num_tasks_;
+
+  // Map from JobID_t to JobDescriptor
+  shared_ptr<JobMap_t> job_map_;
+  // Map from TaskID_t to TaskDescriptor*
+  shared_ptr<TaskMap_t> task_map_;
+  // Map from ResourceID_t to ResourceStatus*
+  shared_ptr<ResourceMap_t> resource_map_;
+
+  map<TaskID_t, ResourceID_t> task_bindings_;
 
   // The map storing the simulator events. Maps from timestamp to simulator event.
-  multimap<uint64_t, EventDescriptor*> events_;
+  multimap<uint64_t, EventDescriptor> events_;
 
   string trace_path_;
   // The root node of the machine topology.
   ResourceTopologyNodeDescriptor rtn_root_;
+
+  FlowGraph* flow_graph_;
+
+  scheduler::QuincyDispatcher* quincy_dispatcher_;
 
 };
 

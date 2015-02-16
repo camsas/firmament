@@ -1,5 +1,6 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Google cluster trace simulator tool.
 
@@ -55,13 +56,43 @@ DEFINE_uint64(bin_time_duration, 10, "Bin size in seconds.");
 DEFINE_string(task_bins_output, "bins.out", "The file in which the task bins are written.");
 DEFINE_bool(run_incremental_scheduler, false, "Run the Flowlessly incremental scheduler.");
 
-GoogleTraceSimulator::GoogleTraceSimulator(string& trace_path) : trace_path_(trace_path) {
+GoogleTraceSimulator::GoogleTraceSimulator(string& trace_path) :
+  job_map_(new JobMap_t), task_map_(new TaskMap_t), resource_map_(new ResourceMap_t),
+  trace_path_(trace_path),
+  flow_graph_(new FlowGraph(new QuincyCostModel(resource_map_, job_map_, task_map_, &task_bindings_))),
+  quincy_dispatcher_(new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_), false)) {
 }
 
-ResourceID_t GoogleTraceSimulator::AddMachineToTopologyAndResetUuid(
-    const ResourceTopologyNodeDescriptor& machine_tmpl, uint64_t machine_id,
-    ResourceTopologyNodeDescriptor* new_machine) {
-  new_machine = rtn_root_.add_children();
+void GoogleTraceSimulator::Run() {
+  // command line argument sanity checking
+  if (trace_path_.empty()) {
+    LOG(FATAL) << "Please specify a path to the Google trace!";
+  }
+
+  LOG(INFO) << "Starting Google Trace extraction!";
+  LOG(INFO) << "Number of machines to extract: " << FLAGS_num_machines;
+  LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " seconds.";
+
+  CreateRootResource();
+
+  if (FLAGS_tasks_preemption_bins) {
+    ofstream out_file(FLAGS_output_dir + "/" + FLAGS_task_bins_output);
+    if (out_file.is_open()) {
+      BinTasksByEventType(EVICT_EVENT, out_file);
+      out_file.close();
+    } else {
+      LOG(ERROR) << "Could not open bin output file.";
+    }
+  }
+  if (FLAGS_run_incremental_scheduler) {
+    ReplayTrace();
+  }
+}
+
+ResourceDescriptor* GoogleTraceSimulator::AddMachine(
+    const ResourceTopologyNodeDescriptor& machine_tmpl, uint64_t machine_id) {
+  // Create a new machine topology descriptor.
+  ResourceTopologyNodeDescriptor* new_machine = rtn_root_.add_children();
   new_machine->CopyFrom(machine_tmpl);
   const string& root_uuid = rtn_root_.resource_desc().uuid();
   char hn[100];
@@ -69,7 +100,51 @@ ResourceID_t GoogleTraceSimulator::AddMachineToTopologyAndResetUuid(
   DFSTraverseResourceProtobufTreeReturnRTND(
       new_machine, boost::bind(&GoogleTraceSimulator::ResetUuid, this, _1, string(hn), root_uuid));
   new_machine->mutable_resource_desc()->set_friendly_name(hn);
-  return ResourceIDFromString(new_machine->resource_desc().uuid());
+  // Add the node to the flow graph.
+  flow_graph_->AddResourceTopology(*new_machine);
+  ResourceDescriptor* rd = new_machine->mutable_resource_desc();
+  // Add resource to the resource_map_. Create a ResourceStatus wrapper.
+  // TODO(ionel): Check if we need to add children as well.
+  CHECK(InsertIfNotPresent(resource_map_.get(), ResourceIDFromString(rd->uuid()),
+                           new ResourceStatus(new_machine->mutable_resource_desc(),
+                                              "endpoint_uri",
+                                              GetCurrentTimestamp())));
+  // Add resource to the google machine_id to ResourceDescriptor* map.
+  CHECK(InsertIfNotPresent(&machine_id_to_rd_, machine_id, rd));
+  return rd;
+}
+
+TaskDescriptor* GoogleTraceSimulator::AddNewTask(const TaskIdentifier& task_identifier) {
+  JobDescriptor** jdpp = FindOrNull(job_id_to_jd_, task_identifier.job_id);
+  JobDescriptor* jd_ptr;
+  if (!jdpp) {
+    // Add new job to the graph
+    jd_ptr = PopulateJob(task_identifier.job_id);
+    CHECK_NOTNULL(jd_ptr);
+  } else {
+    jd_ptr = *jdpp;
+  }
+  TaskDescriptor* td_ptr = AddTaskToJob(jd_ptr);
+  // Update the job in the flow graph. This method also adds the new task to the flow graph.
+  flow_graph_->AddOrUpdateJobNodes(jd_ptr);
+  CHECK(InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr));
+  CHECK(InsertIfNotPresent(&task_id_to_identifier_, td_ptr->uid(), task_identifier));
+  // Add task to the google (job_id, task_index) to TaskDescriptor* map.
+  CHECK(InsertIfNotPresent(&task_id_to_td_, task_identifier, td_ptr));
+  return td_ptr;
+}
+
+void GoogleTraceSimulator::AddTaskEndEvent(
+    uint64_t cur_timestamp,
+    TaskIdentifier task_identifier,
+    unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime) {
+  uint64_t* runtime_ptr = FindOrNull(task_runtime, task_identifier);
+  CHECK_NOTNULL(runtime_ptr);
+  EventDescriptor event_desc;
+  event_desc.set_job_id(task_identifier.job_id);
+  event_desc.set_task_index(task_identifier.task_index);
+  event_desc.set_type(EventDescriptor::TASK_END_RUNTIME);
+  events_.insert(pair<uint64_t, EventDescriptor>(cur_timestamp + *runtime_ptr, event_desc));
 }
 
 TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
@@ -78,28 +153,7 @@ TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
   TaskDescriptor* new_task = root_task->add_spawned();
   new_task->set_uid(GenerateTaskID(*root_task));
   new_task->set_state(TaskDescriptor::RUNNABLE);
-  // TODO(ionel): Task doesn't get added to the flow graph.
   return new_task;
-}
-
-TaskDescriptor* GoogleTraceSimulator::AddNewTask(
-    FlowGraph* flow_graph, TaskIdentifier task_identifier,
-    unordered_map<uint64_t, TaskIdentifier>* flow_id_to_task_id) {
-  JobDescriptor** jdpp = FindOrNull(job_id_to_jd_, task_identifier.job_id);
-  JobDescriptor* jd_ptr;
-  if (!jdpp) {
-    // Add new job to the graph
-    jd_ptr = new JobDescriptor();
-    PopulateJob(jd_ptr, task_identifier.job_id);
-    jdpp = FindOrNull(job_id_to_jd_, task_identifier.job_id);
-    CHECK_NOTNULL(jdpp);
-  } else {
-    jd_ptr = *jdpp;
-  }
-  TaskDescriptor* td_ptr = AddTaskToJob(jd_ptr);
-  flow_graph->AddOrUpdateJobNodes(jd_ptr);
-  InsertOrUpdate(flow_id_to_task_id, td_ptr->uid(), task_identifier);
-  return td_ptr;
 }
 
 void GoogleTraceSimulator::BinTasksByEventType(uint64_t event, ofstream& out_file) {
@@ -146,29 +200,7 @@ void GoogleTraceSimulator::BinTasksByEventType(uint64_t event, ofstream& out_fil
     time_interval_bound << "]: " << num_tasks << "\n";
 }
 
-void GoogleTraceSimulator::LoadInitialJobs(int64_t max_jobs) {
-  set<uint64_t> job_ids;
-
-  // Read the initial job events from trace
-  uint64_t num_jobs_read = ReadJobsFile(&job_ids, max_jobs);
-  LOG(INFO) << "Loaded " << num_jobs_read << " initial jobs.";
-
-  // Add jobs
-  for (set<uint64_t>::const_iterator iter = job_ids.begin(); iter != job_ids.end(); ++iter) {
-    JobDescriptor* jd = new JobDescriptor();
-    PopulateJob(jd, *iter);
-    CHECK(InsertOrUpdate(&job_id_to_jd_, *iter, jd));
-  }
-}
-
-void GoogleTraceSimulator::LoadInitialMachines(
-    int64_t max_num_machines) {
-  set<uint64_t> machines;
-
-  // Read the initial machine events from trace
-  uint64_t num_machines = ReadMachinesFile(&machines, max_num_machines);
-  LOG(INFO) << "Loaded " << num_machines << " machines.";
-
+void GoogleTraceSimulator::CreateRootResource() {
   // Import a fictional machine resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
   int fd = open(MACHINE_TMPL_FILE, O_RDONLY);
@@ -180,31 +212,39 @@ void GoogleTraceSimulator::LoadInitialMachines(
   rtn_root_.mutable_resource_desc()->set_uuid(to_string(root_uuid));
   LOG(INFO) << "Root res ID is " << to_string(root_uuid);
   InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid), to_string(root_uuid));
-  // Create each machine and add it to the graph
-  for (set<uint64_t>::const_iterator iter = machines.begin(); iter != machines.end(); ++iter) {
-    ResourceTopologyNodeDescriptor* new_machine = NULL;
-    ResourceID_t res_id = AddMachineToTopologyAndResetUuid(machine_tmpl, *iter, new_machine);
-    CHECK(InsertOrUpdate(&machine_id_to_res_id_, *iter, res_id));
+
+  // Add resources and job to flow graph
+  flow_graph_->AddResourceTopology(rtn_root_);
+}
+
+void GoogleTraceSimulator::JobCompleted(uint64_t simulator_job_id, JobID_t job_id) {
+  flow_graph_->DeleteNodesForJob(job_id);
+  job_map_->erase(job_id);
+  job_id_to_jd_.erase(simulator_job_id);
+  job_num_tasks_.erase(simulator_job_id);
+}
+
+void GoogleTraceSimulator::LoadJobsNumTasks() {
+  char line[200];
+  vector<string> cols;
+  FILE* jobs_tasks_file = NULL;
+  string jobs_tasks_file_name = trace_path_ + "/jobs_num_tasks/jobs_num_tasks.csv";
+  if ((jobs_tasks_file = fopen(jobs_tasks_file_name.c_str(), "r")) == NULL) {
+    LOG(FATAL) << "Failed to open jobs num tasks file.";
   }
-  LOG(INFO) << "Added " << machines.size() << " machines.";
-}
-
-void GoogleTraceSimulator::LoadInitialTasks() {
-  // Read initial tasks from trace and add tasks to jobs in initial_jobs
-  uint64_t num_tasks = ReadInitialTasksFile();
-  LOG(INFO) << "Added " << num_tasks << " initial tasks to "
-            << job_id_to_jd_.size() << " initial jobs.";
-}
-
-EventDescriptor_EventType GoogleTraceSimulator::TranslateMachineEventToEventType(int32_t machine_event) {
-  if (machine_event == MACHINE_ADD) {
-    return EventDescriptor::ADD_MACHINE;
-  } else if (machine_event == MACHINE_REMOVE) {
-    return EventDescriptor::REMOVE_MACHINE;
-  } else if (machine_event == MACHINE_UPDATE) {
-    return EventDescriptor::UPDATE_MACHINE;
-  } else {
-    LOG(FATAL) << "Unexpected machine event type: " << machine_event;
+  int64_t num_line = 1;
+  while (!feof(jobs_tasks_file)) {
+    if (fscanf(jobs_tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
+      boost::split(cols, line, is_any_of(" "), token_compress_off);
+      if (cols.size() != 2) {
+        LOG(ERROR) << "Unexpected structure of jobs num tasks row on line: " << num_line;
+      } else {
+        uint64_t job_id = lexical_cast<uint64_t>(cols[0]);
+        uint64_t num_tasks = lexical_cast<uint64_t>(cols[1]);
+        CHECK(InsertIfNotPresent(&job_num_tasks_, job_id, num_tasks));
+      }
+    }
+    num_line++;
   }
 }
 
@@ -225,13 +265,13 @@ void GoogleTraceSimulator::LoadMachineEvents() {
                    << cols.size() << " columns.";
       } else {
         // row schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
-        EventDescriptor* event_desc = new EventDescriptor();
-        event_desc->set_machine_id(lexical_cast<uint64_t>(cols[1]));
-        event_desc->set_type(TranslateMachineEventToEventType(lexical_cast<int32_t>(cols[2])));
+        EventDescriptor event_desc;
+        event_desc.set_machine_id(lexical_cast<uint64_t>(cols[1]));
+        event_desc.set_type(TranslateMachineEventToEventType(lexical_cast<int32_t>(cols[2])));
         uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
-        if (event_desc->type() == EventDescriptor::REMOVE_MACHINE ||
-            event_desc->type() == EventDescriptor::ADD_MACHINE) {
-          events_.insert(pair<uint64_t, EventDescriptor*>(timestamp, event_desc));
+        if (event_desc.type() == EventDescriptor::REMOVE_MACHINE ||
+            event_desc.type() == EventDescriptor::ADD_MACHINE) {
+          events_.insert(pair<uint64_t, EventDescriptor>(timestamp, event_desc));
         } else {
           // TODO(ionel): Handle machine update events.
         }
@@ -249,7 +289,7 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& GoogleTraceSimula
   FILE* tasks_file = NULL;
   string tasks_file_name = trace_path_ + "/task_runtime_events/task_runtime_events.csv";
   if ((tasks_file = fopen(tasks_file_name.c_str(), "r")) == NULL) {
-    LOG(ERROR) << "Failed to open trace runtime events file.";
+    LOG(FATAL) << "Failed to open trace runtime events file.";
   }
   int64_t num_line = 1;
   while (!feof(tasks_file)) {
@@ -273,159 +313,72 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& GoogleTraceSimula
   return *task_runtime;
 }
 
-uint64_t GoogleTraceSimulator::ReadJobsFile(set<uint64_t>* jobs, int64_t num_jobs) {
-  bool done = false;
-  char line[200];
-  vector<string> vals;
-  FILE* fptr = NULL;
-  int64_t j = 0;
-  for (uint64_t f = 0; f < 500; f++) {
-    string fname;
-    spf(&fname, "%s/job_events/part-%05ld-of-00500.csv", trace_path_.c_str(), f);
-    if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open trace for reading of job events.";
-    }
-    int64_t l = 0;
-    while (!feof(fptr)) {
-      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-        VLOG(3) << "Processing line " << l << ": " << line;
-        boost::split(vals, line, is_any_of(","), token_compress_off);
-        uint64_t time = lexical_cast<uint64_t>(vals[0]);
-        if (time > 0 || (num_jobs >= 0 && l >= num_jobs)) {
-          // We only care about the initial jobs here, so break once
-          // the time is non-zero
-          done = true;
-          break;
-        }
-        if (vals.size() != 8) {
-          LOG(ERROR) << "Unexpected structure of job event row: found "
-                     << vals.size() << " columns.";
-        } else {
-          uint64_t job_id = lexical_cast<uint64_t>(vals[2]);
-          uint64_t event_type = lexical_cast<uint64_t>(vals[3]);
-          if (event_type == SUBMIT_EVENT) {
-            jobs->insert(job_id);
-            j++;
-          } else if (event_type == KILL_EVENT) {
-            if (jobs->erase(job_id)) {
-              j--;
-            }
-          }
-        }
-      }
-      l++;
-    }
-    if (done)
-      return j;
-  }
-  return j;
-}
-
-uint64_t GoogleTraceSimulator::ReadMachinesFile(set<uint64_t>* machines, int64_t num_machines) {
-  char line[200];
-  vector<string> vals;
-  FILE* fptr = NULL;
-  string fname = trace_path_ + "/machine_events/part-00000-of-00001.csv";
-  if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
-    LOG(ERROR) << "Failed to open trace for reading of machine events.";
-  }
-  int64_t l = 0;
-  while (!feof(fptr)) {
-    if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-      VLOG(3) << "Processing line " << l << ": " << line;
-      boost::split(vals, line, is_any_of(","), token_compress_off);
-      uint64_t time = lexical_cast<uint64_t>(vals[0]);
-      if (time > 0 || (num_machines >= 0 && l >= num_machines)) {
-        // We only care about the initial machines here
-        break;
-      }
-      if (vals.size() != 6) {
-        LOG(ERROR) << "Unexpected structure of machine event row";
-      } else {
-        uint64_t machine_id = lexical_cast<uint64_t>(vals[1]);
-        uint64_t event_type = lexical_cast<uint64_t>(vals[2]);
-        if (event_type == MACHINE_ADD) {
-          machines->insert(machine_id);
-        } else if (event_type == MACHINE_REMOVE) {
-          machines->erase(machine_id);
-        } else if (event_type == MACHINE_UPDATE) {
-          // TODO(ionel): Handle machine update event.
-        }
-      }
-    }
-    l++;
-  }
-  return l;
-}
-
-uint64_t GoogleTraceSimulator::ReadInitialTasksFile() {
-  bool done = false;
-  char line[200];
-  vector<string> vals;
-  FILE* fptr = NULL;
-  int64_t t = 0;
-  for (uint64_t f = 0; f < 500; f++) {
-    string fname;
-    spf(&fname, "%s/task_events/part-%05ld-of-00500.csv",
-        trace_path_.c_str(), f);
-    if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open trace for reading of task events.";
-    }
-    int64_t l = 0;
-    while (!feof(fptr)) {
-      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-        VLOG(3) << "Processing line " << l << ": " << line;
-        boost::split(vals, line, is_any_of(","), token_compress_off);
-        uint64_t time = lexical_cast<uint64_t>(vals[0]);
-        if (time > 0) {
-          // We only care about the initial tasks here, so break once
-          // the time is non-zero
-          done = true;
-          break;
-        }
-        if (vals.size() != 13) {
-          LOG(ERROR) << "Unexpected structure of task event row: found "
-                     << vals.size() << " columns.";
-        } else {
-          uint64_t job_id = lexical_cast<uint64_t>(vals[2]);
-          uint64_t task_index = lexical_cast<uint64_t>(vals[3]);
-          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
-          if (event_type == SUBMIT_EVENT) {
-            if (JobDescriptor* jd = FindPtrOrNull(job_id_to_jd_, job_id)) {
-              // This is a job we're interested in
-              TaskDescriptor* new_task = AddTaskToJob(jd);
-              TaskIdentifier task_id;
-              task_id.job_id = job_id;
-              task_id.task_index = task_index;
-              InsertIfNotPresent(&task_id_to_td_, task_id, new_task);
-              t++;
-            }
-          }
-          // TODO(ionel): Can there be a situation in which a task is
-          // submitted and killed at timestamp 0?
-        }
-      }
-      l++;
-    }
-    if (done)
-      return t;
-  }
-  return t;
-}
-
-void GoogleTraceSimulator::PopulateJob(JobDescriptor* jd, uint64_t job_id) {
+JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
+  JobDescriptor jd;
   // Generate a hash out of the trace job_id.
   JobID_t new_job_id = GenerateJobID(job_id);
+
+  CHECK(InsertIfNotPresent(job_map_.get(), new_job_id, jd));
+  // Get the new value of the pointer because jd has been copied.
+  JobDescriptor* jd_ptr = FindOrNull(*job_map_, new_job_id);
+
   // Maintain a mapping between the trace job_id and the generated job_id.
-  jd->set_uuid(to_string(new_job_id));
-  InsertOrUpdate(&job_id_to_jd_, job_id, jd);
-  TaskDescriptor* rt = jd->mutable_root_task();
+  jd_ptr->set_uuid(to_string(new_job_id));
+  InsertOrUpdate(&job_id_to_jd_, job_id, jd_ptr);
+  TaskDescriptor* rt = jd_ptr->mutable_root_task();
   string bin;
   // XXX(malte): hack, should use logical job name
   spf(&bin, "%jd", job_id);
   rt->set_binary(bin);
-  rt->set_uid(GenerateRootTaskID(*jd));
+  rt->set_uid(GenerateRootTaskID(*jd_ptr));
   rt->set_state(TaskDescriptor::RUNNABLE);
+  return jd_ptr;
+}
+
+void GoogleTraceSimulator::ProcessSimulatorEvents(
+    uint64_t cur_time,
+    const ResourceTopologyNodeDescriptor& machine_tmpl) {
+  pair<multimap<uint64_t, EventDescriptor>::iterator,
+       multimap<uint64_t, EventDescriptor>::iterator> range_events =
+    events_.equal_range(cur_time);
+  for (multimap<uint64_t, EventDescriptor>::iterator it = range_events.first;
+       it != range_events.second; ++it) {
+    if (it->second.type() == EventDescriptor::ADD_MACHINE) {
+      AddMachine(machine_tmpl, it->second.machine_id());
+    } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
+      RemoveMachine(it->second.machine_id());
+    } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
+      // TODO(ionel): Handle machine update event.
+    } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
+      // Task has finished.
+      TaskIdentifier task_identifier;
+      task_identifier.task_index = it->second.task_index();
+      task_identifier.job_id = it->second.job_id();
+      TaskCompleted(task_identifier);
+    } else {
+      LOG(ERROR) << "Unexpected machine event";
+    }
+  }
+  events_.erase(cur_time);
+}
+
+void GoogleTraceSimulator::ProcessTaskEvent(uint64_t cur_time,
+                                            const TaskIdentifier& task_identifier,
+                                            uint64_t event_type) {
+  if (event_type == SUBMIT_EVENT) {
+    AddNewTask(task_identifier);
+  }
+}
+
+void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
+  ResourceDescriptor** rd_ptr = FindOrNull(machine_id_to_rd_, machine_id);
+  CHECK_NOTNULL(rd_ptr);
+  // Delete the machine from the flow graph.
+  ResourceID_t res_id = ResourceIDFromString((*rd_ptr)->uuid());
+  flow_graph_->DeleteResourceNode(res_id);
+  machine_id_to_rd_.erase(machine_id);
+  // TODO(ionel): Remove children from the topology as well (e.g., PU).
+  resource_map_->erase(res_id);
 }
 
 void GoogleTraceSimulator::ResetUuid(ResourceTopologyNodeDescriptor* rtnd,
@@ -453,16 +406,14 @@ void GoogleTraceSimulator::ResetUuid(ResourceTopologyNodeDescriptor* rtnd,
   rtnd->mutable_resource_desc()->set_uuid(new_uuid);
 }
 
-void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph) {
+void GoogleTraceSimulator::ReplayTrace() {
   // Load all the machine events.
   LoadMachineEvents();
+  // Populate the job_id to number of tasks mapping.
+  LoadJobsNumTasks();
   // Load tasks' runtime.
   unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime =
     LoadTasksRunningTime();
-  // Multimap from timestamp to task. The key represents the timestamp at which the task ends.
-  multimap<uint64_t, TaskDescriptor*> task_end_runtime;
-  // Mapping from flow graph task uid to trace task id.
-  unordered_map<uint64_t, TaskIdentifier> flow_id_to_task_id;
 
   // Import a fictional machine resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
@@ -470,17 +421,12 @@ void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph) {
   machine_tmpl.ParseFromFileDescriptor(fd);
   close(fd);
 
-  scheduler::QuincyDispatcher quincy_dispatcher =
-    scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph), false);
-  // The first time the solver runs from scratch.
-  map<uint64_t, uint64_t>* task_mappings = quincy_dispatcher.Run();
-  UpdateFlowGraph(flow_graph, task_mappings, task_runtime, task_end_runtime);
-
   char line[200];
   vector<string> vals;
   FILE* f_task_events_ptr = NULL;
   uint64_t time_interval_bound = FLAGS_bin_time_duration;
-  uint64_t last_timestamp = 0;
+  uint64_t last_time_processed = 0;
+  bool initial_time_processed = false;
   for (uint64_t file_num = 0; file_num < 500; file_num++) {
     string fname;
     spf(&fname, "%s/task_events/part-%05ld-of-00500.csv", trace_path_.c_str(), file_num);
@@ -500,127 +446,107 @@ void GoogleTraceSimulator::ReplayTrace(FlowGraph* flow_graph) {
           task_identifier.task_index = lexical_cast<uint64_t>(vals[3]);
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
 
-          if (task_time == 0) {
-            // The task is already present in the graph.
-            continue;
-          }
-
           // We only run for the first FLAGS_runtime seconds.
           if (FLAGS_runtime < task_time) {
             LOG(INFO) << "Terminating at : " << task_time;
             return;
           }
 
-          if (task_time > last_timestamp) {
-            // Apply all the machine events.
-            ApplyMachineEvents(last_timestamp, task_time, flow_graph, machine_tmpl);
-            last_timestamp = task_time;
-          }
+          if (task_time > time_interval_bound) {
+            map<uint64_t, uint64_t>* task_mappings = quincy_dispatcher_->Run();
 
-          if (event_type == SUBMIT_EVENT) {
-            if (task_time <= time_interval_bound) {
-              AddNewTask(flow_graph, task_identifier, &flow_id_to_task_id);
-            } else {
-              task_mappings = quincy_dispatcher.Run();
-              UpdateFlowGraph(flow_graph, task_mappings, task_runtime, task_end_runtime);
+            UpdateFlowGraph(time_interval_bound, task_runtime, task_mappings);
 
-              // Update current time.
+            // Update current time.
+            time_interval_bound += FLAGS_bin_time_duration;
+            while (time_interval_bound < task_time) {
               time_interval_bound += FLAGS_bin_time_duration;
-              while (time_interval_bound < task_time) {
-                time_interval_bound += FLAGS_bin_time_duration;
-              }
-
-              AddNewTask(flow_graph, task_identifier, &flow_id_to_task_id);
             }
+            time_interval_bound += FLAGS_bin_time_duration;
+          }
+          if (last_time_processed < task_time || !initial_time_processed) {
+            ProcessSimulatorEvents(task_time, machine_tmpl);
+            last_time_processed = task_time;
+            initial_time_processed = true;
           }
 
+          ProcessTaskEvent(task_time, task_identifier, event_type);
         }
       }
     }
   }
 }
 
-void GoogleTraceSimulator::Run() {
-  // command line argument sanity checking
-  if (trace_path_.empty()) {
-    LOG(FATAL) << "Please specify a path to the Google trace!";
+void GoogleTraceSimulator::TaskCompleted(const TaskIdentifier& task_identifier) {
+  TaskDescriptor** td_ptr = FindOrNull(task_id_to_td_, task_identifier);
+  CHECK_NOTNULL(td_ptr);
+  TaskID_t task_id = (*td_ptr)->uid();
+  JobID_t job_id = JobIDFromString((*td_ptr)->job_id());
+  // Remove the task node from the flow graph.
+  flow_graph_->DeleteTaskNode(task_id);
+  // Erase from local state: task_id_to_td_, task_map_ and task_bindings_.
+  task_id_to_td_.erase(task_identifier);
+  task_bindings_.erase(task_id);
+  task_map_->erase(task_id);
+  task_id_to_identifier_.erase(task_id);
+  uint64_t* num_tasks = FindOrNull(job_num_tasks_, task_identifier.job_id);
+  CHECK_NOTNULL(num_tasks);
+  (*num_tasks)--;
+  if (*num_tasks == 0) {
+    JobCompleted(task_identifier.job_id, job_id);
   }
+}
 
-  LOG(INFO) << "Starting Google Trace extraction!";
-  LOG(INFO) << "Number of machines to extract: " << FLAGS_num_machines;
-  LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " seconds.";
-  LoadInitialMachines(FLAGS_num_machines);
-  LoadInitialJobs(FLAGS_num_jobs);
-  LoadInitialTasks();
-
-  QuincyCostModel* cost_model = new QuincyCostModel();
-  FlowGraph g(cost_model);
-  // Add resources and job to flow graph
-  g.AddResourceTopology(rtn_root_);
-  // Add initial jobs
-  for (unordered_map<uint64_t, JobDescriptor*>::const_iterator iter = job_id_to_jd_.begin();
-       iter != job_id_to_jd_.end(); ++iter) {
-    VLOG(1) << "Add job with " << iter->second->root_task().spawned_size()
-            << " child tasks of root task";
-    g.AddOrUpdateJobNodes(iter->second);
-  }
-  if (FLAGS_tasks_preemption_bins) {
-    ofstream out_file(FLAGS_output_dir + "/" + FLAGS_task_bins_output);
-    if (out_file.is_open()) {
-      BinTasksByEventType(EVICT_EVENT, out_file);
-      out_file.close();
-    } else {
-      LOG(ERROR) << "Could not open bin output file.";
-    }
-  }
-  if (FLAGS_run_incremental_scheduler) {
-    ReplayTrace(&g);
+EventDescriptor_EventType GoogleTraceSimulator::TranslateMachineEventToEventType(
+    int32_t machine_event) {
+  if (machine_event == MACHINE_ADD) {
+    return EventDescriptor::ADD_MACHINE;
+  } else if (machine_event == MACHINE_REMOVE) {
+    return EventDescriptor::REMOVE_MACHINE;
+  } else if (machine_event == MACHINE_UPDATE) {
+    return EventDescriptor::UPDATE_MACHINE;
+  } else {
+    LOG(FATAL) << "Unexpected machine event type: " << machine_event;
   }
 }
 
 void GoogleTraceSimulator::UpdateFlowGraph(
-    FlowGraph* flow_graph, map<uint64_t, uint64_t>* task_mappings,
+    uint64_t scheduling_timestamp,
     unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime,
-    multimap<uint64_t, TaskDescriptor*>& task_end_runtime) {
-  // TODO(ionel): Implement.
-}
-
-void GoogleTraceSimulator::ApplyMachineEvents(
-    uint64_t last_time, uint64_t cur_time, FlowGraph* flow_graph,
-    const ResourceTopologyNodeDescriptor& machine_tmpl) {
-  for (; last_time <= cur_time; last_time++) {
-    pair<multimap<uint64_t, EventDescriptor*>::iterator,
-         multimap<uint64_t, EventDescriptor*>::iterator> range_events =
-      events_.equal_range(last_time);
-    for (multimap<uint64_t, EventDescriptor*>::iterator it = range_events.first;
-         it != range_events.second; ++it) {
-      if (it->second->type() == EventDescriptor::ADD_MACHINE) {
-        ResourceID_t* res_id_ptr = FindOrNull(machine_id_to_res_id_, it->second->machine_id());
-        if (res_id_ptr) {
-          LOG(ERROR) << "Already added machine " << it->second->machine_id();
-          continue;
-        }
-        // Create a new machine topology descriptor.
-        ResourceTopologyNodeDescriptor* new_machine = NULL;
-        ResourceID_t res_id =
-          AddMachineToTopologyAndResetUuid(machine_tmpl, it->second->machine_id(), new_machine);
-        // Add mapping from machine_id to the new resource_id.
-        InsertOrUpdate(&machine_id_to_res_id_, it->second->machine_id(), res_id);
-        // Add the new machine to the flow graph.
-        flow_graph->AddResourceNode(new_machine);
-      } else if (it->second->type() == EventDescriptor::REMOVE_MACHINE) {
-        ResourceID_t* res_id_ptr = FindOrNull(machine_id_to_res_id_, it->second->machine_id());
-        CHECK_NOTNULL(res_id_ptr);
-        // Delete the machine from the flow graph.
-        flow_graph->DeleteResourceNode(*res_id_ptr);
-        machine_id_to_res_id_.erase(it->second->machine_id());
-      } else if (it->second->type() == EventDescriptor::UPDATE_MACHINE) {
-        // TODO(ionel): Handle machine update event.
-      } else {
-        LOG(ERROR) << "Unexpected machine event";
-      }
+    map<uint64_t, uint64_t>* task_mappings) {
+  for (map<uint64_t, uint64_t>::iterator it = task_mappings->begin();
+       it != task_mappings->end(); ++it) {
+    SchedulingDelta* delta = new SchedulingDelta();
+    // Populate the scheduling delta.
+    quincy_dispatcher_->NodeBindingToSchedulingDelta(*flow_graph_->Node(it->first),
+                                                     *flow_graph_->Node(it->second),
+                                                     &task_bindings_, delta);
+    if (delta->type() == SchedulingDelta::NOOP) {
+      continue;
     }
-    events_.erase(last_time);
+    // Mark the task as scheduled
+    flow_graph_->Node(it->first)->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+    // Apply the scheduling delta.
+    TaskID_t task_id = delta->task_id();
+    ResourceID_t res_id = ResourceIDFromString(delta->resource_id());
+    if (delta->type() == SchedulingDelta::PLACE) {
+      TaskDescriptor** td = FindOrNull(*task_map_, task_id);
+      ResourceStatus** rs = FindOrNull(*resource_map_, res_id);
+      CHECK_NOTNULL(td);
+      CHECK_NOTNULL(rs);
+      ResourceDescriptor* rd = (*rs)->mutable_descriptor();
+      rd->set_state(ResourceDescriptor::RESOURCE_BUSY);
+      (*td)->set_state(TaskDescriptor::RUNNING);
+      CHECK(InsertIfNotPresent(&task_bindings_, (*td)->uid(), ResourceIDFromString(rd->uuid())));
+      // After the task is bound, we now remove all of its edges into the flow
+      // graph apart from the bound resource.
+      // N.B.: This disables preemption and migration!
+      flow_graph_->UpdateArcsForBoundTask(task_id, res_id);
+      TaskIdentifier* task_identifier = FindOrNull(task_id_to_identifier_, task_id);
+      CHECK_NOTNULL(task_identifier);
+      AddTaskEndEvent(scheduling_timestamp, *task_identifier, task_runtime);
+    }
+    delete delta;
   }
 }
 

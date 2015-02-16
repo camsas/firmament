@@ -15,6 +15,6 @@ message EventDescriptor {
 
   required EventType type = 1;
   optional uint64 machine_id = 2;
-  optional uint64 task_id = 3;
+  optional uint64 task_index = 3;
   optional uint64 job_id = 4;
 }
