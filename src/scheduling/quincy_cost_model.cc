@@ -23,9 +23,9 @@ QuincyCostModel::QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
                                  shared_ptr<TaskMap_t> task_map,
                                  map<TaskID_t, ResourceID_t> *task_bindings)
   : resource_map_(resource_map),
-  job_map_(job_map),
-  task_map_(task_map),
-  task_bindings_(task_bindings) {
+    job_map_(job_map),
+    task_map_(task_map),
+    task_bindings_(task_bindings) {
   //application_stats_ = knowledge_base_->AppStats();
   CHECK_NOTNULL(task_bindings_);
 }

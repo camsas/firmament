@@ -22,8 +22,9 @@
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
-#include "scheduling/trivial_cost_model.h"
 #include "scheduling/quincy_cost_model.h"
+#include "scheduling/random_cost_model.h"
+#include "scheduling/trivial_cost_model.h"
 
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
@@ -53,13 +54,17 @@ QuincyScheduler::QuincyScheduler(
                            coordinator_res_id, coordinator_uri),
       topology_manager_(topo_mgr),
       parameters_(params) {
-  quincy_dispatcher_ = new QuincyDispatcher(flow_graph_, false);
+  // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
           << FLAGS_flow_scheduling_cost_model << "\"";
   switch (FLAGS_flow_scheduling_cost_model) {
     case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
       flow_graph_.reset(new FlowGraph(new TrivialCostModel()));
       VLOG(1) << "Using the trivial cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
+      flow_graph_.reset(new FlowGraph(new RandomCostModel()));
+      VLOG(1) << "Using the random cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
       flow_graph_.reset(
@@ -76,6 +81,8 @@ QuincyScheduler::QuincyScheduler(
             << parameters_.ShortDebugString();
   // Set up the initial flow graph
   UpdateResourceTopology(resource_topology);
+  // Set up the dispatcher, which starts the flow solver
+  quincy_dispatcher_ = new QuincyDispatcher(flow_graph_, false);
 }
 
 QuincyScheduler::~QuincyScheduler() {

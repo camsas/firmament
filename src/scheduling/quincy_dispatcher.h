@@ -18,8 +18,9 @@ namespace scheduler {
 class QuincyDispatcher {
  public:
   QuincyDispatcher(shared_ptr<FlowGraph> flow_graph, bool initial_solver_run)
-    : flow_graph_(flow_graph), initial_solver_run_(initial_solver_run),
-    debug_seq_num_(0) {
+    : flow_graph_(flow_graph),
+      initial_solver_run_(initial_solver_run),
+      debug_seq_num_(0) {
   }
 
   map<uint64_t, uint64_t>* Run();

@@ -104,40 +104,6 @@ FlowGraphNode* FlowGraph::AddEquivClassAggregator(
     spf(&comment, "EC_AGG_%ju", equivclass);
     ec_node->comment_ = comment;
   }
-#if 0
-  // XXX(malte): HACK!
-  if (equivclass == 9726732246984505783ULL) {
-    // matmult
-    VLOG(1) << "Adding EQUIV CLASS PREFERENCE EDGES for MATMULT!";
-    string res[] = {"8fc55627-896e-4006-a716-e1c55507b384",
-                    "a8169544-2709-4c80-82ca-f19879391b36"};
-    //string res[] = {"8fc55627-896e-4006-a716-e1c55507b384",
-    //                "377a2a8b-0ad7-4f4c-960a-884a6e00a06a"};
-    for (uint64_t i = 0; i < 2; ++i) {
-      uint64_t* res_node = FindOrNull(resource_to_nodeid_map_,
-                                      ResourceIDFromString(res[i]));
-      CHECK_NOTNULL(res_node);
-      AddArcInternal(*equiv_class_node_id, *res_node);
-    }
-  } else if (equivclass == 1717579855873226448ULL) {
-    VLOG(1) << "Adding EQUIV CLASS PREFERENCE EDGES for PIAPP!";
-    // pi_app
-    string res[] = {"377a2a8b-0ad7-4f4c-960a-884a6e00a06a",
-                    "a3c93f23-798d-4b84-8683-c3ccacc38702"};
-    //string res[] = {"a8169544-2709-4c80-82ca-f19879391b36",
-    //                "a3c93f23-798d-4b84-8683-c3ccacc38702"};
-    for (uint64_t i = 0; i < 2; ++i) {
-      uint64_t* res_node = FindOrNull(resource_to_nodeid_map_,
-                                      ResourceIDFromString(res[i]));
-      CHECK_NOTNULL(res_node);
-      AddArcInternal(*equiv_class_node_id, *res_node);
-    }
-  } else {
-    // unknown, just rought through cluster agg
-    VLOG(1) << "Adding NO EQUIV CLASS PREFERENCE EDGES as task UNKOWN!";
-    AddArcInternal(*equiv_class_node_id, cluster_agg_node_->id_);
-  }
-#endif
   return Node(*equiv_class_node_id);
 }
 
@@ -619,7 +585,6 @@ void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
     // Disable preemption
     PinTaskToNode(task_node, assigned_res_node);
   }
-
 }
 
 void FlowGraph::UpdateResourceNode(
@@ -632,11 +597,12 @@ void FlowGraph::UpdateResourceNode(
   VLOG(1) << "Considering resource " << res_id << ", which is "
           << (found_node ? *found_node : 0);
   if (found_node) {
-    LOG(FATAL) << "Not supported yet";
     // Check if its parent is identical
     if (rtnd.has_parent_id()) {
       ResourceID_t* old_parent_id = FindOrNull(resource_to_parent_map_, res_id);
       ResourceID_t new_parent_id = ResourceIDFromString(rtnd.parent_id());
+      // We didn't have a parent or the parent we had was different, so we need
+      // to move the node
       if (!old_parent_id || *old_parent_id != new_parent_id) {
         // If not, we need to move it to the new parent
         InsertOrUpdate(&resource_to_parent_map_, res_id, new_parent_id);
@@ -644,16 +610,27 @@ void FlowGraph::UpdateResourceNode(
         uint64_t* new_parent_node =
             FindOrNull(resource_to_nodeid_map_, new_parent_id);
         CHECK_NOTNULL(new_parent_node);
+        LOG(FATAL) << "Moving resources to new parents not supported yet";
       }
+      // Parent is the same as before (and not NULL)
       if (old_parent_id) {
         uint64_t* old_parent_node =
             FindOrNull(resource_to_nodeid_map_, *old_parent_id);
         CHECK_NOTNULL(old_parent_node);
-        // TODO(malte):
+        // TODO(malte): Is there anything we need to do here?
       }
     }
-    // Check if its children are identical
-    // TODO(malte):
+    // Check if any children need adding
+    for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator
+         child_iter = rtnd_ptr->children().begin();
+         child_iter != rtnd_ptr->children().end();
+         ++child_iter) {
+      uint64_t* child_node =
+        FindOrNull(resource_to_nodeid_map_,
+                   ResourceIDFromString(child_iter->resource_desc().uuid()));
+      if (!child_node)
+        AddResourceTopology(*child_iter);
+    }
   } else {
     // It does not already exist, so add it.
     VLOG(1) << "Adding new resource " << res_id << " to flow graph.";
