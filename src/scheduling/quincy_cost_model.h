@@ -6,7 +6,7 @@
 #ifndef FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
 
-
+#include <map>
 #include <string>
 #include <unordered_map>
 

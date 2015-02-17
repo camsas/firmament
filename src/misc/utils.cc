@@ -69,7 +69,7 @@ void SetupResourceID(boost::mt19937 *resource_id, const char *hostname) {
   if (hostname == NULL) {
     gethostname(hn, 100);
   } else {
-    strcpy(hn, hostname);
+    snprintf(hn, sizeof(hn), "%s", hn);
   }
   // Hash the hostname (truncated to 100 characters)
   boost::hash_combine(hash, hn);

@@ -628,7 +628,8 @@ void Coordinator::HandleTaskStateChange(
         bm.mutable_task_state()->CopyFrom(msg);
 
         // Send along completion statistics to the coordinator as well.
-        // TODO make this all const incuding hantle taskcompletion method and remove duplication from
+        // TODO(malte): Make this all const including handle task completion
+        // method and remove duplication from
         // Switch statement below.
         TaskFinalReport *sending_rep = bm.mutable_taskfinal_report();
         sending_rep->CopyFrom(report);
@@ -800,7 +801,8 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   // Compute the absolute deadline for the root task if it has a deadline
   // set.
   if (root_task->has_relative_deadline()) {
-    root_task->set_absolute_deadline(GetCurrentTimestamp() + root_task->relative_deadline() * 1000000);
+    root_task->set_absolute_deadline(
+        GetCurrentTimestamp() + root_task->relative_deadline() * 1000000);
   }
 
   // Create a dynamic task graph for the job

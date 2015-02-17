@@ -151,7 +151,8 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
     CHECK_NOTNULL(lookup_ptr);
     unsched_agg_to_sink_arc = *lookup_ptr;
   }
-  // TODO(gustafa): Maybe clear this and just fill it up on every iteration instead of this first time.
+  // TODO(gustafa): Maybe clear this and just fill it up on every iteration
+  // instead of this first time.
   unsched_agg_nodes_.insert(unsched_agg_node->id_);
 
   // Now add the job's task nodes
@@ -479,7 +480,8 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   // capcacity will already have been deducted (as part of PinTaskToNode,
   // currently).
   // Then remove node meta-data
-  VLOG(2) << "Deleting task node with id " << node->id_ << ", task id " << node->task_id_;
+  VLOG(2) << "Deleting task node with id " << node->id_ << ", task id "
+          << node->task_id_;
   node_map_.erase(node->id_);
   task_nodes_.erase(node->task_id_);
   unused_ids_.push(node->id_);

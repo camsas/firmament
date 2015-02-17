@@ -92,7 +92,7 @@ class MessagingAdapterInterface : public PrintableInterface {
   // (i.e. there is no channel to it, or it has failed), the boolean return
   // value will be false.
   virtual bool SendMessageToEndpoint(const string& endpoint_uri,
-                                     T& message) = 0;
+                                     T& message) = 0;  // NOLINT
 };
 
 }  // namespace firmament

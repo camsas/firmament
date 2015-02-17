@@ -31,7 +31,7 @@ try:
           and filename.endswith(".h") or filename.endswith(".cc"):
         f = os.path.join(root, filename)
         # XXX(malte): Hack to ignore simulator for linting purposes (for now)
-        if "/sim/" in f:
+        if "/sim/" in f and "sim/trace-extract/" not in f:
           continue
         if verbose:
           print "Adding source file %s to list..." % (f)
