@@ -16,6 +16,7 @@
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
+#include "engine/knowledge_base.h"
 #include "engine/executor_interface.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/event_driven_scheduler.h"
@@ -38,6 +39,7 @@ class QuincyScheduler : public EventDrivenScheduler {
                   const ResourceTopologyNodeDescriptor& resource_topology,
                   shared_ptr<ObjectStoreInterface> object_store,
                   shared_ptr<TaskMap_t> task_map,
+                  KnowledgeBase* kb,
                   shared_ptr<TopologyManager> topo_mgr,
                   MessagingAdapterInterface<BaseMessage>* m_adapter,
                   ResourceID_t coordinator_res_id,
@@ -70,10 +72,13 @@ class QuincyScheduler : public EventDrivenScheduler {
   map<TaskID_t, ResourceID_t> task_bindings_;
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
+  // Store a pointer to an external knowledge base.
+  KnowledgeBase* knowledge_base_;
   // Local storage of the current flow graph
   shared_ptr<FlowGraph> flow_graph_;
   // Flow scheduler parameters (passed in as protobuf to constructor)
   SchedulingParameters parameters_;
+  // The dispatcher runs different flow solvers.
   QuincyDispatcher* quincy_dispatcher_;
 };
 
