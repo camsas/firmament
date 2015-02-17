@@ -68,6 +68,47 @@ const deque<TaskFinalReport>* KnowledgeBase::GetFinalStatsForTask(
   return res;
 }
 
+uint64_t KnowledgeBase::GetAvgCPIForTEC(TaskEquivClass_t id) {
+  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
+  CHECK_NOTNULL(res);
+  if (!res || res->size() == 0)
+    return 0;
+  uint64_t accumulator = 0;
+  for (deque<TaskFinalReport>::const_iterator it = res->begin();
+       it != res->end();
+       ++it) {
+    accumulator += (it->cycles() / it->instructions());
+  }
+  return accumulator / res->size();
+}
+
+uint64_t KnowledgeBase::GetAvgIPMAForTEC(TaskEquivClass_t id) {
+  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
+  if (!res || res->size() == 0)
+    return 0;
+  uint64_t accumulator = 0;
+  for (deque<TaskFinalReport>::const_iterator it = res->begin();
+       it != res->end();
+       ++it) {
+    accumulator += (it->instructions() / it->llc_refs());
+  }
+  return accumulator / res->size();
+}
+
+uint64_t KnowledgeBase::GetAvgRuntimeForTEC(TaskEquivClass_t id) {
+  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
+  if (!res || res->size() == 0)
+    return 0;
+  uint64_t accumulator = 0;
+  for (deque<TaskFinalReport>::const_iterator it = res->begin();
+       it != res->end();
+       ++it) {
+    // Runtime is in seconds, but a double -- so convert into ms here
+    accumulator += it->runtime() * 1000;
+  }
+  return accumulator / res->size();
+}
+
 void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
   // Sanity checks
   const deque<MachinePerfStatisticsSample>* q =

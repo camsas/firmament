@@ -41,7 +41,7 @@ void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
   MessagingChannelInterface<BaseMessage>* chan = GetChannel();
   SendTaskExecutionMessage(chan, td, firmament_binary);
 
-  td->set_started(GetCurrentTimestamp());
+  td->set_start_time(GetCurrentTimestamp());
 }
 
 MessagingChannelInterface<BaseMessage>* RemoteExecutor::GetChannel() {
