@@ -8,6 +8,8 @@
 #define FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_SIMULATOR_H
 
 #include <fstream>
+#include <map>
+#include <string>
 
 #include "base/common.h"
 #include "base/resource_topology_node_desc.pb.h"
@@ -38,11 +40,10 @@ struct TaskIdentifierHasher {
 
 class GoogleTraceSimulator {
  public:
-  explicit GoogleTraceSimulator(string& trace_path);
+  explicit GoogleTraceSimulator(const string& trace_path);
   void Run();
 
  private:
-
   /**
    * Add new machine to the topology. The method updates simulator's mapping state.
    * @param machine_tmp the topology descriptor of the new machine
@@ -59,9 +60,10 @@ class GoogleTraceSimulator {
    */
   TaskDescriptor* AddNewTask(const TaskIdentifier& task_identifier);
 
-  void AddTaskEndEvent(uint64_t cur_timestamp,
-                       TaskIdentifier task_identifier,
-                       unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime);
+  void AddTaskEndEvent(
+      uint64_t cur_timestamp, TaskIdentifier task_identifier,
+      unordered_map<TaskIdentifier, uint64_t,
+                    TaskIdentifierHasher>* task_runtime);
 
   /**
    * Creates a new task for a job.
@@ -73,7 +75,7 @@ class GoogleTraceSimulator {
   /**
    * Compute the number of events of a particular type withing each time interval.
    */
-  void BinTasksByEventType(uint64_t event_type, ofstream& out_file);
+  void BinTasksByEventType(uint64_t event_type, ofstream& out_file); // NOLINT
 
   /**
    * Populate and add the root node of the topology.
@@ -92,7 +94,8 @@ class GoogleTraceSimulator {
   /**
    * Loads all the task runtimes and returns map task_identifier -> runtime.
    */
-  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& LoadTasksRunningTime();
+  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>&
+      LoadTasksRunningTime();
 
   /**
    * Create and populate a new job.
@@ -106,7 +109,8 @@ class GoogleTraceSimulator {
    * @param cur_time the timestamp for which to process the simulator events
    * @param machine_tmpl topology to use in case new machines are added
    */
-  void ProcessSimulatorEvents(uint64_t cur_time, const ResourceTopologyNodeDescriptor& machine_tmpl);
+  void ProcessSimulatorEvents(
+      uint64_t cur_time, const ResourceTopologyNodeDescriptor& machine_tmpl);
 
   /**
    * Process the given task event.
@@ -114,14 +118,15 @@ class GoogleTraceSimulator {
    * @param task_identifier the Google trace identifier of the task
    * @param event_type the type of the event
    */
-  void ProcessTaskEvent(uint64_t cur_time,
-                        const TaskIdentifier& task_identifier, uint64_t event_type);
+  void ProcessTaskEvent(
+      uint64_t cur_time,
+      const TaskIdentifier& task_identifier, uint64_t event_type);
 
   void RemoveMachine(uint64_t machine_id);
 
   /**
-   * The resource topology is build from the same protobuf file. The function changes the
-   * uuids to make sure that there's no two identical uuids.
+   * The resource topology is build from the same protobuf file. The function
+   * changes the uuids to make sure that there's no two identical uuids.
    */
   void ResetUuid(ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
                  const string& root_uuid);
@@ -130,23 +135,27 @@ class GoogleTraceSimulator {
 
   void TaskCompleted(const TaskIdentifier& task_identifier);
 
-  EventDescriptor_EventType TranslateMachineEventToEventType(int32_t machine_event);
+  EventDescriptor_EventType TranslateMachineEvent(int32_t machine_event);
 
   void UpdateFlowGraph(
     uint64_t scheduling_timestamp,
-    unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>& task_runtime,
+    unordered_map<TaskIdentifier, uint64_t,
+      TaskIdentifierHasher>* task_runtime,
     map<uint64_t, uint64_t>* task_mappings);
 
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.
   unordered_map<string, string> uuid_conversion_map_;
 
-  // Map used to convert between the google trace job_ids and the Firmament job descriptors.
+  // Map used to convert between the google trace job_ids and the Firmament
+  // job descriptors.
   unordered_map<uint64_t, JobDescriptor*> job_id_to_jd_;
-  // Map used to convert between the google trace task_ids and the Firmament task descriptors.
-  unordered_map<TaskIdentifier, TaskDescriptor*, TaskIdentifierHasher> task_id_to_td_;
-  // Map used to convert between the google trace machine_ids and the Firmament resource
-  // descriptors.
+  // Map used to convert between the google trace task_ids and the Firmament
+  // task descriptors.
+  unordered_map<TaskIdentifier, TaskDescriptor*, TaskIdentifierHasher>
+      task_id_to_td_;
+  // Map used to convert between the google trace machine_ids and the
+  // Firmament resource descriptors.
   unordered_map<uint64_t, ResourceDescriptor*> machine_id_to_rd_;
 
   unordered_map<TaskID_t, TaskIdentifier> task_id_to_identifier_;
@@ -162,7 +171,8 @@ class GoogleTraceSimulator {
 
   map<TaskID_t, ResourceID_t> task_bindings_;
 
-  // The map storing the simulator events. Maps from timestamp to simulator event.
+  // The map storing the simulator events. Maps from timestamp to simulator
+  // event.
   multimap<uint64_t, EventDescriptor> events_;
 
   string trace_path_;
@@ -172,7 +182,6 @@ class GoogleTraceSimulator {
   FlowGraph* flow_graph_;
 
   scheduler::QuincyDispatcher* quincy_dispatcher_;
-
 };
 
 }  // namespace sim

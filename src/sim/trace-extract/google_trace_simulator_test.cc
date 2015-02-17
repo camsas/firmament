@@ -35,8 +35,6 @@ class GoogleTraceSimulatorTest : public ::testing::Test {
     // Code here will be called immediately after each test (right
     // before the destructor).
   }
-
-
 };
 
 TEST(GoogleTraceSimulatorTest, Empty) {
