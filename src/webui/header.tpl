@@ -1,4 +1,5 @@
 <html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <head>
   <title>Firmament</title>
   <style>
@@ -66,6 +67,6 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
 
   <!-- Sparklines for resource consumption -->
-  <script src="http://www.omnipotent.net/jquery.sparkline/2.1.1/jquery.sparkline.min.js"></script>
+  <script src="http://www.omnipotent.net/jquery.sparkline/2.1.2/jquery.sparkline.min.js"></script>
 </head>
 

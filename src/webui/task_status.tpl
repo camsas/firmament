@@ -16,9 +16,9 @@ var sched_run_ts = [];
 var sched_wait_runnable_ts = [];
 
 function mean(values) {
-  var sum = 0;
+  var sum = 0.0;
   for (var i = 0; i < values.length; i++) {
-    sum += parseInt(values[i]);
+    sum += parseFloat(values[i]);
   }
   return sum / values.length;
 }
@@ -40,11 +40,15 @@ function getRAM(data) {
 }
 
 function getSchedStats(data) {
+  prev_run_ts = 0;
+  prev_wait_ts = 0;
   sched_run_ts = [];
   sched_wait_runnable_ts = [];
   for (i = 0; i < data.length; i++) {
-    sched_run_ts.push(data[i].sched_run);
-    sched_wait_runnable_ts.push(data[i].sched_wait);
+    sched_run_ts.push(data[i].sched_run - prev_run_ts);
+    sched_wait_runnable_ts.push(data[i].sched_wait - prev_wait_ts);
+    prev_run_ts = data[i].sched_run;
+    prev_wait_ts = data[i].sched_wait;
   }
 }
 
