@@ -6,6 +6,9 @@
 using namespace firmament;
 
 DEFINE_string(trace_path, "", "Path where the trace files are.");
+DEFINE_bool(aggregate_task_usage, false, "Generate aggregated task usage.");
+DEFINE_bool(expand_task_events, false, "Generate task events with runtime.");
+DEFINE_bool(jobs_num_tasks, false, "Generate num tasks for each jobs.");
 
 inline void init(int argc, char *argv[]) {
   // Set up usage message.

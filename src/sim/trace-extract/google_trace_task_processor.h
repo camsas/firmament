@@ -5,6 +5,7 @@
 
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using namespace std;
@@ -44,23 +45,27 @@ namespace sim {
 
   public:
     explicit GoogleTraceTaskProcessor(string& trace_path);
+
+    void AggregateTaskUsage();
+    void ExpandTaskEvents();
+    void JobsNumTasks();
     void Run();
-    map<uint64_t, vector<TaskSchedulingEvent*> >& ReadTaskSchedulingEvents();
-    TaskResourceUsage* BuildTaskResourceUsage(vector<string>& line_cols);
+
+  private:
     TaskResourceUsage* AvgTaskUsage(vector<TaskResourceUsage*>& resource_usage);
+    TaskResourceUsage* BuildTaskResourceUsage(vector<string>& line_cols);
     TaskResourceUsage* MaxTaskUsage(vector<TaskResourceUsage*>& resource_usage);
     TaskResourceUsage* MinTaskUsage(vector<TaskResourceUsage*>& resource_usage);
-    TaskResourceUsage* StandardDevTaskUsage(vector<TaskResourceUsage*>& resource_usage);
     void PrintStats(FILE* usage_stat_file, uint64_t job_id, uint64_t task_index,
                     vector<TaskResourceUsage*>& task_resource);
-    void AggregateTaskUsage();
-    map<uint64_t, string>& ReadLogicalJobsName();
     void PrintTaskRuntime(FILE* out_events_file, TaskRuntime* task_runtime, uint64_t job_id,
                           uint64_t task_index, string logical_job_name, uint64_t runtime,
                           vector<string>& cols);
-    void ExpandTaskEvents();
+    map<uint64_t, string>& ReadLogicalJobsName();
+    map<uint64_t, vector<TaskSchedulingEvent*> >& ReadTaskSchedulingEvents(
+        unordered_map<uint64_t, uint64_t>* job_num_tasks);
+    TaskResourceUsage* StandardDevTaskUsage(vector<TaskResourceUsage*>& resource_usage);
 
-  private:
     string trace_path_;
 
   };

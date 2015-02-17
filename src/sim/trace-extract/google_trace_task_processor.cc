@@ -7,10 +7,11 @@
 #include <boost/lexical_cast.hpp>
 #include <glog/logging.h>
 
-#include "sim/trace-extract/google_trace_task_processor.h"
+#include "misc/map-util.h"
 #include "misc/string_utils.h"
+#include "misc/utils.h"
+#include "sim/trace-extract/google_trace_task_processor.h"
 
-using namespace std;
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;
 using boost::token_compress_off;
@@ -23,13 +24,18 @@ using boost::token_compress_off;
 #define TASK_KILL 5
 #define TASK_LOST 6
 
+DECLARE_bool(aggregate_task_usage);
+DECLARE_bool(expand_task_events);
+DECLARE_bool(jobs_num_tasks);
+
 namespace firmament {
 namespace sim {
 
   GoogleTraceTaskProcessor::GoogleTraceTaskProcessor(string& trace_path): trace_path_(trace_path) {
   }
 
-  map<uint64_t, vector<TaskSchedulingEvent*> >& GoogleTraceTaskProcessor::ReadTaskSchedulingEvents() {
+  map<uint64_t, vector<TaskSchedulingEvent*> >& GoogleTraceTaskProcessor::ReadTaskSchedulingEvents(
+      unordered_map<uint64_t, uint64_t>* job_num_tasks) {
     // Store the scheduling events for every timestamp.
     map<uint64_t, vector<TaskSchedulingEvent*> > *scheduling_events =
       new map<uint64_t, vector<TaskSchedulingEvent*> >();
@@ -74,6 +80,14 @@ namespace sim {
               map<uint64_t, vector<TaskSchedulingEvent*> >::iterator it =
                 scheduling_events->find(timestamp);
               it->second.push_back(event);
+            }
+            if (FLAGS_jobs_num_tasks && task_event == TASK_SUBMIT) {
+              uint64_t* num_tasks = FindOrNull(*job_num_tasks, job_id);
+              if (num_tasks == NULL) {
+                CHECK(InsertOrUpdate(job_num_tasks, job_id, 1));
+              } else {
+                (*num_tasks)++;
+              }
             }
           }
         }
@@ -493,7 +507,12 @@ namespace sim {
   }
 
   void GoogleTraceTaskProcessor::AggregateTaskUsage() {
-    map<uint64_t, vector<TaskSchedulingEvent*> >& scheduling_events = ReadTaskSchedulingEvents();
+    unordered_map<uint64_t, uint64_t>* job_num_tasks =
+      new unordered_map<uint64_t, uint64_t>();
+    map<uint64_t, vector<TaskSchedulingEvent*> >& scheduling_events =
+      ReadTaskSchedulingEvents(job_num_tasks);
+    job_num_tasks->clear();
+    delete job_num_tasks;
     // Map job id to map of task id to vector of resource usage.
     map<uint64_t, map<uint64_t, vector<TaskResourceUsage*> > > task_usage;
     char line[200];
@@ -745,10 +764,39 @@ namespace sim {
     fclose(out_events_file);
   }
 
+  void GoogleTraceTaskProcessor::JobsNumTasks() {
+    unordered_map<uint64_t, uint64_t>* job_num_tasks =
+      new unordered_map<uint64_t, uint64_t>();
+    //    map<uint64_t, vector<TaskSchedulingEvent*> >& scheduling_events =
+    ReadTaskSchedulingEvents(job_num_tasks);
+
+    FILE* out_file = NULL;
+    string out_file_name;
+    spf(&out_file_name, "%s/jobs_num_tasks/jobs_num_tasks.csv", trace_path_.c_str());
+    if ((out_file = fopen(out_file_name.c_str(), "w")) == NULL) {
+      LOG(FATAL) << "Failed to open jobs_num_tasks file for writing";
+    }
+
+    for (unordered_map<uint64_t, uint64_t>::iterator it = job_num_tasks->begin();
+         it != job_num_tasks->end(); ++it) {
+      fprintf(out_file, "%" PRId64 " %" PRId64 "\n", it->first, it->second);
+    }
+    fclose(out_file);
+    // TODO(ionel): Delete scheduling_events.
+    job_num_tasks->clear();
+    delete job_num_tasks;
+  }
+
   void GoogleTraceTaskProcessor::Run() {
-    // TODO(ionel): Implement.
-    //    AggregateTaskUsage();
-    ExpandTaskEvents();
+    if (FLAGS_aggregate_task_usage) {
+      AggregateTaskUsage();
+    }
+    if (FLAGS_expand_task_events) {
+      ExpandTaskEvents();
+    }
+    if (FLAGS_jobs_num_tasks) {
+      JobsNumTasks();
+    }
   }
 
 } // sim
