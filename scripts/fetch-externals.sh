@@ -465,7 +465,7 @@ print_subhdr "CPPLINT HELPER SCRIPT"
 get_dep_wget "cpplint" "http://google-styleguide.googlecode.com/svn/trunk/cpplint/cpplint.py"
 
 
-## CS2 solver code for min-flow scheduler
+## CS2 solver code for min-cost max-flow scheduler.
 print_subhdr "CS2 MIN COST FLOW SOLVER"
 get_dep_wget "cs2" "http://igsystems.com/cs2/cs2-${CS2_VER}.tar"
 tar -xf cs2-${CS2_VER}.tar
@@ -474,6 +474,19 @@ if [[ ! -f cs2.exe ]]; then
   echo -n "Building..."
   # add patched makefile
   cp ${EXT_DIR}/../scripts/cs2-custom-makefile makefile
+  RES=$(make 2>/dev/null)
+else
+  RES=0
+fi
+print_succ_or_fail ${RES}
+cd ${EXT_DIR}
+
+
+## Flowlessly solver code for min-cost max-flow scheduler.
+print_subhdr "FLOWLESSLY_PRIVATE MIN COST MAX FLOW SOLVER"
+get_dep_git "flowlessly-git" "https://github.com/ICGog/FlowlesslyPrivate/FlowlesslyPrivate.git"
+cd flowlessly-git
+if [[ ! -f run_fast_cost_scaling ]]; then
   RES=$(make 2>/dev/null)
 else
   RES=0

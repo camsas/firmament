@@ -331,7 +331,7 @@ namespace scheduler {
     if (solver == "cs2") {
       *binary = "ext/cs2-4.6/cs2.exe";
     } else if (solver == "flowlessly") {
-      *binary = "ext/flowlessly-git/flow_scheduler";
+      *binary = "ext/flowlessly-git/run_fast_cost_scaling --statistics=false";
     } else {
       LOG(FATAL) << "Non-existed flow network solver specified: " << solver;
     }
