@@ -26,6 +26,7 @@ boost::mt19937 job_id_rg_;
 bool resource_id_rg_init_ = false;
 bool job_id_rg_init_ = false;
 
+/* Returns a timestamp in microseconds */
 uint64_t GetCurrentTimestamp() {
   struct timeval ts;
   gettimeofday(&ts, NULL);
