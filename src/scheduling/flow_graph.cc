@@ -287,6 +287,8 @@ void FlowGraph::AddResourceNode(
                 << parent_node->resource_id_
                 << "(" << parent_node->id_ << ") to "
                 << rtnd.resource_desc().uuid() << "("  << id << ").";
+        // The arc will have a 0 capacity, but it will be updated
+        // by the ConfigureResource methods.
         resource_arcs->push_back(AddArcInternal(parent_node->id_, id));
       }
       InsertIfNotPresent(&resource_to_parent_map_,
@@ -428,6 +430,8 @@ void FlowGraph::ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
   arc->cost_ = cost;
   if (!arc->cap_upper_bound_) {
     DeleteArcGeneratingDelta(arc);
+  } else {
+    graph_changes_.push_back(new DIMACSChangeArc(*arc));
   }
 }
 
@@ -668,6 +672,7 @@ void FlowGraph::ResetChanges() {
     delete *it;
   }
   graph_changes_.clear();
+  ids_created_.clear();
 }
 
 }  // namespace firmament

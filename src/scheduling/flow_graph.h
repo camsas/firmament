@@ -43,11 +43,11 @@ class FlowGraph {
   FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
+  void ResetChanges();
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void UpdateResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
-  void ResetChanges();
 
   // Simple accessor methods
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
@@ -80,6 +80,13 @@ class FlowGraph {
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
   FRIEND_TEST(DIMACSExporterTest, ScalabilityTestGraphs);
   FRIEND_TEST(FlowGraphTest, AddArcToNode);
+  FRIEND_TEST(FlowGraphTest, AddOrUpdateJobNodes);
+  FRIEND_TEST(FlowGraphTest, AddResourceNode);
+  FRIEND_TEST(FlowGraphTest, ChangeArc);
+  FRIEND_TEST(FlowGraphTest, DeleteTaskNode);
+  FRIEND_TEST(FlowGraphTest, DeleteResourceNode);
+  FRIEND_TEST(FlowGraphTest, DeleteNodesForJob);
+  FRIEND_TEST(FlowGraphTest, ResetChanges);
   FRIEND_TEST(FlowGraphTest, UnschedAggCapacityAdjustment);
   void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
                       vector<FlowGraphArc*>* task_arcs);
@@ -103,10 +110,12 @@ class FlowGraph {
 
   uint64_t next_id() {
     if (unused_ids_.empty()) {
+      ids_created_.push_back(current_id_);
       return current_id_++;
-    } else {
+   } else {
       uint64_t new_id = unused_ids_.front();
       unused_ids_.pop();
+      ids_created_.push_back(new_id);
       return new_id;
     }
   }
@@ -143,8 +152,11 @@ class FlowGraph {
   shared_ptr<JobMap_t> job_table_;
   // Pointer to map of all tasks that the coordinator currently knows about.
   shared_ptr<TaskMap_t> task_table_;
-  // Vector storing the ids of the nodes we've previously removed.
+  // Queue storing the ids of the nodes we've previously removed.
   queue<uint64_t> unused_ids_;
+  // Vector storing the ids of the nodes we've created.
+  vector<uint64_t> ids_created_;
+
 };
 
 }  // namespace firmament

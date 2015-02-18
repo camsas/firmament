@@ -1,7 +1,8 @@
 // The Firmament project
 // Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015-2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
-// Tests for DIMACS exporter for CS2 solver.
+// Tests for flow graph.
 
 #include <gtest/gtest.h>
 
@@ -9,6 +10,9 @@
 
 #include "base/common.h"
 #include "misc/utils.h"
+#include "scheduling/dimacs_add_node.h"
+#include "scheduling/dimacs_change_arc.h"
+#include "scheduling/dimacs_new_arc.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/trivial_cost_model.h"
 
@@ -73,6 +77,135 @@ TEST_F(FlowGraphTest, AddArcToNode) {
   CHECK_EQ(n0->outgoing_arc_map_[n1->id_], arc);
 }
 
+TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
+  FlowGraph g(new TrivialCostModel());
+  ResourceTopologyNodeDescriptor rtn_root;
+  CreateSimpleResourceTopo(&rtn_root);
+  g.AddResourceTopology(rtn_root);
+  //  uint32_t num_changes = g.graph_changes_.size();
+  // TODO(ionel): Implement.
+}
+
+TEST_F(FlowGraphTest, AddResourceNode) {
+  FlowGraph g(new TrivialCostModel());
+  ResourceTopologyNodeDescriptor rtn_root;
+  CreateSimpleResourceTopo(&rtn_root);
+  g.AddResourceTopology(rtn_root);
+  string root_id = rtn_root.mutable_resource_desc()->uuid();
+  uint32_t num_changes = g.graph_changes_.size();
+  // Add a new core node.
+  ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
+  string core_uid = to_string(GenerateUUID());
+  core_node->mutable_resource_desc()->set_uuid(core_uid);
+  core_node->mutable_resource_desc()->set_parent(root_id);
+  core_node->set_parent_id(root_id);
+  rtn_root.mutable_resource_desc()->add_children(core_uid);
+  uint64_t sink_graph_id = g.ids_created_[0];
+  uint64_t root_graph_id = g.ids_created_[1];
+  g.AddResourceNode(core_node);
+  uint64_t new_core_graph_id = g.ids_created_[g.ids_created_.size() - 1];
+  // Check if the number of changes is correct. One change for adding the new
+  // node, another change for adding an arc from the node to the sink and
+  // another change for update the arc from the parent to the core.
+  CHECK_EQ(g.graph_changes_.size(), num_changes + 3);
+  DIMACSAddNode* add_node =
+    static_cast<DIMACSAddNode*>(g.graph_changes_[num_changes]);
+  CHECK_EQ(add_node->node_.id_, new_core_graph_id);
+  DIMACSNewArc* arc_to_sink =
+    static_cast<DIMACSNewArc*>(g.graph_changes_[num_changes + 1]);
+  CHECK_EQ(arc_to_sink->src_, new_core_graph_id);
+  CHECK_EQ(arc_to_sink->dst_, sink_graph_id);
+  DIMACSChangeArc* arc_to_parent =
+    static_cast<DIMACSChangeArc*>(g.graph_changes_[num_changes + 2]);
+  CHECK_EQ(arc_to_parent->src_, root_graph_id);
+  CHECK_EQ(arc_to_parent->dst_, new_core_graph_id);
+
+  // Add two new PUs.
+  ResourceTopologyNodeDescriptor* memory_node = rtn_root.add_children();
+  string memory_uid = to_string(GenerateUUID());
+  memory_node->mutable_resource_desc()->set_uuid(memory_uid);
+  memory_node->mutable_resource_desc()->set_parent(root_id);
+  memory_node->set_parent_id(root_id);
+  ResourceTopologyNodeDescriptor* pu1_node = memory_node->add_children();
+  string pu1_uid = to_string(GenerateUUID());
+  pu1_node->mutable_resource_desc()->set_uuid(pu1_uid);
+  pu1_node->mutable_resource_desc()->set_parent(memory_uid);
+  pu1_node->set_parent_id(memory_uid);
+  ResourceTopologyNodeDescriptor* pu2_node = memory_node->add_children();
+  string pu2_uid = to_string(GenerateUUID());
+  pu2_node->mutable_resource_desc()->set_uuid(pu2_uid);
+  pu2_node->mutable_resource_desc()->set_parent(memory_uid);
+  pu2_node->set_parent_id(memory_uid);
+  // Add non-leaf node.
+  g.AddResourceNode(memory_node);
+  uint64_t non_leaf_node_id = g.ids_created_[g.ids_created_.size() - 1];
+  DIMACSAddNode* non_leaf_node =
+    static_cast<DIMACSAddNode*>(g.graph_changes_[g.graph_changes_.size() - 1]);
+  CHECK_EQ(non_leaf_node->node_.id_, non_leaf_node_id);
+  // Arc to parent.
+  CHECK_EQ(non_leaf_node->arcs_->size(), 1);
+}
+
+// Change an arc and check it gets added to changes.
+TEST_F(FlowGraphTest, ChangeArc) {
+  FlowGraph g(new TrivialCostModel());
+  FlowGraphNode* n0 = g.AddNodeInternal(g.next_id());
+  FlowGraphNode* n1 = g.AddNodeInternal(g.next_id());
+  FlowGraphArc* arc = g.AddArcInternal(n0->id_, n1->id_);
+  uint32_t num_changes = g.graph_changes_.size();
+  g.ChangeArc(arc, 0, 100, 42);
+  CHECK_EQ(arc->cost_, 42);
+  CHECK_EQ(arc->cap_lower_bound_, 0);
+  CHECK_EQ(arc->cap_upper_bound_, 100);
+  CHECK_EQ(g.graph_changes_.size(), num_changes + 1);
+  // This should delete the arc.
+  g.ChangeArc(arc, 0, 0, 42);
+  // Should have only added a change for the arc we removed.
+  CHECK_EQ(g.graph_changes_.size(), num_changes + 2);
+  // TODO(ionel): Check the change is correct.
+}
+
+TEST_F(FlowGraphTest, DeleteTaskNode) {
+  FlowGraph g(new TrivialCostModel());
+  ResourceTopologyNodeDescriptor rtn_root;
+  CreateSimpleResourceTopo(&rtn_root);
+  g.AddResourceTopology(rtn_root);
+
+  // TODO(ionel): Implement.
+}
+
+TEST_F(FlowGraphTest, DeleteResourceNode) {
+  FlowGraph g(new TrivialCostModel());
+  ResourceTopologyNodeDescriptor rtn_root;
+  CreateSimpleResourceTopo(&rtn_root);
+  g.AddResourceTopology(rtn_root);
+
+  // TODO(ionel): Implement.
+}
+
+TEST_F(FlowGraphTest, DeleteNodesForJob) {
+  FlowGraph g(new TrivialCostModel());
+  ResourceTopologyNodeDescriptor rtn_root;
+  CreateSimpleResourceTopo(&rtn_root);
+  g.AddResourceTopology(rtn_root);
+
+  // TODO(ionel): Implement.
+}
+
+TEST_F(FlowGraphTest, GetUnscheduledAggForForJob) {
+  // TODO(ionel): Implement.
+}
+
+TEST_F(FlowGraphTest, ResetChanges) {
+  FlowGraph g(new TrivialCostModel());
+  FlowGraphNode* n0 = g.AddNodeInternal(g.next_id());
+  FlowGraphNode* n1 = g.AddNodeInternal(g.next_id());
+  g.AddArcInternal(n0->id_, n1->id_);
+  CHECK_EQ(g.graph_changes_.size(), 1);
+  g.ResetChanges();
+  CHECK_EQ(g.graph_changes_.size(), 0);
+}
+
 // Add simple resource topology to graph
 TEST_F(FlowGraphTest, SimpleResourceTopo) {
   FlowGraph g(new TrivialCostModel());
@@ -117,6 +250,9 @@ TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
   CHECK_EQ(unsched_agg_to_sink_arc->cap_upper_bound_, 0);
 }
 
+TEST_F(FlowGraphTest, UpdateArcsForBoundTask) {
+  // TODO(ionel): Implement.
+}
 
 }  // namespace firmament
 

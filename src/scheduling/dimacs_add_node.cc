@@ -11,7 +11,8 @@ namespace firmament {
   const string DIMACSAddNode::GenerateChange() const {
     stringstream ss;
     // TODO(ionel): add support for node price. Currently we just print 0.
-    ss << "d " << node_.id_ << " " << node_.excess_ << " 0 " << arcs_->size();
+    ss << "d " << node_.id_ << " " << node_.excess_ << " 0 " << arcs_->size()
+       << "\n";
     for (vector<FlowGraphArc*>::const_iterator it = arcs_->begin();
          it != arcs_->end(); ++it) {
       ss << "a " << (*it)->src_ << " " << (*it)->dst_ << " "

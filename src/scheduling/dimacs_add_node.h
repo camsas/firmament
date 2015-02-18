@@ -28,6 +28,7 @@ class DIMACSAddNode : public DIMACSChange {
   const string GenerateChange() const;
 
  private:
+  FRIEND_TEST(FlowGraphTest, AddResourceNode);
   const FlowGraphNode& node_;
   vector<FlowGraphArc*>* arcs_;
 };
