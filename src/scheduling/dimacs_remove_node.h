@@ -24,6 +24,8 @@ class DIMACSRemoveNode : public DIMACSChange {
   const string GenerateChange() const;
 
  private:
+  FRIEND_TEST(FlowGraphTest, DeleteResourceNode);
+  FRIEND_TEST(FlowGraphTest, DeleteNodesForJob);
   uint64_t node_id_;
 };
 
