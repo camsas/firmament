@@ -16,10 +16,10 @@
 
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
-#include "engine/knowledge_base.h"
 #include "misc/utils.h"
 #include "misc/equivclasses.h"
 #include "messages/task_kill_message.pb.h"
+#include "scheduling/knowledge_base.h"
 #include "storage/types.h"
 
 namespace firmament {

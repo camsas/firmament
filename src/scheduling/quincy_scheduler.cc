@@ -19,11 +19,11 @@
 #include "misc/utils.h"
 #include "misc/string_utils.h"
 #include "engine/local_executor.h"
-#include "engine/knowledge_base.h"
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
 #include "scheduling/cost_models.h"
+#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/knowledge_base.h"
 
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "

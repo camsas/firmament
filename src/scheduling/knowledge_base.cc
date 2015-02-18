@@ -3,7 +3,7 @@
 //
 // Implementation of the coordinator knowledge base.
 
-#include "engine/knowledge_base.h"
+#include "scheduling/knowledge_base.h"
 
 #include <deque>
 

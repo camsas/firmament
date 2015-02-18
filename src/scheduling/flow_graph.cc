@@ -36,6 +36,7 @@ FlowGraph::FlowGraph(FlowSchedulingCostModelInterface *cost_model)
     : cost_model_(cost_model),
       current_id_(1),
       cluster_agg_node_(NULL) {
+  task_table_.reset(new TaskMap_t());
   // Add sink and cluster aggregator node
   AddSpecialNodes();
 }
@@ -163,6 +164,8 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
   while (!q.empty()) {
     TaskDescriptor* cur = q.front();
     q.pop();
+    // Add node to task_table_
+    InsertIfNotPresent(task_table_.get(), cur->uid(), cur);
     // Check if this node has already been added
     uint64_t* tn_ptr = FindOrNull(task_to_nodeid_map_, cur->uid());
     FlowGraphNode* task_node = tn_ptr ? Node(*tn_ptr) : NULL;
@@ -493,6 +496,7 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   task_nodes_.erase(node->task_id_);
   unused_ids_.push(node->id_);
   task_to_nodeid_map_.erase(task_id);
+  task_table_->erase(task_id);
   // Then remove the node itself
   DeleteNode(node);
 }

@@ -8,9 +8,11 @@ LIBS += -lboost_system -lboost_thread -lboost_regex -lhwloc -lssl -lcrypto
 LIB = libfirmament_scheduling.a
 OBJS = dimacs_exporter.o event_driven_scheduler.o flow_graph.o \
        quincy_cost_model.o quincy_scheduler.o simple_scheduler.o \
-			 sjf_cost_model.o trivial_cost_model.o random_cost_model.o common.o \
-			 dimacs_change_arc.o dimacs_remove_node.o dimacs_add_node.o \
-			 flow_graph_node.o flow_graph_arc.o dimacs_new_arc.o quincy_dispatcher.o
+       sjf_cost_model.o trivial_cost_model.o random_cost_model.o common.o \
+       knowledge_base.o dimacs_change_arc.o dimacs_remove_node.o \
+       dimacs_add_node.o flow_graph_node.o flow_graph_arc.o dimacs_new_arc.o \
+       quincy_dispatcher.o
+
 PBS = flow_node_type.pb.o scheduling_parameters.pb.o scheduling_delta.pb.o
 TESTS = dimacs_exporter_test flow_graph_test
 TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a
@@ -23,11 +25,11 @@ TESTS_dimacs_exporter_DEPS = $(OBJ_DIR)/flow_graph.o \
 			     $(OBJ_DIR)/dimacs_add_node.o \
 			     $(OBJ_DIR)/flow_graph_arc.o \
 			     $(OBJ_DIR)/flow_graph_node.o \
-			     $(OBJ_DIR)/sjf_cost_model.o \
+			     $(OBJ_DIR)/knowledge_base.o \
 			     $(OBJ_DIR)/random_cost_model.o \
+			     $(OBJ_DIR)/sjf_cost_model.o \
 			     $(OBJ_DIR)/trivial_cost_model.o \
 			     $(OBJ_DIR)/quincy_cost_model.o \
-			     $(OBJ_DIR)/../engine/knowledge_base.o \
 			     $(BUILD_DIR)/misc/libfirmament_misc.a \
 			     $(BUILD_DIR)/base/libfirmament_base.a
 TESTS_flow_graph_DEPS = $(OBJ_DIR)/flow_node_type.pb.o \
@@ -38,11 +40,11 @@ TESTS_flow_graph_DEPS = $(OBJ_DIR)/flow_node_type.pb.o \
 			$(OBJ_DIR)/dimacs_remove_node.o \
 			$(OBJ_DIR)/dimacs_add_node.o \
 			$(OBJ_DIR)/flow_graph_node.o \
-			$(OBJ_DIR)/sjf_cost_model.o \
+			$(OBJ_DIR)/knowledge_base.o \
 			$(OBJ_DIR)/random_cost_model.o \
+			$(OBJ_DIR)/sjf_cost_model.o \
 			$(OBJ_DIR)/trivial_cost_model.o \
 			$(OBJ_DIR)/quincy_cost_model.o \
-			$(OBJ_DIR)/../engine/knowledge_base.o \
 			$(BUILD_DIR)/misc/libfirmament_misc.a \
 			$(BUILD_DIR)/base/libfirmament_base.a
 

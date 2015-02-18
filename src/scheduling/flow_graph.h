@@ -148,8 +148,6 @@ class FlowGraph {
 
   // Vector storing the graph changes occured since the last scheduling round.
   vector<DIMACSChange*> graph_changes_;
-  // Pointer to map of all jobs that the coordinator currently knows about.
-  shared_ptr<JobMap_t> job_table_;
   // Pointer to map of all tasks that the coordinator currently knows about.
   shared_ptr<TaskMap_t> task_table_;
   // Queue storing the ids of the nodes we've previously removed.

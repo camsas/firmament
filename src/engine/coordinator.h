@@ -32,7 +32,6 @@
 #include "base/resource_topology_node_desc.pb.h"
 #include "base/task_graph.h"
 #include "engine/node.h"
-#include "engine/knowledge_base.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
 #include "messages/heartbeat_message.pb.h"
@@ -52,6 +51,7 @@
 #ifdef __HTTP_UI__
 #include "engine/coordinator_http_ui.h"
 #endif
+#include "scheduling/knowledge_base.h"
 #include "scheduling/simple_scheduler.h"
 #include "scheduling/quincy_scheduler.h"
 #include "storage/object_store_interface.h"

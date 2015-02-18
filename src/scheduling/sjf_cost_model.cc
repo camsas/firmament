@@ -12,9 +12,9 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "engine/knowledge_base.h"
 #include "misc/utils.h"
 #include "misc/map-util.h"
+#include "scheduling/knowledge_base.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
