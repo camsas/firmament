@@ -86,8 +86,8 @@ Coordinator::Coordinator(PlatformID platform_id)
     SchedulingParameters params;
     scheduler_ = new QuincyScheduler(
         job_table_, associated_resources_, *local_resource_topology_,
-        object_store_, task_table_, topology_manager_, m_adapter_, uuid_,
-        FLAGS_listen_uri, params);
+        object_store_, task_table_, knowledge_base_, topology_manager_, m_adapter_,
+        uuid_, FLAGS_listen_uri, params);
   } else {
     // Unknown scheduler specified, error.
     LOG(FATAL) << "Unknown or unrecognized scheduler '" << FLAGS_scheduler

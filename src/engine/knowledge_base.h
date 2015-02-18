@@ -17,6 +17,7 @@
 #include "base/machine_perf_statistics_sample.pb.h"
 #include "base/task_perf_statistics_sample.pb.h"
 #include "base/task_final_report.pb.h"
+#include "misc/equivclasses.h"
 
 namespace firmament {
 
@@ -33,7 +34,10 @@ class KnowledgeBase {
       ResourceID_t id) const;
   const deque<TaskPerfStatisticsSample>* GetStatsForTask(
       TaskID_t id) const;
-  const deque<TaskFinalReport>* GetFinalStatsForTask(TaskID_t id) const;
+  uint64_t GetAvgCPIForTEC(TaskEquivClass_t id);
+  uint64_t GetAvgIPMAForTEC(TaskEquivClass_t id);
+  uint64_t GetAvgRuntimeForTEC(TaskEquivClass_t id);
+  const deque<TaskFinalReport>* GetFinalStatsForTask(TaskEquivClass_t id) const;
   void ProcessTaskFinalReport(const TaskFinalReport& report);
 
  protected:

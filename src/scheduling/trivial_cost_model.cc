@@ -11,35 +11,35 @@ namespace firmament {
 
 TrivialCostModel::TrivialCostModel() { }
 
-Cost_t TrivialCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  return 5ULL;
+Cost_t TrivialCostModel::TaskToUnscheduledAggCost(const TaskDescriptor& td) {
+  return 5LL;
 }
 
-Cost_t TrivialCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
-  return 0ULL;
+Cost_t TrivialCostModel::UnscheduledAggToSinkCost(const JobDescriptor& jd) {
+  return 0LL;
 }
 
 Cost_t TrivialCostModel::TaskToClusterAggCost(TaskID_t task_id) {
-  return 2ULL;
+  return 2LL;
 }
 
 Cost_t TrivialCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                                ResourceID_t resource_id) {
-  return 0ULL;
+  return 0LL;
 }
 
 Cost_t TrivialCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
-  return 0ULL;
+  return 0LL;
 }
 
 Cost_t TrivialCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {
-  return 0ULL;
+  return 0LL;
 }
 
 Cost_t TrivialCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
-  return 0ULL;
+  return 0LL;
 }
 
 Cost_t TrivialCostModel::TaskContinuationCost(TaskID_t task_id) {

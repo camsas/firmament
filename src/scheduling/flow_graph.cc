@@ -50,6 +50,9 @@ FlowGraph::~FlowGraph() {
 void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
                                FlowGraphNode* unsched_agg_node,
                                vector<FlowGraphArc*>* task_arcs) {
+  // Grab the TD for this task.
+  TaskDescriptor* td = FindPtrOrNull(*task_table_, task_node->task_id_);
+  CHECK_NOTNULL(td);
   // We always have an edge to the cluster aggregator node
   FlowGraphArc* cluster_agg_arc = AddArcInternal(task_node, cluster_agg_node_);
   // Assign cost to the (task -> cluster agg) edge from cost model
@@ -64,8 +67,7 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
   // aggregator's outgoing edge
   AdjustUnscheduledAggToSinkCapacityGeneratingDelta(task_node->job_id_, 1);
   // Assign cost to the (task -> unscheduled agg) edge from cost model
-  unsched_arc->cost_ =
-      cost_model_->TaskToUnscheduledAggCost(task_node->task_id_);
+  unsched_arc->cost_ = cost_model_->TaskToUnscheduledAggCost(*td);
 
   unsched_arc->cap_upper_bound_ = 1;
   task_arcs->push_back(unsched_arc);
@@ -131,8 +133,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
     // ... and connect it directly to the sink
     unsched_agg_to_sink_arc = AddArcInternal(unsched_agg_node, sink_node_);
     unsched_agg_to_sink_arc->cap_upper_bound_ = 0;
-    unsched_agg_to_sink_arc->cost_ =
-        cost_model_->UnscheduledAggToSinkCost(JobIDFromString(jd->uuid()));
+    unsched_agg_to_sink_arc->cost_ = cost_model_->UnscheduledAggToSinkCost(*jd);
     // Record this for the future in the job <-> node ID lookup table
     CHECK(InsertIfNotPresent(&job_to_nodeid_map_, JobIDFromString(jd->uuid()),
                              unsched_agg_node->id_));

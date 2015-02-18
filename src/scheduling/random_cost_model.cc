@@ -11,7 +11,7 @@ RandomCostModel::RandomCostModel() { }
 
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
-Cost_t RandomCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
+Cost_t RandomCostModel::TaskToUnscheduledAggCost(const TaskDescriptor& td) {
   uint32_t seed = 0;
   int64_t half_max_arc_cost = FLAGS_flow_max_arc_cost / 2;
   return half_max_arc_cost + rand_r(&seed) % half_max_arc_cost + 1;
@@ -21,8 +21,8 @@ Cost_t RandomCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
 // than zero affects all the unscheduled tasks. It is better to affect the cost
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
-Cost_t RandomCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
-  return 0ULL;
+Cost_t RandomCostModel::UnscheduledAggToSinkCost(const JobDescriptor& jd) {
+  return 0LL;
 }
 
 // The cost from the task to the cluster aggregator models how expensive is a
@@ -49,15 +49,15 @@ Cost_t RandomCostModel::ResourceNodeToResourceNodeCost(
 
 // The cost from the resource leaf to the sink is 0.
 Cost_t RandomCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
-  return 0ULL;
+  return 0LL;
 }
 
 Cost_t RandomCostModel::TaskContinuationCost(TaskID_t task_id) {
-  return 0ULL;
+  return 0LL;
 }
 
 Cost_t RandomCostModel::TaskPreemptionCost(TaskID_t task_id) {
-  return 0ULL;
+  return 0LL;
 }
 
 Cost_t RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id) {

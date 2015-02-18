@@ -27,10 +27,9 @@ QuincyCostModel::QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
   CHECK_NOTNULL(task_bindings_);
 }
 
-
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
-Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
+Cost_t QuincyCostModel::TaskToUnscheduledAggCost(const TaskDescriptor& td) {
   uint32_t seed = 0;
   int64_t half_max_arc_cost = FLAGS_flow_max_arc_cost / 2;
   return half_max_arc_cost + rand_r(&seed) % half_max_arc_cost + 1;
@@ -41,7 +40,7 @@ Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
 // than zero affects all the unscheduled tasks. It is better to affect the cost
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
-Cost_t QuincyCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
+Cost_t QuincyCostModel::UnscheduledAggToSinkCost(const JobDescriptor& jd) {
   return 0ULL;
 }
 

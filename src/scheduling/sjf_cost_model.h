@@ -3,10 +3,10 @@
 //
 // Quincy scheduling cost model, as described in the SOSP 2009 paper.
 
-#ifndef FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
-#define FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
+#ifndef FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
+#define FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
 
-#include <map>
+
 #include <string>
 #include <unordered_map>
 
@@ -21,12 +21,10 @@ namespace firmament {
 
 typedef int64_t Cost_t;
 
-class QuincyCostModel : public FlowSchedulingCostModelInterface {
+class SJFCostModel : public FlowSchedulingCostModelInterface {
  public:
-  QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
-                  shared_ptr<JobMap_t> job_map,
-                  shared_ptr<TaskMap_t> task_map,
-                  map<TaskID_t, ResourceID_t> *task_bindings);
+  SJFCostModel(shared_ptr<TaskMap_t> task_table,
+               KnowledgeBase* kb);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(const TaskDescriptor& td);
   Cost_t UnscheduledAggToSinkCost(const JobDescriptor& jd);
@@ -46,14 +44,11 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
 
  private:
-  // Lookup maps for various resources from the scheduler.
-  shared_ptr<ResourceMap_t> resource_map_;
-  // Information regarding jobs and tasks.
-  shared_ptr<JobMap_t> job_map_;
-  shared_ptr<TaskMap_t> task_map_;
-  map<TaskID_t, ResourceID_t> *task_bindings_;
+  // A knowledge base instance that we will refer to for job runtime statistics.
+  KnowledgeBase* knowledge_base_;
+  shared_ptr<TaskMap_t> task_table_;
 };
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
+#endif  // FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H

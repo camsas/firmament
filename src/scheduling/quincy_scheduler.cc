@@ -19,16 +19,16 @@
 #include "misc/utils.h"
 #include "misc/string_utils.h"
 #include "engine/local_executor.h"
+#include "engine/knowledge_base.h"
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
-#include "scheduling/quincy_cost_model.h"
-#include "scheduling/random_cost_model.h"
-#include "scheduling/trivial_cost_model.h"
+#include "scheduling/cost_models.h"
 
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
-             "Values: 0 = TRIVIAL, 1 = QUINCY");
+             "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
+             "4 = WHARE, 5 = COCO");
 
 namespace firmament {
 namespace scheduler {
@@ -44,6 +44,7 @@ QuincyScheduler::QuincyScheduler(
     const ResourceTopologyNodeDescriptor& resource_topology,
     shared_ptr<ObjectStoreInterface> object_store,
     shared_ptr<TaskMap_t> task_map,
+    KnowledgeBase* kb,
     shared_ptr<TopologyManager> topo_mgr,
     MessagingAdapterInterface<BaseMessage>* m_adapter,
     ResourceID_t coordinator_res_id,
@@ -53,6 +54,7 @@ QuincyScheduler::QuincyScheduler(
                            object_store, task_map, topo_mgr, m_adapter,
                            coordinator_res_id, coordinator_uri),
       topology_manager_(topo_mgr),
+      knowledge_base_(kb),
       parameters_(params) {
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
@@ -66,11 +68,15 @@ QuincyScheduler::QuincyScheduler(
       flow_graph_.reset(new FlowGraph(new RandomCostModel()));
       VLOG(1) << "Using the random cost model";
       break;
+    case FlowSchedulingCostModelType::COST_MODEL_SJF:
+      flow_graph_.reset(new FlowGraph(new SJFCostModel(task_map, knowledge_base_)));
+      VLOG(1) << "Using the SJF cost model";
+      break;
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
       flow_graph_.reset(
           new FlowGraph(new QuincyCostModel(resource_map, job_map, task_map,
                                             &task_bindings_)));
-      VLOG(1) << "Using the quincy cost model";
+      VLOG(1) << "Using the Quincy cost model";
       break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
