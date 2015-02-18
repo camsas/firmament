@@ -110,7 +110,7 @@ FlowGraphNode* FlowGraph::AddEquivClassAggregator(
 }
 
 FlowGraphNode* FlowGraph::GetUnschedAggForJob(JobID_t job_id) {
-  uint64_t* unsched_agg_node_id = FindOrNull(job_to_nodeid_map_, job_id);
+  uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
   if (unsched_agg_node_id == NULL) {
     return NULL;
   }
@@ -122,7 +122,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
   // if none exists alread
   FlowGraphArc* unsched_agg_to_sink_arc;
   FlowGraphNode* unsched_agg_node;
-  uint64_t* unsched_agg_node_id = FindOrNull(job_to_nodeid_map_,
+  uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_,
                                              JobIDFromString(jd->uuid()));
   if (!unsched_agg_node_id) {
     unsched_agg_node = AddNodeInternal(next_id());
@@ -135,7 +135,8 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
     unsched_agg_to_sink_arc->cap_upper_bound_ = 0;
     unsched_agg_to_sink_arc->cost_ = cost_model_->UnscheduledAggToSinkCost(*jd);
     // Record this for the future in the job <-> node ID lookup table
-    CHECK(InsertIfNotPresent(&job_to_nodeid_map_, JobIDFromString(jd->uuid()),
+    CHECK(InsertIfNotPresent(&job_unsched_to_node_id_,
+                             JobIDFromString(jd->uuid()),
                              unsched_agg_node->id_));
     // Add new job unscheduled agg to the graph changes.
     vector<FlowGraphArc*> *unsched_arcs = new vector<FlowGraphArc*>();
@@ -324,7 +325,7 @@ void FlowGraph::AddResourceNode(
 
 void FlowGraph::AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
     JobID_t job, int64_t delta) {
-  uint64_t* unsched_agg_node_id = FindOrNull(job_to_nodeid_map_, job);
+  uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_, job);
   CHECK_NOTNULL(unsched_agg_node_id);
   FlowGraphArc** lookup_ptr =
       FindOrNull(Node(*unsched_agg_node_id)->outgoing_arc_map_,
@@ -456,6 +457,7 @@ void FlowGraph::DeleteNode(FlowGraphNode* node) {
       node->outgoing_arc_map_.begin();
       it != node->outgoing_arc_map_.end();
       ++it) {
+    Node(it->second->dst_)->incoming_arc_map_.erase(it->second->src_);;
     DeleteArc(it->second);
   }
   node->outgoing_arc_map_.clear();
@@ -464,6 +466,7 @@ void FlowGraph::DeleteNode(FlowGraphNode* node) {
       node->incoming_arc_map_.begin();
       it != node->incoming_arc_map_.end();
       ++it) {
+    Node(it->second->src_)->outgoing_arc_map_.erase(it->second->dst_);
     DeleteArc(it->second);
   }
   node->incoming_arc_map_.clear();
@@ -473,6 +476,7 @@ void FlowGraph::DeleteNode(FlowGraphNode* node) {
 }
 
 void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
+  // TODO(ionel): Delete the job related equivalence class aggregators.
   uint64_t* node_id = FindOrNull(task_to_nodeid_map_, task_id);
   CHECK_NOTNULL(node_id);
   FlowGraphNode* node = Node(*node_id);
@@ -486,7 +490,6 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   // Then remove node meta-data
   VLOG(2) << "Deleting task node with id " << node->id_ << ", task id "
           << node->task_id_;
-  node_map_.erase(node->id_);
   task_nodes_.erase(node->task_id_);
   unused_ids_.push(node->id_);
   task_to_nodeid_map_.erase(task_id);
@@ -499,15 +502,16 @@ void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
   CHECK_NOTNULL(node_id);
   FlowGraphNode* node = Node(*node_id);
   resource_to_nodeid_map_.erase(res_id);
+  resource_to_parent_map_.erase(res_id);
   unused_ids_.push(node->id_);
   leaf_nodes_.erase(*node_id);
   DeleteNode(node);
 }
 
 void FlowGraph::DeleteNodesForJob(JobID_t job_id) {
-  uint64_t* node_id = FindOrNull(job_to_nodeid_map_, job_id);
-  CHECK_NOTNULL(node_id);
-  FlowGraphNode* node = Node(*node_id);
+  uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
+  CHECK_NOTNULL(unsched_node_id);
+  FlowGraphNode* node = Node(*unsched_node_id);
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator
          it = node->incoming_arc_map_.begin();
        it != node->incoming_arc_map_.end(); it++) {
@@ -516,10 +520,9 @@ void FlowGraph::DeleteNodesForJob(JobID_t job_id) {
     CHECK_EQ(task_node->job_id_, job_id);
     DeleteTaskNode(task_node->task_id_);
   }
-  job_to_nodeid_map_.erase(job_id);
+  job_unsched_to_node_id_.erase(job_id);
   unused_ids_.push(node->id_);
   DeleteNode(node);
-  // TODO(ionel): Delete the job related equivalence class aggregators.
 }
 
 FlowGraphNode* FlowGraph::NodeForResourceID(const ResourceID_t& res_id) {

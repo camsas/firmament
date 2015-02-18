@@ -141,7 +141,7 @@ class FlowGraph {
   unordered_map<TaskEquivClass_t, uint64_t> equiv_class_to_nodeid_map_;
   // The "node ID" for the job is currently the ID of the job's unscheduled node
   unordered_map<JobID_t, uint64_t,
-      boost::hash<boost::uuids::uuid> > job_to_nodeid_map_;
+      boost::hash<boost::uuids::uuid> > job_unsched_to_node_id_;
   unordered_set<uint64_t> leaf_nodes_;
   unordered_set<uint64_t> task_nodes_;
   unordered_set<uint64_t> unsched_agg_nodes_;

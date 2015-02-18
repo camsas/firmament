@@ -13,6 +13,7 @@
 #include "scheduling/dimacs_add_node.h"
 #include "scheduling/dimacs_change_arc.h"
 #include "scheduling/dimacs_new_arc.h"
+#include "scheduling/dimacs_remove_node.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/trivial_cost_model.h"
 
@@ -82,8 +83,37 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   g.AddResourceTopology(rtn_root);
-  //  uint32_t num_changes = g.graph_changes_.size();
-  // TODO(ionel): Implement.
+  // Now generate a job and add it
+  JobID_t jid = GenerateJobID();
+  JobDescriptor test_job;
+  test_job.mutable_root_task()->set_state(TaskDescriptor::RUNNABLE);
+  test_job.set_uuid(to_string(jid));
+  uint32_t num_changes = g.graph_changes_.size();
+  uint32_t num_ids = g.ids_created_.size();
+  g.AddOrUpdateJobNodes(&test_job);
+  // This should add one new node for the agg, one arc change from agg to
+  // sink, one new node for the root task, one new node for the
+  // equivalence class.
+  CHECK_EQ(g.graph_changes_.size(), num_changes + 4);
+  uint64_t sink_graph_id = g.ids_created_[0];
+  DIMACSAddNode* unsched_agg =
+    static_cast<DIMACSAddNode*>(g.graph_changes_[num_changes]);
+  DIMACSChangeArc* arc_to_sink =
+    static_cast<DIMACSChangeArc*>(g.graph_changes_[num_changes + 1]);
+  DIMACSAddNode* root_task =
+    static_cast<DIMACSAddNode*>(g.graph_changes_[num_changes + 2]);
+  DIMACSAddNode* equiv_class =
+    static_cast<DIMACSAddNode*>(g.graph_changes_[num_changes + 3]);
+
+  // Check the id of the source equals the id of the unsched agg node.
+  CHECK_EQ(arc_to_sink->src_, g.ids_created_[num_ids]);
+  CHECK_EQ(arc_to_sink->dst_, sink_graph_id);
+  CHECK_EQ(arc_to_sink->cap_upper_bound_, 1);
+  // Arc to sink.
+  CHECK_EQ(unsched_agg->arcs_->size(), 1);
+  // Arc to unscheduled aggregator and to topology.
+  CHECK_EQ(root_task->arcs_->size(), 2);
+  CHECK_EQ(equiv_class->arcs_->size(), 1);
 }
 
 TEST_F(FlowGraphTest, AddResourceNode) {
@@ -149,8 +179,10 @@ TEST_F(FlowGraphTest, AddResourceNode) {
 // Change an arc and check it gets added to changes.
 TEST_F(FlowGraphTest, ChangeArc) {
   FlowGraph g(new TrivialCostModel());
-  FlowGraphNode* n0 = g.AddNodeInternal(g.next_id());
-  FlowGraphNode* n1 = g.AddNodeInternal(g.next_id());
+  uint64_t n0_id = g.next_id();
+  FlowGraphNode* n0 = g.AddNodeInternal(n0_id);
+  uint64_t n1_id = g.next_id();
+  FlowGraphNode* n1 = g.AddNodeInternal(n1_id);
   FlowGraphArc* arc = g.AddArcInternal(n0->id_, n1->id_);
   uint32_t num_changes = g.graph_changes_.size();
   g.ChangeArc(arc, 0, 100, 42);
@@ -158,20 +190,25 @@ TEST_F(FlowGraphTest, ChangeArc) {
   CHECK_EQ(arc->cap_lower_bound_, 0);
   CHECK_EQ(arc->cap_upper_bound_, 100);
   CHECK_EQ(g.graph_changes_.size(), num_changes + 1);
+  uint64_t num_arcs = g.NumArcs();
   // This should delete the arc.
   g.ChangeArc(arc, 0, 0, 42);
+  CHECK_EQ(g.NumArcs(), num_arcs - 1);
   // Should have only added a change for the arc we removed.
   CHECK_EQ(g.graph_changes_.size(), num_changes + 2);
-  // TODO(ionel): Check the change is correct.
-}
-
-TEST_F(FlowGraphTest, DeleteTaskNode) {
-  FlowGraph g(new TrivialCostModel());
-  ResourceTopologyNodeDescriptor rtn_root;
-  CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
-
-  // TODO(ionel): Implement.
+  DIMACSChangeArc* chg_arc =
+    static_cast<DIMACSChangeArc*>(g.graph_changes_[num_changes]);
+  CHECK_EQ(chg_arc->src_, n0_id);
+  CHECK_EQ(chg_arc->dst_, n1_id);
+  CHECK_EQ(chg_arc->cap_lower_bound_, 0);
+  CHECK_EQ(chg_arc->cap_upper_bound_, 100);
+  CHECK_EQ(chg_arc->cost_, 42);
+  DIMACSChangeArc* del_arc =
+    static_cast<DIMACSChangeArc*>(g.graph_changes_[num_changes + 1]);
+  CHECK_EQ(del_arc->src_, n0_id);
+  CHECK_EQ(del_arc->dst_, n1_id);
+  CHECK_EQ(del_arc->cap_lower_bound_, 0);
+  CHECK_EQ(del_arc->cap_upper_bound_, 0);
 }
 
 TEST_F(FlowGraphTest, DeleteResourceNode) {
@@ -179,8 +216,24 @@ TEST_F(FlowGraphTest, DeleteResourceNode) {
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   g.AddResourceTopology(rtn_root);
-
-  // TODO(ionel): Implement.
+  string root_id = rtn_root.mutable_resource_desc()->uuid();
+  // Add a new core node.
+  ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
+  string core_uid = to_string(GenerateUUID());
+  core_node->mutable_resource_desc()->set_uuid(core_uid);
+  core_node->mutable_resource_desc()->set_parent(root_id);
+  core_node->set_parent_id(root_id);
+  rtn_root.mutable_resource_desc()->add_children(core_uid);
+  g.AddResourceNode(core_node);
+  uint64_t new_core_graph_id = g.ids_created_[g.ids_created_.size() - 1];
+  uint32_t num_changes = g.graph_changes_.size();
+  // Delete the core node.
+  g.DeleteResourceNode(
+       ResourceIDFromString(core_node->resource_desc().uuid()));
+  CHECK_EQ(g.graph_changes_.size(), num_changes + 1);
+  DIMACSRemoveNode* rem_node =
+    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes]);
+  CHECK_EQ(rem_node->node_id_, new_core_graph_id);
 }
 
 TEST_F(FlowGraphTest, DeleteNodesForJob) {
@@ -188,12 +241,25 @@ TEST_F(FlowGraphTest, DeleteNodesForJob) {
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   g.AddResourceTopology(rtn_root);
-
-  // TODO(ionel): Implement.
-}
-
-TEST_F(FlowGraphTest, GetUnscheduledAggForForJob) {
-  // TODO(ionel): Implement.
+  // Now generate a job and add it
+  JobID_t jid = GenerateJobID();
+  JobDescriptor test_job;
+  test_job.mutable_root_task()->set_state(TaskDescriptor::RUNNABLE);
+  test_job.set_uuid(to_string(jid));
+  uint32_t num_changes = g.graph_changes_.size();
+  uint32_t num_ids = g.ids_created_.size();
+  g.AddOrUpdateJobNodes(&test_job);
+  CHECK_EQ(g.graph_changes_.size(), num_changes + 4);
+  uint64_t unsched_agg_graph_id = g.ids_created_[num_ids];
+  uint64_t root_task_graph_id = g.ids_created_[num_ids + 1];
+  // Now delete all the nodes for the given job.
+  g.DeleteNodesForJob(jid);
+  DIMACSRemoveNode* rm1 =
+    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 4]);
+  DIMACSRemoveNode* rm2 =
+    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 5]);
+  CHECK_EQ(rm1->node_id_, root_task_graph_id);
+  CHECK_EQ(rm2->node_id_, unsched_agg_graph_id);
 }
 
 TEST_F(FlowGraphTest, ResetChanges) {
@@ -211,7 +277,6 @@ TEST_F(FlowGraphTest, SimpleResourceTopo) {
   FlowGraph g(new TrivialCostModel());
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  LOG(INFO) << rtn_root.DebugString();
   g.AddResourceTopology(rtn_root);
 }
 
@@ -228,7 +293,7 @@ TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
   test_job.set_uuid(to_string(jid));
   g.AddOrUpdateJobNodes(&test_job);
   // Grab the unscheduled aggregator for the new job
-  uint64_t* unsched_agg_node_id = FindOrNull(g.job_to_nodeid_map_, jid);
+  uint64_t* unsched_agg_node_id = FindOrNull(g.job_unsched_to_node_id_, jid);
   CHECK_NOTNULL(unsched_agg_node_id);
   FlowGraphArc** lookup_ptr =
       FindOrNull(g.Node(*unsched_agg_node_id)->outgoing_arc_map_,
@@ -248,10 +313,6 @@ TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
   // The unscheduled aggregator's outbound capacity should have been
   // decremented.
   CHECK_EQ(unsched_agg_to_sink_arc->cap_upper_bound_, 0);
-}
-
-TEST_F(FlowGraphTest, UpdateArcsForBoundTask) {
-  // TODO(ionel): Implement.
 }
 
 }  // namespace firmament
