@@ -26,8 +26,8 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
   SJFCostModel(shared_ptr<TaskMap_t> task_table,
                KnowledgeBase* kb);
   // Costs pertaining to leaving tasks unscheduled
-  Cost_t TaskToUnscheduledAggCost(const TaskDescriptor& td);
-  Cost_t UnscheduledAggToSinkCost(const JobDescriptor& jd);
+  Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
+  Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
   // Per-task costs (into the resource topology)
   Cost_t TaskToClusterAggCost(TaskID_t task_id);
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,
@@ -44,6 +44,8 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
 
  private:
+  const TaskDescriptor& GetTask(TaskID_t task_id);
+
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
   shared_ptr<TaskMap_t> task_table_;

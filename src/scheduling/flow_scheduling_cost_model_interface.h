@@ -32,8 +32,8 @@ class FlowSchedulingCostModelInterface {
   virtual ~FlowSchedulingCostModelInterface() {}
 
   // Costs pertaining to leaving tasks unscheduled
-  virtual Cost_t TaskToUnscheduledAggCost(const TaskDescriptor& td) = 0;
-  virtual Cost_t UnscheduledAggToSinkCost(const JobDescriptor& jd) = 0;
+  virtual Cost_t TaskToUnscheduledAggCost(TaskID_t task_id) = 0;
+  virtual Cost_t UnscheduledAggToSinkCost(JobID_t job_id) = 0;
   // Per-task costs (into the resource topology)
   virtual Cost_t TaskToClusterAggCost(TaskID_t task_id) = 0;
   virtual Cost_t TaskToResourceNodeCost(TaskID_t task_id,

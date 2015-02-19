@@ -11,11 +11,11 @@ namespace firmament {
 
 TrivialCostModel::TrivialCostModel() { }
 
-Cost_t TrivialCostModel::TaskToUnscheduledAggCost(const TaskDescriptor& td) {
+Cost_t TrivialCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   return 5LL;
 }
 
-Cost_t TrivialCostModel::UnscheduledAggToSinkCost(const JobDescriptor& jd) {
+Cost_t TrivialCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
   return 0LL;
 }
 

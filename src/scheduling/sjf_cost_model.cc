@@ -25,9 +25,16 @@ SJFCostModel::SJFCostModel(shared_ptr<TaskMap_t> task_table,
     task_table_(task_table) {
 }
 
+const TaskDescriptor& SJFCostModel::GetTask(TaskID_t task_id) {
+  TaskDescriptor* td = FindPtrOrNull(*task_table_, task_id);
+  CHECK_NOTNULL(td);
+  return *td;
+}
+
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
-Cost_t SJFCostModel::TaskToUnscheduledAggCost(const TaskDescriptor& td) {
+Cost_t SJFCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
+  const TaskDescriptor& td = GetTask(task_id);
   uint64_t now = GetCurrentTimestamp();
   uint64_t time_since_submit = now - td.submit_time();
   // timestamps are in microseconds, but we scale to tenths of a second here in
@@ -39,7 +46,7 @@ Cost_t SJFCostModel::TaskToUnscheduledAggCost(const TaskDescriptor& td) {
 // than zero affects all the unscheduled tasks. It is better to affect the cost
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
-Cost_t SJFCostModel::UnscheduledAggToSinkCost(const JobDescriptor& jd) {
+Cost_t SJFCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
   return 0ULL;
 }
 
@@ -47,15 +54,15 @@ Cost_t SJFCostModel::UnscheduledAggToSinkCost(const JobDescriptor& jd) {
 // task to run on any node in the cluster. The cost of the topology's arcs are
 // the same for all the tasks.
 Cost_t SJFCostModel::TaskToClusterAggCost(TaskID_t task_id) {
-  return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
+  const TaskDescriptor& td = GetTask(task_id);
+  TaskEquivClass_t ec = GenerateTaskEquivClass(td);
+  uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(ec);
+  return avg_runtime;
 }
 
 Cost_t SJFCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                             ResourceID_t resource_id) {
-  TaskDescriptor* td = FindPtrOrNull(*task_table_, task_id);
-  TaskEquivClass_t ec = GenerateTaskEquivClass(*td);
-  uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(ec);
-  return avg_runtime;
+  return TaskToClusterAggCost(task_id);
 }
 
 Cost_t SJFCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
@@ -76,19 +83,6 @@ Cost_t SJFCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
 Cost_t SJFCostModel::TaskContinuationCost(TaskID_t task_id) {
   return 0ULL;
 }
-
-/*Cost_t SJFCostModel::TaskToResourceNodeCosts(TaskID_t task_id, const vector<ResourceID_t> &machine_ids,  vector<Cost_t> &machine_task_costs) {
-  for (uint64_t i = 0; i < machine_ids.size(); ++i) {
-      string host = (*resource_to_host_)[machine_ids[i]];
-
-     if (!knowledge_base_->NumRunningWebservers(host)) {
-        machine_task_costs.push_back(0);
-      } else {
-        machine_task_costs.push_back(2);
-      }
-  }
-  return 1ULL;
-}*/
 
 Cost_t SJFCostModel::TaskPreemptionCost(TaskID_t task_id) {
   return 0ULL;

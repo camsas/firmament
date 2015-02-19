@@ -21,8 +21,8 @@ class TrivialCostModel : public FlowSchedulingCostModelInterface {
   TrivialCostModel();
 
   // Costs pertaining to leaving tasks unscheduled
-  Cost_t TaskToUnscheduledAggCost(const TaskDescriptor& td);
-  Cost_t UnscheduledAggToSinkCost(const JobDescriptor& jd);
+  Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
+  Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
   // Per-task costs (into the resource topology)
   Cost_t TaskToClusterAggCost(TaskID_t task_id);
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,

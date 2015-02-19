@@ -11,7 +11,7 @@ RandomCostModel::RandomCostModel() { }
 
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
-Cost_t RandomCostModel::TaskToUnscheduledAggCost(const TaskDescriptor& td) {
+Cost_t RandomCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   uint32_t seed = 0;
   int64_t half_max_arc_cost = FLAGS_flow_max_arc_cost / 2;
   return half_max_arc_cost + rand_r(&seed) % half_max_arc_cost + 1;
@@ -21,7 +21,7 @@ Cost_t RandomCostModel::TaskToUnscheduledAggCost(const TaskDescriptor& td) {
 // than zero affects all the unscheduled tasks. It is better to affect the cost
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
-Cost_t RandomCostModel::UnscheduledAggToSinkCost(const JobDescriptor& jd) {
+Cost_t RandomCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
   return 0LL;
 }
 

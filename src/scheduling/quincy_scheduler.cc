@@ -69,7 +69,8 @@ QuincyScheduler::QuincyScheduler(
       VLOG(1) << "Using the random cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_SJF:
-      flow_graph_.reset(new FlowGraph(new SJFCostModel(task_map, knowledge_base_)));
+      flow_graph_.reset(new FlowGraph(
+          new SJFCostModel(task_map, knowledge_base_)));
       VLOG(1) << "Using the SJF cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:

@@ -154,7 +154,6 @@ class FlowGraph {
   queue<uint64_t> unused_ids_;
   // Vector storing the ids of the nodes we've created.
   vector<uint64_t> ids_created_;
-
 };
 
 }  // namespace firmament
