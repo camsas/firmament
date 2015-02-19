@@ -41,6 +41,21 @@ typedef struct TaskRuntime_st {
   int64_t total_runtime;
 } TaskRuntime;
 
+struct TaskIdentifier {
+  uint64_t job_id;
+  uint64_t task_index;
+
+  bool operator==(const TaskIdentifier& other) const {
+    return job_id == other.job_id && task_index == other.task_index;
+  }
+};
+
+struct TaskIdentifierHasher {
+  size_t operator()(const TaskIdentifier& key) const {
+    return hash<uint64_t>()(key.job_id) * 17 + hash<uint64_t>()(key.task_index);
+  }
+};
+
 class GoogleTraceTaskProcessor {
  public:
   explicit GoogleTraceTaskProcessor(const string& trace_path);
@@ -58,10 +73,10 @@ class GoogleTraceTaskProcessor {
       const vector<TaskResourceUsage*>& resource_usage);
   TaskResourceUsage* MinTaskUsage(
       const vector<TaskResourceUsage*>& resource_usage);
-  void PrintStats(FILE* usage_stat_file, uint64_t job_id, uint64_t task_index,
+  void PrintStats(FILE* usage_stat_file, const TaskIdentifier& task_id,
                   const vector<TaskResourceUsage*>& task_resource);
   void PrintTaskRuntime(FILE* out_events_file, TaskRuntime* task_runtime,
-                        uint64_t job_id, uint64_t task_index,
+                        const TaskIdentifier& task_id,
                         string logical_job_name, uint64_t runtime,
                         vector<string>& cols); // NOLINT
   map<uint64_t, string>& ReadLogicalJobsName();

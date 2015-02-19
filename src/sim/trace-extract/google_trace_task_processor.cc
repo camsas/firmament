@@ -510,7 +510,7 @@ namespace sim {
   }
 
   void GoogleTraceTaskProcessor::PrintStats(
-      FILE* usage_stat_file, uint64_t job_id, uint64_t task_index,
+      FILE* usage_stat_file, const TaskIdentifier& task_id,
       const vector<TaskResourceUsage*>& task_resource) {
     TaskResourceUsage* avg_task_usage = AvgTaskUsage(task_resource);
     TaskResourceUsage* min_task_usage = MinTaskUsage(task_resource);
@@ -520,7 +520,7 @@ namespace sim {
             "%" PRId64 " %" PRId64 " %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf"
             "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf"
             "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-            job_id, task_index,
+            task_id.job_id, task_id.task_index,
             min_task_usage->mean_cpu_usage, max_task_usage->mean_cpu_usage,
             avg_task_usage->mean_cpu_usage, sd_task_usage->mean_cpu_usage,
             min_task_usage->canonical_mem_usage,
@@ -565,7 +565,8 @@ namespace sim {
     job_num_tasks->clear();
     delete job_num_tasks;
     // Map job id to map of task id to vector of resource usage.
-    map<uint64_t, map<uint64_t, vector<TaskResourceUsage*> > > task_usage;
+    unordered_map<TaskIdentifier, vector<TaskResourceUsage*>,
+        TaskIdentifierHasher> task_usage;
     char line[200];
     vector<string> line_cols;
     FILE* usage_file = NULL;
@@ -595,8 +596,9 @@ namespace sim {
                        << " columns.";
           } else {
             uint64_t start_timestamp = lexical_cast<uint64_t>(line_cols[0]);
-            uint64_t job_id = lexical_cast<uint64_t>(line_cols[2]);
-            uint64_t task_index = lexical_cast<uint64_t>(line_cols[3]);
+            TaskIdentifier cur_task_id;
+            cur_task_id.job_id = lexical_cast<uint64_t>(line_cols[2]);
+            cur_task_id.task_index = lexical_cast<uint64_t>(line_cols[3]);
             if (last_timestamp < start_timestamp) {
               multimap<uint64_t, TaskSchedulingEvent>::iterator it_to =
                 scheduling_events.upper_bound(last_timestamp);
@@ -606,23 +608,20 @@ namespace sim {
                 TaskSchedulingEvent evt = it->second;
                 // TODO(ionel): Which events should I handle here?
                 if (evt.event_type == TASK_FINISH) {
-                  uint64_t job_id = evt.job_id;
-                  uint64_t task_index = evt.task_index;
-                  PrintStats(usage_stat_file, job_id, task_index,
-                             task_usage[job_id][task_index]);
+                  TaskIdentifier task_id;
+                  task_id.job_id = evt.job_id;
+                  task_id.task_index = evt.task_index;
+                  PrintStats(usage_stat_file, task_id, task_usage[task_id]);
                   // Free task resource usage memory.
                   vector<TaskResourceUsage*>::iterator res_it =
-                    task_usage[job_id][task_index].begin();
+                    task_usage[task_id].begin();
                   vector<TaskResourceUsage*>::iterator end_it =
-                    task_usage[job_id][task_index].end();
+                    task_usage[task_id].end();
                   for (; res_it != end_it; res_it++) {
                     delete *res_it;
                   }
-                  task_usage[job_id][task_index].clear();
-                  task_usage[job_id].erase(task_index);
-                  if (task_usage[job_id].empty()) {
-                    task_usage.erase(job_id);
-                  }
+                  task_usage[task_id].clear();
+                  task_usage.erase(task_id);
                 }
               }
               // Free task scheduling events.
@@ -633,23 +632,13 @@ namespace sim {
             TaskResourceUsage* task_resource_usage =
               BuildTaskResourceUsage(line_cols);
 
-            if (task_usage.find(job_id) == task_usage.end()) {
-              // New job id.
-              map<uint64_t, vector<TaskResourceUsage*> > task_to_usage;
-              task_usage.insert(
-                  pair<uint64_t, map<uint64_t, vector<TaskResourceUsage*> > >(
-                      job_id, task_to_usage));
-            }
-            if (task_usage[job_id].find(task_index) ==
-                task_usage[job_id].end()) {
-              // New task index.
+            if (task_usage.find(cur_task_id) == task_usage.end()) {
+              // New task identifier.
               vector<TaskResourceUsage*> resource_usage;
               resource_usage.push_back(task_resource_usage);
-              task_usage[job_id].insert(
-                  pair<uint64_t, vector<TaskResourceUsage*> >(task_index,
-                                                              resource_usage));
+              InsertIfNotPresent(&task_usage, cur_task_id, resource_usage);
             } else {
-              task_usage[job_id][task_index].push_back(task_resource_usage);
+              task_usage[cur_task_id].push_back(task_resource_usage);
             }
           }
         }
@@ -657,15 +646,10 @@ namespace sim {
       }
     }
     // Write stats for tasks that are still running.
-    for (map<uint64_t, map<uint64_t, vector<TaskResourceUsage*> > >::iterator
-           job_it = task_usage.begin();
-         job_it != task_usage.end(); job_it++) {
-      for (map<uint64_t, vector<TaskResourceUsage*> >::iterator
-             task_it = job_it->second.begin();
-           task_it != job_it->second.end(); task_it++) {
-        PrintStats(usage_stat_file, job_it->first, task_it->first,
-                   task_it->second);
-      }
+    for (unordered_map<TaskIdentifier, vector<TaskResourceUsage*>,
+           TaskIdentifierHasher>::iterator it = task_usage.begin();
+         it != task_usage.end(); it++) {
+      PrintStats(usage_stat_file, it->first, it->second);
     }
     // TODO(ionel): Free the memory occupied by the jobs running at the end
     // of the trace.
@@ -706,8 +690,8 @@ namespace sim {
   }
 
   void GoogleTraceTaskProcessor::PrintTaskRuntime(
-      FILE* out_events_file, TaskRuntime* task_runtime, uint64_t job_id,
-      uint64_t task_index, string logical_job_name, uint64_t runtime,
+      FILE* out_events_file, TaskRuntime* task_runtime,
+      const TaskIdentifier& task_id, string logical_job_name, uint64_t runtime,
       vector<string>& cols) {
     for (uint32_t index = 7; index < 13; ++index) {
       if (!cols[index].compare("")) {
@@ -722,7 +706,7 @@ namespace sim {
     int32_t machine_constraint = lexical_cast<int32_t>(cols[12]);
     fprintf(out_events_file, "%" PRId64 " %" PRId64 " %s %" PRId64 " %" PRId64
             " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %lf %lf %lf %d\n",
-            job_id, task_index, logical_job_name.c_str(),
+            task_id.job_id, task_id.task_index, logical_job_name.c_str(),
             task_runtime->start_time, task_runtime->total_runtime, runtime,
             task_runtime->num_runs, scheduling_class, priority, cpu_request,
             ram_request, disk_request, machine_constraint);
@@ -730,7 +714,8 @@ namespace sim {
 
   void GoogleTraceTaskProcessor::ExpandTaskEvents() {
     map<uint64_t, string> job_id_to_name = ReadLogicalJobsName();
-    map<uint64_t, map<uint64_t, TaskRuntime*> > tasks_runtime;
+    unordered_map<TaskIdentifier, TaskRuntime*,
+                  TaskIdentifierHasher> tasks_runtime;
     char line[200];
     vector<string> line_cols;
     FILE* events_file = NULL;
@@ -757,68 +742,53 @@ namespace sim {
                        << num_line << ": found " << line_cols.size()
                        << " columns.";
           } else {
+            TaskIdentifier task_id;
             uint64_t timestamp = lexical_cast<uint64_t>(line_cols[0]);
-            uint64_t job_id = lexical_cast<uint64_t>(line_cols[2]);
-            uint64_t task_index = lexical_cast<uint64_t>(line_cols[3]);
+            task_id.job_id = lexical_cast<uint64_t>(line_cols[2]);
+            task_id.task_index = lexical_cast<uint64_t>(line_cols[3]);
             int32_t event_type = lexical_cast<int32_t>(line_cols[5]);
-            if (tasks_runtime.find(job_id) == tasks_runtime.end()) {
-              // New job id.
-              map<uint64_t, TaskRuntime*> task_runtime;
-              tasks_runtime.insert(
-                  pair<uint64_t, map<uint64_t, TaskRuntime*> >(job_id,
-                                                               task_runtime));
-            }
             if (event_type == TASK_SCHEDULE) {
-              if (tasks_runtime[job_id].find(task_index) ==
-                  tasks_runtime[job_id].end()) {
+              if (tasks_runtime.find(task_id) == tasks_runtime.end()) {
                 // New task.
                 TaskRuntime* task_runtime = new TaskRuntime();
                 task_runtime->start_time = timestamp;
                 task_runtime->last_schedule_time = timestamp;
-                tasks_runtime[job_id].insert(
-                    pair<uint64_t, TaskRuntime*>(task_index, task_runtime));
+                InsertIfNotPresent(&tasks_runtime, task_id, task_runtime);
               } else {
-                tasks_runtime[job_id][task_index]->last_schedule_time =
-                  timestamp;
+                tasks_runtime[task_id]->last_schedule_time = timestamp;
               }
             } else if (event_type == TASK_EVICT || event_type == TASK_FAIL ||
                        event_type == TASK_KILL) {
-              if (tasks_runtime[job_id].find(task_index) ==
-                  tasks_runtime[job_id].end()) {
+              if (tasks_runtime.find(task_id) == tasks_runtime.end()) {
                 // First event for this task.
                 TaskRuntime* task_runtime = new TaskRuntime();
                 task_runtime->start_time = 0;
                 task_runtime->num_runs = 1;
                 task_runtime->total_runtime = timestamp;
-                tasks_runtime[job_id].insert(
-                    pair<uint64_t, TaskRuntime*>(task_index, task_runtime));
+                InsertIfNotPresent(&tasks_runtime, task_id, task_runtime);
               } else {
-                TaskRuntime* task_runtime = tasks_runtime[job_id][task_index];
+                TaskRuntime* task_runtime = tasks_runtime[task_id];
                 task_runtime->num_runs++;
                 task_runtime->total_runtime +=
                   timestamp - task_runtime->last_schedule_time;
               }
             } else if (event_type == TASK_FINISH) {
-              string logical_job_name = job_id_to_name[job_id];
-              if (tasks_runtime[job_id].find(task_index) ==
-                  tasks_runtime[job_id].end()) {
+              string logical_job_name = job_id_to_name[task_id.job_id];
+              if (tasks_runtime.find(task_id) == tasks_runtime.end()) {
                 // First event for this task.
                 TaskRuntime* task_runtime = new TaskRuntime();
                 task_runtime->start_time = 0;
                 task_runtime->num_runs = 1;
                 task_runtime->total_runtime = timestamp;
-                tasks_runtime[job_id].insert(
-                    pair<uint64_t, TaskRuntime*>(task_index, task_runtime));
-                PrintTaskRuntime(out_events_file, task_runtime, job_id,
-                                 task_index, logical_job_name, timestamp,
-                                 line_cols);
+                InsertIfNotPresent(&tasks_runtime, task_id, task_runtime);
+                PrintTaskRuntime(out_events_file, task_runtime, task_id,
+                                 logical_job_name, timestamp, line_cols);
               } else {
-                TaskRuntime* task_runtime = tasks_runtime[job_id][task_index];
+                TaskRuntime* task_runtime = tasks_runtime[task_id];
                 task_runtime->num_runs++;
                 task_runtime->total_runtime +=
                   timestamp - task_runtime->last_schedule_time;
-                PrintTaskRuntime(out_events_file, task_runtime,
-                                 job_id, task_index,
+                PrintTaskRuntime(out_events_file, task_runtime, task_id,
                                  logical_job_name,
                                  timestamp - task_runtime->last_schedule_time,
                                  line_cols);
