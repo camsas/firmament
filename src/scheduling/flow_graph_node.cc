@@ -8,12 +8,14 @@
 namespace firmament {
 
   FlowGraphNode::FlowGraphNode(uint64_t id)
-      : id_(id), excess_(0), resource_id_(boost::uuids::nil_uuid()),
+      : id_(id), excess_(0), job_id_(boost::uuids::nil_uuid()),
+        resource_id_(boost::uuids::nil_uuid()),
     task_id_(0) {
   }
 
   FlowGraphNode::FlowGraphNode(uint64_t id, uint64_t excess)
-      : id_(id), excess_(excess), resource_id_(boost::uuids::nil_uuid()),
+      : id_(id), excess_(excess), job_id_(boost::uuids::nil_uuid()),
+        resource_id_(boost::uuids::nil_uuid()),
     task_id_(0) {
   }
 
