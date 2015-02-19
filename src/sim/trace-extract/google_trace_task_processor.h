@@ -66,24 +66,30 @@ class GoogleTraceTaskProcessor {
   void Run();
 
  private:
-  TaskResourceUsage* AvgTaskUsage(
-      const vector<TaskResourceUsage*>& resource_usage);
-  TaskResourceUsage* BuildTaskResourceUsage(vector<string>& line_cols); // NOLINT
-  TaskResourceUsage* MaxTaskUsage(
-      const vector<TaskResourceUsage*>& resource_usage);
-  TaskResourceUsage* MinTaskUsage(
-      const vector<TaskResourceUsage*>& resource_usage);
+  TaskResourceUsage AvgTaskUsage(
+      const vector<TaskResourceUsage>& resource_usage);
+  TaskResourceUsage BuildTaskResourceUsage(vector<string>& line_cols); // NOLINT
+  void ExpandTaskEvent(
+      uint64_t timestamp, const TaskIdentifier& task_id, int32_t event_type,
+      unordered_map<TaskIdentifier, TaskRuntime*,
+                    TaskIdentifierHasher>* tasks_runtime,
+      unordered_map<uint64_t, string>* job_id_to_name, FILE* out_events_file,
+      vector<string>& line_cols); // NOLINT
+  TaskResourceUsage MaxTaskUsage(
+      const vector<TaskResourceUsage>& resource_usage);
+  TaskResourceUsage MinTaskUsage(
+      const vector<TaskResourceUsage>& resource_usage);
   void PrintStats(FILE* usage_stat_file, const TaskIdentifier& task_id,
-                  const vector<TaskResourceUsage*>& task_resource);
+                  const vector<TaskResourceUsage>& task_resource);
   void PrintTaskRuntime(FILE* out_events_file, TaskRuntime* task_runtime,
                         const TaskIdentifier& task_id,
                         string logical_job_name, uint64_t runtime,
                         vector<string>& cols); // NOLINT
-  map<uint64_t, string>& ReadLogicalJobsName();
+  unordered_map<uint64_t, string>& ReadLogicalJobsName();
   multimap<uint64_t, TaskSchedulingEvent>& ReadTaskSchedulingEvents(
       unordered_map<uint64_t, uint64_t>* job_num_tasks);
-  TaskResourceUsage* StandardDevTaskUsage(
-      const vector<TaskResourceUsage*>& resource_usage);
+  TaskResourceUsage StandardDevTaskUsage(
+      const vector<TaskResourceUsage>& resource_usage);
 
   string trace_path_;
 };
