@@ -252,14 +252,19 @@ TEST_F(FlowGraphTest, DeleteNodesForJob) {
   CHECK_EQ(g.graph_changes_.size(), num_changes + 4);
   uint64_t unsched_agg_graph_id = g.ids_created_[num_ids];
   uint64_t root_task_graph_id = g.ids_created_[num_ids + 1];
+  uint64_t equiv_graph_id = g.ids_created_[num_ids + 2];
   // Now delete all the nodes for the given job.
   g.DeleteNodesForJob(jid);
-  DIMACSRemoveNode* rm1 =
+  CHECK_EQ(g.graph_changes_.size(), num_changes + 7);
+  DIMACSRemoveNode* rm_task =
     static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 4]);
-  DIMACSRemoveNode* rm2 =
+  DIMACSRemoveNode* rm_equiv =
     static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 5]);
-  CHECK_EQ(rm1->node_id_, root_task_graph_id);
-  CHECK_EQ(rm2->node_id_, unsched_agg_graph_id);
+  DIMACSRemoveNode* rm_unsched =
+    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 6]);
+  CHECK_EQ(rm_task->node_id_, root_task_graph_id);
+  CHECK_EQ(rm_equiv->node_id_, equiv_graph_id);
+  CHECK_EQ(rm_unsched->node_id_, unsched_agg_graph_id);
 }
 
 TEST_F(FlowGraphTest, ResetChanges) {

@@ -93,7 +93,7 @@ class FlowGraph {
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
-  FlowGraphNode* AddEquivClassAggregator(TaskEquivClass_t equivclass);
+  FlowGraphNode* AddEquivClassAggregator(const TaskDescriptor& td);
   void AddSpecialNodes();
   void AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
       JobID_t job, int64_t delta);
@@ -106,6 +106,7 @@ class FlowGraph {
   void DeleteArcGeneratingDelta(FlowGraphArc* arc);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node);
+  void DeleteOrUpdateTaskEquivNode(TaskID_t task_id);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
 
   uint64_t next_id() {
@@ -138,7 +139,7 @@ class FlowGraph {
   unordered_map<ResourceID_t, ResourceID_t,
       boost::hash<boost::uuids::uuid> > resource_to_parent_map_;
   // Hacky equivalence class node map
-  unordered_map<TaskEquivClass_t, uint64_t> equiv_class_to_nodeid_map_;
+  unordered_map<TaskID_t, uint64_t> task_to_equiv_class_node_id_;
   // The "node ID" for the job is currently the ID of the job's unscheduled node
   unordered_map<JobID_t, uint64_t,
       boost::hash<boost::uuids::uuid> > job_unsched_to_node_id_;
@@ -148,8 +149,6 @@ class FlowGraph {
 
   // Vector storing the graph changes occured since the last scheduling round.
   vector<DIMACSChange*> graph_changes_;
-  // Pointer to map of all tasks that the coordinator currently knows about.
-  shared_ptr<TaskMap_t> task_table_;
   // Queue storing the ids of the nodes we've previously removed.
   queue<uint64_t> unused_ids_;
   // Vector storing the ids of the nodes we've created.

@@ -90,18 +90,20 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
   return arc;
 }
 
-FlowGraphNode* FlowGraph::AddEquivClassAggregator(
-    TaskEquivClass_t equivclass) {
-  uint64_t* equiv_class_node_id = FindOrNull(equiv_class_to_nodeid_map_,
-                                             equivclass);
+FlowGraphNode* FlowGraph::AddEquivClassAggregator(const TaskDescriptor& td) {
+  TaskEquivClass_t equiv_class = GenerateTaskEquivClass(td);
+  VLOG(2) << "Equiv class for task " << td.uid() << " is "
+              << equiv_class;
+  uint64_t* equiv_class_node_id = FindOrNull(task_to_equiv_class_node_id_,
+                                             td.uid());
   if (!equiv_class_node_id) {
     // Need to add the equiv class aggregator first
     FlowGraphNode* ec_node = AddNodeInternal(next_id());
     equiv_class_node_id = &(ec_node->id_);
-    InsertIfNotPresent(&equiv_class_to_nodeid_map_,
-                       equivclass, *equiv_class_node_id);
+    InsertIfNotPresent(&task_to_equiv_class_node_id_,
+                       td.uid(), *equiv_class_node_id);
     string comment;
-    spf(&comment, "EC_AGG_%ju", equivclass);
+    spf(&comment, "EC_AGG_%ju", equiv_class);
     ec_node->comment_ = comment;
   }
   return Node(*equiv_class_node_id);
@@ -185,10 +187,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
       // Add the new task node to the graph changes
       graph_changes_.push_back(new DIMACSAddNode(*task_node, task_arcs));
       // XXX(malte): hack to add equiv class aggregator nodes
-      VLOG(2) << "Equiv class for task " << cur->uid() << " is "
-              << GenerateTaskEquivClass(*cur);
-      FlowGraphNode* ec_node =
-          AddEquivClassAggregator(GenerateTaskEquivClass(*cur));
+      FlowGraphNode* ec_node = AddEquivClassAggregator(*cur);
       FlowGraphArc* ec_arc = AddArcInternal(task_node->id_,
                                             ec_node->id_);
       ec_arc->cost_ = cost_model_->TaskToEquivClassAggregator(task_node->id_);
@@ -474,8 +473,54 @@ void FlowGraph::DeleteNode(FlowGraphNode* node) {
   delete node;
 }
 
+void FlowGraph::DeleteNodesForJob(JobID_t job_id) {
+  uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
+  CHECK_NOTNULL(unsched_node_id);
+  FlowGraphNode* node = Node(*unsched_node_id);
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator
+         it = node->incoming_arc_map_.begin();
+       it != node->incoming_arc_map_.end(); it++) {
+    FlowGraphArc* arc = it->second;
+    FlowGraphNode* task_node = arc->src_node_;
+    CHECK_EQ(task_node->job_id_, job_id);
+    DeleteTaskNode(task_node->task_id_);
+  }
+  job_unsched_to_node_id_.erase(job_id);
+  unused_ids_.push(node->id_);
+  DeleteNode(node);
+}
+
+void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
+  uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
+  CHECK_NOTNULL(node_id);
+  FlowGraphNode* node = Node(*node_id);
+  resource_to_nodeid_map_.erase(res_id);
+  resource_to_parent_map_.erase(res_id);
+  unused_ids_.push(node->id_);
+  leaf_nodes_.erase(*node_id);
+  DeleteNode(node);
+}
+
+void FlowGraph::DeleteOrUpdateTaskEquivNode(TaskID_t task_id) {
+  uint64_t* equiv_class_node_id =
+    FindOrNull(task_to_equiv_class_node_id_, task_id);
+  CHECK_NOTNULL(equiv_class_node_id);
+  FlowGraphNode* equiv_node = Node(*equiv_class_node_id);
+  task_to_equiv_class_node_id_.erase(task_id);
+  if (equiv_node->incoming_arc_map_.size() == 0) {
+    // The equiv class doesn't have any incoming arcs from tasks.
+    // We can remove the node.
+    unused_ids_.push(*equiv_class_node_id);
+    DeleteNode(equiv_node);
+  } else {
+    // TODO(ionel): We may want to reduce the number of outgoing
+    // arcs from the equiv class to cores. However, this is not
+    // mandatory.
+  }
+}
+
 void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
-  // TODO(ionel): Delete the job related equivalence class aggregators.
+
   uint64_t* node_id = FindOrNull(task_to_nodeid_map_, task_id);
   CHECK_NOTNULL(node_id);
   FlowGraphNode* node = Node(*node_id);
@@ -494,34 +539,7 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   task_to_nodeid_map_.erase(task_id);
   // Then remove the node itself
   DeleteNode(node);
-}
-
-void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
-  uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
-  CHECK_NOTNULL(node_id);
-  FlowGraphNode* node = Node(*node_id);
-  resource_to_nodeid_map_.erase(res_id);
-  resource_to_parent_map_.erase(res_id);
-  unused_ids_.push(node->id_);
-  leaf_nodes_.erase(*node_id);
-  DeleteNode(node);
-}
-
-void FlowGraph::DeleteNodesForJob(JobID_t job_id) {
-  uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
-  CHECK_NOTNULL(unsched_node_id);
-  FlowGraphNode* node = Node(*unsched_node_id);
-  for (unordered_map<uint64_t, FlowGraphArc*>::iterator
-         it = node->incoming_arc_map_.begin();
-       it != node->incoming_arc_map_.end(); it++) {
-    FlowGraphArc* arc = it->second;
-    FlowGraphNode* task_node = arc->src_node_;
-    CHECK_EQ(task_node->job_id_, job_id);
-    DeleteTaskNode(task_node->task_id_);
-  }
-  job_unsched_to_node_id_.erase(job_id);
-  unused_ids_.push(node->id_);
-  DeleteNode(node);
+  DeleteOrUpdateTaskEquivNode(task_id);
 }
 
 FlowGraphNode* FlowGraph::NodeForResourceID(const ResourceID_t& res_id) {
