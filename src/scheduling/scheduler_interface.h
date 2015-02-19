@@ -49,7 +49,9 @@ class SchedulerInterface : public PrintableInterface {
                                           TaskDescriptor* td_ptr) = 0;
   // Handle the completion of a task. This usually involves freeing up its
   // resource by setting it idle, and recording any bookkeeping data required.
-  virtual void HandleTaskCompletion(TaskDescriptor* td_ptr,
+  // Return value indicates if the containing job completed as a result of this
+  // task completing.
+  virtual bool HandleTaskCompletion(TaskDescriptor* td_ptr,
                                     TaskFinalReport* report) = 0;
   // Handle the failure of a task. This usually involves freeing up its
   // resource by setting it idle, and kicking off the necessary fault tolerance

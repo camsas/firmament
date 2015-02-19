@@ -135,15 +135,20 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
   return deltas.size();
 }
 
-void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
+bool QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                            TaskFinalReport* report) {
+  bool job_done = false;
+  // Call into superclass handler
+  job_done = EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   {
     boost::lock_guard<boost::mutex> lock(scheduling_lock_);
-    // Remove the task's node from the flow graph
     flow_graph_->DeleteTaskNode(td_ptr->uid());
+    if (job_done) {
+      // Job completed, so remove its nodes
+      flow_graph_->DeleteNodesForJob(ResourceIDFromString(td_ptr->job_id()));
+    }
   }
-  // Call into superclass handler
-  EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
+  return job_done;
 }
 
 uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {

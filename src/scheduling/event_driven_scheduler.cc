@@ -163,7 +163,9 @@ ExecutorInterface *EventDrivenScheduler::GetExecutorForTask(TaskID_t task_id) {
   return *exec;
 }
 
-void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
+// Return value indicates if the job completed as a result of this task
+// completion.
+bool EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                                 TaskFinalReport* report) {
   boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Find resource for task
@@ -177,9 +179,9 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   // Remove the task's resource binding (as it is no longer currently bound)
   task_bindings_.erase(td_ptr->uid());
   // Record final report
-  ExecutorInterface** exec = FindOrNull(executors_, *res_id_ptr);
+  ExecutorInterface* exec = FindPtrOrNull(executors_, *res_id_ptr);
   CHECK_NOTNULL(exec);
-  (*exec)->HandleTaskCompletion(*td_ptr, report);
+  exec->HandleTaskCompletion(*td_ptr, report);
   // Mark task ask completed
   td_ptr->set_state(TaskDescriptor::COMPLETED);
   // We only need to run the scheduler if the task was not delegated from
@@ -196,8 +198,10 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
         FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
       CHECK_NOTNULL(jd);
       jd->set_state(JobDescriptor::COMPLETED);
+      return true;
     }
   }
+  return false;
 }
 
 void EventDrivenScheduler::HandleReferenceStateChange(

@@ -47,7 +47,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                   const ReferenceInterface& new_ref,
                                   TaskDescriptor* td_ptr);
-  void HandleTaskCompletion(TaskDescriptor* td_ptr,
+  bool HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
   void HandleTaskFailure(TaskDescriptor* td_ptr);
   bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);
