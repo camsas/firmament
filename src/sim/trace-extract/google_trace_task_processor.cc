@@ -39,12 +39,12 @@ namespace sim {
     trace_path_(trace_path) {
   }
 
-  map<uint64_t, vector<TaskSchedulingEvent*> >&
+  multimap<uint64_t, TaskSchedulingEvent>&
     GoogleTraceTaskProcessor::ReadTaskSchedulingEvents(
       unordered_map<uint64_t, uint64_t>* job_num_tasks) {
     // Store the scheduling events for every timestamp.
-    map<uint64_t, vector<TaskSchedulingEvent*> > *scheduling_events =
-      new map<uint64_t, vector<TaskSchedulingEvent*> >();
+    multimap<uint64_t, TaskSchedulingEvent> *scheduling_events =
+      new multimap<uint64_t, TaskSchedulingEvent>();
     char line[200];
     vector<string> line_cols;
     FILE* events_file = NULL;
@@ -75,20 +75,12 @@ namespace sim {
             if (task_event == TASK_SCHEDULE || task_event == TASK_EVICT ||
                 task_event == TASK_FAIL || task_event == TASK_FINISH ||
                 task_event == TASK_KILL || task_event == TASK_LOST) {
-              if (scheduling_events->find(timestamp) ==
-                  scheduling_events->end()) {
-                vector<TaskSchedulingEvent*> events_during_timestamp;
-                scheduling_events->insert(
-                    pair<uint64_t, vector<TaskSchedulingEvent*> >(
-                        timestamp, events_during_timestamp));
-              }
-              TaskSchedulingEvent* event = new TaskSchedulingEvent();
-              event->job_id = job_id;
-              event->task_index = task_index;
-              event->event_type = task_event;
-              map<uint64_t, vector<TaskSchedulingEvent*> >::iterator it =
-                scheduling_events->find(timestamp);
-              it->second.push_back(event);
+              TaskSchedulingEvent event;
+              event.job_id = job_id;
+              event.task_index = task_index;
+              event.event_type = task_event;
+              scheduling_events->insert(
+                  pair<uint64_t, TaskSchedulingEvent>(timestamp, event));
             }
             if (FLAGS_jobs_num_tasks && task_event == TASK_SUBMIT) {
               uint64_t* num_tasks = FindOrNull(*job_num_tasks, job_id);
@@ -568,7 +560,7 @@ namespace sim {
   void GoogleTraceTaskProcessor::AggregateTaskUsage() {
     unordered_map<uint64_t, uint64_t>* job_num_tasks =
       new unordered_map<uint64_t, uint64_t>();
-    map<uint64_t, vector<TaskSchedulingEvent*> >& scheduling_events =
+    multimap<uint64_t, TaskSchedulingEvent>& scheduling_events =
       ReadTaskSchedulingEvents(job_num_tasks);
     job_num_tasks->clear();
     delete job_num_tasks;
@@ -606,50 +598,37 @@ namespace sim {
             uint64_t job_id = lexical_cast<uint64_t>(line_cols[2]);
             uint64_t task_index = lexical_cast<uint64_t>(line_cols[3]);
             if (last_timestamp < start_timestamp) {
-              while (1) {
-                map<uint64_t, vector<TaskSchedulingEvent*> >::iterator
-                  first_entry = scheduling_events.begin();
-                if (first_entry->first <= last_timestamp) {
-                  for (vector<TaskSchedulingEvent*>::iterator
-                         evt_it = first_entry->second.begin();
-                       evt_it != first_entry->second.end(); ++evt_it) {
-                    // TODO(ionel): Which events should I handle here?
-                    if ((*evt_it)->event_type == TASK_FINISH) {
-                      uint64_t job_id = (*evt_it)->job_id;
-                      uint64_t task_index = (*evt_it)->task_index;
-                      PrintStats(usage_stat_file, job_id, task_index,
-                                 task_usage[job_id][task_index]);
-                      // Free task resource usage memory.
-                      vector<TaskResourceUsage*>::iterator res_it =
-                        task_usage[job_id][task_index].begin();
-                      vector<TaskResourceUsage*>::iterator end_it =
-                        task_usage[job_id][task_index].end();
-                      for (; res_it != end_it; res_it++) {
-                        delete *res_it;
-                      }
-                      task_usage[job_id][task_index].clear();
-                      task_usage[job_id].erase(task_index);
-                      if (task_usage[job_id].empty()) {
-                        task_usage.erase(job_id);
-                      }
-                    }
+              multimap<uint64_t, TaskSchedulingEvent>::iterator it_to =
+                scheduling_events.upper_bound(last_timestamp);
+              multimap<uint64_t, TaskSchedulingEvent>::iterator it =
+                scheduling_events.begin();
+              for (; it != it_to; ++it) {
+                TaskSchedulingEvent evt = it->second;
+                // TODO(ionel): Which events should I handle here?
+                if (evt.event_type == TASK_FINISH) {
+                  uint64_t job_id = evt.job_id;
+                  uint64_t task_index = evt.task_index;
+                  PrintStats(usage_stat_file, job_id, task_index,
+                             task_usage[job_id][task_index]);
+                  // Free task resource usage memory.
+                  vector<TaskResourceUsage*>::iterator res_it =
+                    task_usage[job_id][task_index].begin();
+                  vector<TaskResourceUsage*>::iterator end_it =
+                    task_usage[job_id][task_index].end();
+                  for (; res_it != end_it; res_it++) {
+                    delete *res_it;
                   }
-                  // Free task scheduling event memory.
-                  vector<TaskSchedulingEvent*>::iterator schd_it =
-                    first_entry->second.begin();
-                  vector<TaskSchedulingEvent*>::iterator end_it =
-                    first_entry->second.end();
-                  for (; schd_it != end_it; schd_it++) {
-                    delete *schd_it;
+                  task_usage[job_id][task_index].clear();
+                  task_usage[job_id].erase(task_index);
+                  if (task_usage[job_id].empty()) {
+                    task_usage.erase(job_id);
                   }
-                  first_entry->second.clear();
-                  scheduling_events.erase(scheduling_events.begin());
-                } else {
-                  break;
                 }
               }
-              last_timestamp = start_timestamp;
+              // Free task scheduling events.
+              scheduling_events.erase(it, it_to);
             }
+            last_timestamp = start_timestamp;
 
             TaskResourceUsage* task_resource_usage =
               BuildTaskResourceUsage(line_cols);
@@ -857,8 +836,8 @@ namespace sim {
   void GoogleTraceTaskProcessor::JobsNumTasks() {
     unordered_map<uint64_t, uint64_t>* job_num_tasks =
       new unordered_map<uint64_t, uint64_t>();
-    //    map<uint64_t, vector<TaskSchedulingEvent*> >& scheduling_events =
-    ReadTaskSchedulingEvents(job_num_tasks);
+    multimap<uint64_t, TaskSchedulingEvent>& scheduling_events =
+      ReadTaskSchedulingEvents(job_num_tasks);
 
     FILE* out_file = NULL;
     string out_file_name;
@@ -874,7 +853,7 @@ namespace sim {
       fprintf(out_file, "%" PRId64 " %" PRId64 "\n", it->first, it->second);
     }
     fclose(out_file);
-    // TODO(ionel): Delete scheduling_events.
+    scheduling_events.clear();
     job_num_tasks->clear();
     delete job_num_tasks;
   }

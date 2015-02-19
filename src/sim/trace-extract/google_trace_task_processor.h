@@ -65,7 +65,7 @@ class GoogleTraceTaskProcessor {
                         string logical_job_name, uint64_t runtime,
                         vector<string>& cols); // NOLINT
   map<uint64_t, string>& ReadLogicalJobsName();
-  map<uint64_t, vector<TaskSchedulingEvent*> >& ReadTaskSchedulingEvents(
+  multimap<uint64_t, TaskSchedulingEvent>& ReadTaskSchedulingEvents(
       unordered_map<uint64_t, uint64_t>* job_num_tasks);
   TaskResourceUsage* StandardDevTaskUsage(
       const vector<TaskResourceUsage*>& resource_usage);
