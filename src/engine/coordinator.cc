@@ -722,6 +722,8 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
   // Set job ID field on task. We do this here since we've only just generated
   // the job ID in the job submission, which passes it in.
   td->set_job_id(to_string(job_id));
+  // Set the submission timestamp for the task.
+  td->set_submit_time(GetCurrentTimestamp());
   // Insert task into task table
   VLOG(1) << "Adding task " << td->uid() << " to task table.";
   if (!InsertIfNotPresent(task_table_.get(), td->uid(), td)) {
@@ -797,14 +799,12 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   // Set the root task ID (which is 0 or unset on submission)
   TaskDescriptor *root_task = new_jd->mutable_root_task();
   root_task->set_uid(GenerateRootTaskID(*new_jd));
-
   // Compute the absolute deadline for the root task if it has a deadline
   // set.
   if (root_task->has_relative_deadline()) {
     root_task->set_absolute_deadline(
         GetCurrentTimestamp() + root_task->relative_deadline() * 1000000);
   }
-
   // Create a dynamic task graph for the job
   TaskGraph* new_dtg = new TaskGraph(root_task);
   // Store the task graph
