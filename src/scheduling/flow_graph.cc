@@ -67,7 +67,7 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
   AdjustUnscheduledAggToSinkCapacityGeneratingDelta(task_node->job_id_, 1);
   // Assign cost to the (task -> unscheduled agg) edge from cost model
   unsched_arc->cost_ =
-    cost_model_->TaskToUnscheduledAggCost(task_node->task_id_);
+      cost_model_->TaskToUnscheduledAggCost(task_node->task_id_);
   // Set up arc to unscheduled aggregator
   unsched_arc->cap_upper_bound_ = 1;
   task_arcs->push_back(unsched_arc);
@@ -358,14 +358,15 @@ void FlowGraph::AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
 void FlowGraph::AdjustUnscheduledAggArcCosts() {
   unordered_map<JobID_t, uint64_t,
                 boost::hash<boost::uuids::uuid> >::iterator it =
-    job_unsched_to_node_id_.begin();
+      job_unsched_to_node_id_.begin();
   for (; it != job_unsched_to_node_id_.end(); ++it) {
     FlowGraphNode* unsched_node = Node(it->second);
     for (unordered_map<uint64_t, FlowGraphArc*>::iterator
-           ait = unsched_node->incoming_arc_map_.begin();
+         ait = unsched_node->incoming_arc_map_.begin();
          ait != unsched_node->incoming_arc_map_.end();
          ++ait) {
       FlowGraphArc* arc = ait->second;
+      CHECK_NOTNULL(arc);
       TaskID_t task_id = Node(arc->src_)->task_id_;
       ChangeArc(arc, arc->cap_lower_bound_, arc->cap_upper_bound_,
                 cost_model_->TaskToUnscheduledAggCost(task_id));
@@ -491,19 +492,23 @@ void FlowGraph::DeleteArc(FlowGraphArc* arc) {
 void FlowGraph::DeleteNode(FlowGraphNode* node) {
   // First remove all outgoing arcs
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
-      node->outgoing_arc_map_.begin();
-      it != node->outgoing_arc_map_.end();
-      ++it) {
-    Node(it->second->dst_)->incoming_arc_map_.erase(it->second->src_);;
+       node->outgoing_arc_map_.begin();
+       it != node->outgoing_arc_map_.end();
+       ++it) {
+    CHECK_EQ(it->first, it->second->dst_);
+    CHECK_EQ(node->id_, it->second->src_);
+    CHECK_EQ(Node(it->first)->incoming_arc_map_.erase(it->second->src_), 1);
     DeleteArc(it->second);
   }
   node->outgoing_arc_map_.clear();
   // Remove all incoming arcs.
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
-      node->incoming_arc_map_.begin();
-      it != node->incoming_arc_map_.end();
-      ++it) {
-    Node(it->second->src_)->outgoing_arc_map_.erase(it->second->dst_);
+       node->incoming_arc_map_.begin();
+       it != node->incoming_arc_map_.end();
+       ++it) {
+    CHECK_EQ(node->id_, it->second->dst_);
+    CHECK_EQ(it->first, it->second->src_);
+    CHECK_EQ(Node(it->first)->outgoing_arc_map_.erase(it->second->dst_), 1);
     DeleteArc(it->second);
   }
   node->incoming_arc_map_.clear();
@@ -516,11 +521,15 @@ void FlowGraph::DeleteNodesForJob(JobID_t job_id) {
   uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
   CHECK_NOTNULL(unsched_node_id);
   FlowGraphNode* node = Node(*unsched_node_id);
+  // Remove any remaining task nodes
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator
-         it = node->incoming_arc_map_.begin();
-       it != node->incoming_arc_map_.end(); it++) {
+       it = node->incoming_arc_map_.begin();
+       it != node->incoming_arc_map_.end();
+       it++) {
     FlowGraphArc* arc = it->second;
+    CHECK_NOTNULL(arc);
     FlowGraphNode* task_node = arc->src_node_;
+    CHECK_NOTNULL(task_node);
     CHECK_EQ(task_node->job_id_, job_id);
     DeleteTaskNode(task_node->task_id_);
   }
@@ -542,7 +551,7 @@ void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
 
 void FlowGraph::DeleteOrUpdateTaskEquivNode(TaskID_t task_id) {
   uint64_t* equiv_class_node_id =
-    FindOrNull(task_to_equiv_class_node_id_, task_id);
+      FindOrNull(task_to_equiv_class_node_id_, task_id);
   CHECK_NOTNULL(equiv_class_node_id);
   FlowGraphNode* equiv_node = Node(*equiv_class_node_id);
   task_to_equiv_class_node_id_.erase(task_id);
