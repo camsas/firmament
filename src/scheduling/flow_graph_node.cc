@@ -21,8 +21,9 @@ namespace firmament {
 
   void FlowGraphNode::AddArc(FlowGraphArc* arc) {
     CHECK_EQ(arc->src_, id_);
-    InsertIfNotPresent(&outgoing_arc_map_, arc->dst_, arc);
-    InsertIfNotPresent(&arc->dst_node_->incoming_arc_map_, arc->src_, arc);
+    CHECK(InsertIfNotPresent(&outgoing_arc_map_, arc->dst_, arc));
+    CHECK(InsertIfNotPresent(&(arc->dst_node_->incoming_arc_map_),
+                             arc->src_, arc));
   }
 
 } // namespace firmament

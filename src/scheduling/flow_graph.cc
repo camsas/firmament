@@ -118,15 +118,15 @@ void FlowGraph::AddEquivClassPreferenceArcs(
     vector<FlowGraphArc*>* ec_arcs) {
   // TODO(ionel): Use td to add preference arcs.
   for (int32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs; ++num_arc) {
-    // XXX(ionel): This may end up adding more than one arc to the same
-    // leaf node.
     size_t index = rand_r(&rand_seed_) % leaf_nodes_.size();
     unordered_set<uint64_t>::iterator it = leaf_nodes_.begin();
     advance(it, index);
-    FlowGraphArc* arc = AddArcInternal(equiv_node->id_, *it);
-    ec_arcs->push_back(arc);
-    ResourceID_t res_id = Node(*it)->resource_id_;
-    arc->cost_ = cost_model_->EquivClassToResourceNode(td.uid(), res_id);
+    if (!FindOrNull(equiv_node->outgoing_arc_map_, *it)) {
+      FlowGraphArc* arc = AddArcInternal(equiv_node->id_, *it);
+      ec_arcs->push_back(arc);
+      ResourceID_t res_id = Node(*it)->resource_id_;
+      arc->cost_ = cost_model_->EquivClassToResourceNode(td.uid(), res_id);
+    }
   }
 }
 
