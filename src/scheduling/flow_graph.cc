@@ -609,8 +609,8 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
   // N.B.: we need to collect a set of pointers here rather than
   // deleting things inside the loop, as otherwise the iterator
   // gets confused
-  set<TaskID_t> to_delete;
-  for (unordered_map<TaskID_t, FlowGraphArc*>::iterator it =
+  set<uint64_t> to_delete;
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
        task_node->outgoing_arc_map_.begin();
        it != task_node->outgoing_arc_map_.end();
        ++it) {
@@ -619,12 +619,13 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
     DeleteArcGeneratingDelta(it->second);
     to_delete.insert(it->first);
   }
-  // N.B. This is a little dodgy, as it mutates the collection inside the
-  // loop. However, since nobody else is reading from it at the same time,
-  // this should be fine.
-  for (set<TaskID_t>::iterator it = to_delete.begin();
+  // Now actually delete the arcs.
+  for (set<uint64_t>::iterator it = to_delete.begin();
        it != to_delete.end();
        ++it) {
+    // Delete arc from remote incoming map
+    Node(*it)->incoming_arc_map_.erase(task_node->id_);
+    // Delete it from our own outgoing map
     task_node->outgoing_arc_map_.erase(*it);
   }
   // Remove this task's potential flow from the per-job unscheduled
