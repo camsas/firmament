@@ -54,4 +54,9 @@ Cost_t TrivialCostModel::TaskToEquivClassAggregator(TaskID_t task_id) {
   return 0ULL;
 }
 
+Cost_t TrivialCostModel::EquivClassToResourceNode(TaskID_t task_id,
+                                                  ResourceID_t res_id) {
+  return 0ULL;
+}
+
 }  // namespace firmament

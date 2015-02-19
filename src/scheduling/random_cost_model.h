@@ -36,6 +36,10 @@ class RandomCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskPreemptionCost(TaskID_t task_id);
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
+  Cost_t EquivClassToResourceNode(TaskID_t task_id, ResourceID_t res_id);
+
+ private:
+  uint32_t rand_seed_ = 0;
 };
 
 }  // namespace firmament

@@ -44,6 +44,7 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskPreemptionCost(TaskID_t task_id);
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
+  Cost_t EquivClassToResourceNode(TaskID_t task_id, ResourceID_t res_id);
 
  private:
   // Lookup maps for various resources from the scheduler.
@@ -52,6 +53,7 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<TaskMap_t> task_map_;
   map<TaskID_t, ResourceID_t> *task_bindings_;
+  uint32_t rand_seed_ = 0;
 };
 
 }  // namespace firmament

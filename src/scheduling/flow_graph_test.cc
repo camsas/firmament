@@ -17,6 +17,8 @@
 #include "scheduling/flow_graph.h"
 #include "scheduling/trivial_cost_model.h"
 
+DECLARE_int32(num_pref_arcs);
+
 namespace firmament {
 
 // The fixture for testing the FlowGraph container class.
@@ -113,7 +115,7 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   CHECK_EQ(unsched_agg->arcs_->size(), 1);
   // Arc to unscheduled aggregator and to topology.
   CHECK_EQ(root_task->arcs_->size(), 2);
-  CHECK_EQ(equiv_class->arcs_->size(), 1);
+  CHECK_EQ(equiv_class->arcs_->size(), 1 + FLAGS_num_pref_arcs);
 }
 
 TEST_F(FlowGraphTest, AddResourceNode) {

@@ -3,8 +3,6 @@
 //
 // Simple shortest-job-first scheduling cost model.
 
-#include <string>
-
 #include "scheduling/sjf_cost_model.h"
 
 #include <string>
@@ -89,6 +87,11 @@ Cost_t SJFCostModel::TaskPreemptionCost(TaskID_t task_id) {
 }
 
 Cost_t SJFCostModel::TaskToEquivClassAggregator(TaskID_t task_id) {
+  return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
+}
+
+Cost_t SJFCostModel::EquivClassToResourceNode(TaskID_t task_id,
+                                              ResourceID_t res_id) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 

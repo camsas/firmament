@@ -93,7 +93,11 @@ class FlowGraph {
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
-  FlowGraphNode* AddEquivClassAggregator(const TaskDescriptor& td);
+  FlowGraphNode* AddEquivClassAggregator(const TaskDescriptor& td,
+                                         vector<FlowGraphArc*>* ec_arcs);
+  void AddEquivClassPreferenceArcs(const TaskDescriptor& td,
+                                   FlowGraphNode* equiv_node,
+                                   vector<FlowGraphArc*>* ec_arcs);
   void AddSpecialNodes();
   void AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
       JobID_t job, int64_t delta);
@@ -113,7 +117,7 @@ class FlowGraph {
     if (unused_ids_.empty()) {
       ids_created_.push_back(current_id_);
       return current_id_++;
-   } else {
+    } else {
       uint64_t new_id = unused_ids_.front();
       unused_ids_.pop();
       ids_created_.push_back(new_id);
@@ -153,6 +157,8 @@ class FlowGraph {
   queue<uint64_t> unused_ids_;
   // Vector storing the ids of the nodes we've created.
   vector<uint64_t> ids_created_;
+
+  uint32_t rand_seed_ = 0;
 };
 
 }  // namespace firmament

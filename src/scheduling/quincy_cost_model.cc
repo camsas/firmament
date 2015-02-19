@@ -30,9 +30,8 @@ QuincyCostModel::QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  uint32_t seed = 0;
   int64_t half_max_arc_cost = FLAGS_flow_max_arc_cost / 2;
-  return half_max_arc_cost + rand_r(&seed) % half_max_arc_cost + 1;
+  return half_max_arc_cost + rand_r(&rand_seed_) % half_max_arc_cost + 1;
   //  return 5ULL;
 }
 
@@ -80,6 +79,11 @@ Cost_t QuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {
 }
 
 Cost_t QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id) {
+  return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
+}
+
+Cost_t QuincyCostModel::EquivClassToResourceNode(TaskID_t task_id,
+                                                 ResourceID_t res_id) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 

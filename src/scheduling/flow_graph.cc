@@ -27,6 +27,8 @@
 #include "scheduling/flow_scheduling_cost_model_interface.h"
 
 DEFINE_bool(preemption, false, "Enable preemption and migration of tasks");
+DEFINE_int32(num_pref_arcs, 5,
+             "Number of preference arcs from equiv class node");
 
 namespace firmament {
 
@@ -90,7 +92,8 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
   return arc;
 }
 
-FlowGraphNode* FlowGraph::AddEquivClassAggregator(const TaskDescriptor& td) {
+FlowGraphNode* FlowGraph::AddEquivClassAggregator(
+    const TaskDescriptor& td, vector<FlowGraphArc*>* ec_arcs) {
   TaskEquivClass_t equiv_class = GenerateTaskEquivClass(td);
   VLOG(2) << "Equiv class for task " << td.uid() << " is "
               << equiv_class;
@@ -105,8 +108,26 @@ FlowGraphNode* FlowGraph::AddEquivClassAggregator(const TaskDescriptor& td) {
     string comment;
     spf(&comment, "EC_AGG_%ju", equiv_class);
     ec_node->comment_ = comment;
+    AddEquivClassPreferenceArcs(td, ec_node, ec_arcs);
   }
   return Node(*equiv_class_node_id);
+}
+
+void FlowGraph::AddEquivClassPreferenceArcs(
+    const TaskDescriptor& td, FlowGraphNode* equiv_node,
+    vector<FlowGraphArc*>* ec_arcs) {
+  // TODO(ionel): Use td to add preference arcs.
+  for (int32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs; ++num_arc) {
+    // XXX(ionel): This may end up adding more than one arc to the same
+    // leaf node.
+    size_t index = rand_r(&rand_seed_) % leaf_nodes_.size();
+    unordered_set<uint64_t>::iterator it = leaf_nodes_.begin();
+    advance(it, index);
+    FlowGraphArc* arc = AddArcInternal(equiv_node->id_, *it);
+    ec_arcs->push_back(arc);
+    ResourceID_t res_id = Node(*it)->resource_id_;
+    arc->cost_ = cost_model_->EquivClassToResourceNode(td.uid(), res_id);
+  }
 }
 
 FlowGraphNode* FlowGraph::GetUnschedAggForJob(JobID_t job_id) {
@@ -187,12 +208,12 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
       // Add the new task node to the graph changes
       graph_changes_.push_back(new DIMACSAddNode(*task_node, task_arcs));
       // XXX(malte): hack to add equiv class aggregator nodes
-      FlowGraphNode* ec_node = AddEquivClassAggregator(*cur);
+      vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
+      FlowGraphNode* ec_node = AddEquivClassAggregator(*cur, ec_arcs);
       FlowGraphArc* ec_arc = AddArcInternal(task_node->id_,
                                             ec_node->id_);
       ec_arc->cost_ = cost_model_->TaskToEquivClassAggregator(task_node->id_);
       // Add the new equivalence node to the graph changes
-      vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
       ec_arcs->push_back(ec_arc);
       graph_changes_.push_back(new DIMACSAddNode(*ec_node, ec_arcs));
     } else if (cur->state() == TaskDescriptor::RUNNING ||
@@ -520,7 +541,6 @@ void FlowGraph::DeleteOrUpdateTaskEquivNode(TaskID_t task_id) {
 }
 
 void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
-
   uint64_t* node_id = FindOrNull(task_to_nodeid_map_, task_id);
   CHECK_NOTNULL(node_id);
   FlowGraphNode* node = Node(*node_id);

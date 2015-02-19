@@ -22,7 +22,7 @@ enum FlowSchedulingCostModelType {
   COST_MODEL_RANDOM = 1,
   COST_MODEL_SJF = 2,
   COST_MODEL_QUINCY = 3,
-  COST_MODEL_WHARE= 4,
+  COST_MODEL_WHARE = 4,
   COST_MODEL_COCO = 5,
 };
 
@@ -48,6 +48,8 @@ class FlowSchedulingCostModelInterface {
   virtual Cost_t TaskPreemptionCost(TaskID_t task_id) = 0;
   // Costs to equivalence class aggregators
   virtual Cost_t TaskToEquivClassAggregator(TaskID_t task_id) = 0;
+  virtual Cost_t EquivClassToResourceNode(TaskID_t task_id,
+                                          ResourceID_t res_id) = 0;
 };
 
 }  // namespace firmament
