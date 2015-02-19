@@ -28,9 +28,12 @@ using boost::token_compress_off;
 #define TASK_KILL 5
 #define TASK_LOST 6
 
+#define EPS 0.00001
+
 DECLARE_bool(aggregate_task_usage);
 DECLARE_bool(expand_task_events);
 DECLARE_bool(jobs_num_tasks);
+DECLARE_int32(num_files_to_process);
 
 namespace firmament {
 namespace sim {
@@ -48,9 +51,10 @@ namespace sim {
     char line[200];
     vector<string> line_cols;
     FILE* events_file = NULL;
-    for (uint64_t file_num = 0; file_num < 500; file_num++) {
+    for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
+         file_num++) {
       string file_name;
-      spf(&file_name, "%s/task_events/part-%05ld-of-00500.csv",
+      spf(&file_name, "%s/task_events/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
       if ((events_file = fopen(file_name.c_str(), "r")) == NULL) {
         LOG(ERROR) << "Failed to open trace for reading of task events.";
@@ -98,9 +102,9 @@ namespace sim {
     return *scheduling_events;
   }
 
-  TaskResourceUsage* GoogleTraceTaskProcessor::BuildTaskResourceUsage(
+  TaskResourceUsage GoogleTraceTaskProcessor::BuildTaskResourceUsage(
       vector<string>& line_cols) {
-    TaskResourceUsage* task_resource_usage = new TaskResourceUsage();
+    TaskResourceUsage task_resource_usage = {};
     // Set resource value to -1 if not present. We can then later not take it
     // into account when we compute the statistics.
     for (uint32_t index = 5; index < 17; index++) {
@@ -108,191 +112,246 @@ namespace sim {
         line_cols[index] = "-1";
       }
     }
-    task_resource_usage->mean_cpu_usage = lexical_cast<double>(line_cols[5]);
-    task_resource_usage->canonical_mem_usage =
+    task_resource_usage.mean_cpu_usage = lexical_cast<double>(line_cols[5]);
+    task_resource_usage.canonical_mem_usage =
       lexical_cast<double>(line_cols[6]);
-    task_resource_usage->assigned_mem_usage =
+    task_resource_usage.assigned_mem_usage =
       lexical_cast<double>(line_cols[7]);
-    task_resource_usage->unmapped_page_cache =
+    task_resource_usage.unmapped_page_cache =
       lexical_cast<double>(line_cols[8]);
-    task_resource_usage->total_page_cache = lexical_cast<double>(line_cols[9]);
-    task_resource_usage->max_mem_usage = lexical_cast<double>(line_cols[10]);
-    task_resource_usage->mean_disk_io_time =
+    task_resource_usage.total_page_cache = lexical_cast<double>(line_cols[9]);
+    task_resource_usage.max_mem_usage = lexical_cast<double>(line_cols[10]);
+    task_resource_usage.mean_disk_io_time =
       lexical_cast<double>(line_cols[11]);
-    task_resource_usage->mean_local_disk_used =
+    task_resource_usage.mean_local_disk_used =
       lexical_cast<double>(line_cols[12]);
-    task_resource_usage->max_cpu_usage = lexical_cast<double>(line_cols[13]);
-    task_resource_usage->max_disk_io_time = lexical_cast<double>(line_cols[14]);
-    task_resource_usage->cpi = lexical_cast<double>(line_cols[15]);
-    task_resource_usage->mai = lexical_cast<double>(line_cols[16]);
+    task_resource_usage.max_cpu_usage = lexical_cast<double>(line_cols[13]);
+    task_resource_usage.max_disk_io_time = lexical_cast<double>(line_cols[14]);
+    task_resource_usage.cpi = lexical_cast<double>(line_cols[15]);
+    task_resource_usage.mai = lexical_cast<double>(line_cols[16]);
     return task_resource_usage;
   }
 
-  TaskResourceUsage* GoogleTraceTaskProcessor::MinTaskUsage(
-      const vector<TaskResourceUsage*>& resource_usage) {
-    TaskResourceUsage* task_resource_min = new TaskResourceUsage();
-    task_resource_min->mean_cpu_usage = numeric_limits<double>::max();
-    task_resource_min->canonical_mem_usage = numeric_limits<double>::max();
-    task_resource_min->assigned_mem_usage = numeric_limits<double>::max();
-    task_resource_min->unmapped_page_cache = numeric_limits<double>::max();
-    task_resource_min->total_page_cache = numeric_limits<double>::max();
-    task_resource_min->max_mem_usage = numeric_limits<double>::max();
-    task_resource_min->mean_disk_io_time = numeric_limits<double>::max();
-    task_resource_min->mean_local_disk_used = numeric_limits<double>::max();
-    task_resource_min->max_cpu_usage = numeric_limits<double>::max();
-    task_resource_min->max_disk_io_time = numeric_limits<double>::max();
-    task_resource_min->cpi = numeric_limits<double>::max();
-    task_resource_min->mai = numeric_limits<double>::max();
-    for (vector<TaskResourceUsage*>::const_iterator it = resource_usage.begin();
+  void GoogleTraceTaskProcessor::ExpandTaskEvent(
+      uint64_t timestamp, const TaskIdentifier& task_id, int32_t event_type,
+      unordered_map<TaskIdentifier, TaskRuntime*,
+                    TaskIdentifierHasher>* tasks_runtime,
+      unordered_map<uint64_t, string>* job_id_to_name,
+      FILE* out_events_file, vector<string>& line_cols) {
+    if (event_type == TASK_SCHEDULE) {
+      if (tasks_runtime->find(task_id) == tasks_runtime->end()) {
+        // New task.
+        TaskRuntime* task_runtime = new TaskRuntime();
+        task_runtime->start_time = timestamp;
+        task_runtime->last_schedule_time = timestamp;
+        InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
+      } else {
+        (*tasks_runtime)[task_id]->last_schedule_time = timestamp;
+      }
+    } else if (event_type == TASK_EVICT || event_type == TASK_FAIL ||
+               event_type == TASK_KILL) {
+      if (tasks_runtime->find(task_id) == tasks_runtime->end()) {
+        // First event for this task.
+        TaskRuntime* task_runtime = new TaskRuntime();
+        task_runtime->start_time = 0;
+        task_runtime->num_runs = 1;
+        task_runtime->total_runtime = timestamp;
+        InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
+      } else {
+        TaskRuntime* task_runtime = (*tasks_runtime)[task_id];
+        task_runtime->num_runs++;
+        task_runtime->total_runtime +=
+          timestamp - task_runtime->last_schedule_time;
+      }
+    } else if (event_type == TASK_FINISH) {
+      string logical_job_name = (*job_id_to_name)[task_id.job_id];
+      if (tasks_runtime->find(task_id) == tasks_runtime->end()) {
+        // First event for this task.
+        TaskRuntime* task_runtime = new TaskRuntime();
+        task_runtime->start_time = 0;
+        task_runtime->num_runs = 1;
+        task_runtime->total_runtime = timestamp;
+        InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
+        PrintTaskRuntime(out_events_file, task_runtime, task_id,
+                         logical_job_name, timestamp, line_cols);
+      } else {
+        TaskRuntime* task_runtime = (*tasks_runtime)[task_id];
+        task_runtime->num_runs++;
+        task_runtime->total_runtime +=
+          timestamp - task_runtime->last_schedule_time;
+        PrintTaskRuntime(out_events_file, task_runtime, task_id,
+                         logical_job_name,
+                         timestamp - task_runtime->last_schedule_time,
+                         line_cols);
+      }
+    }
+  }
+
+  TaskResourceUsage GoogleTraceTaskProcessor::MinTaskUsage(
+      const vector<TaskResourceUsage>& resource_usage) {
+    TaskResourceUsage task_resource_min;
+    task_resource_min.mean_cpu_usage = numeric_limits<double>::max();
+    task_resource_min.canonical_mem_usage = numeric_limits<double>::max();
+    task_resource_min.assigned_mem_usage = numeric_limits<double>::max();
+    task_resource_min.unmapped_page_cache = numeric_limits<double>::max();
+    task_resource_min.total_page_cache = numeric_limits<double>::max();
+    task_resource_min.max_mem_usage = numeric_limits<double>::max();
+    task_resource_min.mean_disk_io_time = numeric_limits<double>::max();
+    task_resource_min.mean_local_disk_used = numeric_limits<double>::max();
+    task_resource_min.max_cpu_usage = numeric_limits<double>::max();
+    task_resource_min.max_disk_io_time = numeric_limits<double>::max();
+    task_resource_min.cpi = numeric_limits<double>::max();
+    task_resource_min.mai = numeric_limits<double>::max();
+    for (vector<TaskResourceUsage>::const_iterator it = resource_usage.begin();
          it != resource_usage.end(); ++it) {
-      if ((*it)->mean_cpu_usage >= 0.0) {
-        task_resource_min->mean_cpu_usage =
-          min(task_resource_min->mean_cpu_usage, (*it)->mean_cpu_usage);
+      if (it->mean_cpu_usage >= 0.0) {
+        task_resource_min.mean_cpu_usage =
+          min(task_resource_min.mean_cpu_usage, it->mean_cpu_usage);
       }
-      if ((*it)->canonical_mem_usage >= 0.0) {
-        task_resource_min->canonical_mem_usage =
-          min(task_resource_min->canonical_mem_usage,
-              (*it)->canonical_mem_usage);
+      if (it->canonical_mem_usage >= 0.0) {
+        task_resource_min.canonical_mem_usage =
+          min(task_resource_min.canonical_mem_usage,
+              it->canonical_mem_usage);
       }
-      if ((*it)->assigned_mem_usage >= 0.0) {
-        task_resource_min->assigned_mem_usage =
-          min(task_resource_min->assigned_mem_usage, (*it)->assigned_mem_usage);
+      if (it->assigned_mem_usage >= 0.0) {
+        task_resource_min.assigned_mem_usage =
+          min(task_resource_min.assigned_mem_usage, it->assigned_mem_usage);
       }
-      if ((*it)->unmapped_page_cache >= 0.0) {
-        task_resource_min->unmapped_page_cache =
-          min(task_resource_min->unmapped_page_cache,
-              (*it)->unmapped_page_cache);
+      if (it->unmapped_page_cache >= 0.0) {
+        task_resource_min.unmapped_page_cache =
+          min(task_resource_min.unmapped_page_cache,
+              it->unmapped_page_cache);
       }
-      if ((*it)->total_page_cache >= 0.0) {
-        task_resource_min->total_page_cache =
-          min(task_resource_min->total_page_cache, (*it)->total_page_cache);
+      if (it->total_page_cache >= 0.0) {
+        task_resource_min.total_page_cache =
+          min(task_resource_min.total_page_cache, it->total_page_cache);
       }
-      if ((*it)->max_mem_usage >= 0.0) {
-        task_resource_min->max_mem_usage =
-          min(task_resource_min->max_mem_usage, (*it)->max_mem_usage);
+      if (it->max_mem_usage >= 0.0) {
+        task_resource_min.max_mem_usage =
+          min(task_resource_min.max_mem_usage, it->max_mem_usage);
       }
-      if ((*it)->mean_disk_io_time >= 0.0) {
-        task_resource_min->mean_disk_io_time =
-          min(task_resource_min->mean_disk_io_time, (*it)->mean_disk_io_time);
+      if (it->mean_disk_io_time >= 0.0) {
+        task_resource_min.mean_disk_io_time =
+          min(task_resource_min.mean_disk_io_time, it->mean_disk_io_time);
       }
-      if ((*it)->mean_local_disk_used >= 0.0) {
-        task_resource_min->mean_local_disk_used =
-          min(task_resource_min->mean_local_disk_used,
-              (*it)->mean_local_disk_used);
+      if (it->mean_local_disk_used >= 0.0) {
+        task_resource_min.mean_local_disk_used =
+          min(task_resource_min.mean_local_disk_used,
+              it->mean_local_disk_used);
       }
-      if ((*it)->max_cpu_usage >= 0.0) {
-        task_resource_min->max_cpu_usage =
-          min(task_resource_min->max_cpu_usage, (*it)->max_cpu_usage);
+      if (it->max_cpu_usage >= 0.0) {
+        task_resource_min.max_cpu_usage =
+          min(task_resource_min.max_cpu_usage, it->max_cpu_usage);
       }
-      if ((*it)->max_disk_io_time >= 0.0) {
-        task_resource_min->max_disk_io_time =
-          min(task_resource_min->max_disk_io_time, (*it)->max_disk_io_time);
+      if (it->max_disk_io_time >= 0.0) {
+        task_resource_min.max_disk_io_time =
+          min(task_resource_min.max_disk_io_time, it->max_disk_io_time);
       }
-      if ((*it)->cpi >= 0.0) {
-        task_resource_min->cpi = min(task_resource_min->cpi, (*it)->cpi);
+      if (it->cpi >= 0.0) {
+        task_resource_min.cpi = min(task_resource_min.cpi, it->cpi);
       }
-      if ((*it)->mai >= 0.0) {
-        task_resource_min->mai = min(task_resource_min->mai, (*it)->mai);
+      if (it->mai >= 0.0) {
+        task_resource_min.mai = min(task_resource_min.mai, it->mai);
       }
     }
-    if (fabs(task_resource_min->mean_cpu_usage -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->mean_cpu_usage = -1.0;
+    if (fabs(task_resource_min.mean_cpu_usage -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.mean_cpu_usage = -1.0;
     }
-    if (fabs(task_resource_min->canonical_mem_usage -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->canonical_mem_usage = -1.0;
+    if (fabs(task_resource_min.canonical_mem_usage -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.canonical_mem_usage = -1.0;
     }
-    if (fabs(task_resource_min->assigned_mem_usage -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->assigned_mem_usage = -1.0;
+    if (fabs(task_resource_min.assigned_mem_usage -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.assigned_mem_usage = -1.0;
     }
-    if (fabs(task_resource_min->unmapped_page_cache -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->unmapped_page_cache = -1.0;
+    if (fabs(task_resource_min.unmapped_page_cache -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.unmapped_page_cache = -1.0;
     }
-    if (fabs(task_resource_min->total_page_cache -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->total_page_cache = -1.0;
+    if (fabs(task_resource_min.total_page_cache -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.total_page_cache = -1.0;
     }
-    if (fabs(task_resource_min->max_mem_usage -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->max_mem_usage = -1.0;
+    if (fabs(task_resource_min.max_mem_usage -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.max_mem_usage = -1.0;
     }
-    if (fabs(task_resource_min->mean_disk_io_time -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->mean_disk_io_time = -1.0;
+    if (fabs(task_resource_min.mean_disk_io_time -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.mean_disk_io_time = -1.0;
     }
-    if (fabs(task_resource_min->mean_local_disk_used -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->mean_local_disk_used = -1.0;
+    if (fabs(task_resource_min.mean_local_disk_used -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.mean_local_disk_used = -1.0;
     }
-    if (fabs(task_resource_min->max_cpu_usage -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->max_cpu_usage = -1.0;
+    if (fabs(task_resource_min.max_cpu_usage -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.max_cpu_usage = -1.0;
     }
-    if (fabs(task_resource_min->max_disk_io_time -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->max_disk_io_time = -1.0;
+    if (fabs(task_resource_min.max_disk_io_time -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.max_disk_io_time = -1.0;
     }
-    if (fabs(task_resource_min->cpi -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->cpi = -1.0;
+    if (fabs(task_resource_min.cpi -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.cpi = -1.0;
     }
-    if (fabs(task_resource_min->mai -
-             numeric_limits<double>::max()) < 0.00001) {
-      task_resource_min->mai = -1.0;
+    if (fabs(task_resource_min.mai -
+             numeric_limits<double>::max()) < EPS) {
+      task_resource_min.mai = -1.0;
     }
     return task_resource_min;
   }
 
-  TaskResourceUsage* GoogleTraceTaskProcessor::MaxTaskUsage(
-      const vector<TaskResourceUsage*>& resource_usage) {
-    TaskResourceUsage* task_resource_max = new TaskResourceUsage();
-    task_resource_max->mean_cpu_usage = -1.0;
-    task_resource_max->canonical_mem_usage = -1.0;
-    task_resource_max->assigned_mem_usage = -1.0;
-    task_resource_max->unmapped_page_cache = -1.0;
-    task_resource_max->total_page_cache = -1.0;
-    task_resource_max->max_mem_usage = -1.0;
-    task_resource_max->mean_disk_io_time = -1.0;
-    task_resource_max->mean_local_disk_used = -1.0;
-    task_resource_max->max_cpu_usage = -1.0;
-    task_resource_max->max_disk_io_time = -1.0;
-    task_resource_max->cpi = -1.0;
-    task_resource_max->mai = -1.0;
-    for (vector<TaskResourceUsage*>::const_iterator it = resource_usage.begin();
+  TaskResourceUsage GoogleTraceTaskProcessor::MaxTaskUsage(
+      const vector<TaskResourceUsage>& resource_usage) {
+    TaskResourceUsage task_resource_max;
+    task_resource_max.mean_cpu_usage = -1.0;
+    task_resource_max.canonical_mem_usage = -1.0;
+    task_resource_max.assigned_mem_usage = -1.0;
+    task_resource_max.unmapped_page_cache = -1.0;
+    task_resource_max.total_page_cache = -1.0;
+    task_resource_max.max_mem_usage = -1.0;
+    task_resource_max.mean_disk_io_time = -1.0;
+    task_resource_max.mean_local_disk_used = -1.0;
+    task_resource_max.max_cpu_usage = -1.0;
+    task_resource_max.max_disk_io_time = -1.0;
+    task_resource_max.cpi = -1.0;
+    task_resource_max.mai = -1.0;
+    for (vector<TaskResourceUsage>::const_iterator it = resource_usage.begin();
          it != resource_usage.end(); ++it) {
-      task_resource_max->mean_cpu_usage =
-        max(task_resource_max->mean_cpu_usage, (*it)->mean_cpu_usage);
-      task_resource_max->canonical_mem_usage =
-        max(task_resource_max->canonical_mem_usage, (*it)->canonical_mem_usage);
-      task_resource_max->assigned_mem_usage =
-        max(task_resource_max->assigned_mem_usage, (*it)->assigned_mem_usage);
-      task_resource_max->unmapped_page_cache =
-        max(task_resource_max->unmapped_page_cache, (*it)->unmapped_page_cache);
-      task_resource_max->total_page_cache =
-        max(task_resource_max->total_page_cache, (*it)->total_page_cache);
-      task_resource_max->max_mem_usage =
-        max(task_resource_max->max_mem_usage, (*it)->max_mem_usage);
-      task_resource_max->mean_disk_io_time =
-        max(task_resource_max->mean_disk_io_time, (*it)->mean_disk_io_time);
-      task_resource_max->mean_local_disk_used =
-        max(task_resource_max->mean_local_disk_used,
-            (*it)->mean_local_disk_used);
-      task_resource_max->max_cpu_usage =
-        max(task_resource_max->max_cpu_usage, (*it)->max_cpu_usage);
-      task_resource_max->max_disk_io_time =
-        max(task_resource_max->max_disk_io_time, (*it)->max_disk_io_time);
-      task_resource_max->cpi = max(task_resource_max->cpi, (*it)->cpi);
-      task_resource_max->mai = max(task_resource_max->mai, (*it)->mai);
+      task_resource_max.mean_cpu_usage =
+        max(task_resource_max.mean_cpu_usage, it->mean_cpu_usage);
+      task_resource_max.canonical_mem_usage =
+        max(task_resource_max.canonical_mem_usage, it->canonical_mem_usage);
+      task_resource_max.assigned_mem_usage =
+        max(task_resource_max.assigned_mem_usage, it->assigned_mem_usage);
+      task_resource_max.unmapped_page_cache =
+        max(task_resource_max.unmapped_page_cache, it->unmapped_page_cache);
+      task_resource_max.total_page_cache =
+        max(task_resource_max.total_page_cache, it->total_page_cache);
+      task_resource_max.max_mem_usage =
+        max(task_resource_max.max_mem_usage, it->max_mem_usage);
+      task_resource_max.mean_disk_io_time =
+        max(task_resource_max.mean_disk_io_time, it->mean_disk_io_time);
+      task_resource_max.mean_local_disk_used =
+        max(task_resource_max.mean_local_disk_used,
+            it->mean_local_disk_used);
+      task_resource_max.max_cpu_usage =
+        max(task_resource_max.max_cpu_usage, it->max_cpu_usage);
+      task_resource_max.max_disk_io_time =
+        max(task_resource_max.max_disk_io_time, it->max_disk_io_time);
+      task_resource_max.cpi = max(task_resource_max.cpi, it->cpi);
+      task_resource_max.mai = max(task_resource_max.mai, it->mai);
     }
     return task_resource_max;
   }
 
-  TaskResourceUsage* GoogleTraceTaskProcessor::AvgTaskUsage(
-      const vector<TaskResourceUsage*>& resource_usage) {
-    TaskResourceUsage* task_resource_avg = new TaskResourceUsage();
+  TaskResourceUsage GoogleTraceTaskProcessor::AvgTaskUsage(
+      const vector<TaskResourceUsage>& resource_usage) {
+    TaskResourceUsage task_resource_avg = {};
     uint64_t num_mean_cpu_usage = 0;
     uint64_t num_canonical_mem_usage = 0;
     uint64_t num_assigned_mem_usage = 0;
@@ -302,98 +361,98 @@ namespace sim {
     uint64_t num_mean_local_disk_used = 0;
     uint64_t num_cpi = 0;
     uint64_t num_mai = 0;
-    for (vector<TaskResourceUsage*>::const_iterator it = resource_usage.begin();
+    for (vector<TaskResourceUsage>::const_iterator it = resource_usage.begin();
          it != resource_usage.end(); ++it) {
       // Sum the resources.
-      if ((*it)->mean_cpu_usage >= 0.0) {
-        task_resource_avg->mean_cpu_usage += (*it)->mean_cpu_usage;
+      if (it->mean_cpu_usage >= 0.0) {
+        task_resource_avg.mean_cpu_usage += it->mean_cpu_usage;
         num_mean_cpu_usage++;
       }
-      if ((*it)->canonical_mem_usage >= 0.0) {
-        task_resource_avg->canonical_mem_usage += (*it)->canonical_mem_usage;
+      if (it->canonical_mem_usage >= 0.0) {
+        task_resource_avg.canonical_mem_usage += it->canonical_mem_usage;
         num_canonical_mem_usage++;
       }
-      if ((*it)->assigned_mem_usage >= 0.0) {
-        task_resource_avg->assigned_mem_usage += (*it)->assigned_mem_usage;
+      if (it->assigned_mem_usage >= 0.0) {
+        task_resource_avg.assigned_mem_usage += it->assigned_mem_usage;
         num_assigned_mem_usage++;
       }
-      if ((*it)->unmapped_page_cache >= 0.0) {
-        task_resource_avg->unmapped_page_cache += (*it)->unmapped_page_cache;
+      if (it->unmapped_page_cache >= 0.0) {
+        task_resource_avg.unmapped_page_cache += it->unmapped_page_cache;
         num_unmapped_page_cache++;
       }
-      if ((*it)->total_page_cache >= 0.0) {
-        task_resource_avg->total_page_cache += (*it)->total_page_cache;
+      if (it->total_page_cache >= 0.0) {
+        task_resource_avg.total_page_cache += it->total_page_cache;
         num_total_page_cache++;
       }
-      if ((*it)->mean_disk_io_time >= 0.0) {
-        task_resource_avg->mean_disk_io_time += (*it)->mean_disk_io_time;
+      if (it->mean_disk_io_time >= 0.0) {
+        task_resource_avg.mean_disk_io_time += it->mean_disk_io_time;
         num_mean_disk_io_time++;
       }
-      if ((*it)->mean_local_disk_used >= 0.0) {
-        task_resource_avg->mean_local_disk_used += (*it)->mean_local_disk_used;
+      if (it->mean_local_disk_used >= 0.0) {
+        task_resource_avg.mean_local_disk_used += it->mean_local_disk_used;
         num_mean_local_disk_used++;
       }
-      if ((*it)->cpi >= 0.0) {
-        task_resource_avg->cpi += (*it)->cpi;
+      if (it->cpi >= 0.0) {
+        task_resource_avg.cpi += it->cpi;
         num_cpi++;
       }
-      if ((*it)->mai >= 0.0) {
-        task_resource_avg->mai += (*it)->mai;
+      if (it->mai >= 0.0) {
+        task_resource_avg.mai += it->mai;
         num_mai++;
       }
     }
     if (num_mean_cpu_usage > 0) {
-      task_resource_avg->mean_cpu_usage /= num_mean_cpu_usage;
+      task_resource_avg.mean_cpu_usage /= num_mean_cpu_usage;
     } else {
-      task_resource_avg->mean_cpu_usage = -1.0;
+      task_resource_avg.mean_cpu_usage = -1.0;
     }
     if (num_canonical_mem_usage > 0) {
-      task_resource_avg->canonical_mem_usage /= num_canonical_mem_usage;
+      task_resource_avg.canonical_mem_usage /= num_canonical_mem_usage;
     } else {
-      task_resource_avg->canonical_mem_usage = -1.0;
+      task_resource_avg.canonical_mem_usage = -1.0;
     }
     if (num_assigned_mem_usage > 0) {
-      task_resource_avg->assigned_mem_usage /= num_assigned_mem_usage;
+      task_resource_avg.assigned_mem_usage /= num_assigned_mem_usage;
     } else {
-      task_resource_avg->assigned_mem_usage = -1.0;
+      task_resource_avg.assigned_mem_usage = -1.0;
     }
     if (num_unmapped_page_cache > 0) {
-      task_resource_avg->unmapped_page_cache /= num_unmapped_page_cache;
+      task_resource_avg.unmapped_page_cache /= num_unmapped_page_cache;
     } else {
-      task_resource_avg->unmapped_page_cache = -1.0;
+      task_resource_avg.unmapped_page_cache = -1.0;
     }
     if (num_total_page_cache > 0) {
-      task_resource_avg->total_page_cache /= num_total_page_cache;
+      task_resource_avg.total_page_cache /= num_total_page_cache;
     } else {
-      task_resource_avg->total_page_cache = -1.0;
+      task_resource_avg.total_page_cache = -1.0;
     }
     if (num_mean_disk_io_time > 0) {
-      task_resource_avg->mean_disk_io_time /= num_mean_disk_io_time;
+      task_resource_avg.mean_disk_io_time /= num_mean_disk_io_time;
     } else {
-      task_resource_avg->mean_disk_io_time = -1.0;
+      task_resource_avg.mean_disk_io_time = -1.0;
     }
     if (num_mean_local_disk_used > 0) {
-      task_resource_avg->mean_local_disk_used /= num_mean_local_disk_used;
+      task_resource_avg.mean_local_disk_used /= num_mean_local_disk_used;
     } else {
-      task_resource_avg->mean_local_disk_used = -1.0;
+      task_resource_avg.mean_local_disk_used = -1.0;
     }
     if (num_cpi > 0) {
-      task_resource_avg->cpi /= num_cpi;
+      task_resource_avg.cpi /= num_cpi;
     } else {
-      task_resource_avg->cpi = -1.0;
+      task_resource_avg.cpi = -1.0;
     }
     if (num_mai > 0) {
-      task_resource_avg->mai /= num_mai;
+      task_resource_avg.mai /= num_mai;
     } else {
-      task_resource_avg->mai = -1.0;
+      task_resource_avg.mai = -1.0;
     }
     return task_resource_avg;
   }
 
-  TaskResourceUsage* GoogleTraceTaskProcessor::StandardDevTaskUsage(
-      const vector<TaskResourceUsage*>& resource_usage) {
-    TaskResourceUsage* task_resource_avg = AvgTaskUsage(resource_usage);
-    TaskResourceUsage* task_resource_sd = new TaskResourceUsage();
+  TaskResourceUsage GoogleTraceTaskProcessor::StandardDevTaskUsage(
+      const vector<TaskResourceUsage>& resource_usage) {
+    TaskResourceUsage task_resource_avg = AvgTaskUsage(resource_usage);
+    TaskResourceUsage task_resource_sd = {};
     uint64_t num_mean_cpu_usage = 0;
     uint64_t num_canonical_mem_usage = 0;
     uint64_t num_assigned_mem_usage = 0;
@@ -403,158 +462,154 @@ namespace sim {
     uint64_t num_mean_local_disk_used = 0;
     uint64_t num_cpi = 0;
     uint64_t num_mai = 0;
-    for (vector<TaskResourceUsage*>::const_iterator it = resource_usage.begin();
+    for (vector<TaskResourceUsage>::const_iterator it = resource_usage.begin();
          it != resource_usage.end(); ++it) {
-      if ((*it)->mean_cpu_usage >= 0.0) {
-        task_resource_sd->mean_cpu_usage +=
-          pow((*it)->mean_cpu_usage - task_resource_avg->mean_cpu_usage, 2);
+      if (it->mean_cpu_usage >= 0.0) {
+        task_resource_sd.mean_cpu_usage +=
+          pow(it->mean_cpu_usage - task_resource_avg.mean_cpu_usage, 2);
         num_mean_cpu_usage++;
       }
-      if ((*it)->canonical_mem_usage >= 0.0) {
-        task_resource_sd->canonical_mem_usage +=
-          pow((*it)->canonical_mem_usage -
-              task_resource_avg->canonical_mem_usage, 2);
+      if (it->canonical_mem_usage >= 0.0) {
+        task_resource_sd.canonical_mem_usage +=
+          pow(it->canonical_mem_usage -
+              task_resource_avg.canonical_mem_usage, 2);
         num_canonical_mem_usage++;
       }
-      if ((*it)->assigned_mem_usage >= 0.0) {
-        task_resource_sd->assigned_mem_usage +=
-          pow((*it)->assigned_mem_usage -
-              task_resource_avg->assigned_mem_usage, 2);
+      if (it->assigned_mem_usage >= 0.0) {
+        task_resource_sd.assigned_mem_usage +=
+          pow(it->assigned_mem_usage -
+              task_resource_avg.assigned_mem_usage, 2);
         num_assigned_mem_usage++;
       }
-      if ((*it)->unmapped_page_cache >= 0.0) {
-        task_resource_sd->unmapped_page_cache +=
-          pow((*it)->unmapped_page_cache -
-              task_resource_avg->unmapped_page_cache, 2);
+      if (it->unmapped_page_cache >= 0.0) {
+        task_resource_sd.unmapped_page_cache +=
+          pow(it->unmapped_page_cache -
+              task_resource_avg.unmapped_page_cache, 2);
         num_unmapped_page_cache++;
       }
-      if ((*it)->total_page_cache >= 0.0) {
-        task_resource_sd->total_page_cache +=
-          pow((*it)->total_page_cache - task_resource_avg->total_page_cache, 2);
+      if (it->total_page_cache >= 0.0) {
+        task_resource_sd.total_page_cache +=
+          pow(it->total_page_cache - task_resource_avg.total_page_cache, 2);
         num_total_page_cache++;
       }
-      if ((*it)->mean_disk_io_time >= 0.0) {
-        task_resource_sd->mean_disk_io_time +=
-          pow((*it)->mean_disk_io_time -
-              task_resource_avg->mean_disk_io_time, 2);
+      if (it->mean_disk_io_time >= 0.0) {
+        task_resource_sd.mean_disk_io_time +=
+          pow(it->mean_disk_io_time -
+              task_resource_avg.mean_disk_io_time, 2);
         num_mean_disk_io_time++;
       }
-      if ((*it)->mean_local_disk_used >= 0.0) {
-        task_resource_sd->mean_local_disk_used +=
-          pow((*it)->mean_local_disk_used -
-              task_resource_avg->mean_local_disk_used, 2);
+      if (it->mean_local_disk_used >= 0.0) {
+        task_resource_sd.mean_local_disk_used +=
+          pow(it->mean_local_disk_used -
+              task_resource_avg.mean_local_disk_used, 2);
         num_mean_local_disk_used++;
       }
-      if ((*it)->cpi >= 0.0) {
-        task_resource_sd->cpi += pow((*it)->cpi - task_resource_avg->cpi, 2);
+      if (it->cpi >= 0.0) {
+        task_resource_sd.cpi += pow(it->cpi - task_resource_avg.cpi, 2);
         num_cpi++;
       }
-      if ((*it)->mai >= 0.0) {
-        task_resource_sd->mai += pow((*it)->mai - task_resource_avg->mai, 2);
+      if (it->mai >= 0.0) {
+        task_resource_sd.mai += pow(it->mai - task_resource_avg.mai, 2);
         num_mai++;
       }
     }
     if (num_mean_cpu_usage > 0) {
-      task_resource_sd->mean_cpu_usage =
-        sqrt(task_resource_sd->mean_cpu_usage / num_mean_cpu_usage);
+      task_resource_sd.mean_cpu_usage =
+        sqrt(task_resource_sd.mean_cpu_usage / num_mean_cpu_usage);
     } else {
-      task_resource_sd->mean_cpu_usage = -1.0;
+      task_resource_sd.mean_cpu_usage = -1.0;
     }
     if (num_canonical_mem_usage > 0) {
-      task_resource_sd->canonical_mem_usage =
-        sqrt(task_resource_sd->canonical_mem_usage / num_canonical_mem_usage);
+      task_resource_sd.canonical_mem_usage =
+        sqrt(task_resource_sd.canonical_mem_usage / num_canonical_mem_usage);
     } else {
-      task_resource_sd->canonical_mem_usage = -1.0;
+      task_resource_sd.canonical_mem_usage = -1.0;
     }
     if (num_assigned_mem_usage > 0) {
-      task_resource_sd->assigned_mem_usage =
-        sqrt(task_resource_sd->assigned_mem_usage / num_assigned_mem_usage);
+      task_resource_sd.assigned_mem_usage =
+        sqrt(task_resource_sd.assigned_mem_usage / num_assigned_mem_usage);
     } else {
-      task_resource_sd->assigned_mem_usage = -1.0;
+      task_resource_sd.assigned_mem_usage = -1.0;
     }
     if (num_unmapped_page_cache > 0) {
-      task_resource_sd->unmapped_page_cache =
-        sqrt(task_resource_sd->unmapped_page_cache / num_unmapped_page_cache);
+      task_resource_sd.unmapped_page_cache =
+        sqrt(task_resource_sd.unmapped_page_cache / num_unmapped_page_cache);
     } else {
-      task_resource_sd->unmapped_page_cache = -1.0;
+      task_resource_sd.unmapped_page_cache = -1.0;
     }
     if (num_total_page_cache > 0) {
-      task_resource_sd->total_page_cache =
-        sqrt(task_resource_sd->total_page_cache / num_total_page_cache);
+      task_resource_sd.total_page_cache =
+        sqrt(task_resource_sd.total_page_cache / num_total_page_cache);
     } else {
-      task_resource_sd->total_page_cache = -1.0;
+      task_resource_sd.total_page_cache = -1.0;
     }
     if (num_mean_disk_io_time > 0) {
-      task_resource_sd->mean_disk_io_time =
-        sqrt(task_resource_sd->mean_disk_io_time / num_mean_disk_io_time);
+      task_resource_sd.mean_disk_io_time =
+        sqrt(task_resource_sd.mean_disk_io_time / num_mean_disk_io_time);
     } else {
-      task_resource_sd->mean_disk_io_time = -1.0;
+      task_resource_sd.mean_disk_io_time = -1.0;
     }
     if (num_mean_local_disk_used > 0) {
-      task_resource_sd->mean_local_disk_used =
-        sqrt(task_resource_sd->mean_local_disk_used / num_mean_local_disk_used);
+      task_resource_sd.mean_local_disk_used =
+        sqrt(task_resource_sd.mean_local_disk_used / num_mean_local_disk_used);
     } else {
-      task_resource_sd->mean_local_disk_used = -1.0;
+      task_resource_sd.mean_local_disk_used = -1.0;
     }
     if (num_cpi > 0) {
-      task_resource_sd->cpi = sqrt(task_resource_sd->cpi / num_cpi);
+      task_resource_sd.cpi = sqrt(task_resource_sd.cpi / num_cpi);
     } else {
-      task_resource_sd->cpi = -1.0;
+      task_resource_sd.cpi = -1.0;
     }
     if (num_mai > 0) {
-      task_resource_sd->mai = sqrt(task_resource_sd->mai / num_mai);
+      task_resource_sd.mai = sqrt(task_resource_sd.mai / num_mai);
     } else {
-      task_resource_sd->mai = -1.0;
+      task_resource_sd.mai = -1.0;
     }
     return task_resource_sd;
   }
 
   void GoogleTraceTaskProcessor::PrintStats(
       FILE* usage_stat_file, const TaskIdentifier& task_id,
-      const vector<TaskResourceUsage*>& task_resource) {
-    TaskResourceUsage* avg_task_usage = AvgTaskUsage(task_resource);
-    TaskResourceUsage* min_task_usage = MinTaskUsage(task_resource);
-    TaskResourceUsage* max_task_usage = MaxTaskUsage(task_resource);
-    TaskResourceUsage* sd_task_usage = StandardDevTaskUsage(task_resource);
+      const vector<TaskResourceUsage>& task_resource) {
+    TaskResourceUsage avg_task_usage = AvgTaskUsage(task_resource);
+    TaskResourceUsage min_task_usage = MinTaskUsage(task_resource);
+    TaskResourceUsage max_task_usage = MaxTaskUsage(task_resource);
+    TaskResourceUsage sd_task_usage = StandardDevTaskUsage(task_resource);
     fprintf(usage_stat_file,
             "%" PRId64 " %" PRId64 " %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf"
             "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf"
             "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
             task_id.job_id, task_id.task_index,
-            min_task_usage->mean_cpu_usage, max_task_usage->mean_cpu_usage,
-            avg_task_usage->mean_cpu_usage, sd_task_usage->mean_cpu_usage,
-            min_task_usage->canonical_mem_usage,
-            max_task_usage->canonical_mem_usage,
-            avg_task_usage->canonical_mem_usage,
-            sd_task_usage->canonical_mem_usage,
-            min_task_usage->assigned_mem_usage,
-            max_task_usage->assigned_mem_usage,
-            avg_task_usage->assigned_mem_usage,
-            sd_task_usage->assigned_mem_usage,
-            min_task_usage->unmapped_page_cache,
-            max_task_usage->unmapped_page_cache,
-            avg_task_usage->unmapped_page_cache,
-            sd_task_usage->unmapped_page_cache,
-            min_task_usage->total_page_cache,
-            max_task_usage->total_page_cache,
-            avg_task_usage->total_page_cache,
-            sd_task_usage->total_page_cache,
-            min_task_usage->mean_disk_io_time,
-            max_task_usage->mean_disk_io_time,
-            avg_task_usage->mean_disk_io_time,
-            sd_task_usage->mean_disk_io_time,
-            min_task_usage->mean_local_disk_used,
-            max_task_usage->mean_local_disk_used,
-            avg_task_usage->mean_local_disk_used,
-            sd_task_usage->mean_local_disk_used,
-            min_task_usage->cpi, max_task_usage->cpi,
-            avg_task_usage->cpi, sd_task_usage->cpi,
-            min_task_usage->mai, max_task_usage->mai,
-            avg_task_usage->mai, sd_task_usage->mai);
-    delete avg_task_usage;
-    delete min_task_usage;
-    delete max_task_usage;
-    delete sd_task_usage;
+            min_task_usage.mean_cpu_usage, max_task_usage.mean_cpu_usage,
+            avg_task_usage.mean_cpu_usage, sd_task_usage.mean_cpu_usage,
+            min_task_usage.canonical_mem_usage,
+            max_task_usage.canonical_mem_usage,
+            avg_task_usage.canonical_mem_usage,
+            sd_task_usage.canonical_mem_usage,
+            min_task_usage.assigned_mem_usage,
+            max_task_usage.assigned_mem_usage,
+            avg_task_usage.assigned_mem_usage,
+            sd_task_usage.assigned_mem_usage,
+            min_task_usage.unmapped_page_cache,
+            max_task_usage.unmapped_page_cache,
+            avg_task_usage.unmapped_page_cache,
+            sd_task_usage.unmapped_page_cache,
+            min_task_usage.total_page_cache,
+            max_task_usage.total_page_cache,
+            avg_task_usage.total_page_cache,
+            sd_task_usage.total_page_cache,
+            min_task_usage.mean_disk_io_time,
+            max_task_usage.mean_disk_io_time,
+            avg_task_usage.mean_disk_io_time,
+            sd_task_usage.mean_disk_io_time,
+            min_task_usage.mean_local_disk_used,
+            max_task_usage.mean_local_disk_used,
+            avg_task_usage.mean_local_disk_used,
+            sd_task_usage.mean_local_disk_used,
+            min_task_usage.cpi, max_task_usage.cpi,
+            avg_task_usage.cpi, sd_task_usage.cpi,
+            min_task_usage.mai, max_task_usage.mai,
+            avg_task_usage.mai, sd_task_usage.mai);
   }
 
   void GoogleTraceTaskProcessor::AggregateTaskUsage() {
@@ -565,7 +620,7 @@ namespace sim {
     job_num_tasks->clear();
     delete job_num_tasks;
     // Map job id to map of task id to vector of resource usage.
-    unordered_map<TaskIdentifier, vector<TaskResourceUsage*>,
+    unordered_map<TaskIdentifier, vector<TaskResourceUsage>,
         TaskIdentifierHasher> task_usage;
     char line[200];
     vector<string> line_cols;
@@ -578,9 +633,10 @@ namespace sim {
       LOG(ERROR) << "Failed to open task_usage_stat file for writing";
     }
     uint64_t last_timestamp = 0;
-    for (uint64_t file_num = 0; file_num < 500; file_num++) {
+    for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
+         file_num++) {
       string file_name;
-      spf(&file_name, "%s/task_usage/part-%05ld-of-00500.csv",
+      spf(&file_name, "%s/task_usage/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
       if ((usage_file = fopen(file_name.c_str(), "r")) == NULL) {
         LOG(ERROR) << "Failed to open trace for reading of task "
@@ -613,13 +669,6 @@ namespace sim {
                   task_id.task_index = evt.task_index;
                   PrintStats(usage_stat_file, task_id, task_usage[task_id]);
                   // Free task resource usage memory.
-                  vector<TaskResourceUsage*>::iterator res_it =
-                    task_usage[task_id].begin();
-                  vector<TaskResourceUsage*>::iterator end_it =
-                    task_usage[task_id].end();
-                  for (; res_it != end_it; res_it++) {
-                    delete *res_it;
-                  }
                   task_usage[task_id].clear();
                   task_usage.erase(task_id);
                 }
@@ -629,12 +678,12 @@ namespace sim {
             }
             last_timestamp = start_timestamp;
 
-            TaskResourceUsage* task_resource_usage =
+            TaskResourceUsage task_resource_usage =
               BuildTaskResourceUsage(line_cols);
 
             if (task_usage.find(cur_task_id) == task_usage.end()) {
               // New task identifier.
-              vector<TaskResourceUsage*> resource_usage;
+              vector<TaskResourceUsage> resource_usage;
               resource_usage.push_back(task_resource_usage);
               InsertIfNotPresent(&task_usage, cur_task_id, resource_usage);
             } else {
@@ -646,7 +695,7 @@ namespace sim {
       }
     }
     // Write stats for tasks that are still running.
-    for (unordered_map<TaskIdentifier, vector<TaskResourceUsage*>,
+    for (unordered_map<TaskIdentifier, vector<TaskResourceUsage>,
            TaskIdentifierHasher>::iterator it = task_usage.begin();
          it != task_usage.end(); it++) {
       PrintStats(usage_stat_file, it->first, it->second);
@@ -657,14 +706,17 @@ namespace sim {
   }
 
   // Returns a mapping job id to logical job name.
-  map<uint64_t, string>& GoogleTraceTaskProcessor::ReadLogicalJobsName() {
-    map<uint64_t, string> *job_id_to_name = new map<uint64_t, string>();
+  unordered_map<uint64_t, string>&
+      GoogleTraceTaskProcessor::ReadLogicalJobsName() {
+    unordered_map<uint64_t, string> *job_id_to_name =
+      new unordered_map<uint64_t, string>();
     char line[200];
     vector<string> line_cols;
     FILE* events_file = NULL;
-    for (uint64_t file_num = 0; file_num < 500; file_num++) {
+    for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
+         file_num++) {
       string file_name;
-      spf(&file_name, "%s/job_events/part-%05ld-of-00500.csv",
+      spf(&file_name, "%s/job_events/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
       if ((events_file = fopen(file_name.c_str(), "r")) == NULL) {
         LOG(ERROR) << "Failed to open trace for reading of job events.";
@@ -679,8 +731,7 @@ namespace sim {
                        << " columns.";
           } else {
             uint64_t job_id = lexical_cast<uint64_t>(line_cols[2]);
-            job_id_to_name->insert(pair<uint64_t, string>(job_id,
-                                                          line_cols[7]));
+            InsertOrUpdate(job_id_to_name, job_id, line_cols[7]);
           }
         }
         num_line++;
@@ -713,7 +764,7 @@ namespace sim {
   }
 
   void GoogleTraceTaskProcessor::ExpandTaskEvents() {
-    map<uint64_t, string> job_id_to_name = ReadLogicalJobsName();
+    unordered_map<uint64_t, string> job_id_to_name = ReadLogicalJobsName();
     unordered_map<TaskIdentifier, TaskRuntime*,
                   TaskIdentifierHasher> tasks_runtime;
     char line[200];
@@ -726,9 +777,10 @@ namespace sim {
     if ((out_events_file = fopen(out_file_name.c_str(), "w")) == NULL) {
       LOG(ERROR) << "Failed to open task_runtime_events file for writing";
     }
-    for (uint64_t file_num = 0; file_num < 500; file_num++) {
+    for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
+         file_num++) {
       string file_name;
-      spf(&file_name, "%s/task_events/part-%05ld-of-00500.csv",
+      spf(&file_name, "%s/task_events/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
       if ((events_file = fopen(file_name.c_str(), "r")) == NULL) {
         LOG(ERROR) << "Failed to open trace for reading of task events.";
@@ -747,53 +799,8 @@ namespace sim {
             task_id.job_id = lexical_cast<uint64_t>(line_cols[2]);
             task_id.task_index = lexical_cast<uint64_t>(line_cols[3]);
             int32_t event_type = lexical_cast<int32_t>(line_cols[5]);
-            if (event_type == TASK_SCHEDULE) {
-              if (tasks_runtime.find(task_id) == tasks_runtime.end()) {
-                // New task.
-                TaskRuntime* task_runtime = new TaskRuntime();
-                task_runtime->start_time = timestamp;
-                task_runtime->last_schedule_time = timestamp;
-                InsertIfNotPresent(&tasks_runtime, task_id, task_runtime);
-              } else {
-                tasks_runtime[task_id]->last_schedule_time = timestamp;
-              }
-            } else if (event_type == TASK_EVICT || event_type == TASK_FAIL ||
-                       event_type == TASK_KILL) {
-              if (tasks_runtime.find(task_id) == tasks_runtime.end()) {
-                // First event for this task.
-                TaskRuntime* task_runtime = new TaskRuntime();
-                task_runtime->start_time = 0;
-                task_runtime->num_runs = 1;
-                task_runtime->total_runtime = timestamp;
-                InsertIfNotPresent(&tasks_runtime, task_id, task_runtime);
-              } else {
-                TaskRuntime* task_runtime = tasks_runtime[task_id];
-                task_runtime->num_runs++;
-                task_runtime->total_runtime +=
-                  timestamp - task_runtime->last_schedule_time;
-              }
-            } else if (event_type == TASK_FINISH) {
-              string logical_job_name = job_id_to_name[task_id.job_id];
-              if (tasks_runtime.find(task_id) == tasks_runtime.end()) {
-                // First event for this task.
-                TaskRuntime* task_runtime = new TaskRuntime();
-                task_runtime->start_time = 0;
-                task_runtime->num_runs = 1;
-                task_runtime->total_runtime = timestamp;
-                InsertIfNotPresent(&tasks_runtime, task_id, task_runtime);
-                PrintTaskRuntime(out_events_file, task_runtime, task_id,
-                                 logical_job_name, timestamp, line_cols);
-              } else {
-                TaskRuntime* task_runtime = tasks_runtime[task_id];
-                task_runtime->num_runs++;
-                task_runtime->total_runtime +=
-                  timestamp - task_runtime->last_schedule_time;
-                PrintTaskRuntime(out_events_file, task_runtime, task_id,
-                                 logical_job_name,
-                                 timestamp - task_runtime->last_schedule_time,
-                                 line_cols);
-              }
-            }
+            ExpandTaskEvent(timestamp, task_id, event_type, &tasks_runtime,
+                            &job_id_to_name, out_events_file, line_cols);
           }
         }
         num_line++;
