@@ -37,6 +37,10 @@ namespace scheduler {
         stat(FLAGS_debug_output_dir.c_str(), &st) == -1) {
       mkdir(FLAGS_debug_output_dir.c_str(), 0700);
     }
+    // Adjusts the costs on the arcs from tasks to unsched aggs.
+    if (initial_solver_run_) {
+      flow_graph_->AdjustUnscheduledAggArcCosts();
+    }
     // Blow away any old exporter state
     exporter_.Reset();
     if (FLAGS_incremental_flow && initial_solver_run_) {

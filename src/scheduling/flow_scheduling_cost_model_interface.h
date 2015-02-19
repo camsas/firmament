@@ -32,6 +32,9 @@ class FlowSchedulingCostModelInterface {
   virtual ~FlowSchedulingCostModelInterface() {}
 
   // Costs pertaining to leaving tasks unscheduled
+  // The method should return a monotonically increasing value upon
+  // subsequent calls. It is used to adjust the cost of
+  // leaving a task unscheduled after each iteration.
   virtual Cost_t TaskToUnscheduledAggCost(TaskID_t task_id) = 0;
   virtual Cost_t UnscheduledAggToSinkCost(JobID_t job_id) = 0;
   // Per-task costs (into the resource topology)

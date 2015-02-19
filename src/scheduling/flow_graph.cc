@@ -355,6 +355,24 @@ void FlowGraph::AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
   graph_changes_.push_back(new DIMACSChangeArc(*unsched_agg_to_sink_arc));
 }
 
+void FlowGraph::AdjustUnscheduledAggArcCosts() {
+  unordered_map<JobID_t, uint64_t,
+                boost::hash<boost::uuids::uuid> >::iterator it =
+    job_unsched_to_node_id_.begin();
+  for (; it != job_unsched_to_node_id_.end(); ++it) {
+    FlowGraphNode* unsched_node = Node(it->second);
+    for (unordered_map<uint64_t, FlowGraphArc*>::iterator
+           ait = unsched_node->incoming_arc_map_.begin();
+         ait != unsched_node->incoming_arc_map_.end();
+         ++ait) {
+      FlowGraphArc* arc = ait->second;
+      TaskID_t task_id = Node(arc->src_)->task_id_;
+      ChangeArc(arc, arc->cap_lower_bound_, arc->cap_upper_bound_,
+                cost_model_->TaskToUnscheduledAggCost(task_id));
+    }
+  }
+}
+
 void FlowGraph::ConfigureResourceRootNode(
     const ResourceTopologyNodeDescriptor& rtnd, FlowGraphNode* new_node) {
   // 1) Root node

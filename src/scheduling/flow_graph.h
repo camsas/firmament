@@ -34,6 +34,7 @@ class FlowGraph {
   void AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void AddResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
+  void AdjustUnscheduledAggArcCosts();
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                  uint64_t cap_upper_bound, uint64_t cost);
   bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
