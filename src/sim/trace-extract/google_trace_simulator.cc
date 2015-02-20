@@ -50,8 +50,8 @@ namespace sim {
 #define MACHINE_TMPL_FILE "../../../tests/testdata/machine_topo.pbin"
 //#define MACHINE_TMPL_FILE "/tmp/mach_test.pbin"
 
-DEFINE_int64(runtime, -1, "Time to extract data for (from start of trace, in "
-             "seconds); -1 for everything.");
+DEFINE_uint64(runtime, 9223372036854775807,
+              "Time in microsec to extract data for (from start of trace)");
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 DEFINE_bool(tasks_preemption_bins, false,
             "Compute bins of number of preempted tasks.");
@@ -78,12 +78,8 @@ void GoogleTraceSimulator::Run() {
     LOG(FATAL) << "Please specify a path to the Google trace!";
   }
 
-  if (FLAGS_runtime == -1) {
-    FLAGS_runtime = numeric_limits<int64_t>::max();
-  }
-
   LOG(INFO) << "Starting Google Trace extraction!";
-  LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " seconds.";
+  LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " microseconds.";
 
   CreateRootResource();
 
@@ -278,7 +274,7 @@ void GoogleTraceSimulator::LoadMachineEvents() {
   vector<string> cols;
   FILE* machines_file;
   string machines_file_name = trace_path_ +
-    "/machine_events/part-00001-of-00500.csv";
+    "/machine_events/part-00000-of-00001.csv";
   if ((machines_file = fopen(machines_file_name.c_str(), "r")) == NULL) {
     LOG(ERROR) << "Failed to open trace for reading machine events.";
   }
@@ -375,12 +371,16 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
   for (multimap<uint64_t, EventDescriptor>::iterator it = range_events.first;
        it != range_events.second; ++it) {
     if (it->second.type() == EventDescriptor::ADD_MACHINE) {
+      VLOG(2) << "ADD_MACHINE " << it->second.machine_id();
       AddMachine(machine_tmpl, it->second.machine_id());
     } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
+      VLOG(2) << "REMOVE_MACHINE " << it->second.machine_id();
       RemoveMachine(it->second.machine_id());
     } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
       // TODO(ionel): Handle machine update event.
     } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
+      VLOG(2) << "TASK_END_RUNTIME " << it->second.job_id() << " "
+              << it->second.task_index();
       // Task has finished.
       TaskIdentifier task_identifier;
       task_identifier.task_index = it->second.task_index();
@@ -492,11 +492,9 @@ void GoogleTraceSimulator::ReplayTrace() {
             UpdateFlowGraph(time_interval_bound, &task_runtime, task_mappings);
 
             // Update current time.
-            time_interval_bound += FLAGS_bin_time_duration;
             while (time_interval_bound < task_time) {
               time_interval_bound += FLAGS_bin_time_duration;
             }
-            time_interval_bound += FLAGS_bin_time_duration;
           }
           if (last_time_processed < task_time || !initial_time_processed) {
             ProcessSimulatorEvents(task_time, machine_tmpl);
