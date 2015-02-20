@@ -27,7 +27,7 @@
 #include "scheduling/flow_scheduling_cost_model_interface.h"
 
 DEFINE_bool(preemption, false, "Enable preemption and migration of tasks");
-DEFINE_int32(num_pref_arcs, 5,
+DEFINE_int32(num_pref_arcs, 1,
              "Number of preference arcs from equiv class node");
 
 namespace firmament {
@@ -117,7 +117,7 @@ void FlowGraph::AddEquivClassPreferenceArcs(
     const TaskDescriptor& td, FlowGraphNode* equiv_node,
     vector<FlowGraphArc*>* ec_arcs) {
   // TODO(ionel): Use td to add preference arcs.
-  for (int32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs; ++num_arc) {
+  for (int32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs; ) {
     size_t index = rand_r(&rand_seed_) % leaf_nodes_.size();
     unordered_set<uint64_t>::iterator it = leaf_nodes_.begin();
     advance(it, index);
@@ -126,6 +126,7 @@ void FlowGraph::AddEquivClassPreferenceArcs(
       ec_arcs->push_back(arc);
       ResourceID_t res_id = Node(*it)->resource_id_;
       arc->cost_ = cost_model_->EquivClassToResourceNode(td.uid(), res_id);
+      num_arc++;
     }
   }
 }
@@ -522,9 +523,16 @@ void FlowGraph::DeleteNodesForJob(JobID_t job_id) {
   CHECK_NOTNULL(unsched_node_id);
   FlowGraphNode* node = Node(*unsched_node_id);
   // Remove any remaining task nodes
+  // Clone the incoming_arcs so that we can use the copy to iterate over
+  // incoming arcs. We do so in order to avoid iterating over a collection
+  // that we change while iterating. DeleteTaskNode removes entries
+  // from the incoming_arcs_map.
+  unordered_map<uint64_t, FlowGraphArc*> incoming_arcs(
+      node->incoming_arc_map_.begin(),
+      node->incoming_arc_map_.end());
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator
-       it = node->incoming_arc_map_.begin();
-       it != node->incoming_arc_map_.end();
+       it = incoming_arcs.begin();
+       it != incoming_arcs.end();
        it++) {
     FlowGraphArc* arc = it->second;
     CHECK_NOTNULL(arc);
@@ -533,6 +541,8 @@ void FlowGraph::DeleteNodesForJob(JobID_t job_id) {
     CHECK_EQ(task_node->job_id_, job_id);
     DeleteTaskNode(task_node->task_id_);
   }
+  CHECK_EQ(node->incoming_arc_map_.size(), 0);
+  incoming_arcs.clear();
   job_unsched_to_node_id_.erase(job_id);
   unused_ids_.push(node->id_);
   DeleteNode(node);
