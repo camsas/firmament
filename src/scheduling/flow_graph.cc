@@ -324,8 +324,6 @@ void FlowGraph::AddResourceNode(
         ResourceIDFromString(rtnd.resource_desc().uuid()));
   }
   // Consider different cases: root node, internal node and leaf node
-  // N.B.: the root node is processed BOTH by the root case (1) and the
-  // branch or leaf case (2 or 3).
   if (!rtnd.has_parent_id()) {
     // 1) Root node
     ConfigureResourceRootNode(rtnd, new_node);
@@ -336,10 +334,6 @@ void FlowGraph::AddResourceNode(
   } else if (rtnd.has_parent_id()) {
     // 3) Leaves of the resource topology; add an arc to the sink node
     ConfigureResourceLeafNode(rtnd, new_node);
-  } else {
-    LOG(WARNING) << "Orphan node in resource toplogy: it has neither children "
-                 << "nor a parent! (resource id: "
-                 << rtnd.resource_desc().uuid();
   }
 }
 

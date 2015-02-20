@@ -50,9 +50,7 @@ namespace sim {
 #define MACHINE_TMPL_FILE "../../../tests/testdata/machine_topo.pbin"
 //#define MACHINE_TMPL_FILE "/tmp/mach_test.pbin"
 
-DEFINE_int64(num_machines, -1, "Number of machines to extract; -1 for all.");
-DEFINE_int64(num_jobs, -1, "Number of initial jobs to extract; -1 for all.");
-DEFINE_uint64(runtime, -1, "Time to extract data for (from start of trace, in "
+DEFINE_int64(runtime, -1, "Time to extract data for (from start of trace, in "
              "seconds); -1 for everything.");
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 DEFINE_bool(tasks_preemption_bins, false,
@@ -62,6 +60,7 @@ DEFINE_string(task_bins_output, "bins.out",
               "The file in which the task bins are written.");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
+DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -79,8 +78,11 @@ void GoogleTraceSimulator::Run() {
     LOG(FATAL) << "Please specify a path to the Google trace!";
   }
 
+  if (FLAGS_runtime == -1) {
+    FLAGS_runtime = numeric_limits<int64_t>::max();
+  }
+
   LOG(INFO) << "Starting Google Trace extraction!";
-  LOG(INFO) << "Number of machines to extract: " << FLAGS_num_machines;
   LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " seconds.";
 
   CreateRootResource();
@@ -178,9 +180,10 @@ void GoogleTraceSimulator::BinTasksByEventType(uint64_t event,
   FILE* fptr = NULL;
   uint64_t time_interval_bound = FLAGS_bin_time_duration;
   uint64_t num_tasks = 0;
-  for (uint64_t file_num = 0; file_num < 500; file_num++) {
+  for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
+       file_num++) {
     string fname;
-    spf(&fname, "%s/task_events/part-%05ld-of-00500.csv",
+    spf(&fname, "%s/task_events/part-%05d-of-00500.csv",
         trace_path_.c_str(), file_num);
     if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
       LOG(ERROR) << "Failed to open trace for reading of task events.";
@@ -229,8 +232,8 @@ void GoogleTraceSimulator::CreateRootResource() {
   ResourceID_t root_uuid = GenerateRootResourceID("XXXgoogleXXX");
   rtn_root_.mutable_resource_desc()->set_uuid(to_string(root_uuid));
   LOG(INFO) << "Root res ID is " << to_string(root_uuid);
-  InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
-                     to_string(root_uuid));
+  CHECK(InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
+                           to_string(root_uuid)));
 
   // Add resources and job to flow graph
   flow_graph_->AddResourceTopology(rtn_root_);
@@ -457,9 +460,9 @@ void GoogleTraceSimulator::ReplayTrace() {
   uint64_t time_interval_bound = FLAGS_bin_time_duration;
   uint64_t last_time_processed = 0;
   bool initial_time_processed = false;
-  for (uint64_t file_num = 0; file_num < 500; file_num++) {
+  for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process; file_num++) {
     string fname;
-    spf(&fname, "%s/task_events/part-%05ld-of-00500.csv", trace_path_.c_str(),
+    spf(&fname, "%s/task_events/part-%05d-of-00500.csv", trace_path_.c_str(),
         file_num);
     if ((f_task_events_ptr = fopen(fname.c_str(), "r")) == NULL) {
       LOG(ERROR) << "Failed to open trace for reading of task events.";
