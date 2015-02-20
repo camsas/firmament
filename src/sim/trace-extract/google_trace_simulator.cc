@@ -39,6 +39,9 @@ namespace sim {
 #define FINISH_EVENT 4
 #define KILL_EVENT 5
 #define LOST_EVENT 6
+#define UPDATE_PENDING_EVENT 7
+#define UPDATE_RUNNING_EVENT 8
+
 
 #define MACHINE_ADD 0
 #define MACHINE_REMOVE 1
