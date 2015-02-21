@@ -467,7 +467,7 @@ void Coordinator::HandleRegistrationRequest(
   if (!rdp) {
     LOG(INFO) << "REGISTERING NEW RESOURCE (uuid: " << msg.uuid() << ")";
     // N.B.: below creates a new resource descriptor
-    ResourceDescriptor* rd = new ResourceDescriptor(msg.res_desc());
+    //ResourceDescriptor* rd = new ResourceDescriptor(msg.res_desc());
     // Insert the root of the registered topology into the topology tree
     ResourceTopologyNodeDescriptor* rtnd =
         local_resource_topology_->add_children();
@@ -479,7 +479,7 @@ void Coordinator::HandleRegistrationRequest(
     DFSTraverseResourceProtobufTree(
         rtnd, boost::bind(&Coordinator::AddResource, this, _1,
                           msg.location(), false));
-    InformStorageEngineNewResource(rd);
+    //InformStorageEngineNewResource(rd);
   } else {
     LOG(INFO) << "REGISTRATION request from resource " << msg.uuid()
               << " that we already know about. "
