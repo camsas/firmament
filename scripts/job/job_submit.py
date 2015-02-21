@@ -30,21 +30,6 @@ if len(sys.argv) > 4:
   job_desc.root_task.args.extend(shlex.split(sys.argv[4]))
 #job_desc.root_task.args.append("--v=2")
 job_desc.root_task.inject_task_lib = True
-# NGINX
-#job_desc.root_task.args.append("-p")
-#job_desc.root_task.args.append("/tmp")
-#job_desc.root_task.args.append("-c")
-#job_desc.root_task.args.append("/tmp/nginx.conf")
-# NAIAD
-#job_desc.root_task.args.append("connectedcomponents")
-#job_desc.root_task.args.append("100000")
-#job_desc.root_task.args.append("200000")
-# SLEEP
-#job_desc.root_task.args.append("10")
-#job_desc.root_task.args.append("100000")
-#root_input1 = job_desc.root_task.dependencies.add()
-#root_input1.id = 123456789
-#root_input1.type = reference_desc_pb2.ReferenceDescriptor.FUTURE
 if len(sys.argv) == 6:
   input_id = binascii.unhexlify(sys.argv[4])
 else:
@@ -53,8 +38,6 @@ output_id = binascii.unhexlify('db33daba280d8e68eea6e490723b02cedb33daba280d8e68
 output2_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 job_desc.output_ids.append(output_id)
 job_desc.output_ids.append(output2_id)
-#job_desc.root_task.binary = "/bin/echo"
-#job_desc.root_task.args.append("Hello World!")
 input_desc = job_desc.root_task.dependencies.add()
 input_desc.id = input_id
 input_desc.scope = reference_desc_pb2.ReferenceDescriptor.PUBLIC
