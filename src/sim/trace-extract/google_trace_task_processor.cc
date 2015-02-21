@@ -101,6 +101,7 @@ namespace sim {
         }
         num_line++;
       }
+      fclose(events_file);
     }
     return *scheduling_events;
   }
@@ -694,6 +695,7 @@ namespace sim {
         }
         num_line++;
       }
+      fclose(usage_file);
     }
     // Process the scheduling events up to the last timestamp.
     ProcessSchedulingEvents(last_timestamp, &scheduling_events,
@@ -742,6 +744,7 @@ namespace sim {
         }
         num_line++;
       }
+      fclose(events_file);
     }
     return *job_id_to_name;
   }
@@ -839,6 +842,7 @@ namespace sim {
         }
         num_line++;
       }
+      fclose(events_file);
     }
     job_id_to_name.clear();
     delete &job_id_to_name;

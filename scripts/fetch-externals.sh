@@ -483,7 +483,6 @@ cd ${EXT_DIR}
 
 
 ## Flowlessly solver code for min-cost max-flow scheduler.
-print_subhdr "FLOWLESSLY_PRIVATE MIN COST MAX FLOW SOLVER"
 print_hdr "CHECKING OUT FLOWLESSLY CODE"
 echo "OPTIONAL: Do you want to check out the Flowlessly code base into the 'ext' directory?"
 echo -n "Do you want to check out the Flowlessly code? [yN] "

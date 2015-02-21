@@ -9,9 +9,11 @@
 // Cost model interface
 #include "scheduling/flow_scheduling_cost_model_interface.h"
 // Concrete cost models
-#include "scheduling/trivial_cost_model.h"
+#include "scheduling/coco_cost_model.h"
+#include "scheduling/quincy_cost_model.h"
 #include "scheduling/random_cost_model.h"
 #include "scheduling/sjf_cost_model.h"
-#include "scheduling/quincy_cost_model.h"
+#include "scheduling/trivial_cost_model.h"
+#include "scheduling/wharemap_cost_model.h"
 
 #endif
