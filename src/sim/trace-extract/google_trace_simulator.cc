@@ -76,6 +76,7 @@ void GoogleTraceSimulator::Run() {
   FLAGS_incremental_flow = true;
   FLAGS_flow_scheduling_solver = "flowlessly";
   FLAGS_only_read_assignment_changes = true;
+  FLAGS_flowlessly_binary = "../../../ext/flowlessly-git/run_fast_cost_scaling";
   // command line argument sanity checking
   if (trace_path_.empty()) {
     LOG(FATAL) << "Please specify a path to the Google trace!";

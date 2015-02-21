@@ -22,6 +22,8 @@ DEFINE_string(flow_scheduling_solver, "cs2",
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
+DEFINE_string(flowlessly_binary, "ext/flowlessly-git/run_fast_cost_scaling",
+              "Path to the flowleslly binary.");
 
 namespace firmament {
 namespace scheduler {
@@ -335,7 +337,7 @@ namespace scheduler {
     if (solver == "cs2") {
       *binary = "ext/cs2-4.6/cs2.exe";
     } else if (solver == "flowlessly") {
-      *binary = "ext/flowlessly/run_fast_cost_scaling";
+      *binary = FLAGS_flowlessly_binary;
     } else {
       LOG(FATAL) << "Non-existed flow network solver specified: " << solver;
     }

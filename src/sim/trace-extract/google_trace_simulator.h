@@ -23,6 +23,7 @@
 DECLARE_bool(incremental_flow);
 DECLARE_string(flow_scheduling_solver);
 DECLARE_bool(only_read_assignment_changes);
+DECLARE_string(flowlessly_binary);
 
 namespace firmament {
 namespace sim {
