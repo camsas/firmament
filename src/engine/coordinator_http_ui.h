@@ -73,6 +73,8 @@ class CoordinatorHTTPUI {
                            tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleTaskURI(http::request_ptr& http_request, // NOLINT
                      tcp::connection_ptr& tcp_conn);  // NOLINT
+  void HandleTaskLogURI(http::request_ptr& http_request, // NOLINT
+                        tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleShutdownURI(http::request_ptr& http_request, // NOLINT
                          tcp::connection_ptr& tcp_conn);  // NOLINT
   void Shutdown(bool block);

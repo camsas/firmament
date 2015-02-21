@@ -22,6 +22,8 @@
 #include "scheduling/knowledge_base.h"
 #include "storage/types.h"
 
+DECLARE_string(task_log_directory);
+
 namespace firmament {
 namespace webui {
 
@@ -584,6 +586,14 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     if (td_ptr->has_name())
       dict.SetValue("TASK_NAME", td_ptr->name());
     dict.SetValue("TASK_BINARY", td_ptr->binary());
+    string arg_string = "";
+    for (RepeatedPtrField<string>::const_iterator arg_iter =
+         td_ptr->args().begin();
+         arg_iter != td_ptr->args().end();
+         ++arg_iter) {
+      arg_string += *arg_iter;
+    }
+    dict.SetValue("TASK_ARGS", arg_string);
     dict.SetValue("TASK_STATUS", ENUM_TO_STRING(TaskDescriptor::TaskState,
                                                 td_ptr->state()));
     // Equivalence classes
@@ -640,6 +650,56 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
   ExpandTemplate("src/webui/task_status.tpl", ctemplate::DO_NOT_STRIP,
                  &dict, &output);
   writer->write(output);
+  FinishOkResponse(writer);
+}
+
+void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NOLINT
+                                         tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  string task_id = http_request->get_query("id");
+  if (task_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
+  string action = http_request->get_query("a");
+  string tasklog_filename = FLAGS_task_log_directory;
+  if (action.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  } else {
+    if (action == "1") {
+      tasklog_filename += "/" + task_id + "-stdout";
+    } else if (action == "2") {
+      tasklog_filename += "/" + task_id + "-stderr";
+    } else {
+      ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                    tcp_conn);
+      return;
+    }
+  }
+  int logfd = open(tasklog_filename.c_str(), O_RDONLY);
+  if (logfd < 0) {
+    PLOG(ERROR) << "Failed to open task log file for reading.";
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+  }
+  string output(256, '\0');
+  while (true) {
+    int64_t n = read(logfd, &output[0], 256);
+    if (n < 0) {
+      PLOG(ERROR) << "Tasklog send data: read from log failed";
+      ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                    tcp_conn);
+      return;
+    } else if (n == 0) {
+      break;
+    }
+    writer->write(&output[0], n);
+  }
   FinishOkResponse(writer);
 }
 
@@ -750,6 +810,9 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Task status
     coordinator_http_server_->add_resource("/task/", boost::bind(
         &CoordinatorHTTPUI::HandleTaskURI, this, _1, _2));
+    // Task log
+    coordinator_http_server_->add_resource("/tasklog/", boost::bind(
+        &CoordinatorHTTPUI::HandleTaskLogURI, this, _1, _2));
     // Shutdown request
     coordinator_http_server_->add_resource("/shutdown/", boost::bind(
         &CoordinatorHTTPUI::HandleShutdownURI, this, _1, _2));
