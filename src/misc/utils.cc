@@ -128,6 +128,16 @@ TaskID_t GenerateTaskID(const TaskDescriptor& parent_task) {
   return static_cast<TaskID_t>(hash);
 }
 
+TaskID_t GenerateTaskID(const TaskDescriptor& parent_task, uint64_t child_num) {
+  // A new task's ID is a hash of the parent (spawning) task's ID and its
+  // current spawn counter value, which is implicitly stored in the TD by means
+  // of the length of its set of spawned tasks.
+  size_t hash = 42;
+  boost::hash_combine(hash, parent_task.uid());
+  boost::hash_combine(hash, child_num);
+  return static_cast<TaskID_t>(hash);
+}
+
 DataObjectID_t GenerateDataObjectID(const TaskDescriptor& producing_task) {
   // A thin shim that converts to the signature of GenerateDataObjectID.
   return GenerateDataObjectID(producing_task.uid(),
