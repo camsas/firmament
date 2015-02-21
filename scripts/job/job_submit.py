@@ -8,7 +8,7 @@ import time
 
 if len(sys.argv) < 4:
   print "usage: job_submit.py <coordinator hostname> <web UI port> " \
-      "<task binary> [<job name>] [<input object>]"
+      "<task binary> [<args>] [<job name>] [<input object>]"
   sys.exit(1)
 
 hostname = sys.argv[1]
@@ -17,14 +17,16 @@ port = int(sys.argv[2])
 job_desc = job_desc_pb2.JobDescriptor()
 
 job_desc.uuid = "" # UUID will be set automatically on submission
-if len(sys.argv) > 4:
-  job_desc.name = sys.argv[4]
+if len(sys.argv) > 5:
+  job_desc.name = sys.argv[5]
 else:
   job_desc.name = "anonymous_job_at_%d" % (int(time.time()))
 job_desc.root_task.uid = 0
 job_desc.root_task.name = "root_task"
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
 job_desc.root_task.binary = sys.argv[3]
+if len(sys.argv) > 4:
+  job_desc.root_task.args.extend(sys.argv[4].split(" "))
 #job_desc.root_task.args.append("--v=2")
 job_desc.root_task.inject_task_lib = True
 # NGINX
@@ -37,7 +39,7 @@ job_desc.root_task.inject_task_lib = True
 #job_desc.root_task.args.append("100000")
 #job_desc.root_task.args.append("200000")
 # SLEEP
-job_desc.root_task.args.append("10")
+#job_desc.root_task.args.append("10")
 #job_desc.root_task.args.append("100000")
 #root_input1 = job_desc.root_task.dependencies.add()
 #root_input1.id = 123456789
