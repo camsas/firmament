@@ -1,10 +1,10 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// Quincy scheduling cost model, as described in the SOSP 2009 paper.
+// Coordinated co-location scheduling cost model.
 
-#ifndef FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
-#define FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
+#ifndef FIRMAMENT_SCHEDULING_COCO_COST_MODEL_H
+#define FIRMAMENT_SCHEDULING_COCO_COST_MODEL_H
 
 
 #include <string>
@@ -21,9 +21,9 @@ namespace firmament {
 
 typedef int64_t Cost_t;
 
-class SJFCostModel : public FlowSchedulingCostModelInterface {
+class CocoCostModel : public FlowSchedulingCostModelInterface {
  public:
-  SJFCostModel(shared_ptr<TaskMap_t> task_table,
+  CocoCostModel(shared_ptr<TaskMap_t> task_table,
                KnowledgeBase* kb);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
@@ -45,8 +45,6 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
   Cost_t EquivClassToResourceNode(TaskID_t task_id, ResourceID_t res_id);
 
  private:
-  const Cost_t WAIT_TIME_MULTIPLIER = 1;
-
   const TaskDescriptor& GetTask(TaskID_t task_id);
 
   // A knowledge base instance that we will refer to for job runtime statistics.
@@ -56,4 +54,4 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
+#endif  // FIRMAMENT_SCHEDULING_COCO_COST_MODEL_H

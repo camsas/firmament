@@ -63,7 +63,7 @@ ResourceID_t GenerateResourceID() {
 }
 
 void SetupResourceID(boost::mt19937 *resource_id, const char *hostname) {
-  size_t hash = 0;
+  size_t hash = 42;
   char hn[100];
   bzero(&hn, 100);
   if (hostname == NULL) {
@@ -79,7 +79,7 @@ void SetupResourceID(boost::mt19937 *resource_id, const char *hostname) {
 }
 
 ResourceID_t GenerateRootResourceID(const string& hostname) {
-  size_t hash = 0;
+  size_t hash = 42;
   // Hash the hostname
   boost::hash_combine(hash, hostname);
   VLOG(2) << "Seeing resource ID RNG with " << hash << " from hostname "
@@ -100,7 +100,7 @@ JobID_t GenerateJobID() {
 }
 
 JobID_t GenerateJobID(uint64_t job_id) {
-  size_t hash = 0;
+  size_t hash = 42;
   // Hash the hostname
   boost::hash_combine(hash, job_id);
   job_id_rg_.seed(hash);
@@ -110,7 +110,7 @@ JobID_t GenerateJobID(uint64_t job_id) {
 }
 
 TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc) {
-  size_t hash = 0;
+  size_t hash = 42;
   //boost::hash_combine(hash, job_desc.uuid());
   boost::hash_combine(hash, job_desc.name());
   boost::hash_combine(hash, job_desc.root_task().binary());
@@ -122,7 +122,7 @@ TaskID_t GenerateTaskID(const TaskDescriptor& parent_task) {
   // A new task's ID is a hash of the parent (spawning) task's ID and its
   // current spawn counter value, which is implicitly stored in the TD by means
   // of the length of its set of spawned tasks.
-  size_t hash = 0;
+  size_t hash = 42;
   boost::hash_combine(hash, parent_task.uid());
   boost::hash_combine(hash, parent_task.spawned_size());
   return static_cast<TaskID_t>(hash);
