@@ -61,8 +61,18 @@ class GoogleTraceTaskProcessor {
   explicit GoogleTraceTaskProcessor(const string& trace_path);
 
   void AggregateTaskUsage();
-  void ExpandTaskEvents();
+
+  /**
+   * Generate task events with runtime information.
+   * NOTE: Events will only be generated for tasks that successfully complete.
+   */
+  void JobsRuntimeEvents();
+
+  /**
+   * Compute the number of tasks each job has.
+   */
   void JobsNumTasks();
+
   void Run();
 
  private:
@@ -71,7 +81,7 @@ class GoogleTraceTaskProcessor {
   TaskResourceUsage BuildTaskResourceUsage(vector<string>& line_cols); // NOLINT
   void ExpandTaskEvent(
       uint64_t timestamp, const TaskIdentifier& task_id, int32_t event_type,
-      unordered_map<TaskIdentifier, TaskRuntime*,
+      unordered_map<TaskIdentifier, TaskRuntime,
                     TaskIdentifierHasher>* tasks_runtime,
       unordered_map<uint64_t, string>* job_id_to_name, FILE* out_events_file,
       vector<string>& line_cols); // NOLINT
@@ -81,12 +91,18 @@ class GoogleTraceTaskProcessor {
       const vector<TaskResourceUsage>& resource_usage);
   void PrintStats(FILE* usage_stat_file, const TaskIdentifier& task_id,
                   const vector<TaskResourceUsage>& task_resource);
-  void PrintTaskRuntime(FILE* out_events_file, TaskRuntime* task_runtime,
+  void PrintTaskRuntime(FILE* out_events_file, const TaskRuntime& task_runtime,
                         const TaskIdentifier& task_id,
                         string logical_job_name, uint64_t runtime,
                         vector<string>& cols); // NOLINT
+  void ProcessSchedulingEvents(
+      uint64_t timestamp,
+      multimap<uint64_t, TaskSchedulingEvent>* scheduling_events,
+      unordered_map<TaskIdentifier, vector<TaskResourceUsage>,
+                    TaskIdentifierHasher>* task_usage,
+      FILE* usage_stat_file);
   unordered_map<uint64_t, string>& ReadLogicalJobsName();
-  multimap<uint64_t, TaskSchedulingEvent>& ReadTaskSchedulingEvents(
+  multimap<uint64_t, TaskSchedulingEvent>& ReadTaskStateChangingEvents(
       unordered_map<uint64_t, uint64_t>* job_num_tasks);
   TaskResourceUsage StandardDevTaskUsage(
       const vector<TaskResourceUsage>& resource_usage);

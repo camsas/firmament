@@ -483,16 +483,24 @@ cd ${EXT_DIR}
 
 
 ## Flowlessly solver code for min-cost max-flow scheduler.
-print_subhdr "FLOWLESSLY_PRIVATE MIN COST MAX FLOW SOLVER"
-get_dep_git "flowlessly" "https://github.com/ICGog/FlowlesslyPrivate.git"
-cd flowlessly-git
-if [[ ! -f run_fast_cost_scaling ]]; then
-  RES=$(make 2>/dev/null)
+print_hdr "CHECKING OUT FLOWLESSLY CODE"
+echo "OPTIONAL: Do you want to check out the Flowlessly code base into the 'ext' directory?"
+echo -n "Do you want to check out the Flowlessly code? [yN] "
+CONT=$(ask_continue_graceful)
+if [[ ${CONT} == "0" ]]; then
+  get_dep_git "flowlessly" "https://github.com/ICGog/FlowlesslyPrivate.git"
+  cd flowlessly-git
+  if [[ ! -f run_fast_cost_scaling ]]; then
+    RES=$(make 2>/dev/null)
+  else
+    RES=0
+  fi
+  print_succ_or_fail ${RES}
+  cd ${EXT_DIR}
 else
-  RES=0
+  echo_skipped
+  echo "Skipping."
 fi
-print_succ_or_fail ${RES}
-cd ${EXT_DIR}
 
 
 ## Cake (for building libDIOS)

@@ -27,11 +27,13 @@ using boost::token_compress_off;
 #define TASK_FINISH 4
 #define TASK_KILL 5
 #define TASK_LOST 6
+#define TASK_UPDATE_PENDING 7
+#define TASK_UPDATE_RUNNING 8
 
 #define EPS 0.00001
 
 DECLARE_bool(aggregate_task_usage);
-DECLARE_bool(expand_task_events);
+DECLARE_bool(jobs_runtime);
 DECLARE_bool(jobs_num_tasks);
 DECLARE_int32(num_files_to_process);
 
@@ -43,7 +45,7 @@ namespace sim {
   }
 
   multimap<uint64_t, TaskSchedulingEvent>&
-    GoogleTraceTaskProcessor::ReadTaskSchedulingEvents(
+    GoogleTraceTaskProcessor::ReadTaskStateChangingEvents(
       unordered_map<uint64_t, uint64_t>* job_num_tasks) {
     // Store the scheduling events for every timestamp.
     multimap<uint64_t, TaskSchedulingEvent> *scheduling_events =
@@ -53,6 +55,7 @@ namespace sim {
     FILE* events_file = NULL;
     for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
          file_num++) {
+      LOG(INFO) << "Reading task_events file " << file_num;
       string file_name;
       spf(&file_name, "%s/task_events/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
@@ -134,62 +137,76 @@ namespace sim {
 
   void GoogleTraceTaskProcessor::ExpandTaskEvent(
       uint64_t timestamp, const TaskIdentifier& task_id, int32_t event_type,
-      unordered_map<TaskIdentifier, TaskRuntime*,
+      unordered_map<TaskIdentifier, TaskRuntime,
                     TaskIdentifierHasher>* tasks_runtime,
       unordered_map<uint64_t, string>* job_id_to_name,
       FILE* out_events_file, vector<string>& line_cols) {
     if (event_type == TASK_SCHEDULE) {
-      if (tasks_runtime->find(task_id) == tasks_runtime->end()) {
-        // New task.
-        TaskRuntime* task_runtime = new TaskRuntime();
-        task_runtime->start_time = timestamp;
-        task_runtime->last_schedule_time = timestamp;
+      TaskRuntime* task_runtime_ptr = FindOrNull(*tasks_runtime, task_id);
+      if (task_runtime_ptr == NULL) {
+        TaskRuntime task_runtime = {};
+        task_runtime.start_time = timestamp;
+        task_runtime.last_schedule_time = timestamp;
         InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
       } else {
-        (*tasks_runtime)[task_id]->last_schedule_time = timestamp;
+        // Update the last scheduling time for the task. Assumes that
+        // the previously running instance of the task has finished/failed.
+        task_runtime_ptr->last_schedule_time = timestamp;
       }
     } else if (event_type == TASK_EVICT || event_type == TASK_FAIL ||
-               event_type == TASK_KILL) {
-      if (tasks_runtime->find(task_id) == tasks_runtime->end()) {
-        // First event for this task.
-        TaskRuntime* task_runtime = new TaskRuntime();
-        task_runtime->start_time = 0;
-        task_runtime->num_runs = 1;
-        task_runtime->total_runtime = timestamp;
+               event_type == TASK_KILL || event_type == TASK_LOST) {
+      TaskRuntime* task_runtime_ptr = FindOrNull(*tasks_runtime, task_id);
+      if (task_runtime_ptr == NULL) {
+        // First event for this task. This means that the task was running
+        // from the beginning of the trace.
+        TaskRuntime task_runtime = {};
+        task_runtime.start_time = 0;
+        task_runtime.num_runs = 1;
+        task_runtime.total_runtime = timestamp;
         InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
       } else {
-        TaskRuntime* task_runtime = (*tasks_runtime)[task_id];
-        task_runtime->num_runs++;
-        task_runtime->total_runtime +=
-          timestamp - task_runtime->last_schedule_time;
+        // Update the runtime for the task. The failed tasks are included
+        // in the runtime.
+        task_runtime_ptr->num_runs++;
+        task_runtime_ptr->total_runtime +=
+          timestamp - task_runtime_ptr->last_schedule_time;
       }
     } else if (event_type == TASK_FINISH) {
       string logical_job_name = (*job_id_to_name)[task_id.job_id];
-      if (tasks_runtime->find(task_id) == tasks_runtime->end()) {
+      TaskRuntime* task_runtime_ptr = FindOrNull(*tasks_runtime, task_id);
+      if (task_runtime_ptr == NULL) {
         // First event for this task.
-        TaskRuntime* task_runtime = new TaskRuntime();
-        task_runtime->start_time = 0;
-        task_runtime->num_runs = 1;
-        task_runtime->total_runtime = timestamp;
+        TaskRuntime task_runtime = {};
+        task_runtime.start_time = 0;
+        task_runtime.num_runs = 1;
+        task_runtime.total_runtime = timestamp;
         InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
         PrintTaskRuntime(out_events_file, task_runtime, task_id,
                          logical_job_name, timestamp, line_cols);
       } else {
-        TaskRuntime* task_runtime = (*tasks_runtime)[task_id];
-        task_runtime->num_runs++;
-        task_runtime->total_runtime +=
-          timestamp - task_runtime->last_schedule_time;
-        PrintTaskRuntime(out_events_file, task_runtime, task_id,
+        task_runtime_ptr->num_runs++;
+        task_runtime_ptr->total_runtime +=
+          timestamp - task_runtime_ptr->last_schedule_time;
+        PrintTaskRuntime(out_events_file, *task_runtime_ptr, task_id,
                          logical_job_name,
-                         timestamp - task_runtime->last_schedule_time,
+                         timestamp - task_runtime_ptr->last_schedule_time,
                          line_cols);
+      }
+    } else if (event_type == TASK_UPDATE_PENDING ||
+               event_type == TASK_UPDATE_RUNNING) {
+      TaskRuntime* task_runtime_ptr = FindOrNull(*tasks_runtime, task_id);
+      if (task_runtime_ptr == NULL) {
+        // First event for this task. Task has been running from the
+        // beginning of the trace.
+        TaskRuntime task_runtime = {};
+        InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
       }
     }
   }
 
   TaskResourceUsage GoogleTraceTaskProcessor::MinTaskUsage(
       const vector<TaskResourceUsage>& resource_usage) {
-    TaskResourceUsage task_resource_min;
+    TaskResourceUsage task_resource_min = {};
     task_resource_min.mean_cpu_usage = numeric_limits<double>::max();
     task_resource_min.canonical_mem_usage = numeric_limits<double>::max();
     task_resource_min.assigned_mem_usage = numeric_limits<double>::max();
@@ -307,7 +324,7 @@ namespace sim {
 
   TaskResourceUsage GoogleTraceTaskProcessor::MaxTaskUsage(
       const vector<TaskResourceUsage>& resource_usage) {
-    TaskResourceUsage task_resource_max;
+    TaskResourceUsage task_resource_max = {};
     task_resource_max.mean_cpu_usage = -1.0;
     task_resource_max.canonical_mem_usage = -1.0;
     task_resource_max.assigned_mem_usage = -1.0;
@@ -576,8 +593,8 @@ namespace sim {
     TaskResourceUsage max_task_usage = MaxTaskUsage(task_resource);
     TaskResourceUsage sd_task_usage = StandardDevTaskUsage(task_resource);
     fprintf(usage_stat_file,
-            "%" PRId64 " %" PRId64 " %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf"
-            "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf"
+            "%" PRId64 " %" PRId64 " %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf "
+            "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf "
             "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
             task_id.job_id, task_id.task_index,
             min_task_usage.mean_cpu_usage, max_task_usage.mean_cpu_usage,
@@ -616,7 +633,7 @@ namespace sim {
     unordered_map<uint64_t, uint64_t>* job_num_tasks =
       new unordered_map<uint64_t, uint64_t>();
     multimap<uint64_t, TaskSchedulingEvent>& scheduling_events =
-      ReadTaskSchedulingEvents(job_num_tasks);
+      ReadTaskStateChangingEvents(job_num_tasks);
     job_num_tasks->clear();
     delete job_num_tasks;
     // Map job id to map of task id to vector of resource usage.
@@ -635,6 +652,7 @@ namespace sim {
     uint64_t last_timestamp = 0;
     for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
          file_num++) {
+      LOG(INFO) << "Reading task_usage file " << file_num;
       string file_name;
       spf(&file_name, "%s/task_usage/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
@@ -656,31 +674,14 @@ namespace sim {
             cur_task_id.job_id = lexical_cast<uint64_t>(line_cols[2]);
             cur_task_id.task_index = lexical_cast<uint64_t>(line_cols[3]);
             if (last_timestamp < start_timestamp) {
-              multimap<uint64_t, TaskSchedulingEvent>::iterator it_to =
-                scheduling_events.upper_bound(last_timestamp);
-              multimap<uint64_t, TaskSchedulingEvent>::iterator it =
-                scheduling_events.begin();
-              for (; it != it_to; ++it) {
-                TaskSchedulingEvent evt = it->second;
-                // TODO(ionel): Which events should I handle here?
-                if (evt.event_type == TASK_FINISH) {
-                  TaskIdentifier task_id;
-                  task_id.job_id = evt.job_id;
-                  task_id.task_index = evt.task_index;
-                  PrintStats(usage_stat_file, task_id, task_usage[task_id]);
-                  // Free task resource usage memory.
-                  task_usage[task_id].clear();
-                  task_usage.erase(task_id);
-                }
-              }
-              // Free task scheduling events.
-              scheduling_events.erase(it, it_to);
+              ProcessSchedulingEvents(last_timestamp, &scheduling_events,
+                                      &task_usage, usage_stat_file);
             }
             last_timestamp = start_timestamp;
 
             TaskResourceUsage task_resource_usage =
               BuildTaskResourceUsage(line_cols);
-
+            // Add task_resource_usage to the usage map.
             if (task_usage.find(cur_task_id) == task_usage.end()) {
               // New task identifier.
               vector<TaskResourceUsage> resource_usage;
@@ -694,14 +695,18 @@ namespace sim {
         num_line++;
       }
     }
+    // Process the scheduling events up to the last timestamp.
+    ProcessSchedulingEvents(last_timestamp, &scheduling_events,
+                            &task_usage, usage_stat_file);
     // Write stats for tasks that are still running.
     for (unordered_map<TaskIdentifier, vector<TaskResourceUsage>,
            TaskIdentifierHasher>::iterator it = task_usage.begin();
          it != task_usage.end(); it++) {
       PrintStats(usage_stat_file, it->first, it->second);
+      it->second.clear();
     }
-    // TODO(ionel): Free the memory occupied by the jobs running at the end
-    // of the trace.
+    task_usage.clear();
+    scheduling_events.clear();
     fclose(usage_stat_file);
   }
 
@@ -715,6 +720,7 @@ namespace sim {
     FILE* events_file = NULL;
     for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
          file_num++) {
+      LOG(INFO) << "Reading job_events file " << file_num;
       string file_name;
       spf(&file_name, "%s/job_events/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
@@ -741,7 +747,7 @@ namespace sim {
   }
 
   void GoogleTraceTaskProcessor::PrintTaskRuntime(
-      FILE* out_events_file, TaskRuntime* task_runtime,
+      FILE* out_events_file, const TaskRuntime& task_runtime,
       const TaskIdentifier& task_id, string logical_job_name, uint64_t runtime,
       vector<string>& cols) {
     for (uint32_t index = 7; index < 13; ++index) {
@@ -758,14 +764,41 @@ namespace sim {
     fprintf(out_events_file, "%" PRId64 " %" PRId64 " %s %" PRId64 " %" PRId64
             " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %lf %lf %lf %d\n",
             task_id.job_id, task_id.task_index, logical_job_name.c_str(),
-            task_runtime->start_time, task_runtime->total_runtime, runtime,
-            task_runtime->num_runs, scheduling_class, priority, cpu_request,
+            task_runtime.start_time, task_runtime.total_runtime, runtime,
+            task_runtime.num_runs, scheduling_class, priority, cpu_request,
             ram_request, disk_request, machine_constraint);
   }
 
-  void GoogleTraceTaskProcessor::ExpandTaskEvents() {
-    unordered_map<uint64_t, string> job_id_to_name = ReadLogicalJobsName();
-    unordered_map<TaskIdentifier, TaskRuntime*,
+  void GoogleTraceTaskProcessor::ProcessSchedulingEvents(
+      uint64_t timestamp,
+      multimap<uint64_t, TaskSchedulingEvent>* scheduling_events,
+      unordered_map<TaskIdentifier, vector<TaskResourceUsage>,
+                    TaskIdentifierHasher>* task_usage,
+      FILE* usage_stat_file) {
+    multimap<uint64_t, TaskSchedulingEvent>::iterator it_to =
+      scheduling_events->upper_bound(timestamp);
+    multimap<uint64_t, TaskSchedulingEvent>::iterator it =
+      scheduling_events->begin();
+    for (; it != it_to; ++it) {
+      TaskSchedulingEvent evt = it->second;
+      if (evt.event_type == TASK_FINISH) {
+        // Print statistics for finished tasks.
+        TaskIdentifier task_id;
+        task_id.job_id = evt.job_id;
+        task_id.task_index = evt.task_index;
+        PrintStats(usage_stat_file, task_id, (*task_usage)[task_id]);
+        // Free task resource usage memory.
+        (*task_usage)[task_id].clear();
+        task_usage->erase(task_id);
+      }
+    }
+    // Free task scheduling events.
+    scheduling_events->erase(scheduling_events->begin(), it_to);
+  }
+
+  void GoogleTraceTaskProcessor::JobsRuntimeEvents() {
+    unordered_map<uint64_t, string>& job_id_to_name = ReadLogicalJobsName();
+    unordered_map<TaskIdentifier, TaskRuntime,
                   TaskIdentifierHasher> tasks_runtime;
     char line[200];
     vector<string> line_cols;
@@ -779,6 +812,7 @@ namespace sim {
     }
     for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
          file_num++) {
+      LOG(INFO) << "Reading task_events file " << file_num;
       string file_name;
       spf(&file_name, "%s/task_events/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
@@ -806,7 +840,8 @@ namespace sim {
         num_line++;
       }
     }
-    // TODO(ionel): Free memory.
+    job_id_to_name.clear();
+    delete &job_id_to_name;
     fclose(out_events_file);
   }
 
@@ -814,7 +849,7 @@ namespace sim {
     unordered_map<uint64_t, uint64_t>* job_num_tasks =
       new unordered_map<uint64_t, uint64_t>();
     multimap<uint64_t, TaskSchedulingEvent>& scheduling_events =
-      ReadTaskSchedulingEvents(job_num_tasks);
+      ReadTaskStateChangingEvents(job_num_tasks);
 
     FILE* out_file = NULL;
     string out_file_name;
@@ -836,14 +871,14 @@ namespace sim {
   }
 
   void GoogleTraceTaskProcessor::Run() {
-    if (FLAGS_aggregate_task_usage) {
-      AggregateTaskUsage();
-    }
-    if (FLAGS_expand_task_events) {
-      ExpandTaskEvents();
+    if (FLAGS_jobs_runtime) {
+      JobsRuntimeEvents();
     }
     if (FLAGS_jobs_num_tasks) {
       JobsNumTasks();
+    }
+    if (FLAGS_aggregate_task_usage) {
+      AggregateTaskUsage();
     }
   }
 
