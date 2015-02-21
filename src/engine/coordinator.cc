@@ -776,7 +776,7 @@ void Coordinator::SendHeartbeatToParent(
                topology_manager_->NumProcessingUnits());
   // Include resource usage stats
   bm.mutable_heartbeat()->mutable_load()->CopyFrom(stats);
-  VLOG(1) << "Sending heartbeat to parent coordinator!";
+  VLOG(2) << "Sending heartbeat to parent coordinator!";
   SendMessageToRemote(parent_chan_, &bm);
 }
 
