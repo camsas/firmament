@@ -468,7 +468,16 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
         }
       }
     }
-    if (!will_block) {
+    // Process any eager children not related via dependencies
+    for (RepeatedPtrField<TaskDescriptor>::iterator it =
+         current_task->mutable_spawned()->begin();
+         it != current_task->mutable_spawned()->end();
+         ++it) {
+      if (it->outputs_size() == 0)
+        newly_active_tasks.push_back(&(*it));
+    }
+    if (!will_block || (current_task->dependencies_size() == 0
+                        && current_task->outputs_size() == 0)) {
       // This task is runnable
       VLOG(2) << "Adding task " << current_task->uid() << " to RUNNABLE set.";
       current_task->set_state(TaskDescriptor::RUNNABLE);
