@@ -5,6 +5,7 @@ from google.protobuf import text_format
 import httplib, urllib, re, sys, random
 import binascii
 import time
+import shlex
 
 if len(sys.argv) < 4:
   print "usage: job_submit.py <coordinator hostname> <web UI port> " \
@@ -26,7 +27,7 @@ job_desc.root_task.name = "root_task"
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
 job_desc.root_task.binary = sys.argv[3]
 if len(sys.argv) > 4:
-  job_desc.root_task.args.extend(sys.argv[4].split(" "))
+  job_desc.root_task.args.extend(shlex.split(sys.argv[4]))
 #job_desc.root_task.args.append("--v=2")
 job_desc.root_task.inject_task_lib = True
 # NGINX
