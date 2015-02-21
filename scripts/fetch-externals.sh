@@ -484,7 +484,7 @@ cd ${EXT_DIR}
 
 ## Flowlessly solver code for min-cost max-flow scheduler.
 print_subhdr "FLOWLESSLY_PRIVATE MIN COST MAX FLOW SOLVER"
-get_dep_git "flowlessly-git" "https://github.com/ICGog/FlowlesslyPrivate/FlowlesslyPrivate.git"
+get_dep_git "flowlessly" "https://github.com/ICGog/FlowlesslyPrivate.git"
 cd flowlessly-git
 if [[ ! -f run_fast_cost_scaling ]]; then
   RES=$(make 2>/dev/null)
