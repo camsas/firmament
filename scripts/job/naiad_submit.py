@@ -7,9 +7,17 @@ import binascii
 import time
 import shlex
 
+def add_worker_task(task, binary, args, worker_id):
+  task.uid = 0
+  task.name = "worker_%d" % (worker_id)
+  task.state = task_desc_pb2.TaskDescriptor.CREATED
+  task.binary = binary
+  task.args.extend(args)
+  task.inject_task_lib = True
+
 if len(sys.argv) < 4:
-  print "usage: job_submit.py <coordinator hostname> <web UI port> " \
-      "<task binary> [<args>] [<job name>] [<input object>]"
+  print "usage: naiad_submit.py <coordinator hostname> <web UI port> " \
+      "<task binary> [<args>] [<job name>] [<num workers>]"
   sys.exit(1)
 
 hostname = sys.argv[1]
@@ -21,19 +29,31 @@ job_desc.uuid = "" # UUID will be set automatically on submission
 if len(sys.argv) > 5:
   job_desc.name = sys.argv[5]
 else:
-  job_desc.name = "anonymous_job_at_%d" % (int(time.time()))
+  job_desc.name = "naiad_job_at_%d" % (int(time.time()))
+
+if len(sys.argv) > 6:
+  num_workers = int(sys.argv[6])
+else:
+  num_workers = 0
+
+# set up root task
 job_desc.root_task.uid = 0
-job_desc.root_task.name = "root_task"
+job_desc.root_task.name = "master_task"
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
 job_desc.root_task.binary = sys.argv[3]
 if len(sys.argv) > 4:
-  job_desc.root_task.args.extend(shlex.split(sys.argv[4]))
-#job_desc.root_task.args.append("--v=2")
-job_desc.root_task.inject_task_lib = True
-if len(sys.argv) == 6:
-  input_id = binascii.unhexlify(sys.argv[4])
+  args = shlex.split(sys.argv[4])
 else:
-  input_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
+  args = []
+job_desc.root_task.args.extend(args)
+job_desc.root_task.inject_task_lib = True
+
+# add workers
+for i in range(1, num_workers):
+  task = job_desc.root_task.spawned.add()
+  add_worker_task(task, sys.argv[3], args, i)
+
+input_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 output_id = binascii.unhexlify('db33daba280d8e68eea6e490723b02cedb33daba280d8e68eea6e490723b02ce')
 output2_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 job_desc.output_ids.append(output_id)

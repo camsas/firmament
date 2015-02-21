@@ -757,11 +757,17 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
       VLOG(3) << "Error: Object is not in object store";
   }
   // Process children recursively
+  uint64_t i = 0;
   for (RepeatedPtrField<TaskDescriptor>::iterator task_iter =
        td->mutable_spawned()->begin();
        task_iter != td->mutable_spawned()->end();
        ++task_iter) {
+    // Tasks that are submitted with the job also do not have a task ID to begin
+    // with (unlike those dynamically spawned)
+    if (task_iter->uid() == 0)
+      task_iter->set_uid(GenerateTaskID(*td, i));
     AddJobsTasksToTables(&(*task_iter), job_id);
+    ++i;
   }
 }
 
