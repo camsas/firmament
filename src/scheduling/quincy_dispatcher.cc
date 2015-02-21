@@ -11,7 +11,7 @@
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 
-DEFINE_bool(debug_flow_graph, true, "Write out a debug copy of the scheduling"
+DEFINE_bool(debug_flow_graph, false, "Write out a debug copy of the scheduling"
             " flow graph to /tmp/debug.dm.");
 DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
               "The directory to write debug output to.");
@@ -22,6 +22,8 @@ DEFINE_string(flow_scheduling_solver, "cs2",
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
+DEFINE_string(flowlessly_binary, "ext/flowlessly-git/run_fast_cost_scaling",
+              "Path to the flowleslly binary.");
 
 namespace firmament {
 namespace scheduler {
@@ -308,15 +310,15 @@ namespace scheduler {
     while (!end_of_iteration) {
       if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
         boost::split(vals, line, is_any_of(" "), token_compress_on);
-        if (vals[0].compare("m")) {
+        if (!vals[0].compare("m")) {
           if (vals.size() != 3) {
             LOG(ERROR) << "Unexpected structure of task mapping changes row";
           }
           uint64_t task_id = lexical_cast<uint64_t>(vals[1]);
           uint64_t core_id = lexical_cast<uint64_t>(vals[2]);
-          (*task_node)[task_id] = core_id;
-        } else if (vals[0].compare("c")) {
-          if (vals[1].compare("EOI")) {
+          InsertIfNotPresent(task_node, task_id, core_id);
+        } else if (!vals[0].compare("c")) {
+          if (!vals[1].compare("EOI")) {
             end_of_iteration = true;
           }
         } else {
@@ -335,7 +337,7 @@ namespace scheduler {
     if (solver == "cs2") {
       *binary = "ext/cs2-4.6/cs2.exe";
     } else if (solver == "flowlessly") {
-      *binary = "ext/flowlessly-git/run_fast_cost_scaling --statistics=false";
+      *binary = FLAGS_flowlessly_binary;
     } else {
       LOG(FATAL) << "Non-existed flow network solver specified: " << solver;
     }

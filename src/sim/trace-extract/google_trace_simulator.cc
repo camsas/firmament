@@ -55,7 +55,7 @@ DEFINE_uint64(runtime, 9223372036854775807,
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 DEFINE_bool(tasks_preemption_bins, false,
             "Compute bins of number of preempted tasks.");
-DEFINE_uint64(bin_time_duration, 10, "Bin size in seconds.");
+DEFINE_uint64(bin_time_duration, 10, "Bin size in microseconds.");
 DEFINE_string(task_bins_output, "bins.out",
               "The file in which the task bins are written.");
 DEFINE_bool(run_incremental_scheduler, false,
@@ -73,6 +73,10 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
 }
 
 void GoogleTraceSimulator::Run() {
+  FLAGS_incremental_flow = true;
+  FLAGS_flow_scheduling_solver = "flowlessly";
+  FLAGS_only_read_assignment_changes = true;
+  FLAGS_flowlessly_binary = "../../../ext/flowlessly-git/run_fast_cost_scaling";
   // command line argument sanity checking
   if (trace_path_.empty()) {
     LOG(FATAL) << "Please specify a path to the Google trace!";
@@ -134,15 +138,20 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
   } else {
     jd_ptr = *jdpp;
   }
-  TaskDescriptor* td_ptr = AddTaskToJob(jd_ptr);
-  // Update the job in the flow graph. This method also adds the new task to
-  // the flow graph.
-  flow_graph_->AddOrUpdateJobNodes(jd_ptr);
-  CHECK(InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr));
-  CHECK(InsertIfNotPresent(&task_id_to_identifier_,
-                           td_ptr->uid(), task_identifier));
-  // Add task to the google (job_id, task_index) to TaskDescriptor* map.
-  CHECK(InsertIfNotPresent(&task_id_to_td_, task_identifier, td_ptr));
+  // Ignore task if it has already been added.
+  // TODO(ionel): We should not ignore it.
+  TaskDescriptor* td_ptr = NULL;
+  if (FindOrNull(task_id_to_td_, task_identifier) == NULL) {
+    td_ptr = AddTaskToJob(jd_ptr);
+    // Update the job in the flow graph. This method also adds the new task to
+    // the flow graph.
+    flow_graph_->AddOrUpdateJobNodes(jd_ptr);
+    CHECK(InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr));
+    CHECK(InsertIfNotPresent(&task_id_to_identifier_,
+                             td_ptr->uid(), task_identifier));
+    // Add task to the google (job_id, task_index) to TaskDescriptor* map.
+    CHECK(InsertIfNotPresent(&task_id_to_td_, task_identifier, td_ptr));
+  }
   return td_ptr;
 }
 
@@ -480,7 +489,7 @@ void GoogleTraceSimulator::ReplayTrace() {
           task_identifier.task_index = lexical_cast<uint64_t>(vals[3]);
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
 
-          // We only run for the first FLAGS_runtime seconds.
+          // We only run for the first FLAGS_runtime microseconds.
           if (FLAGS_runtime < task_time) {
             LOG(INFO) << "Terminating at : " << task_time;
             return;
