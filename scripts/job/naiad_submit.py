@@ -7,12 +7,16 @@ import binascii
 import time
 import shlex
 
-def add_worker_task(task, binary, args, worker_id):
+def add_worker_task(task, binary, args, worker_id, num_workers, extra_args):
   task.uid = 0
   task.name = "worker_%d" % (worker_id)
   task.state = task_desc_pb2.TaskDescriptor.CREATED
-  task.binary = binary
+  task.binary = "/usr/bin/python"
   task.args.extend(args)
+  task.args.append(str(worker_id))
+  task.args.append(str(num_workers))
+  task.args.append(binary)
+  task.args.extend(extra_args)
   task.inject_task_lib = True
 
 if len(sys.argv) < 4:
@@ -22,36 +26,47 @@ if len(sys.argv) < 4:
 
 hostname = sys.argv[1]
 port = int(sys.argv[2])
+naiad_exe = sys.argv[3]
 
-job_desc = job_desc_pb2.JobDescriptor()
-
-job_desc.uuid = "" # UUID will be set automatically on submission
-if len(sys.argv) > 5:
-  job_desc.name = sys.argv[5]
+if len(sys.argv) > 4:
+  extra_args = shlex.split(sys.argv[4])
 else:
-  job_desc.name = "naiad_job_at_%d" % (int(time.time()))
+  extra_args = []
+
+if len(sys.argv) > 5:
+  job_name = sys.argv[5]
+else:
+  job_name = "naiad_job_at_%d" % (int(time.time()))
 
 if len(sys.argv) > 6:
   num_workers = int(sys.argv[6])
 else:
-  num_workers = 0
+  num_workers = 1
 
+basic_args = []
+basic_args.append("/home/srguser/napper/napper.py")
+basic_args.append("caelum-301:2181")
+basic_args.append(job_name)
+
+job_desc = job_desc_pb2.JobDescriptor()
+job_desc.uuid = "" # UUID will be set automatically on submission
+job_desc.name = job_name
 # set up root task
 job_desc.root_task.uid = 0
 job_desc.root_task.name = "master_task"
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
-job_desc.root_task.binary = sys.argv[3]
-if len(sys.argv) > 4:
-  args = shlex.split(sys.argv[4])
-else:
-  args = []
-job_desc.root_task.args.extend(args)
+job_desc.root_task.binary = "/usr/bin/python"
+job_desc.root_task.args.extend(basic_args)
+job_desc.root_task.args.append("0") # root task is worker ID 0
+job_desc.root_task.args.append(str(num_workers))
+job_desc.root_task.args.append(naiad_exe)
+job_desc.root_task.args.extend(extra_args)
 job_desc.root_task.inject_task_lib = True
 
 # add workers
 for i in range(1, num_workers):
   task = job_desc.root_task.spawned.add()
-  add_worker_task(task, sys.argv[3], args, i)
+  add_worker_task(task, naiad_exe, basic_args, i, num_workers, extra_args)
 
 input_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 output_id = binascii.unhexlify('db33daba280d8e68eea6e490723b02cedb33daba280d8e68eea6e490723b02ce')
