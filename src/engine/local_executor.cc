@@ -117,13 +117,20 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
   if (FLAGS_perf_monitoring) {
     FILE* fptr;
     char line[1024];
-    // XXX(malte): This is an ugly hack that avoids a race between the data file
-    // being written by the perf utility and it being opened for reading.
-    // We really need a proper solution here, especially as this is on the
-    // critical path in the coordinator's main event handler thread.
-    sleep(3);
+    // This hack is required to avoid a race between the data file being
+    // written by the perf utility and it being opened for reading.
+    // Perf creates a zero-byte file when the task starts, but only syncs
+    // data to it when it finishes.
+    struct stat st;
+    bzero(&st, sizeof(struct stat));
+    string file_name = PerfDataFileName(td);
+    while (st.st_size == 0) {
+      if (stat(file_name.c_str(), &st) != 0)
+        PLOG(ERROR) << "Failed to stat perf data file " << file_name;
+    }
+    // Once we get here, we have non-zero data in the perf data file
     if ((fptr = fopen(PerfDataFileName(td).c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open FD for reading of perf data. FD " << fptr;
+      LOG(ERROR) << "Failed to open perf data file " << file_name;
     }
     VLOG(1) << "Processing perf output in file " << PerfDataFileName(td)
             << "...";
