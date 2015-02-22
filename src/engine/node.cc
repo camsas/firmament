@@ -79,12 +79,12 @@ bool Node::SendMessageToRemote(
 }
 
 void Node::HandleWrite(const boost::system::error_code& error,
-                              size_t bytes_transferred) {
-  VLOG(2) << "In HandleWrite, thread is " << boost::this_thread::get_id();
+                       size_t bytes_transferred) {
+  VLOG(3) << "In HandleWrite, thread is " << boost::this_thread::get_id();
   if (error)
     LOG(ERROR) << "Error returned from async write: " << error.message();
   else
-    VLOG(1) << "bytes_transferred: " << bytes_transferred;
+    VLOG(3) << "bytes_transferred: " << bytes_transferred;
 }
 
 void Node::Run() {

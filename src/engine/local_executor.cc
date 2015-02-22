@@ -29,6 +29,8 @@ DEFINE_bool(perf_monitoring, true,
             "Enable performance monitoring for tasks executed.");
 DEFINE_string(task_lib_path, "",
               "Path where task_lib.a and task_lib_inject.so are.");
+DEFINE_string(task_log_directory, "/tmp/firmament-log",
+              "Path where task logs will be stored.");
 
 namespace firmament {
 namespace executor {
@@ -111,20 +113,24 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
   report->set_task_id(GenerateTaskEquivClass(td));
   report->set_start_time(*start_time);
   report->set_finish_time(end_time);
-  // Remove the start time from the map
-  task_start_times_.erase(td.uid());
-
   // Load perf data, if it exists
   if (FLAGS_perf_monitoring) {
     FILE* fptr;
     char line[1024];
-    // XXX(malte): This is an ugly hack that avoids a race between the data file
-    // being written by the perf utility and it being opened for reading.
-    // We really need a proper solution here, especially as this is on the
-    // critical path in the coordinator's main event handler thread.
-    sleep(3);
+    // This hack is required to avoid a race between the data file being
+    // written by the perf utility and it being opened for reading.
+    // Perf creates a zero-byte file when the task starts, but only syncs
+    // data to it when it finishes.
+    struct stat st;
+    bzero(&st, sizeof(struct stat));
+    string file_name = PerfDataFileName(td);
+    while (st.st_size == 0) {
+      if (stat(file_name.c_str(), &st) != 0)
+        PLOG(ERROR) << "Failed to stat perf data file " << file_name;
+    }
+    // Once we get here, we have non-zero data in the perf data file
     if ((fptr = fopen(PerfDataFileName(td).c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open FD for reading of perf data. FD " << fptr;
+      LOG(ERROR) << "Failed to open perf data file " << file_name;
     }
     VLOG(1) << "Processing perf output in file " << PerfDataFileName(td)
             << "...";
@@ -135,7 +141,15 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
       }
     }
     fclose(fptr);
+  } else {
+    // TODO(malte): this is a bit of a hack -- when we don't have the perf
+    // information available, we use the executor's runtime measurements.
+    // They should be identical, however, so maybe we should just always do
+    // this. Multiplication by 1M converts from microseconds to seconds.
+    report->set_runtime(end_time / 1000000.0 - *start_time / 1000000.0);
   }
+  // Remove the start time from the map
+  task_start_times_.erase(td.uid());
 }
 
 void LocalExecutor::RunTask(TaskDescriptor* td,
@@ -162,15 +176,17 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   // Convert arguments as specified in TD into a string vector that we can munge
   // into an actual argv[].
   vector<string> args = pb_to_vector(td->args());
+  // Path for task log files (stdout/stderr)
+  string tasklog = FLAGS_task_log_directory + "/" + to_string(td->uid());
   // TODO(malte): This is somewhat hackish
   // arguments: binary (path + name), arguments, performance monitoring on/off,
-  // is this a Firmament task binary? (on/off; will cause default arugments to
-  // be passed)
+  // debugging flags, is this a Firmament task binary? (on/off; will cause
+  // default arugments to be passed)
   bool res = (RunProcessSync(
       td->binary(), args, FLAGS_perf_monitoring,
       (FLAGS_debug_tasks || ((FLAGS_debug_interactively != 0) &&
                              (td->uid() == FLAGS_debug_interactively))),
-      firmament_binary) == 0);
+      firmament_binary, tasklog) == 0);
   VLOG(1) << "Result of RunProcessSync was " << res;
   return res;
 }
@@ -179,12 +195,13 @@ int32_t LocalExecutor::RunProcessAsync(const string& cmdline,
                                        vector<string> args,
                                        bool perf_monitoring,
                                        bool debug,
-                                       bool default_args) {
+                                       bool default_args,
+                                       const string& tasklog) {
   // TODO(malte): We lose the thread reference here, so we can never join this
   // thread. Need to return or store if we ever need it for anythign again.
   boost::thread async_process_thread(
       boost::bind(&LocalExecutor::RunProcessSync, this, cmdline, args,
-                  perf_monitoring, debug, default_args));
+                  perf_monitoring, debug, default_args, tasklog));
   // We hard-code the return to zero here; maybe should return a thread
   // reference instead.
   return 0;
@@ -194,7 +211,8 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
                                       vector<string> args,
                                       bool perf_monitoring,
                                       bool debug,
-                                      bool default_args) {
+                                      bool default_args,
+                                      const string& tasklog) {
   char* perf_prefix;
   pid_t pid;
   /*int pipe_to[2];    // pipe to feed input data to task
@@ -206,6 +224,9 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     PLOG(ERROR) << "Failed to create pipe from task.";
   }*/
   vector<char*> argv;
+  // Get paths for task logs
+  string tasklog_stdout = tasklog + "-stdout";
+  string tasklog_stderr = tasklog + "-stderr";
   // N.B.: only one of debug and perf_monitoring can be active at a time;
   // debug takes priority here.
   if (debug) {
@@ -262,10 +283,14 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     case 0: {
       // Child
       // Set up stderr and stdout log redirections to files
-      int fd = open("/tmp/tasklog", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-      dup2(fd, STDOUT_FILENO);
-      dup2(fd, STDERR_FILENO);
-      close(fd);
+      int stdout_fd = open(tasklog_stdout.c_str(),
+                           O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+      dup2(stdout_fd, STDOUT_FILENO);
+      int stderr_fd = open(tasklog_stderr.c_str(),
+                           O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+      dup2(stderr_fd, STDERR_FILENO);
+      close(stdout_fd);
+      close(stderr_fd);
       // Run the task binary
       execvp(argv[0], &argv[0]);
       // execl only returns if there was an error

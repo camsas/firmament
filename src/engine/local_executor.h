@@ -67,12 +67,14 @@ class LocalExecutor : public ExecutorInterface {
                           vector<string> args,
                           bool perf_monitoring,
                           bool debug,
-                          bool default_args);
+                          bool default_args,
+                          const string& tasklog);
   int32_t RunProcessSync(const string& cmdline,
                          vector<string> args,
                          bool perf_monitoring,
                          bool debug,
-                         bool default_args);
+                         bool default_args,
+                         const string& tasklog);
   bool _RunTask(TaskDescriptor* td,
                 bool firmament_binary);
   string PerfDataFileName(const TaskDescriptor& td);

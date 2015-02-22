@@ -467,7 +467,7 @@ void Coordinator::HandleRegistrationRequest(
   if (!rdp) {
     LOG(INFO) << "REGISTERING NEW RESOURCE (uuid: " << msg.uuid() << ")";
     // N.B.: below creates a new resource descriptor
-    ResourceDescriptor* rd = new ResourceDescriptor(msg.res_desc());
+    //ResourceDescriptor* rd = new ResourceDescriptor(msg.res_desc());
     // Insert the root of the registered topology into the topology tree
     ResourceTopologyNodeDescriptor* rtnd =
         local_resource_topology_->add_children();
@@ -479,7 +479,7 @@ void Coordinator::HandleRegistrationRequest(
     DFSTraverseResourceProtobufTree(
         rtnd, boost::bind(&Coordinator::AddResource, this, _1,
                           msg.location(), false));
-    InformStorageEngineNewResource(rd);
+    //InformStorageEngineNewResource(rd);
   } else {
     LOG(INFO) << "REGISTRATION request from resource " << msg.uuid()
               << " that we already know about. "
@@ -757,11 +757,17 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
       VLOG(3) << "Error: Object is not in object store";
   }
   // Process children recursively
+  uint64_t i = 0;
   for (RepeatedPtrField<TaskDescriptor>::iterator task_iter =
        td->mutable_spawned()->begin();
        task_iter != td->mutable_spawned()->end();
        ++task_iter) {
+    // Tasks that are submitted with the job also do not have a task ID to begin
+    // with (unlike those dynamically spawned)
+    if (task_iter->uid() == 0)
+      task_iter->set_uid(GenerateTaskID(*td, i));
     AddJobsTasksToTables(&(*task_iter), job_id);
+    ++i;
   }
 }
 
@@ -776,7 +782,7 @@ void Coordinator::SendHeartbeatToParent(
                topology_manager_->NumProcessingUnits());
   // Include resource usage stats
   bm.mutable_heartbeat()->mutable_load()->CopyFrom(stats);
-  VLOG(1) << "Sending heartbeat to parent coordinator!";
+  VLOG(2) << "Sending heartbeat to parent coordinator!";
   SendMessageToRemote(parent_chan_, &bm);
 }
 

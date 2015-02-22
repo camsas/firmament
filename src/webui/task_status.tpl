@@ -135,11 +135,15 @@ $(function() {
     <td>{{TASK_NAME}}</td>
   </tr>
   <tr>
-    <td>Code/binary</td>
+    <td>Binary</td>
     <td>{{TASK_BINARY}}</td>
   </tr>
   <tr>
-    <td>Equiv class</td>
+    <td>Arguments</td>
+    <td>{{TASK_ARGS}}</td>
+  </tr>
+  <tr>
+    <td>Equivalence class</td>
     <td>{{TASK_TEC}}</td>
   </tr>
   <tr>
@@ -177,9 +181,16 @@ $(function() {
     </td>
   </tr>
   <tr>
+    <td>Logs</td>
+    <td>
+      <a href="/tasklog/?id={{TASK_ID}}&a=1">stdout</a> &ndash;
+      <a href="/tasklog/?id={{TASK_ID}}&a=2">stderr</a>
+    </td>
+  </tr>
+  <tr>
     <td>Actions</td>
     <td>
-      <a href="/task/?id={{TASK_ID}}&a=kill">Kill</a></li>
+      <a href="/task/?id={{TASK_ID}}&a=kill">Kill</a>
     </td>
   </tr>
   <tr>
