@@ -24,6 +24,8 @@ DECLARE_bool(incremental_flow);
 DECLARE_string(flow_scheduling_solver);
 DECLARE_bool(only_read_assignment_changes);
 DECLARE_string(flowlessly_binary);
+DECLARE_bool(debug_flow_graph);
+DECLARE_bool(add_root_task_to_graph);
 
 namespace firmament {
 namespace sim {
@@ -129,12 +131,14 @@ class GoogleTraceSimulator {
 
   void RemoveMachine(uint64_t machine_id);
 
+  void RemoveResource(ResourceTopologyNodeDescriptor* rtnd);
+
   /**
    * The resource topology is build from the same protobuf file. The function
    * changes the uuids to make sure that there's no two identical uuids.
    */
-  void ResetUuid(ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
-                 const string& root_uuid);
+  void ResetUuidAndAddResource(ResourceTopologyNodeDescriptor* rtnd,
+                               const string& hostname, const string& root_uuid);
 
   void ReplayTrace();
 
@@ -163,9 +167,14 @@ class GoogleTraceSimulator {
   // Firmament resource descriptors.
   unordered_map<uint64_t, ResourceDescriptor*> machine_id_to_rd_;
 
+  // Map from Firmament TaskID_t to Google trace task identifier.
   unordered_map<TaskID_t, TaskIdentifier> task_id_to_identifier_;
 
+  // Map holding the number of tasks for each job.
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
+
+  // Map from the Google machine id to the Firmament rtnd.
+  unordered_map<uint64_t, ResourceTopologyNodeDescriptor*> machine_id_to_rtnd_;
 
   // Map from JobID_t to JobDescriptor
   shared_ptr<JobMap_t> job_map_;

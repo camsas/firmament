@@ -77,6 +77,8 @@ void GoogleTraceSimulator::Run() {
   FLAGS_flow_scheduling_solver = "flowlessly";
   FLAGS_only_read_assignment_changes = true;
   FLAGS_flowlessly_binary = "../../../ext/flowlessly-git/run_fast_cost_scaling";
+  FLAGS_debug_flow_graph = true;
+  FLAGS_add_root_task_to_graph = false;
   // command line argument sanity checking
   if (trace_path_.empty()) {
     LOG(FATAL) << "Please specify a path to the Google trace!";
@@ -110,20 +112,15 @@ ResourceDescriptor* GoogleTraceSimulator::AddMachine(
   char hn[100];
   snprintf(hn, sizeof(hn), "h%ju", machine_id);
   DFSTraverseResourceProtobufTreeReturnRTND(
-      new_machine, boost::bind(&GoogleTraceSimulator::ResetUuid, this, _1,
-                               string(hn), root_uuid));
+      new_machine, boost::bind(&GoogleTraceSimulator::ResetUuidAndAddResource,
+                               this, _1, string(hn), root_uuid));
   ResourceDescriptor* rd = new_machine->mutable_resource_desc();
   rd->set_friendly_name(hn);
   // Add the node to the flow graph.
   flow_graph_->AddResourceTopology(*new_machine);
-  // Add resource to the resource_map_. Create a ResourceStatus wrapper.
-  // TODO(ionel): Check if we need to add children as well.
-  CHECK(InsertIfNotPresent(resource_map_.get(),
-                           ResourceIDFromString(rd->uuid()),
-                           new ResourceStatus(rd, "endpoint_uri",
-                                              GetCurrentTimestamp())));
   // Add resource to the google machine_id to ResourceDescriptor* map.
   CHECK(InsertIfNotPresent(&machine_id_to_rd_, machine_id, rd));
+  CHECK(InsertIfNotPresent(&machine_id_to_rtnd_, machine_id, new_machine));
   return rd;
 }
 
@@ -417,12 +414,21 @@ void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
   ResourceID_t res_id = ResourceIDFromString((*rd_ptr)->uuid());
   flow_graph_->DeleteResourceNode(res_id);
   machine_id_to_rd_.erase(machine_id);
-  // TODO(ionel): Remove children from the topology as well (e.g., PU).
-  resource_map_->erase(res_id);
+  ResourceTopologyNodeDescriptor** rtnd_ptr =
+    FindOrNull(machine_id_to_rtnd_, machine_id);
+  CHECK_NOTNULL(rtnd_ptr);
+  DFSTraverseResourceProtobufTreeReturnRTND(
+      *rtnd_ptr, boost::bind(&GoogleTraceSimulator::RemoveResource, this, _1));
+  machine_id_to_rtnd_.erase(machine_id);
 }
 
-void GoogleTraceSimulator::ResetUuid(ResourceTopologyNodeDescriptor* rtnd,
-    const string& hostname, const string& root_uuid) {
+void GoogleTraceSimulator::RemoveResource(ResourceTopologyNodeDescriptor* rtnd) {
+  resource_map_.get()->erase(ResourceIDFromString(rtnd->resource_desc().uuid()));
+}
+
+void GoogleTraceSimulator::ResetUuidAndAddResource(
+    ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
+    const string& root_uuid) {
   string new_uuid;
   if (rtnd->has_parent_id()) {
     // This is an intermediate node, so translate the parent UUID via the
@@ -445,7 +451,13 @@ void GoogleTraceSimulator::ResetUuid(ResourceTopologyNodeDescriptor* rtnd,
   VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid() << " to "
           << new_uuid;
   InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(), new_uuid);
-  rtnd->mutable_resource_desc()->set_uuid(new_uuid);
+  ResourceDescriptor* rd = rtnd->mutable_resource_desc();
+  rd->set_uuid(new_uuid);
+  // Add the resource node to the map.
+  CHECK(InsertIfNotPresent(resource_map_.get(),
+                           ResourceIDFromString(rd->uuid()),
+                           new ResourceStatus(rd, "endpoint_uri",
+                                              GetCurrentTimestamp())));
 }
 
 void GoogleTraceSimulator::ReplayTrace() {
@@ -496,6 +508,14 @@ void GoogleTraceSimulator::ReplayTrace() {
           }
 
           if (task_time > time_interval_bound) {
+            VLOG(2) << "Job id size: " << job_id_to_jd_.size();
+            VLOG(2) << "Task id size: " << task_id_to_identifier_.size();
+            VLOG(2) << "Job num tasks size: " << job_num_tasks_.size();
+            VLOG(2) << "Job id to jd size: " << job_map_->size();
+            VLOG(2) << "Task id to td size: " << task_map_->size();
+            VLOG(2) << "Res id to rd size: " << resource_map_->size();
+            VLOG(2) << "Task binding: " << task_bindings_.size();
+
             map<uint64_t, uint64_t>* task_mappings = quincy_dispatcher_->Run();
 
             UpdateFlowGraph(time_interval_bound, &task_runtime, task_mappings);
