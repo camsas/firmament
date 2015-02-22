@@ -142,8 +142,8 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
     // information available, we use the executor's runtime measurements.
     // They should be identical, however, so maybe we should just always do
     // this. Multiplication by 1M converts from microseconds to seconds.
-    report->set_runtime(float(end_time) * 1000000.0 -
-                        float(*start_time) * 1000000.0);
+    report->set_runtime(float(end_time) / 1000000.0 -
+                        float(*start_time) / 1000000.0);
   }
 }
 
