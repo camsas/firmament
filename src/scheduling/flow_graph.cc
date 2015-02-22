@@ -123,6 +123,8 @@ void FlowGraph::AddEquivClassPreferenceArcs(
     advance(it, index);
     if (!FindOrNull(equiv_node->outgoing_arc_map_, *it)) {
       FlowGraphArc* arc = AddArcInternal(equiv_node->id_, *it);
+      // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
+      arc->cap_upper_bound_ = 1;
       ec_arcs->push_back(arc);
       ResourceID_t res_id = Node(*it)->resource_id_;
       arc->cost_ = cost_model_->EquivClassToResourceNode(td.uid(), res_id);
@@ -219,6 +221,8 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
                                  ec_node));
         FlowGraphArc* ec_arc = AddArcInternal(task_node->id_,
                                               ec_node->id_);
+        // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
+        ec_arc->cap_upper_bound_ = 1;
         ec_arc->cost_ = cost_model_->TaskToEquivClassAggregator(task_node->id_);
         // Add the new equivalence node to the graph changes
         ec_arcs->push_back(ec_arc);
