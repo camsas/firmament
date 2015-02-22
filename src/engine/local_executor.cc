@@ -113,9 +113,6 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
   report->set_task_id(GenerateTaskEquivClass(td));
   report->set_start_time(*start_time);
   report->set_finish_time(end_time);
-  // Remove the start time from the map
-  task_start_times_.erase(td.uid());
-
   // Load perf data, if it exists
   if (FLAGS_perf_monitoring) {
     FILE* fptr;
@@ -142,9 +139,10 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
     // information available, we use the executor's runtime measurements.
     // They should be identical, however, so maybe we should just always do
     // this. Multiplication by 1M converts from microseconds to seconds.
-    report->set_runtime(float(end_time) / 1000000.0 -
-                        float(*start_time) / 1000000.0);
+    report->set_runtime(end_time / 1000000.0 - *start_time / 1000000.0);
   }
+  // Remove the start time from the map
+  task_start_times_.erase(td.uid());
 }
 
 void LocalExecutor::RunTask(TaskDescriptor* td,
