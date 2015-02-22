@@ -85,6 +85,7 @@ TaskLib::TaskLib()
   ofstream pid_file;
   pid_file.open(pid_filename);
   pid_file << getpid();
+  pid_file.close();
 
   use_procfs_ = true;
 }
@@ -110,6 +111,11 @@ void TaskLib::Stop() {
   SendFinalizeMessage(true);
   printf("Finalise message sent\n");
   fflush(stdout);
+  // Remove PID file
+  stringstream ss;
+  ss << "/tmp/" << task_id_ << ".pid";
+  string pid_filename = ss.str();
+  unlink(pid_filename.c_str());
   //exit(0);
 }
 
