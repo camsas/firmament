@@ -270,7 +270,6 @@ bool TaskLib::PullTaskInformationFromCoordinator(TaskID_t task_id,
 
 void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   FLAGS_logtostderr = true;
-  FLAGS_v = 3;
   //VLOG(3) << "COORDINATOR URI: " << FLAGS_coordinator_uri;
   ConnectToCoordinator(coordinator_uri_);
   VLOG(3) << "Setting up storage engine";
