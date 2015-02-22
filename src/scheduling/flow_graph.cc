@@ -29,6 +29,7 @@
 DEFINE_bool(preemption, false, "Enable preemption and migration of tasks");
 DEFINE_int32(num_pref_arcs, 1,
              "Number of preference arcs from equiv class node");
+DEFINE_bool(add_root_task_to_graph, true, "Add the job root task to the graph");
 
 namespace firmament {
 
@@ -184,7 +185,21 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
   // Now add the job's task nodes
   // TODO(malte): This is a simple BFS lashup; maybe we can do better?
   queue<TaskDescriptor*> q;
-  q.push(jd->mutable_root_task());
+  if (FLAGS_add_root_task_to_graph) {
+    q.push(jd->mutable_root_task());
+  } else {
+    TaskDescriptor* root_task = jd->mutable_root_task();
+    for (RepeatedPtrField<TaskDescriptor>::iterator c_iter =
+         root_task->mutable_spawned()->begin();
+         c_iter != root_task->mutable_spawned()->end();
+         ++c_iter) {
+      // We do actually need to push tasks even if they are already completed,
+      // failed or running, since they may have children eligible for
+      // scheduling.
+      q.push(&(*c_iter));
+    }
+  }
+
   while (!q.empty()) {
     TaskDescriptor* cur = q.front();
     q.pop();
