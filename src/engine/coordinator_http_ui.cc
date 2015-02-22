@@ -591,7 +591,7 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
          td_ptr->args().begin();
          arg_iter != td_ptr->args().end();
          ++arg_iter) {
-      arg_string += *arg_iter;
+      arg_string += " " + *arg_iter;
     }
     dict.SetValue("TASK_ARGS", arg_string);
     dict.SetValue("TASK_STATUS", ENUM_TO_STRING(TaskDescriptor::TaskState,
