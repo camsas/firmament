@@ -35,9 +35,9 @@ class QuincyDispatcher {
   map<uint64_t, uint64_t>* GetMappings(
       vector< map< uint64_t, uint64_t > >* extracted_flow,
       unordered_set<uint64_t> leaves, uint64_t sink);
-  vector< map< uint64_t, uint64_t> >* ReadFlowGraph(int fd,
+  vector< map< uint64_t, uint64_t> >* ReadFlowGraph(FILE* fptr,
                                                     uint64_t num_vertices);
-  map<uint64_t, uint64_t>* ReadTaskMappingChanges(int fd);
+  map<uint64_t, uint64_t>* ReadTaskMappingChanges(FILE* fptr);
   void SolverBinaryName(const string& solver, string* binary);
 
   shared_ptr<FlowGraph> flow_graph_;
@@ -48,6 +48,12 @@ class QuincyDispatcher {
   bool initial_solver_run_;
   // Debug sequence number (for solver input/output files written to /tmp)
   uint64_t debug_seq_num_;
+
+  // FDs used to communicate with the solver.
+  int outfd[2];
+  int infd[2];
+  FILE* to_solver;
+  FILE* from_solver;
 };
 
 } // namespace scheduler

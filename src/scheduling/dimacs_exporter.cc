@@ -106,6 +106,13 @@ void DIMACSExporter::Flush(int fd) {
   fclose(stream);
 }
 
+void DIMACSExporter::Flush(FILE* stream) {
+  // Add end of iteration comment.
+  output_ += GenerateComment("EOI");
+  fprintf(stream, "%s", output_.c_str());
+  fflush(stream);
+}
+
 const string DIMACSExporter::GenerateArc(const FlowGraphArc& arc) {
   stringstream ss;
   ss << "a " << arc.src_ << " " << arc.dst_ << " " << arc.cap_lower_bound_

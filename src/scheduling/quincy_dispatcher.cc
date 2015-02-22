@@ -51,7 +51,6 @@ namespace scheduler {
     } else {
       // Export the current flow graph to DIMACS format
       exporter_.Export(*flow_graph_);
-      initial_solver_run_ = true;
       flow_graph_->ResetChanges();
     }
     uint64_t num_nodes = flow_graph_->NumNodes();
@@ -60,8 +59,6 @@ namespace scheduler {
     // infd[1] == CHILD_WRITE
     // outfd[0] == CHILD_READ
     // outfd[1] == PARENT_WRITE
-    int outfd[2];
-    int infd[2];
     // Write debugging copy
     if (FLAGS_debug_flow_graph) {
       // TODO(malte): somewhat ugly hack to compose a unique file name for each
@@ -71,32 +68,46 @@ namespace scheduler {
           debug_seq_num_);
       LOG(INFO) << "Writing flow graph debug info into " << out_file_name;
       exporter_.Flush(out_file_name);
+      debug_seq_num_++;
     }
     // Now run the solver
     vector<string> args;
     string solver_binary;
     // Get the binary name of the solver
     SolverBinaryName(FLAGS_flow_scheduling_solver, &solver_binary);
-    pid_t solver_pid = ExecCommandSync(solver_binary, args, outfd, infd);
-    VLOG(2) << "Solver (" << FLAGS_flow_scheduling_solver << "running "
-            << "(PID: " << solver_pid << "), CHILD_READ: "
-            << outfd[0] << ", PARENT_WRITE: " << outfd[1] << ", PARENT_READ: "
-            << infd[0] << ", CHILD_WRITE: " << infd[1];
+    pid_t solver_pid;
+    if (!initial_solver_run_) {
+      solver_pid = ExecCommandSync(solver_binary, args, outfd, infd);
+      VLOG(2) << "Solver (" << FLAGS_flow_scheduling_solver << "running "
+              << "(PID: " << solver_pid << "), CHILD_READ: "
+              << outfd[0] << ", PARENT_WRITE: " << outfd[1] << ", PARENT_READ: "
+              << infd[0] << ", CHILD_WRITE: " << infd[1];
+      initial_solver_run_ = true;
+      if ((from_solver = fdopen(infd[0], "r")) == NULL) {
+        LOG(ERROR) << "Failed to open FD for reading of task mapping changes. FD "
+                   << infd[0];
+      }
+      if ((to_solver = fdopen(outfd[1], "w")) == NULL) {
+        LOG(ERROR) << "Failed to open FD to solver for writing. FD: " << outfd[1];
+      }
+    }
     // Write to pipe to solver
-    exporter_.Flush(outfd[1]);
+    exporter_.Flush(to_solver);
     map<uint64_t, uint64_t>* task_mappings;
     if (FLAGS_only_read_assignment_changes) {
-      task_mappings = ReadTaskMappingChanges(infd[0]);
+      task_mappings = ReadTaskMappingChanges(from_solver);
     } else {
       // Parse and process the result
       vector<map<uint64_t, uint64_t> >* extracted_flow =
-        ReadFlowGraph(infd[0], num_nodes);
+        ReadFlowGraph(from_solver, num_nodes);
       task_mappings = GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
                                   flow_graph_->sink_node().id_);
     }
     if (!FLAGS_incremental_flow) {
       // We're done with the solver and can let it terminate here.
       WaitForFinish(solver_pid);
+      fclose(to_solver);
+      fclose(from_solver);
       // close the pipes
       close(outfd[1]);
       close(infd[0]);
@@ -231,7 +242,7 @@ namespace scheduler {
   // In the returned graph the arcs are the inverse of the arcs in the file.
   // If there is (i,j) with flow 1 then in the graph we will have (j,i).
   vector<map< uint64_t, uint64_t> >* QuincyDispatcher::ReadFlowGraph(
-       int fd, uint64_t num_vertices) {
+       FILE* fptr, uint64_t num_vertices) {
     vector<map< uint64_t, uint64_t > >* adj_list =
       new vector<map<uint64_t, uint64_t> >(num_vertices + 1);
     // The cost is not returned.
@@ -239,18 +250,13 @@ namespace scheduler {
     char line[100];
     vector<string> vals;
 
-    FILE* fptr = NULL;
     FILE* dbg_fptr = NULL;
-    if ((fptr = fdopen(fd, "r")) == NULL) {
-      LOG(ERROR) << "Failed to open FD for reading of flow graph. FD " << fd;
-    }
     if (FLAGS_debug_flow_graph) {
       // Somewhat ugly hack to generate unique output file name.
       string out_file_name;
       spf(&out_file_name, "%s/debug-flow_%ju.dm",
           FLAGS_debug_output_dir.c_str(), debug_seq_num_);
       CHECK((dbg_fptr = fopen(out_file_name.c_str(), "w")) != NULL);
-      debug_seq_num_++;
     }
     uint64_t l = 0;
     while (!feof(fptr)) {
@@ -297,15 +303,10 @@ namespace scheduler {
     return adj_list;
   }
 
-  map<uint64_t, uint64_t>* QuincyDispatcher::ReadTaskMappingChanges(int fd) {
+  map<uint64_t, uint64_t>* QuincyDispatcher::ReadTaskMappingChanges(FILE* fptr) {
     map<uint64_t, uint64_t>* task_node = new map<uint64_t, uint64_t>();
     char line[100];
     vector<string> vals;
-    FILE* fptr;
-    if ((fptr = fdopen(fd, "r")) == NULL) {
-      LOG(ERROR) << "Failed to open FD for reading of task mapping changes. FD "
-                 << fd;
-    }
     bool end_of_iteration = false;
     while (!end_of_iteration) {
       if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -326,7 +327,6 @@ namespace scheduler {
         }
       }
     }
-    fclose(fptr);
     return task_node;
   }
 

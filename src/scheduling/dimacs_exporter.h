@@ -28,6 +28,7 @@ class DIMACSExporter {
   void ExportIncremental(const vector<DIMACSChange*>& changes);
   void Flush(const string& filename);
   void Flush(int fd);
+  void Flush(FILE* stream);
   void Reset() { output_ = ""; }
 
  private:
