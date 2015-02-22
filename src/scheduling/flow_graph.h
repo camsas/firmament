@@ -152,6 +152,10 @@ class FlowGraph {
   unordered_set<uint64_t> task_nodes_;
   unordered_set<uint64_t> unsched_agg_nodes_;
 
+  // Mapping storing the equiv class nodes for each job.
+  unordered_map<JobID_t, FlowGraphNode*,
+      boost::hash<boost::uuids::uuid> > job_to_equiv_node_;
+
   // Vector storing the graph changes occured since the last scheduling round.
   vector<DIMACSChange*> graph_changes_;
   // Queue storing the ids of the nodes we've previously removed.

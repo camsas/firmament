@@ -209,14 +209,26 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
       // Add the new task node to the graph changes
       graph_changes_.push_back(new DIMACSAddNode(*task_node, task_arcs));
       // XXX(malte): hack to add equiv class aggregator nodes
-      vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
-      FlowGraphNode* ec_node = AddEquivClassAggregator(*cur, ec_arcs);
-      FlowGraphArc* ec_arc = AddArcInternal(task_node->id_,
-                                            ec_node->id_);
-      ec_arc->cost_ = cost_model_->TaskToEquivClassAggregator(task_node->id_);
-      // Add the new equivalence node to the graph changes
-      ec_arcs->push_back(ec_arc);
-      graph_changes_.push_back(new DIMACSAddNode(*ec_node, ec_arcs));
+      FlowGraphNode** ec_node_ptr =
+        FindOrNull(job_to_equiv_node_, task_node->job_id_);
+      if (ec_node_ptr == NULL) {
+        // Job doesn't yet have an equivalence class node.
+        vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
+        FlowGraphNode* ec_node = AddEquivClassAggregator(*cur, ec_arcs);
+        CHECK(InsertIfNotPresent(&job_to_equiv_node_, task_node->job_id_,
+                                 ec_node));
+        FlowGraphArc* ec_arc = AddArcInternal(task_node->id_,
+                                              ec_node->id_);
+        ec_arc->cost_ = cost_model_->TaskToEquivClassAggregator(task_node->id_);
+        // Add the new equivalence node to the graph changes
+        ec_arcs->push_back(ec_arc);
+        graph_changes_.push_back(new DIMACSAddNode(*ec_node, ec_arcs));
+      } else {
+        // The equivalence class node already exists. Add arc to it.
+        FlowGraphArc* ec_arc =
+          AddArcInternal(task_node->id_, (*ec_node_ptr)->id_);
+        graph_changes_.push_back(new DIMACSNewArc(*ec_arc));
+      }
     } else if (cur->state() == TaskDescriptor::RUNNING ||
                cur->state() == TaskDescriptor::ASSIGNED) {
       // The task is already running, so it must have a node already
