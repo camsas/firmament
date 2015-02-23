@@ -28,6 +28,7 @@ class DIMACSAddNode : public DIMACSChange {
   const string GenerateChange() const;
 
  private:
+  uint32_t GetNodeType() const;
   FRIEND_TEST(FlowGraphTest, AddResourceNode);
   FRIEND_TEST(FlowGraphTest, AddOrUpdateJobNodes);
   const FlowGraphNode& node_;
