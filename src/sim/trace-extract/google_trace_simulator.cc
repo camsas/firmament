@@ -172,6 +172,7 @@ TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
   TaskDescriptor* new_task = root_task->add_spawned();
   new_task->set_uid(GenerateTaskID(*root_task));
   new_task->set_state(TaskDescriptor::RUNNABLE);
+  new_task->set_job_id(jd_ptr->uuid());
   return new_task;
 }
 
