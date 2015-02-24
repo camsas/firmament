@@ -7,7 +7,7 @@ namespace firmament {
 
   const string DIMACSRemoveNode::GenerateChange() const {
     stringstream ss;
-    ss << "r " << node_id_;
+    ss << "r " << node_id_ << "\n";
     return ss.str();
   }
 

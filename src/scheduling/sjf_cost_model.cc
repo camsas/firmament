@@ -5,6 +5,7 @@
 
 #include "scheduling/sjf_cost_model.h"
 
+#include <algorithm>
 #include <string>
 #include <unordered_map>
 

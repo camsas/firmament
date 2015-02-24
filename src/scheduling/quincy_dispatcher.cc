@@ -45,7 +45,8 @@ namespace scheduler {
     }
     // Blow away any old exporter state
     exporter_.Reset();
-    if (FLAGS_incremental_flow && initial_solver_run_) {
+    if (FLAGS_incremental_flow && initial_solver_run_ &&
+        FLAGS_flow_scheduling_solver.compare("cs2")) {
       exporter_.ExportIncremental(flow_graph_->graph_changes());
       flow_graph_->ResetChanges();
     } else {
@@ -53,12 +54,6 @@ namespace scheduler {
       exporter_.Export(*flow_graph_);
       flow_graph_->ResetChanges();
     }
-    uint64_t num_nodes = flow_graph_->NumNodes();
-    // Pipe setup
-    // infd[0] == PARENT_READ
-    // infd[1] == CHILD_WRITE
-    // outfd[0] == CHILD_READ
-    // outfd[1] == PARENT_WRITE
     // Write debugging copy
     if (FLAGS_debug_flow_graph) {
       // TODO(malte): somewhat ugly hack to compose a unique file name for each
@@ -76,41 +71,57 @@ namespace scheduler {
     // Get the binary name of the solver
     SolverBinaryName(FLAGS_flow_scheduling_solver, &solver_binary);
     pid_t solver_pid;
-    if (!initial_solver_run_) {
-      solver_pid = ExecCommandSync(solver_binary, args, outfd, infd);
+
+    if (!initial_solver_run_ || !FLAGS_flow_scheduling_solver.compare("cs2")) {
+      // Pipe setup
+      // infd_[0] == PARENT_READ
+      // infd_[1] == CHILD_WRITE
+      // outfd_[0] == CHILD_READ
+      // outfd_[1] == PARENT_WRITE
+      solver_pid = ExecCommandSync(solver_binary, args, outfd_, infd_);
       VLOG(2) << "Solver (" << FLAGS_flow_scheduling_solver << "running "
               << "(PID: " << solver_pid << "), CHILD_READ: "
-              << outfd[0] << ", PARENT_WRITE: " << outfd[1] << ", PARENT_READ: "
-              << infd[0] << ", CHILD_WRITE: " << infd[1];
+              << outfd_[0] << ", PARENT_WRITE: " << outfd_[1]
+              << ", PARENT_READ: " << infd_[0] << ", CHILD_WRITE: " << infd_[1];
       initial_solver_run_ = true;
-      if ((from_solver = fdopen(infd[0], "r")) == NULL) {
-        LOG(ERROR) << "Failed to open FD for reading of task mapping changes. FD "
-                   << infd[0];
+      if ((from_solver_ = fdopen(infd_[0], "r")) == NULL) {
+        LOG(ERROR) << "Failed to open FD for reading solver's output. FD "
+                   << infd_[0];
       }
-      if ((to_solver = fdopen(outfd[1], "w")) == NULL) {
-        LOG(ERROR) << "Failed to open FD to solver for writing. FD: " << outfd[1];
+      if ((to_solver_ = fdopen(outfd_[1], "w")) == NULL) {
+        LOG(ERROR) << "Failed to open FD to solver for writing. FD: "
+                   << outfd_[1];
       }
     }
     // Write to pipe to solver
-    exporter_.Flush(to_solver);
+    exporter_.Flush(to_solver_);
+    if (!FLAGS_flow_scheduling_solver.compare("cs2")) {
+      // We need to close the stream because that's what cs expects.
+      fclose(to_solver_);
+    }
     map<uint64_t, uint64_t>* task_mappings;
     if (FLAGS_only_read_assignment_changes) {
-      task_mappings = ReadTaskMappingChanges(from_solver);
+      task_mappings = ReadTaskMappingChanges(from_solver_);
     } else {
       // Parse and process the result
+      uint64_t num_nodes = flow_graph_->NumNodes();
       vector<map<uint64_t, uint64_t> >* extracted_flow =
-        ReadFlowGraph(from_solver, num_nodes);
+        ReadFlowGraph(from_solver_, num_nodes);
       task_mappings = GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
                                   flow_graph_->sink_node().id_);
     }
-    if (!FLAGS_incremental_flow) {
+    if (!FLAGS_incremental_flow ||
+        !FLAGS_flow_scheduling_solver.compare("cs2")) {
       // We're done with the solver and can let it terminate here.
       WaitForFinish(solver_pid);
-      fclose(to_solver);
-      fclose(from_solver);
+      if (FLAGS_flow_scheduling_solver.compare("cs2")) {
+        // We've already closed it if the solver is cs2.
+        fclose(to_solver_);
+      }
+      fclose(from_solver_);
       // close the pipes
-      close(outfd[1]);
-      close(infd[0]);
+      close(outfd_[1]);
+      close(infd_[0]);
     }
     return task_mappings;
   }
@@ -297,13 +308,13 @@ namespace scheduler {
         }
       }
     }
-    fclose(fptr);
     if (FLAGS_debug_flow_graph)
       fclose(dbg_fptr);
     return adj_list;
   }
 
-  map<uint64_t, uint64_t>* QuincyDispatcher::ReadTaskMappingChanges(FILE* fptr) {
+  map<uint64_t, uint64_t>* QuincyDispatcher::ReadTaskMappingChanges(
+      FILE* fptr) {
     map<uint64_t, uint64_t>* task_node = new map<uint64_t, uint64_t>();
     char line[100];
     vector<string> vals;

@@ -9,7 +9,6 @@
 namespace firmament {
 
   const string DIMACSAddNode::GenerateChange() const {
-
     stringstream ss;
     ss << "n " << node_.id_ << " " << node_.excess_ << " " << GetNodeType()
        << "\n";

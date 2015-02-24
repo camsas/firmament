@@ -73,9 +73,9 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
 }
 
 void GoogleTraceSimulator::Run() {
-  FLAGS_incremental_flow = true;
-  FLAGS_flow_scheduling_solver = "flowlessly";
-  FLAGS_only_read_assignment_changes = true;
+  //  FLAGS_incremental_flow = true;
+  //  FLAGS_flow_scheduling_solver = "flowlessly";
+  //  FLAGS_only_read_assignment_changes = true;
   FLAGS_flowlessly_binary = "../../../ext/flowlessly-git/run_fast_cost_scaling";
   FLAGS_debug_flow_graph = true;
   FLAGS_add_root_task_to_graph = false;
@@ -423,8 +423,10 @@ void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
   machine_id_to_rtnd_.erase(machine_id);
 }
 
-void GoogleTraceSimulator::RemoveResource(ResourceTopologyNodeDescriptor* rtnd) {
-  resource_map_.get()->erase(ResourceIDFromString(rtnd->resource_desc().uuid()));
+void GoogleTraceSimulator::RemoveResource(
+    ResourceTopologyNodeDescriptor* rtnd) {
+  resource_map_.get()->erase(
+      ResourceIDFromString(rtnd->resource_desc().uuid()));
 }
 
 void GoogleTraceSimulator::ResetUuidAndAddResource(
@@ -482,7 +484,8 @@ void GoogleTraceSimulator::ReplayTrace() {
   uint64_t time_interval_bound = FLAGS_bin_time_duration;
   uint64_t last_time_processed = 0;
   bool initial_time_processed = false;
-  for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process; file_num++) {
+  for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
+       file_num++) {
     string fname;
     spf(&fname, "%s/task_events/part-%05d-of-00500.csv", trace_path_.c_str(),
         file_num);
