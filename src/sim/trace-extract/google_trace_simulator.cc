@@ -389,11 +389,10 @@ JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
 void GoogleTraceSimulator::ProcessSimulatorEvents(
     uint64_t cur_time,
     const ResourceTopologyNodeDescriptor& machine_tmpl) {
-  pair<multimap<uint64_t, EventDescriptor>::iterator,
-       multimap<uint64_t, EventDescriptor>::iterator> range_events =
-    events_.equal_range(cur_time);
-  for (multimap<uint64_t, EventDescriptor>::iterator it = range_events.first;
-       it != range_events.second; ++it) {
+  multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
+  multimap<uint64_t, EventDescriptor>::iterator it_to =
+    events_.upper_bound(cur_time);
+  for (; it != it_to; it++) {
     if (it->second.type() == EventDescriptor::ADD_MACHINE) {
       VLOG(2) << "ADD_MACHINE " << it->second.machine_id();
       AddMachine(machine_tmpl, it->second.machine_id());
@@ -414,7 +413,7 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
       LOG(ERROR) << "Unexpected machine event";
     }
   }
-  events_.erase(cur_time);
+  events_.erase(events_.begin(), it_to);
 }
 
 void GoogleTraceSimulator::ProcessTaskEvent(
@@ -499,8 +498,6 @@ void GoogleTraceSimulator::ReplayTrace() {
   vector<string> vals;
   FILE* f_task_events_ptr = NULL;
   uint64_t time_interval_bound = FLAGS_bin_time_duration;
-  uint64_t last_time_processed = 0;
-  bool initial_time_processed = false;
   for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
        file_num++) {
     string fname;
@@ -546,12 +543,8 @@ void GoogleTraceSimulator::ReplayTrace() {
               time_interval_bound += FLAGS_bin_time_duration;
             }
           }
-          if (last_time_processed < task_time || !initial_time_processed) {
-            ProcessSimulatorEvents(task_time, machine_tmpl);
-            last_time_processed = task_time;
-            initial_time_processed = true;
-          }
 
+          ProcessSimulatorEvents(task_time, machine_tmpl);
           ProcessTaskEvent(task_time, task_identifier, event_type);
         }
       }
