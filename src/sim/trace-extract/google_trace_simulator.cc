@@ -61,6 +61,7 @@ DEFINE_string(task_bins_output, "bins.out",
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
+DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2.");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -73,12 +74,22 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
 }
 
 void GoogleTraceSimulator::Run() {
-  //  FLAGS_incremental_flow = true;
-  //  FLAGS_flow_scheduling_solver = "flowlessly";
-  //  FLAGS_only_read_assignment_changes = true;
-  FLAGS_flowlessly_binary = "../../../ext/flowlessly-git/run_fast_cost_scaling";
   FLAGS_debug_flow_graph = true;
   FLAGS_add_root_task_to_graph = false;
+  if (!FLAGS_solver.compare("flowlessly")) {
+    FLAGS_incremental_flow = true;
+    FLAGS_flow_scheduling_solver = "flowlessly";
+    FLAGS_only_read_assignment_changes = true;
+    FLAGS_flowlessly_binary = "../../../ext/flowlessly-git/run_fast_cost_scaling";
+  } else if (!FLAGS_solver.compare("cs2")) {
+    FLAGS_incremental_flow = false;
+    FLAGS_flow_scheduling_solver = "cs2";
+    FLAGS_only_read_assignment_changes = false;
+    FLAGS_cs2_binary = "../../../ext/cs2-4.6/cs2.exe";
+  } else {
+    LOG(FATAL) << "Unknown solver type: " << FLAGS_solver;
+  }
+
   // command line argument sanity checking
   if (trace_path_.empty()) {
     LOG(FATAL) << "Please specify a path to the Google trace!";
@@ -157,13 +168,19 @@ void GoogleTraceSimulator::AddTaskEndEvent(
     TaskIdentifier task_identifier,
     unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_rnt) {
   uint64_t* runtime_ptr = FindOrNull(*task_rnt, task_identifier);
-  CHECK_NOTNULL(runtime_ptr);
   EventDescriptor event_desc;
   event_desc.set_job_id(task_identifier.job_id);
   event_desc.set_task_index(task_identifier.task_index);
   event_desc.set_type(EventDescriptor::TASK_END_RUNTIME);
-  events_.insert(pair<uint64_t, EventDescriptor>(cur_timestamp + *runtime_ptr,
-                                                 event_desc));
+  if (runtime_ptr != NULL) {
+    // We can approximate the duration of the task.
+    events_.insert(pair<uint64_t, EventDescriptor>(cur_timestamp + *runtime_ptr,
+                                                   event_desc));
+  } else {
+    // The task didn't finish in the trace. Set the task's end event to the
+    // last timestamp of the simulation.
+    events_.insert(pair<uint64_t, EventDescriptor>(FLAGS_runtime, event_desc));
+  }
 }
 
 TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
