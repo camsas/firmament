@@ -38,9 +38,9 @@ class FlowGraph {
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                  uint64_t cap_upper_bound, uint64_t cost);
   bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
-  void DeleteTaskNode(TaskID_t task_id);
-  void DeleteResourceNode(ResourceID_t res_id);
   void DeleteNodesForJob(JobID_t job_id);
+  void DeleteResourceNode(ResourceID_t res_id);
+  void DeleteTaskNode(TaskID_t task_id);
   FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
@@ -111,7 +111,7 @@ class FlowGraph {
   void DeleteArcGeneratingDelta(FlowGraphArc* arc);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node);
-  void DeleteOrUpdateTaskEquivNode(TaskID_t task_id);
+  void DeleteOrUpdateEquivNode(JobID_t job_id);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
 
   uint64_t next_id() {
@@ -143,8 +143,6 @@ class FlowGraph {
   // (needed to assign capacities properly by back-tracking).
   unordered_map<ResourceID_t, ResourceID_t,
       boost::hash<boost::uuids::uuid> > resource_to_parent_map_;
-  // Hacky equivalence class node map
-  unordered_map<TaskID_t, uint64_t> task_to_equiv_class_node_id_;
   // The "node ID" for the job is currently the ID of the job's unscheduled node
   unordered_map<JobID_t, uint64_t,
       boost::hash<boost::uuids::uuid> > job_unsched_to_node_id_;
