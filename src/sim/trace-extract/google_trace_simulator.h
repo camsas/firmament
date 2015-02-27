@@ -151,7 +151,7 @@ class GoogleTraceSimulator {
     uint64_t scheduling_timestamp,
     unordered_map<TaskIdentifier, uint64_t,
       TaskIdentifierHasher>* task_runtime,
-    map<uint64_t, uint64_t>* task_mappings);
+    multimap<uint64_t, uint64_t>* task_mappings);
 
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.

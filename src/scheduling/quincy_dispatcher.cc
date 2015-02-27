@@ -33,7 +33,7 @@ namespace scheduler {
   using boost::algorithm::is_any_of;
   using boost::token_compress_on;
 
-  map<uint64_t, uint64_t>* QuincyDispatcher::Run() {
+  multimap<uint64_t, uint64_t>* QuincyDispatcher::Run() {
     // Set up debug directory if it doesn't exist
     struct stat st;
     if (!FLAGS_debug_output_dir.empty() &&
@@ -100,7 +100,7 @@ namespace scheduler {
       // We need to close the stream because that's what cs expects.
       fclose(to_solver_);
     }
-    map<uint64_t, uint64_t>* task_mappings;
+    multimap<uint64_t, uint64_t>* task_mappings;
     if (FLAGS_only_read_assignment_changes) {
       task_mappings = ReadTaskMappingChanges(from_solver_);
     } else {
@@ -219,10 +219,10 @@ namespace scheduler {
 
   // Maps worker|root tasks to leaves. It expects a extracted_flow containing
   // only the arcs with positive flow (i.e. what ReadFlowGraph returns).
-  map<uint64_t, uint64_t>* QuincyDispatcher::GetMappings(
+  multimap<uint64_t, uint64_t>* QuincyDispatcher::GetMappings(
       vector< map< uint64_t, uint64_t > >* extracted_flow,
       unordered_set<uint64_t> leaves, uint64_t sink) {
-    map<uint64_t, uint64_t>* task_node = new map<uint64_t, uint64_t>();
+    multimap<uint64_t, uint64_t>* task_node = new multimap<uint64_t, uint64_t>();
     unordered_set<uint64_t>::iterator set_it;
     for (set_it = leaves.begin(); set_it != leaves.end(); set_it++) {
       uint64_t* flow = FindOrNull((*extracted_flow)[sink], *set_it);
@@ -240,7 +240,7 @@ namespace scheduler {
           if (task != 0) {
             VLOG(1) << "Assigning task node " << task << " to PU node "
                     << *set_it;
-            (*task_node)[task] = *set_it;
+            task_node->insert(pair<uint64_t, uint64_t>(task, *set_it));
           } else {
             // PU left unassigned.
           }
@@ -302,7 +302,7 @@ namespace scheduler {
               if (vals[0].compare("") == 0) {
                 LOG(INFO) << "Empty row in flow graph.";
               } else {
-                LOG(ERROR) << "Unknown type of row in flow graph.";
+                LOG(ERROR) << "Unknown type of row in flow graph: " << line;
               }
             }
           }
@@ -314,9 +314,9 @@ namespace scheduler {
     return adj_list;
   }
 
-  map<uint64_t, uint64_t>* QuincyDispatcher::ReadTaskMappingChanges(
+  multimap<uint64_t, uint64_t>* QuincyDispatcher::ReadTaskMappingChanges(
       FILE* fptr) {
-    map<uint64_t, uint64_t>* task_node = new map<uint64_t, uint64_t>();
+    multimap<uint64_t, uint64_t>* task_node = new multimap<uint64_t, uint64_t>();
     char line[100];
     vector<string> vals;
     bool end_of_iteration = false;
@@ -329,7 +329,7 @@ namespace scheduler {
           }
           uint64_t task_id = lexical_cast<uint64_t>(vals[1]);
           uint64_t core_id = lexical_cast<uint64_t>(vals[2]);
-          InsertIfNotPresent(task_node, task_id, core_id);
+          task_node->insert(pair<uint64_t, uint64_t>(task_id, core_id));
         } else if (!vals[0].compare("c")) {
           if (!vals[1].compare("EOI")) {
             end_of_iteration = true;

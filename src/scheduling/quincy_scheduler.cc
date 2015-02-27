@@ -180,9 +180,9 @@ void QuincyScheduler::RegisterResource(ResourceID_t res_id, bool local) {
 }
 
 uint64_t QuincyScheduler::RunSchedulingIteration() {
-  map<uint64_t, uint64_t>* task_mappings = quincy_dispatcher_->Run();
+  multimap<uint64_t, uint64_t>* task_mappings = quincy_dispatcher_->Run();
   // Solver's done, let's post-process the results.
-  map<uint64_t, uint64_t>::iterator it;
+  multimap<uint64_t, uint64_t>::iterator it;
   vector<SchedulingDelta*> deltas;
   for (it = task_mappings->begin(); it != task_mappings->end(); it++) {
     VLOG(1) << "Bind " << it->first << " to " << it->second << endl;

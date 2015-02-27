@@ -441,8 +441,8 @@ void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
 
 void GoogleTraceSimulator::RemoveResource(
     ResourceTopologyNodeDescriptor* rtnd) {
-  resource_map_.get()->erase(
-      ResourceIDFromString(rtnd->resource_desc().uuid()));
+  ResourceID_t res_id = ResourceIDFromString(rtnd->resource_desc().uuid());
+  resource_map_.get()->erase(res_id);
 }
 
 void GoogleTraceSimulator::ResetUuidAndAddResource(
@@ -526,6 +526,9 @@ void GoogleTraceSimulator::ReplayTrace() {
           }
 
           if (task_time > time_interval_bound) {
+            ProcessSimulatorEvents(time_interval_bound, machine_tmpl);
+            ProcessTaskEvent(time_interval_bound, task_identifier, event_type);
+
             VLOG(2) << "Job id size: " << job_id_to_jd_.size();
             VLOG(2) << "Task id size: " << task_id_to_identifier_.size();
             VLOG(2) << "Job num tasks size: " << job_num_tasks_.size();
@@ -534,7 +537,7 @@ void GoogleTraceSimulator::ReplayTrace() {
             VLOG(2) << "Res id to rd size: " << resource_map_->size();
             VLOG(2) << "Task binding: " << task_bindings_.size();
 
-            map<uint64_t, uint64_t>* task_mappings = quincy_dispatcher_->Run();
+            multimap<uint64_t, uint64_t>* task_mappings = quincy_dispatcher_->Run();
 
             UpdateFlowGraph(time_interval_bound, &task_runtime, task_mappings);
 
@@ -589,9 +592,9 @@ EventDescriptor_EventType GoogleTraceSimulator::TranslateMachineEvent(
 void GoogleTraceSimulator::UpdateFlowGraph(
     uint64_t scheduling_timestamp,
     unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_runtime,
-    map<uint64_t, uint64_t>* task_mappings) {
+    multimap<uint64_t, uint64_t>* task_mappings) {
   set<ResourceID_t> pus_used;
-  for (map<uint64_t, uint64_t>::iterator it = task_mappings->begin();
+  for (multimap<uint64_t, uint64_t>::iterator it = task_mappings->begin();
        it != task_mappings->end(); ++it) {
     SchedulingDelta* delta = new SchedulingDelta();
     // Populate the scheduling delta.
