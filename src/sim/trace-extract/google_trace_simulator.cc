@@ -5,6 +5,7 @@
 // Google cluster trace simulator tool.
 
 #include <cstdio>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -80,7 +81,8 @@ void GoogleTraceSimulator::Run() {
     FLAGS_incremental_flow = true;
     FLAGS_flow_scheduling_solver = "flowlessly";
     FLAGS_only_read_assignment_changes = true;
-    FLAGS_flowlessly_binary = "../../../ext/flowlessly-git/run_fast_cost_scaling";
+    FLAGS_flowlessly_binary =
+      "../../../ext/flowlessly-git/run_fast_cost_scaling";
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
     FLAGS_flow_scheduling_solver = "cs2";
@@ -165,6 +167,7 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
 
 void GoogleTraceSimulator::AddTaskEndEvent(
     uint64_t cur_timestamp,
+    const TaskID_t& task_id,
     TaskIdentifier task_identifier,
     unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_rnt) {
   uint64_t* runtime_ptr = FindOrNull(*task_rnt, task_identifier);
@@ -176,10 +179,13 @@ void GoogleTraceSimulator::AddTaskEndEvent(
     // We can approximate the duration of the task.
     events_.insert(pair<uint64_t, EventDescriptor>(cur_timestamp + *runtime_ptr,
                                                    event_desc));
+    CHECK(InsertIfNotPresent(&task_id_to_end_time_, task_id,
+                             cur_timestamp + *runtime_ptr));
   } else {
     // The task didn't finish in the trace. Set the task's end event to the
     // last timestamp of the simulation.
     events_.insert(pair<uint64_t, EventDescriptor>(FLAGS_runtime, event_desc));
+    CHECK(InsertIfNotPresent(&task_id_to_end_time_, task_id, FLAGS_runtime));
   }
 }
 
@@ -442,7 +448,55 @@ void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
 void GoogleTraceSimulator::RemoveResource(
     ResourceTopologyNodeDescriptor* rtnd) {
   ResourceID_t res_id = ResourceIDFromString(rtnd->resource_desc().uuid());
+  TaskID_t* task_id = FindOrNull(res_id_to_task_id_, res_id);
+  if (task_id != NULL) {
+    // Evict the task running on the resource.
+    TaskEvicted(*task_id, res_id);
+    res_id_to_task_id_.erase(res_id);
+  }
+  // We don't need to set the state of the resource because it gets removed
+  // anyway.
   resource_map_.get()->erase(res_id);
+}
+
+void GoogleTraceSimulator::TaskEvicted(const TaskID_t& task_id,
+                                       const ResourceID_t& res_id) {
+  VLOG(2) << "Evict task " << task_id << " from resource " << res_id;
+  TaskDescriptor** td_ptr = FindOrNull(*task_map_, task_id);
+  CHECK_NOTNULL(td_ptr);
+  task_bindings_.erase(task_id);
+  // Change the state of the task from running to runnable.
+  (*td_ptr)->set_state(TaskDescriptor::RUNNABLE);
+
+  flow_graph_->NodeForTaskID(task_id)->type_.set_type(
+      FlowNodeType::UNSCHEDULED_TASK);
+  // Remove the running arc and add back arcs to EC and UNSCHED.
+  // TODO(ionel): Inform the cost model that this task has already failed.
+  flow_graph_->UpdateArcsForEvictedTask(task_id, res_id);
+
+  // Get the Google trace identifier of the task.
+  TaskIdentifier* ti_ptr = FindOrNull(task_id_to_identifier_, task_id);
+  CHECK_NOTNULL(ti_ptr);
+  // Get the end time of the task.
+  uint64_t* task_end_time = FindOrNull(task_id_to_end_time_, task_id);
+  CHECK_NOTNULL(task_end_time);
+  // Remove current task end time.
+  task_id_to_end_time_.erase(task_id);
+  // Remove the task end time event from the simulator events_.
+  pair<multimap<uint64_t, EventDescriptor>::iterator,
+       multimap<uint64_t, EventDescriptor>::iterator> range_it =
+    events_.equal_range(*task_end_time);
+  for (; range_it.first != range_it.second; range_it.first++) {
+    if (range_it.first->second.type() == EventDescriptor::TASK_END_RUNTIME &&
+        range_it.first->second.job_id() == ti_ptr->job_id &&
+        range_it.first->second.task_index() == ti_ptr->task_index) {
+      break;
+    }
+  }
+  // We've found the event.
+  if (range_it.first != range_it.second) {
+    events_.erase(range_it.first);
+  }
 }
 
 void GoogleTraceSimulator::ResetUuidAndAddResource(
@@ -537,7 +591,8 @@ void GoogleTraceSimulator::ReplayTrace() {
             VLOG(2) << "Res id to rd size: " << resource_map_->size();
             VLOG(2) << "Task binding: " << task_bindings_.size();
 
-            multimap<uint64_t, uint64_t>* task_mappings = quincy_dispatcher_->Run();
+            multimap<uint64_t, uint64_t>* task_mappings =
+              quincy_dispatcher_->Run();
 
             UpdateFlowGraph(time_interval_bound, &task_runtime, task_mappings);
 
@@ -565,9 +620,13 @@ void GoogleTraceSimulator::TaskCompleted(
   flow_graph_->DeleteTaskNode(task_id);
   // Erase from local state: task_id_to_td_, task_map_ and task_bindings_.
   task_id_to_td_.erase(task_identifier);
+  ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
+  CHECK_NOTNULL(res_id_ptr);
   task_bindings_.erase(task_id);
+  res_id_to_task_id_.erase(*res_id_ptr);
   task_map_->erase(task_id);
   task_id_to_identifier_.erase(task_id);
+  task_id_to_end_time_.erase(task_id);
   uint64_t* num_tasks = FindOrNull(job_num_tasks_, task_identifier.job_id);
   CHECK_NOTNULL(num_tasks);
   (*num_tasks)--;
@@ -609,7 +668,8 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       TaskID_t task_id = delta->task_id();
       ResourceID_t res_id = ResourceIDFromString(delta->resource_id());
       // Mark the task as scheduled
-      flow_graph_->Node(it->first)->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+      flow_graph_->Node(it->first)->type_.set_type(
+          FlowNodeType::SCHEDULED_TASK);
       TaskDescriptor** td = FindOrNull(*task_map_, task_id);
       ResourceStatus** rs = FindOrNull(*resource_map_, res_id);
       CHECK_NOTNULL(td);
@@ -618,8 +678,8 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       rd->set_state(ResourceDescriptor::RESOURCE_BUSY);
       pus_used.insert(res_id);
       (*td)->set_state(TaskDescriptor::RUNNING);
-      CHECK(InsertIfNotPresent(&task_bindings_, (*td)->uid(),
-                               ResourceIDFromString(rd->uuid())));
+      CHECK(InsertIfNotPresent(&task_bindings_, task_id, res_id));
+      CHECK(InsertIfNotPresent(&res_id_to_task_id_, res_id, task_id));
       // After the task is bound, we now remove all of its edges into the flow
       // graph apart from the bound resource.
       // N.B.: This disables preemption and migration!
@@ -627,13 +687,15 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       TaskIdentifier* task_identifier =
         FindOrNull(task_id_to_identifier_, task_id);
       CHECK_NOTNULL(task_identifier);
-      AddTaskEndEvent(scheduling_timestamp, *task_identifier, task_runtime);
+      AddTaskEndEvent(scheduling_timestamp, task_id, *task_identifier,
+                      task_runtime);
     } else if (delta->type() == SchedulingDelta::MIGRATE) {
       // Apply the scheduling delta.
       TaskID_t task_id = delta->task_id();
       ResourceID_t res_id = ResourceIDFromString(delta->resource_id());
       // Mark the task as scheduled
-      flow_graph_->Node(it->first)->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+      flow_graph_->Node(it->first)->type_.set_type(
+          FlowNodeType::SCHEDULED_TASK);
       TaskDescriptor** td = FindOrNull(*task_map_, task_id);
       ResourceStatus** rs = FindOrNull(*resource_map_, res_id);
       CHECK_NOTNULL(td);
@@ -642,7 +704,7 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       rd->set_state(ResourceDescriptor::RESOURCE_BUSY);
       pus_used.insert(res_id);
       (*td)->set_state(TaskDescriptor::RUNNING);
-      ResourceID_t* old_res_id = FindOrNull(task_bindings_,  (*td)->uid());
+      ResourceID_t* old_res_id = FindOrNull(task_bindings_, task_id);
       CHECK_NOTNULL(old_res_id);
       if (pus_used.find(*old_res_id) == pus_used.end()) {
         // The resource is now idle.
@@ -650,9 +712,10 @@ void GoogleTraceSimulator::UpdateFlowGraph(
         CHECK_NOTNULL(old_rs);
         ResourceDescriptor* old_rd = (*old_rs)->mutable_descriptor();
         old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
+        res_id_to_task_id_.erase(*old_res_id);
       }
-      InsertOrUpdate(&task_bindings_, (*td)->uid(),
-                     ResourceIDFromString(rd->uuid()));
+      InsertOrUpdate(&task_bindings_, task_id, res_id);
+      CHECK(InsertIfNotPresent(&res_id_to_task_id_, res_id, task_id));
     } else {
       LOG(FATAL) << "Unhandled scheduling delta case.";
     }

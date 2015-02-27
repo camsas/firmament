@@ -513,7 +513,8 @@ void FlowGraph::DeleteNode(FlowGraphNode* node) {
        ++it) {
     CHECK_EQ(it->first, it->second->dst_);
     CHECK_EQ(node->id_, it->second->src_);
-    CHECK_EQ(it->second->dst_node_->incoming_arc_map_.erase(it->second->src_), 1);
+    CHECK_EQ(it->second->dst_node_->incoming_arc_map_.erase(it->second->src_),
+             1);
     DeleteArc(it->second);
   }
   node->outgoing_arc_map_.clear();
@@ -524,7 +525,8 @@ void FlowGraph::DeleteNode(FlowGraphNode* node) {
        ++it) {
     CHECK_EQ(node->id_, it->second->dst_);
     CHECK_EQ(it->first, it->second->src_);
-    CHECK_EQ(it->second->src_node_->outgoing_arc_map_.erase(it->second->dst_), 1);
+    CHECK_EQ(it->second->src_node_->outgoing_arc_map_.erase(it->second->dst_),
+             1);
     DeleteArc(it->second);
   }
   node->incoming_arc_map_.clear();
@@ -682,6 +684,46 @@ void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
     VLOG(2) << "Disabling preemption for " << tid;
     // Disable preemption
     PinTaskToNode(task_node, assigned_res_node);
+  }
+}
+
+void FlowGraph::UpdateArcsForEvictedTask(TaskID_t task_id,
+                                         ResourceID_t res_id) {
+  FlowGraphNode* task_node = NodeForTaskID(task_id);
+
+  // Remove the arc to the resource node.
+  CHECK_EQ(task_node->outgoing_arc_map_.size(), 1);
+  FlowGraphArc* running_arc = task_node->outgoing_arc_map_.begin()->second;
+  DeleteArc(running_arc);
+
+  if (!FLAGS_preemption) {
+    // Add back arcs to equiv class node, unscheduled agg and to
+    // resource topology agg.
+    vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
+    uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_,
+                                               task_node->job_id_);
+    FlowGraphNode** unsched_agg_node_ptr =
+      FindOrNull(node_map_, *unsched_agg_node_id);
+    CHECK_NOTNULL(unsched_agg_node_ptr);
+
+    AddArcsForTask(task_node, *unsched_agg_node_ptr, task_arcs);
+    for (vector<FlowGraphArc*>::iterator it = task_arcs->begin();
+         it != task_arcs->end(); ++it) {
+      graph_changes_.push_back(new DIMACSNewArc(**it));
+    }
+    delete task_arcs;
+
+    FlowGraphNode** ec_node_ptr =
+      FindOrNull(job_to_equiv_node_, task_node->job_id_);
+    CHECK_NOTNULL(ec_node_ptr);
+    // Add arc to equivalence class node.
+    FlowGraphArc* ec_arc =
+      AddArcInternal(task_node->id_, (*ec_node_ptr)->id_);
+    graph_changes_.push_back(new DIMACSNewArc(*ec_arc));
+
+    // Add this task's potential flow from the per-job unscheduled
+    // aggregator's outgoing edge
+    AdjustUnscheduledAggToSinkCapacityGeneratingDelta(task_node->job_id_, 1);
   }
 }
 

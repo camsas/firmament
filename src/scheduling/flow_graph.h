@@ -46,6 +46,7 @@ class FlowGraph {
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
   void ResetChanges();
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
+  void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
   void UpdateResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void UpdateResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);

@@ -3,6 +3,8 @@
 
 #include "scheduling/quincy_dispatcher.h"
 
+#include <utility>
+
 #include <sys/stat.h>
 
 #include <boost/algorithm/string.hpp>
@@ -222,7 +224,8 @@ namespace scheduler {
   multimap<uint64_t, uint64_t>* QuincyDispatcher::GetMappings(
       vector< map< uint64_t, uint64_t > >* extracted_flow,
       unordered_set<uint64_t> leaves, uint64_t sink) {
-    multimap<uint64_t, uint64_t>* task_node = new multimap<uint64_t, uint64_t>();
+    multimap<uint64_t, uint64_t>* task_node =
+      new multimap<uint64_t, uint64_t>();
     unordered_set<uint64_t>::iterator set_it;
     for (set_it = leaves.begin(); set_it != leaves.end(); set_it++) {
       uint64_t* flow = FindOrNull((*extracted_flow)[sink], *set_it);
@@ -316,7 +319,8 @@ namespace scheduler {
 
   multimap<uint64_t, uint64_t>* QuincyDispatcher::ReadTaskMappingChanges(
       FILE* fptr) {
-    multimap<uint64_t, uint64_t>* task_node = new multimap<uint64_t, uint64_t>();
+    multimap<uint64_t, uint64_t>* task_node =
+      new multimap<uint64_t, uint64_t>();
     char line[100];
     vector<string> vals;
     bool end_of_iteration = false;

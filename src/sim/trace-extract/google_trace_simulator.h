@@ -69,7 +69,8 @@ class GoogleTraceSimulator {
   TaskDescriptor* AddNewTask(const TaskIdentifier& task_identifier);
 
   void AddTaskEndEvent(
-      uint64_t cur_timestamp, TaskIdentifier task_identifier,
+      uint64_t cur_timestamp, const TaskID_t& task_id,
+      TaskIdentifier task_identifier,
       unordered_map<TaskIdentifier, uint64_t,
                     TaskIdentifierHasher>* task_runtime);
 
@@ -144,6 +145,7 @@ class GoogleTraceSimulator {
   void ReplayTrace();
 
   void TaskCompleted(const TaskIdentifier& task_identifier);
+  void TaskEvicted(const TaskID_t& task_id, const ResourceID_t& res_id);
 
   EventDescriptor_EventType TranslateMachineEvent(int32_t machine_event);
 
@@ -184,7 +186,15 @@ class GoogleTraceSimulator {
   // Map from ResourceID_t to ResourceStatus*
   shared_ptr<ResourceMap_t> resource_map_;
 
+  // Map holding the ResourceID_t of every scheduled task.
   map<TaskID_t, ResourceID_t> task_bindings_;
+
+  // Map holding the end runtime for every running task.
+  map<TaskID_t, uint64_t> task_id_to_end_time_;
+
+  // Map holding the task_id of the task running on the resource with res_id.
+  unordered_map<ResourceID_t, TaskID_t,
+      boost::hash<boost::uuids::uuid> > res_id_to_task_id_;
 
   // The map storing the simulator events. Maps from timestamp to simulator
   // event.
