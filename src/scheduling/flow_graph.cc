@@ -690,12 +690,6 @@ void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
 void FlowGraph::UpdateArcsForEvictedTask(TaskID_t task_id,
                                          ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(task_id);
-
-  // Remove the arc to the resource node.
-  CHECK_EQ(task_node->outgoing_arc_map_.size(), 1);
-  FlowGraphArc* running_arc = task_node->outgoing_arc_map_.begin()->second;
-  DeleteArc(running_arc);
-
   if (!FLAGS_preemption) {
     // Add back arcs to equiv class node, unscheduled agg and to
     // resource topology agg.

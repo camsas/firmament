@@ -248,21 +248,18 @@ void GoogleTraceSimulator::BinTasksByEventType(uint64_t event,
 }
 
 void GoogleTraceSimulator::CreateRootResource() {
-  // Import a fictional machine resource topology
-  ResourceTopologyNodeDescriptor machine_tmpl;
-  int fd = open(MACHINE_TMPL_FILE, O_RDONLY);
-  machine_tmpl.ParseFromFileDescriptor(fd);
-  close(fd);
-
-  // Create the machines
   ResourceID_t root_uuid = GenerateRootResourceID("XXXgoogleXXX");
-  rtn_root_.mutable_resource_desc()->set_uuid(to_string(root_uuid));
+  ResourceDescriptor* rd = rtn_root_.mutable_resource_desc();
+  rd->set_uuid(to_string(root_uuid));
   LOG(INFO) << "Root res ID is " << to_string(root_uuid);
   CHECK(InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
                            to_string(root_uuid)));
 
   // Add resources and job to flow graph
   flow_graph_->AddResourceTopology(rtn_root_);
+  CHECK(InsertIfNotPresent(resource_map_.get(), root_uuid,
+                           new ResourceStatus(rd, "endpoint_uri",
+                                              GetCurrentTimestamp())));
 }
 
 void GoogleTraceSimulator::JobCompleted(uint64_t simulator_job_id,
@@ -433,9 +430,6 @@ void GoogleTraceSimulator::ProcessTaskEvent(
 void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
   ResourceDescriptor** rd_ptr = FindOrNull(machine_id_to_rd_, machine_id);
   CHECK_NOTNULL(rd_ptr);
-  // Delete the machine from the flow graph.
-  ResourceID_t res_id = ResourceIDFromString((*rd_ptr)->uuid());
-  flow_graph_->DeleteResourceNode(res_id);
   machine_id_to_rd_.erase(machine_id);
   ResourceTopologyNodeDescriptor** rtnd_ptr =
     FindOrNull(machine_id_to_rtnd_, machine_id);
@@ -443,11 +437,13 @@ void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
   DFSTraverseResourceProtobufTreeReturnRTND(
       *rtnd_ptr, boost::bind(&GoogleTraceSimulator::RemoveResource, this, _1));
   machine_id_to_rtnd_.erase(machine_id);
+  // TODO(ionel): Remove machine from the parent's children list.
 }
 
 void GoogleTraceSimulator::RemoveResource(
     ResourceTopologyNodeDescriptor* rtnd) {
   ResourceID_t res_id = ResourceIDFromString(rtnd->resource_desc().uuid());
+  flow_graph_->DeleteResourceNode(res_id);
   TaskID_t* task_id = FindOrNull(res_id_to_task_id_, res_id);
   if (task_id != NULL) {
     // Evict the task running on the resource.
@@ -464,10 +460,8 @@ void GoogleTraceSimulator::TaskEvicted(const TaskID_t& task_id,
   VLOG(2) << "Evict task " << task_id << " from resource " << res_id;
   TaskDescriptor** td_ptr = FindOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
-  task_bindings_.erase(task_id);
   // Change the state of the task from running to runnable.
   (*td_ptr)->set_state(TaskDescriptor::RUNNABLE);
-
   flow_graph_->NodeForTaskID(task_id)->type_.set_type(
       FlowNodeType::UNSCHEDULED_TASK);
   // Remove the running arc and add back arcs to EC and UNSCHED.
@@ -480,8 +474,6 @@ void GoogleTraceSimulator::TaskEvicted(const TaskID_t& task_id,
   // Get the end time of the task.
   uint64_t* task_end_time = FindOrNull(task_id_to_end_time_, task_id);
   CHECK_NOTNULL(task_end_time);
-  // Remove current task end time.
-  task_id_to_end_time_.erase(task_id);
   // Remove the task end time event from the simulator events_.
   pair<multimap<uint64_t, EventDescriptor>::iterator,
        multimap<uint64_t, EventDescriptor>::iterator> range_it =
@@ -493,6 +485,9 @@ void GoogleTraceSimulator::TaskEvicted(const TaskID_t& task_id,
       break;
     }
   }
+  task_bindings_.erase(task_id);
+  // Remove current task end time.
+  task_id_to_end_time_.erase(task_id);
   // We've found the event.
   if (range_it.first != range_it.second) {
     events_.erase(range_it.first);
