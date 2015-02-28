@@ -325,17 +325,16 @@ namespace scheduler {
     vector<string> vals;
     bool end_of_iteration = false;
     while (!end_of_iteration) {
-      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-        boost::split(vals, line, is_any_of(" "), token_compress_on);
-        if (!vals[0].compare("m")) {
-          if (vals.size() != 3) {
-            LOG(ERROR) << "Unexpected structure of task mapping changes row";
-          }
-          uint64_t task_id = lexical_cast<uint64_t>(vals[1]);
-          uint64_t core_id = lexical_cast<uint64_t>(vals[2]);
+      if (fgets(line, 100, fptr) != NULL) {
+        VLOG(1) << "Line: " << line;
+        if (line[0] == 'm') {
+          uint64_t task_id;
+          uint64_t core_id;
+          sscanf(line, "%*c %" SCNd64 " %" SCNd64, &task_id, &core_id);
           task_node->insert(pair<uint64_t, uint64_t>(task_id, core_id));
-        } else if (!vals[0].compare("c")) {
-          if (!vals[1].compare("EOI")) {
+        } else if (line[0] == 'c') {
+          if (line[2] == 'E' && line[3] == 'O' && line[4] == 'I' &&
+              line[5] == '\n') {
             end_of_iteration = true;
           }
         } else {
