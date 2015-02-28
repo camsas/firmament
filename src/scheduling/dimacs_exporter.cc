@@ -72,6 +72,8 @@ void DIMACSExporter::Export(const FlowGraph& graph) {
        a_iter != graph.Arcs().end();
        ++a_iter)
     output_ += GenerateArc(**a_iter);
+  // Add end of iteration comment.
+  output_ += GenerateComment("EOI");
 }
 
 void DIMACSExporter::ExportIncremental(const vector<DIMACSChange*>& changes) {
@@ -79,14 +81,14 @@ void DIMACSExporter::ExportIncremental(const vector<DIMACSChange*>& changes) {
        it != changes.end(); ++it) {
     output_ += (*it)->GenerateChange();
   }
+  // Add end of iteration comment.
+  output_ += GenerateComment("EOI");
 }
 
 void DIMACSExporter::Flush(const string& filename) {
   // TODO(malte): Sanity checks
   // Write the cached DIMACS graph string out to the file
   FILE* outfd = fopen(filename.c_str(), "w");
-  // Add end of iteration comment.
-  output_ += GenerateComment("EOI");
   fprintf(outfd, "%s", output_.c_str());
   fclose(outfd);
 }
@@ -98,19 +100,19 @@ void DIMACSExporter::Flush(int fd) {
   if ((stream = fdopen(fd, "w")) == NULL) {
     LOG(ERROR) << "Failed to open FD to solver for writing. FD: " << fd;
   } else {
-    // Add end of iteration comment.
-    output_ += GenerateComment("EOI");
     fprintf(stream, "%s", output_.c_str());
-    fflush(stream);
+    if (fflush(stream)) {
+      LOG(FATAL) << "Error while flushing";
+    }
   }
   fclose(stream);
 }
 
 void DIMACSExporter::Flush(FILE* stream) {
-  // Add end of iteration comment.
-  output_ += GenerateComment("EOI");
   fprintf(stream, "%s", output_.c_str());
-  fflush(stream);
+  if (fflush(stream)) {
+    LOG(FATAL) << "Error while flushing";
+  }
 }
 
 const string DIMACSExporter::GenerateArc(const FlowGraphArc& arc) {
