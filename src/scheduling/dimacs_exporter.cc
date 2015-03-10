@@ -139,14 +139,27 @@ const string DIMACSExporter::GenerateHeader(uint64_t num_nodes,
 
 const string DIMACSExporter::GenerateNode(const FlowGraphNode& node) {
   stringstream ss;
-  if (node.comment_ != "")
+  if (node.comment_ != "") {
     ss << "c nd " << node.task_id_ << " " << node.comment_ << "\n";
-  else if (!node.resource_id_.is_nil())
+  } else if (!node.resource_id_.is_nil()) {
     ss << "c nd " << node.task_id_ << " " << to_string(node.resource_id_)
        << "\n";
-  else if (node.task_id_)
+  } else if (node.task_id_) {
     ss << "c nd T_" << node.task_id_ << "\n";
-  ss << "n " << node.id_ << " " << node.excess_ << "\n";
+  }
+  uint32_t node_type = 0;
+  if (node.type_.type() == FlowNodeType::PU) {
+    node_type = 2;
+  } else if (node.type_.type() == FlowNodeType::SINK) {
+    node_type = 3;
+  } else if (node.type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+             node.type_.type() == FlowNodeType::SCHEDULED_TASK ||
+             node.type_.type() == FlowNodeType::ROOT_TASK) {
+    node_type = 1;
+  } else {
+    node_type = 0;
+  }
+  ss << "n " << node.id_ << " " << node.excess_ << " " << node_type << "\n";
   return ss.str();
 }
 
