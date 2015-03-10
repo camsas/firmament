@@ -83,6 +83,7 @@ namespace scheduler {
       if (!FLAGS_incremental_flow &&
           !FLAGS_flow_scheduling_solver.compare("flowlessly")) {
         args.push_back("--daemon=false");
+        args.push_back("--graph_has_node_types=true");
       }
       solver_pid = ExecCommandSync(solver_binary, args, outfd_, infd_);
       VLOG(2) << "Solver (" << FLAGS_flow_scheduling_solver << "running "
@@ -212,7 +213,7 @@ namespace scheduler {
     }
     // If here it means that the leaf node will not be assigned.
     // Should not happen because it initially had flow.
-    VLOG(1) << "Failed to find a task mapping for node " << node
+    VLOG(2) << "Failed to find a task mapping for node " << node
             << ", which has flow!";
     return 0;
   }
@@ -232,7 +233,7 @@ namespace scheduler {
         // This could technically be optimized and done in assign_node.
         // It's not done like that for now because we're only expecting one task
         // per leaf node.
-        VLOG(1) << "Have flow from PU node " << *set_it << " to sink: "
+        VLOG(2) << "Have flow from PU node " << *set_it << " to sink: "
                 << *flow;
         CHECK_EQ(*flow, 1);
         for (uint64_t flow_used = 1;  flow_used <= *flow; ++flow_used) {
@@ -324,11 +325,12 @@ namespace scheduler {
     bool end_of_iteration = false;
     while (!end_of_iteration) {
       if (fgets(line, 100, fptr) != NULL) {
-        VLOG(1) << "Line: " << line;
         if (line[0] == 'm') {
           uint64_t task_id;
           uint64_t core_id;
           sscanf(line, "%*c %" SCNd64 " %" SCNd64, &task_id, &core_id);
+          VLOG(1) << "Assigning task node " << task_id << " to PU node "
+                  << core_id;
           task_node->insert(pair<uint64_t, uint64_t>(task_id, core_id));
         } else if (line[0] == 'c') {
           if (line[2] == 'E' && line[3] == 'O' && line[4] == 'I' &&
