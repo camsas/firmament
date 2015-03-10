@@ -498,9 +498,8 @@ get_dep_wget "cpplint" "http://google-styleguide.googlecode.com/svn/trunk/cpplin
 
 ## CS2 solver code for min-cost max-flow scheduler.
 print_subhdr "CS2 MIN COST FLOW SOLVER"
-get_dep_wget "cs2" "http://igsystems.com/cs2/cs2-${CS2_VER}.tar"
-tar -xf cs2-${CS2_VER}.tar
-cd cs2-${CS2_VER}
+get_dep_git "cs2" "git@github.com:iveney/cs2.git"
+cd cs2-git
 if [[ ! -f cs2.exe ]]; then
   echo -n "Building..."
   # add patched makefile
@@ -524,7 +523,7 @@ else
   CONT=$(ask_continue_graceful)
 fi
 if [[ ${CONT} == "0" ]]; then
-  get_dep_git "flowlessly" "https://github.com/ICGog/FlowlesslyPrivate.git"
+  get_dep_git "flowlessly" "git@github.com:ICGog/FlowlesslyPrivate.git"
   cd flowlessly-git
   if [[ ! -f run_fast_cost_scaling ]]; then
     RES=$(make 2>/dev/null)
