@@ -55,6 +55,10 @@ class QuincyScheduler : public EventDrivenScheduler {
                    << parameters_.DebugString() << ">";
   }
 
+  const QuincyDispatcher& dispatcher() const {
+    return *quincy_dispatcher_;
+  }
+
  protected:
   const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
 
