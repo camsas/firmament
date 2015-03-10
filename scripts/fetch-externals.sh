@@ -6,6 +6,17 @@ else
   source include/bash_header.sh
 fi
 
+# Super-user? Should I run sudo commands non-interactively?
+USER=$(whoami)
+if [[ ${USER} == "root" ]]; then
+  NONINTERACTIVE=1
+else
+  NONINTERACTIVE=${NONINTERACTIVE:-0}
+fi
+if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+  echo "Running as root or with NONINTERACTIVE=1, so will attempt to sort things out non-interactively."
+fi
+
 # Valid targets: unix, scc, ia64
 TARGET="unix"
 
@@ -111,11 +122,15 @@ function check_dpkg_packages() {
     echo -n "The following packages are required to run ${PROJECT}, "
     echo "but are not currently installed: "
     echo ${MISSING_PKGS}
-    echo
-    echo "Please install them using the following commmand: "
-    echo "$ sudo apt-get install${MISSING_PKGS}"
-    echo
-    exit 1
+    if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+      sudo apt-get install ${MISSING_PKGS}
+    else
+      echo
+      echo "Please install them using the following commmand: "
+      echo "$ sudo apt-get install ${MISSING_PKGS}"
+      echo
+      exit 1
+    fi
   else
     echo -n "All required packages are installed."
     echo_success
@@ -264,14 +279,20 @@ then
     get_dep_deb "google-gflags" "http://gflags.googlecode.com/files/libgflags0_${GFLAGS_VER}-1_${ARCH}.deb"
     get_dep_deb "google-gflags" "http://gflags.googlecode.com/files/libgflags-dev_${GFLAGS_VER}-1_${ARCH}.deb"
     echo -n "libgflags not installed."
-    echo_failure
-    echo "Please install libgflags0_${GFLAGS_VER}_${ARCH}.deb "
-    echo "and libgflags-dev_${GFLAGS_VER}_${ARCH}.deb from the ${EXT_DIR}/ directiory:"
-    echo
-    echo "$ cd ${EXT_DIR}"
-    echo "$ sudo dpkg -i libgflags0_${GFLAGS_VER}-1_${ARCH}.deb"
-    echo "$ sudo dpkg -i libgflags-dev_${GFLAGS_VER}-1_${ARCH}.deb"
-    exit 1
+    if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+      echo "Installing..."
+      sudo dpkg -i ${EXT_DIR}/libgflags0_${GFLAGS_VER}-1_${ARCH}.deb
+      sudo dpkg -i ${EXT_DIR}/libgflags-dev_${GFLAGS_VER}-1_${ARCH}.deb
+    else
+      echo_failure
+      echo "Please install libgflags0_${GFLAGS_VER}_${ARCH}.deb "
+      echo "and libgflags-dev_${GFLAGS_VER}_${ARCH}.deb from the ${EXT_DIR}/ directiory:"
+      echo
+      echo "$ cd ${EXT_DIR}"
+      echo "$ sudo dpkg -i libgflags0_${GFLAGS_VER}-1_${ARCH}.deb"
+      echo "$ sudo dpkg -i libgflags-dev_${GFLAGS_VER}-1_${ARCH}.deb"
+      exit 1
+    fi
  fi
 else
   # non-deb OS -- need to get tarball and extract, config, make & install
@@ -286,13 +307,18 @@ else
   print_succ_or_fail $RES
   if [[ ${TARGET} != "scc" ]]; then
     echo "google-gflags library (v${GFLAGS_VER}) was built in ${GFLAGS_DIR}. "
-    echo "Please run the following commands to install it: "
-    echo
-    echo "$ cd ${EXT_DIR}/${GFLAGS_DIR}"
-    echo "$ sudo make install"
-    echo
-    echo "... and then re-run."
-    exit 1
+    if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+      echo "Installing..."
+      sudo make -C ${EXT_DIR}/${GFLAGS_DIR} install
+    else
+      echo "Please run the following commands to install it: "
+      echo
+      echo "$ cd ${EXT_DIR}/${GFLAGS_DIR}"
+      echo "$ sudo make install"
+      echo
+      echo "... and then re-run."
+      exit 1
+    fi
   fi
   cd ${EXT_DIR}
 fi
@@ -317,13 +343,18 @@ if [[ ${TARGET} == "scc" || ! -f ${GLOG_INSTALL_FILE} ]]; then
   print_succ_or_fail $RES
   if [[ ${TARGET} != "scc" ]]; then
     echo "google-glog library (v${GLOG_VER}) was built in ${GLOG_DIR}. "
-    echo "Please run the following commands to install it: "
-    echo
-    echo "$ cd ${EXT_DIR}/${GLOG_DIR}"
-    echo "$ sudo make install"
-    echo
-    echo "... and then re-run."
-    exit 1
+    if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+      echo "Installing..."
+      sudo make -C ${EXT_DIR}/${GLOG_DIR} install
+    else
+      echo "Please run the following commands to install it: "
+      echo
+      echo "$ cd ${EXT_DIR}/${GLOG_DIR}"
+      echo "$ sudo make install"
+      echo
+      echo "... and then re-run."
+      exit 1
+    fi
   fi
 else
   echo -n "Already installed!"
@@ -467,9 +498,8 @@ get_dep_wget "cpplint" "http://google-styleguide.googlecode.com/svn/trunk/cpplin
 
 ## CS2 solver code for min-cost max-flow scheduler.
 print_subhdr "CS2 MIN COST FLOW SOLVER"
-get_dep_wget "cs2" "http://igsystems.com/cs2/cs2-${CS2_VER}.tar"
-tar -xf cs2-${CS2_VER}.tar
-cd cs2-${CS2_VER}
+get_dep_git "cs2" "git@github.com:iveney/cs2.git"
+cd cs2-git
 if [[ ! -f cs2.exe ]]; then
   echo -n "Building..."
   # add patched makefile
@@ -484,11 +514,16 @@ cd ${EXT_DIR}
 
 ## Flowlessly solver code for min-cost max-flow scheduler.
 print_hdr "CHECKING OUT FLOWLESSLY CODE"
-echo "OPTIONAL: Do you want to check out the Flowlessly code base into the 'ext' directory?"
-echo -n "Do you want to check out the Flowlessly code? [yN] "
-CONT=$(ask_continue_graceful)
+if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+  echo "Trying to check out Flowlessly..."
+  CONT="0"
+else
+  echo "OPTIONAL: Do you want to check out the Flowlessly code base into the 'ext' directory?"
+  echo -n "Do you want to check out the Flowlessly code? [yN] "
+  CONT=$(ask_continue_graceful)
+fi
 if [[ ${CONT} == "0" ]]; then
-  get_dep_git "flowlessly" "https://github.com/ICGog/FlowlesslyPrivate.git"
+  get_dep_git "flowlessly" "git@github.com:ICGog/FlowlesslyPrivate.git"
   cd flowlessly-git
   if [[ ! -f run_fast_cost_scaling ]]; then
     RES=$(make 2>/dev/null)
@@ -502,7 +537,6 @@ else
   echo "Skipping."
 fi
 
-
 ## Cake (for building libDIOS)
 print_subhdr "CAKE BUILD TOOL"
 get_dep_git "cake" "https://github.com/Zomojo/Cake.git"
@@ -514,13 +548,18 @@ cd ${EXT_DIR}
 
 ## libDIOS checkout or ask user to request tarball
 print_hdr "CHECKING OUT LIBDIOS CODE"
-echo "OPTIONAL: Do you want to check out the libDIOS code base into the 'ext' directory?"
-echo "Note that this requires access to the CL NFS server for now (as the libDIOS repo is "
-echo "hosted there). Please contact malte.schwarzkopf@cl.cam.ac.uk if you do not have access."
-echo -n "Do you want to check out the libDIOS code? [yN] "
-CONT=$(ask_continue_graceful)
+if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+  echo "Skipping libDIOS code checkout as running non-interactively."
+  CONT="1"
+else
+  echo "OPTIONAL: Do you want to check out the libDIOS code base into the 'ext' directory?"
+  echo "Note that this requires access to the CL NFS server for now (as the libDIOS repo is "
+  echo "hosted there). Please contact malte.schwarzkopf@cl.cam.ac.uk if you do not have access."
+  echo -n "Do you want to check out the libDIOS code? [yN] "
+  CONT=$(ask_continue_graceful)
+fi
 if [[ ${CONT} == "0" ]]; then
-  get_dep_git "libdios" "slogin.cl.cam.ac.uk:/usr/groups/netos/libdios/"
+  get_dep_git "libdios" "git@github.com:mgrosvenor/libdios.git"
   cd libdios-git
   export PATH=${PATH}:${EXT_DIR}/cake-git/
   RES=$(./build.sh --quiet)
