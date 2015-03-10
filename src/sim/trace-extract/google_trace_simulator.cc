@@ -78,7 +78,7 @@ void GoogleTraceSimulator::Run() {
   FLAGS_debug_flow_graph = true;
   FLAGS_add_root_task_to_graph = false;
   if (!FLAGS_solver.compare("flowlessly")) {
-    FLAGS_incremental_flow = true;
+    FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
     FLAGS_flow_scheduling_solver = "flowlessly";
     FLAGS_only_read_assignment_changes = true;
     FLAGS_flowlessly_binary =
@@ -110,8 +110,7 @@ void GoogleTraceSimulator::Run() {
     } else {
       LOG(ERROR) << "Could not open bin output file.";
     }
-  }
-  if (FLAGS_run_incremental_scheduler) {
+  } else {
     ReplayTrace();
   }
 }

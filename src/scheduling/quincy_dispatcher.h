@@ -17,9 +17,9 @@ namespace scheduler {
 
 class QuincyDispatcher {
  public:
-  QuincyDispatcher(shared_ptr<FlowGraph> flow_graph, bool initial_solver_run)
+  QuincyDispatcher(shared_ptr<FlowGraph> flow_graph, bool solver_ran_once)
     : flow_graph_(flow_graph),
-      initial_solver_run_(initial_solver_run),
+      solver_ran_once_(solver_ran_once),
       debug_seq_num_(0) {
   }
 
@@ -45,7 +45,7 @@ class QuincyDispatcher {
   DIMACSExporter exporter_;
   // Boolean that indicates if the solver has knowledge of the flow graph (i.e.
   // it is set after the initial from scratch run of the solver).
-  bool initial_solver_run_;
+  bool solver_ran_once_;
   // Debug sequence number (for solver input/output files written to /tmp)
   uint64_t debug_seq_num_;
 

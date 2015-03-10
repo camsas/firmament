@@ -43,13 +43,12 @@ namespace scheduler {
       mkdir(FLAGS_debug_output_dir.c_str(), 0700);
     }
     // Adjusts the costs on the arcs from tasks to unsched aggs.
-    if (initial_solver_run_) {
+    if (solver_ran_once_) {
       flow_graph_->AdjustUnscheduledAggArcCosts();
     }
     // Blow away any old exporter state
     exporter_.Reset();
-    if (FLAGS_incremental_flow && initial_solver_run_ &&
-        FLAGS_flow_scheduling_solver.compare("cs2")) {
+    if (FLAGS_incremental_flow && solver_ran_once_) {
       exporter_.ExportIncremental(flow_graph_->graph_changes());
       flow_graph_->ResetChanges();
     } else {
@@ -75,18 +74,22 @@ namespace scheduler {
     SolverBinaryName(FLAGS_flow_scheduling_solver, &solver_binary);
     pid_t solver_pid;
 
-    if (!initial_solver_run_ || !FLAGS_flow_scheduling_solver.compare("cs2")) {
+    if (!solver_ran_once_ || !FLAGS_incremental_flow) {
       // Pipe setup
       // infd_[0] == PARENT_READ
       // infd_[1] == CHILD_WRITE
       // outfd_[0] == CHILD_READ
       // outfd_[1] == PARENT_WRITE
+      if (!FLAGS_incremental_flow &&
+          !FLAGS_flow_scheduling_solver.compare("flowlessly")) {
+        args.push_back("--daemon=false");
+      }
       solver_pid = ExecCommandSync(solver_binary, args, outfd_, infd_);
       VLOG(2) << "Solver (" << FLAGS_flow_scheduling_solver << "running "
               << "(PID: " << solver_pid << "), CHILD_READ: "
               << outfd_[0] << ", PARENT_WRITE: " << outfd_[1]
               << ", PARENT_READ: " << infd_[0] << ", CHILD_WRITE: " << infd_[1];
-      initial_solver_run_ = true;
+      solver_ran_once_ = true;
       if ((from_solver_ = fdopen(infd_[0], "r")) == NULL) {
         LOG(ERROR) << "Failed to open FD for reading solver's output. FD "
                    << infd_[0];
@@ -98,7 +101,7 @@ namespace scheduler {
     }
     // Write to pipe to solver
     exporter_.Flush(to_solver_);
-    if (!FLAGS_flow_scheduling_solver.compare("cs2")) {
+    if (!FLAGS_incremental_flow) {
       // We need to close the stream because that's what cs expects.
       fclose(to_solver_);
     }
@@ -113,14 +116,9 @@ namespace scheduler {
       task_mappings = GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
                                   flow_graph_->sink_node().id_);
     }
-    if (!FLAGS_incremental_flow ||
-        !FLAGS_flow_scheduling_solver.compare("cs2")) {
+    if (!FLAGS_incremental_flow) {
       // We're done with the solver and can let it terminate here.
       WaitForFinish(solver_pid);
-      if (FLAGS_flow_scheduling_solver.compare("cs2")) {
-        // We've already closed it if the solver is cs2.
-        fclose(to_solver_);
-      }
       fclose(from_solver_);
       // close the pipes
       close(outfd_[1]);

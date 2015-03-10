@@ -96,7 +96,7 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
 FlowGraphNode* FlowGraph::AddEquivClassAggregator(
     const TaskDescriptor& td, vector<FlowGraphArc*>* ec_arcs) {
   TaskEquivClass_t equiv_class = GenerateTaskEquivClass(td);
-  LOG(INFO) << "Equiv class for task " << td.uid() << " is "
+  VLOG(2) << "Equiv class for task " << td.uid() << " is "
           << equiv_class;
   FlowGraphNode** ec_node_ptr =
     FindOrNull(job_to_equiv_node_, JobIDFromString(td.job_id()));
