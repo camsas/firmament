@@ -96,9 +96,20 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
 FlowGraphNode* FlowGraph::AddEquivClassAggregator(
     const TaskDescriptor& td, vector<FlowGraphArc*>* ec_arcs) {
   TaskEquivClass_t equiv_class = GenerateTaskEquivClass(td);
-  FlowGraphNode* ec_node = AddNodeInternal(next_id());
-  CHECK(InsertIfNotPresent(&job_to_equiv_node_,
-                           JobIDFromString(td.job_id()), ec_node));
+  LOG(INFO) << "Equiv class for task " << td.uid() << " is "
+          << equiv_class;
+  FlowGraphNode** ec_node_ptr =
+    FindOrNull(job_to_equiv_node_, JobIDFromString(td.job_id()));
+  LOG(INFO) << "POSE FIND";
+  FlowGraphNode* ec_node;
+  if (ec_node_ptr != NULL) {
+    ec_node = *ec_node_ptr;
+    LOG(WARNING) << "Equiv class aggregator already exists";
+  } else {
+    ec_node = AddNodeInternal(next_id());
+    CHECK(InsertIfNotPresent(&job_to_equiv_node_,
+                             JobIDFromString(td.job_id()), ec_node));
+  }
   string comment;
   spf(&comment, "EC_AGG_%ju", equiv_class);
   ec_node->comment_ = comment;

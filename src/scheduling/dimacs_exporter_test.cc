@@ -149,10 +149,12 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
     spf(&bin, "%jd", rand_r(&seed));
     rt->set_binary(bin);
     rt->set_uid(GenerateRootTaskID(jd));
+    rt->set_job_id(jd.uuid());
     for (uint64_t k = 1; k < t; ++k) {
       TaskDescriptor* ct = rt->add_spawned();
       ct->set_uid(GenerateTaskID(*rt));
       ct->set_state(TaskDescriptor::RUNNABLE);
+      ct->set_job_id(jd.uuid());
     }
     g.AddOrUpdateJobNodes(&jd);
   }
@@ -225,10 +227,12 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
       spf(&bin, "%jd", rand_r(&seed));
       rt->set_binary(bin);
       rt->set_uid(GenerateRootTaskID(jd));
+      rt->set_job_id(jd.uuid());
       for (uint64_t k = 1; k < t; ++k) {
         TaskDescriptor* ct = rt->add_spawned();
         ct->set_uid(GenerateTaskID(*rt));
         ct->set_state(TaskDescriptor::RUNNABLE);
+        ct->set_job_id(jd.uuid());
       }
       g.AddOrUpdateJobNodes(&jd);
     }

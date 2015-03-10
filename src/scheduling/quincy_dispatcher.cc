@@ -214,8 +214,8 @@ namespace scheduler {
     }
     // If here it means that the leaf node will not be assigned.
     // Should not happen because it initially had flow.
-    LOG(WARNING) << "Failed to find a task mapping for node " << node
-                 << ", which has flow!";
+    VLOG(1) << "Failed to find a task mapping for node " << node
+            << ", which has flow!";
     return 0;
   }
 
