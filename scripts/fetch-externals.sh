@@ -123,7 +123,7 @@ function check_dpkg_packages() {
     echo "but are not currently installed: "
     echo ${MISSING_PKGS}
     if [[ ${NONINTERACTIVE} -eq 1 ]]; then
-      sudo apt-get install ${MISSING_PKGS}
+      sudo apt-get -y install ${MISSING_PKGS}
     else
       echo
       echo "Please install them using the following commmand: "
@@ -498,7 +498,7 @@ get_dep_wget "cpplint" "http://google-styleguide.googlecode.com/svn/trunk/cpplin
 
 ## CS2 solver code for min-cost max-flow scheduler.
 print_subhdr "CS2 MIN COST FLOW SOLVER"
-get_dep_git "cs2" "git@github.com:iveney/cs2.git"
+get_dep_git "cs2" "https://github.com/iveney/cs2.git"
 cd cs2-git
 if [[ ! -f cs2.exe ]]; then
   echo -n "Building..."
