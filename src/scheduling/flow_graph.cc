@@ -100,7 +100,6 @@ FlowGraphNode* FlowGraph::AddEquivClassAggregator(
           << equiv_class;
   FlowGraphNode** ec_node_ptr =
     FindOrNull(job_to_equiv_node_, JobIDFromString(td.job_id()));
-  LOG(INFO) << "POSE FIND";
   FlowGraphNode* ec_node;
   if (ec_node_ptr != NULL) {
     ec_node = *ec_node_ptr;

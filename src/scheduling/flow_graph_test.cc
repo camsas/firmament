@@ -88,8 +88,11 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;
-  test_job.mutable_root_task()->set_state(TaskDescriptor::RUNNABLE);
   test_job.set_uuid(to_string(jid));
+  TaskDescriptor* rt = test_job.mutable_root_task();
+  rt->set_state(TaskDescriptor::RUNNABLE);
+  rt->set_uid(GenerateRootTaskID(test_job));
+  rt->set_job_id(test_job.uuid());
   uint32_t num_changes = g.graph_changes_.size();
   uint32_t num_ids = g.ids_created_.size();
   g.AddOrUpdateJobNodes(&test_job);
@@ -246,8 +249,11 @@ TEST_F(FlowGraphTest, DeleteNodesForJob) {
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;
-  test_job.mutable_root_task()->set_state(TaskDescriptor::RUNNABLE);
   test_job.set_uuid(to_string(jid));
+  TaskDescriptor* rt = test_job.mutable_root_task();
+  rt->set_state(TaskDescriptor::RUNNABLE);
+  rt->set_uid(GenerateRootTaskID(test_job));
+  rt->set_job_id(test_job.uuid());
   uint32_t num_changes = g.graph_changes_.size();
   uint32_t num_ids = g.ids_created_.size();
   g.AddOrUpdateJobNodes(&test_job);
@@ -260,13 +266,13 @@ TEST_F(FlowGraphTest, DeleteNodesForJob) {
   CHECK_EQ(g.graph_changes_.size(), num_changes + 7);
   DIMACSRemoveNode* rm_task =
     static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 4]);
-  DIMACSRemoveNode* rm_equiv =
-    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 5]);
   DIMACSRemoveNode* rm_unsched =
+    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 5]);
+  DIMACSRemoveNode* rm_equiv =
     static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 6]);
   CHECK_EQ(rm_task->node_id_, root_task_graph_id);
-  CHECK_EQ(rm_equiv->node_id_, equiv_graph_id);
   CHECK_EQ(rm_unsched->node_id_, unsched_agg_graph_id);
+  CHECK_EQ(rm_equiv->node_id_, equiv_graph_id);
 }
 
 TEST_F(FlowGraphTest, ResetChanges) {
@@ -296,8 +302,11 @@ TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;
-  test_job.mutable_root_task()->set_state(TaskDescriptor::RUNNABLE);
   test_job.set_uuid(to_string(jid));
+  TaskDescriptor* rt = test_job.mutable_root_task();
+  rt->set_state(TaskDescriptor::RUNNABLE);
+  rt->set_uid(GenerateRootTaskID(test_job));
+  rt->set_job_id(test_job.uuid());
   g.AddOrUpdateJobNodes(&test_job);
   // Grab the unscheduled aggregator for the new job
   uint64_t* unsched_agg_node_id = FindOrNull(g.job_unsched_to_node_id_, jid);
