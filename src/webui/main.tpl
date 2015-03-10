@@ -26,4 +26,16 @@
   </tbody>
 </table>
 
+<h2>Scheduler</h2>
+
+<p><b>Active scheduler:</b> {{SCHEDULER_NAME}}
+
+<ol>
+{{#SCHEDULER_ITER}}
+  <li>Iteration {{SCHEDULER_ITER_ID}} &ndash; flow graph (<a href="/sched/?iter={{SCHEDULER_ITER_ID}}&a=dimacs">DIMACS</a>;
+                                                          <a href="/sched/?iter={{SCHEDULER_ITER_ID}}&a=gv">GV</a>;
+                                                          <a href="/sched/?iter={{SCHEDULER_ITER_ID}}&a=png">PNG</a>)</li>
+{{/SCHEDULER_ITER}}
+</ol>
+
 {{>PAGE_FOOTER}}

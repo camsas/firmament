@@ -20,9 +20,13 @@
 #include "misc/equivclasses.h"
 #include "messages/task_kill_message.pb.h"
 #include "scheduling/knowledge_base.h"
+#include "scheduling/quincy_dispatcher.h"
+#include "scheduling/quincy_scheduler.h"
 #include "storage/types.h"
 
 DECLARE_string(task_log_directory);
+DECLARE_string(scheduler);
+DECLARE_string(debug_output_dir);
 
 namespace firmament {
 namespace webui {
@@ -117,6 +121,19 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
   dict.SetIntValue("NUM_REFERENCES_CONCRETE",
                    coordinator_->get_object_store()->NumReferencesOfType(
                        ReferenceDescriptor::CONCRETE));
+  // Scheduler information
+  if (FLAGS_scheduler == "simple") {
+    dict.SetValue("SCHEDULER_NAME", "queue-based");
+  } else if (FLAGS_scheduler == "quincy") {
+    dict.SetValue("SCHEDULER_NAME", "flow optmisation");
+    const QuincyScheduler* sched =
+      dynamic_cast<const QuincyScheduler*>(coordinator_->scheduler());
+    for (uint64_t i = 0; i < sched->dispatcher().seq_num(); ++i) {
+      TemplateDictionary* iteration_dict =
+          dict.AddSectionDictionary("SCHEDULER_ITER");
+      iteration_dict->SetIntValue("SCHEDULER_ITER_ID", i);
+    }
+  }
   AddFooterToTemplate(&dict);
   string output;
   ExpandTemplate("src/webui/main.tpl", ctemplate::DO_NOT_STRIP, &dict, &output);
@@ -474,6 +491,40 @@ void CoordinatorHTTPUI::HandleReferenceURI(http::request_ptr& http_request,  // 
   FinishOkResponse(writer);
 }
 
+void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLINT
+                                       tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  string iter_id = http_request->get_query("iter");
+  if (iter_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
+  string action = http_request->get_query("a");
+  string graph_filename = FLAGS_debug_output_dir;
+  if (action.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  } else {
+    if (action == "png") {
+      graph_filename += "/debug_" + iter_id + ".dm.png";
+    } else if (action == "gv") {
+      graph_filename += "/debug_" + iter_id + ".dm.gv";
+    } else if (action == "dimacs") {
+      graph_filename += "/debug_" + iter_id + ".dm";
+    } else {
+      ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                    tcp_conn);
+      return;
+    }
+  }
+  ServeFile(graph_filename, tcp_conn, http_request, writer);
+  FinishOkResponse(writer);
+}
+
 void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  // NOLINT
                                             tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -681,25 +732,7 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
       return;
     }
   }
-  int logfd = open(tasklog_filename.c_str(), O_RDONLY);
-  if (logfd < 0) {
-    PLOG(ERROR) << "Failed to open task log file for reading.";
-    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
-                  tcp_conn);
-  }
-  string output(256, '\0');
-  while (true) {
-    int64_t n = read(logfd, &output[0], 256);
-    if (n < 0) {
-      PLOG(ERROR) << "Tasklog send data: read from log failed";
-      ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
-                    tcp_conn);
-      return;
-    } else if (n == 0) {
-      break;
-    }
-    writer->write(&output[0], n);
-  }
+  ServeFile(tasklog_filename, tcp_conn, http_request, writer);
   FinishOkResponse(writer);
 }
 
@@ -804,6 +837,9 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Reference list
     coordinator_http_server_->add_resource("/refs/", boost::bind(
         &CoordinatorHTTPUI::HandleReferencesListURI, this, _1, _2));
+    // Scheduler data
+    coordinator_http_server_->add_resource("/sched/", boost::bind(
+        &CoordinatorHTTPUI::HandleSchedURI, this, _1, _2));
     // Statistics data serving pages
     coordinator_http_server_->add_resource("/stats/", boost::bind(
         &CoordinatorHTTPUI::HandleStatisticsURI, this, _1, _2));
@@ -822,6 +858,31 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
   } catch(const std::exception& e) {
     LOG(ERROR) << "Failed running the coordinator's HTTP UI due to "
                << e.what();
+  }
+}
+
+void CoordinatorHTTPUI::ServeFile(const string& filename,
+                                  tcp::connection_ptr& tcp_conn,
+                                  http::request_ptr& http_request,
+                                  http::response_writer_ptr writer) { 
+  int fd = open(filename.c_str(), O_RDONLY);
+  if (fd < 0) {
+    PLOG(ERROR) << "Failed to open file for reading.";
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+  }
+  string output(256, '\0');
+  while (true) {
+    int64_t n = read(fd, &output[0], 256);
+    if (n < 0) {
+      PLOG(ERROR) << "Send data: read from file failed";
+      ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                    tcp_conn);
+      return;
+    } else if (n == 0) {
+      break;
+    }
+    writer->write(&output[0], n);
   }
 }
 

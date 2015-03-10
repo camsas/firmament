@@ -214,6 +214,9 @@ class Coordinator : public Node,
   const KnowledgeBase* knowledge_base() {
     return knowledge_base_;
   }
+  const SchedulerInterface* scheduler() const {
+    return scheduler_;
+  }
 
   void InformStorageEngineNewResource(ResourceDescriptor* rd);
   void KillRunningTask(TaskID_t task_id,
