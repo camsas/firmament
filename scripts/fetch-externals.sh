@@ -6,17 +6,6 @@ else
   source include/bash_header.sh
 fi
 
-# Super-user? Should I run sudo commands non-interactively?
-USER=$(whoami)
-if [[ ${USER} == "root" ]]; then
-  NONINTERACTIVE=1
-else
-  NONINTERACTIVE=${NONINTERACTIVE:-0}
-fi
-if [[ ${NONINTERACTIVE} -eq 1 ]]; then
-  echo "Running as root or with NONINTERACTIVE=1, so will attempt to sort things out non-interactively."
-fi
-
 # Valid targets: unix, scc, ia64
 TARGET="unix"
 
@@ -56,9 +45,24 @@ else
   source ../include/pkglist.generic
 fi
 
+# Flowlessly deployment key
+FLOWLESSLY_DEPLOY_KEY=~/.ssh/flowlessly-deploy_rsa
+
 UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
 DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
 DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
+
+# Super-user? Should I run sudo commands non-interactively?
+USER=$(whoami)
+if [[ ${USER} == "root" ]]; then
+  NONINTERACTIVE=1
+else
+  NONINTERACTIVE=${NONINTERACTIVE:-0}
+fi
+if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+  echo "Running as root or with NONINTERACTIVE=1, so will attempt to sort things out non-interactively."
+fi
+
 
 #################################
 
@@ -498,7 +502,7 @@ get_dep_wget "cpplint" "http://google-styleguide.googlecode.com/svn/trunk/cpplin
 
 ## CS2 solver code for min-cost max-flow scheduler.
 print_subhdr "CS2 MIN COST FLOW SOLVER"
-get_dep_git "cs2" "git@github.com:iveney/cs2.git"
+get_dep_git "cs2" "https://github.com/iveney/cs2.git"
 cd cs2-git
 if [[ ! -f cs2.exe ]]; then
   echo -n "Building..."
@@ -522,8 +526,8 @@ else
   echo -n "Do you want to check out the Flowlessly code? [yN] "
   CONT=$(ask_continue_graceful)
 fi
-if [[ ${CONT} == "0" ]]; then
-  get_dep_git "flowlessly" "git@github.com:ICGog/FlowlesslyPrivate.git"
+if [[ ${CONT} == "0" && -f ${FLOWLESSLY_DEPLOY_KEY} ]]; then
+  ssh-agent bash -c "ssh-add ${FLOWLESSLY_DEPLOY_KEY}; git clone git@github.com:ICGog/FlowlesslyPrivate.git flowlessly-git"
   cd flowlessly-git
   if [[ ! -f run_fast_cost_scaling ]]; then
     RES=$(make 2>/dev/null)
