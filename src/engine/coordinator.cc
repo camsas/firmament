@@ -212,7 +212,7 @@ void Coordinator::Run() {
     VLOG(1) << parent_chan_->LocalEndpointString();
     VLOG(1) << parent_chan_->RemoteEndpointString();
     RegisterWithCoordinator(parent_chan_);
-    InformStorageEngineNewResource(&resource_desc_);
+    //InformStorageEngineNewResource(&resource_desc_);
   }
 
   uint64_t cur_time = 0;
