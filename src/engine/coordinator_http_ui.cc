@@ -125,7 +125,7 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
   if (FLAGS_scheduler == "simple") {
     dict.SetValue("SCHEDULER_NAME", "queue-based");
   } else if (FLAGS_scheduler == "quincy") {
-    dict.SetValue("SCHEDULER_NAME", "flow optmisation");
+    dict.SetValue("SCHEDULER_NAME", "flow optimization");
     const QuincyScheduler* sched =
       dynamic_cast<const QuincyScheduler*>(coordinator_->scheduler());
     for (uint64_t i = 0; i < sched->dispatcher().seq_num(); ++i) {
