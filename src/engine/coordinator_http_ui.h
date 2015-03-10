@@ -69,6 +69,8 @@ class CoordinatorHTTPUI {
                           tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleReferencesListURI(http::request_ptr& http_request, // NOLINT
                                tcp::connection_ptr& tcp_conn);  // NOLINT
+  void HandleSchedURI(http::request_ptr& http_request, // NOLINT
+                      tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleStatisticsURI(http::request_ptr& http_request, // NOLINT
                            tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleTaskURI(http::request_ptr& http_request, // NOLINT
@@ -77,6 +79,9 @@ class CoordinatorHTTPUI {
                         tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleShutdownURI(http::request_ptr& http_request, // NOLINT
                          tcp::connection_ptr& tcp_conn);  // NOLINT
+  void ServeFile(const string& filename, tcp::connection_ptr& tcp_conn,
+                 http::request_ptr& http_request,
+                 http::response_writer_ptr writer);
   void Shutdown(bool block);
 
   inline bool active() { return active_; }
