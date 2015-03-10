@@ -156,11 +156,16 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
     // Update the job in the flow graph. This method also adds the new task to
     // the flow graph.
     flow_graph_->AddOrUpdateJobNodes(jd_ptr);
-    CHECK(InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr));
-    CHECK(InsertIfNotPresent(&task_id_to_identifier_,
-                             td_ptr->uid(), task_identifier));
-    // Add task to the google (job_id, task_index) to TaskDescriptor* map.
-    CHECK(InsertIfNotPresent(&task_id_to_td_, task_identifier, td_ptr));
+    if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
+      CHECK(InsertIfNotPresent(&task_id_to_identifier_,
+                               td_ptr->uid(), task_identifier));
+      // Add task to the google (job_id, task_index) to TaskDescriptor* map.
+      CHECK(InsertIfNotPresent(&task_id_to_td_, task_identifier, td_ptr));
+    } else {
+      // TODO(ionel): We should handle duplicate task ids. At the moment they
+      // end up beging added to the graph and never removed.
+      LOG(WARNING) << "Duplicate task id: " << td_ptr->uid();
+    }
   }
   return td_ptr;
 }
@@ -356,7 +361,8 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>&
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
-        if (!InsertIfNotPresent(task_runtime, task_id, runtime)) {
+        if (!InsertIfNotPresent(task_runtime, task_id, runtime) &&
+            VLOG_IS_ON(1)) {
           LOG(ERROR) << "There should not be more than an entry for job "
                      << task_id.job_id << ", task " << task_id.task_index;
         }
@@ -585,6 +591,8 @@ void GoogleTraceSimulator::ReplayTrace() {
             VLOG(2) << "Task id to td size: " << task_map_->size();
             VLOG(2) << "Res id to rd size: " << resource_map_->size();
             VLOG(2) << "Task binding: " << task_bindings_.size();
+
+            LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
 
             multimap<uint64_t, uint64_t>* task_mappings =
               quincy_dispatcher_->Run();
