@@ -21,7 +21,7 @@ TaskLib *task_lib;
 
 void TerminationCleanup() {
   if (task_lib) {
-    task_lib->Stop();
+    task_lib->Stop(true);
   }
 }
 

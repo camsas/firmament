@@ -97,7 +97,7 @@ TaskLib::~TaskLib() {
   }
 }
 
-void TaskLib::Stop() {
+void TaskLib::Stop(bool success) {
   printf("STOP CALLED\n");
   fflush(stdout);
   stop_ = true;
@@ -108,7 +108,7 @@ void TaskLib::Stop() {
   sleep(1);
   printf("Sending finalize message\n");
   fflush(stdout);
-  SendFinalizeMessage(true);
+  SendFinalizeMessage(success);
   printf("Finalise message sent\n");
   fflush(stdout);
   // Remove PID file
@@ -163,11 +163,6 @@ void TaskLib::AddCompletionStatistics(TaskPerfStatisticsSample *ts) {
   if (completed_ >= 1.0) {
     exit_ = true;
   }
-}
-
-void TaskLib::AwaitNextMessage() {
-  // Finally, call back into ourselves.
-  //AwaitNextMessage();
 }
 
 void TaskLib::SetCompleted(double completed) {
@@ -237,6 +232,20 @@ void TaskLib::ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec) {
   }
 }
 
+void TaskLib::HandleIncomingMessage(BaseMessage *bm,
+                                    const string& remote_endpoint) {
+  LOG(INFO) << "Got message from " << remote_endpoint << ": "
+            << bm->DebugString();
+  // Registration message
+  if (bm->has_task_kill()) {
+    const TaskKillMessage& msg = bm->task_kill();
+    LOG(ERROR) << "Received task kill request from " << remote_endpoint
+               << ", terminating due to " << msg.reason();
+    Stop(false);
+    exit(1);
+  }
+}
+
 void TaskLib::HandleWrite(const boost::system::error_code& error,
         size_t bytes_transferred) {
   VLOG(1) << "In HandleWrite, thread is " << boost::this_thread::get_id();
@@ -272,9 +281,15 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   FLAGS_logtostderr = true;
   //VLOG(3) << "COORDINATOR URI: " << FLAGS_coordinator_uri;
   ConnectToCoordinator(coordinator_uri_);
-  VLOG(3) << "Setting up storage engine";
-  setUpStorageEngine();
-  VLOG(2) << "Finished setting up storage engine";
+  m_adapter_->RegisterAsyncMessageReceiptCallback(
+      boost::bind(&TaskLib::HandleIncomingMessage, this, _1, _2));
+  //m_adapter_->RegisterAsyncErrorPathCallback(
+  //        boost::bind(&Coordinator::HandleIncomingReceiveError, this,
+  //        boost::asio::placeholders::error, _2));
+
+  //VLOG(3) << "Setting up storage engine";
+  //setUpStorageEngine();
+  //VLOG(2) << "Finished setting up storage engine";
 
   task_running_ = true;
   VLOG(3) << "Setting up process statistics\n";
@@ -302,10 +317,13 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
       }
       SendHeartbeat(current_stats);
 
-      sleep(FLAGS_heartbeat_interval);
       // TODO(malte): We'll need to receive any potential messages from the
       // coordinator here, too. This is probably best done by a simple RecvA on
       // the channel.
+      m_adapter_->AwaitNextMessage();
+ 
+      // Finally, nap for a bit until the next heartbeat is due
+      sleep(FLAGS_heartbeat_interval);
     }
   printf("STOPPING HEARTBEATS\n");
   fflush(stdout);
@@ -318,9 +336,9 @@ void TaskLib::SendFinalizeMessage(bool success) {
   if (success)
     SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::COMPLETED);
   else
-    LOG(FATAL) << "Unimplemented error path!";
+    SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::ABORTED);
   VLOG(1) << "Sending finalize message (task state change to "
-          << (success ? "COMPLETED" : "FAILED") << ")!";
+          << (success ? "COMPLETED" : "ABORTED") << ")!";
   //SendMessageToCoordinator(&bm);
   Envelope<BaseMessage> envelope(&bm);
   CHECK(chan_->SendS(envelope));
