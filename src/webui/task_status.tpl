@@ -153,9 +153,9 @@ $(function() {
   <tr>
     <td>Location</td>
     <td>
-       <a href="http://{{TASK_LOCATION_HOST}}:8080/task/?id={{TASK_ID}}">{{TASK_LOCATION}}</a>
+       <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/task/?id={{TASK_ID}}">{{TASK_LOCATION}}</a>
        {{#TASK_DELEGATION}}
-       (delegated from <a href="http://{{TASK_DELEGATED_FROM_HOST}}:8080/task/?id={{TASK_ID}}">{{TASK_DELEGATED_FROM_HOST}}</a>)
+       (delegated from <a href="http://{{TASK_DELEGATED_FROM_HOST}}:{{WEBUI_PORT}}/task/?id={{TASK_ID}}">{{TASK_DELEGATED_FROM_HOST}}</a>)
        {{/TASK_DELEGATION}}
     </td>
   </tr>
@@ -192,8 +192,8 @@ $(function() {
   <tr>
     <td>Logs</td>
     <td>
-      <a href="/tasklog/?id={{TASK_ID}}&a=1">stdout</a> &ndash;
-      <a href="/tasklog/?id={{TASK_ID}}&a=2">stderr</a>
+      <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/tasklog/?id={{TASK_ID}}&a=1">stdout</a> &ndash;
+      <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/tasklog/?id={{TASK_ID}}&a=2">stderr</a>
     </td>
   </tr>
   <tr>

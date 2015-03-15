@@ -110,7 +110,7 @@ $(function() {
   </tr>
   <tr>
     <td>Last location</td>
-    <td><a href="http://{{RES_LOCATION_HOST}}:8080/resource/?id={{RES_ID}}">{{RES_LOCATION}}</a></td>
+    <td><a href="http://{{RES_LOCATION_HOST}}:{{WEBUI_PORT}}/resource/?id={{RES_ID}}">{{RES_LOCATION}}</a></td>
   </tr>
   <tr>
     <td>Last heartbeat</td>
