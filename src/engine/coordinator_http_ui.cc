@@ -656,7 +656,7 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     if (td_ptr->has_last_location()) {
       dict.SetValue("TASK_LOCATION", td_ptr->last_location());
       dict.SetValue("TASK_LOCATION_HOST",
-                    URITools:: GetHostnameFromURI(td_ptr->last_location()));
+                    URITools::GetHostnameFromURI(td_ptr->last_location()));
     } else {
       dict.SetValue("TASK_LOCATION", "unknown");
     }
