@@ -97,7 +97,7 @@ class TaskLib {
   void SetCompleted(double completed);
 
   // Terminate tasklib.
-  void Stop();
+  void Stop(bool success);
 
   Cache_t* getCache() {
     return cache;
@@ -117,8 +117,11 @@ class TaskLib {
       const ProcFSMonitor::ProcessStatistics_t& proc_stats,
       TaskPerfStatisticsSample* stats);
   void ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec);
+  void HandleIncomingMessage(BaseMessage *bm,
+                             const string& remote_endpoint);
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
+
   bool PullTaskInformationFromCoordinator(TaskID_t task_id,
                                           TaskDescriptor* desc);
   void SendFinalizeMessage(bool success);
