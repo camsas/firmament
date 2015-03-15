@@ -33,7 +33,7 @@ RemoteExecutor::RemoteExecutor(
 }
 
 bool RemoteExecutor::CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks) {
-  LOG(FATAL) << "Unimplemented!";
+  LOG(ERROR) << "CheckRunningTasksHealth is unimplemented for RemoteExecutor!";
   return false;
 }
 
