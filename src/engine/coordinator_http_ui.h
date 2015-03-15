@@ -55,6 +55,8 @@ class CoordinatorHTTPUI {
                           tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleJobDTGURI(http::request_ptr& http_request, // NOLINT
                        tcp::connection_ptr& tcp_conn);  // NOLINT
+  void HandleLogURI(http::request_ptr& http_request, // NOLINT
+                    tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleRootURI(http::request_ptr& http_request, // NOLINT
                      tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleResourcesListURI(http::request_ptr& http_request, // NOLINT

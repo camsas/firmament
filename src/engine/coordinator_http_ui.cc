@@ -458,6 +458,28 @@ void CoordinatorHTTPUI::HandleJobDTGURI(http::request_ptr& http_request,  // NOL
   }
 }
 
+void CoordinatorHTTPUI::HandleLogURI(http::request_ptr& http_request,  // NOLINT
+                                     tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  string log = http_request->get_query("log");
+  if (log.empty() && !(log == "INFO" || log == "WARNING" || log == "ERROR")) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
+  if (FLAGS_log_dir.empty()) {
+    writer->write("Need to specify --log_dir on cooordinator command line to "
+                  "enable remote log viewing.");
+    FinishOkResponse(writer);
+  } else {
+    string log_filename = FLAGS_log_dir + "/coordinator." + log;
+    ServeFile(log_filename, tcp_conn, http_request, writer);
+    FinishOkResponse(writer);
+  }
+}
+
 void CoordinatorHTTPUI::HandleReferenceURI(http::request_ptr& http_request,  // NOLINT
                                            tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -849,6 +871,9 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Job task graph
     coordinator_http_server_->add_resource("/job/dtg/", boost::bind(
         &CoordinatorHTTPUI::HandleJobDTGURI, this, _1, _2));
+    // Log for coordinator
+    coordinator_http_server_->add_resource("/log/", boost::bind(
+        &CoordinatorHTTPUI::HandleLogURI, this, _1, _2));
     // Resource list
     coordinator_http_server_->add_resource("/resources/", boost::bind(
         &CoordinatorHTTPUI::HandleResourcesListURI, this, _1, _2));
