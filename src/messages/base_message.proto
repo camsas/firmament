@@ -80,28 +80,27 @@ message BaseMessage {
   optional StorageRegistrationMessage storage_registration = 7;
   optional TaskInfoRequestMessage task_info_request = 8;
   optional TaskInfoResponseMessage task_info_response = 9;
-  optional TaskDelegationMessage task_delegation = 10;
-  optional ObtainObjectMessage obtain_object = 11;
-  optional StorageDiscoverMessage storage_discover = 12;
-  optional StorageHeartBeatMessage storage_heartbeat = 13;
-  optional ObjectInfoMessage object_info = 14;
-  optional TaskKillMessage task_kill = 15;
-  optional TaskFinalReport taskfinal_report = 31;
+  optional TaskDelegationRequestMessage task_delegation_request = 10;
+  optional TaskDelegationResponseMessage task_delegation_response = 11;
+  optional ObtainObjectMessage obtain_object = 12;
+  optional StorageDiscoverMessage storage_discover = 13;
+  optional StorageHeartBeatMessage storage_heartbeat = 14;
+  optional ObjectInfoMessage object_info = 15;
+  optional TaskKillMessage task_kill = 16;
+  optional TaskFinalReport taskfinal_report = 17;
   // -----------------------------
   // libDIOS messages
-  optional CopyRequest copy_request = 16;
-  optional CopyResponse copy_response = 17;
-  optional CreateRequest create_request = 18;
-  optional CreateResponse create_response = 19;
-  optional DeleteNotification delete_notification = 20;
-  optional BeginReadNotification begin_read_notification = 21;
-  optional EndReadNotification end_read_notification = 22;
-  optional BeginWriteNotification begin_write_notification = 23;
-  optional EndWriteNotification end_write_notification = 24;
-  optional EndWriteFinalNotification end_write_final_notification = 25;
-  optional SelectNotification select_notification = 26;
-  optional LookupRequest lookup_request = 27;
-  optional LookupResponse lookup_response = 28;
-  // Tag-on
-  optional TaskDelegationResponse task_delegation_response = 29;
+  optional CopyRequest copy_request = 18;
+  optional CopyResponse copy_response = 19;
+  optional CreateRequest create_request = 20;
+  optional CreateResponse create_response = 21;
+  optional DeleteNotification delete_notification = 22;
+  optional BeginReadNotification begin_read_notification = 23;
+  optional EndReadNotification end_read_notification = 24;
+  optional BeginWriteNotification begin_write_notification = 25;
+  optional EndWriteNotification end_write_notification = 26;
+  optional EndWriteFinalNotification end_write_final_notification = 27;
+  optional SelectNotification select_notification = 28;
+  optional LookupRequest lookup_request = 29;
+  optional LookupResponse lookup_response = 30;
 }
