@@ -7,7 +7,7 @@
 <p><strong>ID:</strong> {{COORD_ID}}</p>
 <p><strong>Hostname:</strong> {{COORD_HOST}}</p>
 {{#COORD_HAS_PARENT}}
-<p><strong>Parent:</strong> {{COORD_PARENT_URI}} (<a href=http://{{COORD_PARENT_HOST}}:{{WEBUI_PORT}}">{{COORD_PARENT_HOST}}</a>)</p>
+<p><strong>Parent:</strong> {{COORD_PARENT_URI}} (<a href="http://{{COORD_PARENT_HOST}}:{{WEBUI_PORT}}">{{COORD_PARENT_HOST}}</a>)</p>
 {{/COORD_HAS_PARENT}}
 <p><strong>Logs:</strong> <a href="/log?log=ERROR">ERROR</a> &ndash; <a href="/log?log=WARNING">WARNING</a> &ndash; <a href="/log?log=INFO">INFO</a></p>
 
