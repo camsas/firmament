@@ -30,8 +30,8 @@ if len(sys.argv) > 4:
   job_desc.root_task.args.extend(shlex.split(sys.argv[4]))
 #job_desc.root_task.args.append("--v=2")
 job_desc.root_task.inject_task_lib = True
-if len(sys.argv) == 6:
-  input_id = binascii.unhexlify(sys.argv[4])
+if len(sys.argv) == 7:
+  input_id = binascii.unhexlify(sys.argv[6])
 else:
   input_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 output_id = binascii.unhexlify('db33daba280d8e68eea6e490723b02cedb33daba280d8e68eea6e490723b02ce')
