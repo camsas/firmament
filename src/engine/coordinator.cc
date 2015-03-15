@@ -69,7 +69,7 @@ Coordinator::Coordinator(PlatformID platform_id)
   resource_desc_.set_uuid(to_string(uuid_));
   resource_desc_.set_friendly_name(desc_name);
   resource_desc_.set_type(ResourceDescriptor::RESOURCE_MACHINE);
-  resource_desc_.set_storage_engine(object_store_->get_listening_interface());
+  //resource_desc_.set_storage_engine(object_store_->get_listening_interface());
   local_resource_topology_->mutable_resource_desc()->CopyFrom(
       resource_desc_);
 
@@ -98,8 +98,8 @@ Coordinator::Coordinator(PlatformID platform_id)
   // Log information
   LOG(INFO) << "Coordinator starting on host " << FLAGS_listen_uri
           << ", platform " << platform_id << ", uuid " << uuid_;
-  LOG(INFO) << "Storage Engine is listening on interface : "
-            << object_store_->get_listening_interface();
+  //LOG(INFO) << "Storage Engine is listening on interface : "
+  //          << object_store_->get_listening_interface();
   switch (platform_id) {
       case PL_UNIX:
       {
@@ -376,17 +376,17 @@ void Coordinator::HandleCreateRequest(const CreateRequest& msg,
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
   boost::uuids::string_generator gen;
   boost::uuids::uuid uuid = gen(msg.uuid());
-  ResourceStatus** rsp = FindOrNull(*associated_resources_, uuid);
+  ResourceStatus* rsp = FindPtrOrNull(*associated_resources_, uuid);
   if (!rsp) {
       LOG(WARNING) << "HEARTBEAT from UNKNOWN resource (uuid: "
               << msg.uuid() << ")!";
   } else {
       LOG(INFO) << "HEARTBEAT from resource " << msg.uuid()
-                << " (last seen at " << (*rsp)->last_heartbeat() << ")";
+                << " (last seen at " << rsp->last_heartbeat() << ")";
       if (msg.has_load())
         VLOG(2) << "Remote resource stats: " << msg.load().ShortDebugString();
       // Update timestamp
-      (*rsp)->set_last_heartbeat(GetCurrentTimestamp());
+      rsp->set_last_heartbeat(GetCurrentTimestamp());
       // Record resource statistics sample
       knowledge_base_->AddMachineSample(msg.load());
   }
@@ -887,9 +887,9 @@ void Coordinator::InformStorageEngineNewResource(ResourceDescriptor* rd_new) {
   BaseMessage base;
   StorageRegistrationMessage* message = new StorageRegistrationMessage();
   message->set_peer(true);
-  CHECK_NE(rd_new->storage_engine(), "")
-    << "Storage engine URI missing on resource " << rd_new->uuid();
-  message->set_storage_interface(rd_new->storage_engine());
+  //CHECK_NE(rd_new->storage_engine(), "")
+  //  << "Storage engine URI missing on resource " << rd_new->uuid();
+  //message->set_storage_interface(rd_new->storage_engine());
   message->set_uuid(rd_new->uuid());
 
   StorageRegistrationMessage& message_ref = *message;
