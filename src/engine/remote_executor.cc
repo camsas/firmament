@@ -65,8 +65,6 @@ bool RemoteExecutor::SendTaskExecutionMessage(
   TaskDescriptor* msg_td =
       exec_message.mutable_task_delegation_request()->
           mutable_task_descriptor();
-  // Set the task's location
-  td->set_last_location(chan->RemoteEndpointString());
   // N.B. copies task descriptor
   msg_td->CopyFrom(*td);
   // XXX(malte): HACK
