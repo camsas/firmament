@@ -304,9 +304,15 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
     handled_extensions++;
   }
   // Task delegation message
-  if (bm->has_task_delegation()) {
-    const TaskDelegationMessage& msg = bm->task_delegation();
+  if (bm->has_task_delegation_request()) {
+    const TaskDelegationRequestMessage& msg = bm->task_delegation_request();
     HandleTaskDelegationRequest(msg, remote_endpoint);
+    handled_extensions++;
+  }
+  // Task delegation message
+  if (bm->has_task_delegation_response()) {
+    const TaskDelegationResponseMessage& msg = bm->task_delegation_response();
+    HandleTaskDelegationResponse(msg, remote_endpoint);
     handled_extensions++;
   }
   // DIOS syscall: create message
@@ -340,7 +346,7 @@ void Coordinator::HandleIncomingReceiveError(
     // Connection terminated, handle accordingly
     LOG(INFO) << "Connection to " << remote_endpoint << " closed.";
     // XXX(malte): Need to figure out if this relates to a resource, and if so,
-    // if we should declare it failed; or whether this is an expected job
+    // if we should declare it failed; or whether this is an expected task
     // completion.
   } else {
     LOG(WARNING) << "Failed to complete a message receive cycle from "
@@ -517,7 +523,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
 }
 
 void Coordinator::HandleTaskDelegationRequest(
-    const TaskDelegationMessage& msg,
+    const TaskDelegationRequestMessage& msg,
     const string& remote_endpoint) {
   VLOG(1) << "Handling requested delegation of task "
           << msg.task_descriptor().uid() << " from resource "
@@ -541,6 +547,16 @@ void Coordinator::HandleTaskDelegationRequest(
     SUBMSG_WRITE(response, task_delegation_response, success, false);
   }
   m_adapter_->SendMessageToEndpoint(remote_endpoint, response);
+}
+
+void Coordinator::HandleTaskDelegationResponse(
+    const TaskDelegationResponseMessage& msg,
+    const string& remote_endpoint) {
+  LOG(INFO) << "Got TaskDelegationResponse from " << remote_endpoint;
+  TaskDescriptor* td = FindPtrOrNull(*task_table_, msg.task_id());
+  CHECK_NOTNULL(td);
+  td->set_last_location(remote_endpoint);
+  LOG(ERROR) << "Task delegation response handler not fully implemented!";
 }
 
 void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,

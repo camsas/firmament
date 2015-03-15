@@ -243,8 +243,10 @@ class Coordinator : public Node,
   void HandleIONotification(const BaseMessage& msg,
                             const string& remote_uri);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
-  void HandleTaskDelegationRequest(const TaskDelegationMessage& msg,
+  void HandleTaskDelegationRequest(const TaskDelegationRequestMessage& msg,
                                    const string& endpoint);
+  void HandleTaskDelegationResponse(const TaskDelegationResponseMessage& msg,
+                                    const string& endpoint);
   void HandleTaskFinalReport(const TaskFinalReport& report);
   void HandleTaskHeartbeat(const TaskHeartbeatMessage& msg);
   void HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
