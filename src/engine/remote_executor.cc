@@ -62,7 +62,6 @@ MessagingChannelInterface<BaseMessage>* RemoteExecutor::GetChannel() {
           << ", endpoint " << remote_endpoint;
   MessagingChannelInterface<BaseMessage>* chan =
       m_adapter_ptr_->GetChannelForEndpoint(remote_endpoint);
-  VLOG(1) << "Chan is " << chan;
   return chan;
 }
 
@@ -73,14 +72,15 @@ bool RemoteExecutor::SendTaskExecutionMessage(
   // Craft a task execution message
   BaseMessage exec_message;
   TaskDescriptor* msg_td =
-      exec_message.mutable_task_delegation()->mutable_task_descriptor();
+      exec_message.mutable_task_delegation_request()->
+          mutable_task_descriptor();
   // N.B. copies task descriptor
   msg_td->CopyFrom(*td);
   // XXX(malte): HACK
   msg_td->set_delegated_from(FLAGS_listen_uri);
-  SUBMSG_WRITE(exec_message, task_delegation, target_resource_id,
+  SUBMSG_WRITE(exec_message, task_delegation_request, target_resource_id,
                to_string(remote_resource_id_));
-  SUBMSG_WRITE(exec_message, task_delegation, delegating_resource_id,
+  SUBMSG_WRITE(exec_message, task_delegation_request, delegating_resource_id,
                to_string(local_resource_id_));
   Envelope<BaseMessage> envelope(&exec_message);
   // Send it to the relevant resource's coordinator

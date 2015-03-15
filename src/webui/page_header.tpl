@@ -8,18 +8,20 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="/resource/?id={{RESOURCE_ID}}">{{RESOURCE_ID}}</a>
+        <a class="navbar-brand" href="/resource/?id={{RESOURCE_ID}}"><b>{{RESOURCE_HOST}}</b> ({{RESOURCE_ID}})</a>
       </div>
       <div id="navbar" class="navbar-collapse collapse">
         <ul class="nav navbar-nav">
           <li class="active"><a href="/">Home</a></li>
           <li><a href="/jobs">Jobs</a></li>
+          <li><a href="/tasks">Tasks</a></li>
           <li><a href="/resources">Resources</a></li>
           <li><a href="/refs">References</a></li>
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Actions <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu">
               <li><a href="/shutdown">Shutdown</a></li>
+              <li><a href="/kbexport">Serialize KB</a></li>
             </ul>
           </li>
         </ul>

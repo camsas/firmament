@@ -16,8 +16,9 @@
 
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
-#include "misc/utils.h"
 #include "misc/equivclasses.h"
+#include "misc/utils.h"
+#include "misc/uri_tools.h"
 #include "messages/task_kill_message.pb.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/quincy_dispatcher.h"
@@ -60,6 +61,7 @@ void CoordinatorHTTPUI::AddHeaderToTemplate(TemplateDictionary* dict,
       dict->AddIncludeDictionary("PAGE_HEADER");
   pgheader_sub_dict->SetFilename("src/webui/page_header.tpl");
   pgheader_sub_dict->SetValue("RESOURCE_ID", to_string(uuid));
+  pgheader_sub_dict->SetValue("RESOURCE_HOST", coordinator_->hostname());
   // Error message, if set
   if (err) {
     TemplateDictionary* err_dict =
@@ -107,6 +109,7 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
   TemplateDictionary dict("main");
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   dict.SetValue("COORD_ID", to_string(coordinator_->uuid()));
+  dict.SetValue("COORD_HOST", coordinator_->hostname());
   dict.SetIntValue("NUM_JOBS_KNOWN", coordinator_->NumJobs());
   dict.SetIntValue("NUM_JOBS_RUNNING", coordinator_->NumJobsInState(
       JobDescriptor::RUNNING));
@@ -345,6 +348,8 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
       child_dict->SetValue("RES_CHILD_ID", *c_iter);
     }
     dict.SetValue("RES_LOCATION", rs_ptr->location());
+    dict.SetValue("RES_LOCATION_HOST",
+                  URITools::GetHostnameFromURI(rs_ptr->location()));
     dict.SetIntValue("RES_LAST_HEARTBEAT", rs_ptr->last_heartbeat());
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
@@ -647,6 +652,21 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     dict.SetValue("TASK_ARGS", arg_string);
     dict.SetValue("TASK_STATUS", ENUM_TO_STRING(TaskDescriptor::TaskState,
                                                 td_ptr->state()));
+    // Location
+    if (td_ptr->has_last_location()) {
+      dict.SetValue("TASK_LOCATION", td_ptr->last_location());
+      dict.SetValue("TASK_LOCATION_HOST",
+                    URITools::GetHostnameFromURI(td_ptr->last_location()));
+    } else {
+      dict.SetValue("TASK_LOCATION", "unknown");
+    }
+    if (td_ptr->has_delegated_from()) {
+      TemplateDictionary* del_dict =
+          dict.AddSectionDictionary("TASK_DELEGATION");
+      del_dict->SetValue("TASK_DELEGATED_FROM_HOST",
+                         URITools::GetHostnameFromURI(
+                             td_ptr->delegated_from()));
+    }
     // Equivalence classes
     dict.SetValue("TASK_TEC", to_string(GenerateTaskEquivClass(*td_ptr)));
     // Dependencies
