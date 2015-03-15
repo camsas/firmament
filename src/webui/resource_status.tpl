@@ -110,10 +110,10 @@ $(function() {
   </tr>
   <tr>
     <td>Last location</td>
-    <td>{{RES_LOCATION}}</td>
+    <td><a href="http://{{RES_LOCATION_HOST}}:8080/resource/?id={{RES_ID}}">{{RES_LOCATION}}</a></td>
   </tr>
   <tr>
-    <td>Last hearbeat</td>
+    <td>Last heartbeat</td>
     <td>{{RES_LAST_HEARTBEAT}}</td>
   </tr>
   <tr>

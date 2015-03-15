@@ -68,5 +68,14 @@
 
   <!-- Sparklines for resource consumption -->
   <script src="http://www.omnipotent.net/jquery.sparkline/2.1.2/jquery.sparkline.min.js"></script>
+
+  <!-- Workaround for JQS + bootstrap issue -->
+  <style>
+    .jqstooltip {
+      width: auto !important;
+      height: auto !important;
+    }
+  </style>
+
 </head>
 

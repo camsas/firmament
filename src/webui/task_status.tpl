@@ -143,12 +143,21 @@ $(function() {
     <td>{{TASK_ARGS}}</td>
   </tr>
   <tr>
-    <td>Equivalence class</td>
+    <td>Equivalence classes</td>
     <td>{{TASK_TEC}}</td>
   </tr>
   <tr>
     <td>Status</td>
     <td>{{TASK_STATUS}}</td>
+  </tr>
+  <tr>
+    <td>Location</td>
+    <td>
+       <a href="http://{{TASK_LOCATION_HOST}}:8080/task/?id={{TASK_ID}}">{{TASK_LOCATION}}</a>
+       {{#TASK_DELEGATION}
+       (delegated from <a href="http://{{TASK_DELEGATED_FROM_HOST}}:8080">{{TASK_DELEGATED_FROM_HOST}}</a>)
+       {{/TASK_DELEGATION}
+    </td>
   </tr>
   <tr>
     <td>Dependencies</td>

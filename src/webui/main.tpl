@@ -5,6 +5,7 @@
 <h1>Firmament coordinator</h1>
 
 <p><strong>ID:</strong> {{COORD_ID}}</p>
+<p><strong>Hostname:</strong> {{COORD_HOST}}</p>
 
 <h2>Overview</h2>
 <table class="table table-bordered">
