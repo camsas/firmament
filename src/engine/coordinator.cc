@@ -218,6 +218,7 @@ void Coordinator::Run() {
     VLOG(1) << parent_chan_->LocalEndpointString();
     VLOG(1) << parent_chan_->RemoteEndpointString();
     RegisterWithCoordinator(parent_chan_);
+    parent_uri_ = FLAGS_parent_uri;
     //InformStorageEngineNewResource(&resource_desc_);
   }
 

@@ -94,6 +94,7 @@ class CoordinatorHTTPUI {
   http::server_ptr coordinator_http_server_;
   shared_ptr<Coordinator> coordinator_;
   bool active_;
+  uint16_t port_;
 };
 
 }  // namespace webui

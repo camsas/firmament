@@ -218,6 +218,9 @@ class Coordinator : public Node,
   const KnowledgeBase* knowledge_base() {
     return knowledge_base_;
   }
+  const string& parent_uri() {
+    return parent_uri_;
+  }
   const SchedulerInterface* scheduler() const {
     return scheduler_;
   }
@@ -298,6 +301,8 @@ class Coordinator : public Node,
   // which case this will be a stub that defers to another scheduler.
   // TODO(malte): Work out the detailed semantics of this.
   SchedulerInterface* scheduler_;
+  // Store URI of parent coordinator (if any)
+  string parent_uri_;
   // Pointer to channel to the parent coordinator
   StreamSocketsChannel<BaseMessage>* parent_chan_;
   // Machine statistics monitor

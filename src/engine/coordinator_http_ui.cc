@@ -53,6 +53,8 @@ CoordinatorHTTPUI::~CoordinatorHTTPUI() {
 void CoordinatorHTTPUI::AddHeaderToTemplate(TemplateDictionary* dict,
                                             ResourceID_t uuid,
                                             ErrorMessage_t* err) {
+  // Global: set web UI port
+  dict->SetIntValue("WEBUI_PORT", port_);
   // HTML header
   TemplateDictionary* header_sub_dict = dict->AddIncludeDictionary("HEADER");
   header_sub_dict->SetFilename("src/webui/header.tpl");
@@ -110,6 +112,14 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   dict.SetValue("COORD_ID", to_string(coordinator_->uuid()));
   dict.SetValue("COORD_HOST", coordinator_->hostname());
+  if (!coordinator_->parent_uri().empty()) {
+    TemplateDictionary* parent_dict =
+        dict.AddSectionDictionary("COORD_HAS_PARENT");
+    parent_dict->SetValue("COORD_PARENT_URI", coordinator_->parent_uri());
+    parent_dict->SetValue("COORD_PARENT_HOST",
+                          URITools::GetHostnameFromURI(
+                              coordinator_->parent_uri()));
+  }
   dict.SetIntValue("NUM_JOBS_KNOWN", coordinator_->NumJobs());
   dict.SetIntValue("NUM_JOBS_RUNNING", coordinator_->NumJobsInState(
       JobDescriptor::RUNNING));
@@ -873,6 +883,7 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     coordinator_http_server_->add_resource("/shutdown/", boost::bind(
         &CoordinatorHTTPUI::HandleShutdownURI, this, _1, _2));
     // Start the HTTP server
+    port_ = port;
     coordinator_http_server_->start();  // spawns a thread!
     LOG(INFO) << "Coordinator HTTP interface up!";
   } catch(const std::exception& e) {
