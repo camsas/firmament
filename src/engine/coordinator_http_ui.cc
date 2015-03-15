@@ -719,7 +719,8 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
       dict.SetValue("TASK_LOCATION_HOST",
                     URITools::GetHostnameFromURI(td_ptr->last_location()));
     } else {
-      dict.SetValue("TASK_LOCATION", "unknown");
+      dict.SetValue("TASK_LOCATION", "local");
+      dict.SetValue("TASK_LOCATION_HOST", "localhost");
     }
     if (td_ptr->has_delegated_from()) {
       TemplateDictionary* del_dict =
