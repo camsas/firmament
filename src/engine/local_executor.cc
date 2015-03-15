@@ -17,6 +17,7 @@ extern "C" {
 
 #include "base/common.h"
 #include "base/types.h"
+#include "engine/task_health_checker.h"
 #include "misc/equivclasses.h"
 #include "misc/utils.h"
 #include "misc/map-util.h"
@@ -41,6 +42,7 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
                              const string& coordinator_uri)
     : local_resource_id_(resource_id),
       coordinator_uri_(coordinator_uri),
+      health_checker_(&task_handler_threads_, &handler_map_mutex_),
       topology_manager_(shared_ptr<TopologyManager>()),  // NULL
       heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
@@ -52,6 +54,7 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
                              shared_ptr<TopologyManager> topology_mgr)
     : local_resource_id_(resource_id),
       coordinator_uri_(coordinator_uri),
+      health_checker_(&task_handler_threads_, &handler_map_mutex_),
       topology_manager_(topology_mgr),
       heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
@@ -78,6 +81,18 @@ char* LocalExecutor::AddDebuggingToCommandLine(vector<char*>* argv) {
   else if (FLAGS_debug_interactively != 0)
     dbg_string = "gdb '-ex run --args ";
   return TokenizeIntoArgv(dbg_string, argv);
+}
+
+bool LocalExecutor::CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks) {
+  return health_checker_.Run(failed_tasks);
+}
+
+void LocalExecutor::CleanUpCompletedTask(const TaskDescriptor& td) {
+  // Drop task handler thread
+  boost::unique_lock<boost::shared_mutex> lock(handler_map_mutex_);
+  task_handler_threads_.erase(td.uid());
+  // Remove the start time from the map
+  task_start_times_.erase(td.uid());
 }
 
 void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
@@ -148,8 +163,14 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
     // this. Multiplication by 1M converts from microseconds to seconds.
     report->set_runtime(end_time / 1000000.0 - *start_time / 1000000.0);
   }
-  // Remove the start time from the map
-  task_start_times_.erase(td.uid());
+  // Now clean up any remaining state.
+  CleanUpCompletedTask(td);
+}
+
+void LocalExecutor::HandleTaskFailure(const TaskDescriptor& td) {
+  // Nothing to be done other than cleaning up; there is no final
+  // report for failed task at this time.
+  CleanUpCompletedTask(td);
 }
 
 void LocalExecutor::RunTask(TaskDescriptor* td,
@@ -162,12 +183,12 @@ void LocalExecutor::RunTask(TaskDescriptor* td,
   td->set_start_time(start_time);
   // XXX(malte): Move this over to use RunProcessAsync, instead of custom thread
   // spawning.
-  // TODO(malte): We lose the thread reference here, so we can never join this
-  // thread. Need to return or store if we ever need it for anythign again.
-  boost::unique_lock<boost::mutex> lock(exec_mutex_);
-  boost::thread per_task_thread(
+  boost::unique_lock<boost::mutex> exec_lock(exec_mutex_);
+  boost::unique_lock<boost::shared_mutex> handler_lock(handler_map_mutex_);
+  boost::thread* task_thread = new boost::thread(
       boost::bind(&LocalExecutor::_RunTask, this, td, firmament_binary));
-  exec_condvar_.wait(lock);
+  InsertIfNotPresent(&task_handler_threads_, td->uid(), task_thread);
+  exec_condvar_.wait(exec_lock);
 }
 
 bool LocalExecutor::_RunTask(TaskDescriptor* td,

@@ -31,6 +31,7 @@
 #include "base/resource_desc.pb.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "base/task_graph.h"
+#include "engine/health_monitor.h"
 #include "engine/node.h"
 // XXX(malte): include order dependency
 #include "platforms/unix/common.h"
@@ -279,6 +280,10 @@ class Coordinator : public Node,
   // TODO(malte): figure out if we need task_table_ and job_table_ in addition
   // to this.
   TaskGraphMap_t task_graph_table_;
+  // The health monitor periodically checks on the liveness of subordinate
+  // coordinators and running tasks.
+  HealthMonitor health_monitor_;
+  boost::thread* health_monitor_thread_;
   // The topology manager associated with this coordinator; responsible for the
   // local resources.
   shared_ptr<TopologyManager> topology_manager_;

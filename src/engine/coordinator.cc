@@ -20,8 +20,10 @@
 #include "base/resource_desc.pb.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "base/task_final_report.pb.h"
-#include "storage/simple_object_store.h"
+#include "engine/health_monitor.h"
 #include "messages/base_message.pb.h"
+#include "messages/storage_registration_message.pb.h"
+#include "messages/storage_message.pb.h"
 #include "misc/pb_utils.h"
 #include "misc/protobuf_envelope.h"
 #include "misc/map-util.h"
@@ -29,8 +31,7 @@
 #include "scheduling/scheduling_parameters.pb.h"
 #include "scheduling/simple_scheduler.h"
 #include "scheduling/quincy_scheduler.h"
-#include "messages/storage_registration_message.pb.h"
-#include "messages/storage_message.pb.h"
+#include "storage/simple_object_store.h"
 
 
 // It is necessary to declare listen_uri here, since "node.o" comes after
@@ -107,6 +108,11 @@ Coordinator::Coordinator(PlatformID platform_id)
       default:
           LOG(FATAL) << "Unimplemented!";
   }
+
+  // Start health monitor thread (won't have much to do initially)
+  health_monitor_thread_ =
+    new boost::thread(boost::bind(&HealthMonitor::Run, health_monitor_,
+                                  scheduler_, associated_resources_));
 }
 
 Coordinator::~Coordinator() {

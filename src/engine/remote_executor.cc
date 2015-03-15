@@ -32,9 +32,18 @@ RemoteExecutor::RemoteExecutor(
       m_adapter_ptr_(m_adapter_ptr) {
 }
 
+bool RemoteExecutor::CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks) {
+  LOG(FATAL) << "Unimplemented!";
+  return false;
+}
+
 void RemoteExecutor::HandleTaskCompletion(const TaskDescriptor& td,
                                           TaskFinalReport* report) {
   LOG(ERROR) << "Remote task completion handler is unimplemented!";
+}
+
+void RemoteExecutor::HandleTaskFailure(const TaskDescriptor& td) {
+  LOG(ERROR) << "Remote task failure handler is unimplemented!";
 }
 
 void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {

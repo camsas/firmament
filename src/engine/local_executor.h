@@ -25,6 +25,7 @@
 #include "base/types.h"
 #include "base/task_final_report.pb.h"
 #include "engine/executor_interface.h"
+#include "engine/task_health_checker.h"
 #include "engine/topology_manager.h"
 
 namespace firmament {
@@ -39,6 +40,10 @@ class LocalExecutor : public ExecutorInterface {
   LocalExecutor(ResourceID_t resource_id,
                 const string& coordinator_uri,
                 shared_ptr<TopologyManager> topology_mgr);
+  bool CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks);
+  void HandleTaskCompletion(const TaskDescriptor& td,
+                            TaskFinalReport* report);
+  void HandleTaskFailure(const TaskDescriptor& td);
   void RunTask(TaskDescriptor* td,
                bool firmament_binary);
   virtual ostream& ToString(ostream* stream) const {
@@ -59,10 +64,9 @@ class LocalExecutor : public ExecutorInterface {
   ResourceID_t local_resource_id_;
   char* AddPerfMonitoringToCommandLine(vector<char*>* argv);
   char* AddDebuggingToCommandLine(vector<char*>* argv);
+  void CleanUpCompletedTask(const TaskDescriptor& td);
   void GetPerfDataFromLine(TaskFinalReport* report,
                            const string& line);
-  void HandleTaskCompletion(const TaskDescriptor& td,
-                            TaskFinalReport* report);
   int32_t RunProcessAsync(const string& cmdline,
                           vector<string> args,
                           bool perf_monitoring,
@@ -85,6 +89,8 @@ class LocalExecutor : public ExecutorInterface {
   // This holds the currently configured URI of the coordinator for this
   // resource (which must be unique, for now).
   const string coordinator_uri_;
+  // The health manager checks on the liveness of locally managed tasks.
+  TaskHealthChecker health_checker_;
   // Local pointer to topology manager
   // TODO(malte): Figure out what to do if this local executor is associated
   // with a dumb worker, who does not have topology support!
@@ -93,9 +99,11 @@ class LocalExecutor : public ExecutorInterface {
   // nanoseconds.
   uint64_t heartbeat_interval_;
   boost::mutex exec_mutex_;
+  boost::shared_mutex handler_map_mutex_;
   boost::condition_variable exec_condvar_;
 
   unordered_map<TaskID_t, uint64_t> task_start_times_;
+  unordered_map<TaskID_t, boost::thread*> task_handler_threads_;
 };
 
 }  // namespace executor
