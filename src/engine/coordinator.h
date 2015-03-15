@@ -126,15 +126,15 @@ class Coordinator : public Node,
   // Gets a pointer to the resource status for an associated resource.
   // Returns NULL if not associated.
   ResourceStatus* GetResourceStatus(ResourceID_t res_id) {
-    ResourceStatus** res = FindOrNull(*associated_resources_, res_id);
-    return (res ? *res : NULL);
+    ResourceStatus* res = FindPtrOrNull(*associated_resources_, res_id);
+    return res;
   }
 
   // Gets the current location (endpoint) of an associated resource.
   // Returns NULL if not associated.
   const string GetLocationForResource(ResourceID_t res_id) {
-    ResourceStatus** res = FindOrNull(*associated_resources_, res_id);
-    return (res ? (*res)->location() : NULL);
+    ResourceStatus* res = FindPtrOrNull(*associated_resources_, res_id);
+    return res->location();
   }
 
   // Gets a pointer to the job descriptor for a job known to the coordinator.
@@ -146,8 +146,8 @@ class Coordinator : public Node,
   // Gets a pointer to the task descriptor for a task known to the coordinator.
   // If the task is not known to the coordinator, we will return NULL.
   TaskDescriptor* GetTask(TaskID_t task_id) {
-    TaskDescriptor** result = FindOrNull(*task_table_, task_id);
-    return (result ? *result : NULL);
+    TaskDescriptor* result = FindPtrOrNull(*task_table_, task_id);
+    return result;
   }
   inline size_t NumResources() { return associated_resources_->size(); }
   inline size_t NumJobs() { return job_table_->size(); }
