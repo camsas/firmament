@@ -14,6 +14,7 @@
         <ul class="nav navbar-nav">
           <li class="active"><a href="/">Home</a></li>
           <li><a href="/jobs">Jobs</a></li>
+          <li><a href="/tasks">Tasks</a></li>
           <li><a href="/resources">Resources</a></li>
           <li><a href="/refs">References</a></li>
           <li class="dropdown">

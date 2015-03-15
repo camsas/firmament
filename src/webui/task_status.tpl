@@ -155,7 +155,7 @@ $(function() {
     <td>
        <a href="http://{{TASK_LOCATION_HOST}}:8080/task/?id={{TASK_ID}}">{{TASK_LOCATION}}</a>
        {{#TASK_DELEGATION}}
-       (delegated from <a href="http://{{TASK_DELEGATED_FROM_HOST}}:8080">{{TASK_DELEGATED_FROM_HOST}}</a>)
+       (delegated from <a href="http://{{TASK_DELEGATED_FROM_HOST}}:8080/task/?id={{TASK_ID}}">{{TASK_DELEGATED_FROM_HOST}}</a>)
        {{/TASK_DELEGATION}}
     </td>
   </tr>
