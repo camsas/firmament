@@ -648,6 +648,35 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   FinishOkResponse(writer);
 }
 
+void CoordinatorHTTPUI::HandleTasksListURI(http::request_ptr& http_request,  // NOLINT
+                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Get task list from coordinator
+  vector<TaskDescriptor*> tasks = coordinator_->active_tasks();
+  TemplateDictionary dict("tasks_list");
+  AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+  AddFooterToTemplate(&dict);
+  for (vector<TaskDescriptor*>::const_iterator td_iter =
+       tasks.begin();
+       td_iter != tasks.end();
+       ++td_iter) {
+    TemplateDictionary* sect_dict = dict.AddSectionDictionary("TASK_DATA");
+    sect_dict->SetIntValue("TASK_ID", (*td_iter)->uid());
+    sect_dict->SetValue("TASK_JOB_ID", (*td_iter)->job_id());
+    sect_dict->SetValue("TASK_FRIENDLY_NAME", (*td_iter)->name());
+    sect_dict->SetValue("TASK_STATE",
+                        ENUM_TO_STRING(TaskDescriptor::TaskState,
+                                       (*td_iter)->state()));
+  }
+  string output;
+  ExpandTemplate("src/webui/tasks_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
+                 &output);
+  writer->write(output);
+  FinishOkResponse(writer);
+}
+
+
 void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLINT
                                       tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -856,7 +885,7 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Root URI
     coordinator_http_server_->add_resource("/favicon.ico", boost::bind(
         &CoordinatorHTTPUI::HandleFaviconURI, this, _1, _2));
-    // Job submission
+    // Job list
     coordinator_http_server_->add_resource("/jobs/", boost::bind(
         &CoordinatorHTTPUI::HandleJobsListURI, this, _1, _2));
     // Job submission
@@ -898,6 +927,9 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Statistics data serving pages
     coordinator_http_server_->add_resource("/stats/", boost::bind(
         &CoordinatorHTTPUI::HandleStatisticsURI, this, _1, _2));
+    // Task list
+    coordinator_http_server_->add_resource("/tasks/", boost::bind(
+        &CoordinatorHTTPUI::HandleTasksListURI, this, _1, _2));
     // Task status
     coordinator_http_server_->add_resource("/task/", boost::bind(
         &CoordinatorHTTPUI::HandleTaskURI, this, _1, _2));
