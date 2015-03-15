@@ -209,7 +209,10 @@ class Coordinator : public Node,
     return *local_resource_topology_;
   }
   shared_ptr<ObjectStoreInterface> get_object_store() {
-      return object_store_;
+    return object_store_;
+  }
+  const string& hostname() {
+    return hostname_;
   }
   const KnowledgeBase* knowledge_base() {
     return knowledge_base_;
