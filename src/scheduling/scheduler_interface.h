@@ -12,6 +12,7 @@
 #include "base/job_desc.pb.h"
 #include "base/task_final_report.pb.h"
 #include "misc/printable_interface.h"
+#include "engine/executor_interface.h"
 #include "engine/topology_manager.h"
 #include "storage/object_store_interface.h"
 
@@ -39,6 +40,9 @@ class SchedulerInterface : public PrintableInterface {
   // Find the resource to which a particular task ID is currently bound. Returns
   // NULL if the task does not exist or is not currently bound.
   virtual ResourceID_t* BoundResourceForTask(TaskID_t task_id) = 0;
+  // Check if all running tasks managed by this scheduler are healthy. Will invoke
+  // failure handlers if any failures are detected.
+  virtual void CheckRunningTasksHealth() = 0;
   // Unregister a resource ID from the scheduler. No-op if the resource ID is
   // not actually registered with it.
   virtual void DeregisterResource(ResourceID_t res_id) = 0;

@@ -132,6 +132,25 @@ bool EventDrivenScheduler::UnbindResourceForTask(TaskID_t task_id) {
   }
 }
 
+void EventDrivenScheduler::CheckRunningTasksHealth() {
+  for (map<ResourceID_t, ExecutorInterface*>::const_iterator
+       it = executors_.begin();
+       it != executors_.end();
+       ++it) {
+    vector<TaskID_t> failed_tasks;
+    if (!it->second->CheckRunningTasksHealth(&failed_tasks)) {
+      // Handle task failures
+      for (vector<TaskID_t>::const_iterator it = failed_tasks.begin();
+           it != failed_tasks.end();
+           ++it) {
+        TaskDescriptor* td = FindPtrOrNull(*task_map_, *it);
+        CHECK_NOTNULL(td);
+        HandleTaskFailure(td);
+      }
+    }
+  }
+}
+
 void EventDrivenScheduler::DebugPrintRunnableTasks() {
   VLOG(1) << "Runnable task queue now contains " << runnable_tasks_.size()
           << " elements:";
@@ -266,17 +285,29 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   // Set the bound resource idle again.
   // TODO(malte): We should probably check if the resource has failed at this
   // point...
-  ResourceStatus** res = FindOrNull(*resource_map_, *res_id_ptr);
-  (*res)->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  ResourceStatus* res = FindPtrOrNull(*resource_map_, *res_id_ptr);
+  res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  // Executor cleanup: drop the task from the health checker's list, etc.
+  ExecutorInterface* executor = GetExecutorForTask(td_ptr->uid());
+  CHECK_NOTNULL(executor);
+  executor->HandleTaskFailure(*td_ptr);
   // Remove the task's resource binding (as it is no longer currently bound)
   task_bindings_.erase(td_ptr->uid());
-  // TODO(malte): Trigger the necessary re-executions as a result of this
-  // failure
+  // Set the task to "failed" state and deal with the consequences
+  td_ptr->set_state(TaskDescriptor::FAILED);
+  // We only need to run the scheduler if the failed task was not delegated from
+  // elsewhere, i.e. if it is managed by the local scheduler. If so, we kick the
+  // scheduler if we haven't exceeded the retry limit.
+  if (!td_ptr->has_delegated_from()) {
+    // Run scheduling algorithms from this task
+  } else {
+    // XXX(malte): Need to forward message about task failure to delegator here!
+  }
 }
 
 
 bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
-                                         ResourceID_t target_resource) {
+                                              ResourceID_t target_resource) {
   // Check if the resource is available
   ResourceStatus** rs_ptr = FindOrNull(*resource_map_, target_resource);
   // Do we know about this resource?
@@ -391,7 +422,8 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
          t_iter != tasks.end();
          ++t_iter) {
       TaskDescriptor* task = *t_iter;
-      if (task->state() == TaskDescriptor::CREATED) {
+      if (task->state() == TaskDescriptor::CREATED ||
+          task->state() == TaskDescriptor::FAILED) {
         VLOG(2) << "Setting task " << task->uid() << " active as it produces "
                 << "output " << **output_id_iter << ", which we're interested "
                 << "in.";

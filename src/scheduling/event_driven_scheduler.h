@@ -37,12 +37,8 @@ class EventDrivenScheduler : public SchedulerInterface {
                        const string& coordinator_uri);
   ~EventDrivenScheduler();
   ResourceID_t* BoundResourceForTask(TaskID_t task_id);
-  bool UnbindResourceForTask(TaskID_t task_id);
-
+  void CheckRunningTasksHealth() ;
   virtual void DeregisterResource(ResourceID_t res_id);
-  virtual void RegisterResource(ResourceID_t res_id, bool local);
-  void KillRunningTask(TaskID_t task_id,
-                       TaskKillMessage::TaskKillReason reason);
   ExecutorInterface* GetExecutorForTask(TaskID_t task_id);
   void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                   const ReferenceInterface& new_ref,
@@ -50,10 +46,14 @@ class EventDrivenScheduler : public SchedulerInterface {
   bool HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
   void HandleTaskFailure(TaskDescriptor* td_ptr);
+  void KillRunningTask(TaskID_t task_id,
+                       TaskKillMessage::TaskKillReason reason);
   bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);
+  virtual void RegisterResource(ResourceID_t res_id, bool local);
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
   // N.B. ScheduleJob must be implemented in scheduler-specific logic
   virtual uint64_t ScheduleJob(JobDescriptor* job_desc) = 0;
+  bool UnbindResourceForTask(TaskID_t task_id);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<EventDrivenScheduler>";
   }
