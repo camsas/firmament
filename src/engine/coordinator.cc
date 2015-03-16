@@ -521,7 +521,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
     // Remember the current location of this task
     // TODO(malte): commenting this out as the string received is often incomplete
     // We maintain it separately when it changes (e.g. in executor events)
-    //tdp->set_last_location(msg.location());
+    tdp->set_last_location(msg.location());
     // Process the profiling information submitted by the task, add it to
     // the knowledge base
     knowledge_base_->AddTaskSample(msg.stats());
