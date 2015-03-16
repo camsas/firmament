@@ -688,16 +688,26 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
                   tcp_conn);
     return;
   }
+  TemplateDictionary dict("task_status");
   string action = http_request->get_query("a");
   if (!action.empty()) {
     if (action == "kill") {
-      coordinator_->KillRunningTask(TaskIDFromString(task_id),
-                                    TaskKillMessage::USER_ABORT);
+      if (coordinator_->KillRunningTask(TaskIDFromString(task_id),
+                                        TaskKillMessage::USER_ABORT)) {
+        TemplateDictionary* not_dict = dict.AddSectionDictionary("INFO");
+        not_dict->SetValue("INFO_TITLE", "Task kill initiated.");
+        not_dict->SetValue("INFO_TEXT", "Please reload the page to see if the "
+                                        "kill request succeeded.");
+      } else {
+        ErrorMessage_t err("Failed to kill task.",
+                           "The requested task could not be killed; check "
+                           "the ERROR log for more information.");
+        AddHeaderToTemplate(&dict, coordinator_->uuid(), &err);
+      }
     }
   }
   TaskDescriptor* td_ptr = coordinator_->GetTask(
       TaskIDFromString(task_id));
-  TemplateDictionary dict("task_status");
   if (td_ptr) {
     dict.SetFormattedValue("TASK_ID", "%ju", TaskID_t(td_ptr->uid()));
     if (td_ptr->has_name())

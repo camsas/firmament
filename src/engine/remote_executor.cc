@@ -86,6 +86,8 @@ bool RemoteExecutor::SendTaskExecutionMessage(
   CHECK(chan->SendS(envelope));
   // Receive the response
   //chan->RecvS();
+  // Mark as delegated
+  td->set_state(TaskDescriptor::DELEGATED);
   return true;
 }
 

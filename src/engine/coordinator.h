@@ -226,7 +226,7 @@ class Coordinator : public Node,
   }
 
   void InformStorageEngineNewResource(ResourceDescriptor* rd);
-  void KillRunningTask(TaskID_t task_id,
+  bool KillRunningTask(TaskID_t task_id,
                        TaskKillMessage::TaskKillReason reason);
 
  protected:
