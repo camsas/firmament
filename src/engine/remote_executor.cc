@@ -75,7 +75,7 @@ bool RemoteExecutor::SendTaskExecutionMessage(
           mutable_task_descriptor();
   // N.B. copies task descriptor
   msg_td->CopyFrom(*td);
-  // XXX(malte): HACK
+  // Prepare delegation message
   msg_td->set_delegated_from(FLAGS_listen_uri);
   SUBMSG_WRITE(exec_message, task_delegation_request, target_resource_id,
                to_string(remote_resource_id_));
@@ -86,6 +86,7 @@ bool RemoteExecutor::SendTaskExecutionMessage(
   CHECK(chan->SendS(envelope));
   // Receive the response
   //chan->RecvS();
+  // XXX(malte): need to check here if the delegation succeeded
   // Mark as delegated
   td->set_state(TaskDescriptor::DELEGATED);
   return true;

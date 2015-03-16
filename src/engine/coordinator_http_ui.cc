@@ -662,7 +662,7 @@ void CoordinatorHTTPUI::HandleTasksListURI(http::request_ptr& http_request,  // 
        td_iter != tasks.end();
        ++td_iter) {
     TemplateDictionary* sect_dict = dict.AddSectionDictionary("TASK_DATA");
-    sect_dict->SetIntValue("TASK_ID", (*td_iter)->uid());
+    sect_dict->SetFormattedValue("TASK_ID", "%ju", (*td_iter)->uid());
     sect_dict->SetValue("TASK_JOB_ID", (*td_iter)->job_id());
     sect_dict->SetValue("TASK_FRIENDLY_NAME", (*td_iter)->name());
     sect_dict->SetValue("TASK_STATE",

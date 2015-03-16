@@ -521,7 +521,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
     // Remember the current location of this task
     // TODO(malte): commenting this out as the string received is often incomplete
     // We maintain it separately when it changes (e.g. in executor events)
-    tdp->set_last_location(msg.location());
+    tdp->set_last_heartbeat_location(msg.location());
     // Process the profiling information submitted by the task, add it to
     // the knowledge base
     knowledge_base_->AddTaskSample(msg.stats());
@@ -571,7 +571,7 @@ void Coordinator::HandleTaskDelegationResponse(
   LOG(INFO) << "Got TaskDelegationResponse from " << remote_endpoint;
   TaskDescriptor* td = FindPtrOrNull(*task_table_, msg.task_id());
   CHECK_NOTNULL(td);
-  td->set_last_location(remote_endpoint);
+  td->set_delegated_to(remote_endpoint);
   LOG(ERROR) << "Task delegation response handler not fully implemented!";
 }
 
@@ -584,7 +584,7 @@ void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
   TaskDescriptor* task_desc_ptr = FindPtrOrNull(*task_table_, msg.task_id());
   CHECK_NOTNULL(task_desc_ptr);
   // Remember the current location of this task
-  task_desc_ptr->set_last_location(remote_endpoint);
+  task_desc_ptr->set_last_heartbeat_location(remote_endpoint);
   BaseMessage resp;
   // XXX(malte): ugly hack!
   SUBMSG_WRITE(resp, task_info_response, task_id, msg.task_id());
@@ -729,7 +729,8 @@ bool Coordinator::KillRunningTask(TaskID_t task_id,
   if (!td_ptr) {
     LOG(ERROR) << "Tried to kill unknown task " << task_id;
     return false;
-  } else if (!td_ptr->has_last_location() || td_ptr->last_location().empty()) {
+  } else if (!td_ptr->has_last_heartbeat_location() ||
+             td_ptr->last_heartbeat_location().empty()) {
     LOG(ERROR) << "Tried to kill task " << task_id << " at unknown location";
     return false;
   }
@@ -746,10 +747,17 @@ bool Coordinator::KillRunningTask(TaskID_t task_id,
   BaseMessage bm;
   SUBMSG_WRITE(bm, task_kill, task_id, task_id);
   SUBMSG_WRITE(bm, task_kill, reason, reason);
-  // Send the message
-  LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
-            << *rid << " (endpoint: " << td_ptr->last_location()  << ")";
-  m_adapter_->SendMessageToEndpoint(td_ptr->last_location(), bm);
+  // Send the message -- either directly or via delegation path
+  if (!td_ptr->has_delegated_to()) {
+    LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
+              << *rid << " (endpoint: " << td_ptr->last_heartbeat_location()
+              << ")";
+    m_adapter_->SendMessageToEndpoint(td_ptr->last_heartbeat_location(), bm);
+  } else {
+    LOG(INFO) << "Forwarding KILL message to task " << task_id << " via "
+              << "coordinator at " << td_ptr->delegated_to();
+    m_adapter_->SendMessageToEndpoint(td_ptr->delegated_to(), bm);
+  }
   return true;
 }
 
