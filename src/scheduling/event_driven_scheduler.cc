@@ -309,7 +309,7 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
 bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
                                               ResourceID_t target_resource) {
   // Check if the resource is available
-  ResourceStatus** rs_ptr = FindOrNull(*resource_map_, target_resource);
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, target_resource);
   // Do we know about this resource?
   if (!rs_ptr) {
     // Requested resource unknown or does not exist any more
@@ -318,7 +318,7 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
                  << "unknown!";
     return false;
   }
-  ResourceDescriptor* rd = (*rs_ptr)->mutable_descriptor();
+  ResourceDescriptor* rd = rs_ptr->mutable_descriptor();
   // Is the resource still idle?
   if (rd->state() != ResourceDescriptor::RESOURCE_IDLE) {
     // Resource is no longer idle
@@ -332,7 +332,7 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
   runnable_tasks_.insert(td->uid());
   InsertIfNotPresent(task_map_.get(), td->uid(), td);
   BindTaskToResource(td, rd);
-  td->set_state(TaskDescriptor::DELEGATED);
+  td->set_state(TaskDescriptor::RUNNING);
   return true;
 }
 
