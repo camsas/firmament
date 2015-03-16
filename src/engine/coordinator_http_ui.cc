@@ -724,13 +724,19 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     dict.SetValue("TASK_STATUS", ENUM_TO_STRING(TaskDescriptor::TaskState,
                                                 td_ptr->state()));
     // Location
-    if (td_ptr->has_last_location()) {
-      dict.SetValue("TASK_LOCATION", td_ptr->last_location());
+    if (td_ptr->has_last_heartbeat_location()) {
+      dict.SetValue("TASK_LOCATION", td_ptr->last_heartbeat_location());
       dict.SetValue("TASK_LOCATION_HOST",
-                    URITools::GetHostnameFromURI(td_ptr->last_location()));
+                    URITools::GetHostnameFromURI(
+                        td_ptr->last_heartbeat_location()));
     } else {
-      dict.SetValue("TASK_LOCATION", "local");
+      dict.SetValue("TASK_LOCATION", "unknown");
       dict.SetValue("TASK_LOCATION_HOST", "localhost");
+    }
+    if (td_ptr->has_delegated_to()) {
+      dict.SetValue("TASK_LOCATION", td_ptr->delegated_to());
+      dict.SetValue("TASK_LOCATION_HOST",
+                    URITools::GetHostnameFromURI(td_ptr->delegated_to()));
     }
     if (td_ptr->has_delegated_from()) {
       TemplateDictionary* del_dict =

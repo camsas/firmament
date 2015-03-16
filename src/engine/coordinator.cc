@@ -748,15 +748,13 @@ bool Coordinator::KillRunningTask(TaskID_t task_id,
   SUBMSG_WRITE(bm, task_kill, task_id, task_id);
   SUBMSG_WRITE(bm, task_kill, reason, reason);
   // Send the message -- either directly or via delegation path
-  if (!td_ptr->has_delegated_to()) {
-    LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
-              << *rid << " (endpoint: " << td_ptr->last_heartbeat_location()
-              << ")";
-    m_adapter_->SendMessageToEndpoint(td_ptr->last_heartbeat_location(), bm);
-  } else {
+  if (td_ptr->has_delegated_to()) {
     LOG(INFO) << "Forwarding KILL message to task " << task_id << " via "
               << "coordinator at " << td_ptr->delegated_to();
     m_adapter_->SendMessageToEndpoint(td_ptr->delegated_to(), bm);
+  } else {
+    // Kill local tasks via the scheduler
+    scheduler_->KillRunningTask(task_id, reason);
   }
   return true;
 }
