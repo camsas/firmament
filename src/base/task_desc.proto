@@ -30,19 +30,20 @@ message TaskDescriptor {
   /* Children */
   repeated TaskDescriptor spawned = 10;
   /* Runtime meta-data */
-  optional string last_location = 11;
-  optional string delegated_from = 12;
+  optional string last_heartbeat_location = 11;
+  optional string delegated_to = 12;
+  optional string delegated_from = 13;
   /* Timestamps */
-  optional uint64 submit_time = 13;
-  optional uint64 start_time = 14;
+  optional uint64 submit_time = 14;
+  optional uint64 start_time = 15;
   /* Deadlines */
-  optional uint64 relative_deadline = 15;
-  optional uint64 absolute_deadline = 16;
-  optional uint64 equivalence_class = 17;
+  optional uint64 relative_deadline = 16;
+  optional uint64 absolute_deadline = 17;
+  optional uint64 equivalence_class = 18;
   /* Application-specific fields */
   /* TODO(malte): move these to sub-messages */
-  optional uint64 port = 18;
-  optional uint64 input_size = 19;
-  optional bool inject_task_lib = 20 [default = false];
+  optional uint64 port = 19;
+  optional uint64 input_size = 20;
+  optional bool inject_task_lib = 21 [default = false];
 }
 

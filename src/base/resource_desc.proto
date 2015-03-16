@@ -24,6 +24,7 @@ message ResourceDescriptor {
     RESOURCE_LOGICAL = 7;
     RESOURCE_NUMA_NODE = 8;
     RESOURCE_SOCKET = 9;
+    RESOURCE_COORDINATOR = 10;
   }
 
   required string uuid = 1;
