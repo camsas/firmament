@@ -581,15 +581,15 @@ void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
   // coordinator
   VLOG(1) << "Resource " << msg.requesting_resource_id()
           << " requests task information for " << msg.task_id();
-  TaskDescriptor** task_desc_ptr = FindOrNull(*task_table_, msg.task_id());
+  TaskDescriptor* task_desc_ptr = FindPtrOrNull(*task_table_, msg.task_id());
   CHECK_NOTNULL(task_desc_ptr);
   // Remember the current location of this task
-  (*task_desc_ptr)->set_last_location(remote_endpoint);
+  task_desc_ptr->set_last_location(remote_endpoint);
   BaseMessage resp;
   // XXX(malte): ugly hack!
   SUBMSG_WRITE(resp, task_info_response, task_id, msg.task_id());
   resp.mutable_task_info_response()->
-      mutable_task_desc()->CopyFrom(**task_desc_ptr);
+      mutable_task_desc()->CopyFrom(*task_desc_ptr);
   m_adapter_->SendMessageToEndpoint(remote_endpoint, resp);
 }
 
