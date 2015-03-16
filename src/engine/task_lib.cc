@@ -139,8 +139,6 @@ void TaskLib::AddTaskStatisticsToHeartbeat(
   if (!FLAGS_completion_filename.empty() || internal_completed_) {
     VLOG(3) << "Adding completion stats!";
     AddCompletionStatistics(stats);
-  } else {
-    VLOG(3) << "NOT ADDING COMPLETION STATS :(";
   }
 }
 
