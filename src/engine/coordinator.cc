@@ -669,27 +669,27 @@ void Coordinator::HandleTaskStateChange(
 
         m_adapter_->SendMessageToEndpoint(td_ptr->delegated_from(), bm);
       }
-
-      // TODO(malte): Fix! This fills the report queue with rubbish for the
-      // master (top-level) coordinator. For now, we ignore the reports: no
-      // local resources -> the job must have been delegated to a child
-      // coordinator.
-      if (FLAGS_include_local_resources) {
-        knowledge_base_->ProcessTaskFinalReport(report);
-      }
-
+      // Process the final report locally
+      knowledge_base_->ProcessTaskFinalReport(report);
       break;
     }
     case TaskDescriptor::FAILED:
     {
-      td_ptr->set_state(TaskDescriptor::FAILED);
       scheduler_->HandleTaskFailure(td_ptr);
-      break;
+      // Fall through into default case, which sends message to
+      // parent if required
     }
+    case TaskDescriptor::ABORTED:
     default:
       VLOG(1) << "Task " << msg.id() << "'s state changed to "
               << static_cast<uint64_t> (msg.new_state());
       td_ptr->set_state(msg.new_state());
+      // Check if this is a delegated task, and forward the message if so
+      if (td_ptr->has_delegated_from()) {
+        BaseMessage bm;
+        bm.mutable_task_state()->CopyFrom(msg);
+        m_adapter_->SendMessageToEndpoint(td_ptr->delegated_from(), bm);
+      }
       break;
   }
   // Do not run if delegated
