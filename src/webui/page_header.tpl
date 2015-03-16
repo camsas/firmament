@@ -37,3 +37,10 @@
     {{ERR_TEXT}}
   </div>
 {{/ERR}}
+
+{{#INFO}}
+  <div class="alert alert-info" role="alert">
+    <strong>{{INFO_TITLE}}</strong><br />
+    {{INFO_TEXT}}
+  </div>
+{{/INFO}}
