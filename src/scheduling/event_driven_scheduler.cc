@@ -81,8 +81,8 @@ void EventDrivenScheduler::KillRunningTask(
   SUBMSG_WRITE(bm, task_kill, reason, reason);
   // Send the message
   LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
-            << *rid << " (endpoint: " << td->last_location()  << ")";
-  m_adapter_ptr_->SendMessageToEndpoint(td->last_location(), bm);
+            << *rid << " (endpoint: " << td->last_heartbeat_location()  << ")";
+  m_adapter_ptr_->SendMessageToEndpoint(td->last_heartbeat_location(), bm);
 
   // Remove the bound resource, if any.
   if (rid) {
