@@ -26,7 +26,7 @@ DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
 DEFINE_string(flowlessly_binary, "ext/flowlessly-git/run_fast_cost_scaling",
               "Path to the flowlessly binary.");
-DEFINE_string(cs2_binary, "ext/cs2-4.6/cs2.exe", "Path to the cs2 binary.");
+DEFINE_string(cs2_binary, "ext/cs2-git/cs2.exe", "Path to the cs2 binary.");
 
 namespace firmament {
 namespace scheduler {
