@@ -80,10 +80,11 @@ namespace scheduler {
       // infd_[1] == CHILD_WRITE
       // outfd_[0] == CHILD_READ
       // outfd_[1] == PARENT_WRITE
-      if (!FLAGS_incremental_flow &&
-          !FLAGS_flow_scheduling_solver.compare("flowlessly")) {
-        args.push_back("--daemon=false");
+      if (FLAGS_flow_scheduling_solver.compare("flowlessly") == 0) {
         args.push_back("--graph_has_node_types=true");
+        if (!FLAGS_incremental_flow) {
+          args.push_back("--daemon=false");
+        }
       }
       solver_pid = ExecCommandSync(solver_binary, args, outfd_, infd_);
       VLOG(2) << "Solver (" << FLAGS_flow_scheduling_solver << "running "
