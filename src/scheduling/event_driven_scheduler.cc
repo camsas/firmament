@@ -178,9 +178,13 @@ ExecutorInterface *EventDrivenScheduler::GetExecutorForTask(TaskID_t task_id) {
   return *exec;
 }
 
-// Return value indicates if the job completed as a result of this task
-// completion.
-bool EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
+void EventDrivenScheduler::HandleJobCompletion(JobID_t job_id) {
+  JobDescriptor* jd = FindOrNull(*job_map_, job_id);
+  CHECK_NOTNULL(jd);
+  jd->set_state(JobDescriptor::COMPLETED);
+}
+
+void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                                 TaskFinalReport* report) {
   boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Find resource for task
@@ -198,25 +202,6 @@ bool EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   ExecutorInterface* exec = FindPtrOrNull(executors_, *res_id_ptr);
   CHECK_NOTNULL(exec);
   exec->HandleTaskCompletion(*td_ptr, report);
-  // We only need to check the job-level completion state if the task was not
-  // delegated from elsewhere, i.e. if it is managed by the local scheduler
-  // instance.
-  if (!td_ptr->has_delegated_from()) {
-    // Run scheduling algorithms from this task
-    set<DataObjectID_t*> outputs = DataObjectIDsFromProtobuf(td_ptr->outputs());
-    uint64_t num_incomplete_tasks =
-      LazyGraphReduction(outputs, td_ptr, JobIDFromString(td_ptr->job_id()));
-    // Check if this job still has any outstanding tasks, otherwise mark it as
-    // completed.
-    if (num_incomplete_tasks == 0) {
-      JobDescriptor* jd =
-        FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
-      CHECK_NOTNULL(jd);
-      jd->set_state(JobDescriptor::COMPLETED);
-      return true;
-    }
-  }
-  return false;
 }
 
 void EventDrivenScheduler::HandleReferenceStateChange(
@@ -296,9 +281,7 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   // We only need to run the scheduler if the failed task was not delegated from
   // elsewhere, i.e. if it is managed by the local scheduler. If so, we kick the
   // scheduler if we haven't exceeded the retry limit.
-  if (!td_ptr->has_delegated_from()) {
-    // Run scheduling algorithms from this task
-  } else {
+  if (td_ptr->has_delegated_from()) {
     // XXX(malte): Need to forward message about task failure to delegator here!
   }
 }
@@ -368,11 +351,7 @@ const set<TaskID_t>& EventDrivenScheduler::RunnableTasksForJob(
   set<DataObjectID_t*> outputs =
       DataObjectIDsFromProtobuf(job_desc->output_ids());
   TaskDescriptor* rtp = job_desc->mutable_root_task();
-  uint64_t num_incomplete_tasks =
-    LazyGraphReduction(outputs, rtp, JobIDFromString(job_desc->uuid()));
-  // If there are no incomplete tasks left, mark the job as completed
-  if (num_incomplete_tasks == 0)
-    job_desc->set_state(JobDescriptor::COMPLETED);
+  LazyGraphReduction(outputs, rtp, JobIDFromString(job_desc->uuid()));
   return runnable_tasks_;
 }
 
@@ -386,9 +365,6 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
   // Local data structures
   deque<TaskDescriptor*> newly_active_tasks;
   bool do_schedule = false;
-  // Counter of tasks that have not yet completed (used to set job completion
-  // state)
-  uint64_t incomplete_tasks = 0;
   // Add expected producer for object_id to queue, if the object reference is
   // not already concrete.
   VLOG(2) << "for a job with " << output_ids.size() << " outputs";
@@ -443,9 +419,6 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
     TaskDescriptor* current_task = newly_active_tasks.front();
     VLOG(2) << "Next active task considered is " << current_task->uid();
     newly_active_tasks.pop_front();
-    // Count the tasks if it is not completed
-    if (current_task->state() != TaskDescriptor::COMPLETED)
-      incomplete_tasks++;
     // Find any unfulfilled dependencies
     bool will_block = false;
     for (RepeatedPtrField<ReferenceDescriptor>::const_iterator iter =
@@ -517,7 +490,7 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
   }
   VLOG(1) << "do_schedule is " << do_schedule << ", runnable_task set "
           << "contains " << runnable_tasks_.size() << " tasks.";
-  return incomplete_tasks;
+  return runnable_tasks_.size();
 }
 
 const set<ReferenceInterface*> EventDrivenScheduler::ReferencesForID(

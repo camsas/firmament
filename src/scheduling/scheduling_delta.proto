@@ -16,4 +16,5 @@ message SchedulingDelta {
   required uint64 task_id = 1;
   required string resource_id = 2;
   required ChangeType type = 3 [default = NOOP];
+  optional bool actioned = 4;
 }

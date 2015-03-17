@@ -40,10 +40,11 @@ class EventDrivenScheduler : public SchedulerInterface {
   void CheckRunningTasksHealth() ;
   virtual void DeregisterResource(ResourceID_t res_id);
   ExecutorInterface* GetExecutorForTask(TaskID_t task_id);
+  void HandleJobCompletion(JobID_t job_id);
   void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                   const ReferenceInterface& new_ref,
                                   TaskDescriptor* td_ptr);
-  bool HandleTaskCompletion(TaskDescriptor* td_ptr,
+  void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
   void HandleTaskFailure(TaskDescriptor* td_ptr);
   void KillRunningTask(TaskID_t task_id,

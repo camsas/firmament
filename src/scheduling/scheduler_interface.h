@@ -51,11 +51,14 @@ class SchedulerInterface : public PrintableInterface {
   virtual void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                           const ReferenceInterface& new_ref,
                                           TaskDescriptor* td_ptr) = 0;
+  // Handle the completion of a job (all tasks are completed, failed or aborted).
+  // May clean up scheduler-specific state.
+  virtual void HandleJobCompletion(JobID_t job_id) = 0;
   // Handle the completion of a task. This usually involves freeing up its
   // resource by setting it idle, and recording any bookkeeping data required.
   // Return value indicates if the containing job completed as a result of this
   // task completing.
-  virtual bool HandleTaskCompletion(TaskDescriptor* td_ptr,
+  virtual void HandleTaskCompletion(TaskDescriptor* td_ptr,
                                     TaskFinalReport* report) = 0;
   // Handle the failure of a task. This usually involves freeing up its
   // resource by setting it idle, and kicking off the necessary fault tolerance
