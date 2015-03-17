@@ -25,7 +25,7 @@
       <td>{{TASK_RESOURCE}}</td>
       <td>
         <a href="/task/?id={{TASK_ID}}">Status</a>
-        <a href="/task/?id={{TASK_ID}}&a=kill">Kill</a>
+        <a href="/task/?id={{TASK_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></a>
       </td>
     </tr>
   {{/TASK_DATA}}

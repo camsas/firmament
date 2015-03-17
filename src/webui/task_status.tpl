@@ -199,7 +199,7 @@ $(function() {
   <tr>
     <td>Actions</td>
     <td>
-      <a href="/task/?id={{TASK_ID}}&a=kill">Kill</a>
+      <a href="/task/?id={{TASK_ID}}&a=kill">Terminate</a>
     </td>
   </tr>
   <tr>
