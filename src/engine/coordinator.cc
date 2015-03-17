@@ -395,8 +395,8 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       LOG(WARNING) << "HEARTBEAT from UNKNOWN resource (uuid: "
               << msg.uuid() << ")!";
   } else {
-      LOG(INFO) << "HEARTBEAT from resource " << msg.uuid()
-                << " (last seen at " << rsp->last_heartbeat() << ")";
+      VLOG(1) << "HEARTBEAT from resource " << msg.uuid()
+              << " (last seen at " << rsp->last_heartbeat() << ")";
       if (msg.has_load())
         VLOG(2) << "Remote resource stats: " << msg.load().ShortDebugString();
       // Update timestamp
@@ -514,7 +514,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
     LOG(WARNING) << "HEARTBEAT from UNKNOWN task (ID: "
                  << task_id << ")!";
   } else {
-    LOG(INFO) << "HEARTBEAT from task " << task_id;
+    VLOG(1) << "HEARTBEAT from task " << task_id;
     // Remember the current location from which this task reports
     tdp->set_last_heartbeat_location(msg.location());
     // Remember the heartbeat time
