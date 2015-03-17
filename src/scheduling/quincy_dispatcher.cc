@@ -65,7 +65,6 @@ namespace scheduler {
           debug_seq_num_);
       LOG(INFO) << "Writing flow graph debug info into " << out_file_name;
       exporter_.Flush(out_file_name);
-      debug_seq_num_++;
     }
     // Now run the solver
     vector<string> args;
@@ -126,6 +125,7 @@ namespace scheduler {
       close(outfd_[1]);
       close(infd_[0]);
     }
+    debug_seq_num_++;
     return task_mappings;
   }
 
