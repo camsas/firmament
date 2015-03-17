@@ -362,7 +362,8 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
     dict.SetValue("RES_LOCATION", rs_ptr->location());
     dict.SetValue("RES_LOCATION_HOST",
                   URITools::GetHostnameFromURI(rs_ptr->location()));
-    dict.SetIntValue("RES_LAST_HEARTBEAT", rs_ptr->last_heartbeat());
+    // JS expects millisecond values
+    dict.SetIntValue("RES_LAST_HEARTBEAT", rs_ptr->last_heartbeat() / 1000);
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
     VLOG(1) << "rd_ptr is: " << rd_ptr;
@@ -750,7 +751,9 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
                              td_ptr->delegated_from()));
     }
     // Heartbeat time
-    dict.SetIntValue("TASK_LAST_HEARTBEAT", td_ptr->last_heartbeat_time());
+    // JS expects millisecond values
+    dict.SetIntValue("TASK_LAST_HEARTBEAT",
+                     td_ptr->last_heartbeat_time() / 1000);
     // Equivalence classes
     dict.SetValue("TASK_TEC", to_string(GenerateTaskEquivClass(*td_ptr)));
     // Dependencies
