@@ -60,7 +60,7 @@ void EventDrivenScheduler::KillRunningTask(
     TaskID_t task_id,
     TaskKillMessage::TaskKillReason reason) {
   // Check if this task is managed by this coordinator
-  TaskDescriptor** td_ptr = FindOrNull(*task_map_, task_id);
+  TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   if (!td_ptr) {
     LOG(ERROR) << "Tried to kill unknown task " << task_id;
     return;
@@ -68,7 +68,7 @@ void EventDrivenScheduler::KillRunningTask(
   // Check if we have a bound resource for the task and if it is marked as
   // running
   ResourceID_t* rid = BoundResourceForTask(task_id);
-  if ((*td_ptr)->state() != TaskDescriptor::RUNNING || !rid) {
+  if (td_ptr->state() != TaskDescriptor::RUNNING || !rid) {
     LOG(ERROR) << "Task " << task_id << " is not running locally, "
                << "so cannot kill it!";
     return;
@@ -83,11 +83,6 @@ void EventDrivenScheduler::KillRunningTask(
   LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
             << *rid << " (endpoint: " << td->last_heartbeat_location()  << ")";
   m_adapter_ptr_->SendMessageToEndpoint(td->last_heartbeat_location(), bm);
-
-  // Remove the bound resource, if any.
-  if (rid) {
-    UnbindResourceForTask(task_id);
-  }
 }
 
 void EventDrivenScheduler::BindTaskToResource(
@@ -127,8 +122,7 @@ ResourceID_t* EventDrivenScheduler::BoundResourceForTask(TaskID_t task_id) {
 bool EventDrivenScheduler::UnbindResourceForTask(TaskID_t task_id) {
   ResourceID_t* rid = FindOrNull(task_bindings_, task_id);
   if (rid) {
-    task_bindings_.erase(task_id);
-    return true;
+    return (task_bindings_.erase(task_id) == 1);
   } else {
     return false;
   }
@@ -199,7 +193,7 @@ bool EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   CHECK_NOTNULL(res);
   res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
   // Remove the task's resource binding (as it is no longer currently bound)
-  CHECK_EQ(task_bindings_.erase(td_ptr->uid()), 1);
+  CHECK(UnbindResourceForTask(td_ptr->uid()));
   // Record final report
   ExecutorInterface* exec = FindPtrOrNull(executors_, *res_id_ptr);
   CHECK_NOTNULL(exec);
@@ -294,7 +288,7 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   CHECK_NOTNULL(executor);
   executor->HandleTaskFailure(*td_ptr);
   // Remove the task's resource binding (as it is no longer currently bound)
-  task_bindings_.erase(td_ptr->uid());
+  CHECK(UnbindResourceForTask(td_ptr->uid()));
   // Set the task to "failed" state and deal with the consequences
   // (The state may already have been changed elsewhere, but since the failure
   // case can arise unexpectedly, we set it again here).
