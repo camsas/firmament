@@ -325,8 +325,16 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
   // Task kill message
   if (bm->has_task_kill()) {
     const TaskKillMessage& msg = bm->task_kill();
-    // TODO(malte): N.B., this throws away the success indication
-    KillRunningTask(msg.task_id(), msg.reason());
+    CHECK(KillRunningTask(msg.task_id(), msg.reason()))
+        << "Failed to kill task!";
+    handled_extensions++;
+  }
+  // Task final report
+  // TODO(malte): The TaskFinalReport protobuf lives in the wrong place (base
+  // instead of messages). Move over.
+  if (bm->has_taskfinal_report()) {
+    const TaskFinalReport& msg = bm->taskfinal_report();
+    HandleTaskFinalReport(msg);
     handled_extensions++;
   }
   // DIOS syscall: create message
@@ -700,8 +708,10 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
 
     m_adapter_->SendMessageToEndpoint(td_ptr->delegated_from(), bm);
   }
-  // Process the final report locally
-  knowledge_base_->ProcessTaskFinalReport(report);
+  if (report.has_task_id()) {
+    // Process the final report locally
+    knowledge_base_->ProcessTaskFinalReport(report);
+  }
 }
 
 #ifdef __HTTP_UI__
