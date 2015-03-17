@@ -714,14 +714,6 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
   TaskFinalReport report;
   // Report will be filled in if the task is local (currently)
   scheduler_->HandleTaskCompletion(td_ptr, &report);
-  // Check if this is the last task in the job to complete; if so, the job
-  // has completed
-  JobDescriptor* jd = DescriptorForJob(td_ptr->job_id());
-  CHECK_NOTNULL(jd);
-  if (HasJobCompleted(*jd)) {
-    LOG(INFO) << "Job " << jd->uuid() << " has completed!";
-    scheduler_->HandleJobCompletion(JobIDFromString(jd->uuid()));
-  }
   // First check if this is a delegated task, and forward the message if so
   if (td_ptr->has_delegated_from()) {
     BaseMessage bm;
@@ -734,6 +726,17 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
     sending_rep->set_task_id(td_ptr->uid());
 
     m_adapter_->SendMessageToEndpoint(td_ptr->delegated_from(), bm);
+  } else {
+    // Check if this is the last task in the job to complete; if so, the job
+    // has completed. This only needs to happen on the delegating coordinator,
+    // who is responsible for maintaining the job information. Subordinate
+    // delegatees only know about their respective tasks.
+    JobDescriptor* jd = DescriptorForJob(td_ptr->job_id());
+    CHECK_NOTNULL(jd);
+    if (HasJobCompleted(*jd)) {
+      LOG(INFO) << "Job " << jd->uuid() << " has completed!";
+      scheduler_->HandleJobCompletion(JobIDFromString(jd->uuid()));
+    }
   }
   if (report.has_task_id()) {
     // Process the final report locally
