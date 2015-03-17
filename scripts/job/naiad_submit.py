@@ -44,7 +44,7 @@ else:
   num_workers = 1
 
 basic_args = []
-basic_args.append("/home/srguser/napper/napper.py")
+basic_args.append("/home/srguser/firmament-experiments/helpers/napper/napper_naiad.py")
 basic_args.append("caelum-301:2181")
 basic_args.append(job_name)
 
