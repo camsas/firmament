@@ -749,6 +749,8 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
                          URITools::GetHostnameFromURI(
                              td_ptr->delegated_from()));
     }
+    // Heartbeat time
+    dict.SetIntValue("TASK_LAST_HEARTBEAT", td_ptr->last_heartbeat_time());
     // Equivalence classes
     dict.SetValue("TASK_TEC", to_string(GenerateTaskEquivClass(*td_ptr)));
     // Dependencies

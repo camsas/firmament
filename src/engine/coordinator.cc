@@ -515,10 +515,10 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
                  << task_id << ")!";
   } else {
     LOG(INFO) << "HEARTBEAT from task " << task_id;
-    // Remember the current location of this task
-    // TODO(malte): commenting this out as the string received is often incomplete
-    // We maintain it separately when it changes (e.g. in executor events)
+    // Remember the current location from which this task reports
     tdp->set_last_heartbeat_location(msg.location());
+    // Remember the heartbeat time
+    tdp->set_last_heartbeat_time(GetCurrentTimestamp());
     // Process the profiling information submitted by the task, add it to
     // the knowledge base
     knowledge_base_->AddTaskSample(msg.stats());
@@ -542,7 +542,6 @@ void Coordinator::HandleTaskDelegationRequest(
           << msg.task_descriptor().uid() << " from resource "
           << msg.delegating_resource_id();
   // Check if there is room for this task here
-  // (or maybe enqueue it?)
   TaskDescriptor* td = new TaskDescriptor(msg.task_descriptor());
   bool result = scheduler_->PlaceDelegatedTask(
       td, ResourceIDFromString(msg.target_resource_id()));
@@ -558,6 +557,7 @@ void Coordinator::HandleTaskDelegationRequest(
     // Failure; delegator needs to try again
     VLOG(1) << "Failed to place!";
     SUBMSG_WRITE(response, task_delegation_response, success, false);
+    delete td;
   }
   m_adapter_->SendMessageToEndpoint(remote_endpoint, response);
 }
