@@ -89,7 +89,7 @@ class Coordinator : public Node,
   explicit Coordinator(PlatformID platform_id);
   virtual ~Coordinator();
   void Run();
-  const JobDescriptor* DescriptorForJob(const string& job_id);
+  JobDescriptor* DescriptorForJob(const string& job_id);
   void Shutdown(const string& reason);
   const string SubmitJob(const JobDescriptor& job_descriptor);
 
@@ -236,6 +236,7 @@ class Coordinator : public Node,
                    bool local);
   bool RegisterWithCoordinator(StreamSocketsChannel<BaseMessage>* chan);
   void DetectLocalResources();
+  bool HasJobCompleted(const JobDescriptor& jd);
   void HandleCreateRequest(const CreateRequest& msg,
                            const string& remote_endpoint);
   void HandleIncomingMessage(BaseMessage *bm, const string& remote_endpoint);

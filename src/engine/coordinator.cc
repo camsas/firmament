@@ -253,10 +253,38 @@ void Coordinator::Run() {
   Shutdown("dropped out of main loop");
 }
 
-const JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
+JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
   JobID_t job_uuid = JobIDFromString(job_id);
   JobDescriptor *jd = FindOrNull(*job_table_, job_uuid);
   return jd;
+}
+
+bool Coordinator::HasJobCompleted(const JobDescriptor& jd) {
+  queue<TaskID_t> q;
+  q.push(jd.root_task().uid());
+  while (!q.empty()) {
+    TaskID_t cur_task_id = q.front();
+    q.pop();
+    TaskDescriptor* td = FindPtrOrNull(*task_table_, cur_task_id);
+    CHECK_NOTNULL(td);
+    if (!(td->state() == TaskDescriptor::COMPLETED ||
+          td->state() == TaskDescriptor::ABORTED)) {
+      LOG(INFO) << "Job " << jd.uuid() << " has not yet completed, as task "
+                << td->uid() << " is in state "
+                << ENUM_TO_STRING(TaskDescriptor::TaskState, td->state());
+      return false;
+    }
+    // TODO(malte): this needs to take a copy or a lock, otherwise we can race
+    // with concurrent spawns.
+    for (RepeatedPtrField<TaskDescriptor>::const_iterator it =
+         td->spawned().begin();
+         it != td->spawned().end();
+         it++) {
+      q.push(it->uid());
+    }
+  }
+  LOG(INFO) << "Job " << jd.uuid() << " has completed.";
+  return true;
 }
 
 void Coordinator::HandleIncomingMessage(BaseMessage *bm,
@@ -456,8 +484,7 @@ void Coordinator::HandleIONotification(const BaseMessage& bm,
       delete remove[i];
     }
     // Call into scheduler, as this change may have made things runnable
-    JobDescriptor* jd = FindOrNull(*job_table_,
-                                   JobIDFromString((*td_ptr)->job_id()));
+    JobDescriptor* jd = DescriptorForJob((*td_ptr)->job_id());
     scheduler_->ScheduleJob(jd);
   }
 }
@@ -684,8 +711,7 @@ void Coordinator::HandleTaskStateChange(
   // TODO(malte): decide if we should do invoke the scheduler here, or kick off
   // the scheduling iteration from within the earlier handler call into the
   // scheduler
-  JobDescriptor* jd = FindOrNull(*job_table_,
-                                 JobIDFromString(td_ptr->job_id()));
+  JobDescriptor* jd = DescriptorForJob(td_ptr->job_id());
   scheduler_->ScheduleJob(jd);
   // XXX(malte): tear down the respective connection, cleanup
 }
@@ -695,6 +721,14 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
   TaskFinalReport report;
   // Report will be filled in if the task is local (currently)
   scheduler_->HandleTaskCompletion(td_ptr, &report);
+  // Check if this is the last task in the job to complete; if so, the job
+  // has completed
+  JobDescriptor* jd = DescriptorForJob(td_ptr->job_id());
+  CHECK_NOTNULL(jd);
+  if (HasJobCompleted(*jd)) {
+    LOG(INFO) << "Job " << jd->uuid() << " has completed!";
+    scheduler_->HandleJobCompletion(JobIDFromString(jd->uuid()));
+  }
   // First check if this is a delegated task, and forward the message if so
   if (td_ptr->has_delegated_from()) {
     BaseMessage bm;
