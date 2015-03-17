@@ -38,7 +38,8 @@ class KnowledgeBase {
   uint64_t GetAvgIPMAForTEC(TaskEquivClass_t id);
   uint64_t GetAvgRuntimeForTEC(TaskEquivClass_t id);
   const deque<TaskFinalReport>* GetFinalStatsForTask(TaskEquivClass_t id) const;
-  void ProcessTaskFinalReport(const TaskFinalReport& report);
+  void ProcessTaskFinalReport(const TaskFinalReport& report,
+                              const TaskDescriptor& td);
 
  protected:
   map<ResourceID_t, deque<MachinePerfStatisticsSample> > machine_map_;
