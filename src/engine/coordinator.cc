@@ -419,7 +419,7 @@ void Coordinator::HandleTaskFinalReport(const TaskFinalReport& report) {
   TaskDescriptor *td_ptr = FindPtrOrNull(*task_table_, report.task_id());
   CHECK_NOTNULL(td_ptr);
   // Process the report using the KB
-  knowledge_base_->ProcessTaskFinalReport(report);
+  knowledge_base_->ProcessTaskFinalReport(report, *td_ptr);
 }
 
 void Coordinator::HandleIONotification(const BaseMessage& bm,
@@ -710,7 +710,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
   }
   if (report.has_task_id()) {
     // Process the final report locally
-    knowledge_base_->ProcessTaskFinalReport(report);
+    knowledge_base_->ProcessTaskFinalReport(report, *td_ptr);
   }
 }
 
