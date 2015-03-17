@@ -32,6 +32,8 @@ DECLARE_string(debug_output_dir);
 namespace firmament {
 namespace webui {
 
+#define WEBUI_PERF_QUEUE_LEN 200LL
+
 using ctemplate::TemplateDictionary;
 
 using store::DataObjectMap_t;
@@ -583,9 +585,10 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
         coordinator_->knowledge_base()->GetStatsForMachine(
             ResourceIDFromString(res_id));
     if (result) {
+      int64_t length = result->size();
       output += "[";
       for (deque<MachinePerfStatisticsSample>::const_iterator it =
-          result->begin();
+          result->begin() + max(0LL, length - WEBUI_PERF_QUEUE_LEN);
           it != result->end();
           ++it) {
         if (output != "[")
@@ -613,8 +616,9 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
             TaskIDFromString(task_id));
     if (samples_result) {
       bool first = true;
+      int64_t length = samples_result->size();
       for (deque<TaskPerfStatisticsSample>::const_iterator it =
-          samples_result->begin();
+          samples_result->begin() + max(0LL, length - WEBUI_PERF_QUEUE_LEN);
           it != samples_result->end();
           ++it) {
         if (!first)
