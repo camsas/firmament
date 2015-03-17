@@ -114,12 +114,21 @@ function step() {
   $('#mai-text').text(" avg: " + mean(mai_series) + ", median: " + median(mai_series));
   $('#llc-ref-text').text(" avg: " + mean(llc_ref_series) + ", median: " + median(llc_ref_series));
   $('#llc-miss-text').text(" avg: " + mean(llc_miss_series) + ", median: " + median(llc_miss_series));
+  // update timers
+  $("abbr.timeago").each(function (index) {
+    $(this).text(jQuery.timeago(new Date(this.title)));
+  });
   window.setTimeout(step, 10000);
 }
 
 $(function() {
+  $("abbr.timeago").each(function (index) {
+    $(this).attr("title", new Date(parseInt(this.title)));
+  });
   step();
 });
+
+
 </script>
 
 
@@ -152,7 +161,7 @@ $(function() {
   </tr>
   <tr>
     <td>Last heartbeat</td>
-    <td>{{TASK_LAST_HEARTBEAT}}</td>
+    <td><abbr class="timeago" title="{{TASK_LAST_HEARTBEAT}}">{{TASK_LAST_HEARTBEAT}}</abbr></td>
   </tr>
   <tr>
     <td>Location</td>
