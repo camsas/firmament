@@ -193,18 +193,17 @@ bool EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   VLOG(1) << "Handling completion of task " << td_ptr->uid()
           << ", freeing resource " << *res_id_ptr;
   // Set the bound resource idle again.
-  ResourceStatus** res = FindOrNull(*resource_map_, *res_id_ptr);
-  (*res)->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  ResourceStatus* res = FindPtrOrNull(*resource_map_, *res_id_ptr);
+  res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
   // Remove the task's resource binding (as it is no longer currently bound)
   task_bindings_.erase(td_ptr->uid());
   // Record final report
   ExecutorInterface* exec = FindPtrOrNull(executors_, *res_id_ptr);
   CHECK_NOTNULL(exec);
   exec->HandleTaskCompletion(*td_ptr, report);
-  // Mark task ask completed
-  td_ptr->set_state(TaskDescriptor::COMPLETED);
-  // We only need to run the scheduler if the task was not delegated from
-  // elsewhere, i.e. if it is managed by the local scheduler instance.
+  // We only need to check the job-level completion state if the task was not
+  // delegated from elsewhere, i.e. if it is managed by the local scheduler
+  // instance.
   if (!td_ptr->has_delegated_from()) {
     // Run scheduling algorithms from this task
     set<DataObjectID_t*> outputs = DataObjectIDsFromProtobuf(td_ptr->outputs());
@@ -294,6 +293,8 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   // Remove the task's resource binding (as it is no longer currently bound)
   task_bindings_.erase(td_ptr->uid());
   // Set the task to "failed" state and deal with the consequences
+  // (The state may already have been changed elsewhere, but since the failure
+  // case can arise unexpectedly, we set it again here).
   td_ptr->set_state(TaskDescriptor::FAILED);
   // We only need to run the scheduler if the failed task was not delegated from
   // elsewhere, i.e. if it is managed by the local scheduler. If so, we kick the
