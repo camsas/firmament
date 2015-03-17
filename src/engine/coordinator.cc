@@ -640,13 +640,6 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
   // Extract job ID (we expect it to be set)
   CHECK(msg.spawned_task_desc().has_job_id());
   JobID_t job_id = JobIDFromString(msg.spawned_task_desc().job_id());
-  // Find task graph for job
-  TaskGraph** task_graph_pptr = FindOrNull(task_graph_table_, job_id);
-  CHECK_NOTNULL(task_graph_pptr);
-  TaskGraph* task_graph_ptr = *task_graph_pptr;
-  VLOG(1) << "Task graph is at " << task_graph_ptr;
-  // Add task to task graph
-  //task_graph_ptr->AddChildTask(spawner, spawnee)
   // Update references with producing task, if necessary
   // TODO(malte): implement this properly; below is a hack that delegates
   // outputs by simple modifying their producing task.
