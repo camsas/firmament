@@ -647,43 +647,21 @@ void Coordinator::HandleTaskStateChange(
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_table_, msg.id());
   CHECK(td_ptr) << "Received task state change message for task "
                 << msg.id();
-
+  // Update the task's state
+  td_ptr->set_state(msg.new_state());
   switch (msg.new_state()) {
     case TaskDescriptor::COMPLETED:
-    {
-      td_ptr->set_state(TaskDescriptor::COMPLETED);
-      TaskFinalReport report;
-      scheduler_->HandleTaskCompletion(td_ptr, &report);
-      // First check if this is a delegated task, and forward the message if so
-      if (td_ptr->has_delegated_from()) {
-        BaseMessage bm;
-        bm.mutable_task_state()->CopyFrom(msg);
-
-        // Send along completion statistics to the coordinator as well.
-        // TODO(malte): Make this all const including handle task completion
-        // method and remove duplication from
-        // Switch statement below.
-        TaskFinalReport *sending_rep = bm.mutable_taskfinal_report();
-        sending_rep->CopyFrom(report);
-        sending_rep->set_task_id(td_ptr->uid());
-
-        m_adapter_->SendMessageToEndpoint(td_ptr->delegated_from(), bm);
-      }
-      // Process the final report locally
-      knowledge_base_->ProcessTaskFinalReport(report);
+    case TaskDescriptor::ABORTED:
+      HandleTaskCompletion(msg, td_ptr);
       break;
-    }
     case TaskDescriptor::FAILED:
-    {
+      // Set the task to "failed" state and deal with the consequences
       scheduler_->HandleTaskFailure(td_ptr);
       // Fall through into default case, which sends message to
       // parent if required
-    }
-    case TaskDescriptor::ABORTED:
     default:
       VLOG(1) << "Task " << msg.id() << "'s state changed to "
               << static_cast<uint64_t> (msg.new_state());
-      td_ptr->set_state(msg.new_state());
       // Check if this is a delegated task, and forward the message if so
       if (td_ptr->has_delegated_from()) {
         BaseMessage bm;
@@ -692,7 +670,7 @@ void Coordinator::HandleTaskStateChange(
       }
       break;
   }
-  // Do not run if delegated
+  // Do not run scheduler if delegated
   if (td_ptr->has_delegated_from()) {
     return;
   }
@@ -705,6 +683,29 @@ void Coordinator::HandleTaskStateChange(
                                  JobIDFromString(td_ptr->job_id()));
   scheduler_->ScheduleJob(jd);
   // XXX(malte): tear down the respective connection, cleanup
+}
+
+void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
+                                       TaskDescriptor* td_ptr) {
+  TaskFinalReport report;
+  scheduler_->HandleTaskCompletion(td_ptr, &report);
+  // First check if this is a delegated task, and forward the message if so
+  if (td_ptr->has_delegated_from()) {
+    BaseMessage bm;
+    bm.mutable_task_state()->CopyFrom(msg);
+
+    // Send along completion statistics to the coordinator as well.
+    // TODO(malte): Make this all const including handle task completion
+    // method and remove duplication from
+    // Switch statement below.
+    TaskFinalReport *sending_rep = bm.mutable_taskfinal_report();
+    sending_rep->CopyFrom(report);
+    sending_rep->set_task_id(td_ptr->uid());
+
+    m_adapter_->SendMessageToEndpoint(td_ptr->delegated_from(), bm);
+  }
+  // Process the final report locally
+  knowledge_base_->ProcessTaskFinalReport(report);
 }
 
 #ifdef __HTTP_UI__

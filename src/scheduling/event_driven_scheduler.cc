@@ -93,19 +93,19 @@ void EventDrivenScheduler::KillRunningTask(
 void EventDrivenScheduler::BindTaskToResource(
     TaskDescriptor* task_desc,
     ResourceDescriptor* res_desc) {
-  // TODO(malte): stub
+  CHECK_NOTNULL(task_desc);
+  CHECK_NOTNULL(res_desc);
   VLOG(1) << "Binding task " << task_desc->uid() << " to resource "
           << res_desc->uuid();
-  // TODO(malte): safety checks
+  // Mark resource as busy and record task binding
   res_desc->set_state(ResourceDescriptor::RESOURCE_BUSY);
-  task_desc->set_state(TaskDescriptor::RUNNING);
   CHECK(InsertIfNotPresent(&task_bindings_, task_desc->uid(),
                            ResourceIDFromString(res_desc->uuid())));
-  if (VLOG_IS_ON(1))
+  if (VLOG_IS_ON(2))
     DebugPrintRunnableTasks();
   // Remove the task from the runnable set
-  CHECK(runnable_tasks_.erase(task_desc->uid()));
-  if (VLOG_IS_ON(1))
+  CHECK_EQ(runnable_tasks_.erase(task_desc->uid()), 1);
+  if (VLOG_IS_ON(2))
     DebugPrintRunnableTasks();
   // Find an executor for this resource.
   ExecutorInterface* exec =
@@ -114,7 +114,9 @@ void EventDrivenScheduler::BindTaskToResource(
   // Actually kick off the task
   // N.B. This is an asynchronous call, as the executor will spawn a thread.
   exec->RunTask(task_desc, !task_desc->inject_task_lib());
-  VLOG(1) << "Task running";
+  // Mark task as running and report
+  task_desc->set_state(TaskDescriptor::RUNNING);
+  VLOG(1) << "Task " << task_desc->uid() << " running.";
 }
 
 ResourceID_t* EventDrivenScheduler::BoundResourceForTask(TaskID_t task_id) {
@@ -188,23 +190,23 @@ bool EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                                 TaskFinalReport* report) {
   boost::lock_guard<boost::mutex> lock(scheduling_lock_);
   // Find resource for task
-  ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, td_ptr->uid());
+  ResourceID_t* res_id_ptr = BoundResourceForTask(td_ptr->uid());
   CHECK_NOTNULL(res_id_ptr);
   VLOG(1) << "Handling completion of task " << td_ptr->uid()
           << ", freeing resource " << *res_id_ptr;
   // Set the bound resource idle again.
-  ResourceStatus** res = FindOrNull(*resource_map_, *res_id_ptr);
-  (*res)->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  ResourceStatus* res = FindPtrOrNull(*resource_map_, *res_id_ptr);
+  CHECK_NOTNULL(res);
+  res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
   // Remove the task's resource binding (as it is no longer currently bound)
-  task_bindings_.erase(td_ptr->uid());
+  CHECK_EQ(task_bindings_.erase(td_ptr->uid()), 1);
   // Record final report
   ExecutorInterface* exec = FindPtrOrNull(executors_, *res_id_ptr);
   CHECK_NOTNULL(exec);
   exec->HandleTaskCompletion(*td_ptr, report);
-  // Mark task ask completed
-  td_ptr->set_state(TaskDescriptor::COMPLETED);
-  // We only need to run the scheduler if the task was not delegated from
-  // elsewhere, i.e. if it is managed by the local scheduler instance.
+  // We only need to check the job-level completion state if the task was not
+  // delegated from elsewhere, i.e. if it is managed by the local scheduler
+  // instance.
   if (!td_ptr->has_delegated_from()) {
     // Run scheduling algorithms from this task
     set<DataObjectID_t*> outputs = DataObjectIDsFromProtobuf(td_ptr->outputs());
@@ -294,6 +296,8 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   // Remove the task's resource binding (as it is no longer currently bound)
   task_bindings_.erase(td_ptr->uid());
   // Set the task to "failed" state and deal with the consequences
+  // (The state may already have been changed elsewhere, but since the failure
+  // case can arise unexpectedly, we set it again here).
   td_ptr->set_state(TaskDescriptor::FAILED);
   // We only need to run the scheduler if the failed task was not delegated from
   // elsewhere, i.e. if it is managed by the local scheduler. If so, we kick the
@@ -319,6 +323,7 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
     return false;
   }
   ResourceDescriptor* rd = rs_ptr->mutable_descriptor();
+  CHECK_NOTNULL(rd);
   // Is the resource still idle?
   if (rd->state() != ResourceDescriptor::RESOURCE_IDLE) {
     // Resource is no longer idle
