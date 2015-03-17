@@ -729,8 +729,9 @@ bool Coordinator::KillRunningTask(TaskID_t task_id,
   if (!td_ptr) {
     LOG(ERROR) << "Tried to kill unknown task " << task_id;
     return false;
-  } else if (!td_ptr->has_last_heartbeat_location() ||
-             td_ptr->last_heartbeat_location().empty()) {
+  } else if (!td_ptr->has_delegated_to() &&
+             (!td_ptr->has_last_heartbeat_location() ||
+              td_ptr->last_heartbeat_location().empty())) {
     LOG(ERROR) << "Tried to kill task " << task_id << " at unknown location";
     return false;
   }
