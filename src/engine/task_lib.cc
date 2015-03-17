@@ -98,19 +98,18 @@ TaskLib::~TaskLib() {
 }
 
 void TaskLib::Stop(bool success) {
-  printf("STOP CALLED\n");
-  fflush(stdout);
+  LOG(INFO) << "STOP CALLED";
   stop_ = true;
   //while (task_running_) {
   //  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
   //   //Wait until the monitor has stopped before sending the finalize message.
   //}
   sleep(1);
-  printf("Sending finalize message\n");
-  fflush(stdout);
+  LOG(INFO) << "Sending finalize message to coordinator...";
   SendFinalizeMessage(success);
-  printf("Finalise message sent\n");
+  LOG(INFO) << "Finalise message sent";
   fflush(stdout);
+  fflush(stderr);
   // Remove PID file
   stringstream ss;
   ss << "/tmp/" << task_id_ << ".pid";
@@ -277,8 +276,8 @@ bool TaskLib::PullTaskInformationFromCoordinator(TaskID_t task_id,
 
 void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   FLAGS_logtostderr = true;
-  //VLOG(3) << "COORDINATOR URI: " << FLAGS_coordinator_uri;
-  ConnectToCoordinator(coordinator_uri_);
+  LOG(INFO) << "COORDINATOR URI: " << FLAGS_coordinator_uri;
+  CHECK(ConnectToCoordinator(coordinator_uri_));
   m_adapter_->RegisterAsyncMessageReceiptCallback(
       boost::bind(&TaskLib::HandleIncomingMessage, this, _1, _2));
   //m_adapter_->RegisterAsyncErrorPathCallback(
@@ -323,8 +322,8 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
       // Finally, nap for a bit until the next heartbeat is due
       sleep(FLAGS_heartbeat_interval);
     }
-  printf("STOPPING HEARTBEATS\n");
-  fflush(stdout);
+  LOG(INFO) << "STOPPING HEARTBEATS";
+  fflush(stderr);
   task_running_ = false;
 }
 

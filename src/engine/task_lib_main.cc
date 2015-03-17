@@ -52,12 +52,12 @@ __attribute__((constructor)) static void task_lib_main() {
   */
 
   // Unset LD_PRELOAD to avoid us from starting launching monitors in
-  // child processes.
+  // child processes, unless we're in a wrapper
   setenv("LD_PRELOAD", "", 1);
 
   // Cleanup task lib before terminating the process.
   atexit(TerminationCleanup);
 
-  VLOG(2) << "Starting tasklib monitor thread\n";
+  LOG(INFO) << "Starting tasklib monitor thread\n";
   boost::thread t1(&LaunchTasklib);
 }
