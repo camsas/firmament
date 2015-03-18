@@ -20,6 +20,8 @@
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
 
+#define TASK_FAIL_TIMEOUT 10000000ULL
+
 namespace firmament {
 namespace scheduler {
 
@@ -144,7 +146,7 @@ void EventDrivenScheduler::CheckRunningTasksHealth() {
         CHECK_NOTNULL(td);
         if (td->state() != TaskDescriptor::COMPLETED &&
             td->last_heartbeat_time() <= 
-            (GetCurrentTimestamp() - FLAGS_heartbeat_interval * 10))
+            (GetCurrentTimestamp() - TASK_FAIL_TIMEOUT))
           HandleTaskFailure(td);
       }
     }
