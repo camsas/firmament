@@ -294,9 +294,9 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   len = read(*client_socket_, size_m_buf,
              boost::asio::transfer_exactly(sizeof(uint64_t)), error);
   if (error || len != sizeof(uint64_t)) {
-    VLOG(1) << "Error reading from connection on channel " << *this
-            << "(len: " << len << ", expected: " << sizeof(uint64_t) << ")"
-            << ": " << error.message();
+    LOG(ERROR) << "Error reading from connection on channel " << *this
+               << "(len: " << len << ", expected: " << sizeof(uint64_t) << ")"
+               << ": " << error.message();
     return false;
   }
   // ... we can get away with a simple CHECK here and assume that we have some
@@ -318,8 +318,8 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
     VLOG(1) << "Received EOF, connection terminating!";
     return false;
   } else if (error) {
-    VLOG(1) << "Error reading from connection: "
-            << error.message();
+    LOG(ERROR) << "Error reading from connection: "
+               << error.message();
     return false;
   } else {
     VLOG(2) << "Read " << len << " bytes of protobuf data...";
@@ -370,7 +370,9 @@ void StreamSocketsChannel<T>::RecvASecondStage(
     Envelope<T>* final_envelope,
     typename AsyncRecvHandler<T>::type final_callback) {
   if (error || bytes_read != sizeof(uint64_t)) {
-    VLOG(1) << "Error reading from connection: " << error.message();
+    LOG(ERROR) << "Error reading from connection: " << error.message()
+               << "; read " << bytes_read << " bytes, expected "
+               << sizeof(uint64_t);
     async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
     return;
@@ -417,8 +419,9 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
     final_callback(error, bytes_read, final_envelope);
     return;
   } else if (error) {
-    VLOG(1) << "Error reading from connection: "
-            << error.message();
+    LOG(ERROR) << "Error reading from connection: "
+               << error.message() << "; read " << bytes_read
+               << " bytes, expected " << message_size;
     async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
     return;
