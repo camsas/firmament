@@ -102,6 +102,8 @@ class GoogleTraceSimulator {
 
   void LoadJobsNumTasks();
 
+  void LoadTaskRuntimeStats();
+
   /**
    * Loads all the task runtimes and returns map task_identifier -> runtime.
    */
