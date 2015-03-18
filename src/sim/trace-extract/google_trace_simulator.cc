@@ -691,6 +691,7 @@ void GoogleTraceSimulator::UpdateFlowGraph(
         &task_bindings_, delta);
     if (delta->type() == SchedulingDelta::NOOP) {
       // We don't have to do anything.
+      delete delta;
       continue;
     } else if (delta->type() == SchedulingDelta::PLACE) {
       // Apply the scheduling delta.
