@@ -39,6 +39,12 @@ typedef struct TaskRuntime_st {
   uint64_t num_runs;
   int64_t last_schedule_time;
   int64_t total_runtime;
+  int64_t scheduling_class;
+  int64_t priority;
+  double cpu_request;
+  double ram_request;
+  double disk_request;
+  int32_t machine_constraint;
 } TaskRuntime;
 
 struct TaskIdentifier {
@@ -89,12 +95,13 @@ class GoogleTraceTaskProcessor {
       const vector<TaskResourceUsage>& resource_usage);
   TaskResourceUsage MinTaskUsage(
       const vector<TaskResourceUsage>& resource_usage);
+  void PopulateTaskRuntime(TaskRuntime* task_runtime_ptr,
+                           vector<string>& cols); // NOLINT
   void PrintStats(FILE* usage_stat_file, const TaskIdentifier& task_id,
                   const vector<TaskResourceUsage>& task_resource);
   void PrintTaskRuntime(FILE* out_events_file, const TaskRuntime& task_runtime,
                         const TaskIdentifier& task_id,
-                        string logical_job_name, uint64_t runtime,
-                        vector<string>& cols); // NOLINT
+                        string logical_job_name, uint64_t runtime);
   void ProcessSchedulingEvents(
       uint64_t timestamp,
       multimap<uint64_t, TaskSchedulingEvent>* scheduling_events,

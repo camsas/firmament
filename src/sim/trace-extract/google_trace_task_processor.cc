@@ -148,11 +148,13 @@ namespace sim {
         TaskRuntime task_runtime = {};
         task_runtime.start_time = timestamp;
         task_runtime.last_schedule_time = timestamp;
+        PopulateTaskRuntime(&task_runtime, line_cols);
         InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
       } else {
         // Update the last scheduling time for the task. Assumes that
         // the previously running instance of the task has finished/failed.
         task_runtime_ptr->last_schedule_time = timestamp;
+        PopulateTaskRuntime(task_runtime_ptr, line_cols);
       }
     } else if (event_type == TASK_EVICT || event_type == TASK_FAIL ||
                event_type == TASK_KILL || event_type == TASK_LOST) {
@@ -164,6 +166,7 @@ namespace sim {
         task_runtime.start_time = 0;
         task_runtime.num_runs = 1;
         task_runtime.total_runtime = timestamp;
+        PopulateTaskRuntime(&task_runtime, line_cols);
         InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
       } else {
         // Update the runtime for the task. The failed tasks are included
@@ -171,6 +174,7 @@ namespace sim {
         task_runtime_ptr->num_runs++;
         task_runtime_ptr->total_runtime +=
           timestamp - task_runtime_ptr->last_schedule_time;
+        PopulateTaskRuntime(task_runtime_ptr, line_cols);
       }
     } else if (event_type == TASK_FINISH) {
       string logical_job_name = (*job_id_to_name)[task_id.job_id];
@@ -181,17 +185,18 @@ namespace sim {
         task_runtime.start_time = 0;
         task_runtime.num_runs = 1;
         task_runtime.total_runtime = timestamp;
+        PopulateTaskRuntime(&task_runtime, line_cols);
         InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
         PrintTaskRuntime(out_events_file, task_runtime, task_id,
-                         logical_job_name, timestamp, line_cols);
+                         logical_job_name, timestamp);
       } else {
         task_runtime_ptr->num_runs++;
         task_runtime_ptr->total_runtime +=
           timestamp - task_runtime_ptr->last_schedule_time;
+        PopulateTaskRuntime(task_runtime_ptr, line_cols);
         PrintTaskRuntime(out_events_file, *task_runtime_ptr, task_id,
                          logical_job_name,
-                         timestamp - task_runtime_ptr->last_schedule_time,
-                         line_cols);
+                         timestamp - task_runtime_ptr->last_schedule_time);
       }
     } else if (event_type == TASK_UPDATE_PENDING ||
                event_type == TASK_UPDATE_RUNNING) {
@@ -749,27 +754,32 @@ namespace sim {
     return *job_id_to_name;
   }
 
-  void GoogleTraceTaskProcessor::PrintTaskRuntime(
-      FILE* out_events_file, const TaskRuntime& task_runtime,
-      const TaskIdentifier& task_id, string logical_job_name, uint64_t runtime,
-      vector<string>& cols) {
+  void GoogleTraceTaskProcessor::PopulateTaskRuntime(TaskRuntime* task_runtime_ptr,
+                                                     vector<string>& cols) {
     for (uint32_t index = 7; index < 13; ++index) {
       if (!cols[index].compare("")) {
         cols[index] = "-1";
       }
     }
-    int64_t scheduling_class = lexical_cast<uint64_t>(cols[7]);
-    int64_t priority = lexical_cast<uint64_t>(cols[8]);
-    double cpu_request = lexical_cast<double>(cols[9]);
-    double ram_request = lexical_cast<double>(cols[10]);
-    double disk_request = lexical_cast<double>(cols[11]);
-    int32_t machine_constraint = lexical_cast<int32_t>(cols[12]);
+    task_runtime_ptr->scheduling_class = lexical_cast<uint64_t>(cols[7]);
+    task_runtime_ptr->priority = lexical_cast<uint64_t>(cols[8]);
+    task_runtime_ptr->cpu_request = lexical_cast<double>(cols[9]);
+    task_runtime_ptr->ram_request = lexical_cast<double>(cols[10]);
+    task_runtime_ptr->disk_request = lexical_cast<double>(cols[11]);
+    task_runtime_ptr->machine_constraint = lexical_cast<int32_t>(cols[12]);
+  }
+
+  void GoogleTraceTaskProcessor::PrintTaskRuntime(
+      FILE* out_events_file, const TaskRuntime& task_runtime,
+      const TaskIdentifier& task_id, string logical_job_name, uint64_t runtime) {
     fprintf(out_events_file, "%" PRId64 " %" PRId64 " %s %" PRId64 " %" PRId64
             " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %lf %lf %lf %d\n",
             task_id.job_id, task_id.task_index, logical_job_name.c_str(),
             task_runtime.start_time, task_runtime.total_runtime, runtime,
-            task_runtime.num_runs, scheduling_class, priority, cpu_request,
-            ram_request, disk_request, machine_constraint);
+            task_runtime.num_runs, task_runtime.scheduling_class,
+            task_runtime.priority, task_runtime.cpu_request,
+            task_runtime.ram_request, task_runtime.disk_request,
+            task_runtime.machine_constraint);
   }
 
   void GoogleTraceTaskProcessor::ProcessSchedulingEvents(
@@ -803,6 +813,7 @@ namespace sim {
     unordered_map<uint64_t, string>& job_id_to_name = ReadLogicalJobsName();
     unordered_map<TaskIdentifier, TaskRuntime,
                   TaskIdentifierHasher> tasks_runtime;
+    uint64_t end_simulation_time = 0;
     char line[200];
     vector<string> line_cols;
     FILE* events_file = NULL;
@@ -833,6 +844,9 @@ namespace sim {
           } else {
             TaskIdentifier task_id;
             uint64_t timestamp = lexical_cast<uint64_t>(line_cols[0]);
+            if (timestamp < numeric_limits<int64_t>::max()) {
+              end_simulation_time = max(end_simulation_time, timestamp);
+            }
             task_id.job_id = lexical_cast<uint64_t>(line_cols[2]);
             task_id.task_index = lexical_cast<uint64_t>(line_cols[3]);
             int32_t event_type = lexical_cast<int32_t>(line_cols[5]);
@@ -843,6 +857,32 @@ namespace sim {
         num_line++;
       }
       fclose(events_file);
+    }
+    for (unordered_map<TaskIdentifier, TaskRuntime,
+           TaskIdentifierHasher>::iterator it = tasks_runtime.begin();
+         it != tasks_runtime.end(); ++it) {
+      TaskIdentifier task_id = it->first;
+      string logical_job_name =  job_id_to_name[task_id.job_id];
+      uint64_t runtime = 0;
+      TaskRuntime task_runtime = it->second;
+      if (task_runtime.num_runs == 0) {
+        runtime = end_simulation_time - task_runtime.last_schedule_time;
+        task_runtime.num_runs++;
+        task_runtime.total_runtime = runtime;
+      } else {
+        uint64_t avg_runtime = task_runtime.total_runtime / task_runtime.num_runs;
+        runtime = end_simulation_time - task_runtime.last_schedule_time;
+        // If the average runtime to failure is bigger than the current
+        // runtime then we assume that the task is going to run for avg
+        // runtime to failure.
+        if (avg_runtime > runtime) {
+          runtime = avg_runtime;
+        }
+        task_runtime.num_runs++;
+        task_runtime.total_runtime += runtime;
+      }
+      PrintTaskRuntime(out_events_file, task_runtime, task_id,
+                       logical_job_name, runtime);
     }
     job_id_to_name.clear();
     delete &job_id_to_name;
