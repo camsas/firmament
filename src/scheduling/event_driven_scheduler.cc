@@ -192,16 +192,19 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   // Find resource for task
   ResourceID_t* res_id_ptr = BoundResourceForTask(td_ptr->uid());
   CHECK_NOTNULL(res_id_ptr);
+  // This copy is necessary because UnbindResourceForTask ends up deleting the
+  // ResourceID_t pointed to by res_id_ptr
+  ResourceID_t res_id_tmp = *res_id_ptr;
   VLOG(1) << "Handling completion of task " << td_ptr->uid()
-          << ", freeing resource " << *res_id_ptr;
+          << ", freeing resource " << res_id_tmp;
   // Set the bound resource idle again.
-  ResourceStatus* res = FindPtrOrNull(*resource_map_, *res_id_ptr);
+  ResourceStatus* res = FindPtrOrNull(*resource_map_, res_id_tmp);
   CHECK_NOTNULL(res);
   res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
   // Remove the task's resource binding (as it is no longer currently bound)
   CHECK(UnbindResourceForTask(td_ptr->uid()));
   // Record final report
-  ExecutorInterface* exec = FindPtrOrNull(executors_, *res_id_ptr);
+  ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
   CHECK_NOTNULL(exec);
   exec->HandleTaskCompletion(*td_ptr, report);
 }
@@ -263,12 +266,16 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Find resource for task
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, td_ptr->uid());
+  CHECK_NOTNULL(res_id_ptr);
+  // This copy is necessary because UnbindResourceForTask ends up deleting the
+  // ResourceID_t pointed to by res_id_ptr
+  ResourceID_t res_id_tmp = *res_id_ptr;
   VLOG(1) << "Handling failure of task " << td_ptr->uid()
-          << ", freeing resource " << *res_id_ptr;
+          << ", freeing resource " << res_id_tmp;
   // Set the bound resource idle again.
   // TODO(malte): We should probably check if the resource has failed at this
   // point...
-  ResourceStatus* res = FindPtrOrNull(*resource_map_, *res_id_ptr);
+  ResourceStatus* res = FindPtrOrNull(*resource_map_, res_id_tmp);
   res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
   // Executor cleanup: drop the task from the health checker's list, etc.
   ExecutorInterface* executor = GetExecutorForTask(td_ptr->uid());
