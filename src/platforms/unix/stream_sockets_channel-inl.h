@@ -229,7 +229,7 @@ bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
   len = boost::asio::write(
       *client_socket_, boost::asio::buffer(
           reinterpret_cast<char*>(&msg_size_endian), sizeof(msg_size_endian)),
-             boost::asio::transfer_at_least(sizeof(uint64_t)), error);
+             boost::asio::transfer_exactly(sizeof(uint64_t)), error);
   if (error || len != sizeof(uint64_t)) {
     VLOG(1) << "Error sending size preamble on connection: "
             << error.message();
@@ -238,7 +238,7 @@ bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
   // Send the data
   len = boost::asio::write(
       *client_socket_, boost::asio::buffer(buf, msg_size),
-             boost::asio::transfer_at_least(msg_size), error);
+             boost::asio::transfer_exactly(msg_size), error);
   if (error || len != msg_size) {
     VLOG(1) << "Error sending message on connection: "
             << error.message();
@@ -292,7 +292,7 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   // N.B.: read() blocks until the buffer has been filled, i.e. an entire
   // uint64_t has been read.
   len = read(*client_socket_, size_m_buf,
-             boost::asio::transfer_at_least(sizeof(uint64_t)), error);
+             boost::asio::transfer_exactly(sizeof(uint64_t)), error);
   if (error || len != sizeof(uint64_t)) {
     VLOG(1) << "Error reading from connection on channel " << *this
             << "(len: " << len << ", expected: " << sizeof(uint64_t) << ")"
@@ -311,7 +311,7 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   vector<char> buf(msg_size);
   len = read(*client_socket_,
              boost::asio::mutable_buffers_1(&buf[0], msg_size),
-             boost::asio::transfer_at_least(msg_size), error);
+             boost::asio::transfer_exactly(msg_size), error);
   VLOG(2) << "Read " << len << " bytes.";
 
   if (error == boost::asio::error::eof) {
@@ -350,7 +350,7 @@ bool StreamSocketsChannel<T>::RecvA(
   // Asynchronously read the incoming protobuf message length and invoke the
   // second stage of the receive call once we have it.
   async_read(*client_socket_, *async_recv_buffer_,
-             boost::asio::transfer_at_least(sizeof(uint64_t)),
+             boost::asio::transfer_exactly(sizeof(uint64_t)),
              boost::bind(&StreamSocketsChannel<T>::RecvASecondStage,
                          this,
                          boost::asio::placeholders::error,
@@ -391,7 +391,7 @@ void StreamSocketsChannel<T>::RecvASecondStage(
   async_recv_buffer_.reset(new boost::asio::mutable_buffers_1(
       reinterpret_cast<char*>(&(*async_recv_buffer_vec_)[0]), msg_size));
   async_read(*client_socket_, *async_recv_buffer_,
-             boost::asio::transfer_at_least(msg_size),
+             boost::asio::transfer_exactly(msg_size),
              boost::bind(&StreamSocketsChannel<T>::RecvAThirdStage,
                          this,
                          boost::asio::placeholders::error,
