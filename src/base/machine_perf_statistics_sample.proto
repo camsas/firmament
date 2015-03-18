@@ -15,14 +15,14 @@ message MachinePerfStatisticsSample {
 }
 
 message CpuUsage {
-  required double user = 1;
-  required double nice = 2;
-  required double system = 3;
-  required double idle = 4;
-  required double iowait = 5;
-  required double irq = 6;
-  required double soft_irq = 7;
-  required double steal = 8;
-  required double guest = 9;
-  required double guest_nice = 10;
+  optional double user = 1;
+  optional double nice = 2;
+  optional double system = 3;
+  optional double idle = 4;
+  optional double iowait = 5;
+  optional double irq = 6;
+  optional double soft_irq = 7;
+  optional double steal = 8;
+  optional double guest = 9;
+  optional double guest_nice = 10;
 }
