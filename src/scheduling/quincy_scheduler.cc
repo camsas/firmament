@@ -105,6 +105,7 @@ const ResourceID_t* QuincyScheduler::FindResourceForTask(
 
 uint64_t QuincyScheduler::ApplySchedulingDeltas(
     const vector<SchedulingDelta*>& deltas) {
+  uint64_t num_scheduled = 0;
   // Perform the necessary actions to apply the scheduling changes passed to the
   // method
   VLOG(1) << "Applying " << deltas.size() << " scheduling deltas...";
@@ -117,38 +118,46 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
     if ((*it)->type() == SchedulingDelta::PLACE) {
       VLOG(1) << "Trying to place task " << task_id
               << " on resource " << (*it)->resource_id();
-      TaskDescriptor** td = FindOrNull(*task_map_, task_id);
-      ResourceStatus** rs = FindOrNull(*resource_map_, res_id);
+      TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
+      ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
       CHECK_NOTNULL(td);
       CHECK_NOTNULL(rs);
-      VLOG(1) << "About to bind task " << (*td)->uid() << " to resource "
-              << (*rs)->mutable_descriptor()->uuid();
-      BindTaskToResource(*td, (*rs)->mutable_descriptor());
+      VLOG(1) << "About to bind task " << td->uid() << " to resource "
+              << rs->mutable_descriptor()->uuid();
+      BindTaskToResource(td, rs->mutable_descriptor());
       // After the task is bound, we now remove all of its edges into the flow
       // graph apart from the bound resource.
       // N.B.: This disables preemption and migration!
       flow_graph_->UpdateArcsForBoundTask(task_id, res_id);
+      // Tag the job to which this task belongs as running
+      JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td->job_id()));
+      if (jd->state() != JobDescriptor::RUNNING)
+        jd->set_state(JobDescriptor::RUNNING);
+      num_scheduled++;
+      (*it)->set_actioned(true);
     }
-    delete *it;  // Remove the scheduling delta -- N.B. modifies collection
-                 // within loop!
   }
-  return deltas.size();
+  return num_scheduled;
 }
 
-bool QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
-                                           TaskFinalReport* report) {
-  bool job_done = false;
+void QuincyScheduler::HandleJobCompletion(JobID_t job_id) {
   // Call into superclass handler
-  job_done = EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
+  EventDrivenScheduler::HandleJobCompletion(job_id);
+  {
+    boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+    // Job completed, so remove its nodes
+    flow_graph_->DeleteNodesForJob(job_id);
+  }
+}
+
+void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
+                                           TaskFinalReport* report) {
+  // Call into superclass handler
+  EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   {
     boost::lock_guard<boost::mutex> lock(scheduling_lock_);
     flow_graph_->DeleteTaskNode(td_ptr->uid());
-    if (job_done) {
-      // Job completed, so remove its nodes
-      flow_graph_->DeleteNodesForJob(ResourceIDFromString(td_ptr->job_id()));
-    }
   }
-  return job_done;
 }
 
 uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
@@ -198,6 +207,17 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
     deltas.push_back(delta);
   }
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
+  // Drop all deltas that were actioned
+  for (vector<SchedulingDelta*>::iterator it = deltas.begin();
+       it != deltas.end(); ) {
+    if ((*it)->actioned())
+      it = deltas.erase(it);
+    else
+      it++;
+  }
+  if (deltas.size() > 0)
+    LOG(WARNING) << "Not all deltas were processed, " << deltas.size()
+                 << " remain!";
   return num_scheduled;
 }
 

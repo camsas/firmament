@@ -90,9 +90,9 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
   shared_ptr<AsyncTCPServer> tcp_server_;
   scoped_ptr<boost::thread> tcp_server_thread_;
   //set<shared_ptr<StreamSocketsChannel<T> > > active_channels_;
-  map<const string, StreamSocketsChannel<T>*>
+  unordered_map<string, StreamSocketsChannel<T>*>
       endpoint_channel_map_;
-  map<StreamSocketsChannel<T>*, Envelope<T>*>
+  unordered_map<StreamSocketsChannel<T>*, Envelope<T>*>
       channel_recv_envelopes_;
   // Synchronization variables, locks tec.
   boost::mutex message_wait_mutex_;

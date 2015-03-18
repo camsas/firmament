@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include <boost/chrono.hpp>
+
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
@@ -38,6 +40,8 @@ bool TaskHealthChecker::Run(vector<TaskID_t>* failed_tasks) {
 bool TaskHealthChecker::CheckTaskLiveness(TaskID_t task_id,
                                           boost::thread* handler_thread) {
   if (!handler_thread)
+    return false;
+  if (handler_thread->try_join_for(boost::chrono::seconds(1)))
     return false;
   return true;
 }

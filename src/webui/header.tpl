@@ -69,6 +69,9 @@
   <!-- Sparklines for resource consumption -->
   <script src="http://www.omnipotent.net/jquery.sparkline/2.1.2/jquery.sparkline.min.js"></script>
 
+  <!-- Friendly timestamps -->
+  <script src="https://cdn.rawgit.com/rmm5t/jquery-timeago/master/jquery.timeago.js"></script>
+
   <!-- Workaround for JQS + bootstrap issue -->
   <style>
     .jqstooltip {
@@ -76,6 +79,5 @@
       height: auto !important;
     }
   </style>
-
 </head>
 

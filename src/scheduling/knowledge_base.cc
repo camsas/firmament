@@ -124,15 +124,16 @@ void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
     LOG(INFO) << it->free_ram();
   }
 }
-void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report) {
-  TaskID_t tid = report.task_id();
+void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report,
+                                           const TaskDescriptor& td) {
+  TaskEquivClass_t tec = GenerateTaskEquivClass(td);
   // Check if we already have a record for this task
-  deque<TaskFinalReport>* q = FindOrNull(task_exec_reports_, tid);
+  deque<TaskFinalReport>* q = FindOrNull(task_exec_reports_, tec);
   if (!q) {
     // Add a blank queue for this task
-    CHECK(InsertOrUpdate(&task_exec_reports_, tid,
+    CHECK(InsertOrUpdate(&task_exec_reports_, tec,
                          deque<TaskFinalReport>()));
-    q = FindOrNull(task_exec_reports_, tid);
+    q = FindOrNull(task_exec_reports_, tec);
     CHECK_NOTNULL(q);
   }
   if (q->size() * sizeof(report) >= MAX_SAMPLE_QUEUE_CAPACITY)

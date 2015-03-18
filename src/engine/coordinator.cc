@@ -253,10 +253,38 @@ void Coordinator::Run() {
   Shutdown("dropped out of main loop");
 }
 
-const JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
+JobDescriptor* Coordinator::DescriptorForJob(const string& job_id) {
   JobID_t job_uuid = JobIDFromString(job_id);
   JobDescriptor *jd = FindOrNull(*job_table_, job_uuid);
   return jd;
+}
+
+bool Coordinator::HasJobCompleted(const JobDescriptor& jd) {
+  queue<TaskID_t> q;
+  q.push(jd.root_task().uid());
+  while (!q.empty()) {
+    TaskID_t cur_task_id = q.front();
+    q.pop();
+    TaskDescriptor* td = FindPtrOrNull(*task_table_, cur_task_id);
+    CHECK_NOTNULL(td);
+    if (!(td->state() == TaskDescriptor::COMPLETED ||
+          td->state() == TaskDescriptor::ABORTED)) {
+      LOG(INFO) << "Job " << jd.uuid() << " has not yet completed, as task "
+                << td->uid() << " is in state "
+                << ENUM_TO_STRING(TaskDescriptor::TaskState, td->state());
+      return false;
+    }
+    // TODO(malte): this needs to take a copy or a lock, otherwise we can race
+    // with concurrent spawns.
+    for (RepeatedPtrField<TaskDescriptor>::const_iterator it =
+         td->spawned().begin();
+         it != td->spawned().end();
+         it++) {
+      q.push(it->uid());
+    }
+  }
+  LOG(INFO) << "Job " << jd.uuid() << " has completed.";
+  return true;
 }
 
 void Coordinator::HandleIncomingMessage(BaseMessage *bm,
@@ -325,8 +353,16 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
   // Task kill message
   if (bm->has_task_kill()) {
     const TaskKillMessage& msg = bm->task_kill();
-    // TODO(malte): N.B., this throws away the success indication
-    KillRunningTask(msg.task_id(), msg.reason());
+    CHECK(KillRunningTask(msg.task_id(), msg.reason()))
+        << "Failed to kill task!";
+    handled_extensions++;
+  }
+  // Task final report
+  // TODO(malte): The TaskFinalReport protobuf lives in the wrong place (base
+  // instead of messages). Move over.
+  if (bm->has_taskfinal_report()) {
+    const TaskFinalReport& msg = bm->taskfinal_report();
+    HandleTaskFinalReport(msg);
     handled_extensions++;
   }
   // DIOS syscall: create message
@@ -395,8 +431,8 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       LOG(WARNING) << "HEARTBEAT from UNKNOWN resource (uuid: "
               << msg.uuid() << ")!";
   } else {
-      LOG(INFO) << "HEARTBEAT from resource " << msg.uuid()
-                << " (last seen at " << rsp->last_heartbeat() << ")";
+      VLOG(1) << "HEARTBEAT from resource " << msg.uuid()
+              << " (last seen at " << rsp->last_heartbeat() << ")";
       if (msg.has_load())
         VLOG(2) << "Remote resource stats: " << msg.load().ShortDebugString();
       // Update timestamp
@@ -407,15 +443,12 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
 }
 
 void Coordinator::HandleTaskFinalReport(const TaskFinalReport& report) {
-  VLOG(1) << "Handling task final report!";
+  VLOG(1) << "Handling task final report for " << report.task_id();
   TaskDescriptor *td_ptr = FindPtrOrNull(*task_table_, report.task_id());
-
-  if (parent_chan_ == NULL) {
-    CHECK_NOTNULL(td_ptr);
-    knowledge_base_->ProcessTaskFinalReport(report);
-  }
+  CHECK_NOTNULL(td_ptr);
+  // Process the report using the KB
+  knowledge_base_->ProcessTaskFinalReport(report, *td_ptr);
 }
-
 
 void Coordinator::HandleIONotification(const BaseMessage& bm,
                                        const string& remote_uri) {
@@ -451,8 +484,7 @@ void Coordinator::HandleIONotification(const BaseMessage& bm,
       delete remove[i];
     }
     // Call into scheduler, as this change may have made things runnable
-    JobDescriptor* jd = FindOrNull(*job_table_,
-                                   JobIDFromString((*td_ptr)->job_id()));
+    JobDescriptor* jd = DescriptorForJob((*td_ptr)->job_id());
     scheduler_->ScheduleJob(jd);
   }
 }
@@ -517,11 +549,11 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
     LOG(WARNING) << "HEARTBEAT from UNKNOWN task (ID: "
                  << task_id << ")!";
   } else {
-    LOG(INFO) << "HEARTBEAT from task " << task_id;
-    // Remember the current location of this task
-    // TODO(malte): commenting this out as the string received is often incomplete
-    // We maintain it separately when it changes (e.g. in executor events)
+    VLOG(1) << "HEARTBEAT from task " << task_id;
+    // Remember the current location from which this task reports
     tdp->set_last_heartbeat_location(msg.location());
+    // Remember the heartbeat time
+    tdp->set_last_heartbeat_time(GetCurrentTimestamp());
     // Process the profiling information submitted by the task, add it to
     // the knowledge base
     knowledge_base_->AddTaskSample(msg.stats());
@@ -545,7 +577,6 @@ void Coordinator::HandleTaskDelegationRequest(
           << msg.task_descriptor().uid() << " from resource "
           << msg.delegating_resource_id();
   // Check if there is room for this task here
-  // (or maybe enqueue it?)
   TaskDescriptor* td = new TaskDescriptor(msg.task_descriptor());
   bool result = scheduler_->PlaceDelegatedTask(
       td, ResourceIDFromString(msg.target_resource_id()));
@@ -561,6 +592,7 @@ void Coordinator::HandleTaskDelegationRequest(
     // Failure; delegator needs to try again
     VLOG(1) << "Failed to place!";
     SUBMSG_WRITE(response, task_delegation_response, success, false);
+    delete td;
   }
   m_adapter_->SendMessageToEndpoint(remote_endpoint, response);
 }
@@ -608,13 +640,6 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
   // Extract job ID (we expect it to be set)
   CHECK(msg.spawned_task_desc().has_job_id());
   JobID_t job_id = JobIDFromString(msg.spawned_task_desc().job_id());
-  // Find task graph for job
-  TaskGraph** task_graph_pptr = FindOrNull(task_graph_table_, job_id);
-  CHECK_NOTNULL(task_graph_pptr);
-  TaskGraph* task_graph_ptr = *task_graph_pptr;
-  VLOG(1) << "Task graph is at " << task_graph_ptr;
-  // Add task to task graph
-  //task_graph_ptr->AddChildTask(spawner, spawnee)
   // Update references with producing task, if necessary
   // TODO(malte): implement this properly; below is a hack that delegates
   // outputs by simple modifying their producing task.
@@ -679,8 +704,7 @@ void Coordinator::HandleTaskStateChange(
   // TODO(malte): decide if we should do invoke the scheduler here, or kick off
   // the scheduling iteration from within the earlier handler call into the
   // scheduler
-  JobDescriptor* jd = FindOrNull(*job_table_,
-                                 JobIDFromString(td_ptr->job_id()));
+  JobDescriptor* jd = DescriptorForJob(td_ptr->job_id());
   scheduler_->ScheduleJob(jd);
   // XXX(malte): tear down the respective connection, cleanup
 }
@@ -688,6 +712,7 @@ void Coordinator::HandleTaskStateChange(
 void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
                                        TaskDescriptor* td_ptr) {
   TaskFinalReport report;
+  // Report will be filled in if the task is local (currently)
   scheduler_->HandleTaskCompletion(td_ptr, &report);
   // First check if this is a delegated task, and forward the message if so
   if (td_ptr->has_delegated_from()) {
@@ -695,17 +720,28 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
     bm.mutable_task_state()->CopyFrom(msg);
 
     // Send along completion statistics to the coordinator as well.
-    // TODO(malte): Make this all const including handle task completion
-    // method and remove duplication from
-    // Switch statement below.
+    // TODO(malte): Make this all const including handle task completion method
     TaskFinalReport *sending_rep = bm.mutable_taskfinal_report();
     sending_rep->CopyFrom(report);
     sending_rep->set_task_id(td_ptr->uid());
 
     m_adapter_->SendMessageToEndpoint(td_ptr->delegated_from(), bm);
+  } else {
+    // Check if this is the last task in the job to complete; if so, the job
+    // has completed. This only needs to happen on the delegating coordinator,
+    // who is responsible for maintaining the job information. Subordinate
+    // delegatees only know about their respective tasks.
+    JobDescriptor* jd = DescriptorForJob(td_ptr->job_id());
+    CHECK_NOTNULL(jd);
+    if (HasJobCompleted(*jd)) {
+      LOG(INFO) << "Job " << jd->uuid() << " has completed!";
+      scheduler_->HandleJobCompletion(JobIDFromString(jd->uuid()));
+    }
   }
-  // Process the final report locally
-  knowledge_base_->ProcessTaskFinalReport(report);
+  if (report.has_task_id()) {
+    // Process the final report locally
+    knowledge_base_->ProcessTaskFinalReport(report, *td_ptr);
+  }
 }
 
 #ifdef __HTTP_UI__

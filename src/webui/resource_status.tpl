@@ -64,10 +64,17 @@ function step() {
   $('#ram-sparkline').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
   $('#cpu-agg-sys').sparkline(cpuAggSysTimeseries, {lineColor: '#ff0000', fillColor: '#ffaaaa'});
   $('#cpu-agg-usr').sparkline(cpuAggUsrTimeseries, {lineColor: '#00ff00', fillColor: '#aaffaa'});
+  // update timers
+  $("abbr.timeago").each(function (index) {
+    $(this).text(jQuery.timeago(new Date(this.title)));
+  });
   window.setTimeout(step, 10000);
 }
 
 $(function() {
+  $("abbr.timeago").each(function (index) {
+    $(this).attr("title", new Date(parseInt(this.title)).toISOString());
+  });
   step();
 });
 </script>
@@ -114,7 +121,7 @@ $(function() {
   </tr>
   <tr>
     <td>Last heartbeat</td>
-    <td>{{RES_LAST_HEARTBEAT}}</td>
+    <td><abbr class="timeago" title="{{RES_LAST_HEARTBEAT}}">{{RES_LAST_HEARTBEAT}}</a></td>
   </tr>
   <tr>
     <td>CPU (usr)</td>

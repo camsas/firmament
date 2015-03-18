@@ -7,9 +7,9 @@ import binascii
 import time
 import shlex
 
-def add_worker_task(task, binary, args, worker_id, num_workers, extra_args):
+def add_worker_task(job_name, task, binary, args, worker_id, num_workers, extra_args):
   task.uid = 0
-  task.name = "task_%d" % (worker_id)
+  task.name = "%s/%d" % (job_name, worker_id)
   task.state = task_desc_pb2.TaskDescriptor.CREATED
   task.binary = "/usr/bin/python"
   task.args.extend(args)
@@ -21,7 +21,7 @@ def add_worker_task(task, binary, args, worker_id, num_workers, extra_args):
 
 if len(sys.argv) < 4:
   print "usage: memcached_submit.py <coordinator hostname> <web UI port> " \
-      "<task binary> [<args>] [<job name>] [<num workers>]"
+      "<task binary> [<args>] [<num workers>] [<job name>]"
   sys.exit(1)
 
 hostname = sys.argv[1]
@@ -34,14 +34,14 @@ else:
   extra_args = []
 
 if len(sys.argv) > 5:
-  job_name = sys.argv[5]
-else:
-  job_name = "memcached_job_at_%d" % (int(time.time()))
-
-if len(sys.argv) > 6:
-  num_workers = int(sys.argv[6])
+  num_workers = int(sys.argv[5])
 else:
   num_workers = 1
+
+if len(sys.argv) > 6:
+  job_name = sys.argv[6]
+else:
+  job_name = "memcached_job_at_%d" % (int(time.time()))
 
 basic_args = []
 basic_args.append("/home/srguser/firmament-experiments/helpers/napper/napper_memcached.py")
@@ -53,7 +53,7 @@ job_desc.uuid = "" # UUID will be set automatically on submission
 job_desc.name = job_name
 # set up root task
 job_desc.root_task.uid = 0
-job_desc.root_task.name = "task_0"
+job_desc.root_task.name = job_name + "/0"
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
 job_desc.root_task.binary = "/usr/bin/python"
 job_desc.root_task.args.extend(basic_args)
@@ -66,7 +66,7 @@ job_desc.root_task.inject_task_lib = True
 # add workers
 for i in range(1, num_workers):
   task = job_desc.root_task.spawned.add()
-  add_worker_task(task, memcached_exe, basic_args, i, num_workers, extra_args)
+  add_worker_task(job_name, task, memcached_exe, basic_args, i, num_workers, extra_args)
 
 input_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 output_id = binascii.unhexlify('db33daba280d8e68eea6e490723b02cedb33daba280d8e68eea6e490723b02ce')

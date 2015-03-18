@@ -125,7 +125,7 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
   uint64_t *start_time = FindOrNull(task_start_times_, td.uid());
   // _SHOULD_ be in the start time from before!
   CHECK_NOTNULL(start_time);
-  report->set_task_id(GenerateTaskEquivClass(td));
+  report->set_task_id(td.uid());
   report->set_start_time(*start_time);
   report->set_finish_time(end_time);
   // Load perf data, if it exists
