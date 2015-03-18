@@ -71,11 +71,12 @@ bool Node::SendMessageToRemote(
     StreamSocketsChannel<BaseMessage>* chan,
     BaseMessage* msg) {
   Envelope<BaseMessage> envelope(msg);
-  return chan->SendA(
+  return chan->SendS(envelope);
+  /*return chan->SendA(
       envelope, boost::bind(&Node::HandleWrite,
                             this,
                             boost::asio::placeholders::error,
-                            boost::asio::placeholders::bytes_transferred));
+                            boost::asio::placeholders::bytes_transferred));*/
 }
 
 void Node::HandleWrite(const boost::system::error_code& error,
