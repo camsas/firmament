@@ -45,8 +45,9 @@ class KnowledgeBase {
   map<ResourceID_t, deque<MachinePerfStatisticsSample> > machine_map_;
   // TODO(malte): note that below sample queue has no awareness of time within a
   // task, i.e. it mixes samples from all phases
-  map<TaskID_t, deque<TaskPerfStatisticsSample> > task_map_;
-  map<TaskID_t, deque<TaskFinalReport> > task_exec_reports_;
+  unordered_map<TaskID_t, deque<TaskPerfStatisticsSample> > task_map_;
+  unordered_map<TaskID_t, deque<TaskFinalReport> > task_exec_reports_;
+  boost::mutex kb_lock_;
 };
 
 }  // namespace firmament

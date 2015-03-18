@@ -144,7 +144,7 @@ void QuincyScheduler::HandleJobCompletion(JobID_t job_id) {
   // Call into superclass handler
   EventDrivenScheduler::HandleJobCompletion(job_id);
   {
-    boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     // Job completed, so remove its nodes
     flow_graph_->DeleteNodesForJob(job_id);
   }
@@ -155,13 +155,13 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   {
-    boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     flow_graph_->DeleteTaskNode(td_ptr->uid());
   }
 }
 
 uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
-  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   LOG(INFO) << "START SCHEDULING " << job_desc->uuid();
   // Check if we have any runnable tasks in this job
   const set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);

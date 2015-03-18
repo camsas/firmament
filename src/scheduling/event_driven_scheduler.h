@@ -96,9 +96,9 @@ class EventDrivenScheduler : public SchedulerInterface {
   // Pointer to messaging adapter to use for communication with remote
   // resources.
   MessagingAdapterInterface<BaseMessage>* m_adapter_ptr_;
-  // Flag (effectively a lock) indicating if the scheduler is currently
+  // A lock indicating if the scheduler is currently
   // in the process of making scheduling decisions.
-  boost::mutex scheduling_lock_;
+  boost::recursive_mutex scheduling_lock_;
 };
 
 }  // namespace scheduler

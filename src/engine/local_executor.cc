@@ -28,10 +28,12 @@ DEFINE_uint64(debug_interactively, 0,
               "Run this task ID inside an interactive debugger.");
 DEFINE_bool(perf_monitoring, true,
             "Enable performance monitoring for tasks executed.");
-DEFINE_string(task_lib_path, "",
+DEFINE_string(task_lib_dir, "build/engine/",
               "Path where task_lib.a and task_lib_inject.so are.");
-DEFINE_string(task_log_directory, "/tmp/firmament-log",
+DEFINE_string(task_log_dir, "/tmp/firmament-log",
               "Path where task logs will be stored.");
+DEFINE_string(task_perf_dir, "/tmp/firmament-perf",
+              "Path where tasks' perf logs should be written.");
 
 namespace firmament {
 namespace executor {
@@ -47,6 +49,7 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
       heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
   VLOG(1) << "No topology manager passed, so will not bind to resource.";
+  CreateDirectories();
 }
 
 LocalExecutor::LocalExecutor(ResourceID_t resource_id,
@@ -60,6 +63,7 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
   VLOG(1) << "Tasks will be bound to the resource by the topology manager"
           << "at " << topology_manager_;
+  CreateDirectories();
 }
 
 char* LocalExecutor::AddPerfMonitoringToCommandLine(vector<char*>* argv) {
@@ -95,6 +99,21 @@ void LocalExecutor::CleanUpCompletedTask(const TaskDescriptor& td) {
   task_start_times_.erase(td.uid());
 }
 
+
+void LocalExecutor::CreateDirectories() {
+  struct stat st;
+  // Task logs (stdout and stderr)
+  if (!FLAGS_task_log_dir.empty() &&
+      stat(FLAGS_task_log_dir.c_str(), &st) == -1) {
+    mkdir(FLAGS_task_log_dir.c_str(), 0700);
+  }
+  // Tasks' perf logs
+  if (!FLAGS_task_perf_dir.empty() &&
+      stat(FLAGS_task_perf_dir.c_str(), &st) == -1) {
+    mkdir(FLAGS_task_perf_dir.c_str(), 0700);
+  }
+}
+ 
 void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
                                         const string& line) {
   boost::regex e("[[:space:]]*? ([0-9,.]+) ([a-zA-Z-]+) .*");
@@ -198,7 +217,7 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   // into an actual argv[].
   vector<string> args = pb_to_vector(td->args());
   // Path for task log files (stdout/stderr)
-  string tasklog = FLAGS_task_log_directory + "/" + to_string(td->uid());
+  string tasklog = FLAGS_task_log_dir + "/" + to_string(td->uid());
   // TODO(malte): This is somewhat hackish
   // arguments: binary (path + name), arguments, performance monitoring on/off,
   // debugging flags, is this a Firmament task binary? (on/off; will cause
@@ -280,7 +299,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
   // Print the whole command line
   string full_cmd_line;
   if (!default_args) {
-    setenv("LD_LIBRARY_PATH", FLAGS_task_lib_path.c_str(), 1);
+    setenv("LD_LIBRARY_PATH", FLAGS_task_lib_dir.c_str(), 1);
     setenv("LD_PRELOAD", "task_lib_inject.so", 1);
   }
   for (vector<char*>::const_iterator arg_iter = argv.begin();

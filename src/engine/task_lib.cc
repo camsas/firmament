@@ -365,11 +365,12 @@ void TaskLib::SendHeartbeat(
 
 bool TaskLib::SendMessageToCoordinator(BaseMessage* msg) {
   Envelope<BaseMessage> envelope(msg);
-  return chan_->SendA(
+  return chan_->SendS(envelope);
+  /*return chan_->SendA(
           envelope, boost::bind(&TaskLib::HandleWrite,
           this,
           boost::asio::placeholders::error,
-          boost::asio::placeholders::bytes_transferred));
+          boost::asio::placeholders::bytes_transferred));*/
 }
 
 void TaskLib::setUpStorageEngine() {

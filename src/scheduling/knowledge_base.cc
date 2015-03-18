@@ -18,6 +18,7 @@ KnowledgeBase::KnowledgeBase() {
 
 void KnowledgeBase::AddMachineSample(
     const MachinePerfStatisticsSample& sample) {
+  boost::lock_guard<boost::mutex> lock(kb_lock_);
   ResourceID_t rid = ResourceIDFromString(sample.resource_id());
   // Check if we already have a record for this machine
   deque<MachinePerfStatisticsSample>* q =
@@ -36,6 +37,7 @@ void KnowledgeBase::AddMachineSample(
 
 void KnowledgeBase::AddTaskSample(const TaskPerfStatisticsSample& sample) {
   TaskID_t tid = sample.task_id();
+  boost::lock_guard<boost::mutex> lock(kb_lock_);
   // Check if we already have a record for this task
   deque<TaskPerfStatisticsSample>* q = FindOrNull(task_map_, tid);
   if (!q) {
@@ -126,6 +128,7 @@ void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
 }
 void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report,
                                            const TaskDescriptor& td) {
+  boost::lock_guard<boost::mutex> lock(kb_lock_);
   TaskEquivClass_t tec = GenerateTaskEquivClass(td);
   // Check if we already have a record for this task
   deque<TaskFinalReport>* q = FindOrNull(task_exec_reports_, tec);

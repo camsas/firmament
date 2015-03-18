@@ -25,7 +25,7 @@
 #include "scheduling/quincy_scheduler.h"
 #include "storage/types.h"
 
-DECLARE_string(task_log_directory);
+DECLARE_string(task_log_dir);
 DECLARE_string(scheduler);
 DECLARE_string(debug_output_dir);
 
@@ -829,7 +829,7 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
     return;
   }
   string action = http_request->get_query("a");
-  string tasklog_filename = FLAGS_task_log_directory;
+  string tasklog_filename = FLAGS_task_log_dir;
   if (action.empty()) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
