@@ -50,6 +50,7 @@ struct TaskIdentifierHasher {
 class GoogleTraceSimulator {
  public:
   explicit GoogleTraceSimulator(const string& trace_path);
+  virtual ~GoogleTraceSimulator();
   void Run();
 
  private:
@@ -104,7 +105,7 @@ class GoogleTraceSimulator {
   /**
    * Loads all the task runtimes and returns map task_identifier -> runtime.
    */
-  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>&
+  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
       LoadTasksRunningTime();
 
   /**
@@ -146,7 +147,7 @@ class GoogleTraceSimulator {
   void ReplayTrace();
 
   void TaskCompleted(const TaskIdentifier& task_identifier);
-  void TaskEvicted(const TaskID_t& task_id, const ResourceID_t& res_id);
+  void TaskEvicted(TaskID_t task_id, const ResourceID_t& res_id);
 
   EventDescriptor_EventType TranslateMachineEvent(int32_t machine_event);
 
