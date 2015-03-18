@@ -699,10 +699,8 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     if (action == "kill") {
       if (coordinator_->KillRunningTask(TaskIDFromString(task_id),
                                         TaskKillMessage::USER_ABORT)) {
-        TemplateDictionary* not_dict = dict.AddSectionDictionary("INFO");
-        not_dict->SetValue("INFO_TITLE", "Task kill initiated.");
-        not_dict->SetValue("INFO_TEXT", "Please reload the page to see if the "
-                                        "kill request succeeded.");
+        RedirectResponse(http_request, tcp_conn, "/task/?id=" + task_id);
+        return;
       } else {
         ErrorMessage_t err("Failed to kill task.",
                            "The requested task could not be killed; check "
@@ -822,6 +820,14 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
                   tcp_conn);
     return;
   }
+  TaskDescriptor* td = coordinator_->GetTask(TaskIDFromString(task_id));
+  if (td->has_delegated_to()) {
+    string target = "http://" +
+                    URITools::GetHostnameFromURI(td->delegated_to()) +
+                    ":" + to_string(port_) + "/tasklog/?id=" + task_id;
+    RedirectResponse(http_request, tcp_conn, target);
+    return;
+  }
   string action = http_request->get_query("a");
   string tasklog_filename = FLAGS_task_log_directory;
   if (action.empty()) {
@@ -883,6 +889,19 @@ void CoordinatorHTTPUI::ErrorResponse(
   http::response& r = writer->get_response();
   r.set_status_code(error_code);
   //r.set_status_message("test");
+  writer->send();
+}
+
+void CoordinatorHTTPUI::RedirectResponse(
+    http::request_ptr http_request,
+    tcp::connection_ptr tcp_conn,
+    const string& location) {
+  http::response_writer_ptr writer = http::response_writer::create(
+      tcp_conn, *http_request, boost::bind(&tcp::connection::finish,
+                                           tcp_conn));
+  http::response& r = writer->get_response();
+  r.set_status_code(http::types::RESPONSE_CODE_FOUND);
+  r.add_header("Location", location);
   writer->send();
 }
 

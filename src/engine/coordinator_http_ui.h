@@ -83,6 +83,9 @@ class CoordinatorHTTPUI {
                         tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleShutdownURI(http::request_ptr& http_request, // NOLINT
                          tcp::connection_ptr& tcp_conn);  // NOLINT
+  void RedirectResponse(http::request_ptr http_request,  // NOLINT
+                        tcp::connection_ptr tcp_conn,  // NOLINT
+                        const string& location);
   void ServeFile(const string& filename, tcp::connection_ptr& tcp_conn,
                  http::request_ptr& http_request,
                  http::response_writer_ptr writer);
