@@ -270,8 +270,10 @@ void GoogleTraceSimulator::JobCompleted(uint64_t simulator_job_id,
                                         JobID_t job_id) {
   flow_graph_->DeleteNodesForJob(job_id);
   job_map_->erase(job_id);
+  JobDescriptor** jd_ptr = FindOrNull(job_id_to_jd_, simulator_job_id);
   job_id_to_jd_.erase(simulator_job_id);
   job_num_tasks_.erase(simulator_job_id);
+  delete *jd_ptr;
 }
 
 void GoogleTraceSimulator::LoadJobsNumTasks() {
@@ -442,7 +444,14 @@ void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
   DFSTraverseResourceProtobufTreeReturnRTND(
       *rtnd_ptr, boost::bind(&GoogleTraceSimulator::RemoveResource, this, _1));
   machine_id_to_rtnd_.erase(machine_id);
-  // TODO(ionel): Remove machine from the parent's children list.
+  if ((*rtnd_ptr)->has_parent_id()) {
+    // TODO(ionel): Delete node from the parent's children list.
+  } else {
+    LOG(WARNING) << "Machine " << machine_id << " doesn't have a parent";
+  }
+  // We can't delete the node because we haven't removed it from it's parent
+  // children list.
+  // delete *rtnd_ptr;
 }
 
 void GoogleTraceSimulator::RemoveResource(
@@ -453,7 +462,6 @@ void GoogleTraceSimulator::RemoveResource(
   if (task_id != NULL) {
     // Evict the task running on the resource.
     TaskEvicted(*task_id, res_id);
-    res_id_to_task_id_.erase(res_id);
   }
   // We don't need to set the state of the resource because it gets removed
   // anyway.
@@ -497,6 +505,7 @@ void GoogleTraceSimulator::TaskEvicted(const TaskID_t& task_id,
   if (range_it.first != range_it.second) {
     events_.erase(range_it.first);
   }
+  res_id_to_task_id_.erase(res_id);
 }
 
 void GoogleTraceSimulator::ResetUuidAndAddResource(
@@ -620,8 +629,10 @@ void GoogleTraceSimulator::TaskCompleted(
   JobID_t job_id = JobIDFromString((*td_ptr)->job_id());
   // Remove the task node from the flow graph.
   flow_graph_->DeleteTaskNode(task_id);
-  // Erase from local state: task_id_to_td_, task_map_ and task_bindings_.
+  // Erase from local state: task_id_to_td_, task_id_to_identifier_, task_map_ and task_bindings_,
+  // task_id_to_end_time_, res_id_to_task_id_.
   task_id_to_td_.erase(task_identifier);
+  delete *td_ptr;
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
   CHECK_NOTNULL(res_id_ptr);
   task_bindings_.erase(task_id);
