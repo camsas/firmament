@@ -65,6 +65,7 @@ class LocalExecutor : public ExecutorInterface {
   char* AddPerfMonitoringToCommandLine(vector<char*>* argv);
   char* AddDebuggingToCommandLine(vector<char*>* argv);
   void CleanUpCompletedTask(const TaskDescriptor& td);
+  void CreateDirectories();
   void GetPerfDataFromLine(TaskFinalReport* report,
                            const string& line);
   int32_t RunProcessAsync(const string& cmdline,
