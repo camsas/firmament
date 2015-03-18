@@ -93,7 +93,7 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
-		$(OPTFLAGS) $(DEFINES) \
+		$(OPTFLAGS) -fsanitize=address $(DEFINES) \
 		$(BUILD_DIR)/engine/coordinator.o \
 		$(BUILD_DIR)/scheduling/knowledge_base.o \
 		$(BUILD_DIR)/engine/node.o \
@@ -126,7 +126,7 @@ $(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
-		$(OPTFLAGS) $(DEFINES) \
+		$(OPTFLAGS) -fsanitize=address $(DEFINES) \
 		$(SRC_ROOT_DIR)/engine/coordinator.cc \
 		$(BUILD_DIR)/engine/node.o \
 		$(BUILD_DIR)/scheduling/knowledge_base.o \
@@ -157,7 +157,7 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/engine/worker_main.cc \
-		$(OPTFLAGS) $(DEFINES) \
+		$(OPTFLAGS) -fsanitize=address $(DEFINES) \
 		$(BUILD_DIR)/engine/node.o \
 		$(BUILD_DIR)/engine/worker.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
