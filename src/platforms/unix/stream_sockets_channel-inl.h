@@ -231,8 +231,8 @@ bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
           reinterpret_cast<char*>(&msg_size_endian), sizeof(msg_size_endian)),
              boost::asio::transfer_exactly(sizeof(uint64_t)), error);
   if (error || len != sizeof(uint64_t)) {
-    VLOG(1) << "Error sending size preamble on connection: "
-            << error.message();
+    LOG(ERROR) << "Error sending size preamble on connection: "
+               << error.message();
     return false;
   }
   // Send the data
@@ -240,8 +240,8 @@ bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
       *client_socket_, boost::asio::buffer(buf, msg_size),
              boost::asio::transfer_exactly(msg_size), error);
   if (error || len != msg_size) {
-    VLOG(1) << "Error sending message on connection: "
-            << error.message();
+    LOG(ERROR) << "Error sending message on connection: "
+               << error.message();
     return false;
   } else {
     VLOG(2) << "Sent " << len << " bytes of protobuf data: "
@@ -257,10 +257,12 @@ template <class T>
 bool StreamSocketsChannel<T>::SendA(
     const Envelope<T>& message,
     typename AsyncSendHandler<T>::type callback) {
+  LOG(FATAL) << "Should not currently use broken SendA!";
   VLOG(2) << "Trying to asynchronously send message: " << message;
   uint64_t msg_size = message.size();
-  vector<char> buf(msg_size);
-  CHECK(message.Serialize(&buf[0], message.size()));
+  // XXX(malte): not freed correctly!
+  vector<char>* buf = new vector<char>(msg_size);
+  CHECK(message.Serialize(&buf[0], msg_size));
 
   uint64_t msg_size_endian = htobe64(msg_size);
   // Synchronously send data size first
@@ -386,7 +388,7 @@ void StreamSocketsChannel<T>::RecvASecondStage(
   CHECK_GT(msg_size, 0);
   // XXX(malte): This is a nasty hack to highlight bugs in the channel logic.
   CHECK_LT(msg_size, 35000) << "Received implausibly large message!";
-  VLOG(3) << "RecvA: size of incoming protobuf from" << RemoteEndpointString()
+  VLOG(2) << "RecvA: size of incoming protobuf from" << RemoteEndpointString()
           << "is " << msg_size << " bytes.";
   // We still hold the async_recv_lock_ mutex here.
   async_recv_buffer_vec_.reset(new vector<char>(msg_size));
@@ -431,7 +433,7 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
   CHECK_GT(bytes_read, 0);
   CHECK_EQ(bytes_read, message_size);
   VLOG(2) << "About to parse message";
-  final_envelope->Parse(&(*async_recv_buffer_vec_)[0], bytes_read);
+  CHECK(final_envelope->Parse(&(*async_recv_buffer_vec_)[0], bytes_read));
   // Drop the lock
   VLOG(2) << "Unlocking async receive buffer";
   async_recv_lock_.unlock();
