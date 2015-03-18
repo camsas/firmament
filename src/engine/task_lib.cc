@@ -281,7 +281,7 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   m_adapter_->RegisterAsyncMessageReceiptCallback(
       boost::bind(&TaskLib::HandleIncomingMessage, this, _1, _2));
   //m_adapter_->RegisterAsyncErrorPathCallback(
-  //        boost::bind(&Coordinator::HandleIncomingReceiveError, this,
+  //        boost::bind(&TaskLib::HandleIncomingReceiveError, this,
   //        boost::asio::placeholders::error, _2));
 
   //VLOG(3) << "Setting up storage engine";
