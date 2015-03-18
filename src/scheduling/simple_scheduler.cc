@@ -64,7 +64,7 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
 uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
   uint64_t total_scheduled = 0;
   VLOG(2) << "Preparing to schedule job " << job_desc->uuid();
-  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   LOG(INFO) << "START SCHEDULING " << job_desc->uuid();
   // Get the set of runnable tasks for this job
   set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);

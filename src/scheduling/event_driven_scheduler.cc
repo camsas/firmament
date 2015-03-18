@@ -129,6 +129,7 @@ bool EventDrivenScheduler::UnbindResourceForTask(TaskID_t task_id) {
 }
 
 void EventDrivenScheduler::CheckRunningTasksHealth() {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   for (map<ResourceID_t, ExecutorInterface*>::const_iterator
        it = executors_.begin();
        it != executors_.end();
@@ -179,6 +180,7 @@ ExecutorInterface *EventDrivenScheduler::GetExecutorForTask(TaskID_t task_id) {
 }
 
 void EventDrivenScheduler::HandleJobCompletion(JobID_t job_id) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   JobDescriptor* jd = FindOrNull(*job_map_, job_id);
   CHECK_NOTNULL(jd);
   jd->set_state(JobDescriptor::COMPLETED);
@@ -186,7 +188,7 @@ void EventDrivenScheduler::HandleJobCompletion(JobID_t job_id) {
 
 void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                                 TaskFinalReport* report) {
-  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Find resource for task
   ResourceID_t* res_id_ptr = BoundResourceForTask(td_ptr->uid());
   CHECK_NOTNULL(res_id_ptr);
@@ -214,7 +216,7 @@ void EventDrivenScheduler::HandleReferenceStateChange(
     // no change, return
     return;
   } else if (!old_ref.Consumable() && new_ref.Consumable()) {
-    boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     // something became available, unblock the waiting tasks
     set<TaskDescriptor*>* tasks = FindOrNull(reference_subscriptions_,
                                              old_ref.id());
@@ -258,7 +260,7 @@ void EventDrivenScheduler::HandleReferenceStateChange(
 }
 
 void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
-  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Find resource for task
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, td_ptr->uid());
   VLOG(1) << "Handling failure of task " << td_ptr->uid()
@@ -310,7 +312,7 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
     return false;
   }
   // Otherwise, bind the task
-  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   runnable_tasks_.insert(td->uid());
   InsertIfNotPresent(task_map_.get(), td->uid(), td);
   BindTaskToResource(td, rd);
@@ -320,7 +322,7 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
 
 // Simple 2-argument wrapper
 void EventDrivenScheduler::RegisterResource(ResourceID_t res_id, bool local) {
-  boost::lock_guard<boost::mutex> lock(scheduling_lock_);
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   if (local)
     RegisterLocalResource(res_id);
   else
