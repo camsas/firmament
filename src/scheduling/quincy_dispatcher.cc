@@ -116,6 +116,7 @@ namespace scheduler {
         ReadFlowGraph(from_solver_, num_nodes);
       task_mappings = GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
                                   flow_graph_->sink_node().id_);
+      delete extracted_flow;
     }
     if (!FLAGS_incremental_flow) {
       // We're done with the solver and can let it terminate here.

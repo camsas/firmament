@@ -16,6 +16,7 @@
 #include "misc/utils.h"
 #include "misc/map-util.h"
 #include "scheduling/flow_graph.h"
+#include "scheduling/knowledge_base.h"
 #include "scheduling/quincy_cost_model.h"
 #include "scheduling/quincy_dispatcher.h"
 #include "sim/trace-extract/event_desc.pb.h"
@@ -49,6 +50,7 @@ struct TaskIdentifierHasher {
 class GoogleTraceSimulator {
  public:
   explicit GoogleTraceSimulator(const string& trace_path);
+  virtual ~GoogleTraceSimulator();
   void Run();
 
  private:
@@ -103,7 +105,7 @@ class GoogleTraceSimulator {
   /**
    * Loads all the task runtimes and returns map task_identifier -> runtime.
    */
-  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>&
+  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
       LoadTasksRunningTime();
 
   /**
@@ -145,7 +147,7 @@ class GoogleTraceSimulator {
   void ReplayTrace();
 
   void TaskCompleted(const TaskIdentifier& task_identifier);
-  void TaskEvicted(const TaskID_t& task_id, const ResourceID_t& res_id);
+  void TaskEvicted(TaskID_t task_id, const ResourceID_t& res_id);
 
   EventDescriptor_EventType TranslateMachineEvent(int32_t machine_event);
 
@@ -201,6 +203,9 @@ class GoogleTraceSimulator {
   multimap<uint64_t, EventDescriptor> events_;
 
   string trace_path_;
+
+  KnowledgeBase* knowledge_base_;
+
   // The root node of the machine topology.
   ResourceTopologyNodeDescriptor rtn_root_;
 

@@ -45,6 +45,10 @@ FlowGraph::FlowGraph(FlowSchedulingCostModelInterface *cost_model)
 
 FlowGraph::~FlowGraph() {
   delete cost_model_;
+  for (unordered_map<uint64_t, FlowGraphNode*>::iterator it = node_map_.begin();
+       it != node_map_.end(); ++it) {
+    DeleteNode(it->second);
+  }
   ResetChanges();
   // XXX(malte): N.B. this leaks memory as we haven't destroyed all of the
   // nodes and arcs in the flow graph (which are allocated on the heap)
@@ -580,10 +584,11 @@ void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
   uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
   CHECK_NOTNULL(node_id);
   FlowGraphNode* node = Node(*node_id);
-  resource_to_nodeid_map_.erase(res_id);
+  ResourceID_t res_id_tmp = res_id;
   resource_to_parent_map_.erase(res_id);
   unused_ids_.push(node->id_);
   leaf_nodes_.erase(*node_id);
+  resource_to_nodeid_map_.erase(res_id_tmp);
   DeleteNode(node);
 }
 

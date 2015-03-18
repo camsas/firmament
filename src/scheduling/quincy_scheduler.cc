@@ -76,7 +76,7 @@ QuincyScheduler::QuincyScheduler(
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
       flow_graph_.reset(
           new FlowGraph(new QuincyCostModel(resource_map, job_map, task_map,
-                                            &task_bindings_)));
+                                            &task_bindings_, knowledge_base_)));
       VLOG(1) << "Using the Quincy cost model";
       break;
     default:
