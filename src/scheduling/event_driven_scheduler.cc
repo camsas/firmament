@@ -142,7 +142,10 @@ void EventDrivenScheduler::CheckRunningTasksHealth() {
            ++it) {
         TaskDescriptor* td = FindPtrOrNull(*task_map_, *it);
         CHECK_NOTNULL(td);
-        HandleTaskFailure(td);
+        if (td->state() != TaskDescriptor::COMPLETED &&
+            td->last_heartbeat_time() <= 
+            (GetCurrentTimestamp() - FLAGS_heartbeat_interval * 10))
+          HandleTaskFailure(td);
       }
     }
   }
