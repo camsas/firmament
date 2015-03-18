@@ -8,6 +8,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "misc/map-util.h"
 #include "misc/utils.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
 #include "scheduling/knowledge_base.h"
@@ -18,11 +19,13 @@ namespace firmament {
 QuincyCostModel::QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
                                  shared_ptr<JobMap_t> job_map,
                                  shared_ptr<TaskMap_t> task_map,
-                                 map<TaskID_t, ResourceID_t> *task_bindings)
+                                 map<TaskID_t, ResourceID_t> *task_bindings,
+                                 KnowledgeBase* kb)
   : resource_map_(resource_map),
     job_map_(job_map),
     task_map_(task_map),
-    task_bindings_(task_bindings) {
+    task_bindings_(task_bindings),
+    knowledge_base_(kb) {
   //application_stats_ = knowledge_base_->AppStats();
   CHECK_NOTNULL(task_bindings_);
 }
@@ -47,7 +50,12 @@ Cost_t QuincyCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 // task to run on any node in the cluster. The cost of the topology's arcs are
 // the same for all the tasks.
 Cost_t QuincyCostModel::TaskToClusterAggCost(TaskID_t task_id) {
-  return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
+  TaskDescriptor** td_ptr = FindOrNull(*task_map_, task_id);
+  CHECK_NOTNULL(td_ptr);
+  TaskEquivClass_t ec = GenerateTaskEquivClass(**td_ptr);
+  uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(ec);
+  // Avg runtime is in milliseconds, so we convert it to tenths of a second
+  return (avg_runtime * 100);
 }
 
 Cost_t QuincyCostModel::TaskToResourceNodeCost(TaskID_t task_id,

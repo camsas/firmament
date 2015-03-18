@@ -42,6 +42,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator): $(addprefix $(OBJ_DIR)/, $(SIM
 		$(BUILD_DIR)/scheduling/flow_graph_node.o \
 		$(BUILD_DIR)/scheduling/flow_graph.o \
 		$(BUILD_DIR)/scheduling/flow_node_type.pb.o \
+		$(BUILD_DIR)/scheduling/knowledge_base.o \
 		$(BUILD_DIR)/scheduling/quincy_cost_model.o \
 		$(BUILD_DIR)/scheduling/quincy_dispatcher.o \
 		$(BUILD_DIR)/scheduling/scheduling_delta.pb.o \
@@ -85,6 +86,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator-test): $(addprefix $(OBJ_DIR)/, 
 		$(BUILD_DIR)/scheduling/flow_graph_node.o \
 		$(BUILD_DIR)/scheduling/flow_graph.o \
 		$(BUILD_DIR)/scheduling/flow_node_type.pb.o \
+		$(BUILD_DIR)/scheduling/knowledge_base.o \
 		$(BUILD_DIR)/scheduling/quincy_cost_model.o \
 		$(BUILD_DIR)/scheduling/quincy_dispatcher.o \
 		$(BUILD_DIR)/scheduling/scheduling_delta.pb.o \

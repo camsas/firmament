@@ -67,8 +67,10 @@ DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2.");
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
   resource_map_(new ResourceMap_t), trace_path_(trace_path),
+  knowledge_base_(new KnowledgeBase),
   flow_graph_(new FlowGraph(
-    new QuincyCostModel(resource_map_, job_map_, task_map_, &task_bindings_))),
+                new QuincyCostModel(resource_map_, job_map_, task_map_,
+                                    &task_bindings_, knowledge_base_))),
   quincy_dispatcher_(
     new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_),
                                     false)) {
@@ -152,17 +154,16 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
   TaskDescriptor* td_ptr = NULL;
   if (FindOrNull(task_id_to_td_, task_identifier) == NULL) {
     td_ptr = AddTaskToJob(jd_ptr);
-    // Update the job in the flow graph. This method also adds the new task to
-    // the flow graph.
-    flow_graph_->AddOrUpdateJobNodes(jd_ptr);
     if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
       CHECK(InsertIfNotPresent(&task_id_to_identifier_,
                                td_ptr->uid(), task_identifier));
       // Add task to the google (job_id, task_index) to TaskDescriptor* map.
       CHECK(InsertIfNotPresent(&task_id_to_td_, task_identifier, td_ptr));
+      // Update the job in the flow graph. This method also adds the new task to
+      // the flow graph.
+      flow_graph_->AddOrUpdateJobNodes(jd_ptr);
     } else {
-      // TODO(ionel): We should handle duplicate task ids. At the moment they
-      // end up beging added to the graph and never removed.
+      // TODO(ionel): We should handle duplicate task ids.
       LOG(WARNING) << "Duplicate task id: " << td_ptr->uid();
     }
   }
@@ -269,11 +270,10 @@ void GoogleTraceSimulator::CreateRootResource() {
 void GoogleTraceSimulator::JobCompleted(uint64_t simulator_job_id,
                                         JobID_t job_id) {
   flow_graph_->DeleteNodesForJob(job_id);
+  // This call frees the JobDescriptor* as well.
   job_map_->erase(job_id);
-  JobDescriptor** jd_ptr = FindOrNull(job_id_to_jd_, simulator_job_id);
   job_id_to_jd_.erase(simulator_job_id);
   job_num_tasks_.erase(simulator_job_id);
-  delete *jd_ptr;
 }
 
 void GoogleTraceSimulator::LoadJobsNumTasks() {
@@ -632,7 +632,6 @@ void GoogleTraceSimulator::TaskCompleted(
   // Erase from local state: task_id_to_td_, task_id_to_identifier_, task_map_ and task_bindings_,
   // task_id_to_end_time_, res_id_to_task_id_.
   task_id_to_td_.erase(task_identifier);
-  delete *td_ptr;
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
   CHECK_NOTNULL(res_id_ptr);
   task_bindings_.erase(task_id);

@@ -26,7 +26,9 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
   QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
                   shared_ptr<JobMap_t> job_map,
                   shared_ptr<TaskMap_t> task_map,
-                  map<TaskID_t, ResourceID_t> *task_bindings);
+                  map<TaskID_t, ResourceID_t> *task_bindings,
+                  KnowledgeBase* kb);
+
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -53,6 +55,8 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<TaskMap_t> task_map_;
   map<TaskID_t, ResourceID_t> *task_bindings_;
+  // A knowledge base instance that we will refer to for job runtime statistics.
+  KnowledgeBase* knowledge_base_;
   uint32_t rand_seed_ = 0;
 };
 

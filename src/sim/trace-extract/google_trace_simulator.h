@@ -16,6 +16,7 @@
 #include "misc/utils.h"
 #include "misc/map-util.h"
 #include "scheduling/flow_graph.h"
+#include "scheduling/knowledge_base.h"
 #include "scheduling/quincy_cost_model.h"
 #include "scheduling/quincy_dispatcher.h"
 #include "sim/trace-extract/event_desc.pb.h"
@@ -201,6 +202,9 @@ class GoogleTraceSimulator {
   multimap<uint64_t, EventDescriptor> events_;
 
   string trace_path_;
+
+  KnowledgeBase* knowledge_base_;
+
   // The root node of the machine topology.
   ResourceTopologyNodeDescriptor rtn_root_;
 
