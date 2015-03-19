@@ -59,4 +59,8 @@ Cost_t TrivialCostModel::EquivClassToResourceNode(TaskID_t task_id,
   return 0ULL;
 }
 
+TaskEquivClass_t TrivialCostModel::GetTaskEquivClass(JobID_t job_id) {
+  return 0LL;
+}
+
 }  // namespace firmament

@@ -38,6 +38,8 @@ class TrivialCostModel : public FlowSchedulingCostModelInterface {
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
   Cost_t EquivClassToResourceNode(TaskID_t task_id, ResourceID_t res_id);
+  // Get the type of equiv class.
+  TaskEquivClass_t GetTaskEquivClass(JobID_t job_id);
 };
 
 }  // namespace firmament

@@ -10,6 +10,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "misc/equivclasses.h"
 #include "scheduling/common.h"
 
 namespace firmament {
@@ -53,6 +54,7 @@ class FlowSchedulingCostModelInterface {
   virtual Cost_t TaskToEquivClassAggregator(TaskID_t task_id) = 0;
   virtual Cost_t EquivClassToResourceNode(TaskID_t task_id,
                                           ResourceID_t res_id) = 0;
+  virtual TaskEquivClass_t GetTaskEquivClass(JobID_t job_id) = 0;
 };
 
 }  // namespace firmament

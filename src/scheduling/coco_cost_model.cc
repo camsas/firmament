@@ -96,4 +96,8 @@ Cost_t CocoCostModel::EquivClassToResourceNode(TaskID_t task_id,
   return 0LL;
 }
 
+TaskEquivClass_t CocoCostModel::GetTaskEquivClass(JobID_t job_id) {
+  return 0LL;
+}
+
 }  // namespace firmament

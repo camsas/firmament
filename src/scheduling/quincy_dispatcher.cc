@@ -81,6 +81,7 @@ namespace scheduler {
       // outfd_[1] == PARENT_WRITE
       if (FLAGS_flow_scheduling_solver.compare("flowlessly") == 0) {
         args.push_back("--graph_has_node_types=true");
+        args.push_back("--global_update=false");
         if (!FLAGS_incremental_flow) {
           args.push_back("--daemon=false");
         }

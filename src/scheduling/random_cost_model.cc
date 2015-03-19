@@ -68,4 +68,8 @@ Cost_t RandomCostModel::EquivClassToResourceNode(TaskID_t task_id,
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
+TaskEquivClass_t RandomCostModel::GetTaskEquivClass(JobID_t job_id) {
+  return 0LL;
+}
+
 }  // namespace firmament

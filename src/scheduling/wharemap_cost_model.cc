@@ -96,4 +96,8 @@ Cost_t WhareMapCostModel::EquivClassToResourceNode(TaskID_t task_id,
   return 0LL;
 }
 
+TaskEquivClass_t WhareMapCostModel::GetTaskEquivClass(JobID_t job_id) {
+  return 0LL;
+}
+
 }  // namespace firmament
