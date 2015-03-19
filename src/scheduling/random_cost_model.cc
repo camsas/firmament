@@ -1,6 +1,7 @@
 // The Firmament project
 // Copyright (c) 2014 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
+#include <set>
 #include <string>
 
 #include "scheduling/random_cost_model.h"
@@ -68,8 +69,17 @@ Cost_t RandomCostModel::EquivClassToResourceNode(TaskID_t task_id,
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
-TaskEquivClass_t RandomCostModel::GetTaskEquivClass(JobID_t job_id) {
-  return 0LL;
+set<TaskEquivClass_t>* RandomCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+  return NULL;
+}
+
+set<ResourceID_t>* RandomCostModel::GetEquivClassPreferenceArcs(
+    TaskEquivClass_t tec) {
+  return NULL;
+}
+
+set<ResourceID_t>* RandomCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+  return NULL;
 }
 
 }  // namespace firmament
