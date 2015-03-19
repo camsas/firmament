@@ -30,7 +30,7 @@ DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 DEFINE_string(resource_id, "",
         "The resource ID that is running this task.");
 DEFINE_string(task_id, "", "The ID of this task.");
-DEFINE_int32(heartbeat_interval, 1000,
+DEFINE_int32(heartbeat_interval, 1000000,
         "The interval, in microseconds, between heartbeats sent to the"
         "coordinator.");
 
