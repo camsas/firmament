@@ -30,6 +30,8 @@ void LaunchTasklib() {
   // Read these important variables from the environment.
   sleep(1);
 
+  FLAGS_v = 1;
+
   string sargs = "--logtostderr";
   string progargs = "task_lib";
   boost::thread::id task_thread_id = boost::this_thread::get_id();
