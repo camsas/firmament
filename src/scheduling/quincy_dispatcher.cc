@@ -20,13 +20,16 @@ DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
 DEFINE_string(flow_scheduling_solver, "cs2",
               "Solver to use for flow network optimization. Possible values:"
               "\"cs2\": Goldberg solver, \"flowlessly\": local Flowlessly"
-              "solver reimplementation.");
+              "solver reimplementation, \"custom\": "
+		          "custom solver (must specify path).");
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
 DEFINE_string(flowlessly_binary, "ext/flowlessly-git/run_fast_cost_scaling",
               "Path to the flowlessly binary.");
 DEFINE_string(cs2_binary, "ext/cs2-git/cs2.exe", "Path to the cs2 binary.");
+DEFINE_string(custom_binary, "", "Path to custom flow solver binary.");
+DEFINE_string(custom_args, "", "Arguments to pass to custom flow solver binary.");
 
 namespace firmament {
 namespace scheduler {
@@ -84,7 +87,10 @@ namespace scheduler {
         if (!FLAGS_incremental_flow) {
           args.push_back("--daemon=false");
         }
+      } else if (FLAGS_flow_scheduling_solver.compare("custom") == 0) {
+      	boost::split(args, FLAGS_custom_args, boost::is_any_of(" "));
       }
+
       solver_pid = ExecCommandSync(solver_binary, args, outfd_, infd_);
       VLOG(2) << "Solver (" << FLAGS_flow_scheduling_solver << "running "
               << "(PID: " << solver_pid << "), CHILD_READ: "

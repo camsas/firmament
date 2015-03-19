@@ -62,7 +62,7 @@ DEFINE_string(task_bins_output, "bins.out",
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
-DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2.");
+DEFINE_string(solver, "cs2", "Solver to use: flowlessly | cs2 | custom.");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -92,13 +92,17 @@ void GoogleTraceSimulator::Run() {
     FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
     FLAGS_flow_scheduling_solver = "flowlessly";
     FLAGS_only_read_assignment_changes = true;
-    FLAGS_flowlessly_binary =
-      SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
+    FLAGS_flowlessly_binary =	SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
     FLAGS_flow_scheduling_solver = "cs2";
     FLAGS_only_read_assignment_changes = false;
-    FLAGS_cs2_binary = SOLVER_DIR "/cs2-git/cs2.exe";
+		FLAGS_cs2_binary = SOLVER_DIR "/cs2-git/cs2.exe";
+  } else if (!FLAGS_solver.compare("custom")) {
+  	FLAGS_flow_scheduling_solver = "custom";
+  	if (!FLAGS_custom_binary.compare("")) {
+  		LOG(FATAL) << "Must specify path to solver binary with custom type.";
+  	}
   } else {
     LOG(FATAL) << "Unknown solver type: " << FLAGS_solver;
   }
