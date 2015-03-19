@@ -754,8 +754,8 @@ namespace sim {
     return *job_id_to_name;
   }
 
-  void GoogleTraceTaskProcessor::PopulateTaskRuntime(TaskRuntime* task_runtime_ptr,
-                                                     vector<string>& cols) {
+  void GoogleTraceTaskProcessor::PopulateTaskRuntime(
+      TaskRuntime* task_runtime_ptr, vector<string>& cols) {
     for (uint32_t index = 7; index < 13; ++index) {
       if (!cols[index].compare("")) {
         cols[index] = "-1";
@@ -771,7 +771,8 @@ namespace sim {
 
   void GoogleTraceTaskProcessor::PrintTaskRuntime(
       FILE* out_events_file, const TaskRuntime& task_runtime,
-      const TaskIdentifier& task_id, string logical_job_name, uint64_t runtime) {
+      const TaskIdentifier& task_id, string logical_job_name,
+      uint64_t runtime) {
     fprintf(out_events_file, "%" PRId64 " %" PRId64 " %s %" PRId64 " %" PRId64
             " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %lf %lf %lf %d\n",
             task_id.job_id, task_id.task_index, logical_job_name.c_str(),
@@ -870,7 +871,8 @@ namespace sim {
         task_runtime.num_runs++;
         task_runtime.total_runtime = runtime;
       } else {
-        uint64_t avg_runtime = task_runtime.total_runtime / task_runtime.num_runs;
+        uint64_t avg_runtime =
+          task_runtime.total_runtime / task_runtime.num_runs;
         runtime = end_simulation_time - task_runtime.last_schedule_time;
         // If the average runtime to failure is bigger than the current
         // runtime then we assume that the task is going to run for avg

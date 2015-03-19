@@ -6,6 +6,8 @@
 #ifndef FIRMAMENT_ENGINE_EXECUTOR_INTERFACE_H
 #define FIRMAMENT_ENGINE_EXECUTOR_INTERFACE_H
 
+#include <vector>
+
 #include "base/common.h"
 #include "base/types.h"
 #include "base/task_final_report.pb.h"

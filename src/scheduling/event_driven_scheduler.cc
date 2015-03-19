@@ -6,11 +6,12 @@
 
 #include "scheduling/event_driven_scheduler.h"
 
-#include <string>
 #include <deque>
 #include <map>
-#include <utility>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "storage/reference_types.h"
 #include "storage/reference_utils.h"
@@ -145,7 +146,7 @@ void EventDrivenScheduler::CheckRunningTasksHealth() {
         TaskDescriptor* td = FindPtrOrNull(*task_map_, *it);
         CHECK_NOTNULL(td);
         if (td->state() != TaskDescriptor::COMPLETED &&
-            td->last_heartbeat_time() <= 
+            td->last_heartbeat_time() <=
             (GetCurrentTimestamp() - TASK_FAIL_TIMEOUT))
           HandleTaskFailure(td);
       }

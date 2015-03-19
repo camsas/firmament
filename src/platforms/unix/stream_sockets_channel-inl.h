@@ -37,7 +37,9 @@ using boost::asio::io_service;
 
 template <class T>
 StreamSocketsChannel<T>::StreamSocketsChannel(StreamSocketType type)
-  : client_io_service_(new io_service),
+  : async_recv_buffer_(NULL),
+    async_recv_buffer_vec_(NULL),
+    client_io_service_(new io_service),
     client_socket_(NULL),
     channel_ready_(false),
     type_(type) {
@@ -59,6 +61,8 @@ template <class T>
 StreamSocketsChannel<T>::StreamSocketsChannel(
     TCPConnection::connection_ptr connection)
   : //client_io_service_(&(connection->socket()->get_io_service())),
+    async_recv_buffer_(NULL),
+    async_recv_buffer_vec_(NULL),
     client_socket_(connection->socket()),
     client_connection_(connection),
     channel_ready_(false),
@@ -216,6 +220,7 @@ const string StreamSocketsChannel<T>::RemoteEndpointString() {
 // Synchronous send
 template <class T>
 bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
+  boost::lock_guard<boost::mutex> lock(sync_send_lock_);
   VLOG(2) << "Trying to send message of size " << message.size()
           << " on channel " << *this;
   uint64_t msg_size = message.size();
@@ -266,6 +271,7 @@ bool StreamSocketsChannel<T>::SendA(
 
   uint64_t msg_size_endian = htobe64(msg_size);
   // Synchronously send data size first
+  // XXX(malte): broken, sends async
   boost::asio::async_write(
       *client_socket_, boost::asio::buffer(
           reinterpret_cast<char*>(&msg_size_endian), sizeof(msg_size_endian)),
@@ -279,6 +285,7 @@ bool StreamSocketsChannel<T>::SendA(
 // Synchronous recieve -- blocks until the next message is received.
 template <class T>
 bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
+  boost::lock_guard<boost::mutex> lock(sync_send_lock_);
   VLOG(2) << "In RecvS, polling for next message";
   if (!Ready()) {
     LOG(WARNING) << "Tried to read from channel " << this
@@ -309,7 +316,8 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   VLOG(3) << "RecvS: size of incoming protobuf from" << RemoteEndpointString()
           << "is " << msg_size << " bytes.";
   // XXX(malte): This is a nasty hack to highlight bugs in the channel logic.
-  CHECK_LT(msg_size, 35000) << "Received implausibly large message size!";
+  CHECK_LT(msg_size, 35000) << "Received implausibly large message size "
+                            << "from " << RemoteEndpointString();
   vector<char> buf(msg_size);
   len = read(*client_socket_,
              boost::asio::mutable_buffers_1(&buf[0], msg_size),
@@ -345,10 +353,12 @@ bool StreamSocketsChannel<T>::RecvA(
   }
   // Obtain the lock on the async receive buffer.
   async_recv_lock_.lock();
-  async_recv_buffer_vec_.reset(new vector<char>(sizeof(uint64_t)));
-  async_recv_buffer_.reset(new boost::asio::mutable_buffers_1(
-      reinterpret_cast<char*>(&(*async_recv_buffer_vec_)[0]),
-                                sizeof(uint64_t)));
+  CHECK_EQ(async_recv_buffer_vec_, static_cast<char*>(NULL));
+  CHECK_EQ(async_recv_buffer_, static_cast<boost::asio::mutable_buffers_1*>(NULL));
+  async_recv_buffer_vec_ = (char*)malloc(sizeof(uint64_t));
+  async_recv_buffer_ =
+      new boost::asio::mutable_buffers_1(async_recv_buffer_vec_, 
+                                         sizeof(uint64_t));
   // Asynchronously read the incoming protobuf message length and invoke the
   // second stage of the receive call once we have it.
   async_read(*client_socket_, *async_recv_buffer_,
@@ -375,8 +385,8 @@ void StreamSocketsChannel<T>::RecvASecondStage(
     LOG(ERROR) << "Error reading from connection: " << error.message()
                << "; read " << bytes_read << " bytes, expected "
                << sizeof(uint64_t);
-    async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
+    async_recv_lock_.unlock();
     return;
   }
   // ... we can get away with a simple CHECK here and assume that we have some
@@ -384,16 +394,22 @@ void StreamSocketsChannel<T>::RecvASecondStage(
   CHECK_EQ(sizeof(uint64_t), bytes_read);
   // Nasty cast to get message size indicator received (after endian conversion)
   uint64_t msg_size =
-    be64toh(*reinterpret_cast<uint64_t*>(&(*async_recv_buffer_vec_)[0]));
-  CHECK_GT(msg_size, 0);
+    be64toh(*reinterpret_cast<uint64_t*>(async_recv_buffer_vec_));
+  CHECK_GT(msg_size, 0) << "Received message of length 0 from "
+                        << RemoteEndpointString();
   // XXX(malte): This is a nasty hack to highlight bugs in the channel logic.
-  CHECK_LT(msg_size, 35000) << "Received implausibly large message!";
+  CHECK_LT(msg_size, 35000) << "Received implausibly large message "
+                            << "from " << RemoteEndpointString();
   VLOG(2) << "RecvA: size of incoming protobuf from" << RemoteEndpointString()
           << "is " << msg_size << " bytes.";
   // We still hold the async_recv_lock_ mutex here.
-  async_recv_buffer_vec_.reset(new vector<char>(msg_size));
-  async_recv_buffer_.reset(new boost::asio::mutable_buffers_1(
-      reinterpret_cast<char*>(&(*async_recv_buffer_vec_)[0]), msg_size));
+  free(async_recv_buffer_vec_);
+  async_recv_buffer_vec_ = (char*)malloc(msg_size);
+  VLOG(2) << "New async recv buffer is at "
+          << static_cast<void*>(async_recv_buffer_vec_);
+  delete async_recv_buffer_;
+  async_recv_buffer_ =
+      new boost::asio::mutable_buffers_1(async_recv_buffer_vec_, msg_size);
   async_read(*client_socket_, *async_recv_buffer_,
              boost::asio::transfer_exactly(msg_size),
              boost::bind(&StreamSocketsChannel<T>::RecvAThirdStage,
@@ -417,15 +433,15 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
   VLOG(2) << "Read " << bytes_read << " bytes.";
   if (error == boost::asio::error::eof) {
     VLOG(1) << "Received EOF, connection terminating!";
-    async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
+    async_recv_lock_.unlock();
     return;
   } else if (error) {
     LOG(ERROR) << "Error reading from connection: "
                << error.message() << "; read " << bytes_read
                << " bytes, expected " << message_size;
-    async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
+    async_recv_lock_.unlock();
     return;
   } else {
     VLOG(2) << "Read " << bytes_read << " bytes of protobuf data...";
@@ -433,15 +449,22 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
   CHECK_GT(bytes_read, 0);
   CHECK_EQ(bytes_read, message_size);
   VLOG(2) << "About to parse message";
-  CHECK(final_envelope->Parse(&(*async_recv_buffer_vec_)[0], bytes_read));
-  // Drop the lock
-  VLOG(2) << "Unlocking async receive buffer";
-  async_recv_lock_.unlock();
+  if (!final_envelope->Parse(async_recv_buffer_vec_, bytes_read)) {
+    LOG(ERROR) << "Failed to parse protobuf message of " << bytes_read
+               << " bytes!";
+  }
+  free(async_recv_buffer_vec_);
+  delete async_recv_buffer_;
+  async_recv_buffer_vec_ = NULL;
+  async_recv_buffer_ = NULL;
   // Invoke the original callback
   // XXX(malte): potential race condition -- someone else may finish and invoke
   // the callback before we do (although this is very unlikely).
   VLOG(2) << "About to invoke final async recv callback!";
   final_callback(error, bytes_read, final_envelope);
+  // Drop the lock
+  VLOG(2) << "Unlocking async receive buffer";
+  async_recv_lock_.unlock();
 }
 
 template <class T>

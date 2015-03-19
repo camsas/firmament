@@ -94,6 +94,7 @@ MessagingChannelInterface<T>* StreamSocketsAdapter<T>::GetChannelForEndpoint(
 
 template <typename T>
 void StreamSocketsAdapter<T>::AwaitNextMessage() {
+  boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
   VLOG(3) << "Iterating over " << endpoint_channel_map_.size()
           << " active channels in adapter " << this;
   if (VLOG_IS_ON(3))
@@ -106,7 +107,6 @@ void StreamSocketsAdapter<T>::AwaitNextMessage() {
   // each fo them.
   bool any_outstanding = false;
   {
-    boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
     boost::lock_guard<boost::mutex> envel_lock(channel_recv_envelopes_mutex_);
     for (__typeof__(endpoint_channel_map_.begin()) chan_iter =
          endpoint_channel_map_.begin();
@@ -116,9 +116,7 @@ void StreamSocketsAdapter<T>::AwaitNextMessage() {
       if (!channel_recv_envelopes_.count(chan)) {
         // No outstanding receive request for this channel, so create one
         Envelope<T>* envelope = new Envelope<T>();
-        channel_recv_envelopes_.insert(
-            pair<StreamSocketsChannel<T>*,
-            Envelope<T>*>(chan, envelope));
+        CHECK(InsertIfNotPresent(&channel_recv_envelopes_, chan, envelope));
         VLOG(2) << "MA replenishing envelope for channel " << chan
                 << " at " << envelope;
         chan->RecvA(envelope,
@@ -188,7 +186,7 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
   }
   CHECK_GT(channel_recv_envelopes_.count(chan), 0) << "No envelopes around "
       << "when we expected to have at least one.";
-  Envelope<T>* envelope = channel_recv_envelopes_[chan];
+  Envelope<T>* envelope = FindPtrOrNull(channel_recv_envelopes_, chan);
   CHECK_NOTNULL(envelope);
   VLOG(2) << "Received in MA: " << *envelope << " ("
           << bytes_transferred << ")";
@@ -295,8 +293,9 @@ void StreamSocketsAdapter<T>::RegisterAsyncErrorPathCallback(
 template <typename T>
 bool StreamSocketsAdapter<T>::SendMessageToEndpoint(
     const string& endpoint_uri, T& message) {  // NOLINT
-  StreamSocketsChannel<T>** chan =
-      FindOrNull(endpoint_channel_map_, endpoint_uri);
+  boost::lock_guard<boost::mutex> lock(endpoint_channel_map_mutex_);
+  StreamSocketsChannel<T>* chan =
+      FindPtrOrNull(endpoint_channel_map_, endpoint_uri);
   if (!chan) {
     LOG(ERROR) << "Failed to find channel for endpoint " << endpoint_uri;
     return false;
@@ -305,7 +304,7 @@ bool StreamSocketsAdapter<T>::SendMessageToEndpoint(
   // Envelope; if we ever switch to async or provide such a facility, this needs
   // to be dynamically allocated.
   Envelope<T> envelope(&message);
-  return (*chan)->SendS(envelope);
+  return chan->SendS(envelope);
 }
 
 template <typename T>
