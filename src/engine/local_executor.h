@@ -41,9 +41,9 @@ class LocalExecutor : public ExecutorInterface {
                 const string& coordinator_uri,
                 shared_ptr<TopologyManager> topology_mgr);
   bool CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks);
-  void HandleTaskCompletion(const TaskDescriptor& td,
+  void HandleTaskCompletion(TaskDescriptor* td,
                             TaskFinalReport* report);
-  void HandleTaskFailure(const TaskDescriptor& td);
+  void HandleTaskFailure(TaskDescriptor* td);
   void RunTask(TaskDescriptor* td,
                bool firmament_binary);
   virtual ostream& ToString(ostream* stream) const {
@@ -102,8 +102,7 @@ class LocalExecutor : public ExecutorInterface {
   boost::mutex exec_mutex_;
   boost::shared_mutex handler_map_mutex_;
   boost::condition_variable exec_condvar_;
-
-  unordered_map<TaskID_t, uint64_t> task_start_times_;
+  // Map to each task's local handler thread
   unordered_map<TaskID_t, boost::thread*> task_handler_threads_;
 };
 

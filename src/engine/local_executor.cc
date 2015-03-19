@@ -95,8 +95,6 @@ void LocalExecutor::CleanUpCompletedTask(const TaskDescriptor& td) {
   // Drop task handler thread
   boost::unique_lock<boost::shared_mutex> lock(handler_map_mutex_);
   task_handler_threads_.erase(td.uid());
-  // Remove the start time from the map
-  task_start_times_.erase(td.uid());
 }
 
 
@@ -138,14 +136,13 @@ void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
   }
 }
 
-void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
+void LocalExecutor::HandleTaskCompletion(TaskDescriptor* td,
                                          TaskFinalReport* report) {
   uint64_t end_time = GetCurrentTimestamp();
-  uint64_t *start_time = FindOrNull(task_start_times_, td.uid());
-  // _SHOULD_ be in the start time from before!
-  CHECK_NOTNULL(start_time);
-  report->set_task_id(td.uid());
-  report->set_start_time(*start_time);
+  td->set_finish_time(end_time);
+  uint64_t start_time = td->start_time();
+  report->set_task_id(td->uid());
+  report->set_start_time(start_time);
   report->set_finish_time(end_time);
   // Load perf data, if it exists
   if (FLAGS_perf_monitoring) {
@@ -157,16 +154,16 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
     // data to it when it finishes.
     struct stat st;
     bzero(&st, sizeof(struct stat));
-    string file_name = PerfDataFileName(td);
+    string file_name = PerfDataFileName(*td);
     while (st.st_size == 0) {
       if (stat(file_name.c_str(), &st) != 0)
         PLOG(ERROR) << "Failed to stat perf data file " << file_name;
     }
     // Once we get here, we have non-zero data in the perf data file
-    if ((fptr = fopen(PerfDataFileName(td).c_str(), "r")) == NULL) {
+    if ((fptr = fopen(PerfDataFileName(*td).c_str(), "r")) == NULL) {
       LOG(ERROR) << "Failed to open perf data file " << file_name;
     }
-    VLOG(1) << "Processing perf output in file " << PerfDataFileName(td)
+    VLOG(1) << "Processing perf output in file " << PerfDataFileName(*td)
             << "...";
     while (!feof(fptr)) {
       char* lptr = fgets(line, 1024, fptr);
@@ -180,16 +177,17 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
     // information available, we use the executor's runtime measurements.
     // They should be identical, however, so maybe we should just always do
     // this. Multiplication by 1M converts from microseconds to seconds.
-    report->set_runtime(end_time / 1000000.0 - *start_time / 1000000.0);
+    report->set_runtime(end_time / 1000000.0 - start_time / 1000000.0);
   }
   // Now clean up any remaining state.
-  CleanUpCompletedTask(td);
+  CleanUpCompletedTask(*td);
 }
 
-void LocalExecutor::HandleTaskFailure(const TaskDescriptor& td) {
+void LocalExecutor::HandleTaskFailure(TaskDescriptor* td) {
+  td->set_finish_time(GetCurrentTimestamp());
   // Nothing to be done other than cleaning up; there is no final
   // report for failed task at this time.
-  CleanUpCompletedTask(td);
+  CleanUpCompletedTask(*td);
 }
 
 void LocalExecutor::RunTask(TaskDescriptor* td,
@@ -197,7 +195,6 @@ void LocalExecutor::RunTask(TaskDescriptor* td,
   CHECK(td);
   // Save the start time.
   uint64_t start_time = GetCurrentTimestamp();
-  InsertIfNotPresent(&task_start_times_, td->uid(), start_time);
   // Mark the start time of the task.
   td->set_start_time(start_time);
   // XXX(malte): Move this over to use RunProcessAsync, instead of custom thread

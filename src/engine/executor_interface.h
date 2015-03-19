@@ -19,9 +19,9 @@ namespace executor {
 class ExecutorInterface : public PrintableInterface {
  public:
   virtual bool CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks) = 0;
-  virtual void HandleTaskCompletion(const TaskDescriptor& td,
+  virtual void HandleTaskCompletion(TaskDescriptor* td,
                                     TaskFinalReport* report) = 0;
-  virtual void HandleTaskFailure(const TaskDescriptor& td) = 0;
+  virtual void HandleTaskFailure(TaskDescriptor* td) = 0;
   virtual void RunTask(TaskDescriptor* td,
                        bool firmament_binary) = 0;
   virtual ostream& ToString(ostream* stream) const = 0;
