@@ -368,7 +368,8 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
         TaskIdentifier task_id;
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
-        // TODO(ionel): Populate the knowledge base.
+        // TODO(ionel): Populate the knowledge base. Note a -1 denotes value
+        // unknown.
         // double min_mean_cpu_usage = lexical_cast<double>(cols[2]);
         // double max_mean_cpu_usage = lexical_cast<double>(cols[3]);
         // double avg_mean_cpu_usage = lexical_cast<double>(cols[4]);
@@ -714,8 +715,8 @@ void GoogleTraceSimulator::TaskCompleted(
   JobID_t job_id = JobIDFromString((*td_ptr)->job_id());
   // Remove the task node from the flow graph.
   flow_graph_->DeleteTaskNode(task_id);
-  // Erase from local state: task_id_to_td_, task_id_to_identifier_, task_map_ and task_bindings_,
-  // task_id_to_end_time_, res_id_to_task_id_.
+  // Erase from local state: task_id_to_td_, task_id_to_identifier_, task_map_
+  // and task_bindings_, task_id_to_end_time_, res_id_to_task_id_.
   task_id_to_td_.erase(task_identifier);
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
   CHECK_NOTNULL(res_id_ptr);

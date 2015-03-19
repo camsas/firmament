@@ -316,7 +316,7 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
       // coordinator here, too. This is probably best done by a simple RecvA on
       // the channel.
       m_adapter_->AwaitNextMessage();
- 
+
       // Finally, nap for a bit until the next heartbeat is due
       usleep(FLAGS_heartbeat_interval);
     }

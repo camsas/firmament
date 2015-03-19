@@ -37,7 +37,7 @@ class EventDrivenScheduler : public SchedulerInterface {
                        const string& coordinator_uri);
   ~EventDrivenScheduler();
   ResourceID_t* BoundResourceForTask(TaskID_t task_id);
-  void CheckRunningTasksHealth() ;
+  void CheckRunningTasksHealth();
   virtual void DeregisterResource(ResourceID_t res_id);
   ExecutorInterface* GetExecutorForTask(TaskID_t task_id);
   void HandleJobCompletion(JobID_t job_id);

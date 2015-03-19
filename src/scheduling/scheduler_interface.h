@@ -40,8 +40,8 @@ class SchedulerInterface : public PrintableInterface {
   // Find the resource to which a particular task ID is currently bound. Returns
   // NULL if the task does not exist or is not currently bound.
   virtual ResourceID_t* BoundResourceForTask(TaskID_t task_id) = 0;
-  // Check if all running tasks managed by this scheduler are healthy. Will invoke
-  // failure handlers if any failures are detected.
+  // Check if all running tasks managed by this scheduler are healthy. Will
+  // invoke failure handlers if any failures are detected.
   virtual void CheckRunningTasksHealth() = 0;
   // Unregister a resource ID from the scheduler. No-op if the resource ID is
   // not actually registered with it.
@@ -51,8 +51,8 @@ class SchedulerInterface : public PrintableInterface {
   virtual void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                           const ReferenceInterface& new_ref,
                                           TaskDescriptor* td_ptr) = 0;
-  // Handle the completion of a job (all tasks are completed, failed or aborted).
-  // May clean up scheduler-specific state.
+  // Handle the completion of a job (all tasks are completed, failed or
+  // aborted). May clean up scheduler-specific state.
   virtual void HandleJobCompletion(JobID_t job_id) = 0;
   // Handle the completion of a task. This usually involves freeing up its
   // resource by setting it idle, and recording any bookkeeping data required.

@@ -113,7 +113,7 @@ void LocalExecutor::CreateDirectories() {
     mkdir(FLAGS_task_perf_dir.c_str(), 0700);
   }
 }
- 
+
 void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
                                         const string& line) {
   boost::regex e("[[:space:]]*? ([0-9,.]+) ([a-zA-Z-]+) .*");

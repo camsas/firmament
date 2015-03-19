@@ -4,6 +4,7 @@
 
 #include "engine/coordinator_http_ui.h"
 
+#include <algorithm>
 #include <deque>
 #include <set>
 #include <string>
@@ -997,7 +998,7 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
 void CoordinatorHTTPUI::ServeFile(const string& filename,
                                   tcp::connection_ptr& tcp_conn,
                                   http::request_ptr& http_request,
-                                  http::response_writer_ptr writer) { 
+                                  http::response_writer_ptr writer) {
   int fd = open(filename.c_str(), O_RDONLY);
   if (fd < 0) {
     PLOG(ERROR) << "Failed to open file for reading.";
