@@ -31,8 +31,9 @@ namespace scheduler {
   using boost::algorithm::is_any_of;
   using boost::token_compress_on;
 
-  multimap<uint64_t, uint64_t>* QuincyDispatcher::Run(double *algorithm_time,
-  		                                                double *flowsolver_time) {
+  multimap<uint64_t, uint64_t>* QuincyDispatcher::Run(
+  		                        double *algorithm_time, double *flowsolver_time,
+					                    FILE *initial_graph, FILE *incremental_changes) {
     // Set up debug directory if it doesn't exist
     struct stat st;
     if (!FLAGS_debug_output_dir.empty() &&
@@ -43,17 +44,41 @@ namespace scheduler {
     if (solver_ran_once_) {
       flow_graph_->AdjustUnscheduledAggArcCosts();
     }
-    // Blow away any old exporter state
-    exporter_.Reset();
-    if (FLAGS_incremental_flow && solver_ran_once_) {
-      exporter_.ExportIncremental(flow_graph_->graph_changes());
-      flow_graph_->ResetChanges();
-    } else {
-      // Export the current flow graph to DIMACS format
-      exporter_.Export(*flow_graph_);
-      flow_graph_->ResetChanges();
+
+    if (solver_ran_once_ &&
+    	  (incremental_changes != NULL || FLAGS_incremental_flow)) {
+    	// Only generate incremental delta if not first time running
+    	// If we're running an incremental algorithm, have to generate deltas.
+    	// But if we're logging incremental changes, generate deltas even when
+    	// algorithm is non-incremental.
+
+    	exporter_.Reset();
+    	exporter_.ExportIncremental(flow_graph_->graph_changes());
+			flow_graph_->ResetChanges();
+
+			if (incremental_changes != NULL) {
+				exporter_.Flush(incremental_changes);
+			}
     }
-    // Write debugging copy
+
+    if (!solver_ran_once_ || !FLAGS_incremental_flow) {
+    	// Always export full flow graph when first time running. If algorithm
+    	// is non-incremental, must do it for subsequent iterations too.
+
+    	exporter_.Reset();
+    	exporter_.Export(*flow_graph_);
+			flow_graph_->ResetChanges();
+
+			if (initial_graph != NULL && !solver_ran_once_) {
+				// only log the initial graph once, even when running non-incrementally
+				exporter_.Flush(initial_graph);
+			}
+    }
+
+    // Note exporter_ is the full graph iff solver is running for the first time,
+    // or is non-incremental. Otherwise, exporter_ is the incremental delta.
+
+    // Write debugging copy, of whatever we send to flow solver
     if (FLAGS_debug_flow_graph) {
       // TODO(malte): somewhat ugly hack to compose a unique file name for each
       // scheduler iteration
@@ -128,7 +153,8 @@ namespace scheduler {
     }
 
     if (flowsolver_time != NULL) {
-    	*flowsolver_time = flowsolver_timer.elapsed().wall;
+    	boost::timer::nanosecond_type one_nanosecond = 1e9;
+    	*flowsolver_time = flowsolver_timer.elapsed().wall / one_nanosecond;
     	// restart timer
     	flowsolver_timer.stop(); flowsolver_timer.resume();
     }
@@ -137,9 +163,11 @@ namespace scheduler {
       // We're done with the solver and can let it terminate here.
       WaitForFinish(solver_pid);
       fclose(from_solver_);
+      fclose(from_solver_stats_);
       // close the pipes
-      close(outfd_[1]);
-      close(infd_[0]);
+      close(errfd_[0]);
+      close(outfd_[0]);
+      close(infd_[1]);
     }
     debug_seq_num_++;
     return task_mappings;
@@ -368,7 +396,7 @@ namespace scheduler {
   	if (num_matched == 1) {
   		return result;
   	} else {
-  		LOG(WARNING) << "Did not read ALGOTIME on stderr";
+  		LOG(WARNING) << "Could not read ALGOTIME on stderr";
   		return nan("");
   	}
   }
