@@ -671,8 +671,8 @@ namespace sim {
         if (fscanf(usage_file, "%[^\n]%*[\n]", &line[0]) > 0) {
           boost::split(line_cols, line, is_any_of(","), token_compress_off);
           if (line_cols.size() != 19 && line_cols.size() != 20) {
-          	// 19 columns in v2 of trace, 20 columns in v2.1 of trace
-          	// (we do not use the 20th column, being sampled CPU usage)
+            // 19 columns in v2 of trace, 20 columns in v2.1 of trace
+            // (we do not use the 20th column, being sampled CPU usage)
             LOG(ERROR) << "Unexpected structure of task usage on line "
                        << num_line << ": found " << line_cols.size()
                        << " columns.";

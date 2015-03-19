@@ -5,6 +5,7 @@
 
 #include "scheduling/wharemap_cost_model.h"
 
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -96,8 +97,18 @@ Cost_t WhareMapCostModel::EquivClassToResourceNode(TaskID_t task_id,
   return 0LL;
 }
 
-TaskEquivClass_t WhareMapCostModel::GetTaskEquivClass(JobID_t job_id) {
-  return 0LL;
+set<TaskEquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
+    TaskID_t task_id) {
+  return NULL;
+}
+
+set<ResourceID_t>* WhareMapCostModel::GetEquivClassPreferenceArcs(
+    TaskEquivClass_t tec) {
+  return NULL;
+}
+
+set<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+  return NULL;
 }
 
 }  // namespace firmament

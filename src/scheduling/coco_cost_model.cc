@@ -17,14 +17,14 @@
 
 namespace firmament {
 
-CocoCostModel::CocoCostModel(shared_ptr<TaskMap_t> task_table,
+CocoCostModel::CocoCostModel(shared_ptr<TaskMap_t> task_map,
                            KnowledgeBase* kb)
   : knowledge_base_(kb),
-    task_table_(task_table) {
+    task_map_(task_map) {
 }
 
 const TaskDescriptor& CocoCostModel::GetTask(TaskID_t task_id) {
-  TaskDescriptor* td = FindPtrOrNull(*task_table_, task_id);
+  TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td);
   return *td;
 }
@@ -96,8 +96,17 @@ Cost_t CocoCostModel::EquivClassToResourceNode(TaskID_t task_id,
   return 0LL;
 }
 
-TaskEquivClass_t CocoCostModel::GetTaskEquivClass(JobID_t job_id) {
-  return 0LL;
+set<TaskEquivClass_t>* CocoCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+  return NULL;
+}
+
+set<ResourceID_t>* CocoCostModel::GetEquivClassPreferenceArcs(
+    TaskEquivClass_t tec) {
+  return NULL;
+}
+
+set<ResourceID_t>* CocoCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+  return NULL;
 }
 
 }  // namespace firmament

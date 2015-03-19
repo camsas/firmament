@@ -3,6 +3,7 @@
 //
 // Trivial scheduling cost model for testing purposes.
 
+#include <set>
 #include <string>
 
 #include "scheduling/trivial_cost_model.h"
@@ -59,8 +60,17 @@ Cost_t TrivialCostModel::EquivClassToResourceNode(TaskID_t task_id,
   return 0ULL;
 }
 
-TaskEquivClass_t TrivialCostModel::GetTaskEquivClass(JobID_t job_id) {
-  return 0LL;
+set<TaskEquivClass_t>* TrivialCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+  return NULL;
+}
+
+set<ResourceID_t>* TrivialCostModel::GetEquivClassPreferenceArcs(
+    TaskEquivClass_t tec) {
+  return NULL;
+}
+
+set<ResourceID_t>* TrivialCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+  return NULL;
 }
 
 }  // namespace firmament
