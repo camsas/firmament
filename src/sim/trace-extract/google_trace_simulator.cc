@@ -355,15 +355,15 @@ void GoogleTraceSimulator::LoadMachineEvents() {
 void GoogleTraceSimulator::LoadTaskRuntimeStats() {
   char line[1000];
   vector<string> cols;
-  FILE* runtime_file = NULL;
-  string runtime_file_name = trace_path_ +
-    "/task_runtime_stat/task_runtime_stat.csv";
-  if ((runtime_file = fopen(runtime_file_name.c_str(), "r")) == NULL) {
+  FILE* usage_file = NULL;
+  string usage_file_name = trace_path_ +
+    "/task_usage_stat/task_usage_stat.csv";
+  if ((usage_file = fopen(usage_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace task runtime stats file.";
   }
   int64_t num_line = 1;
-  while (!feof(runtime_file)) {
-    if (fscanf(runtime_file, "%[^\n]%*[\n]", &line[0]) > 0) {
+  while (!feof(usage_file)) {
+    if (fscanf(usage_file, "%[^\n]%*[\n]", &line[0]) > 0) {
       boost::split(cols, line, is_any_of(" "), token_compress_off);
       if (cols.size() != 38) {
       } else {
@@ -412,7 +412,7 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
     }
     num_line++;
   }
-  fclose(runtime_file);
+  fclose(usage_file);
 }
 
 unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
