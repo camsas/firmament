@@ -369,7 +369,9 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
 }
 
 string LocalExecutor::PerfDataFileName(const TaskDescriptor& td) {
-  return (to_string(local_resource_id_) + "-" + to_string(td.uid()) + ".perf");
+  string fname = FLAGS_task_perf_dir + "/" + (to_string(local_resource_id_) +
+                 "-" + to_string(td.uid()) + ".perf";
+  return fname;
 }
 
 void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
