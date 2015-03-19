@@ -60,8 +60,6 @@ DEFINE_bool(tasks_preemption_bins, false,
 DEFINE_uint64(bin_time_duration, 10, "Bin size in microseconds.");
 DEFINE_string(task_bins_output, "bins.out",
               "The file in which the task bins are written.");
-DEFINE_bool(run_incremental_scheduler, false,
-            "Run the Flowlessly incremental scheduler.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(stats_file, "", "Path to write CSV of statistics.");
 

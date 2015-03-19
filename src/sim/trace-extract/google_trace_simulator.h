@@ -21,12 +21,6 @@
 #include "scheduling/quincy_dispatcher.h"
 #include "sim/trace-extract/event_desc.pb.h"
 
-DECLARE_bool(incremental_flow);
-DECLARE_string(flow_scheduling_solver);
-DECLARE_bool(only_read_assignment_changes);
-DECLARE_string(flowlessly_binary);
-DECLARE_string(cs2_binary);
-DECLARE_string(custom_binary);
 DECLARE_bool(debug_flow_graph);
 DECLARE_bool(add_root_task_to_graph);
 
