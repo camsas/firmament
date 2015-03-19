@@ -67,6 +67,8 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
                        typename AsyncRecvHandler<T>::type final_callback);
 
  private:
+  boost::mutex sync_recv_lock_;
+  boost::mutex sync_send_lock_;
   // Async receive buffer data structures and lock
   boost::mutex async_recv_lock_;
   scoped_ptr<boost::asio::mutable_buffers_1> async_recv_buffer_;

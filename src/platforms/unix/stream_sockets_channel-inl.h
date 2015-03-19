@@ -216,6 +216,7 @@ const string StreamSocketsChannel<T>::RemoteEndpointString() {
 // Synchronous send
 template <class T>
 bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
+  boost::lock_guard<boost::mutex> lock(sync_send_lock_);
   VLOG(2) << "Trying to send message of size " << message.size()
           << " on channel " << *this;
   uint64_t msg_size = message.size();
@@ -279,6 +280,7 @@ bool StreamSocketsChannel<T>::SendA(
 // Synchronous recieve -- blocks until the next message is received.
 template <class T>
 bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
+  boost::lock_guard<boost::mutex> lock(sync_send_lock_);
   VLOG(2) << "In RecvS, polling for next message";
   if (!Ready()) {
     LOG(WARNING) << "Tried to read from channel " << this
