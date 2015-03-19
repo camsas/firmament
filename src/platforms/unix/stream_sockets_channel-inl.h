@@ -388,7 +388,8 @@ void StreamSocketsChannel<T>::RecvASecondStage(
     be64toh(*reinterpret_cast<uint64_t*>(&(*async_recv_buffer_vec_)[0]));
   CHECK_GT(msg_size, 0);
   // XXX(malte): This is a nasty hack to highlight bugs in the channel logic.
-  CHECK_LT(msg_size, 35000) << "Received implausibly large message!";
+  CHECK_LT(msg_size, 35000) << "Received implausibly large message "
+                            << "from " << RemoteEndpointString();
   VLOG(2) << "RecvA: size of incoming protobuf from" << RemoteEndpointString()
           << "is " << msg_size << " bytes.";
   // We still hold the async_recv_lock_ mutex here.
