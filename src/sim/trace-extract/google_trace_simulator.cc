@@ -173,7 +173,9 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
       flow_graph_->AddOrUpdateJobNodes(jd_ptr);
     } else {
       // TODO(ionel): We should handle duplicate task ids.
-      LOG(WARNING) << "Duplicate task id: " << td_ptr->uid();
+      LOG(WARNING) << "Duplicate task id: " << td_ptr->uid() << " for task "
+		   << task_identifier.job_id << " "
+		   << task_identifier.task_index;
     }
   }
   return td_ptr;
@@ -640,7 +642,12 @@ void GoogleTraceSimulator::ReplayTrace() {
 void GoogleTraceSimulator::TaskCompleted(
     const TaskIdentifier& task_identifier) {
   TaskDescriptor** td_ptr = FindOrNull(task_id_to_td_, task_identifier);
-  CHECK_NOTNULL(td_ptr);
+  if (td_ptr == NULL) {
+    LOG(ERROR) << "Could not find TaskDescriptor for: " << task_identifier.job_id
+	       << " " << task_identifier.task_index;
+    // TODO(ionel): This may have to update the state.
+    return;
+  }
   TaskID_t task_id = (*td_ptr)->uid();
   JobID_t job_id = JobIDFromString((*td_ptr)->job_id());
   // Remove the task node from the flow graph.
