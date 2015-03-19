@@ -46,8 +46,10 @@ FlowGraph::FlowGraph(FlowSchedulingCostModelInterface *cost_model)
 FlowGraph::~FlowGraph() {
   delete cost_model_;
   for (unordered_map<uint64_t, FlowGraphNode*>::iterator it = node_map_.begin();
-       it != node_map_.end(); ++it) {
-    DeleteNode(it->second);
+       it != node_map_.end(); ) {
+    unordered_map<uint64_t, FlowGraphNode*>::iterator it_tmp = it;
+    ++it;
+    DeleteNode(it_tmp->second);
   }
   ResetChanges();
   // XXX(malte): N.B. this leaks memory as we haven't destroyed all of the
@@ -513,6 +515,9 @@ void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc) {
 }
 
 void FlowGraph::DeleteArc(FlowGraphArc* arc) {
+  // Remove the arc from the incoming and outgoing collections.
+  arc->src_node_->outgoing_arc_map_.erase(arc->dst_node_->id_);
+  arc->dst_node_->incoming_arc_map_.erase(arc->src_node_->id_);
   // First remove various meta-data relating to this arc
   arc_set_.erase(arc);
   // Then delete the arc itself
@@ -654,28 +659,14 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
                               FlowGraphNode* res_node) {
   // Remove all arcs apart from the task -> resource mapping;
   // note that this effectively disables preemption!
-  // ----
-  // N.B.: we need to collect a set of pointers here rather than
-  // deleting things inside the loop, as otherwise the iterator
-  // gets confused
-  set<uint64_t> to_delete;
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
        task_node->outgoing_arc_map_.begin();
-       it != task_node->outgoing_arc_map_.end();
-       ++it) {
+       it != task_node->outgoing_arc_map_.end(); ) {
     VLOG(2) << "Deleting arc from " << it->second->src_ << " to "
             << it->second->dst_;
-    DeleteArcGeneratingDelta(it->second);
-    to_delete.insert(it->first);
-  }
-  // Now actually delete the arcs.
-  for (set<uint64_t>::iterator it = to_delete.begin();
-       it != to_delete.end();
-       ++it) {
-    // Delete arc from remote incoming map
-    Node(*it)->incoming_arc_map_.erase(task_node->id_);
-    // Delete it from our own outgoing map
-    task_node->outgoing_arc_map_.erase(*it);
+    unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
+    ++it;
+    DeleteArcGeneratingDelta(it_tmp->second);
   }
   // Remove this task's potential flow from the per-job unscheduled
   // aggregator's outgoing edge

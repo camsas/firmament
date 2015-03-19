@@ -173,7 +173,9 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
       flow_graph_->AddOrUpdateJobNodes(jd_ptr);
     } else {
       // TODO(ionel): We should handle duplicate task ids.
-      LOG(WARNING) << "Duplicate task id: " << td_ptr->uid();
+      LOG(WARNING) << "Duplicate task id: " << td_ptr->uid() << " for task "
+		   << task_identifier.job_id << " "
+		   << task_identifier.task_index;
     }
   }
   return td_ptr;
@@ -353,15 +355,15 @@ void GoogleTraceSimulator::LoadMachineEvents() {
 void GoogleTraceSimulator::LoadTaskRuntimeStats() {
   char line[1000];
   vector<string> cols;
-  FILE* runtime_file = NULL;
-  string runtime_file_name = trace_path_ +
-    "/task_runtime_stat/task_runtime_stat.csv";
-  if ((runtime_file = fopen(runtime_file_name.c_str(), "r")) == NULL) {
+  FILE* usage_file = NULL;
+  string usage_file_name = trace_path_ +
+    "/task_usage_stat/task_usage_stat.csv";
+  if ((usage_file = fopen(usage_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace task runtime stats file.";
   }
   int64_t num_line = 1;
-  while (!feof(runtime_file)) {
-    if (fscanf(runtime_file, "%[^\n]%*[\n]", &line[0]) > 0) {
+  while (!feof(usage_file)) {
+    if (fscanf(usage_file, "%[^\n]%*[\n]", &line[0]) > 0) {
       boost::split(cols, line, is_any_of(" "), token_compress_off);
       if (cols.size() != 38) {
       } else {
@@ -410,7 +412,7 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
     }
     num_line++;
   }
-  fclose(runtime_file);
+  fclose(usage_file);
 }
 
 unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
@@ -710,7 +712,12 @@ void GoogleTraceSimulator::ReplayTrace() {
 void GoogleTraceSimulator::TaskCompleted(
     const TaskIdentifier& task_identifier) {
   TaskDescriptor** td_ptr = FindOrNull(task_id_to_td_, task_identifier);
-  CHECK_NOTNULL(td_ptr);
+  if (td_ptr == NULL) {
+    LOG(ERROR) << "Could not find TaskDescriptor for: " << task_identifier.job_id
+	       << " " << task_identifier.task_index;
+    // TODO(ionel): This may have to update the state.
+    return;
+  }
   TaskID_t task_id = (*td_ptr)->uid();
   JobID_t job_id = JobIDFromString((*td_ptr)->job_id());
   // Remove the task node from the flow graph.

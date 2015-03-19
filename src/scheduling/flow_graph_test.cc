@@ -194,6 +194,8 @@ TEST_F(FlowGraphTest, ChangeArc) {
   CHECK_EQ(arc->cost_, 42);
   CHECK_EQ(arc->cap_lower_bound_, 0);
   CHECK_EQ(arc->cap_upper_bound_, 100);
+  CHECK_EQ(arc->src_, n0->id_);
+  CHECK_EQ(arc->dst_, n1->id_);
   CHECK_EQ(g.graph_changes_.size(), num_changes + 1);
   uint64_t num_arcs = g.NumArcs();
   // This should delete the arc.
