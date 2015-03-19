@@ -34,6 +34,8 @@ DEFINE_string(task_log_dir, "/tmp/firmament-log",
               "Path where task logs will be stored.");
 DEFINE_string(task_perf_dir, "/tmp/firmament-perf",
               "Path where tasks' perf logs should be written.");
+DEFINE_string(task_data_dir, "/tmp/firmament-data",
+              "Path where tasks' perf logs should be written.");
 
 namespace firmament {
 namespace executor {
@@ -109,6 +111,11 @@ void LocalExecutor::CreateDirectories() {
   if (!FLAGS_task_perf_dir.empty() &&
       stat(FLAGS_task_perf_dir.c_str(), &st) == -1) {
     mkdir(FLAGS_task_perf_dir.c_str(), 0700);
+  }
+  // Tasks' data directory
+  if (!FLAGS_task_data_dir.empty() &&
+      stat(FLAGS_task_data_dir.c_str(), &st) == -1) {
+    mkdir(FLAGS_task_data_dir.c_str(), 0700);
   }
 }
 
@@ -376,6 +383,11 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
     LOG(WARNING) << "Executor does not have the coordinator_uri_ field set. "
                  << "The task will be unable to communicate with the "
                  << "coordinator!";
+  // Make data directory for task
+  string data_dir = FLAGS_task_data_dir + "/" + td.job_id() + "-" +
+                    to_string(td.uid());
+  mkdir(data_dir.c_str(), 0700);
+  // Set environment variables
   vector<EnvPair_t> env;
   env.push_back(EnvPair_t("FLAGS_task_id", to_string(td.uid())));
   env.push_back(EnvPair_t("PERF_FNAME", PerfDataFileName(td)));
@@ -383,7 +395,6 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
   env.push_back(EnvPair_t("FLAGS_resource_id", to_string(local_resource_id_)));
   env.push_back(EnvPair_t("FLAGS_heartbeat_interval",
                           to_string(heartbeat_interval_)));
-  // Set environment variables
   VLOG(2) << "Task's environment variables:";
   for (vector<EnvPair_t>::const_iterator env_iter = env.begin();
        env_iter != env.end();
