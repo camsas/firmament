@@ -22,6 +22,7 @@ class Envelope<BaseMessage> : public PrintableInterface {
   explicit Envelope(BaseMessage *data) : data_(data), is_owner_(false) {}
   virtual ~Envelope() {
     VLOG(2) << "Envelope at " << this << " is being destroyed.";
+    VLOG(2) << "At destruction, content is: " << *this;
     if (is_owner_)
       // de-allocate buffer
       delete data_;
