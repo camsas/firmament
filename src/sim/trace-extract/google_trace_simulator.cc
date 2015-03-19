@@ -256,6 +256,7 @@ void GoogleTraceSimulator::BinTasksByEventType(uint64_t event,
         }
       }
     }
+    fclose(fptr);
   }
   out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
     time_interval_bound << "]: " << num_tasks << "\n";
@@ -309,6 +310,7 @@ void GoogleTraceSimulator::LoadJobsNumTasks() {
     }
     num_line++;
   }
+  fclose(jobs_tasks_file);
 }
 
 void GoogleTraceSimulator::LoadMachineEvents() {
@@ -345,6 +347,69 @@ void GoogleTraceSimulator::LoadMachineEvents() {
     }
     num_line++;
   }
+  fclose(machines_file);
+}
+
+void GoogleTraceSimulator::LoadTaskRuntimeStats() {
+  char line[1000];
+  vector<string> cols;
+  FILE* runtime_file = NULL;
+  string runtime_file_name = trace_path_ +
+    "/task_runtime_stat/task_runtime_stat.csv";
+  if ((runtime_file = fopen(runtime_file_name.c_str(), "r")) == NULL) {
+    LOG(FATAL) << "Failed to open trace task runtime stats file.";
+  }
+  int64_t num_line = 1;
+  while (!feof(runtime_file)) {
+    if (fscanf(runtime_file, "%[^\n]%*[\n]", &line[0]) > 0) {
+      boost::split(cols, line, is_any_of(" "), token_compress_off);
+      if (cols.size() != 38) {
+      } else {
+        TaskIdentifier task_id;
+        task_id.job_id = lexical_cast<uint64_t>(cols[0]);
+        task_id.task_index = lexical_cast<uint64_t>(cols[1]);
+        // TODO(ionel): Populate the knowledge base.
+        // double min_mean_cpu_usage = lexical_cast<double>(cols[2]);
+        // double max_mean_cpu_usage = lexical_cast<double>(cols[3]);
+        // double avg_mean_cpu_usage = lexical_cast<double>(cols[4]);
+        // double sd_mean_cpu_usage = lexical_cast<double>(cols[5]);
+        // double min_canonical_mem_usage = lexical_cast<double>(cols[6]);
+        // double max_canonical_mem_usage = lexical_cast<double>(cols[7]);
+        // double avg_canonical_mem_usage = lexical_cast<double>(cols[8]);
+        // double sd_canonical_mem_usage = lexical_cast<double>(cols[9]);
+        // double min_assigned_mem_usage = lexical_cast<double>(cols[10]);
+        // double max_assigned_mem_usage = lexical_cast<double>(cols[11]);
+        // double avg_assigned_mem_usage = lexical_cast<double>(cols[12]);
+        // double sd_assigned_mem_usage = lexical_cast<double>(cols[13]);
+        // double min_unmapped_page_cache = lexical_cast<double>(cols[14]);
+        // double max_unmapped_page_cache = lexical_cast<double>(cols[15]);
+        // double avg_unmapped_page_cache = lexical_cast<double>(cols[16]);
+        // double sd_unmapped_page_cache = lexical_cast<double>(cols[17]);
+        // double min_total_page_cache = lexical_cast<double>(cols[18]);
+        // double max_total_page_cache = lexical_cast<double>(cols[19]);
+        // double avg_total_page_cache = lexical_cast<double>(cols[20]);
+        // double sd_total_page_cache = lexical_cast<double>(cols[21]);
+        // double min_mean_disk_io_time = lexical_cast<double>(cols[22]);
+        // double max_mean_disk_io_time = lexical_cast<double>(cols[23]);
+        // double avg_mean_disk_io_time = lexical_cast<double>(cols[24]);
+        // double sd_mean_disk_io_time = lexical_cast<double>(cols[25]);
+        // double min_mean_local_disk_used = lexical_cast<double>(cols[26]);
+        // double max_mean_local_disk_used = lexical_cast<double>(cols[27]);
+        // double avg_mean_local_disk_used = lexical_cast<double>(cols[28]);
+        // double sd_mean_local_disk_used = lexical_cast<double>(cols[29]);
+        // double min_cpi = lexical_cast<double>(cols[30]);
+        // double max_cpi = lexical_cast<double>(cols[31]);
+        // double avg_cpi = lexical_cast<double>(cols[32]);
+        // double sd_cpi = lexical_cast<double>(cols[33]);
+        // double min_mai = lexical_cast<double>(cols[34]);
+        // double max_mai = lexical_cast<double>(cols[35]);
+        // double avg_mai = lexical_cast<double>(cols[36]);
+        // double sd_mai = lexical_cast<double>(cols[37]);
+      }
+    }
+    num_line++;
+  }
+  fclose(runtime_file);
 }
 
 unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
@@ -380,6 +445,7 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
     }
     num_line++;
   }
+  fclose(tasks_file);
   return task_runtime;
 }
 
@@ -563,6 +629,8 @@ void GoogleTraceSimulator::ReplayTrace() {
   // Load tasks' runtime.
   unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_runtime =
     LoadTasksRunningTime();
+  // Populate the knowledge base.
+  LoadTaskRuntimeStats();
 
   // Import a fictional machine resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
@@ -633,6 +701,7 @@ void GoogleTraceSimulator::ReplayTrace() {
         }
       }
     }
+    fclose(f_task_events_ptr);
   }
   delete task_runtime;
 }
@@ -691,6 +760,7 @@ void GoogleTraceSimulator::UpdateFlowGraph(
         &task_bindings_, delta);
     if (delta->type() == SchedulingDelta::NOOP) {
       // We don't have to do anything.
+      delete delta;
       continue;
     } else if (delta->type() == SchedulingDelta::PLACE) {
       // Apply the scheduling delta.

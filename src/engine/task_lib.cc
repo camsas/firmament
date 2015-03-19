@@ -30,8 +30,8 @@ DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 DEFINE_string(resource_id, "",
         "The resource ID that is running this task.");
 DEFINE_string(task_id, "", "The ID of this task.");
-DEFINE_int32(heartbeat_interval, 1,
-        "The interval, in seconds, between heartbeats sent to the"
+DEFINE_int32(heartbeat_interval, 1000,
+        "The interval, in microseconds, between heartbeats sent to the"
         "coordinator.");
 
 DEFINE_string(tasklib_application, "",
@@ -281,7 +281,7 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   m_adapter_->RegisterAsyncMessageReceiptCallback(
       boost::bind(&TaskLib::HandleIncomingMessage, this, _1, _2));
   //m_adapter_->RegisterAsyncErrorPathCallback(
-  //        boost::bind(&Coordinator::HandleIncomingReceiveError, this,
+  //        boost::bind(&TaskLib::HandleIncomingReceiveError, this,
   //        boost::asio::placeholders::error, _2));
 
   //VLOG(3) << "Setting up storage engine";
@@ -293,8 +293,6 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
 
   ProcFSMonitor::ProcessStatistics_t current_stats;
   VLOG(3) << "Finished setting up process statistics\n";
-
-  int FLAGS_heartbeat_interval = 1;
 
   // This will check if the task thread has joined once every heartbeat
   // interval, and go back to sleep if it has not.
@@ -320,7 +318,7 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
       m_adapter_->AwaitNextMessage();
  
       // Finally, nap for a bit until the next heartbeat is due
-      sleep(FLAGS_heartbeat_interval);
+      usleep(FLAGS_heartbeat_interval);
     }
   LOG(INFO) << "STOPPING HEARTBEATS";
   fflush(stderr);

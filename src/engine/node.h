@@ -59,9 +59,6 @@ class Node {
                                      const string& remote_endpoint) = 0;
   void HandleIncomingReceiveError(const boost::system::error_code& error,
                                   const string& remote_endpoint);
-  void HandleRecv(const boost::system::error_code& error,
-                  size_t bytes_transferred,
-                  Envelope<BaseMessage>* env);
   void HandleWrite(const boost::system::error_code& error,
                    size_t bytes_transferred);
 #if (BOOST_VERSION < 104700)

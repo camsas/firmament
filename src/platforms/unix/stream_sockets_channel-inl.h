@@ -309,7 +309,8 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   VLOG(3) << "RecvS: size of incoming protobuf from" << RemoteEndpointString()
           << "is " << msg_size << " bytes.";
   // XXX(malte): This is a nasty hack to highlight bugs in the channel logic.
-  CHECK_LT(msg_size, 35000) << "Received implausibly large message size!";
+  CHECK_LT(msg_size, 35000) << "Received implausibly large message size "
+                            << "from " << RemoteEndpointString();
   vector<char> buf(msg_size);
   len = read(*client_socket_,
              boost::asio::mutable_buffers_1(&buf[0], msg_size),
@@ -433,7 +434,10 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
   CHECK_GT(bytes_read, 0);
   CHECK_EQ(bytes_read, message_size);
   VLOG(2) << "About to parse message";
-  CHECK(final_envelope->Parse(&(*async_recv_buffer_vec_)[0], bytes_read));
+  if (!final_envelope->Parse(&(*async_recv_buffer_vec_)[0], bytes_read)) {
+    LOG(ERROR) << "Failed to parse protobuf message of " << bytes_read
+               << " bytes!";
+  }
   // Drop the lock
   VLOG(2) << "Unlocking async receive buffer";
   // Invoke the original callback

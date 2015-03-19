@@ -71,12 +71,9 @@ bool Node::SendMessageToRemote(
     StreamSocketsChannel<BaseMessage>* chan,
     BaseMessage* msg) {
   Envelope<BaseMessage> envelope(msg);
+  // Must send synchronously as we cannot assume that msg stays around
+  // forever!
   return chan->SendS(envelope);
-  /*return chan->SendA(
-      envelope, boost::bind(&Node::HandleWrite,
-                            this,
-                            boost::asio::placeholders::error,
-                            boost::asio::placeholders::bytes_transferred));*/
 }
 
 void Node::HandleWrite(const boost::system::error_code& error,
@@ -116,21 +113,6 @@ void Node::AwaitNextMessage() {
   VLOG(3) << "Waiting for next message from adapter...";
   m_adapter_->AwaitNextMessage();
   //boost::this_thread::sleep(boost::posix_time::seconds(1));
-}
-
-void Node::HandleRecv(const boost::system::error_code& error,
-                             size_t bytes_transferred,
-                             Envelope<BaseMessage>* env) {
-  if (error) {
-    LOG(WARNING) << "Asynchronous receive call returned an error: "
-                 << error.message();
-    return;
-  }
-  VLOG(3) << "Received " << bytes_transferred << " bytes asynchronously, "
-          << "in envelope at " << env << ", representing message " << *env;
-  BaseMessage *bm = env->data();
-  HandleIncomingMessage(bm, "");
-  delete env;
 }
 
 void Node::HandleIncomingReceiveError(
