@@ -71,8 +71,10 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
   boost::mutex sync_send_lock_;
   // Async receive buffer data structures and lock
   boost::mutex async_recv_lock_;
-  scoped_ptr<boost::asio::mutable_buffers_1> async_recv_buffer_;
-  scoped_ptr<vector<char> > async_recv_buffer_vec_;
+  //scoped_ptr<boost::asio::mutable_buffers_1> async_recv_buffer_;
+  boost::asio::mutable_buffers_1* async_recv_buffer_;
+  //scoped_ptr<vector<char> > async_recv_buffer_vec_;
+  char* async_recv_buffer_vec_;
   // TCP and io_service data structures
   shared_ptr<boost::asio::io_service> client_io_service_;
   scoped_ptr<boost::asio::io_service::work> io_service_work_;

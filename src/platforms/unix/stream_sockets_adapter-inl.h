@@ -186,7 +186,7 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
   }
   CHECK_GT(channel_recv_envelopes_.count(chan), 0) << "No envelopes around "
       << "when we expected to have at least one.";
-  Envelope<T>* envelope = channel_recv_envelopes_[chan];
+  Envelope<T>* envelope = FindPtrOrNull(channel_recv_envelopes_, chan);
   CHECK_NOTNULL(envelope);
   VLOG(2) << "Received in MA: " << *envelope << " ("
           << bytes_transferred << ")";
