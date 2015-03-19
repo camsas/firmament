@@ -385,8 +385,8 @@ void StreamSocketsChannel<T>::RecvASecondStage(
     LOG(ERROR) << "Error reading from connection: " << error.message()
                << "; read " << bytes_read << " bytes, expected "
                << sizeof(uint64_t);
-    final_callback(error, bytes_read, final_envelope);
     async_recv_lock_.unlock();
+    final_callback(error, bytes_read, final_envelope);
     return;
   }
   // ... we can get away with a simple CHECK here and assume that we have some
@@ -433,15 +433,15 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
   VLOG(2) << "Read " << bytes_read << " bytes.";
   if (error == boost::asio::error::eof) {
     VLOG(1) << "Received EOF, connection terminating!";
-    final_callback(error, bytes_read, final_envelope);
     async_recv_lock_.unlock();
+    final_callback(error, bytes_read, final_envelope);
     return;
   } else if (error) {
     LOG(ERROR) << "Error reading from connection: "
                << error.message() << "; read " << bytes_read
                << " bytes, expected " << message_size;
-    final_callback(error, bytes_read, final_envelope);
     async_recv_lock_.unlock();
+    final_callback(error, bytes_read, final_envelope);
     return;
   } else {
     VLOG(2) << "Read " << bytes_read << " bytes of protobuf data...";
