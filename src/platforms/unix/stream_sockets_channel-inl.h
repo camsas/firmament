@@ -386,7 +386,8 @@ void StreamSocketsChannel<T>::RecvASecondStage(
   // Nasty cast to get message size indicator received (after endian conversion)
   uint64_t msg_size =
     be64toh(*reinterpret_cast<uint64_t*>(&(*async_recv_buffer_vec_)[0]));
-  CHECK_GT(msg_size, 0);
+  CHECK_GT(msg_size, 0) << "Received message of length 0 from "
+                        << RemoteEndpointString();
   // XXX(malte): This is a nasty hack to highlight bugs in the channel logic.
   CHECK_LT(msg_size, 35000) << "Received implausibly large message "
                             << "from " << RemoteEndpointString();
@@ -439,13 +440,13 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
     LOG(ERROR) << "Failed to parse protobuf message of " << bytes_read
                << " bytes!";
   }
-  // Drop the lock
-  VLOG(2) << "Unlocking async receive buffer";
   // Invoke the original callback
   // XXX(malte): potential race condition -- someone else may finish and invoke
   // the callback before we do (although this is very unlikely).
   VLOG(2) << "About to invoke final async recv callback!";
   final_callback(error, bytes_read, final_envelope);
+  // Drop the lock
+  VLOG(2) << "Unlocking async receive buffer";
   async_recv_lock_.unlock();
 }
 
