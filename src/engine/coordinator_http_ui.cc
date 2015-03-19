@@ -190,8 +190,13 @@ void CoordinatorHTTPUI::HandleJobsListURI(http::request_ptr& http_request,  // N
     ++i;
   }
   string output;
-  ExpandTemplate("src/webui/jobs_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
-                 &output);
+  if (!http_request->get_query("json").empty()) {
+    ExpandTemplate("src/webui/json_jobs_list.tpl", ctemplate::DO_NOT_STRIP,
+                   &dict, &output);
+  } else {
+    ExpandTemplate("src/webui/jobs_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
+                   &output);
+  }
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -451,7 +456,7 @@ void CoordinatorHTTPUI::HandleJobDTGURI(http::request_ptr& http_request,  // NOL
     }
     // Return serialized DTG
     http::response_writer_ptr writer = InitOkResponse(http_request,
-                                                  tcp_conn);
+                                                      tcp_conn);
     char *json = pb2json(*jd);
     writer->write(json);
     FinishOkResponse(writer);
@@ -676,8 +681,13 @@ void CoordinatorHTTPUI::HandleTasksListURI(http::request_ptr& http_request,  // 
                                        (*td_iter)->state()));
   }
   string output;
-  ExpandTemplate("src/webui/tasks_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
-                 &output);
+  if (!http_request->get_query("json").empty()) {
+    ExpandTemplate("src/webui/json_tasks_list.tpl", ctemplate::DO_NOT_STRIP,
+                   &dict, &output);
+  } else {
+    ExpandTemplate("src/webui/tasks_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
+                   &output);
+  }
   writer->write(output);
   FinishOkResponse(writer);
 }
