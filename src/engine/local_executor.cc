@@ -395,6 +395,7 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
   env.push_back(EnvPair_t("FLAGS_resource_id", to_string(local_resource_id_)));
   env.push_back(EnvPair_t("FLAGS_heartbeat_interval",
                           to_string(heartbeat_interval_)));
+  env.push_back(EnvPair_t("FLAGS_task_data_dir", data_dir));
   VLOG(2) << "Task's environment variables:";
   for (vector<EnvPair_t>::const_iterator env_iter = env.begin();
        env_iter != env.end();
