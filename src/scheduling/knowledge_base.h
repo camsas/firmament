@@ -5,8 +5,8 @@
 // code for the performance and utilization data reported by tasks and other
 // coordinators.
 
-#ifndef FIRMAMENT_ENGINE_KNOWLEDGE_BASE_H
-#define FIRMAMENT_ENGINE_KNOWLEDGE_BASE_H
+#ifndef FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_H
+#define FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_H
 
 #include <string>
 #include <map>
@@ -34,9 +34,9 @@ class KnowledgeBase {
       ResourceID_t id) const;
   const deque<TaskPerfStatisticsSample>* GetStatsForTask(
       TaskID_t id) const;
-  uint64_t GetAvgCPIForTEC(TaskEquivClass_t id);
-  uint64_t GetAvgIPMAForTEC(TaskEquivClass_t id);
-  uint64_t GetAvgRuntimeForTEC(TaskEquivClass_t id);
+  double GetAvgCPIForTEC(TaskEquivClass_t id);
+  double GetAvgIPMAForTEC(TaskEquivClass_t id);
+  double GetAvgRuntimeForTEC(TaskEquivClass_t id);
   const deque<TaskFinalReport>* GetFinalStatsForTask(TaskEquivClass_t id) const;
   void ProcessTaskFinalReport(const TaskFinalReport& report,
                               const TaskDescriptor& td);
@@ -52,4 +52,4 @@ class KnowledgeBase {
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_KNOWLEDGE_BASE_H
+#endif  // FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_H

@@ -76,7 +76,7 @@ TaskLib::TaskLib()
   VLOG(1) << "Task ID is " << task_id_env;
   CHECK_NOTNULL(task_id_env);
   task_id_ = TaskIDFromString(task_id_env);
-  setUpStorageEngine();
+  //setUpStorageEngine();
 
   stringstream ss;
   ss << "/tmp/" << task_id_env << ".pid";
