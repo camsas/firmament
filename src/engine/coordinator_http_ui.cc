@@ -837,7 +837,7 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
     string target = "http://" +
                     URITools::GetHostnameFromURI(td->delegated_to()) +
                     ":" + to_string(port_) + "/tasklog/?id=" +
-                    to_string(task_id);
+                    to_string(task_id) + "&a=" + http_request->get_query("a");
     RedirectResponse(http_request, tcp_conn, target);
     return;
   }
