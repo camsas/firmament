@@ -825,17 +825,19 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  string task_id = http_request->get_query("id");
-  if (task_id.empty()) {
+  string task_id_str = http_request->get_query("id");
+  if (task_id_str.empty()) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
-  TaskDescriptor* td = coordinator_->GetTask(TaskIDFromString(task_id));
+  TaskID_t task_id = TaskIDFromString(task_id_str);
+  TaskDescriptor* td = coordinator_->GetTask(task_id);
   if (td->has_delegated_to()) {
     string target = "http://" +
                     URITools::GetHostnameFromURI(td->delegated_to()) +
-                    ":" + to_string(port_) + "/tasklog/?id=" + task_id;
+                    ":" + to_string(port_) + "/tasklog/?id=" +
+                    to_string(task_id);
     RedirectResponse(http_request, tcp_conn, target);
     return;
   }
@@ -847,9 +849,9 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
     return;
   } else {
     if (action == "1") {
-      tasklog_filename += "/" + task_id + "-stdout";
+      tasklog_filename += "/" + to_string(task_id) + "-stdout";
     } else if (action == "2") {
-      tasklog_filename += "/" + task_id + "-stderr";
+      tasklog_filename += "/" + to_string(task_id) + "-stderr";
     } else {
       ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                     tcp_conn);
