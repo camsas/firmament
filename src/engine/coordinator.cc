@@ -666,9 +666,9 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
 
 void Coordinator::HandleTaskStateChange(
     const TaskStateMessage& msg) {
-  VLOG(1) << "Task " << msg.id() << " now in state "
-          << ENUM_TO_STRING(TaskDescriptor::TaskState, msg.new_state())
-          << ".";
+  LOG(INFO) << "Task " << msg.id() << " now in state "
+            << ENUM_TO_STRING(TaskDescriptor::TaskState, msg.new_state())
+            << ".";
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_table_, msg.id());
   CHECK(td_ptr) << "Received task state change message for task "
                 << msg.id();
