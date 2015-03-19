@@ -375,8 +375,8 @@ void StreamSocketsChannel<T>::RecvASecondStage(
     LOG(ERROR) << "Error reading from connection: " << error.message()
                << "; read " << bytes_read << " bytes, expected "
                << sizeof(uint64_t);
-    async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
+    async_recv_lock_.unlock();
     return;
   }
   // ... we can get away with a simple CHECK here and assume that we have some
@@ -417,15 +417,15 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
   VLOG(2) << "Read " << bytes_read << " bytes.";
   if (error == boost::asio::error::eof) {
     VLOG(1) << "Received EOF, connection terminating!";
-    async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
+    async_recv_lock_.unlock();
     return;
   } else if (error) {
     LOG(ERROR) << "Error reading from connection: "
                << error.message() << "; read " << bytes_read
                << " bytes, expected " << message_size;
-    async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
+    async_recv_lock_.unlock();
     return;
   } else {
     VLOG(2) << "Read " << bytes_read << " bytes of protobuf data...";
@@ -436,12 +436,12 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
   CHECK(final_envelope->Parse(&(*async_recv_buffer_vec_)[0], bytes_read));
   // Drop the lock
   VLOG(2) << "Unlocking async receive buffer";
-  async_recv_lock_.unlock();
   // Invoke the original callback
   // XXX(malte): potential race condition -- someone else may finish and invoke
   // the callback before we do (although this is very unlikely).
   VLOG(2) << "About to invoke final async recv callback!";
   final_callback(error, bytes_read, final_envelope);
+  async_recv_lock_.unlock();
 }
 
 template <class T>
