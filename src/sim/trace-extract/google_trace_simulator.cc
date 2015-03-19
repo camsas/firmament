@@ -67,7 +67,7 @@ DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2.");
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
   resource_map_(new ResourceMap_t), trace_path_(trace_path),
-  knowledge_base_(new KnowledgeBase),
+  knowledge_base_(new KnowledgeBaseSimulator),
   flow_graph_(new FlowGraph(
                 new QuincyCostModel(resource_map_, job_map_, task_map_,
                                     &task_bindings_, knowledge_base_))),
