@@ -22,6 +22,9 @@ all: protobufs $(BIN) .setup
 
 protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 
+SOLVER_DIR = $(shell readlink -f $(ROOT_DIR)/ext)
+DEFINES += -DSOLVER_DIR=\"$(SOLVER_DIR)\" 
+
 $(addprefix $(OBJ_DIR)/, google-trace-simulator): $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \

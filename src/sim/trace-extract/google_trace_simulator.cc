@@ -93,12 +93,12 @@ void GoogleTraceSimulator::Run() {
     FLAGS_flow_scheduling_solver = "flowlessly";
     FLAGS_only_read_assignment_changes = true;
     FLAGS_flowlessly_binary =
-      "../../../ext/flowlessly-git/run_fast_cost_scaling";
+      SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
     FLAGS_flow_scheduling_solver = "cs2";
     FLAGS_only_read_assignment_changes = false;
-    FLAGS_cs2_binary = "../../../ext/cs2-4.6/cs2.exe";
+    FLAGS_cs2_binary = SOLVER_DIR "/cs2-git/cs2.exe";
   } else {
     LOG(FATAL) << "Unknown solver type: " << FLAGS_solver;
   }
