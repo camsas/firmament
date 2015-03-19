@@ -214,12 +214,15 @@ TaskID_t TaskIDFromString(const string& str) {
 }
 
 // Pipe setup
+// errfd[0] == PARENT_READ
+// errfd[1] == CHILD_WRITE
 // outfd[0] == PARENT_READ
 // outfd[1] == CHILD_WRITE
 // infd[0] == CHILD_READ
 // infd[1] == PARENT_WRITE
+
 int32_t ExecCommandSync(const string& cmdline, vector<string> args,
-                        int infd[2], int outfd[2]) {
+                        int infd[2], int outfd[2], int errfd[2]) {
   VLOG(2) << "Executing externally: " << cmdline;
   pid_t pid;
   if (pipe(infd) != 0) {
@@ -228,6 +231,9 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
   if (pipe(outfd) != 0) {
     LOG(ERROR) << "Failed to create pipe from task.";
   }
+  if (pipe(errfd) != 0) {
+      LOG(ERROR) << "Failed to create pipe from task.";
+    }
   // Convert args from string to char*
   vector<char*> argv;
   // no performance monitoring, so we only need to reserve space for the
@@ -263,12 +269,15 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       // Close parent pipe descriptors
       close(infd[1]);
       close(outfd[0]);
+      close(errfd[0]);
       // set up pipes
       CHECK(dup2(infd[0], STDIN_FILENO) == STDIN_FILENO);
       CHECK(dup2(outfd[1], STDOUT_FILENO) == STDOUT_FILENO);
+      CHECK(dup2(errfd[1], STDERR_FILENO) == STDERR_FILENO);
       // close unnecessary pipe descriptors
       close(infd[0]);
       close(outfd[1]);
+      close(errfd[1]);
       // Run the task binary
       execvp(argv[0], &argv[0]);
       // execl only returns if there was an error
@@ -283,6 +292,7 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       // close unused pipe ends
       close(infd[0]);
       close(outfd[1]);
+      close(errfd[1]);
       // TODO(malte): ReadFromPipe is a synchronous call that will only return
       // once the pipe has been closed! Check if this is actually the semantic
       // we want.

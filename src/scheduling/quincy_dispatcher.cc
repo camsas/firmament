@@ -9,6 +9,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/timer/timer.hpp>
 
 #include "misc/string_utils.h"
 #include "misc/utils.h"
@@ -30,7 +31,8 @@ namespace scheduler {
   using boost::algorithm::is_any_of;
   using boost::token_compress_on;
 
-  multimap<uint64_t, uint64_t>* QuincyDispatcher::Run() {
+  multimap<uint64_t, uint64_t>* QuincyDispatcher::Run(double *algorithm_time,
+  		                                                double *flowsolver_time) {
     // Set up debug directory if it doesn't exist
     struct stat st;
     if (!FLAGS_debug_output_dir.empty() &&
@@ -66,26 +68,39 @@ namespace scheduler {
     pid_t solver_pid;
     if (!solver_ran_once_ || !FLAGS_incremental_flow) {
       // Pipe setup
-      // infd_[0] == PARENT_READ
-      // infd_[1] == CHILD_WRITE
-      // outfd_[0] == CHILD_READ
-      // outfd_[1] == PARENT_WRITE
+    	// errfd[0] == PARENT_READ
+    	// errfd[1] == CHILD_WRITE
+    	// outfd[0] == PARENT_READ
+    	// outfd[1] == CHILD_WRITE
+    	// infd[0] == CHILD_READ
+    	// infd[1] == PARENT_WRITE
      	boost::split(args, FLAGS_flow_scheduling_args, boost::is_any_of(" "));
 
-      solver_pid = ExecCommandSync(FLAGS_flow_scheduling_binary, args, outfd_, infd_);
+      solver_pid = ExecCommandSync(FLAGS_flow_scheduling_binary, args, infd_, outfd_, errfd_);
       VLOG(2) << "Solver running " << "(PID: " << solver_pid << ")"
-      		    << ", CHILD_READ: " << outfd_[0] << ", PARENT_WRITE: " << outfd_[1]
-              << ", PARENT_READ: " << infd_[0] << ", CHILD_WRITE: " << infd_[1];
+      		    << ", CHILD_READ: " << infd_[0]
+							<< ", CHILD_WRITE_STD: " << outfd_[1]
+							<< ", CHILD_WRITE_ERR: " << errfd_[1]
+							<< ", PARENT_WRITE: " << infd_[1]
+							<< ", PARENT_READ_STD: " << outfd_[0]
+							<< ", PARENT_READ_ERR: " << errfd_[0];
       solver_ran_once_ = true;
-      if ((from_solver_ = fdopen(infd_[0], "r")) == NULL) {
+      if ((from_solver_stats_ = fdopen(errfd_[0], "r")) == NULL) {
+				LOG(ERROR) << "Failed to open FD for reading solver's output. FD "
+									 << errfd_[0];
+			}
+      if ((from_solver_ = fdopen(outfd_[0], "r")) == NULL) {
         LOG(ERROR) << "Failed to open FD for reading solver's output. FD "
-                   << infd_[0];
+                   << outfd_[0];
       }
-      if ((to_solver_ = fdopen(outfd_[1], "w")) == NULL) {
+      if ((to_solver_ = fdopen(infd_[1], "w")) == NULL) {
         LOG(ERROR) << "Failed to open FD to solver for writing. FD: "
-                   << outfd_[1];
+                   << infd_[1];
       }
     }
+
+    boost::timer::cpu_timer flowsolver_timer;
+
     // Write to pipe to solver
     exporter_.Flush(to_solver_);
     if (!FLAGS_incremental_flow) {
@@ -104,6 +119,20 @@ namespace scheduler {
                                   flow_graph_->sink_node().id_);
       delete extracted_flow;
     }
+
+    if (algorithm_time != NULL) {
+    	*algorithm_time = ReadAlgorithmTime(from_solver_stats_);
+    } else {
+    	// discard, read it so that it doesn't build up in buffer and block
+    	ReadAlgorithmTime(from_solver_stats_);
+    }
+
+    if (flowsolver_time != NULL) {
+    	*flowsolver_time = flowsolver_timer.elapsed().wall;
+    	// restart timer
+    	flowsolver_timer.stop(); flowsolver_timer.resume();
+    }
+
     if (!FLAGS_incremental_flow) {
       // We're done with the solver and can let it terminate here.
       WaitForFinish(solver_pid);
@@ -331,6 +360,17 @@ namespace scheduler {
       }
     }
     return task_node;
+  }
+
+  double QuincyDispatcher::ReadAlgorithmTime(FILE *stats) {
+  	double result;
+  	int num_matched = fscanf(stats, "ALGOTIME: %lf\n", &result);
+  	if (num_matched == 1) {
+  		return result;
+  	} else {
+  		LOG(WARNING) << "Did not read ALGOTIME on stderr";
+  		return nan("");
+  	}
   }
 
 } // namespace scheduler

@@ -3,7 +3,8 @@ SUFFIX=sim/trace-extract
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_thread -lboost_system -lboost_regex -lssl -lcrypto
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_timer \
+        -lssl -lcrypto
 
 BINS = google-trace-simulator google-trace-processor google-trace-simulator-test
 # OPTFLAGS += -fsanitize=address -fno-omit-frame-pointer

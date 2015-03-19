@@ -4,7 +4,7 @@ SUFFIX=engine
 include $(ROOT_DIR)/include/Makefile.config
 
 TASK_LIB_LIBS := $(LIBS) -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc -lssl -lcrypto
-LIBS += -lboost_chrono -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc -lssl -lcrypto
+LIBS += -lboost_chrono -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lboost_timer -lhwloc -lssl -lcrypto
 HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -llog4cpp -ljansson -lctemplate
 
 LIB = libfirmament_engine.a

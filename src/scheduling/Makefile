@@ -3,7 +3,8 @@ SUFFIX=scheduling
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_system -lboost_thread -lboost_regex -lhwloc -lssl -lcrypto
+LIBS += -lboost_system -lboost_thread -lboost_regex -lboost_timer \
+        -lhwloc -lssl -lcrypto
 
 LIB = libfirmament_scheduling.a
 COST_MODEL_OBJS = coco_cost_model.o quincy_cost_model.o sjf_cost_model.o \

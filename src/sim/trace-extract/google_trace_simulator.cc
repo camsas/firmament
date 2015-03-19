@@ -11,6 +11,7 @@
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/timer/timer.hpp>
 
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -62,6 +63,7 @@ DEFINE_string(task_bins_output, "bins.out",
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
+DEFINE_string(stats_file, "", "Path to write CSV of statistics.");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -107,7 +109,11 @@ void GoogleTraceSimulator::Run() {
       LOG(ERROR) << "Could not open bin output file.";
     }
   } else {
-    ReplayTrace();
+  	if (FLAGS_stats_file.empty()) {
+  		LOG(FATAL) << "Must specify a path for the statistics file, -stats-file.";
+  	}
+  	ofstream stats_file(FLAGS_stats_file);
+    ReplayTrace(stats_file);
   }
 }
 
@@ -609,7 +615,12 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
                                               GetCurrentTimestamp())));
 }
 
-void GoogleTraceSimulator::ReplayTrace() {
+void GoogleTraceSimulator::ReplayTrace(ofstream &stats_file) {
+	// Output CSV header
+	stats_file << "cluster_time,algorithm_time,flowsolver_time,total_time"
+			       << std::endl;
+	boost::timer::cpu_timer timer;
+
   // Load all the machine events.
   LoadMachineEvents();
   // Populate the job_id to number of tasks mapping.
@@ -671,8 +682,9 @@ void GoogleTraceSimulator::ReplayTrace() {
 
             LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
 
+            double algorithm_time, flowsolver_time;
             multimap<uint64_t, uint64_t>* task_mappings =
-              quincy_dispatcher_->Run();
+              quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time);
 
             UpdateFlowGraph(time_interval_bound, task_runtime, task_mappings);
 
@@ -682,6 +694,15 @@ void GoogleTraceSimulator::ReplayTrace() {
             while (time_interval_bound < task_time) {
               time_interval_bound += FLAGS_bin_time_duration;
             }
+
+            // Log stats to CSV file
+						boost::timer::cpu_times total_runtime = timer.elapsed();
+						stats_file << time_interval_bound << ","
+								       << algorithm_time << ","
+											 << flowsolver_time << ","
+											 << total_runtime.wall << std::endl;
+						// restart timer; elapsed() returns time from this point
+						timer.stop(); timer.resume();
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
