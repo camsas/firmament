@@ -38,14 +38,15 @@ message TaskDescriptor {
   /* Timestamps */
   optional uint64 submit_time = 15;
   optional uint64 start_time = 16;
+  optional uint64 finish_time = 17;
   /* Deadlines */
-  optional uint64 relative_deadline = 17;
-  optional uint64 absolute_deadline = 18;
-  optional uint64 equivalence_class = 19;
+  optional uint64 relative_deadline = 18;
+  optional uint64 absolute_deadline = 19;
+  optional uint64 equivalence_class = 20;
   /* Application-specific fields */
   /* TODO(malte): move these to sub-messages */
-  optional uint64 port = 20;
-  optional uint64 input_size = 21;
-  optional bool inject_task_lib = 22 [default = false];
+  optional uint64 port = 21;
+  optional uint64 input_size = 22;
+  optional bool inject_task_lib = 23 [default = false];
 }
 

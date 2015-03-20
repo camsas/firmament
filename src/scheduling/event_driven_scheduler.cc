@@ -212,7 +212,7 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   // Record final report
   ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
   CHECK_NOTNULL(exec);
-  exec->HandleTaskCompletion(*td_ptr, report);
+  exec->HandleTaskCompletion(td_ptr, report);
 }
 
 void EventDrivenScheduler::HandleReferenceStateChange(
@@ -286,7 +286,7 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   // Executor cleanup: drop the task from the health checker's list, etc.
   ExecutorInterface* executor = GetExecutorForTask(td_ptr->uid());
   CHECK_NOTNULL(executor);
-  executor->HandleTaskFailure(*td_ptr);
+  executor->HandleTaskFailure(td_ptr);
   // Remove the task's resource binding (as it is no longer currently bound)
   CHECK(UnbindResourceForTask(td_ptr->uid()));
   // Set the task to "failed" state and deal with the consequences

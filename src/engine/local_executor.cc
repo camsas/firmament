@@ -22,6 +22,8 @@ extern "C" {
 #include "misc/utils.h"
 #include "misc/map-util.h"
 
+DEFINE_bool(pin_tasks_to_cores, true,
+            "Pin tasks to their allocated CPU core when executing.");
 DEFINE_bool(debug_tasks, false,
             "Run tasks through a debugger (gdb).");
 DEFINE_uint64(debug_interactively, 0,
@@ -33,6 +35,8 @@ DEFINE_string(task_lib_dir, "build/engine/",
 DEFINE_string(task_log_dir, "/tmp/firmament-log",
               "Path where task logs will be stored.");
 DEFINE_string(task_perf_dir, "/tmp/firmament-perf",
+              "Path where tasks' perf logs should be written.");
+DEFINE_string(task_data_dir, "/tmp/firmament-data",
               "Path where tasks' perf logs should be written.");
 
 namespace firmament {
@@ -95,8 +99,6 @@ void LocalExecutor::CleanUpCompletedTask(const TaskDescriptor& td) {
   // Drop task handler thread
   boost::unique_lock<boost::shared_mutex> lock(handler_map_mutex_);
   task_handler_threads_.erase(td.uid());
-  // Remove the start time from the map
-  task_start_times_.erase(td.uid());
 }
 
 
@@ -111,6 +113,11 @@ void LocalExecutor::CreateDirectories() {
   if (!FLAGS_task_perf_dir.empty() &&
       stat(FLAGS_task_perf_dir.c_str(), &st) == -1) {
     mkdir(FLAGS_task_perf_dir.c_str(), 0700);
+  }
+  // Tasks' data directory
+  if (!FLAGS_task_data_dir.empty() &&
+      stat(FLAGS_task_data_dir.c_str(), &st) == -1) {
+    mkdir(FLAGS_task_data_dir.c_str(), 0700);
   }
 }
 
@@ -138,14 +145,13 @@ void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
   }
 }
 
-void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
+void LocalExecutor::HandleTaskCompletion(TaskDescriptor* td,
                                          TaskFinalReport* report) {
   uint64_t end_time = GetCurrentTimestamp();
-  uint64_t *start_time = FindOrNull(task_start_times_, td.uid());
-  // _SHOULD_ be in the start time from before!
-  CHECK_NOTNULL(start_time);
-  report->set_task_id(td.uid());
-  report->set_start_time(*start_time);
+  td->set_finish_time(end_time);
+  uint64_t start_time = td->start_time();
+  report->set_task_id(td->uid());
+  report->set_start_time(start_time);
   report->set_finish_time(end_time);
   // Load perf data, if it exists
   if (FLAGS_perf_monitoring) {
@@ -157,16 +163,16 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
     // data to it when it finishes.
     struct stat st;
     bzero(&st, sizeof(struct stat));
-    string file_name = PerfDataFileName(td);
+    string file_name = PerfDataFileName(*td);
     while (st.st_size == 0) {
       if (stat(file_name.c_str(), &st) != 0)
         PLOG(ERROR) << "Failed to stat perf data file " << file_name;
     }
     // Once we get here, we have non-zero data in the perf data file
-    if ((fptr = fopen(PerfDataFileName(td).c_str(), "r")) == NULL) {
+    if ((fptr = fopen(PerfDataFileName(*td).c_str(), "r")) == NULL) {
       LOG(ERROR) << "Failed to open perf data file " << file_name;
     }
-    VLOG(1) << "Processing perf output in file " << PerfDataFileName(td)
+    VLOG(1) << "Processing perf output in file " << PerfDataFileName(*td)
             << "...";
     while (!feof(fptr)) {
       char* lptr = fgets(line, 1024, fptr);
@@ -180,16 +186,17 @@ void LocalExecutor::HandleTaskCompletion(const TaskDescriptor& td,
     // information available, we use the executor's runtime measurements.
     // They should be identical, however, so maybe we should just always do
     // this. Multiplication by 1M converts from microseconds to seconds.
-    report->set_runtime(end_time / 1000000.0 - *start_time / 1000000.0);
+    report->set_runtime(end_time / 1000000.0 - start_time / 1000000.0);
   }
   // Now clean up any remaining state.
-  CleanUpCompletedTask(td);
+  CleanUpCompletedTask(*td);
 }
 
-void LocalExecutor::HandleTaskFailure(const TaskDescriptor& td) {
+void LocalExecutor::HandleTaskFailure(TaskDescriptor* td) {
+  td->set_finish_time(GetCurrentTimestamp());
   // Nothing to be done other than cleaning up; there is no final
   // report for failed task at this time.
-  CleanUpCompletedTask(td);
+  CleanUpCompletedTask(*td);
 }
 
 void LocalExecutor::RunTask(TaskDescriptor* td,
@@ -197,7 +204,6 @@ void LocalExecutor::RunTask(TaskDescriptor* td,
   CHECK(td);
   // Save the start time.
   uint64_t start_time = GetCurrentTimestamp();
-  InsertIfNotPresent(&task_start_times_, td->uid(), start_time);
   // Mark the start time of the task.
   td->set_start_time(start_time);
   // XXX(malte): Move this over to use RunProcessAsync, instead of custom thread
@@ -348,7 +354,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       // Parent
       VLOG(1) << "Task process with PID " << pid << " created.";
       // Pin the task to the appropriate resource
-      if (topology_manager_)
+      if (topology_manager_ && FLAGS_pin_tasks_to_cores)
         topology_manager_->BindPIDToResource(pid, local_resource_id_);
       unsetenv("LD_LIBRARY_PATH");
       unsetenv("LD_PRELOAD");
@@ -387,6 +393,11 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
     LOG(WARNING) << "Executor does not have the coordinator_uri_ field set. "
                  << "The task will be unable to communicate with the "
                  << "coordinator!";
+  // Make data directory for task
+  string data_dir = FLAGS_task_data_dir + "/" + td.job_id() + "-" +
+                    to_string(td.uid());
+  mkdir(data_dir.c_str(), 0700);
+  // Set environment variables
   vector<EnvPair_t> env;
   env.push_back(EnvPair_t("FLAGS_task_id", to_string(td.uid())));
   env.push_back(EnvPair_t("PERF_FNAME", PerfDataFileName(td)));
@@ -394,7 +405,7 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
   env.push_back(EnvPair_t("FLAGS_resource_id", to_string(local_resource_id_)));
   env.push_back(EnvPair_t("FLAGS_heartbeat_interval",
                           to_string(heartbeat_interval_)));
-  // Set environment variables
+  env.push_back(EnvPair_t("FLAGS_task_data_dir", data_dir));
   VLOG(2) << "Task's environment variables:";
   for (vector<EnvPair_t>::const_iterator env_iter = env.begin();
        env_iter != env.end();
