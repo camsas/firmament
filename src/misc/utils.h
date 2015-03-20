@@ -69,6 +69,8 @@ int32_t WaitForFinish(pid_t pid);
 
 uint8_t* SHA256Hash(uint8_t* bytes, uint64_t len);
 
+string CoarseTimestampToHumanReadble(const time_t rawtime);
+
 set<DataObjectID_t*> DataObjectIDsFromProtobuf(
     const RepeatedPtrField<string>& pb_field);
 set<DataObjectID_t*> DataObjectIDsFromProtobuf(
