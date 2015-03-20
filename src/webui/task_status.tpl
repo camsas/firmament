@@ -160,7 +160,9 @@ $(function() {
     <td>Equivalence classes</td>
     <td>
       <ul>
-        {{TASK_TEC}}
+        {{#TASK_TECS}}
+        <li><a href="/tec/?id={{TASK_TEC}}">{{TASK_TEC}}</a></li>
+        {{/TASK_TECS}}
       </ul>
     </td>
   </tr>

@@ -85,6 +85,40 @@ void CoordinatorHTTPUI::AddFooterToTemplate(TemplateDictionary* dict) {
   pgheader_sub_dict->SetFilename("src/webui/page_footer.tpl");
 }
 
+void CoordinatorHTTPUI::HandleCollectlGraphsURI(
+    http::request_ptr& http_request, // NOLINT
+    tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Kick off collectl graph generation
+  vector<string> args;
+  args.push_back("-scdnm");
+  args.push_back("-p");
+  args.push_back("/var/log/collectl/20150320*.raw.gz");
+  args.push_back("--from");
+  args.push_back(http_request->get_query("from"));
+  args.push_back("-ozTm");
+  args.push_back("-P");
+  args.push_back("-f");
+  args.push_back("/tmp/collectltmp/");
+  int infd[2];
+  int outfd[2];
+  ExecCommandSync("/usr/bin/collectl", args, infd, outfd);
+  //args.clear();
+  //args.push_back("ext/plot_collectl.py");
+  //args.push_back("/tmp/collectltmp");
+  //args.push_back("/tmp/testgraph.pdf");
+  //ExecCommandSync("/usr/bin/python", args, infd, outfd);
+  //ServeFile("/tmp/collectltmp/", tcp_conn, http_request, writer);
+  writer->write("done!");
+  FinishOkResponse(writer);
+}
+
+void CoordinatorHTTPUI::HandleCollectlRawURI(
+    http::request_ptr& http_request, // NOLINT
+    tcp::connection_ptr& tcp_conn) {  // NOLINT
+}
+
 void CoordinatorHTTPUI::HandleJobSubmitURI(http::request_ptr& http_request,  // NOLINT
                                            tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -823,17 +857,16 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     dict.SetIntValue("TASK_LAST_HEARTBEAT",
                      td_ptr->last_heartbeat_time() / 1000);
     // Equivalence classes
-    string task_tec = "";
     vector<TaskEquivClass_t>* equiv_classes =
-      coordinator_->knowledge_base()->GetTaskEquivClasses(td_ptr->uid());
-    for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
-         it != equiv_classes->end(); ++it) {
-      string equiv_class = lexical_cast<string>(*it);
-      task_tec += "<li><a href=\"/tec/id?=" + equiv_class + "\">" +
-        equiv_class + "</a>\n";
+        coordinator_->knowledge_base()->GetTaskEquivClasses(td_ptr->uid());
+    if (equiv_classes) {
+      for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+           it != equiv_classes->end(); ++it) {
+        TemplateDictionary* tec_dict = dict.AddSectionDictionary("TASK_TECS");
+        tec_dict->SetIntValue("TASK_TEC", *it;
+      }
     }
     delete equiv_classes;
-    dict.SetValue("TASK_TEC", task_tec);
     // Dependencies
     if (td_ptr->dependencies_size() > 0)
       dict.SetIntValue("TASK_NUM_DEPS", td_ptr->dependencies_size());
@@ -1013,6 +1046,12 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Root URI
     coordinator_http_server_->add_resource("/favicon.ico", boost::bind(
         &CoordinatorHTTPUI::HandleFaviconURI, this, _1, _2));
+    // Collectl graph hook
+    coordinator_http_server_->add_resource("/collectl/graphs/", boost::bind(
+        &CoordinatorHTTPUI::HandleCollectlGraphsURI, this, _1, _2));
+    // Collectl raw data hook
+    coordinator_http_server_->add_resource("/collectl/raw/", boost::bind(
+        &CoordinatorHTTPUI::HandleCollectlRawURI, this, _1, _2));
     // Job list
     coordinator_http_server_->add_resource("/jobs/", boost::bind(
         &CoordinatorHTTPUI::HandleJobsListURI, this, _1, _2));
