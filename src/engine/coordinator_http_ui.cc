@@ -801,13 +801,25 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
                              td_ptr->delegated_from()));
     }
     // Timestamps
-    dict.SetIntValue("TASK_SUBMIT_TIME", td_ptr->submit_time() / 1000);
-    dict.SetIntValue("TASK_START_TIME", td_ptr->start_time() / 1000);
-    dict.SetIntValue("TASK_FINISH_TIME", td_ptr->start_time() / 1000);
-    dict.SetValue("TASK_START_TIME_HR",
-        CoarseTimestampToHumanReadble(td_ptr->start_time() / 1000000));
-    dict.SetValue("TASK_FINISH_TIME_HR",
-        CoarseTimestampToHumanReadble(td_ptr->finish_time() / 1000000));
+    if (td_ptr->has_submit_time()) {
+      dict.SetIntValue("TASK_SUBMIT_TIME", td_ptr->submit_time() / 1000);
+    } else {
+      dict.SetIntValue("TASK_SUBMIT_TIME", 0);
+    }
+    if (td_ptr->has_start_time()) {
+      dict.SetIntValue("TASK_START_TIME", td_ptr->start_time() / 1000);
+      dict.SetValue("TASK_START_TIME_HR",
+          CoarseTimestampToHumanReadble(td_ptr->start_time() / 1000000));
+    } else {
+      dict.SetIntValue("TASK_START_TIME", 0);
+    }
+    if (td_ptr->has_finish_time()) {
+      dict.SetIntValue("TASK_FINISH_TIME", td_ptr->start_time() / 1000);
+      dict.SetValue("TASK_FINISH_TIME_HR",
+          CoarseTimestampToHumanReadble(td_ptr->finish_time() / 1000000));
+    } else {
+      dict.SetIntValue("TASK_FINISH_TIME", 0);
+    }
     // Heartbeat time
     // JS expects millisecond values
     dict.SetIntValue("TASK_LAST_HEARTBEAT",
