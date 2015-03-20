@@ -68,15 +68,13 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
   resource_map_(new ResourceMap_t), trace_path_(trace_path),
   knowledge_base_(new KnowledgeBaseSimulator) {
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>();
   FlowSchedulingCostModelInterface* cost_model =
     new QuincyCostModel(resource_map_, job_map_, task_map_,
-                        &task_bindings_,
-                        new unordered_set<ResourceID_t,
-                          boost::hash<boost::uuids::uuid>>,
+                        &task_bindings_, leaf_res_ids,
                         knowledge_base_);
-  flow_graph_ = new FlowGraph(cost_model,
-                              new unordered_set<ResourceID_t,
-                                boost::hash<boost::uuids::uuid>>);
+  flow_graph_ = new FlowGraph(cost_model, leaf_res_ids);
   knowledge_base_->SetCostModel(cost_model);
   quincy_dispatcher_ =
     new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
@@ -99,12 +97,12 @@ void GoogleTraceSimulator::Run() {
     FLAGS_flow_scheduling_solver = "flowlessly";
     FLAGS_only_read_assignment_changes = true;
     FLAGS_flowlessly_binary =
-      "../../../ext/flowlessly-git/run_fast_cost_scaling";
+      SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
     FLAGS_flow_scheduling_solver = "cs2";
     FLAGS_only_read_assignment_changes = false;
-    FLAGS_cs2_binary = "../../../ext/cs2-4.6/cs2.exe";
+    FLAGS_cs2_binary = SOLVER_DIR "/cs2-4.6/cs2.exe";
   } else {
     LOG(FATAL) << "Unknown solver type: " << FLAGS_solver;
   }
