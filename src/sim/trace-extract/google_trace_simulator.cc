@@ -67,15 +67,16 @@ DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2.");
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
   resource_map_(new ResourceMap_t), trace_path_(trace_path),
-  knowledge_base_(new KnowledgeBaseSimulator),
-  flow_graph_(new FlowGraph(
-                new QuincyCostModel(resource_map_, job_map_, task_map_,
-                                    &task_bindings_, knowledge_base_),
-                new unordered_set<ResourceID_t,
-                boost::hash<boost::uuids::uuid>>)),
-  quincy_dispatcher_(
-    new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_),
-                                    false)) {
+  knowledge_base_(new KnowledgeBaseSimulator) {
+  FlowSchedulingCostModelInterface* cost_model =
+    new QuincyCostModel(resource_map_, job_map_, task_map_,
+                        &task_bindings_, knowledge_base_);
+  flow_graph_ = new FlowGraph(cost_model,
+                              new unordered_set<ResourceID_t,
+                                boost::hash<boost::uuids::uuid>>);
+  knowledge_base_->SetCostModel(cost_model);
+  quincy_dispatcher_ =
+    new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
 }
 
 GoogleTraceSimulator::~GoogleTraceSimulator() {
