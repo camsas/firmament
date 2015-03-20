@@ -53,10 +53,12 @@ Cost_t CocoCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 // task to run on any node in the cluster. The cost of the topology's arcs are
 // the same for all the tasks.
 Cost_t CocoCostModel::TaskToClusterAggCost(TaskID_t task_id) {
-  const TaskDescriptor& td = GetTask(task_id);
-  TaskEquivClass_t ec = GenerateTaskEquivClass(td);
+  vector<TaskEquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+  CHECK_GE(equiv_classes->size(), 0);
   // Avg runtime is in milliseconds, so we convert it to tenths of a second
-  uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(ec);
+  uint64_t avg_runtime =
+    knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
+  delete equiv_classes;
   return (avg_runtime * 100);
 }
 
@@ -122,7 +124,7 @@ vector<ResourceID_t>* CocoCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
 pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
   CocoCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
-  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
+  return pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
 }
 
 }  // namespace firmament

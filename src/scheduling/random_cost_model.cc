@@ -95,7 +95,7 @@ vector<ResourceID_t>* RandomCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
 pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
   RandomCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
-  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
+  return pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
 }
 
 }  // namespace firmament

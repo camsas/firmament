@@ -89,7 +89,7 @@ vector<ResourceID_t>* TrivialCostModel::GetEquivClassPreferenceArcs(
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   // TODO(ionel): Improve logic to decide how many preference arcs to add.
   uint32_t num_pref_arcs = 1;
-  CHECK(leaf_res_ids_->size() >= num_pref_arcs);
+  CHECK_GE(leaf_res_ids_->size(),  num_pref_arcs);
   uint32_t rand_seed_ = 0;
   for (uint32_t num_arc = 0; num_arc < num_pref_arcs; ++num_arc) {
     size_t index = rand_r(&rand_seed_) % leaf_res_ids_->size();
@@ -110,7 +110,7 @@ vector<ResourceID_t>* TrivialCostModel::GetTaskPreferenceArcs(
 pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
   TrivialCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
-  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
+  return pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
 }
 
 }  // namespace firmament

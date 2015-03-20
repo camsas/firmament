@@ -42,8 +42,11 @@ Cost_t SJFCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   uint64_t wait_time_centamillis = time_since_submit / 100000;
   // Cost is the max of the average runtime and the wait time, so that the
   // average runtime is a lower bound on the cost.
-  TaskEquivClass_t ec = GenerateTaskEquivClass(td);
-  uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(ec);
+  vector<TaskEquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+  CHECK_GT(equiv_classes->size(), 0);
+  uint64_t avg_runtime =
+    knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
+  delete equiv_classes;
   return max(WAIT_TIME_MULTIPLIER * wait_time_centamillis, avg_runtime * 100);
 }
 
@@ -59,10 +62,12 @@ Cost_t SJFCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 // task to run on any node in the cluster. The cost of the topology's arcs are
 // the same for all the tasks.
 Cost_t SJFCostModel::TaskToClusterAggCost(TaskID_t task_id) {
-  const TaskDescriptor& td = GetTask(task_id);
-  TaskEquivClass_t ec = GenerateTaskEquivClass(td);
-  uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(ec);
+  vector<TaskEquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+  CHECK_GT(equiv_classes->size(), 0);
   // Avg runtime is in milliseconds, so we convert it to tenths of a second
+  uint64_t avg_runtime =
+    knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
+  delete equiv_classes;
   return (avg_runtime * 100);
 }
 
@@ -128,7 +133,7 @@ vector<ResourceID_t>* SJFCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
 pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
   SJFCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
-  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
+  return pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
 }
 
 }  // namespace firmament

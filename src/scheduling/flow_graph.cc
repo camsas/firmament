@@ -14,7 +14,6 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "misc/equivclasses.h"
 #include "misc/map-util.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"

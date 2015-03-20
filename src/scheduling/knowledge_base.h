@@ -8,16 +8,17 @@
 #ifndef FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_H
 #define FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_H
 
-#include <string>
-#include <map>
 #include <deque>
+#include <map>
+#include <string>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
 #include "base/machine_perf_statistics_sample.pb.h"
 #include "base/task_perf_statistics_sample.pb.h"
 #include "base/task_final_report.pb.h"
-#include "misc/equivclasses.h"
+#include "scheduling/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
 
@@ -37,9 +38,11 @@ class KnowledgeBase {
   double GetAvgCPIForTEC(TaskEquivClass_t id);
   double GetAvgIPMAForTEC(TaskEquivClass_t id);
   double GetAvgRuntimeForTEC(TaskEquivClass_t id);
-  const deque<TaskFinalReport>* GetFinalStatsForTask(TaskEquivClass_t id) const;
+  const deque<TaskFinalReport>* GetFinalStatsForTask(TaskID_t task_id) const;
+  vector<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) const;
   void ProcessTaskFinalReport(const TaskFinalReport& report,
-                              const TaskDescriptor& td);
+                              TaskID_t task_id);
+  void SetCostModel(FlowSchedulingCostModelInterface* cost_model);
 
  protected:
   map<ResourceID_t, deque<MachinePerfStatisticsSample> > machine_map_;
@@ -48,6 +51,7 @@ class KnowledgeBase {
   unordered_map<TaskID_t, deque<TaskPerfStatisticsSample> > task_map_;
   unordered_map<TaskID_t, deque<TaskFinalReport> > task_exec_reports_;
   boost::mutex kb_lock_;
+  FlowSchedulingCostModelInterface* cost_model_;
 };
 
 }  // namespace firmament

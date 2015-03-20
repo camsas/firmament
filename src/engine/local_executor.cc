@@ -18,7 +18,6 @@ extern "C" {
 #include "base/common.h"
 #include "base/types.h"
 #include "engine/task_health_checker.h"
-#include "misc/equivclasses.h"
 #include "misc/utils.h"
 #include "misc/map-util.h"
 
