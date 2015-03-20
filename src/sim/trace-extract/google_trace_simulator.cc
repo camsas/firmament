@@ -70,7 +70,10 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   knowledge_base_(new KnowledgeBaseSimulator) {
   FlowSchedulingCostModelInterface* cost_model =
     new QuincyCostModel(resource_map_, job_map_, task_map_,
-                        &task_bindings_, knowledge_base_);
+                        &task_bindings_,
+                        new unordered_set<ResourceID_t,
+                          boost::hash<boost::uuids::uuid>>,
+                        knowledge_base_);
   flow_graph_ = new FlowGraph(cost_model,
                               new unordered_set<ResourceID_t,
                                 boost::hash<boost::uuids::uuid>>);
@@ -480,10 +483,16 @@ JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
 void GoogleTraceSimulator::ProcessSimulatorEvents(
     uint64_t cur_time,
     const ResourceTopologyNodeDescriptor& machine_tmpl) {
-  multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
-  multimap<uint64_t, EventDescriptor>::iterator it_to =
-    events_.upper_bound(cur_time);
-  for (; it != it_to; it++) {
+  while (true) {
+    multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
+    if (it == events_.end()) {
+      // Empty collection.
+      break;
+    }
+    if (it->first > cur_time) {
+      // Processed all the events we are interested in.
+      break;
+    }
     if (it->second.type() == EventDescriptor::ADD_MACHINE) {
       VLOG(2) << "ADD_MACHINE " << it->second.machine_id();
       AddMachine(machine_tmpl, it->second.machine_id());
@@ -503,8 +512,8 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
     } else {
       LOG(ERROR) << "Unexpected machine event";
     }
+    events_.erase(it);
   }
-  events_.erase(events_.begin(), it_to);
 }
 
 void GoogleTraceSimulator::ProcessTaskEvent(
@@ -677,7 +686,6 @@ void GoogleTraceSimulator::ReplayTrace() {
 
           if (task_time > time_interval_bound) {
             ProcessSimulatorEvents(time_interval_bound, machine_tmpl);
-            ProcessTaskEvent(time_interval_bound, task_identifier, event_type);
 
             VLOG(2) << "Job id size: " << job_id_to_jd_.size();
             VLOG(2) << "Task id size: " << task_id_to_identifier_.size();
