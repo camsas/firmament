@@ -600,11 +600,11 @@ void Coordinator::HandleTaskDelegationRequest(
 void Coordinator::HandleTaskDelegationResponse(
     const TaskDelegationResponseMessage& msg,
     const string& remote_endpoint) {
-  LOG(INFO) << "Got TaskDelegationResponse from " << remote_endpoint;
+  LOG(INFO) << "Task delegation to " << remote_endpoint << " succeeded!";
   TaskDescriptor* td = FindPtrOrNull(*task_table_, msg.task_id());
   CHECK_NOTNULL(td);
   td->set_delegated_to(remote_endpoint);
-  LOG(ERROR) << "Task delegation response handler not fully implemented!";
+  VLOG(1) << "Task delegation response handler not fully implemented!";
 }
 
 void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
