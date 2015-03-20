@@ -24,6 +24,8 @@ typedef int64_t Cost_t;
 class SJFCostModel : public FlowSchedulingCostModelInterface {
  public:
   SJFCostModel(shared_ptr<TaskMap_t> task_map,
+               unordered_set<ResourceID_t,
+                 boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                KnowledgeBase* kb);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
@@ -56,9 +58,10 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
 
   const TaskDescriptor& GetTask(TaskID_t task_id);
 
+  shared_ptr<TaskMap_t> task_map_;
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
-  shared_ptr<TaskMap_t> task_map_;
 };
 
 }  // namespace firmament

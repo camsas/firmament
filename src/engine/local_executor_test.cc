@@ -56,8 +56,8 @@ TEST_F(LocalExecutorTest, SimpleSyncProcessExecutionTest) {
   vector<string> empty_args;
   unordered_map<string, string> empty_env;
   // We expect to get a return code of 0.
-  CHECK_EQ(le.RunProcessSync(1, "/bin/ls", empty_args, empty_env, false, false, false,
-                             "/dev/null"), 0);
+  CHECK_EQ(le.RunProcessSync(1, "/bin/ls", empty_args, empty_env, false, false,
+                             false, "/dev/null"), 0);
 }
 
 // Tests that we can synchronously execute a binary with arguments.

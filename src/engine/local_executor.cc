@@ -417,7 +417,8 @@ void LocalExecutor::SetUpEnvironmentForTask(
   // Set environment variables
   // N.B.: we pass a completely scrubbed environment to the task, so we need to
   // define even things like PATH that would normally be inherited.
-  InsertIfNotPresent(env, "PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
+  InsertIfNotPresent(env, "PATH",
+      "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
   InsertIfNotPresent(env, "FLAGS_task_id", to_string(td.uid()));
   InsertIfNotPresent(env, "PERF_FNAME", PerfDataFileName(td));
   InsertIfNotPresent(env, "FLAGS_coordinator_uri", coordinator_uri_);
