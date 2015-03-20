@@ -53,6 +53,11 @@
       display: block;
       margin-bottom: 20px;
     }
+
+    .pre-x-scroll {
+      word-wrap: normal;
+      white-space: pre;
+    }
   </style>
 
   <!-- JQuery -->

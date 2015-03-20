@@ -148,13 +148,13 @@ $(function() {
   <tr>
     <td>Actions</td>
     <td>
-      <a href="/task/?id={{TASK_ID}}&a=kill">Terminate</a> 
-      <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/collectl/graphs/?from={{TASK_START_TIME_HR}}-{{TASK_FINISH_TIME_HR}}">Stats</a>
+      <a href="/task/?id={{TASK_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true" title="Terminate"></span></a>
+      <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/collectl/graphs/?from={{TASK_START_TIME_HR}}-{{TASK_FINISH_TIME_HR}}"><span class="glyphicon glyphicon-stats" title="Stats"></span></a>
     </td>
   </tr>
   <tr>
     <td>Command</td>
-    <td><pre>{{TASK_BINARY}} {{TASK_ARGS}}</pre></td>
+    <td><pre class="pre-x-scroll">{{TASK_BINARY}} {{TASK_ARGS}}</pre></td>
   </tr>
   <tr>
     <td>Equivalence classes</td>
