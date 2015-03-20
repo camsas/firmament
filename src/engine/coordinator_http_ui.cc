@@ -201,6 +201,47 @@ void CoordinatorHTTPUI::HandleJobsListURI(http::request_ptr& http_request,  // N
   FinishOkResponse(writer);
 }
 
+void CoordinatorHTTPUI::HandleJobCompletionURI(
+    http::request_ptr& http_request,  // NOLINT
+    tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  string job_id = http_request->get_query("id");
+  if (job_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
+  JobDescriptor* jd_ptr = coordinator_->GetJob(
+      JobIDFromString(job_id));
+  TemplateDictionary dict("job_completion");
+  if (jd_ptr) {
+    dict.SetValue("JOB_ID", jd_ptr->uuid());
+    dict.SetValue("JOB_NAME", jd_ptr->name());
+    dict.SetValue("JOB_STATUS", ENUM_TO_STRING(JobDescriptor::JobState,
+                                               jd_ptr->state()));
+    AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+  } else {
+    ErrorMessage_t err("Job not found.",
+                       "The requested job does not exist or is unknown to "
+                       "this coordinator.");
+    AddHeaderToTemplate(&dict, coordinator_->uuid(), &err);
+  }
+  AddFooterToTemplate(&dict);
+  string output;
+  if (!http_request->get_query("json").empty()) {
+    ExpandTemplate("src/webui/json_job_completion.tpl", ctemplate::DO_NOT_STRIP,
+                   &dict, &output);
+  } else {
+    ExpandTemplate("src/webui/job_completion.tpl", ctemplate::DO_NOT_STRIP,
+                   &dict, &output);
+  }
+  writer->write(output);
+  FinishOkResponse(writer);
+}
+
+
 void CoordinatorHTTPUI::HandleJobURI(http::request_ptr& http_request,  // NOLINT
                                      tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -949,6 +990,9 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Job submission
     coordinator_http_server_->add_resource("/job/submit/", boost::bind(
         &CoordinatorHTTPUI::HandleJobSubmitURI, this, _1, _2));
+    // Job completion hook
+    coordinator_http_server_->add_resource("/job/completion/", boost::bind(
+        &CoordinatorHTTPUI::HandleJobCompletionURI, this, _1, _2));
     // Job status
     coordinator_http_server_->add_resource("/job/status/", boost::bind(
         &CoordinatorHTTPUI::HandleJobURI, this, _1, _2));
