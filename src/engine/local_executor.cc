@@ -22,6 +22,8 @@ extern "C" {
 #include "misc/utils.h"
 #include "misc/map-util.h"
 
+DEFINE_bool(pin_tasks_to_cores, true,
+            "Pin tasks to their allocated CPU core when executing.");
 DEFINE_bool(debug_tasks, false,
             "Run tasks through a debugger (gdb).");
 DEFINE_uint64(debug_interactively, 0,
@@ -346,7 +348,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       // Parent
       VLOG(1) << "Task process with PID " << pid << " created.";
       // Pin the task to the appropriate resource
-      if (topology_manager_)
+      if (topology_manager_ && FLAGS_pin_tasks_to_cores)
         topology_manager_->BindPIDToResource(pid, local_resource_id_);
       // Notify any other threads waiting to execute processes (?)
       exec_condvar_.notify_one();
