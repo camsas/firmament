@@ -863,7 +863,7 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
       for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
            it != equiv_classes->end(); ++it) {
         TemplateDictionary* tec_dict = dict.AddSectionDictionary("TASK_TECS");
-        tec_dict->SetIntValue("TASK_TEC", *it;
+        tec_dict->SetIntValue("TASK_TEC", *it);
       }
     }
     delete equiv_classes;
