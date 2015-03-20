@@ -7,11 +7,11 @@
 #define FIRMAMENT_SCHEDULING_FLOW_SCHEDULING_COST_MODEL_H
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
-#include "misc/equivclasses.h"
 #include "scheduling/common.h"
 
 namespace firmament {

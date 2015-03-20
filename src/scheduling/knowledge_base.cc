@@ -6,8 +6,8 @@
 #include "scheduling/knowledge_base.h"
 
 #include <deque>
+#include <vector>
 
-#include "misc/equivclasses.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
@@ -65,9 +65,19 @@ const deque<TaskPerfStatisticsSample>* KnowledgeBase::GetStatsForTask(
 }
 
 const deque<TaskFinalReport>* KnowledgeBase::GetFinalStatsForTask(
-      TaskEquivClass_t id) const {
-  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
+      TaskID_t task_id) const {
+  vector<TaskEquivClass_t>* equiv_classes =
+    cost_model_->GetTaskEquivClasses(task_id);
+  CHECK_GT(equiv_classes->size(), 0);
+  // TODO(ionel): This only gets the stats from the first task equiv class.
+  const deque<TaskFinalReport>* res =
+    FindOrNull(task_exec_reports_, equiv_classes->front());
   return res;
+}
+
+vector<TaskEquivClass_t>* KnowledgeBase::GetTaskEquivClasses(
+    TaskID_t task_id) const {
+  return cost_model_->GetTaskEquivClasses(task_id);
 }
 
 double KnowledgeBase::GetAvgCPIForTEC(TaskEquivClass_t id) {
@@ -129,22 +139,31 @@ void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
   }
 }
 void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report,
-                                           const TaskDescriptor& td) {
+                                           TaskID_t task_id) {
   boost::lock_guard<boost::mutex> lock(kb_lock_);
-  TaskEquivClass_t tec = GenerateTaskEquivClass(td);
-  // Check if we already have a record for this task
-  deque<TaskFinalReport>* q = FindOrNull(task_exec_reports_, tec);
-  if (!q) {
-    // Add a blank queue for this task
-    CHECK(InsertOrUpdate(&task_exec_reports_, tec,
-                         deque<TaskFinalReport>()));
-    q = FindOrNull(task_exec_reports_, tec);
-    CHECK_NOTNULL(q);
+  vector<TaskEquivClass_t>* equiv_classes =
+    cost_model_->GetTaskEquivClasses(task_id);
+  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    TaskEquivClass_t tec = *it;
+    // Check if we already have a record for this equiv class
+    deque<TaskFinalReport>* q = FindOrNull(task_exec_reports_, tec);
+    if (!q) {
+      // Add a blank queue for this task
+      CHECK(InsertOrUpdate(&task_exec_reports_, tec,
+                           deque<TaskFinalReport>()));
+      q = FindOrNull(task_exec_reports_, tec);
+      CHECK_NOTNULL(q);
+    }
+    if (q->size() * sizeof(report) >= MAX_SAMPLE_QUEUE_CAPACITY)
+      q->pop_front();  // drop from the front
+    q->push_back(report);
+    VLOG(1) << "Recorded final report for task " << report.task_id();
   }
-  if (q->size() * sizeof(report) >= MAX_SAMPLE_QUEUE_CAPACITY)
-    q->pop_front();  // drop from the front
-  q->push_back(report);
-  VLOG(1) << "Recorded final report for task " << report.task_id();
+}
+
+void KnowledgeBase::SetCostModel(FlowSchedulingCostModelInterface* cost_model) {
+  cost_model_ = cost_model;
 }
 
 }  // namespace firmament

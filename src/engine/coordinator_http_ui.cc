@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/bind.hpp>
 #include <google/protobuf/text_format.h>
@@ -17,7 +18,6 @@
 
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
-#include "misc/equivclasses.h"
 #include "misc/utils.h"
 #include "misc/uri_tools.h"
 #include "messages/task_kill_message.pb.h"
@@ -34,6 +34,8 @@ namespace firmament {
 namespace webui {
 
 #define WEBUI_PERF_QUEUE_LEN 200LL
+
+using boost::lexical_cast;
 
 using ctemplate::TemplateDictionary;
 
@@ -387,10 +389,7 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
   if (rd_ptr) {
     dict.SetValue("RES_ID", rd_ptr->uuid());
     dict.SetValue("RES_FRIENDLY_NAME", rd_ptr->friendly_name());
-    ResourceTopologyNodeDescriptor* rtnd =
-      coordinator_->GetResourceTreeNode(rid);
-    dict.SetValue("RES_REC",
-                  to_string(GenerateResourceTopologyEquivClass(*rtnd)));
+    dict.SetValue("RES_REC", "Not implemented");
     dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
                                              rd_ptr->type()));
     dict.SetValue("RES_STATUS",
@@ -678,8 +677,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     output += "]";
     output += ", \"reports\": [";
     const deque<TaskFinalReport>* report_result =
-        coordinator_->knowledge_base()->GetFinalStatsForTask(
-            GenerateTaskEquivClass(*td));
+      coordinator_->knowledge_base()->GetFinalStatsForTask(td->uid());
     if (report_result) {
       bool first = true;
       for (deque<TaskFinalReport>::const_iterator it =
@@ -825,7 +823,17 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     dict.SetIntValue("TASK_LAST_HEARTBEAT",
                      td_ptr->last_heartbeat_time() / 1000);
     // Equivalence classes
-    dict.SetValue("TASK_TEC", to_string(GenerateTaskEquivClass(*td_ptr)));
+    string task_tec = "";
+    vector<TaskEquivClass_t>* equiv_classes =
+      coordinator_->knowledge_base()->GetTaskEquivClasses(td_ptr->uid());
+    for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+         it != equiv_classes->end(); ++it) {
+      string equiv_class = lexical_cast<string>(*it);
+      task_tec += "<li><a href=\"/tec/id?=" + equiv_class + "\">" +
+        equiv_class + "</a>\n";
+    }
+    delete equiv_classes;
+    dict.SetValue("TASK_TEC", task_tec);
     // Dependencies
     if (td_ptr->dependencies_size() > 0)
       dict.SetIntValue("TASK_NUM_DEPS", td_ptr->dependencies_size());

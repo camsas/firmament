@@ -14,7 +14,6 @@
 #include "base/types.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "engine/topology_manager.h"
-#include "misc/equivclasses.h"
 #include "misc/map-util.h"
 #include "scheduling/dimacs_change.h"
 #include "scheduling/flow_graph_arc.h"
