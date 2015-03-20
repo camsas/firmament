@@ -5,9 +5,9 @@
 
 #include "scheduling/wharemap_cost_model.h"
 
-#include <set>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -88,26 +88,31 @@ Cost_t WhareMapCostModel::TaskPreemptionCost(TaskID_t task_id) {
   return 0LL;
 }
 
-Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id) {
+Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                     TaskEquivClass_t tec) {
   return 0LL;
 }
 
-Cost_t WhareMapCostModel::EquivClassToResourceNode(TaskID_t task_id,
-                                              ResourceID_t res_id) {
+Cost_t WhareMapCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
+                                                   ResourceID_t res_id) {
   return 0LL;
 }
 
-set<TaskEquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
+vector<TaskEquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
-set<ResourceID_t>* WhareMapCostModel::GetEquivClassPreferenceArcs(
+vector<ResourceID_t>* WhareMapCostModel::GetEquivClassPreferenceArcs(
     TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
-set<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+vector<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(
+    TaskID_t task_id) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 

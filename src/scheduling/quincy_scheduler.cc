@@ -55,28 +55,33 @@ QuincyScheduler::QuincyScheduler(
                            coordinator_res_id, coordinator_uri),
       topology_manager_(topo_mgr),
       knowledge_base_(kb),
-      parameters_(params) {
+      parameters_(params),
+      leaf_res_ids_(new unordered_set<ResourceID_t,
+                      boost::hash<boost::uuids::uuid>>) {
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
           << FLAGS_flow_scheduling_cost_model << "\"";
   switch (FLAGS_flow_scheduling_cost_model) {
     case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
-      flow_graph_.reset(new FlowGraph(new TrivialCostModel()));
+      flow_graph_.reset(new FlowGraph(
+          new TrivialCostModel(task_map, leaf_res_ids_),
+          leaf_res_ids_));
       VLOG(1) << "Using the trivial cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
-      flow_graph_.reset(new FlowGraph(new RandomCostModel()));
+      flow_graph_.reset(new FlowGraph(new RandomCostModel(), leaf_res_ids_));
       VLOG(1) << "Using the random cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_SJF:
       flow_graph_.reset(new FlowGraph(
-          new SJFCostModel(task_map, knowledge_base_)));
+          new SJFCostModel(task_map, knowledge_base_), leaf_res_ids_));
       VLOG(1) << "Using the SJF cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
       flow_graph_.reset(
           new FlowGraph(new QuincyCostModel(resource_map, job_map, task_map,
-                                            &task_bindings_, knowledge_base_)));
+                                            &task_bindings_, knowledge_base_),
+                        leaf_res_ids_));
       VLOG(1) << "Using the Quincy cost model";
       break;
     default:
@@ -94,6 +99,7 @@ QuincyScheduler::QuincyScheduler(
 
 QuincyScheduler::~QuincyScheduler() {
   delete quincy_dispatcher_;
+  delete leaf_res_ids_;
   // XXX(ionel): stub
 }
 
