@@ -857,17 +857,16 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     dict.SetIntValue("TASK_LAST_HEARTBEAT",
                      td_ptr->last_heartbeat_time() / 1000);
     // Equivalence classes
-    string task_tec = "";
     vector<TaskEquivClass_t>* equiv_classes =
-      coordinator_->knowledge_base()->GetTaskEquivClasses(td_ptr->uid());
-    for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
-         it != equiv_classes->end(); ++it) {
-      string equiv_class = lexical_cast<string>(*it);
-      task_tec += "<li><a href=\"/tec/id?=" + equiv_class + "\">" +
-        equiv_class + "</a>\n";
+        coordinator_->knowledge_base()->GetTaskEquivClasses(td_ptr->uid());
+    if (equiv_classes) {
+      for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+           it != equiv_classes->end(); ++it) {
+        TemplateDictionary* tec_dict = dict.AddSectionDictionary("TASK_TECS");
+        tec_dict->SetIntValue("TASK_TEC", *it;
+      }
     }
     delete equiv_classes;
-    dict.SetValue("TASK_TEC", task_tec);
     // Dependencies
     if (td_ptr->dependencies_size() > 0)
       dict.SetIntValue("TASK_NUM_DEPS", td_ptr->dependencies_size());
