@@ -518,7 +518,7 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
       task_identifier.job_id = it->second.job_id();
       TaskCompleted(task_identifier);
     } else {
-      LOG(ERROR) << "Unexpected machine event";
+      LOG(ERROR) << "Unexpected event type " << it->second.type();
     }
   }
   events_.erase(events_.begin(), it_to);
