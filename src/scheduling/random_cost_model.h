@@ -19,7 +19,9 @@ typedef int64_t Cost_t;
 
 class RandomCostModel : public FlowSchedulingCostModelInterface {
  public:
-  RandomCostModel();
+  RandomCostModel(shared_ptr<TaskMap_t> task_map,
+                  unordered_set<ResourceID_t,
+                  boost::hash<boost::uuids::uuid>>* leaf_res_ids);
 
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
@@ -48,6 +50,8 @@ class RandomCostModel : public FlowSchedulingCostModelInterface {
     GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec);
 
  private:
+  shared_ptr<TaskMap_t> task_map_;
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   uint32_t rand_seed_ = 0;
 };
 
