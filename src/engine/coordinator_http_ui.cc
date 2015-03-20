@@ -799,13 +799,25 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
                              td_ptr->delegated_from()));
     }
     // Timestamps
-    dict.SetIntValue("TASK_SUBMIT_TIME", td_ptr->submit_time() / 1000);
-    dict.SetIntValue("TASK_START_TIME", td_ptr->start_time() / 1000);
-    dict.SetIntValue("TASK_FINISH_TIME", td_ptr->start_time() / 1000);
-    dict.SetValue("TASK_START_TIME_HR",
-        CoarseTimestampToHumanReadble(td_ptr->start_time() / 1000000));
-    dict.SetValue("TASK_FINISH_TIME_HR",
-        CoarseTimestampToHumanReadble(td_ptr->finish_time() / 1000000));
+    if (td_ptr->has_submit_time()) {
+      dict.SetIntValue("TASK_SUBMIT_TIME", td_ptr->submit_time() / 1000);
+    } else {
+      dict.SetIntValue("TASK_SUBMIT_TIME", 0);
+    }
+    if (td_ptr->has_start_time()) {
+      dict.SetIntValue("TASK_START_TIME", td_ptr->start_time() / 1000);
+      dict.SetValue("TASK_START_TIME_HR",
+          CoarseTimestampToHumanReadble(td_ptr->start_time() / 1000000));
+    } else {
+      dict.SetIntValue("TASK_START_TIME", 0);
+    }
+    if (td_ptr->has_finish_time()) {
+      dict.SetIntValue("TASK_FINISH_TIME", td_ptr->start_time() / 1000);
+      dict.SetValue("TASK_FINISH_TIME_HR",
+          CoarseTimestampToHumanReadble(td_ptr->finish_time() / 1000000));
+    } else {
+      dict.SetIntValue("TASK_FINISH_TIME", 0);
+    }
     // Heartbeat time
     // JS expects millisecond values
     dict.SetIntValue("TASK_LAST_HEARTBEAT",
@@ -899,16 +911,17 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
     return;
   }
   string action = http_request->get_query("a");
-  string tasklog_filename = FLAGS_task_log_dir;
+  string tasklog_filename = FLAGS_task_log_dir + "/" + td->job_id() + "-"
+                            + to_string(task_id);
   if (action.empty()) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   } else {
     if (action == "1") {
-      tasklog_filename += "/" + to_string(task_id) + "-stdout";
+      tasklog_filename += "-stdout";
     } else if (action == "2") {
-      tasklog_filename += "/" + to_string(task_id) + "-stderr";
+      tasklog_filename += "-stderr";
     } else {
       ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                     tcp_conn);

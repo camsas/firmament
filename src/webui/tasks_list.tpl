@@ -25,7 +25,7 @@
       <td><a href="/resource/status/?id={{TASK_RESOURCE}}">{{TASK_RESOURCE}}</a></td>
       <td>
         <a href="/task/?id={{TASK_ID}}"><span class="glyphicon glyphicon-th-list" aria-hidden="true" title="Status"></span></a> 
-        <a href="/task/?id={{TASK_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></a>
+        <a href="/task/?id={{TASK_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true" title="Terminate"></span></a>
       </td>
     </tr>
   {{/TASK_DATA}}
