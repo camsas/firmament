@@ -6,8 +6,8 @@
 #ifndef FIRMAMENT_SCHEDULING_FLOW_SCHEDULING_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_FLOW_SCHEDULING_COST_MODEL_H
 
-#include <set>
 #include <string>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -52,13 +52,20 @@ class FlowSchedulingCostModelInterface {
   virtual Cost_t TaskContinuationCost(TaskID_t task_id) = 0;
   virtual Cost_t TaskPreemptionCost(TaskID_t task_id) = 0;
   // Costs to equivalence class aggregators
-  virtual Cost_t TaskToEquivClassAggregator(TaskID_t task_id) = 0;
-  virtual Cost_t EquivClassToResourceNode(TaskID_t task_id,
+  virtual Cost_t TaskToEquivClassAggregator(TaskID_t task_id,
+                                            TaskEquivClass_t tec) = 0;
+  virtual Cost_t EquivClassToResourceNode(TaskEquivClass_t tec,
                                           ResourceID_t res_id) = 0;
-  virtual set<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) = 0;
-  virtual set<ResourceID_t>* GetEquivClassPreferenceArcs(
+  virtual Cost_t EquiClassToEquivClass(TaskEquivClass_t tec1,
+                                       TaskEquivClass_t tec2) = 0;
+  virtual vector<TaskEquivClass_t>* GetTaskEquivClasses(
+      TaskID_t task_id) = 0;
+  virtual vector<ResourceID_t>* GetEquivClassPreferenceArcs(
       TaskEquivClass_t tec) = 0;
-  virtual set<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id) = 0;
+  virtual vector<ResourceID_t>* GetTaskPreferenceArcs(
+      TaskID_t task_id) = 0;
+  virtual pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+    GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) = 0;
 };
 
 }  // namespace firmament

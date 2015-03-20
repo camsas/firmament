@@ -60,26 +60,42 @@ Cost_t RandomCostModel::TaskPreemptionCost(TaskID_t task_id) {
   return 0LL;
 }
 
-Cost_t RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id) {
+Cost_t RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                   TaskEquivClass_t tec) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
-Cost_t RandomCostModel::EquivClassToResourceNode(TaskID_t task_id,
+Cost_t RandomCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
                                                  ResourceID_t res_id) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
-set<TaskEquivClass_t>* RandomCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+Cost_t RandomCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
+                                              TaskEquivClass_t tec2) {
+  return 0LL;
+}
+
+vector<TaskEquivClass_t>* RandomCostModel::GetTaskEquivClasses(
+    TaskID_t task_id) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
-set<ResourceID_t>* RandomCostModel::GetEquivClassPreferenceArcs(
+vector<ResourceID_t>* RandomCostModel::GetEquivClassPreferenceArcs(
     TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
-set<ResourceID_t>* RandomCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+vector<ResourceID_t>* RandomCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
+}
+
+pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  RandomCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
 }
 
 }  // namespace firmament

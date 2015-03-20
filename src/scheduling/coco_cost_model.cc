@@ -7,6 +7,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -87,26 +88,41 @@ Cost_t CocoCostModel::TaskPreemptionCost(TaskID_t task_id) {
   return 0LL;
 }
 
-Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id) {
+Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                 TaskEquivClass_t tec) {
   return 0LL;
 }
 
-Cost_t CocoCostModel::EquivClassToResourceNode(TaskID_t task_id,
-                                              ResourceID_t res_id) {
+Cost_t CocoCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
+                                               ResourceID_t res_id) {
   return 0LL;
 }
 
-set<TaskEquivClass_t>* CocoCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+Cost_t CocoCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
+                                            TaskEquivClass_t tec2) {
+  return 0LL;
+}
+
+vector<TaskEquivClass_t>* CocoCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
-set<ResourceID_t>* CocoCostModel::GetEquivClassPreferenceArcs(
+vector<ResourceID_t>* CocoCostModel::GetEquivClassPreferenceArcs(
     TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
-set<ResourceID_t>* CocoCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+vector<ResourceID_t>* CocoCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
+}
+
+pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  CocoCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
 }
 
 }  // namespace firmament

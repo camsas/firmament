@@ -147,8 +147,12 @@ void EventDrivenScheduler::CheckRunningTasksHealth() {
         CHECK_NOTNULL(td);
         if (td->state() != TaskDescriptor::COMPLETED &&
             td->last_heartbeat_time() <=
-            (GetCurrentTimestamp() - TASK_FAIL_TIMEOUT))
+            (GetCurrentTimestamp() - TASK_FAIL_TIMEOUT)) {
+          LOG(INFO) << "Task " << td->uid() << " has not reported heartbeats "
+                    << "for " << (TASK_FAIL_TIMEOUT / 1000000) << "s and its "
+                    << "handler thread has exited. Declaring it FAILED!";
           HandleTaskFailure(td);
+        }
       }
     }
   }

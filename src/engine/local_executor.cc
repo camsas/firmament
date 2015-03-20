@@ -50,7 +50,9 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
       coordinator_uri_(coordinator_uri),
       health_checker_(&task_handler_threads_, &handler_map_mutex_),
       topology_manager_(shared_ptr<TopologyManager>()),  // NULL
-      heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
+      heartbeat_interval_(1000000000ULL),  // 1 billios nanosec = 1 sec
+      task_lib_inject_ld_library_path_(
+          "LD_LIBRARY_PATH=" + FLAGS_task_lib_dir) {
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
   VLOG(1) << "No topology manager passed, so will not bind to resource.";
   CreateDirectories();
@@ -63,7 +65,9 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
       coordinator_uri_(coordinator_uri),
       health_checker_(&task_handler_threads_, &handler_map_mutex_),
       topology_manager_(topology_mgr),
-      heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
+      heartbeat_interval_(1000000000ULL),  // 1 billios nanosec = 1 sec
+      task_lib_inject_ld_library_path_(
+          "LD_LIBRARY_PATH=" + FLAGS_task_lib_dir) {
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
   VLOG(1) << "Tasks will be bound to the resource by the topology manager"
           << "at " << topology_manager_;
@@ -221,7 +225,10 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   SetUpEnvironmentForTask(*td);
   // Convert arguments as specified in TD into a string vector that we can munge
   // into an actual argv[].
-  vector<string> args = pb_to_vector(td->args());
+  vector<string> args;
+  if (td->args_size() > 0) {
+    args = pb_to_vector(td->args());
+  }
   // Path for task log files (stdout/stderr)
   string tasklog = FLAGS_task_log_dir + "/" + td->job_id() +
                    "-" + to_string(td->uid());
@@ -233,7 +240,7 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
       td->binary(), args, FLAGS_perf_monitoring,
       (FLAGS_debug_tasks || ((FLAGS_debug_interactively != 0) &&
                              (td->uid() == FLAGS_debug_interactively))),
-      firmament_binary, tasklog) == 0);
+      firmament_binary, td->inject_task_lib(), tasklog) == 0);
   VLOG(1) << "Result of RunProcessSync was " << res;
   return res;
 }
@@ -243,12 +250,14 @@ int32_t LocalExecutor::RunProcessAsync(const string& cmdline,
                                        bool perf_monitoring,
                                        bool debug,
                                        bool default_args,
+                                       bool inject_task_lib,
                                        const string& tasklog) {
   // TODO(malte): We lose the thread reference here, so we can never join this
   // thread. Need to return or store if we ever need it for anythign again.
   boost::thread async_process_thread(
       boost::bind(&LocalExecutor::RunProcessSync, this, cmdline, args,
-                  perf_monitoring, debug, default_args, tasklog));
+                  perf_monitoring, debug, default_args, inject_task_lib,
+                  tasklog));
   // We hard-code the return to zero here; maybe should return a thread
   // reference instead.
   return 0;
@@ -259,6 +268,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
                                       bool perf_monitoring,
                                       bool debug,
                                       bool default_args,
+                                      bool inject_task_lib,
                                       const string& tasklog) {
   char* perf_prefix;
   pid_t pid;
@@ -271,6 +281,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     PLOG(ERROR) << "Failed to create pipe from task.";
   }*/
   vector<char*> argv;
+  vector<char*> envv;
   // Get paths for task logs
   string tasklog_stdout = tasklog + "-stdout";
   string tasklog_stderr = tasklog + "-stderr";
@@ -301,13 +312,14 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     VLOG(1) << "Adding extra argument \"" << args[i] << "\"";
     argv.push_back((char*)(args[i].c_str()));  // NOLINT
   }
-  // The last argument to execvp is always NULL.
+  // The last item in the argv and envp for execvpe is always NULL.
   argv.push_back(NULL);
+  envv.push_back(NULL);
   // Print the whole command line
   string full_cmd_line;
-  if (!default_args) {
-    setenv("LD_LIBRARY_PATH", FLAGS_task_lib_dir.c_str(), 1);
-    setenv("LD_PRELOAD", "task_lib_inject.so", 1);
+  if (inject_task_lib) {
+    envv.push_back((char*)task_lib_inject_ld_library_path_.c_str());
+    envv.push_back((char*)"LD_PRELOAD=task_lib_inject.so");
   }
   for (vector<char*>::const_iterator arg_iter = argv.begin();
        arg_iter != argv.end();
@@ -339,7 +351,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       close(stdout_fd);
       close(stderr_fd);
       // Run the task binary
-      execvp(argv[0], &argv[0]);
+      execvpe(argv[0], &argv[0], &envv[0]);
       // execl only returns if there was an error
       PLOG(ERROR) << "execvp failed for task command '" << full_cmd_line << "'";
       //ReportTaskExecutionFailure();

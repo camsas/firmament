@@ -51,9 +51,9 @@ Cost_t QuincyCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 // task to run on any node in the cluster. The cost of the topology's arcs are
 // the same for all the tasks.
 Cost_t QuincyCostModel::TaskToClusterAggCost(TaskID_t task_id) {
-  TaskDescriptor** td_ptr = FindOrNull(*task_map_, task_id);
+  TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
-  TaskEquivClass_t ec = GenerateTaskEquivClass(**td_ptr);
+  TaskEquivClass_t ec = GenerateTaskEquivClass(*td_ptr);
   uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(ec);
   // Avg runtime is in milliseconds, so we convert it to tenths of a second
   return (avg_runtime * 100);
@@ -87,27 +87,42 @@ Cost_t QuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {
   return 0ULL;
 }
 
-Cost_t QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id) {
+Cost_t QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                   TaskEquivClass_t tec) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
-Cost_t QuincyCostModel::EquivClassToResourceNode(TaskID_t task_id,
+Cost_t QuincyCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
                                                  ResourceID_t res_id) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
-set<TaskEquivClass_t>* QuincyCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+Cost_t QuincyCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
+                                              TaskEquivClass_t tec2) {
+  return 0LL;
+}
+
+vector<TaskEquivClass_t>* QuincyCostModel::GetTaskEquivClasses(
+    TaskID_t task_id) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
-set<ResourceID_t>* QuincyCostModel::GetEquivClassPreferenceArcs(
+vector<ResourceID_t>* QuincyCostModel::GetEquivClassPreferenceArcs(
     TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
-set<ResourceID_t>* QuincyCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+vector<ResourceID_t>* QuincyCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
+pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  QuincyCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
+}
 
 }  // namespace firmament

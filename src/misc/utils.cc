@@ -7,11 +7,12 @@
 
 // N.B.: C header for gettimeofday()
 extern "C" {
-#include <unistd.h>
+#include <openssl/sha.h>
 #include <stdio.h>
 #include <sys/wait.h>
 #include <sys/time.h>
-#include <openssl/sha.h>
+#include <time.h>
+#include <unistd.h>
 }
 #include <set>
 #include <string>
@@ -353,5 +354,14 @@ set<DataObjectID_t*> DataObjectIDsFromProtobuf(
   return return_set;
 }
 
+// Helper function to convert second-granularity timestamps
+// to strings
+string CoarseTimestampToHumanReadble(const time_t rawtime) {
+  struct tm * dt;
+  char buffer[30];
+  dt = localtime(&rawtime);
+  strftime(buffer, sizeof(buffer), "%H:%M", dt);
+  return string(buffer);
+}
 
 }  // namespace firmament
