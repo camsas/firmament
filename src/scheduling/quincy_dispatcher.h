@@ -43,7 +43,7 @@ class QuincyDispatcher {
   vector< map< uint64_t, uint64_t> >* ReadFlowGraph(FILE* fptr,
                                                     uint64_t num_vertices);
   multimap<uint64_t, uint64_t>* ReadTaskMappingChanges(FILE* fptr);
-  double ReadAlgorithmTime(FILE *stats);
+  void ProcessStderr(FILE *stats, double *algorithm_time);
 
   shared_ptr<FlowGraph> flow_graph_;
   // DIMACS exporter for interfacing to the solver
@@ -60,7 +60,7 @@ class QuincyDispatcher {
   int infd_[2];
   FILE* to_solver_;
   FILE* from_solver_;
-  FILE* from_solver_stats_;
+  FILE* from_solver_stderr_;
 };
 
 } // namespace scheduler

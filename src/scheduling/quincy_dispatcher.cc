@@ -88,6 +88,7 @@ namespace scheduler {
       LOG(INFO) << "Writing flow graph debug info into " << out_file_name;
       exporter_.Flush(out_file_name);
     }
+
     // Now run the solver
     vector<string> args;
     pid_t solver_pid;
@@ -110,7 +111,7 @@ namespace scheduler {
 							<< ", PARENT_READ_STD: " << outfd_[0]
 							<< ", PARENT_READ_ERR: " << errfd_[0];
       solver_ran_once_ = true;
-      if ((from_solver_stats_ = fdopen(errfd_[0], "r")) == NULL) {
+      if ((from_solver_stderr_ = fdopen(errfd_[0], "r")) == NULL) {
 				LOG(ERROR) << "Failed to open FD for reading solver's output. FD "
 									 << errfd_[0];
 			}
@@ -122,6 +123,9 @@ namespace scheduler {
         LOG(ERROR) << "Failed to open FD to solver for writing. FD: "
                    << infd_[1];
       }
+
+      setlinebuf(from_solver_);
+      setlinebuf(from_solver_stderr_);
     }
 
     boost::timer::cpu_timer flowsolver_timer;
@@ -132,6 +136,7 @@ namespace scheduler {
       // We need to close the stream because that's what cs expects.
       fclose(to_solver_);
     }
+
     multimap<uint64_t, uint64_t>* task_mappings;
     if (FLAGS_only_read_assignment_changes) {
       task_mappings = ReadTaskMappingChanges(from_solver_);
@@ -145,12 +150,7 @@ namespace scheduler {
       delete extracted_flow;
     }
 
-    if (algorithm_time != NULL) {
-    	*algorithm_time = ReadAlgorithmTime(from_solver_stats_);
-    } else {
-    	// discard, read it so that it doesn't build up in buffer and block
-    	ReadAlgorithmTime(from_solver_stats_);
-    }
+    ProcessStderr(from_solver_stderr_, algorithm_time);
 
     if (flowsolver_time != NULL) {
     	boost::timer::nanosecond_type one_nanosecond = 1e9;
@@ -163,7 +163,7 @@ namespace scheduler {
       // We're done with the solver and can let it terminate here.
       WaitForFinish(solver_pid);
       fclose(from_solver_);
-      fclose(from_solver_stats_);
+      fclose(from_solver_stderr_);
       // close the pipes
       close(errfd_[0]);
       close(outfd_[0]);
@@ -390,14 +390,24 @@ namespace scheduler {
     return task_node;
   }
 
-  double QuincyDispatcher::ReadAlgorithmTime(FILE *stats) {
-  	double result;
-  	int num_matched = fscanf(stats, "ALGOTIME: %lf\n", &result);
-  	if (num_matched == 1) {
-  		return result;
-  	} else {
-  		LOG(WARNING) << "Could not read ALGOTIME on stderr";
-  		return nan("");
+  void QuincyDispatcher::ProcessStderr(FILE *stats, double *algorithm_time) {
+  	char line[100];
+
+  	if (algorithm_time) {
+  		*algorithm_time = nan("");
+  	}
+
+  	while (fgets(line, sizeof(line), stats) != NULL) {
+			double time;
+			int num_matched = sscanf(line, "ALGOTIME: %lf\n", &time);
+			if (num_matched == 1) {
+				if (algorithm_time) {
+					*algorithm_time = time;
+				}
+				return;
+			} else {
+				LOG(WARNING) << "STDERR from algorithm: " << line;
+			}
   	}
   }
 

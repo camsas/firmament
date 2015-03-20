@@ -109,7 +109,11 @@ void DIMACSExporter::Flush(int fd) {
 }
 
 void DIMACSExporter::Flush(FILE* stream) {
-  fprintf(stream, "%s", output_.c_str());
+  int bytes_written = fprintf(stream, "%s", output_.c_str());
+  if (bytes_written < 0 || (string::size_type)bytes_written < output_.length()) {
+  	LOG(WARNING) << "Output truncated: wrote only " << bytes_written
+  			         << "bytes out of " << output_.length();
+  }
   if (fflush(stream)) {
     LOG(FATAL) << "Error while flushing";
   }
