@@ -50,7 +50,9 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
       coordinator_uri_(coordinator_uri),
       health_checker_(&task_handler_threads_, &handler_map_mutex_),
       topology_manager_(shared_ptr<TopologyManager>()),  // NULL
-      heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
+      heartbeat_interval_(1000000000ULL),  // 1 billios nanosec = 1 sec
+      task_lib_inject_ld_library_path_(
+          "LD_LIBRARY_PATH=" + FLAGS_task_lib_dir) {
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
   VLOG(1) << "No topology manager passed, so will not bind to resource.";
   CreateDirectories();
@@ -63,7 +65,9 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
       coordinator_uri_(coordinator_uri),
       health_checker_(&task_handler_threads_, &handler_map_mutex_),
       topology_manager_(topology_mgr),
-      heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
+      heartbeat_interval_(1000000000ULL),  // 1 billios nanosec = 1 sec
+      task_lib_inject_ld_library_path_(
+          "LD_LIBRARY_PATH=" + FLAGS_task_lib_dir) {
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
   VLOG(1) << "Tasks will be bound to the resource by the topology manager"
           << "at " << topology_manager_;
@@ -276,6 +280,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     PLOG(ERROR) << "Failed to create pipe from task.";
   }*/
   vector<char*> argv;
+  vector<char*> envv;
   // Get paths for task logs
   string tasklog_stdout = tasklog + "-stdout";
   string tasklog_stderr = tasklog + "-stderr";
@@ -306,13 +311,14 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     VLOG(1) << "Adding extra argument \"" << args[i] << "\"";
     argv.push_back((char*)(args[i].c_str()));  // NOLINT
   }
-  // The last argument to execvp is always NULL.
+  // The last item in the argv and envp for execvpe is always NULL.
   argv.push_back(NULL);
+  envv.push_back(NULL);
   // Print the whole command line
   string full_cmd_line;
   if (inject_task_lib) {
-    setenv("LD_LIBRARY_PATH", FLAGS_task_lib_dir.c_str(), 1);
-    setenv("LD_PRELOAD", "task_lib_inject.so", 1);
+    envv.push_back((char*)task_lib_inject_ld_library_path_.c_str());
+    envv.push_back((char*)"LD_PRELOAD=task_lib_inject.so");
   }
   for (vector<char*>::const_iterator arg_iter = argv.begin();
        arg_iter != argv.end();
@@ -344,7 +350,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       close(stdout_fd);
       close(stderr_fd);
       // Run the task binary
-      execvp(argv[0], &argv[0]);
+      execvpe(argv[0], &argv[0], &envv[0]);
       // execl only returns if there was an error
       PLOG(ERROR) << "execvp failed for task command '" << full_cmd_line << "'";
       //ReportTaskExecutionFailure();
@@ -356,8 +362,6 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       // Pin the task to the appropriate resource
       if (topology_manager_ && FLAGS_pin_tasks_to_cores)
         topology_manager_->BindPIDToResource(pid, local_resource_id_);
-      unsetenv("LD_LIBRARY_PATH");
-      unsetenv("LD_PRELOAD");
       // Notify any other threads waiting to execute processes (?)
       exec_condvar_.notify_one();
       // Wait for task to terminate
