@@ -497,37 +497,48 @@ JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
 void GoogleTraceSimulator::ProcessSimulatorEvents(
     uint64_t cur_time,
     const ResourceTopologyNodeDescriptor& machine_tmpl) {
-  multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
-  multimap<uint64_t, EventDescriptor>::iterator it_to =
-    events_.upper_bound(cur_time);
-  for (; it != it_to; it++) {
-    if (it->second.type() == EventDescriptor::ADD_MACHINE) {
-      VLOG(2) << "ADD_MACHINE " << it->second.machine_id();
-      AddMachine(machine_tmpl, it->second.machine_id());
-    } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
-      VLOG(2) << "REMOVE_MACHINE " << it->second.machine_id();
-      RemoveMachine(it->second.machine_id());
-    } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
-      // TODO(ionel): Handle machine update event.
-    } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
-      VLOG(2) << "TASK_END_RUNTIME " << it->second.job_id() << " "
-              << it->second.task_index();
-      // Task has finished.
-      TaskIdentifier task_identifier;
-      task_identifier.task_index = it->second.task_index();
-      task_identifier.job_id = it->second.job_id();
-      TaskCompleted(task_identifier);
-    } else {
-      LOG(ERROR) << "Unexpected event type " << it->second.type();
-    }
-  }
-  events_.erase(events_.begin(), it_to);
+	while (true) {
+		multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
+		if (it == events_.end()) {
+			// empty collection
+			break;
+		}
+		if (it->first > cur_time) {
+			// processed all events <=cur_time
+			break;
+		}
+
+		if (it->second.type() == EventDescriptor::ADD_MACHINE) {
+			VLOG(2) << "ADD_MACHINE " << it->second.machine_id() << " @ " << it->first;
+			AddMachine(machine_tmpl, it->second.machine_id());
+		} else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
+			VLOG(2) << "REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first;
+			RemoveMachine(it->second.machine_id());
+		} else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
+			// TODO(ionel): Handle machine update event.
+		} else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
+			VLOG(2) << "TASK_END_RUNTIME " << it->second.job_id() << " "
+							<< it->second.task_index() << " @ " << it->first;;
+			// Task has finished.
+			TaskIdentifier task_identifier;
+			task_identifier.task_index = it->second.task_index();
+			task_identifier.job_id = it->second.job_id();
+			TaskCompleted(task_identifier);
+		} else {
+			LOG(ERROR) << "Unexpected event type " << it->second.type() << " @ " << it->first;
+		}
+
+		events_.erase(it);
+	}
 }
 
 void GoogleTraceSimulator::ProcessTaskEvent(
     uint64_t cur_time, const TaskIdentifier& task_identifier,
     uint64_t event_type) {
   if (event_type == SUBMIT_EVENT) {
+  	VLOG(3) << "TASK_SUBMIT_EVENT: ID "
+  			    << task_identifier.job_id << "/" << task_identifier.task_index
+						<< " @ " << cur_time;
     AddNewTask(task_identifier);
   }
 }
@@ -698,9 +709,10 @@ void GoogleTraceSimulator::ReplayTrace(
             return;
           }
 
+          VLOG(3) << "TASK EVENT @ " << task_time;
+
           if (task_time > time_interval_bound) {
             ProcessSimulatorEvents(time_interval_bound, machine_tmpl);
-            ProcessTaskEvent(time_interval_bound, task_identifier, event_type);
 
             VLOG(2) << "Job id size: " << job_id_to_jd_.size();
             VLOG(2) << "Task id size: " << task_id_to_identifier_.size();
