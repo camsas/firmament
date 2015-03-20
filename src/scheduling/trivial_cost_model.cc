@@ -31,7 +31,7 @@ Cost_t TrivialCostModel::TaskToClusterAggCost(TaskID_t task_id) {
 }
 
 Cost_t TrivialCostModel::TaskToResourceNodeCost(TaskID_t task_id,
-                                               ResourceID_t resource_id) {
+                                                ResourceID_t resource_id) {
   return 0LL;
 }
 
