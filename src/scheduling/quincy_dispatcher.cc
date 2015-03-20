@@ -230,7 +230,9 @@ namespace scheduler {
       // Check if node = root or node = task
       if (flow_graph_->CheckNodeType(map_it->first, FlowNodeType::ROOT_TASK) ||
           flow_graph_->CheckNodeType(map_it->first,
-                                     FlowNodeType::UNSCHEDULED_TASK)) {
+                                     FlowNodeType::UNSCHEDULED_TASK) ||
+				  flow_graph_->CheckNodeType(map_it->first,
+					        									 FlowNodeType::SCHEDULED_TASK)) {
         // Shouldn't really modify the collection in the iterator loop.
         // However, we don't use the iterator after modification.
         uint64_t flow = map_it->second;
