@@ -98,6 +98,11 @@ Cost_t WhareMapCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
   return 0LL;
 }
 
+Cost_t WhareMapCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
+                                                TaskEquivClass_t tec2) {
+  return 0LL;
+}
+
 vector<TaskEquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   LOG(FATAL) << "Not implemented!";
@@ -114,6 +119,12 @@ vector<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(
     TaskID_t task_id) {
   LOG(FATAL) << "Not implemented!";
   return NULL;
+}
+
+pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  WhareMapCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
 }
 
 }  // namespace firmament

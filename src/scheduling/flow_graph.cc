@@ -103,7 +103,7 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
 FlowGraphNode* FlowGraph::AddEquivClassAggregator(
     TaskID_t task_id, TaskEquivClass_t equiv_class,
     vector<FlowGraphArc*>* ec_arcs) {
-  FlowGraphNode*  ec_node = AddNodeInternal(next_id());
+  FlowGraphNode* ec_node = AddNodeInternal(next_id());
   CHECK(InsertIfNotPresent(&tec_to_node_, equiv_class, ec_node));
   string comment;
   spf(&comment, "EC_AGG_%ju", equiv_class);

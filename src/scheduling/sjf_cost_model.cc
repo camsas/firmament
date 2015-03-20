@@ -104,6 +104,11 @@ Cost_t SJFCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
   return 0LL;
 }
 
+Cost_t SJFCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
+                                           TaskEquivClass_t tec2) {
+  return 0LL;
+}
+
 vector<TaskEquivClass_t>* SJFCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   LOG(FATAL) << "Not implemented!";
   return NULL;
@@ -118,6 +123,12 @@ vector<ResourceID_t>* SJFCostModel::GetEquivClassPreferenceArcs(
 vector<ResourceID_t>* SJFCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   LOG(FATAL) << "Not implemented!";
   return NULL;
+}
+
+pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  SJFCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
 }
 
 }  // namespace firmament

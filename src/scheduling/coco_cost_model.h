@@ -44,10 +44,13 @@ class CocoCostModel : public FlowSchedulingCostModelInterface {
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id, TaskEquivClass_t tec);
   Cost_t EquivClassToResourceNode(TaskEquivClass_t tec, ResourceID_t res_id);
+  Cost_t EquiClassToEquivClass(TaskEquivClass_t tec1, TaskEquivClass_t tec2);
   // Get the type of equiv class.
   vector<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
   vector<ResourceID_t>* GetEquivClassPreferenceArcs(TaskEquivClass_t tec);
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
+  pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+    GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec);
 
  private:
   const TaskDescriptor& GetTask(TaskID_t task_id);

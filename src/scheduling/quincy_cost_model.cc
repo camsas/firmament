@@ -97,6 +97,11 @@ Cost_t QuincyCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
+Cost_t QuincyCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
+                                              TaskEquivClass_t tec2) {
+  return 0LL;
+}
+
 vector<TaskEquivClass_t>* QuincyCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   LOG(FATAL) << "Not implemented!";
@@ -114,5 +119,10 @@ vector<ResourceID_t>* QuincyCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   return NULL;
 }
 
+pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  QuincyCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
+}
 
 }  // namespace firmament

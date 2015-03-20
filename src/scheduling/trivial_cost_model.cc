@@ -67,6 +67,11 @@ Cost_t TrivialCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
   return 0ULL;
 }
 
+Cost_t TrivialCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
+                                               TaskEquivClass_t tec2) {
+  return 0LL;
+}
+
 vector<TaskEquivClass_t>* TrivialCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
@@ -100,6 +105,12 @@ vector<ResourceID_t>* TrivialCostModel::GetTaskPreferenceArcs(
     TaskID_t task_id) {
   LOG(FATAL) << "Not implemented!";
   return NULL;
+}
+
+pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  TrivialCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return make_pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
 }
 
 }  // namespace firmament
