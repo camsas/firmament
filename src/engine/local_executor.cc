@@ -215,7 +215,10 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   SetUpEnvironmentForTask(*td);
   // Convert arguments as specified in TD into a string vector that we can munge
   // into an actual argv[].
-  vector<string> args = pb_to_vector(td->args());
+  vector<string> args;
+  if (td->args_size() > 0) {
+    args = pb_to_vector(td->args());
+  }
   // Path for task log files (stdout/stderr)
   string tasklog = FLAGS_task_log_dir + "/" + to_string(td->uid());
   // TODO(malte): This is somewhat hackish
@@ -226,7 +229,7 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
       td->binary(), args, FLAGS_perf_monitoring,
       (FLAGS_debug_tasks || ((FLAGS_debug_interactively != 0) &&
                              (td->uid() == FLAGS_debug_interactively))),
-      firmament_binary, tasklog) == 0);
+      firmament_binary, td->inject_task_lib(), tasklog) == 0);
   VLOG(1) << "Result of RunProcessSync was " << res;
   return res;
 }
@@ -236,12 +239,14 @@ int32_t LocalExecutor::RunProcessAsync(const string& cmdline,
                                        bool perf_monitoring,
                                        bool debug,
                                        bool default_args,
+                                       bool inject_task_lib,
                                        const string& tasklog) {
   // TODO(malte): We lose the thread reference here, so we can never join this
   // thread. Need to return or store if we ever need it for anythign again.
   boost::thread async_process_thread(
       boost::bind(&LocalExecutor::RunProcessSync, this, cmdline, args,
-                  perf_monitoring, debug, default_args, tasklog));
+                  perf_monitoring, debug, default_args, inject_task_lib,
+                  tasklog));
   // We hard-code the return to zero here; maybe should return a thread
   // reference instead.
   return 0;
@@ -252,6 +257,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
                                       bool perf_monitoring,
                                       bool debug,
                                       bool default_args,
+                                      bool inject_task_lib,
                                       const string& tasklog) {
   char* perf_prefix;
   pid_t pid;
@@ -298,7 +304,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
   argv.push_back(NULL);
   // Print the whole command line
   string full_cmd_line;
-  if (!default_args) {
+  if (inject_task_lib) {
     setenv("LD_LIBRARY_PATH", FLAGS_task_lib_dir.c_str(), 1);
     setenv("LD_PRELOAD", "task_lib_inject.so", 1);
   }
@@ -344,6 +350,8 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       // Pin the task to the appropriate resource
       if (topology_manager_)
         topology_manager_->BindPIDToResource(pid, local_resource_id_);
+      unsetenv("LD_LIBRARY_PATH");
+      unsetenv("LD_PRELOAD");
       // Notify any other threads waiting to execute processes (?)
       exec_condvar_.notify_one();
       // Wait for task to terminate
