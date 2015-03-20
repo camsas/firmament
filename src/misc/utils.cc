@@ -360,7 +360,7 @@ string CoarseTimestampToHumanReadble(const time_t rawtime) {
   struct tm * dt;
   char buffer[30];
   dt = localtime(&rawtime);
-  strftime(buffer, sizeof(buffer), "%H:%M", dt);
+  strftime(buffer, sizeof(buffer), "%Y%m%d:%H:%M", dt);
   return string(buffer);
 }
 
