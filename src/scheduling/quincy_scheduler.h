@@ -85,6 +85,8 @@ class QuincyScheduler : public EventDrivenScheduler {
   SchedulingParameters parameters_;
   // The dispatcher runs different flow solvers.
   QuincyDispatcher* quincy_dispatcher_;
+  // Set containing the resource ids of the PUs.
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
 };
 
 }  // namespace scheduler

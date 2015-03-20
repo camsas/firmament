@@ -27,7 +27,9 @@ namespace firmament {
 
 class FlowGraph {
  public:
-  explicit FlowGraph(FlowSchedulingCostModelInterface* cost_model);
+  explicit FlowGraph(FlowSchedulingCostModelInterface* cost_model,
+                     unordered_set<ResourceID_t,
+                       boost::hash<boost::uuids::uuid>>* leaf_res_ids);
   virtual ~FlowGraph();
   // Public API
   void AddOrUpdateJobNodes(JobDescriptor* jd);
@@ -95,12 +97,14 @@ class FlowGraph {
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
-  FlowGraphNode* AddEquivClassAggregator(const TaskDescriptor& td,
+  FlowGraphNode* AddEquivClassAggregator(TaskID_t task_id,
+                                         TaskEquivClass_t equiv_class,
                                          vector<FlowGraphArc*>* ec_arcs);
-  void AddEquivClassPreferenceArcs(const TaskDescriptor& td,
+  void AddEquivClassPreferenceArcs(TaskEquivClass_t equiv_class,
                                    FlowGraphNode* equiv_node,
                                    vector<FlowGraphArc*>* ec_arcs);
   void AddSpecialNodes();
+  void AddTaskEquivClasses(FlowGraphNode* task_node);
   void AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
       JobID_t job, int64_t delta);
   void ConfigureResourceRootNode(const ResourceTopologyNodeDescriptor& rtnd,
@@ -112,7 +116,7 @@ class FlowGraph {
   void DeleteArcGeneratingDelta(FlowGraphArc* arc);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node);
-  void DeleteOrUpdateEquivNode(JobID_t job_id);
+  void DeleteOrUpdateEquivNode(TaskEquivClass_t task_equiv);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
 
   uint64_t next_id() {
@@ -148,12 +152,12 @@ class FlowGraph {
   unordered_map<JobID_t, uint64_t,
       boost::hash<boost::uuids::uuid> > job_unsched_to_node_id_;
   unordered_set<uint64_t> leaf_nodes_;
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   unordered_set<uint64_t> task_nodes_;
   unordered_set<uint64_t> unsched_agg_nodes_;
 
-  // Mapping storing the equiv class nodes for each job.
-  unordered_map<JobID_t, FlowGraphNode*,
-      boost::hash<boost::uuids::uuid> > job_to_equiv_node_;
+  // Mapping storing flow graph nodes for each task equivalence class.
+  unordered_map<TaskEquivClass_t, FlowGraphNode*> tec_to_node_;
 
   // Vector storing the graph changes occured since the last scheduling round.
   vector<DIMACSChange*> graph_changes_;
@@ -161,8 +165,6 @@ class FlowGraph {
   queue<uint64_t> unused_ids_;
   // Vector storing the ids of the nodes we've created.
   vector<uint64_t> ids_created_;
-
-  uint32_t rand_seed_ = 0;
 };
 
 }  // namespace firmament

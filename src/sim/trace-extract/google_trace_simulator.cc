@@ -70,7 +70,9 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   knowledge_base_(new KnowledgeBaseSimulator),
   flow_graph_(new FlowGraph(
                 new QuincyCostModel(resource_map_, job_map_, task_map_,
-                                    &task_bindings_, knowledge_base_))),
+                                    &task_bindings_, knowledge_base_),
+                new unordered_set<ResourceID_t,
+                boost::hash<boost::uuids::uuid>>)),
   quincy_dispatcher_(
     new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_),
                                     false)) {

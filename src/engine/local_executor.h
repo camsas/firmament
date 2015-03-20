@@ -73,12 +73,14 @@ class LocalExecutor : public ExecutorInterface {
                           bool perf_monitoring,
                           bool debug,
                           bool default_args,
+                          bool inject_task_lib,
                           const string& tasklog);
   int32_t RunProcessSync(const string& cmdline,
                          vector<string> args,
                          bool perf_monitoring,
                          bool debug,
                          bool default_args,
+                         bool inject_task_lib,
                          const string& tasklog);
   bool _RunTask(TaskDescriptor* td,
                 bool firmament_binary);

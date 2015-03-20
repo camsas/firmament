@@ -8,6 +8,7 @@
 
 #include <set>
 #include <string>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -19,7 +20,9 @@ typedef int64_t Cost_t;
 
 class TrivialCostModel : public FlowSchedulingCostModelInterface {
  public:
-  TrivialCostModel();
+  TrivialCostModel(shared_ptr<TaskMap_t> task_map,
+                   unordered_set<ResourceID_t,
+                     boost::hash<boost::uuids::uuid>>* leaf_res_ids);
 
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
@@ -37,12 +40,18 @@ class TrivialCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskContinuationCost(TaskID_t task_id);
   Cost_t TaskPreemptionCost(TaskID_t task_id);
   // Costs to equivalence class aggregators
-  Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
-  Cost_t EquivClassToResourceNode(TaskID_t task_id, ResourceID_t res_id);
+  Cost_t TaskToEquivClassAggregator(TaskID_t task_id,
+                                    TaskEquivClass_t tec);
+  Cost_t EquivClassToResourceNode(TaskEquivClass_t tec, ResourceID_t res_id);
   // Get the type of equiv class.
-  set<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
-  set<ResourceID_t>* GetEquivClassPreferenceArcs(TaskEquivClass_t tec);
-  set<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
+  vector<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
+  vector<ResourceID_t>* GetEquivClassPreferenceArcs(
+      TaskEquivClass_t tec);
+  vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
+
+ private:
+  shared_ptr<TaskMap_t> task_map_;
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
 };
 
 }  // namespace firmament
