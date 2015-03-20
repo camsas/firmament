@@ -883,16 +883,17 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
     return;
   }
   string action = http_request->get_query("a");
-  string tasklog_filename = FLAGS_task_log_dir;
+  string tasklog_filename = FLAGS_task_log_dir + "/" + td->job_id() + "-"
+                            + to_string(task_id);
   if (action.empty()) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   } else {
     if (action == "1") {
-      tasklog_filename += "/" + to_string(task_id) + "-stdout";
+      tasklog_filename += "-stdout";
     } else if (action == "2") {
-      tasklog_filename += "/" + to_string(task_id) + "-stderr";
+      tasklog_filename += "-stderr";
     } else {
       ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                     tcp_conn);

@@ -223,7 +223,8 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   // into an actual argv[].
   vector<string> args = pb_to_vector(td->args());
   // Path for task log files (stdout/stderr)
-  string tasklog = FLAGS_task_log_dir + "/" + to_string(td->uid());
+  string tasklog = FLAGS_task_log_dir + "/" + td->job_id() +
+                   "-" + to_string(td->uid());
   // TODO(malte): This is somewhat hackish
   // arguments: binary (path + name), arguments, performance monitoring on/off,
   // debugging flags, is this a Firmament task binary? (on/off; will cause
