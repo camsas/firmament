@@ -7,8 +7,8 @@ LIBS += -lboost_system -lboost_thread -lboost_regex -lhwloc -lssl -lcrypto
 
 LIB = libfirmament_scheduling.a
 COST_MODEL_OBJS = coco_cost_model.o quincy_cost_model.o sjf_cost_model.o \
-									trivial_cost_model.o random_cost_model.o \
-									wharemap_cost_model.o
+                  trivial_cost_model.o random_cost_model.o \
+                  wharemap_cost_model.o void_cost_model.o
 OBJS = dimacs_exporter.o event_driven_scheduler.o flow_graph.o \
        quincy_scheduler.o simple_scheduler.o common.o $(COST_MODEL_OBJS) \
        knowledge_base.o dimacs_change_arc.o dimacs_remove_node.o \

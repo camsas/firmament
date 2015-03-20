@@ -14,6 +14,7 @@
 namespace firmament {
 
 KnowledgeBase::KnowledgeBase() {
+  cost_model_ = NULL;
 }
 
 void KnowledgeBase::AddMachineSample(

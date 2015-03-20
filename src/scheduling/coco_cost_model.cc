@@ -19,7 +19,7 @@
 namespace firmament {
 
 CocoCostModel::CocoCostModel(shared_ptr<TaskMap_t> task_map,
-                           KnowledgeBase* kb)
+                             KnowledgeBase* kb)
   : knowledge_base_(kb),
     task_map_(task_map) {
 }
@@ -46,7 +46,7 @@ Cost_t CocoCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
 Cost_t CocoCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
-  return 0ULL;
+  return 0LL;
 }
 
 // The cost from the task to the cluster aggregator models how expensive is a
@@ -100,8 +100,8 @@ Cost_t CocoCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
   return 0LL;
 }
 
-Cost_t CocoCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
-                                            TaskEquivClass_t tec2) {
+Cost_t CocoCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
+                                             TaskEquivClass_t tec2) {
   return 0LL;
 }
 

@@ -109,8 +109,8 @@ Cost_t SJFCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
   return 0LL;
 }
 
-Cost_t SJFCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
-                                           TaskEquivClass_t tec2) {
+Cost_t SJFCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
+                                            TaskEquivClass_t tec2) {
   return 0LL;
 }
 

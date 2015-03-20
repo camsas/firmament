@@ -1,11 +1,8 @@
 // The Firmament project
-// Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
+#ifndef FIRMAMENT_SCHEDULING_VOID_COST_MODEL_H
+#define FIRMAMENT_SCHEDULING_VOID_COST_MODEL_H
 
-#ifndef FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
-#define FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
-
-#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -13,7 +10,6 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "scheduling/common.h"
-#include "scheduling/knowledge_base.h"
 #include "misc/utils.h"
 #include "scheduling/flow_scheduling_cost_model_interface.h"
 
@@ -21,10 +17,9 @@ namespace firmament {
 
 typedef int64_t Cost_t;
 
-class SJFCostModel : public FlowSchedulingCostModelInterface {
+class VoidCostModel : public FlowSchedulingCostModelInterface {
  public:
-  SJFCostModel(shared_ptr<TaskMap_t> task_map,
-               KnowledgeBase* kb);
+  VoidCostModel();
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -50,17 +45,8 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
     GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec);
-
- private:
-  const Cost_t WAIT_TIME_MULTIPLIER = 1;
-
-  const TaskDescriptor& GetTask(TaskID_t task_id);
-
-  // A knowledge base instance that we will refer to for job runtime statistics.
-  KnowledgeBase* knowledge_base_;
-  shared_ptr<TaskMap_t> task_map_;
 };
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
+#endif  // FIRMAMENT_SCHEDULING_VOID_COST_MODEL_H

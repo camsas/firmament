@@ -67,8 +67,8 @@ Cost_t TrivialCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
   return 0ULL;
 }
 
-Cost_t TrivialCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
-                                               TaskEquivClass_t tec2) {
+Cost_t TrivialCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
+                                                TaskEquivClass_t tec2) {
   return 0LL;
 }
 

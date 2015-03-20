@@ -100,8 +100,8 @@ Cost_t WhareMapCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
   return 0LL;
 }
 
-Cost_t WhareMapCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
-                                                TaskEquivClass_t tec2) {
+Cost_t WhareMapCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
+                                                 TaskEquivClass_t tec2) {
   return 0LL;
 }
 

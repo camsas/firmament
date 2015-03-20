@@ -70,8 +70,8 @@ Cost_t RandomCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
-Cost_t RandomCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
-                                              TaskEquivClass_t tec2) {
+Cost_t RandomCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
+                                               TaskEquivClass_t tec2) {
   return 0LL;
 }
 

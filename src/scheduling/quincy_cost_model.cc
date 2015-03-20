@@ -98,8 +98,8 @@ Cost_t QuincyCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
-Cost_t QuincyCostModel::EquiClassToEquivClass(TaskEquivClass_t tec1,
-                                              TaskEquivClass_t tec2) {
+Cost_t QuincyCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
+                                               TaskEquivClass_t tec2) {
   return 0LL;
 }
 
