@@ -131,6 +131,8 @@ $(function() {
 
 </script>
 
+<!-- should be in header, but works here too -->
+<meta http-equiv="refresh" content="60" />
 
 <h1>Task {{TASK_ID}}</h1>
 
