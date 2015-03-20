@@ -1,12 +1,11 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
-//
-// Quincy scheduling cost model, as described in the SOSP 2009 paper.
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
 #ifndef FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
 
-
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -23,7 +22,7 @@ typedef int64_t Cost_t;
 
 class SJFCostModel : public FlowSchedulingCostModelInterface {
  public:
-  SJFCostModel(shared_ptr<TaskMap_t> task_table,
+  SJFCostModel(shared_ptr<TaskMap_t> task_map,
                KnowledgeBase* kb);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
@@ -43,6 +42,10 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
   Cost_t EquivClassToResourceNode(TaskID_t task_id, ResourceID_t res_id);
+  // Get the type of equiv class.
+  set<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
+  set<ResourceID_t>* GetEquivClassPreferenceArcs(TaskEquivClass_t tec);
+  set<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
 
  private:
   const Cost_t WAIT_TIME_MULTIPLIER = 1;
@@ -51,7 +54,7 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
 
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
-  shared_ptr<TaskMap_t> task_table_;
+  shared_ptr<TaskMap_t> task_map_;
 };
 
 }  // namespace firmament

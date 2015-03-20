@@ -6,6 +6,7 @@
 #ifndef FIRMAMENT_SCHEDULING_TRIVIAL_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_TRIVIAL_COST_MODEL_H
 
+#include <set>
 #include <string>
 
 #include "base/common.h"
@@ -38,6 +39,10 @@ class TrivialCostModel : public FlowSchedulingCostModelInterface {
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
   Cost_t EquivClassToResourceNode(TaskID_t task_id, ResourceID_t res_id);
+  // Get the type of equiv class.
+  set<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
+  set<ResourceID_t>* GetEquivClassPreferenceArcs(TaskEquivClass_t tec);
+  set<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
 };
 
 }  // namespace firmament

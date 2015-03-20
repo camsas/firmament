@@ -600,11 +600,11 @@ void Coordinator::HandleTaskDelegationRequest(
 void Coordinator::HandleTaskDelegationResponse(
     const TaskDelegationResponseMessage& msg,
     const string& remote_endpoint) {
-  LOG(INFO) << "Got TaskDelegationResponse from " << remote_endpoint;
+  LOG(INFO) << "Task delegation to " << remote_endpoint << " succeeded!";
   TaskDescriptor* td = FindPtrOrNull(*task_table_, msg.task_id());
   CHECK_NOTNULL(td);
   td->set_delegated_to(remote_endpoint);
-  LOG(ERROR) << "Task delegation response handler not fully implemented!";
+  VLOG(1) << "Task delegation response handler not fully implemented!";
 }
 
 void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
@@ -666,9 +666,9 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
 
 void Coordinator::HandleTaskStateChange(
     const TaskStateMessage& msg) {
-  VLOG(1) << "Task " << msg.id() << " now in state "
-          << ENUM_TO_STRING(TaskDescriptor::TaskState, msg.new_state())
-          << ".";
+  LOG(INFO) << "Task " << msg.id() << " now in state "
+            << ENUM_TO_STRING(TaskDescriptor::TaskState, msg.new_state())
+            << ".";
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_table_, msg.id());
   CHECK(td_ptr) << "Received task state change message for task "
                 << msg.id();

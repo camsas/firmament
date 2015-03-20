@@ -1,5 +1,6 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Quincy scheduling cost model, as described in the SOSP 2009 paper.
 
@@ -7,6 +8,7 @@
 #define FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
 
 #include <map>
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -47,6 +49,10 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
   Cost_t EquivClassToResourceNode(TaskID_t task_id, ResourceID_t res_id);
+  // Get the type of equiv class.
+  set<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
+  set<ResourceID_t>* GetEquivClassPreferenceArcs(TaskEquivClass_t tec);
+  set<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
 
  private:
   // Lookup maps for various resources from the scheduler.

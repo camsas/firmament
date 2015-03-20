@@ -6,6 +6,7 @@
 #include "scheduling/sjf_cost_model.h"
 
 #include <algorithm>
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -18,14 +19,14 @@
 
 namespace firmament {
 
-SJFCostModel::SJFCostModel(shared_ptr<TaskMap_t> task_table,
+SJFCostModel::SJFCostModel(shared_ptr<TaskMap_t> task_map,
                            KnowledgeBase* kb)
   : knowledge_base_(kb),
-    task_table_(task_table) {
+    task_map_(task_map) {
 }
 
 const TaskDescriptor& SJFCostModel::GetTask(TaskID_t task_id) {
-  TaskDescriptor* td = FindPtrOrNull(*task_table_, task_id);
+  TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td);
   return *td;
 }
@@ -100,6 +101,19 @@ Cost_t SJFCostModel::TaskToEquivClassAggregator(TaskID_t task_id) {
 Cost_t SJFCostModel::EquivClassToResourceNode(TaskID_t task_id,
                                               ResourceID_t res_id) {
   return 0LL;
+}
+
+set<TaskEquivClass_t>* SJFCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+  return NULL;
+}
+
+set<ResourceID_t>* SJFCostModel::GetEquivClassPreferenceArcs(
+    TaskEquivClass_t tec) {
+  return NULL;
+}
+
+set<ResourceID_t>* SJFCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+  return NULL;
 }
 
 }  // namespace firmament

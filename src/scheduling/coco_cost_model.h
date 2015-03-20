@@ -1,12 +1,13 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Coordinated co-location scheduling cost model.
 
 #ifndef FIRMAMENT_SCHEDULING_COCO_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_COCO_COST_MODEL_H
 
-
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -23,8 +24,8 @@ typedef int64_t Cost_t;
 
 class CocoCostModel : public FlowSchedulingCostModelInterface {
  public:
-  CocoCostModel(shared_ptr<TaskMap_t> task_table,
-               KnowledgeBase* kb);
+  CocoCostModel(shared_ptr<TaskMap_t> task_map,
+                KnowledgeBase* kb);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -43,13 +44,17 @@ class CocoCostModel : public FlowSchedulingCostModelInterface {
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id);
   Cost_t EquivClassToResourceNode(TaskID_t task_id, ResourceID_t res_id);
+  // Get the type of equiv class.
+  set<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
+  set<ResourceID_t>* GetEquivClassPreferenceArcs(TaskEquivClass_t tec);
+  set<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
 
  private:
   const TaskDescriptor& GetTask(TaskID_t task_id);
 
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
-  shared_ptr<TaskMap_t> task_table_;
+  shared_ptr<TaskMap_t> task_map_;
 };
 
 }  // namespace firmament

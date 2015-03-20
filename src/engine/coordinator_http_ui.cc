@@ -190,11 +190,57 @@ void CoordinatorHTTPUI::HandleJobsListURI(http::request_ptr& http_request,  // N
     ++i;
   }
   string output;
-  ExpandTemplate("src/webui/jobs_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
-                 &output);
+  if (!http_request->get_query("json").empty()) {
+    ExpandTemplate("src/webui/json_jobs_list.tpl", ctemplate::DO_NOT_STRIP,
+                   &dict, &output);
+  } else {
+    ExpandTemplate("src/webui/jobs_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
+                   &output);
+  }
   writer->write(output);
   FinishOkResponse(writer);
 }
+
+void CoordinatorHTTPUI::HandleJobCompletionURI(
+    http::request_ptr& http_request,  // NOLINT
+    tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  string job_id = http_request->get_query("id");
+  if (job_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
+  JobDescriptor* jd_ptr = coordinator_->GetJob(
+      JobIDFromString(job_id));
+  TemplateDictionary dict("job_completion");
+  if (jd_ptr) {
+    dict.SetValue("JOB_ID", jd_ptr->uuid());
+    dict.SetValue("JOB_NAME", jd_ptr->name());
+    dict.SetValue("JOB_STATUS", ENUM_TO_STRING(JobDescriptor::JobState,
+                                               jd_ptr->state()));
+    AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+  } else {
+    ErrorMessage_t err("Job not found.",
+                       "The requested job does not exist or is unknown to "
+                       "this coordinator.");
+    AddHeaderToTemplate(&dict, coordinator_->uuid(), &err);
+  }
+  AddFooterToTemplate(&dict);
+  string output;
+  if (!http_request->get_query("json").empty()) {
+    ExpandTemplate("src/webui/json_job_completion.tpl", ctemplate::DO_NOT_STRIP,
+                   &dict, &output);
+  } else {
+    ExpandTemplate("src/webui/job_completion.tpl", ctemplate::DO_NOT_STRIP,
+                   &dict, &output);
+  }
+  writer->write(output);
+  FinishOkResponse(writer);
+}
+
 
 void CoordinatorHTTPUI::HandleJobURI(http::request_ptr& http_request,  // NOLINT
                                      tcp::connection_ptr& tcp_conn) {  // NOLINT
@@ -451,7 +497,7 @@ void CoordinatorHTTPUI::HandleJobDTGURI(http::request_ptr& http_request,  // NOL
     }
     // Return serialized DTG
     http::response_writer_ptr writer = InitOkResponse(http_request,
-                                                  tcp_conn);
+                                                      tcp_conn);
     char *json = pb2json(*jd);
     writer->write(json);
     FinishOkResponse(writer);
@@ -676,8 +722,13 @@ void CoordinatorHTTPUI::HandleTasksListURI(http::request_ptr& http_request,  // 
                                        (*td_iter)->state()));
   }
   string output;
-  ExpandTemplate("src/webui/tasks_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
-                 &output);
+  if (!http_request->get_query("json").empty()) {
+    ExpandTemplate("src/webui/json_tasks_list.tpl", ctemplate::DO_NOT_STRIP,
+                   &dict, &output);
+  } else {
+    ExpandTemplate("src/webui/tasks_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
+                   &output);
+  }
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -815,17 +866,19 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  string task_id = http_request->get_query("id");
-  if (task_id.empty()) {
+  string task_id_str = http_request->get_query("id");
+  if (task_id_str.empty()) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   }
-  TaskDescriptor* td = coordinator_->GetTask(TaskIDFromString(task_id));
+  TaskID_t task_id = TaskIDFromString(task_id_str);
+  TaskDescriptor* td = coordinator_->GetTask(task_id);
   if (td->has_delegated_to()) {
     string target = "http://" +
                     URITools::GetHostnameFromURI(td->delegated_to()) +
-                    ":" + to_string(port_) + "/tasklog/?id=" + task_id;
+                    ":" + to_string(port_) + "/tasklog/?id=" +
+                    to_string(task_id) + "&a=" + http_request->get_query("a");
     RedirectResponse(http_request, tcp_conn, target);
     return;
   }
@@ -837,9 +890,9 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
     return;
   } else {
     if (action == "1") {
-      tasklog_filename += "/" + task_id + "-stdout";
+      tasklog_filename += "/" + to_string(task_id) + "-stdout";
     } else if (action == "2") {
-      tasklog_filename += "/" + task_id + "-stderr";
+      tasklog_filename += "/" + to_string(task_id) + "-stderr";
     } else {
       ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                     tcp_conn);
@@ -937,6 +990,9 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Job submission
     coordinator_http_server_->add_resource("/job/submit/", boost::bind(
         &CoordinatorHTTPUI::HandleJobSubmitURI, this, _1, _2));
+    // Job completion hook
+    coordinator_http_server_->add_resource("/job/completion/", boost::bind(
+        &CoordinatorHTTPUI::HandleJobCompletionURI, this, _1, _2));
     // Job status
     coordinator_http_server_->add_resource("/job/status/", boost::bind(
         &CoordinatorHTTPUI::HandleJobURI, this, _1, _2));

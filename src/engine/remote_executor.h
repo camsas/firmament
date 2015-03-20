@@ -27,9 +27,9 @@ class RemoteExecutor : public ExecutorInterface {
                  ResourceMap_t* res_map,
                  MessagingAdapterInterface<BaseMessage>* m_adapter_ptr);
   bool CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks);
-  void HandleTaskCompletion(const TaskDescriptor& td,
+  void HandleTaskCompletion(TaskDescriptor* td,
                             TaskFinalReport* report);
-  void HandleTaskFailure(const TaskDescriptor& td);
+  void HandleTaskFailure(TaskDescriptor* td);
   void RunTask(TaskDescriptor* td,
                bool firmament_binary);
   virtual ostream& ToString(ostream* stream) const {

@@ -6,10 +6,12 @@
 #ifndef FIRMAMENT_SCHEDULING_FLOW_SCHEDULING_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_FLOW_SCHEDULING_COST_MODEL_H
 
+#include <set>
 #include <string>
 
 #include "base/common.h"
 #include "base/types.h"
+#include "misc/equivclasses.h"
 #include "scheduling/common.h"
 
 namespace firmament {
@@ -53,6 +55,10 @@ class FlowSchedulingCostModelInterface {
   virtual Cost_t TaskToEquivClassAggregator(TaskID_t task_id) = 0;
   virtual Cost_t EquivClassToResourceNode(TaskID_t task_id,
                                           ResourceID_t res_id) = 0;
+  virtual set<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) = 0;
+  virtual set<ResourceID_t>* GetEquivClassPreferenceArcs(
+      TaskEquivClass_t tec) = 0;
+  virtual set<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id) = 0;
 };
 
 }  // namespace firmament

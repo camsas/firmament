@@ -79,7 +79,8 @@ double KnowledgeBase::GetAvgCPIForTEC(TaskEquivClass_t id) {
   for (deque<TaskFinalReport>::const_iterator it = res->begin();
        it != res->end();
        ++it) {
-    accumulator += (double)it->cycles() / (double)it->instructions();
+    accumulator += static_cast<double>(it->cycles()) /
+      static_cast<double>(it->instructions());
   }
   return accumulator / res->size();
 }
@@ -92,7 +93,8 @@ double KnowledgeBase::GetAvgIPMAForTEC(TaskEquivClass_t id) {
   for (deque<TaskFinalReport>::const_iterator it = res->begin();
        it != res->end();
        ++it) {
-    accumulator += (double)it->instructions() / (double)it->llc_refs();
+    accumulator += static_cast<double>(it->instructions()) /
+      static_cast<double>(it->llc_refs());
   }
   return accumulator / res->size();
 }

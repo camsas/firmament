@@ -3,6 +3,7 @@
 //
 // Quincy scheduling cost model, as described in the SOSP 2009 paper.
 
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -94,5 +95,19 @@ Cost_t QuincyCostModel::EquivClassToResourceNode(TaskID_t task_id,
                                                  ResourceID_t res_id) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
+
+set<TaskEquivClass_t>* QuincyCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+  return NULL;
+}
+
+set<ResourceID_t>* QuincyCostModel::GetEquivClassPreferenceArcs(
+    TaskEquivClass_t tec) {
+  return NULL;
+}
+
+set<ResourceID_t>* QuincyCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+  return NULL;
+}
+
 
 }  // namespace firmament
