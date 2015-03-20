@@ -50,9 +50,7 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
       coordinator_uri_(coordinator_uri),
       health_checker_(&task_handler_threads_, &handler_map_mutex_),
       topology_manager_(shared_ptr<TopologyManager>()),  // NULL
-      heartbeat_interval_(1000000000ULL),  // 1 billios nanosec = 1 sec
-      task_lib_inject_ld_library_path_(
-          "LD_LIBRARY_PATH=" + FLAGS_task_lib_dir) {
+      heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
   VLOG(1) << "No topology manager passed, so will not bind to resource.";
   CreateDirectories();
@@ -65,9 +63,7 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
       coordinator_uri_(coordinator_uri),
       health_checker_(&task_handler_threads_, &handler_map_mutex_),
       topology_manager_(topology_mgr),
-      heartbeat_interval_(1000000000ULL),  // 1 billios nanosec = 1 sec
-      task_lib_inject_ld_library_path_(
-          "LD_LIBRARY_PATH=" + FLAGS_task_lib_dir) {
+      heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
   VLOG(1) << "Tasks will be bound to the resource by the topology manager"
           << "at " << topology_manager_;
@@ -428,15 +424,14 @@ void LocalExecutor::SetUpEnvironmentForTask(
                      to_string(heartbeat_interval_));
   InsertIfNotPresent(env, "FLAGS_task_data_dir", data_dir);
   if (td.inject_task_lib()) {
-    InsertIfNotPresent(env, "LD_LIBRARY_PATH",
-                       task_lib_inject_ld_library_path_);
+    InsertIfNotPresent(env, "LD_LIBRARY_PATH", FLAGS_task_lib_dir);
     InsertIfNotPresent(env, "LD_PRELOAD", "task_lib_inject.so");
   }
-  VLOG(2) << "Task's environment variables:";
+  VLOG(1) << "Task's environment variables:";
   for (unordered_map<string, string>::const_iterator env_iter = env->begin();
        env_iter != env->end();
        ++env_iter) {
-    VLOG(2) << "  " << env_iter->first << ": " << env_iter->second;
+    VLOG(1) << "  " << env_iter->first << ": " << env_iter->second;
   }
 }
 

@@ -109,8 +109,6 @@ class LocalExecutor : public ExecutorInterface {
   boost::condition_variable exec_condvar_;
   // Map to each task's local handler thread
   unordered_map<TaskID_t, boost::thread*> task_handler_threads_;
-  // Constant LD_LIBRARY_PATH
-  const string task_lib_inject_ld_library_path_;
 };
 
 }  // namespace executor
