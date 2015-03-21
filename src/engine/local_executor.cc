@@ -108,7 +108,8 @@ void LocalExecutor::CleanUpCompletedTask(const TaskDescriptor& td) {
   pid_t* pid = FindOrNull(task_pids_, td.uid());
   CHECK_NOTNULL(pid);
   string command = "/bin/kill " + to_string(*pid);
-  system(command.c_str());
+  int64_t ret = system(command.c_str());
+  LOG(INFO) << command " << returned " << ret;
   task_pids_.erase(td.uid());
 }
 
