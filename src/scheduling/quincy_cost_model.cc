@@ -17,7 +17,7 @@
 
 namespace firmament {
 
-QuincyCostModel::QuincyCostModel(i
+QuincyCostModel::QuincyCostModel(
     shared_ptr<ResourceMap_t> resource_map,
     shared_ptr<JobMap_t> job_map,
     shared_ptr<TaskMap_t> task_map,
