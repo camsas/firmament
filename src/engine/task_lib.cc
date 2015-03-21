@@ -276,7 +276,7 @@ bool TaskLib::PullTaskInformationFromCoordinator(TaskID_t task_id,
 
 void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   FLAGS_logtostderr = true;
-  LOG(INFO) << "COORDINATOR URI: " << FLAGS_coordinator_uri;
+  LOG(INFO) << "Connecting to coordinator at " << FLAGS_coordinator_uri;
   CHECK(ConnectToCoordinator(coordinator_uri_));
   m_adapter_->RegisterAsyncMessageReceiptCallback(
       boost::bind(&TaskLib::HandleIncomingMessage, this, _1, _2));
@@ -332,12 +332,12 @@ void TaskLib::SendFinalizeMessage(bool success) {
     SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::COMPLETED);
   else
     SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::ABORTED);
-  VLOG(1) << "Sending finalize message (task state change to "
-          << (success ? "COMPLETED" : "ABORTED") << ")!";
+  LOG(INFO) << "Sending finalize message (task state change to "
+            << (success ? "COMPLETED" : "ABORTED") << ")!";
   //SendMessageToCoordinator(&bm);
   Envelope<BaseMessage> envelope(&bm);
   CHECK(chan_->SendS(envelope));
-  VLOG(1) << "Done sending message, sleeping before quitting";
+  LOG(INFO) << "Done sending message, sleeping before quitting";
   boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 
@@ -357,7 +357,7 @@ void TaskLib::SendHeartbeat(
   SUBMSG_WRITE(bm, task_heartbeat, location, chan_->LocalEndpointString());
   SUBMSG_WRITE(bm, task_heartbeat, sequence_number, heartbeat_seq_number_++);
 
-  VLOG(1) << "Sending heartbeat message!";
+  LOG(INFO) << "Sending heartbeat message!";
   SendMessageToCoordinator(&bm);
 }
 

@@ -30,8 +30,6 @@ void LaunchTasklib() {
   // Read these important variables from the environment.
   sleep(1);
 
-  FLAGS_v = 1;
-
   string sargs = "--logtostderr";
   string progargs = "task_lib";
   boost::thread::id task_thread_id = boost::this_thread::get_id();
@@ -57,9 +55,19 @@ __attribute__((constructor)) static void task_lib_main() {
   // child processes, unless we're in a wrapper
   setenv("LD_PRELOAD", "", 1);
 
-  // Cleanup task lib before terminating the process.
-  atexit(TerminationCleanup);
+  // Grab the current process's name via procfs
+  FILE* self_comm = fopen("/proc/self/comm", "r");
+  char cur_comm[64];
+  fgets(cur_comm, 64, self_comm);
+  fclose(self_comm);
 
-  LOG(INFO) << "Starting tasklib monitor thread\n";
-  boost::thread t1(&LaunchTasklib);
+  //if (strncmp(&cur_comm, getenv("TASKLIB_TARGET_COMM"), 64) == 0) {
+    // Cleanup task lib before terminating the process.
+    atexit(TerminationCleanup);
+
+    LOG(INFO) << "Starting TaskLib monitor thread for " << cur_comm;
+    boost::thread t1(&LaunchTasklib);
+  //} else {
+  //  LOG(INFO) << "Not injecting TaskLib into " << cur_comm;
+  //}
 }
