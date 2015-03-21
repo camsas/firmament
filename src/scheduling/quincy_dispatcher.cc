@@ -27,6 +27,7 @@ DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
 DEFINE_string(flowlessly_binary, "ext/flowlessly-git/run_fast_cost_scaling",
               "Path to the flowlessly binary.");
 DEFINE_string(cs2_binary, "ext/cs2-git/cs2.exe", "Path to the cs2 binary.");
+DEFINE_bool(log_err_from_solver, true, "Log stderr from solver.");
 
 namespace firmament {
 namespace scheduler {
@@ -79,6 +80,8 @@ namespace scheduler {
       // infd_[1] == CHILD_WRITE
       // outfd_[0] == CHILD_READ
       // outfd_[1] == PARENT_WRITE
+      // errfd_[0] == PARENT_READ
+      // errfd_[1] == CHILD_WRITE
       if (FLAGS_flow_scheduling_solver.compare("flowlessly") == 0) {
         args.push_back("--graph_has_node_types=true");
         args.push_back("--global_update=false");
@@ -86,11 +89,13 @@ namespace scheduler {
           args.push_back("--daemon=false");
         }
       }
-      solver_pid = ExecCommandSync(solver_binary, args, outfd_, infd_);
+      solver_pid = ExecCommandSync(solver_binary, args, outfd_, infd_, errfd_);
       VLOG(2) << "Solver (" << FLAGS_flow_scheduling_solver << "running "
               << "(PID: " << solver_pid << "), CHILD_READ: "
               << outfd_[0] << ", PARENT_WRITE: " << outfd_[1]
-              << ", PARENT_READ: " << infd_[0] << ", CHILD_WRITE: " << infd_[1];
+              << ", PARENT_READ: " << infd_[0] << ", CHILD_WRITE: " << infd_[1]
+              << ", PARENT_ERR_READ: " << errfd_[0]
+              << ", CHILD_ERR_WRITE: " << errfd_[1];
       solver_ran_once_ = true;
       if ((from_solver_ = fdopen(infd_[0], "r")) == NULL) {
         LOG(ERROR) << "Failed to open FD for reading solver's output. FD "
@@ -100,12 +105,22 @@ namespace scheduler {
         LOG(ERROR) << "Failed to open FD to solver for writing. FD: "
                    << outfd_[1];
       }
+      if ((from_solver_err_ = fdopen(errfd_[0], "r")) == NULL) {
+        LOG(ERROR) << "Failed to open FD for reading solver's err. FD "
+                   << errfd_[0];
+      }
     }
     // Write to pipe to solver
     exporter_.Flush(to_solver_);
     if (!FLAGS_incremental_flow) {
       // We need to close the stream because that's what cs expects.
       fclose(to_solver_);
+    }
+    if (FLAGS_log_err_from_solver) {
+      char line[100];
+      while (fgets(line, sizeof(line), from_solver_err_) != NULL) {
+        LOG(ERROR) << "Err from solver: " << line;
+      }
     }
     multimap<uint64_t, uint64_t>* task_mappings;
     if (FLAGS_only_read_assignment_changes) {
@@ -123,9 +138,11 @@ namespace scheduler {
       // We're done with the solver and can let it terminate here.
       WaitForFinish(solver_pid);
       fclose(from_solver_);
+      fclose(from_solver_err_);
       // close the pipes
       close(outfd_[1]);
       close(infd_[0]);
+      close(errfd_[0]);
     }
     debug_seq_num_++;
     return task_mappings;

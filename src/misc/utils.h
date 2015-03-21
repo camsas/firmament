@@ -64,7 +64,7 @@ void SetupResourceID(boost::mt19937 *resource_id, const char *hostname);
 TaskID_t TaskIDFromString(const string& str);
 
 int32_t ExecCommandSync(const string& cmdline, vector<string> args,
-                        int infd[2], int outfd[2]);
+                        int infd[2], int outfd[2], int errfd[2]);
 int32_t WaitForFinish(pid_t pid);
 
 uint8_t* SHA256Hash(uint8_t* bytes, uint64_t len);
