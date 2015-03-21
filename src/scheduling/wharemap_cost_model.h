@@ -48,7 +48,7 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
   vector<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
   vector<ResourceID_t>* GetEquivClassPreferenceArcs(TaskEquivClass_t tec);
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
-  pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
     GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec);
 
  private:

@@ -27,6 +27,7 @@ enum FlowSchedulingCostModelType {
   COST_MODEL_QUINCY = 3,
   COST_MODEL_WHARE = 4,
   COST_MODEL_COCO = 5,
+  COST_MODEL_VOID = 6,
 };
 
 class FlowSchedulingCostModelInterface {
@@ -64,7 +65,7 @@ class FlowSchedulingCostModelInterface {
       TaskEquivClass_t tec) = 0;
   virtual vector<ResourceID_t>* GetTaskPreferenceArcs(
       TaskID_t task_id) = 0;
-  virtual pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  virtual pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
     GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) = 0;
 };
 
