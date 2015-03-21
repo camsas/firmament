@@ -25,7 +25,7 @@ class QuincyDispatcher {
 
   multimap<uint64_t, uint64_t>* Run(
   		            double *algorithm_time = NULL, double *flowsolver_time = NULL,
-                  FILE *initial_graph = NULL, FILE *incremental_changes = NULL);
+                  FILE *graph_output = NULL);
   void NodeBindingToSchedulingDelta(const FlowGraphNode& src,
                                     const FlowGraphNode& dst,
                                     map<TaskID_t, ResourceID_t>* task_bindings,

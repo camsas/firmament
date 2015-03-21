@@ -141,8 +141,7 @@ class GoogleTraceSimulator {
   void ResetUuidAndAddResource(ResourceTopologyNodeDescriptor* rtnd,
                                const string& hostname, const string& root_uuid);
 
-  void ReplayTrace(ofstream &stats_file,
-  		             FILE *graph_file, FILE *incremental_file);
+  void ReplayTrace(ofstream &stats_file, FILE *graph_file);
 
   void TaskCompleted(const TaskIdentifier& task_identifier);
   void TaskEvicted(TaskID_t task_id, const ResourceID_t& res_id);

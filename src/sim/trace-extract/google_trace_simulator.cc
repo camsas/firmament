@@ -63,8 +63,7 @@ DEFINE_string(task_bins_output, "bins.out",
               "The file in which the task bins are written.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(stats_file, "", "Path to write CSV of statistics.");
-DEFINE_string(original_graph_file, "", "Path to write DIMACS export of snapshot at beginning of time.");
-DEFINE_string(graph_deltas_file, "", "Path to write incremental DIMACS deltas.");
+DEFINE_string(graph_output_file, "", "File to write incremental DIMACS export.");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -114,33 +113,21 @@ void GoogleTraceSimulator::Run() {
   		LOG(FATAL) << "Must specify a path for the statistics file, -stats-file.";
   	}
 
-  	FILE *original_graph_file = NULL, *graph_deltas_file = NULL;
-  	if (!FLAGS_original_graph_file.empty()) {
-  		original_graph_file = fopen(FLAGS_original_graph_file.c_str(), "w");
-  		if (!original_graph_file) {
+  	FILE *graph_output_file = NULL;
+  	if (!FLAGS_graph_output_file.empty()) {
+  		graph_output_file = fopen(FLAGS_graph_output_file.c_str(), "w");
+  		if (!graph_output_file) {
   			LOG(FATAL) << "Could not open for writing graph file "
-  					       << FLAGS_original_graph_file
+  					       << FLAGS_graph_output_file
 									 << ", error: " << strerror(errno);
   		}
   	}
 
-  		if (!FLAGS_graph_deltas_file.empty()) {
-  		  		graph_deltas_file = fopen(FLAGS_graph_deltas_file.c_str(), "w");
-  		  		if (!graph_deltas_file) {
-  		  			LOG(FATAL) << "Could not open for writing graph file "
-  		  					       << FLAGS_graph_deltas_file
-  											 << ", error: " << strerror(errno);
-  		  		}
-  	}
-
   	ofstream stats_file(FLAGS_stats_file);
-    ReplayTrace(stats_file, original_graph_file, graph_deltas_file);
+    ReplayTrace(stats_file, graph_output_file);
 
-    if (original_graph_file) {
-    	fclose(original_graph_file);
-    }
-    if (graph_deltas_file) {
-    	fclose(graph_deltas_file);
+    if (graph_output_file) {
+    	fclose(graph_output_file);
     }
   }
 }
@@ -656,7 +643,7 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
 }
 
 void GoogleTraceSimulator::ReplayTrace(
-		           ofstream &stats_file, FILE *graph_file, FILE *incremental_file) {
+		                            ofstream &stats_file, FILE *graph_output_file) {
 	// Output CSV header
 	stats_file << "cluster_time,algorithm_time,flowsolver_time,total_time"
 			       << std::endl;
@@ -727,7 +714,7 @@ void GoogleTraceSimulator::ReplayTrace(
             double algorithm_time, flowsolver_time;
             multimap<uint64_t, uint64_t>* task_mappings =
               quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time,
-              		                    graph_file, incremental_file);
+              		                    graph_output_file);
 
             UpdateFlowGraph(time_interval_bound, task_runtime, task_mappings);
 

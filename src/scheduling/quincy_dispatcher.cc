@@ -33,7 +33,7 @@ namespace scheduler {
 
   multimap<uint64_t, uint64_t>* QuincyDispatcher::Run(
   		                        double *algorithm_time, double *flowsolver_time,
-					                    FILE *initial_graph, FILE *incremental_changes) {
+					                    FILE *graph_output) {
     // Set up debug directory if it doesn't exist
     struct stat st;
     if (!FLAGS_debug_output_dir.empty() &&
@@ -46,7 +46,7 @@ namespace scheduler {
     }
 
     if (solver_ran_once_ &&
-    	  (incremental_changes != NULL || FLAGS_incremental_flow)) {
+    	  (graph_output != NULL || FLAGS_incremental_flow)) {
     	// Only generate incremental delta if not first time running
     	// If we're running an incremental algorithm, have to generate deltas.
     	// But if we're logging incremental changes, generate deltas even when
@@ -56,8 +56,8 @@ namespace scheduler {
     	exporter_.ExportIncremental(flow_graph_->graph_changes());
 			flow_graph_->ResetChanges();
 
-			if (incremental_changes != NULL) {
-				exporter_.Flush(incremental_changes);
+			if (graph_output != NULL) {
+				exporter_.Flush(graph_output);
 			}
     }
 
@@ -69,9 +69,9 @@ namespace scheduler {
     	exporter_.Export(*flow_graph_);
 			flow_graph_->ResetChanges();
 
-			if (initial_graph != NULL && !solver_ran_once_) {
+			if (graph_output != NULL && !solver_ran_once_) {
 				// only log the initial graph once, even when running non-incrementally
-				exporter_.Flush(initial_graph);
+				exporter_.Flush(graph_output);
 			}
     }
 
