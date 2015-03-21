@@ -55,8 +55,10 @@ class QuincyDispatcher {
   // FDs used to communicate with the solver.
   int outfd_[2];
   int infd_[2];
+  int errfd_[2];
   FILE* to_solver_;
   FILE* from_solver_;
+  FILE* from_solver_err_;
 };
 
 } // namespace scheduler
