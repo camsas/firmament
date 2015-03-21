@@ -295,7 +295,7 @@ void CoordinatorHTTPUI::HandleJobURI(http::request_ptr& http_request,  // NOLINT
   if (jd_ptr) {
     if (http_request->get_query("a") == "kill") {
       if (coordinator_->KillRunningJob(JobIDFromString(jd_ptr->uuid()))) {
-        RedirectResponse(http_request, tcp_conn, "/job/?id=" + job_id);
+        RedirectResponse(http_request, tcp_conn, "/job/status/?id=" + job_id);
         return;
       } else {
         ErrorMessage_t err("Failed to kill job.",
