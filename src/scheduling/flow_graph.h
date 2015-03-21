@@ -95,6 +95,8 @@ class FlowGraph {
   void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
                       vector<FlowGraphArc*>* task_arcs);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
+  void AddArcsToOtherEquivNodes(TaskEquivClass_t equiv_class,
+                                FlowGraphNode* ec_node);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   FlowGraphNode* AddEquivClassAggregator(TaskID_t task_id,

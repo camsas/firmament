@@ -112,6 +112,37 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
   return arc;
 }
 
+void FlowGraph::AddArcsToOtherEquivNodes(TaskEquivClass_t equiv_class,
+                                         FlowGraphNode* ec_node) {
+  pair<vector<TaskEquivClass_t>*,
+       vector<TaskEquivClass_t>*> equiv_class_to_connect =
+    cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
+  // Add incoming arcs.
+  for (vector<TaskEquivClass_t>::iterator
+         it = equiv_class_to_connect.first->begin();
+       it != equiv_class_to_connect.first->end(); ++it) {
+    FlowGraphNode* ec_src_ptr = FindPtrOrNull(tec_to_node_, *it);
+    CHECK_NOTNULL(ec_src_ptr);
+    FlowGraphArc* arc = AddArcInternal(ec_src_ptr->id_, ec_node->id_);
+    arc->cost_ = cost_model_->EquivClassToEquivClass(*it, equiv_class);
+    // TODO(ionel): Set the capacity on the arc to a sensible value.
+    arc->cap_upper_bound_ = 1;
+    graph_changes_.push_back(new DIMACSNewArc(*arc));
+  }
+  // Add outgoing arcs.
+  for (vector<TaskEquivClass_t>::iterator
+         it = equiv_class_to_connect.second->begin();
+       it != equiv_class_to_connect.second->end(); ++it) {
+    FlowGraphNode* ec_dst_ptr = FindPtrOrNull(tec_to_node_, *it);
+    CHECK_NOTNULL(ec_dst_ptr);
+    FlowGraphArc* arc = AddArcInternal(ec_node->id_, ec_dst_ptr->id_);
+    arc->cost_ = cost_model_->EquivClassToEquivClass(equiv_class, *it);
+    // TODO(ionel): Set the capacity on the arc to a sensible value.
+    arc->cap_upper_bound_ = 1;
+    graph_changes_.push_back(new DIMACSNewArc(*arc));
+  }
+}
+
 FlowGraphNode* FlowGraph::AddEquivClassAggregator(
     TaskID_t task_id, TaskEquivClass_t equiv_class,
     vector<FlowGraphArc*>* ec_arcs) {
@@ -375,6 +406,7 @@ void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
       // Add the new equivalence node to the graph changes
       ec_arcs->push_back(ec_arc);
       graph_changes_.push_back(new DIMACSAddNode(*ec_node, ec_arcs));
+      AddArcsToOtherEquivNodes(*it, ec_node);
     } else {
       // Node for task equiv class already exists. Add arc to it.
       // XXX(ionel): We don't add new arcs from the equivalence class to
