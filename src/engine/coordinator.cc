@@ -768,6 +768,7 @@ bool Coordinator::KillRunningJob(JobID_t job_id) {
     LOG(ERROR) << "Tried to kill unknown job " << job_id;
     return false;
   }
+  LOG(INFO) << "Termination of job " << job_id << " requested.";
   // Iterate over all tasks in the job and kill them
   queue<TaskID_t> q;
   q.push(jd->root_task().uid());
@@ -793,6 +794,7 @@ bool Coordinator::KillRunningJob(JobID_t job_id) {
       td->set_state(TaskDescriptor::ABORTED);
     }
   }
+  jd->set_state(JobDescriptor::ABORTED);
   return true;
 }
 
