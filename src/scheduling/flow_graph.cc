@@ -124,7 +124,6 @@ void FlowGraph::AddEquivClassPreferenceArcs(
     FlowGraphArc* arc = AddArcInternal(equiv_node->id_, res_node->id_);
     arc->cap_upper_bound_ = 1;
     arc->cost_ = cost_model_->EquivClassToResourceNode(equiv_class, *it);
-    VLOG(2) << "ADDING ARC";
     ec_arcs->push_back(arc);
   }
   delete res_ids;
@@ -604,9 +603,12 @@ void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
 }
 
 void FlowGraph::DeleteOrUpdateEquivNode(TaskEquivClass_t task_equiv) {
-  VLOG(2) << "DeleteOrUpdateEquivNode";
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
-  CHECK_NOTNULL(equiv_node_ptr);
+  if (equiv_node_ptr == NULL) {
+    // Equiv class node can be NULL because all it's task are running
+    // and are directly connected to resource nodes.
+    return;
+  }
   if (equiv_node_ptr->incoming_arc_map_.size() == 0) {
     VLOG(2) << "Deleting task_equiv class: " << task_equiv;
     // The equiv class doesn't have any incoming arcs from tasks.
