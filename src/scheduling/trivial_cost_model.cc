@@ -103,8 +103,8 @@ vector<ResourceID_t>* TrivialCostModel::GetEquivClassPreferenceArcs(
 
 vector<ResourceID_t>* TrivialCostModel::GetTaskPreferenceArcs(
     TaskID_t task_id) {
-  LOG(FATAL) << "Not implemented!";
-  return NULL;
+  vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
+  return prefered_res;
 }
 
 pair<vector<ResourceID_t>*, vector<ResourceID_t>*>

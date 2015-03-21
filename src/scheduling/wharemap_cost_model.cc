@@ -119,8 +119,8 @@ vector<ResourceID_t>* WhareMapCostModel::GetEquivClassPreferenceArcs(
 
 vector<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(
     TaskID_t task_id) {
-  LOG(FATAL) << "Not implemented!";
-  return NULL;
+  vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
+  return prefered_res;
 }
 
 pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
