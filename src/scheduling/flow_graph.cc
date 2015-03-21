@@ -78,6 +78,18 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
   // Set up arc to unscheduled aggregator
   unsched_arc->cap_upper_bound_ = 1;
   task_arcs->push_back(unsched_arc);
+  vector<ResourceID_t>* task_pref_arcs =
+    cost_model_->GetTaskPreferenceArcs(task_node->task_id_);
+  for (vector<ResourceID_t>::iterator it = task_pref_arcs->begin();
+       it != task_pref_arcs->end(); ++it) {
+    FlowGraphArc* arc_to_res =
+      AddArcInternal(task_node, NodeForResourceID(*it));
+    arc_to_res->cost_ =
+      cost_model_->TaskToResourceNodeCost(task_node->task_id_, *it);
+    arc_to_res->cap_upper_bound_ = 1;
+    task_arcs->push_back(arc_to_res);
+  }
+  delete task_pref_arcs;
 }
 
 FlowGraphArc* FlowGraph::AddArcInternal(uint64_t src, uint64_t dst) {
