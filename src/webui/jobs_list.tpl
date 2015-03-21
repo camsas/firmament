@@ -26,7 +26,7 @@
       <td>
         <a href="/job/status/?id={{JOB_ID}}"><span class="glyphicon glyphicon-th-list" aria-hidden="true" title="Status"></span></a> 
         <a href="/job/completion/?id={{JOB_ID}}"><span class="glyphicon glyphicon-bell" aria-hidden="true" title="Alert"></span></a> 
-        <a href="/job/kill/?id={{JOB_ID}}"><span class="glyphicon glyphicon-trash" aria-hidden="true" title="Terminate"></span></a> 
+        <a href="/job/status/?id={{JOB_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true" title="Terminate"></span></a> 
         <a href="/job/dtg-view/?id={{JOB_ID}}"><span class="glyphicon glyphicon-search" aria-hidden="true" title="DTG"></span></a>
       </td>
     </tr>
