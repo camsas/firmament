@@ -858,7 +858,7 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
       dict.SetIntValue("TASK_START_TIME", 0);
     }
     if (td_ptr->has_finish_time()) {
-      dict.SetIntValue("TASK_FINISH_TIME", td_ptr->start_time() / 1000);
+      dict.SetIntValue("TASK_FINISH_TIME", td_ptr->finish_time() / 1000);
       dict.SetValue("TASK_FINISH_TIME_HR",
           CoarseTimestampToHumanReadble(td_ptr->finish_time() / 1000000));
     } else {
