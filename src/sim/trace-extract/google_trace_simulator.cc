@@ -87,7 +87,6 @@ GoogleTraceSimulator::~GoogleTraceSimulator() {
 }
 
 void GoogleTraceSimulator::Run() {
-  FLAGS_debug_flow_graph = true;
   FLAGS_add_root_task_to_graph = false;
 
   // command line argument sanity checking
