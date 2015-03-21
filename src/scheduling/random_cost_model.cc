@@ -43,10 +43,6 @@ Cost_t RandomCostModel::TaskToResourceNodeCost(TaskID_t task_id,
   return rand() % (FLAGS_flow_max_arc_cost / 3) + 1;
 }
 
-Cost_t RandomCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
-  return rand() % (FLAGS_flow_max_arc_cost / 4) + 1;
-}
-
 Cost_t RandomCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {

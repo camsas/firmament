@@ -1,5 +1,6 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Abstract class representing the interface for cost model implementations.
 
@@ -44,7 +45,6 @@ class FlowSchedulingCostModelInterface {
   virtual Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                         ResourceID_t resource_id) = 0;
   // Costs within the resource topology
-  virtual Cost_t ClusterAggToResourceNodeCost(ResourceID_t target) = 0;
   virtual Cost_t ResourceNodeToResourceNodeCost(ResourceID_t source,
                                                 ResourceID_t destination) = 0;
   virtual Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id) = 0;

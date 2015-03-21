@@ -79,10 +79,6 @@ Cost_t SJFCostModel::TaskToResourceNodeCost(TaskID_t task_id,
   return TaskToClusterAggCost(task_id);
 }
 
-Cost_t SJFCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
-  return 0LL;
-}
-
 Cost_t SJFCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {

@@ -1,5 +1,6 @@
 // The Firmament project
 // Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Representation of a Quincy-style scheduling flow graph.
 
@@ -443,10 +444,9 @@ void FlowGraph::ConfigureResourceBranchNode(
     CHECK(parent_node != NULL) << "Could not find parent node with ID "
                                << rtnd.parent_id();
     // Find the arc from parent node (which should have been added before)
-    FlowGraphArc** arc_ptr = FindOrNull(parent_node->outgoing_arc_map_,
-                                        new_node->id_);
-    CHECK_NOTNULL(arc_ptr);
-    FlowGraphArc* arc = *arc_ptr;
+    FlowGraphArc* arc = FindPtrOrNull(parent_node->outgoing_arc_map_,
+                                      new_node->id_);
+    CHECK_NOTNULL(arc);
     // Set initial capacity to 0; this will be updated as leaves are added
     // below this node!
     arc->cap_upper_bound_ = 0;
@@ -495,15 +495,14 @@ void FlowGraph::ConfigureResourceLeafNode(
                                  parent->resource_id_)) != NULL) {
     uint64_t cur_id = parent->id_;
     parent = NodeForResourceID(*parent_id);
-    FlowGraphArc** arc = FindOrNull(parent->outgoing_arc_map_, cur_id);
+    FlowGraphArc* arc = FindPtrOrNull(parent->outgoing_arc_map_, cur_id);
     CHECK_NOTNULL(arc);
-    CHECK_NOTNULL(*arc);
     VLOG(2) << "Adding capacity on edge from " << *parent_id << " ("
             << parent->id_ << ") to " << cur_id << " ("
-            << (*arc)->cap_upper_bound_ << " -> "
-            << (*arc)->cap_upper_bound_ + 1 << ")";
-    (*arc)->cap_upper_bound_ += 1;
-    graph_changes_.push_back(new DIMACSChangeArc(**arc));
+            << arc->cap_upper_bound_ << " -> "
+            << arc->cap_upper_bound_ + 1 << ")";
+    arc->cap_upper_bound_ += 1;
+    graph_changes_.push_back(new DIMACSChangeArc(*arc));
   }
 }
 

@@ -33,7 +33,6 @@ class TrivialCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                 ResourceID_t resource_id);
   // Costs within the resource topology
-  Cost_t ClusterAggToResourceNodeCost(ResourceID_t target);
   Cost_t ResourceNodeToResourceNodeCost(ResourceID_t source,
                                         ResourceID_t destination);
   Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id);

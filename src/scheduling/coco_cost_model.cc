@@ -70,10 +70,6 @@ Cost_t CocoCostModel::TaskToResourceNodeCost(TaskID_t task_id,
   return TaskToClusterAggCost(task_id);
 }
 
-Cost_t CocoCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
-  return 0LL;
-}
-
 Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {

@@ -67,10 +67,6 @@ Cost_t WhareMapCostModel::TaskToResourceNodeCost(TaskID_t task_id,
   return TaskToClusterAggCost(task_id);
 }
 
-Cost_t WhareMapCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
-  return 0LL;
-}
-
 Cost_t WhareMapCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {
