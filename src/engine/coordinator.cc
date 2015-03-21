@@ -761,6 +761,42 @@ void Coordinator::InitHTTPUI() {
 }
 #endif
 
+bool Coordinator::KillRunningJob(JobID_t job_id) {
+  // Check if this is a local job
+  JobDescriptor* jd = FindOrNull(*job_table_, job_id);
+  if (!jd) {
+    LOG(ERROR) << "Tried to kill unknown job " << job_id;
+    return false;
+  }
+  // Iterate over all tasks in the job and kill them
+  queue<TaskID_t> q;
+  q.push(jd->root_task().uid());
+  while (!q.empty()) {
+    TaskID_t cur_task_id = q.front();
+    q.pop();
+    TaskDescriptor* td = FindPtrOrNull(*task_table_, cur_task_id);
+    CHECK_NOTNULL(td);
+    // TODO(malte): this needs to take a copy or a lock, otherwise we can race
+    // with concurrent spawns.
+    for (RepeatedPtrField<TaskDescriptor>::const_iterator it =
+         td->spawned().begin();
+         it != td->spawned().end();
+         it++) {
+      q.push(it->uid());
+    }
+    // Now kill it
+    if (td->state() == TaskDescriptor::RUNNING) {
+      LOG(INFO) << "Killing task " << td->uid();
+      KillRunningTask(cur_task_id, TaskKillMessage::USER_ABORT);
+    } else if (td->state() == TaskDescriptor::RUNNABLE ||
+               td->state() == TaskDescriptor::BLOCKING) {
+      td->set_state(TaskDescriptor::ABORTED);
+    }
+  }
+  return true;
+}
+
+
 bool Coordinator::KillRunningTask(TaskID_t task_id,
                                   TaskKillMessage::TaskKillReason reason) {
   // Check if this is a local task

@@ -293,6 +293,17 @@ void CoordinatorHTTPUI::HandleJobURI(http::request_ptr& http_request,  // NOLINT
       JobIDFromString(job_id));
   TemplateDictionary dict("job_status");
   if (jd_ptr) {
+    if (http_request->get_query("a") == "kill") {
+      if (coordinator_->KillRunningJob(JobIDFromString(jd_ptr->uuid()))) {
+        RedirectResponse(http_request, tcp_conn, "/job/?id=" + job_id);
+        return;
+      } else {
+        ErrorMessage_t err("Failed to kill job.",
+                           "The requested job could not be killed; check "
+                           "the ERROR log for more information.");
+        AddHeaderToTemplate(&dict, coordinator_->uuid(), &err);
+      }
+    }
     dict.SetValue("JOB_ID", jd_ptr->uuid());
     dict.SetValue("JOB_NAME", jd_ptr->name());
     dict.SetValue("JOB_STATUS", ENUM_TO_STRING(JobDescriptor::JobState,
