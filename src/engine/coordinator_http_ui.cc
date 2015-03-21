@@ -103,13 +103,12 @@ void CoordinatorHTTPUI::HandleCollectlGraphsURI(
   args.push_back("/tmp/collectltmp/");
   int infd[2];
   int outfd[2];
-  int errfd[2];
-  ExecCommandSync("/usr/bin/collectl", args, infd, outfd, errfd);
+  ExecCommandSync("/usr/bin/collectl", args, infd, outfd);
   //args.clear();
   //args.push_back("ext/plot_collectl.py");
   //args.push_back("/tmp/collectltmp");
   //args.push_back("/tmp/testgraph.pdf");
-  //ExecCommandSync("/usr/bin/python", args, infd, outfd, errfd);
+  //ExecCommandSync("/usr/bin/python", args, infd, outfd);
   //ServeFile("/tmp/collectltmp/", tcp_conn, http_request, writer);
   writer->write("done!");
   FinishOkResponse(writer);
