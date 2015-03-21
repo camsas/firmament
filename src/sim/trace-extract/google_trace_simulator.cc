@@ -170,6 +170,7 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
   TaskDescriptor* td_ptr = NULL;
   if (FindOrNull(task_id_to_td_, task_identifier) == NULL) {
     td_ptr = AddTaskToJob(jd_ptr);
+    td_ptr->set_binary(lexical_cast<string>(task_identifier.job_id));
     if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
       CHECK(InsertIfNotPresent(&task_id_to_identifier_,
                                td_ptr->uid(), task_identifier));
