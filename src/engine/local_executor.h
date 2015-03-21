@@ -106,9 +106,11 @@ class LocalExecutor : public ExecutorInterface {
   uint64_t heartbeat_interval_;
   boost::mutex exec_mutex_;
   boost::shared_mutex handler_map_mutex_;
+  boost::shared_mutex pid_map_mutex_;
   boost::condition_variable exec_condvar_;
   // Map to each task's local handler thread
   unordered_map<TaskID_t, boost::thread*> task_handler_threads_;
+  unordered_map<TaskID_t, pid_t> task_pids_;
 };
 
 }  // namespace executor
