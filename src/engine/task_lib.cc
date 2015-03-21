@@ -98,24 +98,28 @@ TaskLib::~TaskLib() {
 }
 
 void TaskLib::Stop(bool success) {
-  LOG(INFO) << "STOP CALLED";
-  stop_ = true;
-  //while (task_running_) {
-  //  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-  //   //Wait until the monitor has stopped before sending the finalize message.
-  //}
-  sleep(1);
-  LOG(INFO) << "Sending finalize message to coordinator...";
-  SendFinalizeMessage(success);
-  LOG(INFO) << "Finalise message sent";
-  fflush(stdout);
-  fflush(stderr);
-  // Remove PID file
-  stringstream ss;
-  ss << "/tmp/" << task_id_ << ".pid";
-  string pid_filename = ss.str();
-  unlink(pid_filename.c_str());
-  //exit(0);
+  // This may get called several times by different threads; we only want to
+  // stop once!
+  if (!stop_) {
+    LOG(INFO) << "STOP CALLED";
+    stop_ = true;
+    //while (task_running_) {
+    //  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+    //   //Wait until the monitor has stopped before sending the finalize message.
+    //}
+    sleep(1);
+    LOG(INFO) << "Sending finalize message to coordinator...";
+    SendFinalizeMessage(success);
+    LOG(INFO) << "Finalise message sent";
+    fflush(stdout);
+    fflush(stderr);
+    // Remove PID file
+    stringstream ss;
+    ss << "/tmp/" << task_id_ << ".pid";
+    string pid_filename = ss.str();
+    unlink(pid_filename.c_str());
+    //exit(0);
+  }
 }
 
 void TaskLib::AddTaskStatisticsToHeartbeat(
@@ -300,26 +304,26 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   // notification scheme in case the heartbeat interval is large.
 
   while (!stop_) {
-      // TODO(malte): Check if we've exited with an error
-      // if(error)
-      //   task_error_ = true;
-      // Notify the coordinator that we're still running happily
+    // TODO(malte): Check if we've exited with an error
+    // if(error)
+    //   task_error_ = true;
+    // Notify the coordinator that we're still running happily
 
-      VLOG(1) << "Task thread has not yet joined, sending heartbeat...";
+    VLOG(1) << "Task thread has not yet joined, sending heartbeat...";
 
-      if (use_procfs_) {
-        task_perf_monitor_.ProcessInformation(pid_, &current_stats);
-      }
-      SendHeartbeat(current_stats);
-
-      // TODO(malte): We'll need to receive any potential messages from the
-      // coordinator here, too. This is probably best done by a simple RecvA on
-      // the channel.
-      m_adapter_->AwaitNextMessage();
-
-      // Finally, nap for a bit until the next heartbeat is due
-      usleep(FLAGS_heartbeat_interval);
+    if (use_procfs_) {
+      task_perf_monitor_.ProcessInformation(pid_, &current_stats);
     }
+    SendHeartbeat(current_stats);
+
+    // TODO(malte): We'll need to receive any potential messages from the
+    // coordinator here, too. This is probably best done by a simple RecvA on
+    // the channel.
+    m_adapter_->AwaitNextMessage();
+
+    // Finally, nap for a bit until the next heartbeat is due
+    usleep(FLAGS_heartbeat_interval);
+  }
   LOG(INFO) << "STOPPING HEARTBEATS";
   fflush(stderr);
   task_running_ = false;
