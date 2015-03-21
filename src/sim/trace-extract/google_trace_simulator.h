@@ -47,6 +47,18 @@ struct TaskIdentifierHasher {
   }
 };
 
+struct TaskStats {
+  double avg_mean_cpu_usage;
+  double avg_canonical_mem_usage;
+  double avg_assigned_mem_usage;
+  double avg_unmapped_page_cache;
+  double avg_total_page_cache;
+  double avg_mean_disk_io_time;
+  double avg_mean_local_disk_used;
+  double avg_cpi;
+  double avg_mai;
+};
+
 class GoogleTraceSimulator {
  public:
   explicit GoogleTraceSimulator(const string& trace_path);
@@ -75,6 +87,8 @@ class GoogleTraceSimulator {
       TaskIdentifier task_identifier,
       unordered_map<TaskIdentifier, uint64_t,
                     TaskIdentifierHasher>* task_runtime);
+
+  void AddTaskStats(TaskIdentifier task_identifier);
 
   /**
    * Creates a new task for a job.
@@ -194,11 +208,14 @@ class GoogleTraceSimulator {
   map<TaskID_t, ResourceID_t> task_bindings_;
 
   // Map holding the end runtime for every running task.
-  map<TaskID_t, uint64_t> task_id_to_end_time_;
+  unordered_map<TaskID_t, uint64_t> task_id_to_end_time_;
 
   // Map holding the task_id of the task running on the resource with res_id.
   unordered_map<ResourceID_t, TaskID_t,
       boost::hash<boost::uuids::uuid> > res_id_to_task_id_;
+
+  unordered_map<TaskIdentifier, TaskStats, TaskIdentifierHasher>
+      task_id_to_stats_;
 
   // The map storing the simulator events. Maps from timestamp to simulator
   // event.
@@ -212,6 +229,8 @@ class GoogleTraceSimulator {
   ResourceTopologyNodeDescriptor rtn_root_;
 
   FlowGraph* flow_graph_;
+
+  FlowSchedulingCostModelInterface* cost_model_;
 
   scheduler::QuincyDispatcher* quincy_dispatcher_;
 };

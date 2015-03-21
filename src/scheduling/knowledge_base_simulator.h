@@ -23,6 +23,7 @@ class KnowledgeBaseSimulator : public KnowledgeBase {
   double GetAvgMeanLocalDiskUsed(TaskEquivClass_t id);
 
   void SetAvgCPIForTEC(TaskEquivClass_t id, double avg_cpi);
+  void SetAvgIPMAForTEC(TaskEquivClass_t id, double avg_ipma);
   void SetAvgRuntimeForTEC(TaskEquivClass_t id, double avg_runtime);
   void SetAvgMeanCpuUsage(TaskEquivClass_t id, double avg_mean_cpu_usage);
   void SetAvgCanonicalMemUsage(TaskEquivClass_t id,
@@ -40,6 +41,7 @@ class KnowledgeBaseSimulator : public KnowledgeBase {
 
  private:
   unordered_map<TaskEquivClass_t, double> tec_avg_cpi_;
+  unordered_map<TaskEquivClass_t, double> tec_avg_ipma_;
   unordered_map<TaskEquivClass_t, double> tec_avg_runtime_;
   unordered_map<TaskEquivClass_t, double> tec_avg_mean_cpu_usage_;
   unordered_map<TaskEquivClass_t, double> tec_avg_canonical_mem_usage_;

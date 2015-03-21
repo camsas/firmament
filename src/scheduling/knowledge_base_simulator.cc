@@ -18,8 +18,9 @@ double KnowledgeBaseSimulator::GetAvgCPIForTEC(TaskEquivClass_t id) {
 }
 
 double KnowledgeBaseSimulator::GetAvgIPMAForTEC(TaskEquivClass_t id) {
-  // TODO(ionel): Implement!
-  return 0.0;
+  double* avg_ipma = FindOrNull(tec_avg_ipma_, id);
+  CHECK_NOTNULL(avg_ipma);
+  return *avg_ipma;
 }
 
 double KnowledgeBaseSimulator::GetAvgRuntimeForTEC(TaskEquivClass_t id) {
@@ -77,53 +78,58 @@ double KnowledgeBaseSimulator::GetAvgMeanLocalDiskUsed(TaskEquivClass_t id) {
 
 void KnowledgeBaseSimulator::SetAvgCPIForTEC(TaskEquivClass_t id,
                                              double avg_cpi) {
-  CHECK(InsertIfNotPresent(&tec_avg_cpi_, id, avg_cpi));
+  InsertIfNotPresent(&tec_avg_cpi_, id, avg_cpi);
+}
+
+void KnowledgeBaseSimulator::SetAvgIPMAForTEC(TaskEquivClass_t id,
+                                              double avg_ipma) {
+  InsertIfNotPresent(&tec_avg_ipma_, id, avg_ipma);
 }
 
 void KnowledgeBaseSimulator::SetAvgRuntimeForTEC(TaskEquivClass_t id,
                                                  double avg_runtime) {
-  CHECK(InsertIfNotPresent(&tec_avg_runtime_, id, avg_runtime));
+  InsertIfNotPresent(&tec_avg_runtime_, id, avg_runtime);
 }
 
 void KnowledgeBaseSimulator::SetAvgMeanCpuUsage(TaskEquivClass_t id,
                                                 double avg_mean_cpu_usage) {
-  CHECK(InsertIfNotPresent(&tec_avg_mean_cpu_usage_, id, avg_mean_cpu_usage));
+  InsertIfNotPresent(&tec_avg_mean_cpu_usage_, id, avg_mean_cpu_usage);
 }
 
 void KnowledgeBaseSimulator::SetAvgCanonicalMemUsage(
     TaskEquivClass_t id, double avg_canonical_mem_usage) {
-  CHECK(InsertIfNotPresent(&tec_avg_canonical_mem_usage_, id,
-                           avg_canonical_mem_usage));
+  InsertIfNotPresent(&tec_avg_canonical_mem_usage_, id,
+                     avg_canonical_mem_usage);
 }
 
 void KnowledgeBaseSimulator::SetAvgAssignedMemUsage(
     TaskEquivClass_t id, double avg_assigned_mem_usage) {
-  CHECK(InsertIfNotPresent(&tec_avg_assigned_mem_usage_, id,
-                           avg_assigned_mem_usage));
+  InsertIfNotPresent(&tec_avg_assigned_mem_usage_, id,
+                     avg_assigned_mem_usage);
 }
 
 void KnowledgeBaseSimulator::SetAvgUnmappedPageCache(
     TaskEquivClass_t id, double avg_unmapped_page_cache) {
-  CHECK(InsertIfNotPresent(&tec_avg_unmapped_page_cache_, id,
-                           avg_unmapped_page_cache));
+  InsertIfNotPresent(&tec_avg_unmapped_page_cache_, id,
+                     avg_unmapped_page_cache);
 }
 
 void KnowledgeBaseSimulator::SetAvgTotalPageCache(
     TaskEquivClass_t id, double avg_total_page_cache) {
-  CHECK(InsertIfNotPresent(&tec_avg_total_page_cache_, id,
-                           avg_total_page_cache));
+  InsertIfNotPresent(&tec_avg_total_page_cache_, id,
+                     avg_total_page_cache);
 }
 
 void KnowledgeBaseSimulator::SetAvgMeanDiskIOTime(
     TaskEquivClass_t id, double avg_mean_disk_io_time) {
-  CHECK(InsertIfNotPresent(&tec_avg_mean_disk_io_time_, id,
-                           avg_mean_disk_io_time));
+  InsertIfNotPresent(&tec_avg_mean_disk_io_time_, id,
+                     avg_mean_disk_io_time);
 }
 
 void KnowledgeBaseSimulator::SetAvgMeanLocalDiskUsed(
     TaskEquivClass_t id, double avg_mean_local_disk_used) {
-  CHECK(InsertIfNotPresent(&tec_avg_mean_local_disk_used_, id,
-                           avg_mean_local_disk_used));
+  InsertIfNotPresent(&tec_avg_mean_local_disk_used_, id,
+                     avg_mean_local_disk_used);
 }
 
 } // namespace firmament

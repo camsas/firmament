@@ -4,6 +4,7 @@
 //
 // Google cluster trace simulator tool.
 
+#include <cmath>
 #include <cstdio>
 #include <set>
 #include <string>
@@ -51,6 +52,8 @@ namespace sim {
 #define MACHINE_TMPL_FILE "../../../tests/testdata/machine_topo.pbin"
 //#define MACHINE_TMPL_FILE "/tmp/mach_test.pbin"
 
+#define EPS 0.00001
+
 DEFINE_uint64(runtime, 9223372036854775807,
               "Time in microsec to extract data for (from start of trace)");
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
@@ -70,12 +73,12 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   knowledge_base_(new KnowledgeBaseSimulator) {
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>();
-  FlowSchedulingCostModelInterface* cost_model =
+  cost_model_ =
     new QuincyCostModel(resource_map_, job_map_, task_map_,
                         &task_bindings_, leaf_res_ids,
                         knowledge_base_);
-  flow_graph_ = new FlowGraph(cost_model, leaf_res_ids);
-  knowledge_base_->SetCostModel(cost_model);
+  flow_graph_ = new FlowGraph(cost_model_, leaf_res_ids);
+  knowledge_base_->SetCostModel(cost_model_);
   quincy_dispatcher_ =
     new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
 }
@@ -207,6 +210,56 @@ void GoogleTraceSimulator::AddTaskEndEvent(
     events_.insert(pair<uint64_t, EventDescriptor>(FLAGS_runtime, event_desc));
     CHECK(InsertIfNotPresent(&task_id_to_end_time_, task_id, FLAGS_runtime));
   }
+}
+
+void GoogleTraceSimulator::AddTaskStats(TaskIdentifier task_identifier) {
+  TaskStats* task_stats = FindOrNull(task_id_to_stats_, task_identifier);
+  if (task_stats == NULL) {
+    // Already added stats.
+    return;
+  }
+  TaskDescriptor* td_ptr = FindPtrOrNull(task_id_to_td_, task_identifier);
+  CHECK_NOTNULL(td_ptr);
+  vector<TaskEquivClass_t>* equiv_classes =
+    cost_model_->GetTaskEquivClasses(td_ptr->uid());
+  // XXX(ionel): This assumes that we have one task equivalence class per task.
+  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
+      knowledge_base_->SetAvgMeanCpuUsage(*it, task_stats->avg_mean_cpu_usage);
+    }
+    if (fabs(task_stats->avg_canonical_mem_usage + 1.0) > EPS) {
+      knowledge_base_->SetAvgCanonicalMemUsage(
+          *it, task_stats->avg_canonical_mem_usage);
+    }
+    if (fabs(task_stats->avg_assigned_mem_usage + 1.0) > EPS) {
+      knowledge_base_->SetAvgAssignedMemUsage(
+          *it, task_stats->avg_assigned_mem_usage);
+    }
+    if (fabs(task_stats->avg_unmapped_page_cache + 1.0) > EPS) {
+      knowledge_base_->SetAvgUnmappedPageCache(
+          *it, task_stats->avg_unmapped_page_cache);
+    }
+    if (fabs(task_stats->avg_total_page_cache + 1.0) > EPS) {
+      knowledge_base_->SetAvgTotalPageCache(
+          *it, task_stats->avg_total_page_cache);
+    }
+    if (fabs(task_stats->avg_mean_disk_io_time + 1.0) > EPS) {
+      knowledge_base_->SetAvgMeanDiskIOTime(
+          *it, task_stats->avg_mean_disk_io_time);
+    }
+    if (fabs(task_stats->avg_mean_local_disk_used + 1.0) > EPS) {
+      knowledge_base_->SetAvgMeanLocalDiskUsed(
+          *it, task_stats->avg_mean_local_disk_used);
+    }
+    if (fabs(task_stats->avg_cpi + 1.0) > EPS) {
+      knowledge_base_->SetAvgCPIForTEC(*it, task_stats->avg_cpi);
+    }
+    if (fabs(task_stats->avg_mai + 1.0) > EPS) {
+      knowledge_base_->SetAvgIPMAForTEC(*it, 1.0 / task_stats->avg_mai);
+    }
+  }
+  task_id_to_stats_.erase(task_identifier);
 }
 
 TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
@@ -374,43 +427,45 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
         TaskIdentifier task_id;
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
-        // TODO(ionel): Populate the knowledge base. Note a -1 denotes value
-        // unknown.
+        TaskStats task_stats;
+        // TODO(ionel): Set runtime as well.
+        task_stats.avg_mean_cpu_usage = lexical_cast<double>(cols[4]);
+        task_stats.avg_canonical_mem_usage = lexical_cast<double>(cols[8]);
+        task_stats.avg_assigned_mem_usage = lexical_cast<double>(cols[12]);
+        task_stats.avg_unmapped_page_cache = lexical_cast<double>(cols[16]);
+        task_stats.avg_total_page_cache = lexical_cast<double>(cols[20]);
+        task_stats.avg_mean_disk_io_time = lexical_cast<double>(cols[24]);
+        task_stats.avg_mean_local_disk_used = lexical_cast<double>(cols[28]);
+        task_stats.avg_cpi = lexical_cast<double>(cols[32]);
+        task_stats.avg_mai = lexical_cast<double>(cols[36]);
+        CHECK(InsertIfNotPresent(&task_id_to_stats_, task_id, task_stats));
+
         // double min_mean_cpu_usage = lexical_cast<double>(cols[2]);
         // double max_mean_cpu_usage = lexical_cast<double>(cols[3]);
-        // double avg_mean_cpu_usage = lexical_cast<double>(cols[4]);
         // double sd_mean_cpu_usage = lexical_cast<double>(cols[5]);
         // double min_canonical_mem_usage = lexical_cast<double>(cols[6]);
         // double max_canonical_mem_usage = lexical_cast<double>(cols[7]);
-        // double avg_canonical_mem_usage = lexical_cast<double>(cols[8]);
         // double sd_canonical_mem_usage = lexical_cast<double>(cols[9]);
         // double min_assigned_mem_usage = lexical_cast<double>(cols[10]);
         // double max_assigned_mem_usage = lexical_cast<double>(cols[11]);
-        // double avg_assigned_mem_usage = lexical_cast<double>(cols[12]);
         // double sd_assigned_mem_usage = lexical_cast<double>(cols[13]);
         // double min_unmapped_page_cache = lexical_cast<double>(cols[14]);
         // double max_unmapped_page_cache = lexical_cast<double>(cols[15]);
-        // double avg_unmapped_page_cache = lexical_cast<double>(cols[16]);
         // double sd_unmapped_page_cache = lexical_cast<double>(cols[17]);
         // double min_total_page_cache = lexical_cast<double>(cols[18]);
         // double max_total_page_cache = lexical_cast<double>(cols[19]);
-        // double avg_total_page_cache = lexical_cast<double>(cols[20]);
         // double sd_total_page_cache = lexical_cast<double>(cols[21]);
         // double min_mean_disk_io_time = lexical_cast<double>(cols[22]);
         // double max_mean_disk_io_time = lexical_cast<double>(cols[23]);
-        // double avg_mean_disk_io_time = lexical_cast<double>(cols[24]);
         // double sd_mean_disk_io_time = lexical_cast<double>(cols[25]);
         // double min_mean_local_disk_used = lexical_cast<double>(cols[26]);
         // double max_mean_local_disk_used = lexical_cast<double>(cols[27]);
-        // double avg_mean_local_disk_used = lexical_cast<double>(cols[28]);
         // double sd_mean_local_disk_used = lexical_cast<double>(cols[29]);
         // double min_cpi = lexical_cast<double>(cols[30]);
         // double max_cpi = lexical_cast<double>(cols[31]);
-        // double avg_cpi = lexical_cast<double>(cols[32]);
         // double sd_cpi = lexical_cast<double>(cols[33]);
         // double min_mai = lexical_cast<double>(cols[34]);
         // double max_mai = lexical_cast<double>(cols[35]);
-        // double avg_mai = lexical_cast<double>(cols[36]);
         // double sd_mai = lexical_cast<double>(cols[37]);
       }
     }
@@ -519,6 +574,7 @@ void GoogleTraceSimulator::ProcessTaskEvent(
     uint64_t event_type) {
   if (event_type == SUBMIT_EVENT) {
     AddNewTask(task_identifier);
+    AddTaskStats(task_identifier);
   }
 }
 
