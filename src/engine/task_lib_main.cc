@@ -6,9 +6,11 @@
 // task library instance, setting up watcher threads etc., this will delegate to
 // the task's Run() method.
 
+#include <sys/prctl.h>
+#include <cstdlib>
+
 #include "base/common.h"
 #include "engine/task_lib.h"
-#include <cstdlib>
 
 //DECLARE_string(coordinator_uri);
 DECLARE_string(resource_id);
@@ -39,6 +41,9 @@ void LaunchTasklib() {
 
   argv[1] = const_cast<char*>(sargs.c_str());
     firmament::common::InitFirmament(2, argv);
+
+  // Set process/thread name for debugging
+  prctl(PR_SET_NAME,"TaskLibMonitor", 0, 0, 0);
 
   task_lib = new TaskLib();
   task_lib->RunMonitor(task_thread_id);
