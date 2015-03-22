@@ -23,6 +23,7 @@
 
 DECLARE_bool(debug_flow_graph);
 DECLARE_bool(add_root_task_to_graph);
+DECLARE_bool(flow_scheduling_strict);
 
 namespace firmament {
 namespace sim {

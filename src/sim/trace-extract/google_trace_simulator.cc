@@ -88,6 +88,7 @@ GoogleTraceSimulator::~GoogleTraceSimulator() {
 
 void GoogleTraceSimulator::Run() {
   FLAGS_add_root_task_to_graph = false;
+  FLAGS_flow_scheduling_strict = true;
 
   // command line argument sanity checking
   if (trace_path_.empty()) {
@@ -737,10 +738,13 @@ void GoogleTraceSimulator::ReplayTrace(
             // Log stats to CSV file
 						boost::timer::cpu_times total_runtime = timer.elapsed();
 						if (stats_file) {
+							boost::timer::nanosecond_type second = 1000*1000*1000;
+							double total_runtime_float = total_runtime.wall;
+							total_runtime_float /= second;
 							*stats_file << time_interval_bound << ","
 												  << algorithm_time << ","
 												  << flowsolver_time << ","
-												  << total_runtime.wall << std::endl;
+												  << total_runtime_float << std::endl;
 							stats_file->flush();
 						}
 						// restart timer; elapsed() returns time from this point

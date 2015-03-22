@@ -20,6 +20,7 @@ DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
               "The directory to write debug output to.");
 DEFINE_string(flow_scheduling_binary, "", "Path to flow solving executable.");
 DEFINE_string(flow_scheduling_args, "", "Optional: arguments for executable.");
+DEFINE_bool(flow_scheduling_strict, false, "Terminate if flow solving binary fails.");
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
@@ -162,13 +163,23 @@ namespace scheduler {
 
     if (!FLAGS_incremental_flow) {
       // We're done with the solver and can let it terminate here.
-      WaitForFinish(solver_pid);
+      int status = WaitForFinish(solver_pid);
+
       fclose(from_solver_);
       fclose(from_solver_stderr_);
       // close the pipes
       close(errfd_[0]);
       close(outfd_[0]);
       close(infd_[1]);
+
+      if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0)) {
+      	std::string msg = "Solver terminated abnormally.";
+      	if (FLAGS_flow_scheduling_strict) {
+      		LOG(FATAL) << msg;
+      	} else {
+      		LOG(ERROR) << msg;
+      	}
+      }
     }
     debug_seq_num_++;
     return task_mappings;
