@@ -25,7 +25,6 @@ void ProcFSMonitor::AddSchedStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
   // /proc/[pid]/schedstat parsing
   string filename = "/proc/" + to_string(pid) + "/schedstat";
   FILE* input = fopen(filename.c_str(), "r");
-  CHECK_NOTNULL(input);
   // The procfs file may no longer be there if the process has finished
   if (!input)
     return;
