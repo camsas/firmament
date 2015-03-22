@@ -1,5 +1,6 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Abstract class representing the interface for cost model implementations.
 
@@ -26,6 +27,7 @@ enum FlowSchedulingCostModelType {
   COST_MODEL_QUINCY = 3,
   COST_MODEL_WHARE = 4,
   COST_MODEL_COCO = 5,
+  COST_MODEL_VOID = 6,
 };
 
 class FlowSchedulingCostModelInterface {
@@ -44,7 +46,6 @@ class FlowSchedulingCostModelInterface {
   virtual Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                         ResourceID_t resource_id) = 0;
   // Costs within the resource topology
-  virtual Cost_t ClusterAggToResourceNodeCost(ResourceID_t target) = 0;
   virtual Cost_t ResourceNodeToResourceNodeCost(ResourceID_t source,
                                                 ResourceID_t destination) = 0;
   virtual Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id) = 0;
@@ -64,7 +65,7 @@ class FlowSchedulingCostModelInterface {
       TaskEquivClass_t tec) = 0;
   virtual vector<ResourceID_t>* GetTaskPreferenceArcs(
       TaskID_t task_id) = 0;
-  virtual pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  virtual pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
     GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) = 0;
 };
 

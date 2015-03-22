@@ -86,10 +86,10 @@ vector<ResourceID_t>* VoidCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   return NULL;
 }
 
-pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
-  VoidCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
+pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
+    VoidCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
-  return pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
+  return pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>(NULL, NULL);
 }
 
 } // namespace firmament

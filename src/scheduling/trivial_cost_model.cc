@@ -35,10 +35,6 @@ Cost_t TrivialCostModel::TaskToResourceNodeCost(TaskID_t task_id,
   return 0LL;
 }
 
-Cost_t TrivialCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
-  return 0LL;
-}
-
 Cost_t TrivialCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {
@@ -103,14 +99,15 @@ vector<ResourceID_t>* TrivialCostModel::GetEquivClassPreferenceArcs(
 
 vector<ResourceID_t>* TrivialCostModel::GetTaskPreferenceArcs(
     TaskID_t task_id) {
-  LOG(FATAL) << "Not implemented!";
-  return NULL;
+  vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
+  return prefered_res;
 }
 
-pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
-  TrivialCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
-  LOG(FATAL) << "Not implemented!";
-  return pair<vector<ResourceID_t>*, vector<ResourceID_t>*>(NULL, NULL);
+pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
+    TrivialCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
+  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
+  return pair<vector<TaskEquivClass_t>*,
+              vector<TaskEquivClass_t>*>(equiv_classes, equiv_classes);
 }
 
 }  // namespace firmament

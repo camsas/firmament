@@ -1,5 +1,6 @@
 // The Firmament project
 // Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Representation of a Quincy-style scheduling flow graph.
 
@@ -78,6 +79,18 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
   // Set up arc to unscheduled aggregator
   unsched_arc->cap_upper_bound_ = 1;
   task_arcs->push_back(unsched_arc);
+  vector<ResourceID_t>* task_pref_arcs =
+    cost_model_->GetTaskPreferenceArcs(task_node->task_id_);
+  for (vector<ResourceID_t>::iterator it = task_pref_arcs->begin();
+       it != task_pref_arcs->end(); ++it) {
+    FlowGraphArc* arc_to_res =
+      AddArcInternal(task_node, NodeForResourceID(*it));
+    arc_to_res->cost_ =
+      cost_model_->TaskToResourceNodeCost(task_node->task_id_, *it);
+    arc_to_res->cap_upper_bound_ = 1;
+    task_arcs->push_back(arc_to_res);
+  }
+  delete task_pref_arcs;
 }
 
 FlowGraphArc* FlowGraph::AddArcInternal(uint64_t src, uint64_t dst) {
@@ -97,6 +110,37 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
   arc_set_.insert(arc);
   src->AddArc(arc);
   return arc;
+}
+
+void FlowGraph::AddArcsToOtherEquivNodes(TaskEquivClass_t equiv_class,
+                                         FlowGraphNode* ec_node) {
+  pair<vector<TaskEquivClass_t>*,
+       vector<TaskEquivClass_t>*> equiv_class_to_connect =
+    cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
+  // Add incoming arcs.
+  for (vector<TaskEquivClass_t>::iterator
+         it = equiv_class_to_connect.first->begin();
+       it != equiv_class_to_connect.first->end(); ++it) {
+    FlowGraphNode* ec_src_ptr = FindPtrOrNull(tec_to_node_, *it);
+    CHECK_NOTNULL(ec_src_ptr);
+    FlowGraphArc* arc = AddArcInternal(ec_src_ptr->id_, ec_node->id_);
+    arc->cost_ = cost_model_->EquivClassToEquivClass(*it, equiv_class);
+    // TODO(ionel): Set the capacity on the arc to a sensible value.
+    arc->cap_upper_bound_ = 1;
+    graph_changes_.push_back(new DIMACSNewArc(*arc));
+  }
+  // Add outgoing arcs.
+  for (vector<TaskEquivClass_t>::iterator
+         it = equiv_class_to_connect.second->begin();
+       it != equiv_class_to_connect.second->end(); ++it) {
+    FlowGraphNode* ec_dst_ptr = FindPtrOrNull(tec_to_node_, *it);
+    CHECK_NOTNULL(ec_dst_ptr);
+    FlowGraphArc* arc = AddArcInternal(ec_node->id_, ec_dst_ptr->id_);
+    arc->cost_ = cost_model_->EquivClassToEquivClass(equiv_class, *it);
+    // TODO(ionel): Set the capacity on the arc to a sensible value.
+    arc->cap_upper_bound_ = 1;
+    graph_changes_.push_back(new DIMACSNewArc(*arc));
+  }
 }
 
 FlowGraphNode* FlowGraph::AddEquivClassAggregator(
@@ -124,7 +168,6 @@ void FlowGraph::AddEquivClassPreferenceArcs(
     FlowGraphArc* arc = AddArcInternal(equiv_node->id_, res_node->id_);
     arc->cap_upper_bound_ = 1;
     arc->cost_ = cost_model_->EquivClassToResourceNode(equiv_class, *it);
-    VLOG(2) << "ADDING ARC";
     ec_arcs->push_back(arc);
   }
   delete res_ids;
@@ -363,6 +406,7 @@ void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
       // Add the new equivalence node to the graph changes
       ec_arcs->push_back(ec_arc);
       graph_changes_.push_back(new DIMACSAddNode(*ec_node, ec_arcs));
+      AddArcsToOtherEquivNodes(*it, ec_node);
     } else {
       // Node for task equiv class already exists. Add arc to it.
       // XXX(ionel): We don't add new arcs from the equivalence class to
@@ -432,10 +476,9 @@ void FlowGraph::ConfigureResourceBranchNode(
     CHECK(parent_node != NULL) << "Could not find parent node with ID "
                                << rtnd.parent_id();
     // Find the arc from parent node (which should have been added before)
-    FlowGraphArc** arc_ptr = FindOrNull(parent_node->outgoing_arc_map_,
-                                        new_node->id_);
-    CHECK_NOTNULL(arc_ptr);
-    FlowGraphArc* arc = *arc_ptr;
+    FlowGraphArc* arc = FindPtrOrNull(parent_node->outgoing_arc_map_,
+                                      new_node->id_);
+    CHECK_NOTNULL(arc);
     // Set initial capacity to 0; this will be updated as leaves are added
     // below this node!
     arc->cap_upper_bound_ = 0;
@@ -484,15 +527,14 @@ void FlowGraph::ConfigureResourceLeafNode(
                                  parent->resource_id_)) != NULL) {
     uint64_t cur_id = parent->id_;
     parent = NodeForResourceID(*parent_id);
-    FlowGraphArc** arc = FindOrNull(parent->outgoing_arc_map_, cur_id);
+    FlowGraphArc* arc = FindPtrOrNull(parent->outgoing_arc_map_, cur_id);
     CHECK_NOTNULL(arc);
-    CHECK_NOTNULL(*arc);
     VLOG(2) << "Adding capacity on edge from " << *parent_id << " ("
             << parent->id_ << ") to " << cur_id << " ("
-            << (*arc)->cap_upper_bound_ << " -> "
-            << (*arc)->cap_upper_bound_ + 1 << ")";
-    (*arc)->cap_upper_bound_ += 1;
-    graph_changes_.push_back(new DIMACSChangeArc(**arc));
+            << arc->cap_upper_bound_ << " -> "
+            << arc->cap_upper_bound_ + 1 << ")";
+    arc->cap_upper_bound_ += 1;
+    graph_changes_.push_back(new DIMACSChangeArc(*arc));
   }
 }
 
@@ -604,9 +646,12 @@ void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
 }
 
 void FlowGraph::DeleteOrUpdateEquivNode(TaskEquivClass_t task_equiv) {
-  VLOG(2) << "DeleteOrUpdateEquivNode";
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
-  CHECK_NOTNULL(equiv_node_ptr);
+  if (equiv_node_ptr == NULL) {
+    // Equiv class node can be NULL because all it's task are running
+    // and are directly connected to resource nodes.
+    return;
+  }
   if (equiv_node_ptr->incoming_arc_map_.size() == 0) {
     VLOG(2) << "Deleting task_equiv class: " << task_equiv;
     // The equiv class doesn't have any incoming arcs from tasks.

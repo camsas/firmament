@@ -100,8 +100,17 @@ bool LocalExecutor::CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks) {
 
 void LocalExecutor::CleanUpCompletedTask(const TaskDescriptor& td) {
   // Drop task handler thread
-  boost::unique_lock<boost::shared_mutex> lock(handler_map_mutex_);
+  boost::unique_lock<boost::shared_mutex> handler_lock(handler_map_mutex_);
+  boost::unique_lock<boost::shared_mutex> pid_lock(pid_map_mutex_);
   task_handler_threads_.erase(td.uid());
+  // Issue a kill to make double-sure that the task has finished
+  // XXX(malte): this is a hack!
+  pid_t* pid = FindOrNull(task_pids_, td.uid());
+  CHECK_NOTNULL(pid);
+  string command = "/bin/kill " + to_string(*pid);
+  int64_t ret = system(command.c_str());
+  LOG(INFO) << command << " returned " << ret;
+  task_pids_.erase(td.uid());
 }
 
 
@@ -215,7 +224,7 @@ void LocalExecutor::RunTask(TaskDescriptor* td,
   boost::unique_lock<boost::shared_mutex> handler_lock(handler_map_mutex_);
   boost::thread* task_thread = new boost::thread(
       boost::bind(&LocalExecutor::_RunTask, this, td, firmament_binary));
-  InsertIfNotPresent(&task_handler_threads_, td->uid(), task_thread);
+  CHECK(InsertIfNotPresent(&task_handler_threads_, td->uid(), task_thread));
   exec_condvar_.wait(exec_lock);
 }
 
@@ -370,6 +379,10 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
     default:
       // Parent
       VLOG(1) << "Task process with PID " << pid << " created.";
+      {
+        boost::unique_lock<boost::shared_mutex> handler_lock(pid_map_mutex_);
+        CHECK(InsertIfNotPresent(&task_pids_, task_id, pid));
+      }
       // Pin the task to the appropriate resource
       if (topology_manager_ && FLAGS_pin_tasks_to_cores)
         topology_manager_->BindPIDToResource(pid, local_resource_id_);

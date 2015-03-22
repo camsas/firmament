@@ -35,7 +35,6 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                 ResourceID_t resource_id);
   // Costs within the resource topology
-  Cost_t ClusterAggToResourceNodeCost(ResourceID_t target);
   Cost_t ResourceNodeToResourceNodeCost(ResourceID_t source,
                                         ResourceID_t destination);
   Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id);
@@ -50,7 +49,7 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
   vector<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
   vector<ResourceID_t>* GetEquivClassPreferenceArcs(TaskEquivClass_t tec);
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
-  pair<vector<ResourceID_t>*, vector<ResourceID_t>*>
+  pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
     GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec);
 
  private:
