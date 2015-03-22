@@ -34,9 +34,6 @@ message ResourceDescriptor {
   optional uint64 task_capacity = 5 [default = 0];
   optional uint64 last_heartbeat = 6;
   optional ResourceType type = 7;
-  optional string parent = 8;
-  repeated string siblings = 9;
-  repeated string children = 10;
-  optional bool schedulable = 11 [default = false];
-  optional string storage_engine = 12;
+  optional bool schedulable = 8 [default = false];
+  optional string storage_engine = 9;
 }
