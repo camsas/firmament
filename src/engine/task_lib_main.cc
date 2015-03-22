@@ -19,6 +19,7 @@ extern char **environ;
 using namespace firmament;  // NOLINT
 
 TaskLib* task_lib_;
+char self_comm_[64];
 
 void TerminationCleanup() {
   if (task_lib_) {
@@ -54,6 +55,11 @@ __attribute__((constructor)) static void task_lib_main() {
   Starts a new thread to run the TaskLib monitoring and lets
   the main program continue execution in the current thread.
   */
+
+  // Grab the current process's name via procfs
+  FILE* comm_fd = fopen("/proc/self/comm", "r");
+  fgets(self_comm_, 64, comm_fd);
+  fclose(comm_fd);
 
   // Unset LD_PRELOAD to avoid us from starting launching monitors in
   // child processes, unless we're in a wrapper
