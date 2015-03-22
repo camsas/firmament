@@ -146,6 +146,10 @@ $(function() {
     <td>{{TASK_NAME}}</td>
   </tr>
   <tr>
+    <td>Job</td>
+    <td>{{TASK_JOB_ID}} ({{TASK_JOB_NAME}})</td>
+  </tr>
+  <tr>
     <td>Actions</td>
     <td>
       <a href="/task/?id={{TASK_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true" title="Terminate"></span></a>
