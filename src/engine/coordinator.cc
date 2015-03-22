@@ -362,8 +362,8 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
   // Task final report
   // TODO(malte): The TaskFinalReport protobuf lives in the wrong place (base
   // instead of messages). Move over.
-  if (bm->has_taskfinal_report()) {
-    const TaskFinalReport& msg = bm->taskfinal_report();
+  if (bm->has_task_final_report()) {
+    const TaskFinalReport& msg = bm->task_final_report();
     HandleTaskFinalReport(msg);
     handled_extensions++;
   }
@@ -723,7 +723,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
 
     // Send along completion statistics to the coordinator as well.
     // TODO(malte): Make this all const including handle task completion method
-    TaskFinalReport *sending_rep = bm.mutable_taskfinal_report();
+    TaskFinalReport *sending_rep = bm.mutable_task_final_report();
     sending_rep->CopyFrom(report);
     sending_rep->set_task_id(td_ptr->uid());
 

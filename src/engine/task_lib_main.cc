@@ -14,16 +14,15 @@
 
 //DECLARE_string(coordinator_uri);
 DECLARE_string(resource_id);
-DECLARE_string(cache_name);
 extern char **environ;
 
 using namespace firmament;  // NOLINT
 
-TaskLib *task_lib;
+TaskLib* task_lib_;
 
 void TerminationCleanup() {
-  if (task_lib) {
-    task_lib->Stop(true);
+  if (task_lib_) {
+    task_lib_->Stop(true);
   }
 }
 
@@ -45,8 +44,8 @@ void LaunchTasklib() {
   // Set process/thread name for debugging
   prctl(PR_SET_NAME,"TaskLibMonitor", 0, 0, 0);
 
-  task_lib = new TaskLib();
-  task_lib->RunMonitor(task_thread_id);
+  task_lib_ = new TaskLib();
+  task_lib_->RunMonitor(task_thread_id);
 }
 
 __attribute__((constructor)) static void task_lib_main() {
@@ -60,19 +59,9 @@ __attribute__((constructor)) static void task_lib_main() {
   // child processes, unless we're in a wrapper
   setenv("LD_PRELOAD", "", 1);
 
-  // Grab the current process's name via procfs
-  FILE* self_comm = fopen("/proc/self/comm", "r");
-  char cur_comm[64];
-  fgets(cur_comm, 64, self_comm);
-  fclose(self_comm);
+  // Cleanup task lib before terminating the process.
+  atexit(TerminationCleanup);
 
-  //if (strncmp(&cur_comm, getenv("TASKLIB_TARGET_COMM"), 64) == 0) {
-    // Cleanup task lib before terminating the process.
-    atexit(TerminationCleanup);
-
-    LOG(INFO) << "Starting TaskLib monitor thread for " << cur_comm;
-    boost::thread t1(&LaunchTasklib);
-  //} else {
-  //  LOG(INFO) << "Not injecting TaskLib into " << cur_comm;
-  //}
+  LOG(INFO) << "Starting TaskLib monitor thread for " << self_comm_;
+  boost::thread t1(&LaunchTasklib);
 }

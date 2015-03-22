@@ -237,7 +237,7 @@ void TaskLib::HandleIncomingMessage(BaseMessage *bm,
                                     const string& remote_endpoint) {
   LOG(INFO) << "Got message from " << remote_endpoint << ": "
             << bm->DebugString();
-  // Registration message
+  // Task kill message
   if (bm->has_task_kill()) {
     const TaskKillMessage& msg = bm->task_kill();
     LOG(ERROR) << "Received task kill request from " << remote_endpoint
@@ -324,7 +324,7 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
     // Finally, nap for a bit until the next heartbeat is due
     usleep(FLAGS_heartbeat_interval);
   }
-  LOG(INFO) << "STOPPING HEARTBEATS";
+  LOG(INFO) << "STOPPING HEARTBEATS for " << pid_;
   fflush(stderr);
   task_running_ = false;
 }
