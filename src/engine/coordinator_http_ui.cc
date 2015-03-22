@@ -428,27 +428,28 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
     return;
   }
   ResourceID_t rid = ResourceIDFromString(res_id);
-  ResourceDescriptor* rd_ptr = coordinator_->GetResource(rid);
+  ResourceTopologyNodeDescriptor* rtnd_ptr =
+    coordinator_->GetResourceTreeNode(rid);
   ResourceStatus* rs_ptr = coordinator_->GetResourceStatus(rid);
   TemplateDictionary dict("resource_status");
-  if (rd_ptr) {
-    dict.SetValue("RES_ID", rd_ptr->uuid());
-    dict.SetValue("RES_FRIENDLY_NAME", rd_ptr->friendly_name());
+  if (rtnd_ptr) {
+    dict.SetValue("RES_ID", rtnd_ptr->resource_desc().uuid());
+    dict.SetValue("RES_FRIENDLY_NAME", rtnd_ptr->resource_desc().friendly_name());
     dict.SetValue("RES_REC", "Not implemented");
     dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
-                                             rd_ptr->type()));
+                                             rtnd_ptr->resource_desc().type()));
     dict.SetValue("RES_STATUS",
                   ENUM_TO_STRING(ResourceDescriptor::ResourceState,
-                                 rd_ptr->state()));
-    dict.SetValue("RES_PARENT_ID", rd_ptr->parent());
-    dict.SetIntValue("RES_NUM_CHILDREN", rd_ptr->children_size());
-    for (RepeatedPtrField<string>::const_iterator c_iter =
-         rd_ptr->children().begin();
-         c_iter != rd_ptr->children().end();
+                                 rtnd_ptr->resource_desc().state()));
+    dict.SetValue("RES_PARENT_ID", rtnd_ptr->parent_id());
+    dict.SetIntValue("RES_NUM_CHILDREN", rtnd_ptr->children_size());
+    for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator
+           c_iter = rtnd_ptr->children().begin();
+         c_iter != rtnd_ptr->children().end();
          ++c_iter) {
       TemplateDictionary* child_dict =
           dict.AddSectionDictionary("RES_CHILDREN");
-      child_dict->SetValue("RES_CHILD_ID", *c_iter);
+      child_dict->SetValue("RES_CHILD_ID", c_iter->resource_desc().uuid());
     }
     dict.SetValue("RES_LOCATION", rs_ptr->location());
     dict.SetValue("RES_LOCATION_HOST",
@@ -457,7 +458,6 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
     dict.SetIntValue("RES_LAST_HEARTBEAT", rs_ptr->last_heartbeat() / 1000);
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
-    VLOG(1) << "rd_ptr is: " << rd_ptr;
     ErrorMessage_t err("Resource not found.",
                        "The requested resource does not exist.");
     AddHeaderToTemplate(&dict, coordinator_->uuid(), &err);

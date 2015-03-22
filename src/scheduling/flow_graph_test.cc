@@ -56,17 +56,13 @@ class FlowGraphTest : public ::testing::Test {
     ResourceTopologyNodeDescriptor* rtn_c1 = rtn_root->add_children();
     string c1_uid = to_string(GenerateUUID());
     rtn_c1->mutable_resource_desc()->set_uuid(c1_uid);
-    rtn_c1->mutable_resource_desc()->set_parent(root_id);
     rtn_c1->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
     rtn_c1->set_parent_id(root_id);
-    rtn_root->mutable_resource_desc()->add_children(c1_uid);
     ResourceTopologyNodeDescriptor* rtn_c2 = rtn_root->add_children();
     string c2_uid = to_string(GenerateUUID());
     rtn_c2->mutable_resource_desc()->set_uuid(c2_uid);
-    rtn_c2->mutable_resource_desc()->set_parent(root_id);
     rtn_c2->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
     rtn_c2->set_parent_id(root_id);
-    rtn_root->mutable_resource_desc()->add_children(c2_uid);
   }
 };
 
@@ -147,10 +143,8 @@ TEST_F(FlowGraphTest, AddResourceNode) {
   ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
   string core_uid = to_string(GenerateUUID());
   core_node->mutable_resource_desc()->set_uuid(core_uid);
-  core_node->mutable_resource_desc()->set_parent(root_id);
   core_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   core_node->set_parent_id(root_id);
-  rtn_root.mutable_resource_desc()->add_children(core_uid);
   uint64_t sink_graph_id = g.ids_created_[0];
   uint64_t root_graph_id = g.ids_created_[1];
   g.AddResourceNode(core_node);
@@ -175,18 +169,15 @@ TEST_F(FlowGraphTest, AddResourceNode) {
   ResourceTopologyNodeDescriptor* memory_node = rtn_root.add_children();
   string memory_uid = to_string(GenerateUUID());
   memory_node->mutable_resource_desc()->set_uuid(memory_uid);
-  memory_node->mutable_resource_desc()->set_parent(root_id);
   memory_node->set_parent_id(root_id);
   ResourceTopologyNodeDescriptor* pu1_node = memory_node->add_children();
   string pu1_uid = to_string(GenerateUUID());
   pu1_node->mutable_resource_desc()->set_uuid(pu1_uid);
-  pu1_node->mutable_resource_desc()->set_parent(memory_uid);
   pu1_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   pu1_node->set_parent_id(memory_uid);
   ResourceTopologyNodeDescriptor* pu2_node = memory_node->add_children();
   string pu2_uid = to_string(GenerateUUID());
   pu2_node->mutable_resource_desc()->set_uuid(pu2_uid);
-  pu2_node->mutable_resource_desc()->set_parent(memory_uid);
   pu2_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   pu2_node->set_parent_id(memory_uid);
   // Add non-leaf node.
@@ -252,10 +243,8 @@ TEST_F(FlowGraphTest, DeleteResourceNode) {
   ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
   string core_uid = to_string(GenerateUUID());
   core_node->mutable_resource_desc()->set_uuid(core_uid);
-  core_node->mutable_resource_desc()->set_parent(root_id);
   core_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   core_node->set_parent_id(root_id);
-  rtn_root.mutable_resource_desc()->add_children(core_uid);
   g.AddResourceNode(core_node);
   uint64_t new_core_graph_id = g.ids_created_[g.ids_created_.size() - 1];
   uint32_t num_changes = g.graph_changes_.size();
