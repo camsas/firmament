@@ -75,7 +75,7 @@ using store::FREE;
 class TaskLib {
  public:
   TaskLib();
-  ~TaskLib();
+  virtual ~TaskLib();
 
   void RunMonitor(boost::thread::id main_thread_id);
   void AwaitNextMessage();
