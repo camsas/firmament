@@ -155,8 +155,9 @@ namespace scheduler {
     ProcessStderr(from_solver_stderr_, algorithm_time);
 
     if (flowsolver_time != NULL) {
-    	boost::timer::nanosecond_type one_nanosecond = 1e9;
-    	*flowsolver_time = flowsolver_timer.elapsed().wall / one_nanosecond;
+    	boost::timer::nanosecond_type one_second = 1e9;
+    	*flowsolver_time = flowsolver_timer.elapsed().wall;
+    	*flowsolver_time /= one_second;
     	// restart timer
     	flowsolver_timer.stop(); flowsolver_timer.resume();
     }
