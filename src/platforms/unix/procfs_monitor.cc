@@ -21,37 +21,92 @@ ProcFSMonitor::ProcFSMonitor(uint64_t polling_frequency)
   page_size_ = getpagesize();
 }
 
-vector<string>* ProcFSMonitor::FindMatchingLine(
-    const string& regexp, const string& data) {
-  boost::regex e(regexp);
-  boost::smatch m;
-  // Magic
-  if (boost::regex_match(data, m, e, boost::match_extra)) {
-    // Found a line
-    vector<string>* matches = new vector<string>(m.size());
-    for (boost::smatch::const_iterator m_iter = m.begin();
-         m_iter != m.end();
-           ++m_iter)
-        matches->push_back(*m_iter);
-    return matches;
-  } else {
-    // No match
-    return NULL;
-  }
-}
-
-void ProcFSMonitor::ProcessPIDSchedStat(pid_t pid, ProcessStatistics_t* stats) {
+void ProcFSMonitor::AddSchedStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
   // /proc/[pid]/schedstat parsing
   string filename = "/proc/" + to_string(pid) + "/schedstat";
   FILE* input = fopen(filename.c_str(), "r");
   CHECK_NOTNULL(input);
-  readunsigned(input, &stats->sched_run_ticks);
-  readunsigned(input, &stats->sched_wait_runnable_ticks);
-  readunsigned(input, &stats->sched_run_timeslices);
+  uint64_t tmp;
+  readunsigned(input, &tmp);
+  stats->sched_run_ticks += tmp;
+  readunsigned(input, &tmp);
+  stats->sched_wait_runnable_ticks += tmp;
+  readunsigned(input, &tmp);
+  stats->sched_run_timeslices += tmp;
   fclose(input);
 }
 
-void ProcFSMonitor::ProcessPIDStat(pid_t pid, ProcessStatistics_t* stats) {
+void ProcFSMonitor::AddStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
+  // /proc/[pid]/stat parsing
+  string filename = "/proc/" + to_string(pid) + "/stat";
+  FILE* input = fopen(filename.c_str(), "r");
+  CHECK_NOTNULL(input);
+  uint64_t tmp;
+  char tmp_str[PATH_MAX];
+  readone(input, &tmp);  // skip
+  readstr(input, tmp_str);  // skip
+  readchar(input, &tmp_str[0]);  // skip
+  skip(input, sizeof(uint64_t) * 6);
+  readone(input, &tmp);
+  stats->minflt += tmp;
+  readone(input, &tmp);
+  stats->cminflt += tmp;
+  readone(input, &tmp);
+  stats->majflt += tmp;
+  readone(input, &tmp);
+  stats->cmajflt += tmp;
+  readone(input, &tmp);
+  stats->utime += tmp;
+  readone(input, &tmp);
+  stats->stime += tmp;
+  readone(input, &tmp);
+  stats->cutime += tmp;
+  readone(input, &tmp);
+  stats->cstime += tmp;
+  readone(input, &tmp);
+  stats->num_threads += tmp;
+  readone(input, &tmp);  // skip
+  readunsigned(input, &tmp);  // skip
+  readone(input, &tmp);
+  stats->vsize += tmp;
+  readone(input, &tmp);
+  stats->rss += tmp;
+  readone(input, &tmp);
+  stats->rsslim += tmp;
+  skip(input, sizeof(uint64_t) * 16);  // skip remaining 16 fields
+  fclose(input);
+}
+
+void ProcFSMonitor::AggregateStatsForPIDTree(
+    pid_t pid,
+    bool root,
+    ProcessStatistics_t* stats) {
+  LOG(INFO) << "Adding stats for PID " << pid;
+  // Grab information from /proc/[pid]/stat
+  if (root)
+    GetStatsForPID(pid, stats);
+  else
+    AddStatsForPID(pid, stats);
+  // Grab information from /proc/[pid]/schedstat
+  AddSchedStatsForPID(pid, stats);
+  // Now also aggregate from children
+  string filename = "/proc/" + to_string(pid) + "/task/" + to_string(pid)
+                    + "/children";
+  FILE* chld_input = fopen(filename.c_str(), "r");
+  if (!chld_input)
+    return;
+  vector<uint64_t> children;
+  uint64_t tmp;
+  while (fscanf(chld_input, "%ju ", &tmp) > 0) {
+    LOG(INFO) << "Found child " << tmp << " for " << pid;
+    children.push_back(tmp);
+  }
+  fclose(chld_input);
+  for (uint64_t i = 0; i < children.size(); i++)
+    AggregateStatsForPIDTree(children[i], false, stats);
+}
+
+void ProcFSMonitor::GetStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
   // /proc/[pid]/stat parsing
   string filename = "/proc/" + to_string(pid) + "/stat";
   FILE* input = fopen(filename.c_str(), "r");
@@ -100,14 +155,31 @@ void ProcFSMonitor::ProcessPIDStat(pid_t pid, ProcessStatistics_t* stats) {
   fclose(input);
 }
 
+vector<string>* ProcFSMonitor::FindMatchingLine(
+    const string& regexp, const string& data) {
+  boost::regex e(regexp);
+  boost::smatch m;
+  // Magic
+  if (boost::regex_match(data, m, e, boost::match_extra)) {
+    // Found a line
+    vector<string>* matches = new vector<string>(m.size());
+    for (boost::smatch::const_iterator m_iter = m.begin();
+         m_iter != m.end();
+           ++m_iter)
+        matches->push_back(*m_iter);
+    return matches;
+  } else {
+    // No match
+    return NULL;
+  }
+}
+
 const ProcFSMonitor::ProcessStatistics_t* ProcFSMonitor::ProcessInformation(
     pid_t pid, ProcessStatistics_t* stats) {
   if (stats == NULL)
     stats = new ProcessStatistics_t;
-  // Grab information from /proc/[pid]/stat
-  ProcessPIDStat(pid, stats);
-  // Grab information from /proc/[pid]/schedstat
-  ProcessPIDSchedStat(pid, stats);
+  // Grab information recursively for PID and its children
+  AggregateStatsForPIDTree(pid, true, stats);
   return stats;
 }
 
