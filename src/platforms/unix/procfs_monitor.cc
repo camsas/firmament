@@ -26,6 +26,9 @@ void ProcFSMonitor::AddSchedStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
   string filename = "/proc/" + to_string(pid) + "/schedstat";
   FILE* input = fopen(filename.c_str(), "r");
   CHECK_NOTNULL(input);
+  // The procfs file may no longer be there if the process has finished
+  if (!input)
+    return;
   uint64_t tmp;
   readunsigned(input, &tmp);
   stats->sched_run_ticks += tmp;
@@ -40,7 +43,9 @@ void ProcFSMonitor::AddStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
   // /proc/[pid]/stat parsing
   string filename = "/proc/" + to_string(pid) + "/stat";
   FILE* input = fopen(filename.c_str(), "r");
-  CHECK_NOTNULL(input);
+  // The procfs file may no longer be there if the process has finished
+  if (!input)
+    return;
   uint64_t tmp;
   char tmp_str[PATH_MAX];
   readone(input, &tmp);  // skip
