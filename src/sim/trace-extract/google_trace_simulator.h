@@ -88,7 +88,10 @@ class GoogleTraceSimulator {
       unordered_map<TaskIdentifier, uint64_t,
                     TaskIdentifierHasher>* task_runtime);
 
-  void AddTaskStats(TaskIdentifier task_identifier);
+  void AddTaskStats(
+      TaskIdentifier task_identifier,
+      unordered_map<TaskIdentifier, uint64_t,
+        TaskIdentifierHasher>* task_runtime);
 
   /**
    * Creates a new task for a job.
@@ -147,7 +150,9 @@ class GoogleTraceSimulator {
    */
   void ProcessTaskEvent(
       uint64_t cur_time,
-      const TaskIdentifier& task_identifier, uint64_t event_type);
+      const TaskIdentifier& task_identifier, uint64_t event_type,
+      unordered_map<TaskIdentifier, uint64_t,
+        TaskIdentifierHasher>* task_runtime);
 
   void RemoveMachine(uint64_t machine_id);
 
