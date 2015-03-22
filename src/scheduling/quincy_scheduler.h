@@ -46,9 +46,13 @@ class QuincyScheduler : public EventDrivenScheduler {
                   const string& coordinator_uri,
                   const SchedulingParameters& params);
   ~QuincyScheduler();
+  void DeregisterResource(ResourceID_t res_id);
   void HandleJobCompletion(JobID_t job_id);
   void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
+  void HandleTaskFailure(TaskDescriptor* td_ptr);
+  void KillRunningTask(TaskID_t task_id,
+                       TaskKillMessage::TaskKillReason reason);
   virtual void RegisterResource(ResourceID_t res_id, bool local);
   uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {

@@ -157,6 +157,14 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
   return num_scheduled;
 }
 
+void QuincyScheduler::DeregisterResource(ResourceID_t res_id) {
+  EventDrivenScheduler::DeregisterResource(res_id);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->DeleteResourceNode(res_id);
+  }
+}
+
 void QuincyScheduler::HandleJobCompletion(JobID_t job_id) {
   // Call into superclass handler
   EventDrivenScheduler::HandleJobCompletion(job_id);
@@ -174,6 +182,23 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     flow_graph_->DeleteTaskNode(td_ptr->uid());
+  }
+}
+
+void QuincyScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
+  EventDrivenScheduler::HandleTaskFailure(td_ptr);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->DeleteTaskNode(td_ptr->uid());
+  }
+}
+
+void QuincyScheduler::KillRunningTask(TaskID_t task_id,
+                                      TaskKillMessage::TaskKillReason reason) {
+  EventDrivenScheduler::KillRunningTask(task_id, reason);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->DeleteTaskNode(task_id);
   }
 }
 
@@ -198,8 +223,11 @@ uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
 }
 
 void QuincyScheduler::RegisterResource(ResourceID_t res_id, bool local) {
-  // Update the flow graph
-  UpdateResourceTopology(resource_topology_);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    // Update the flow graph
+    UpdateResourceTopology(resource_topology_);
+  }
   // Call into superclass method to do scheduler resource initialisation.
   // This will create the executor for the new resource.
   EventDrivenScheduler::RegisterResource(res_id, local);
