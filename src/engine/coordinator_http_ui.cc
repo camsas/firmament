@@ -811,6 +811,11 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     if (td_ptr->has_name())
       dict.SetValue("TASK_NAME", td_ptr->name());
     dict.SetValue("TASK_BINARY", td_ptr->binary());
+    dict.SetValue("TASK_JOB_ID", td_ptr->job_id());
+    JobDescriptor* jd_ptr = coordinator_->GetJob(
+        JobIDFromString(td_ptr->job_id()));
+    if (jd_ptr)
+      dict.SetValue("TASK_JOB_NAME", jd_ptr->name());
     string arg_string = "";
     for (RepeatedPtrField<string>::const_iterator arg_iter =
          td_ptr->args().begin();
