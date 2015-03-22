@@ -1,5 +1,6 @@
 // The Firmament project
 // Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Coordinator knowledege base. This implements data structures and management
 // code for the performance and utilization data reported by tasks and other
@@ -9,9 +10,15 @@
 #define FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_H
 
 #include <deque>
+#include <fstream>
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
+
+
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -28,6 +35,7 @@ namespace firmament {
 class KnowledgeBase {
  public:
   KnowledgeBase();
+  ~KnowledgeBase();
   void AddMachineSample(const MachinePerfStatisticsSample& sample);
   void AddTaskSample(const TaskPerfStatisticsSample& sample);
   void DumpMachineStats(const ResourceID_t& res_id) const;
@@ -40,6 +48,7 @@ class KnowledgeBase {
   double GetAvgRuntimeForTEC(TaskEquivClass_t id);
   const deque<TaskFinalReport>* GetFinalStatsForTask(TaskID_t task_id) const;
   vector<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) const;
+  void LoadKnowledgeBaseFromFile();
   void ProcessTaskFinalReport(const TaskFinalReport& report,
                               TaskID_t task_id);
   void SetCostModel(FlowSchedulingCostModelInterface* cost_model);
@@ -52,6 +61,14 @@ class KnowledgeBase {
   unordered_map<TaskID_t, deque<TaskFinalReport> > task_exec_reports_;
   boost::mutex kb_lock_;
   FlowSchedulingCostModelInterface* cost_model_;
+
+ private:
+  fstream serial_machine_samples_;
+  fstream serial_task_samples_;
+  ::google::protobuf::io::ZeroCopyOutputStream* raw_machine_output_;
+  ::google::protobuf::io::CodedOutputStream* coded_machine_output_;
+  ::google::protobuf::io::ZeroCopyOutputStream* raw_task_output_;
+  ::google::protobuf::io::CodedOutputStream* coded_task_output_;
 };
 
 }  // namespace firmament

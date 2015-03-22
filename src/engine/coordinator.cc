@@ -51,6 +51,8 @@ DEFINE_int32(http_ui_port, 8080,
 #endif
 DEFINE_uint64(heartbeat_interval, 1000000,
               "Heartbeat interval in microseconds.");
+DEFINE_bool(populate_knowledge_base_from_file, false,
+            "True if we should load the knowledge base from file.");
 
 namespace firmament {
 
@@ -115,6 +117,10 @@ Coordinator::Coordinator(PlatformID platform_id)
   health_monitor_thread_ =
     new boost::thread(boost::bind(&HealthMonitor::Run, health_monitor_,
                                   scheduler_, associated_resources_));
+
+  if (FLAGS_populate_knowledge_base_from_file) {
+    knowledge_base_->LoadKnowledgeBaseFromFile();
+  }
 }
 
 Coordinator::~Coordinator() {
@@ -967,6 +973,9 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
 
 void Coordinator::Shutdown(const string& reason) {
   LOG(INFO) << "Coordinator shutting down; reason: " << reason;
+  // TODO(ionel): Move this into the destructor. We can't do it now
+  // because the destructor is not called.
+  delete knowledge_base_;
 #ifdef __HTTP_UI__
   if (FLAGS_http_ui && c_http_ui_ && c_http_ui_->active())
       c_http_ui_->Shutdown(false);

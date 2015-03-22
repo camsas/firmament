@@ -1,5 +1,6 @@
 // The Firmament project
 // Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Implementation of the coordinator knowledge base.
 
@@ -8,13 +9,54 @@
 #include <deque>
 #include <vector>
 
+#include <sys/fcntl.h>
+
 #include "misc/map-util.h"
 #include "misc/utils.h"
+
+DEFINE_bool(serialize_knowledge_base, false,
+            "True if we should serialize knowledge base");
+DEFINE_string(serial_machine_samples, "serial_machine_samples",
+              "Path to the file where the knowledge base will serialize machine"
+              " specific information");
+DEFINE_string(serial_task_samples, "serial_task_samples",
+              "Path to the file where the knowledge base will serialize task"
+              " specific information");
 
 namespace firmament {
 
 KnowledgeBase::KnowledgeBase() {
   cost_model_ = NULL;
+  if (FLAGS_serialize_knowledge_base) {
+    serial_machine_samples_.open(FLAGS_serial_machine_samples.c_str(),
+                                 ios::out | ios::trunc | ios::binary);
+    CHECK(serial_machine_samples_.is_open());
+    raw_machine_output_ =
+      new ::google::protobuf::io::OstreamOutputStream(&serial_machine_samples_);
+    coded_machine_output_ =
+        new ::google::protobuf::io::CodedOutputStream(raw_machine_output_);
+
+    serial_task_samples_.open(FLAGS_serial_task_samples.c_str(),
+                              ios::out | ios::trunc | ios::binary);
+    CHECK(serial_task_samples_.is_open());
+    raw_task_output_ =
+      new ::google::protobuf::io::OstreamOutputStream(&serial_task_samples_);
+    coded_task_output_ =
+        new ::google::protobuf::io::CodedOutputStream(raw_task_output_);
+  }
+}
+
+KnowledgeBase::~KnowledgeBase() {
+  if (serial_machine_samples_.is_open()) {
+    delete coded_machine_output_;
+    delete raw_machine_output_;
+    serial_machine_samples_.close();
+  }
+  if (serial_task_samples_.is_open()) {
+    delete coded_task_output_;
+    delete raw_task_output_;
+    serial_task_samples_.close();
+  }
 }
 
 void KnowledgeBase::AddMachineSample(
@@ -32,8 +74,14 @@ void KnowledgeBase::AddMachineSample(
     CHECK_NOTNULL(q);
   }
   if (q->size() * sizeof(sample) >= MAX_SAMPLE_QUEUE_CAPACITY)
-    q->pop_front();  // drom from the front
+    q->pop_front();  // drop from the front
   q->push_back(sample);
+  if (FLAGS_serialize_knowledge_base) {
+    string message_string;
+    sample.SerializeToString(&message_string);
+    coded_machine_output_->WriteVarint32(message_string.size());
+    coded_machine_output_->WriteRaw(message_string.data(), message_string.size());
+  }
 }
 
 void KnowledgeBase::AddTaskSample(const TaskPerfStatisticsSample& sample) {
@@ -51,6 +99,28 @@ void KnowledgeBase::AddTaskSample(const TaskPerfStatisticsSample& sample) {
   if (q->size() * sizeof(sample) >= MAX_SAMPLE_QUEUE_CAPACITY)
     q->pop_front();  // drop from the front
   q->push_back(sample);
+  if (FLAGS_serialize_knowledge_base) {
+    string message_string;
+    sample.SerializeToString(&message_string);
+    coded_task_output_->WriteVarint32(message_string.size());
+    coded_task_output_->WriteRaw(message_string.data(), message_string.size());
+  }
+}
+
+void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
+  // Sanity checks
+  const deque<MachinePerfStatisticsSample>* q =
+      FindOrNull(machine_map_, res_id);
+  if (!q)
+    return;
+  // Dump
+  LOG(INFO) << "STATS FOR " << res_id << ": ";
+  LOG(INFO) << "Have " << q->size() << " samples.";
+  for (deque<MachinePerfStatisticsSample>::const_iterator it = q->begin();
+      it != q->end();
+      ++it) {
+    LOG(INFO) << it->free_ram();
+  }
 }
 
 const deque<MachinePerfStatisticsSample>* KnowledgeBase::GetStatsForMachine(
@@ -124,21 +194,69 @@ double KnowledgeBase::GetAvgRuntimeForTEC(TaskEquivClass_t id) {
   return accumulator / res->size();
 }
 
-void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
-  // Sanity checks
-  const deque<MachinePerfStatisticsSample>* q =
-      FindOrNull(machine_map_, res_id);
-  if (!q)
-    return;
-  // Dump
-  LOG(INFO) << "STATS FOR " << res_id << ": ";
-  LOG(INFO) << "Have " << q->size() << " samples.";
-  for (deque<MachinePerfStatisticsSample>::const_iterator it = q->begin();
-      it != q->end();
-      ++it) {
-    LOG(INFO) << it->free_ram();
+void KnowledgeBase::LoadKnowledgeBaseFromFile() {
+  // Load the machine samples.
+  fstream machine_samples(FLAGS_serial_machine_samples.c_str(),
+                          ios::in | ios::binary);
+  if (!machine_samples) {
+    LOG(FATAL) << "Could not open machine samples file";
   }
+  ::google::protobuf::io::ZeroCopyInputStream* raw_machine_input =
+      new ::google::protobuf::io::IstreamInputStream(&machine_samples);
+  ::google::protobuf::io::CodedInputStream* coded_machine_input =
+      new ::google::protobuf::io::CodedInputStream(raw_machine_input);
+  for (bool read_sample = true; read_sample; ) {
+    uint32_t msg_size;
+    read_sample = coded_machine_input->ReadVarint32(&msg_size);
+    if (!read_sample) {
+      break;
+    }
+    string message;
+    read_sample = coded_machine_input->ReadString(&message, msg_size);
+    if (!read_sample) {
+      LOG(ERROR) << "Unexpected format of the input file";
+      break;
+    }
+    MachinePerfStatisticsSample machine_stats;
+    machine_stats.ParseFromString(message);
+    AddMachineSample(machine_stats);
+  }
+  delete coded_machine_input;
+  delete raw_machine_input;
+  machine_samples.close();
+
+
+  // Load the task samples.
+  fstream task_samples(FLAGS_serial_task_samples.c_str(),
+                       ios::in | ios::binary);
+  if (!task_samples) {
+    LOG(FATAL) << "Could not open task samples file";
+  }
+  ::google::protobuf::io::ZeroCopyInputStream* raw_task_input =
+      new ::google::protobuf::io::IstreamInputStream(&task_samples);
+  ::google::protobuf::io::CodedInputStream* coded_task_input =
+      new ::google::protobuf::io::CodedInputStream(raw_task_input);
+  for (bool read_sample = true; read_sample; ) {
+    uint32_t msg_size;
+    read_sample = coded_task_input->ReadVarint32(&msg_size);
+    if (!read_sample) {
+      break;
+    }
+    string message;
+    read_sample = coded_task_input->ReadString(&message, msg_size);
+    if (!read_sample) {
+      LOG(ERROR) << "Unexpected format of the input file";
+      break;
+    }
+    TaskPerfStatisticsSample task_sample;
+    task_sample.ParseFromString(message);
+    AddTaskSample(task_sample);
+  }
+  delete coded_task_input;
+  delete raw_task_input;
+  task_samples.close();
 }
+
 void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report,
                                            TaskID_t task_id) {
   boost::lock_guard<boost::mutex> lock(kb_lock_);
