@@ -110,7 +110,9 @@ void ProcFSMonitor::GetStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
   // /proc/[pid]/stat parsing
   string filename = "/proc/" + to_string(pid) + "/stat";
   FILE* input = fopen(filename.c_str(), "r");
-  CHECK_NOTNULL(input);
+  // The procfs file may no longer be there if the process has finished
+  if (!input)
+    return;
   readone(input, &stats->pid);
   readstr(input, stats->comm);
   readchar(input, &stats->state);
@@ -176,8 +178,10 @@ vector<string>* ProcFSMonitor::FindMatchingLine(
 
 const ProcFSMonitor::ProcessStatistics_t* ProcFSMonitor::ProcessInformation(
     pid_t pid, ProcessStatistics_t* stats) {
-  if (stats == NULL)
+  if (stats == NULL) {
     stats = new ProcessStatistics_t;
+    bzero(stats, sizeof(ProcessStatistics_t));
+  }
   // Grab information recursively for PID and its children
   AggregateStatsForPIDTree(pid, true, stats);
   return stats;
