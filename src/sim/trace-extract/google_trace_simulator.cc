@@ -111,6 +111,10 @@ void GoogleTraceSimulator::Run() {
   	ofstream *stats_file = NULL;
   	if (!FLAGS_stats_file.empty()) {
   		stats_file = new ofstream(FLAGS_stats_file);
+  		if (stats_file->fail()) {
+  			LOG(FATAL) << "Could not open for writing stats file "
+  					       << FLAGS_stats_file;
+  		}
   	}
 
   	FILE *graph_output_file = NULL;
