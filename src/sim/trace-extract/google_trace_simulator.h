@@ -210,6 +210,9 @@ class GoogleTraceSimulator {
   FlowGraph* flow_graph_;
 
   scheduler::QuincyDispatcher* quincy_dispatcher_;
+
+  // Proportion of events to retain, as a ratio out of SIZE_T_MAX
+  size_t proportion_;
 };
 
 }  // namespace sim

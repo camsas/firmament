@@ -64,6 +64,7 @@ DEFINE_string(task_bins_output, "bins.out",
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(stats_file, "", "File to write CSV of statistics.");
 DEFINE_string(graph_output_file, "", "File to write incremental DIMACS export.");
+DEFINE_double(proportion, 1.0, "Proportion of events to retain.");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -89,6 +90,10 @@ GoogleTraceSimulator::~GoogleTraceSimulator() {
 void GoogleTraceSimulator::Run() {
   FLAGS_add_root_task_to_graph = false;
   FLAGS_flow_scheduling_strict = true;
+
+  const size_t MAX_VALUE = (size_t)-1;
+  proportion_ = FLAGS_proportion * MAX_VALUE;
+  VLOG(2) << "Retaining events with hash < " << proportion_;
 
   // command line argument sanity checking
   if (trace_path_.empty()) {
@@ -338,6 +343,7 @@ void GoogleTraceSimulator::LoadMachineEvents() {
   if ((machines_file = fopen(machines_file_name.c_str(), "r")) == NULL) {
     LOG(ERROR) << "Failed to open trace for reading machine events.";
   }
+  std::hash<uint32_t> id_hash;
   int64_t num_line = 1;
   while (!feof(machines_file)) {
     if (fscanf(machines_file, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -347,6 +353,12 @@ void GoogleTraceSimulator::LoadMachineEvents() {
                    << num_line << ": found " << cols.size() << " columns.";
       } else {
         // schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
+      	uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
+      	if (id_hash(machine_id) > proportion_) {
+      		// skip event
+      		continue;
+      	}
+
         EventDescriptor event_desc;
         event_desc.set_machine_id(lexical_cast<uint64_t>(cols[1]));
         event_desc.set_type(TranslateMachineEvent(
@@ -441,6 +453,7 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
   if ((tasks_file = fopen(tasks_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace runtime events file.";
   }
+  boost::hash<std::pair<uint64_t, uint64_t>> id_hash;
   int64_t num_line = 1;
   while (!feof(tasks_file)) {
     if (fscanf(tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -452,6 +465,13 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
         TaskIdentifier task_id;
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
+
+      	if (id_hash(std::make_pair(task_id.job_id, task_id.task_index))
+      	    > proportion_) {
+      		// skip event
+      		continue;
+      	}
+
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
         if (!InsertIfNotPresent(task_runtime, task_id, runtime) &&
             VLOG_IS_ON(1)) {
@@ -679,6 +699,8 @@ void GoogleTraceSimulator::ReplayTrace(
   vector<string> vals;
   FILE* f_task_events_ptr = NULL;
   uint64_t time_interval_bound = FLAGS_bin_time_duration;
+
+  boost::hash<std::pair<uint64_t, uint64_t>> id_hash;
   for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
        file_num++) {
     string fname;
@@ -698,6 +720,14 @@ void GoogleTraceSimulator::ReplayTrace(
           uint64_t task_time = lexical_cast<uint64_t>(vals[0]);
           task_identifier.job_id = lexical_cast<uint64_t>(vals[2]);
           task_identifier.task_index = lexical_cast<uint64_t>(vals[3]);
+
+        	if (id_hash(std::make_pair(task_identifier.job_id,
+        			                       task_identifier.task_index))
+        			> proportion_) {
+        		// skip event
+        		continue;
+        	}
+
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
 
           // We only run for the first FLAGS_runtime microseconds.
