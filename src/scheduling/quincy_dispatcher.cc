@@ -321,43 +321,55 @@ namespace scheduler {
       CHECK((dbg_fptr = fopen(out_file_name.c_str(), "w")) != NULL);
     }
     uint64_t l = 0;
-    while (!feof(fptr)) {
-      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-        VLOG(3) << "Processing line " << l << ": " << line;
-        if (FLAGS_debug_flow_graph) {
-          fputs(line, dbg_fptr);
-          fputc('\n', dbg_fptr);
-        }
-        l++;
-        boost::split(vals, line, is_any_of(" "), token_compress_on);
-        if (vals[0].compare("f") == 0) {
-          if (vals.size() != 4) {
-            LOG(ERROR) << "Unexpected structure of flow row";
-          } else {
-            uint64_t src = lexical_cast<uint64_t>(vals[1]);
-            uint64_t dest = lexical_cast<uint64_t>(vals[2]);
-            uint64_t flow = lexical_cast<uint64_t>(vals[3]);
-            // Only add it to the adjacency list if flow > 0
-            if (flow > 0) {
-              (*adj_list)[dest].insert(make_pair(src, flow));
-            }
-          }
-        } else {
-          if (vals[0].compare("c") == 0) {
-            // Comment line. Ignore.
-          } else {
-            if (vals[0].compare("s") == 0) {
-              cost = lexical_cast<uint64_t>(vals[1]);
-            } else {
-              if (vals[0].compare("") == 0) {
-                LOG(INFO) << "Empty row in flow graph.";
-              } else {
-                LOG(ERROR) << "Unknown type of row in flow graph: " << line;
-              }
-            }
-          }
-        }
-      }
+    while (fgets(line, sizeof(line), fptr)) {
+    	size_t len = strlen(line);
+    	if (len > 0 && line[len-1] == '\n') {
+    		line[--len] = '\0';
+    	}
+    	if (len == 0) {
+    		// empty line; skip
+    		continue;
+    	}
+
+			VLOG(3) << "Processing line " << l << ": " << line;
+			if (FLAGS_debug_flow_graph) {
+				fputs(line, dbg_fptr);
+				fputc('\n', dbg_fptr);
+			}
+			l++;
+			boost::split(vals, line, is_any_of(" "), token_compress_on);
+			if (vals[0].compare("f") == 0) {
+				if (vals.size() != 4) {
+					LOG(ERROR) << "Unexpected structure of flow row";
+				} else {
+					uint64_t src = lexical_cast<uint64_t>(vals[1]);
+					uint64_t dest = lexical_cast<uint64_t>(vals[2]);
+					uint64_t flow = lexical_cast<uint64_t>(vals[3]);
+					// Only add it to the adjacency list if flow > 0
+					if (flow > 0) {
+						(*adj_list)[dest].insert(make_pair(src, flow));
+					}
+				}
+			} else {
+				if (vals[0].compare("c") == 0) {
+					if (vals.size() == 2 && vals[1].compare("EOI") == 0) {
+						// end of iteration
+						break;
+					} else {
+						// Comment line. Ignore.
+					}
+				} else {
+					if (vals[0].compare("s") == 0) {
+						cost = lexical_cast<uint64_t>(vals[1]);
+					} else {
+						if (vals[0].compare("") == 0) {
+							LOG(INFO) << "Empty row in flow graph.";
+						} else {
+							LOG(ERROR) << "Unknown type of row in flow graph: " << line;
+						}
+					}
+				}
+			}
     }
     if (FLAGS_debug_flow_graph)
       fclose(dbg_fptr);
