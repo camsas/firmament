@@ -115,8 +115,8 @@ void GoogleTraceSimulator::Run() {
     LOG(FATAL) << "Please specify a path to the Google trace!";
   }
 
-  LOG(INFO) << "Starting Google Trace extraction!";
-  LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " microseconds.";
+  LOG(INFO) << "Starting Google trace simulator!";
+  LOG(INFO) << "Time to simulate for: " << FLAGS_runtime << " microseconds.";
 
   CreateRootResource();
 
@@ -593,23 +593,46 @@ void GoogleTraceSimulator::ProcessTaskEvent(
 }
 
 void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
-  ResourceDescriptor** rd_ptr = FindOrNull(machine_id_to_rd_, machine_id);
-  CHECK_NOTNULL(rd_ptr);
   machine_id_to_rd_.erase(machine_id);
-  ResourceTopologyNodeDescriptor** rtnd_ptr =
-    FindOrNull(machine_id_to_rtnd_, machine_id);
+  ResourceTopologyNodeDescriptor* rtnd_ptr =
+    FindPtrOrNull(machine_id_to_rtnd_, machine_id);
   CHECK_NOTNULL(rtnd_ptr);
   DFSTraverseResourceProtobufTreeReturnRTND(
-      *rtnd_ptr, boost::bind(&GoogleTraceSimulator::RemoveResource, this, _1));
-  if ((*rtnd_ptr)->has_parent_id()) {
-    // TODO(ionel): Delete node from the parent's children list.
+      rtnd_ptr, boost::bind(&GoogleTraceSimulator::RemoveResource, this, _1));
+  if (rtnd_ptr->has_parent_id()) {
+    if (rtnd_ptr->parent_id().compare(rtn_root_.resource_desc().uuid()) == 0) {
+      RepeatedPtrField<ResourceTopologyNodeDescriptor>* parent_children =
+        rtn_root_.mutable_children();
+      int32_t index = 0;
+      for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator it =
+             parent_children->begin(); it != parent_children->end();
+           ++it, ++index) {
+        if (it->resource_desc().uuid()
+              .compare(rtnd_ptr->resource_desc().uuid()) == 0) {
+          break;
+        }
+      }
+      if (index < parent_children->size()) {
+        // Found the node.
+        if (index < parent_children->size() - 1) {
+          // The node is not the last one.
+          parent_children->SwapElements(index, parent_children->size() - 1);
+        }
+        parent_children->RemoveLast();
+      } else {
+        LOG(WARNING) << "Could not found the machine in the parent's list";
+      }
+    } else {
+      LOG(ERROR) << "Machine " << machine_id
+                 << " is not direclty connected to the root";
+    }
   } else {
     LOG(WARNING) << "Machine " << machine_id << " doesn't have a parent";
   }
   machine_id_to_rtnd_.erase(machine_id);
   // We can't delete the node because we haven't removed it from it's parent
   // children list.
-  // delete *rtnd_ptr;
+  // delete rtnd_ptr;
 }
 
 void GoogleTraceSimulator::RemoveResource(
