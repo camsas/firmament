@@ -32,9 +32,58 @@
 #include <sys/time.h>
 #include <signal.h>
 
+using std::vector;
+
+firmament::TaskLib* task_lib_;
+
+void TerminationCleanup() {
+  if (task_lib_) {
+    task_lib_->Stop(true);
+  }
+}
+
+void LaunchTasklib() {
+  /* Sets up and runs a TaskLib monitor in the current thread. */
+  // Read these important variables from the environment.
+  sleep(1);
+
+  string sargs = "--logtostderr";
+  string progargs = "task_lib";
+  boost::thread::id task_thread_id = boost::this_thread::get_id();
+
+  char* argv[2];
+  argv[0] = const_cast<char*>(progargs.c_str());
+
+  argv[1] = const_cast<char*>(sargs.c_str());
+    firmament::common::InitFirmament(2, argv);
+
+  task_lib_->RunMonitor(task_thread_id);
+}
+
+int main(int argc, char** argv) {
+  // Unset LD_PRELOAD to avoid us from starting launching monitors in
+  // child processes, unless we're in a wrapper
+  setenv("LD_PRELOAD", "", 1);
+
+  // Cleanup task lib before terminating the process.
+  atexit(TerminationCleanup);
+
+  LOG(INFO) << "Starting TaskLib monitor thread";
+
+  task_lib_ = new firmament::TaskLib();
+
+  boost::thread t1(&LaunchTasklib);
+
+  vector<char*> args;
+  for (int64_t i = 1; i < argc; ++i) {
+    args.push_back(argv[i]);
+  }
+  firmament::task_main(0, &args);
+}
+
 namespace firmament {
 
-void task_main(TaskLib*, TaskID_t task_id, vector<char*>* arg_vec) {
+void task_main(TaskID_t task_id, vector<char*>* arg_vec) {
   int64_t dur_sec, dur_usec;
   if (arg_vec->size() < 2 ||
       (atol(arg_vec->at(1)) <= 0 && atol(arg_vec->at(2)) <= 0)) {
