@@ -296,6 +296,7 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   VLOG(3) << "Setting up process statistics\n";
 
   ProcFSMonitor::ProcessStatistics_t current_stats;
+  bzero(&current_stats, sizeof(ProcFSMonitor::ProcessStatistics_t));
   VLOG(3) << "Finished setting up process statistics\n";
 
   // This will check if the task thread has joined once every heartbeat
