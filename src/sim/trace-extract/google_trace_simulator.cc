@@ -213,7 +213,10 @@ void GoogleTraceSimulator::AddTaskEndEvent(
   }
 }
 
-void GoogleTraceSimulator::AddTaskStats(TaskIdentifier task_identifier) {
+void GoogleTraceSimulator::AddTaskStats(
+    TaskIdentifier task_identifier,
+    unordered_map<TaskIdentifier, uint64_t,
+      TaskIdentifierHasher>* task_runtime) {
   TaskStats* task_stats = FindOrNull(task_id_to_stats_, task_identifier);
   if (task_stats == NULL) {
     // Already added stats.
@@ -221,11 +224,21 @@ void GoogleTraceSimulator::AddTaskStats(TaskIdentifier task_identifier) {
   }
   TaskDescriptor* td_ptr = FindPtrOrNull(task_id_to_td_, task_identifier);
   CHECK_NOTNULL(td_ptr);
+  uint64_t* task_runtime_ptr = FindOrNull(*task_runtime, task_identifier);
+  uint64_t runtime = 0;
+  if (task_runtime_ptr != NULL) {
+    runtime = *task_runtime_ptr;
+  } else {
+    // We don't have information about this task's runtime.
+    // Set its runtime to max which means it's a service task.
+    runtime = numeric_limits<uint64_t>::max();
+  }
   vector<TaskEquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(td_ptr->uid());
   // XXX(ionel): This assumes that we have one task equivalence class per task.
   for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
+    knowledge_base_->SetAvgRuntimeForTEC(*it, runtime);
     if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
       knowledge_base_->SetAvgMeanCpuUsage(*it, task_stats->avg_mean_cpu_usage);
     }
@@ -429,7 +442,6 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
         TaskStats task_stats;
-        // TODO(ionel): Set runtime as well.
         task_stats.avg_mean_cpu_usage = lexical_cast<double>(cols[4]);
         task_stats.avg_canonical_mem_usage = lexical_cast<double>(cols[8]);
         task_stats.avg_assigned_mem_usage = lexical_cast<double>(cols[12]);
@@ -572,10 +584,11 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
 
 void GoogleTraceSimulator::ProcessTaskEvent(
     uint64_t cur_time, const TaskIdentifier& task_identifier,
-    uint64_t event_type) {
+    uint64_t event_type,
+    unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_runtime) {
   if (event_type == SUBMIT_EVENT) {
     AddNewTask(task_identifier);
-    AddTaskStats(task_identifier);
+    AddTaskStats(task_identifier, task_runtime);
   }
 }
 
@@ -766,7 +779,7 @@ void GoogleTraceSimulator::ReplayTrace() {
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
-          ProcessTaskEvent(task_time, task_identifier, event_type);
+          ProcessTaskEvent(task_time, task_identifier, event_type, task_runtime);
         }
       }
     }
