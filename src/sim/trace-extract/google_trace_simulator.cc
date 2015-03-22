@@ -62,7 +62,7 @@ DEFINE_uint64(bin_time_duration, 10, "Bin size in microseconds.");
 DEFINE_string(task_bins_output, "bins.out",
               "The file in which the task bins are written.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
-DEFINE_string(stats_file, "", "Path to write CSV of statistics.");
+DEFINE_string(stats_file, "", "File to write CSV of statistics.");
 DEFINE_string(graph_output_file, "", "File to write incremental DIMACS export.");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
@@ -108,8 +108,9 @@ void GoogleTraceSimulator::Run() {
       LOG(ERROR) << "Could not open bin output file.";
     }
   } else {
-  	if (FLAGS_stats_file.empty()) {
-  		LOG(FATAL) << "Must specify a path for the statistics file, -stats-file.";
+  	ofstream *stats_file = NULL;
+  	if (!FLAGS_stats_file.empty()) {
+  		stats_file = new ofstream(FLAGS_stats_file);
   	}
 
   	FILE *graph_output_file = NULL;
@@ -122,11 +123,13 @@ void GoogleTraceSimulator::Run() {
   		}
   	}
 
-  	ofstream stats_file(FLAGS_stats_file);
     ReplayTrace(stats_file, graph_output_file);
 
     if (graph_output_file) {
     	fclose(graph_output_file);
+    }
+    if (stats_file) {
+    	delete stats_file;
     }
   }
 }
@@ -642,10 +645,13 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
 }
 
 void GoogleTraceSimulator::ReplayTrace(
-		                            ofstream &stats_file, FILE *graph_output_file) {
+		                            ofstream *stats_file, FILE *graph_output_file) {
 	// Output CSV header
-	stats_file << "cluster_time,algorithm_time,flowsolver_time,total_time"
-			       << std::endl;
+	if (stats_file) {
+		*stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,total_time"
+					      << std::endl;
+	}
+
 	boost::timer::cpu_timer timer;
 
   // Load all the machine events.
@@ -726,11 +732,13 @@ void GoogleTraceSimulator::ReplayTrace(
 
             // Log stats to CSV file
 						boost::timer::cpu_times total_runtime = timer.elapsed();
-						stats_file << time_interval_bound << ","
-								       << algorithm_time << ","
-											 << flowsolver_time << ","
-											 << total_runtime.wall << std::endl;
-						stats_file.flush();
+						if (stats_file) {
+							*stats_file << time_interval_bound << ","
+												  << algorithm_time << ","
+												  << flowsolver_time << ","
+												  << total_runtime.wall << std::endl;
+							stats_file->flush();
+						}
 						// restart timer; elapsed() returns time from this point
 						timer.stop(); timer.resume();
           }
