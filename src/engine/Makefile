@@ -184,9 +184,9 @@ $(BUILD_DIR)/engine/task_lib_inject.so: task_lib_main.cc task_lib.cc \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a \
 	$(BUILD_DIR)/base/libfirmament_base.a
-	# echo $(NGINX_INCLUDES) #echo $(addprefix(-I $(SRC_ROOT_DIR)/examples/nginx/src, core))
 	$(call quiet-command, \
-		$(CXX) -fPIC -shared -std=c++11 -fvisibility=default $(OPTFLAGS) \
+		$(CXX) -fPIC -shared -std=c++11 -fvisibility=default -O0 -fno-omit-frame-pointer -g \
 		$(INCLUDES) $(DEFINES) \
 		-o $(BUILD_DIR)/engine/task_lib_inject.so $^ -ldl $(TASK_LIB_LIBS), \
 		"  DYNLNK  $(BUILD_DIR)/engine/task_lib_inject.so")
+# echo $(NGINX_INCLUDES) #echo $(addprefix(-I $(SRC_ROOT_DIR)/examples/nginx/src, core))
