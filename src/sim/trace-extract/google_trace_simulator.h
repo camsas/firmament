@@ -211,8 +211,8 @@ class GoogleTraceSimulator {
 
   scheduler::QuincyDispatcher* quincy_dispatcher_;
 
-  // Proportion of events to retain, as a ratio out of SIZE_T_MAX
-  size_t proportion_;
+  // Proportion of events to retain, as a ratio out of UINT32_MAX
+  uint32_t proportion_;
 };
 
 }  // namespace sim

@@ -17,6 +17,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "SpookyV2.h"
+
 #include "sim/trace-extract/google_trace_simulator.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
@@ -45,13 +47,14 @@ namespace sim {
 #define UPDATE_PENDING_EVENT 7
 #define UPDATE_RUNNING_EVENT 8
 
-
 #define MACHINE_ADD 0
 #define MACHINE_REMOVE 1
 #define MACHINE_UPDATE 2
 
 #define MACHINE_TMPL_FILE "../../../tests/testdata/machine_topo.pbin"
 //#define MACHINE_TMPL_FILE "/tmp/mach_test.pbin"
+
+const static uint64_t SEED = 0;
 
 DEFINE_uint64(runtime, 9223372036854775807,
               "Time in microsec to extract data for (from start of trace)");
@@ -91,7 +94,7 @@ void GoogleTraceSimulator::Run() {
   FLAGS_add_root_task_to_graph = false;
   FLAGS_flow_scheduling_strict = true;
 
-  const size_t MAX_VALUE = (size_t)-1;
+  const uint32_t MAX_VALUE = UINT32_MAX;
   proportion_ = FLAGS_proportion * MAX_VALUE;
   VLOG(2) << "Retaining events with hash < " << proportion_;
 
@@ -343,7 +346,7 @@ void GoogleTraceSimulator::LoadMachineEvents() {
   if ((machines_file = fopen(machines_file_name.c_str(), "r")) == NULL) {
     LOG(ERROR) << "Failed to open trace for reading machine events.";
   }
-  std::hash<uint32_t> id_hash;
+
   int64_t num_line = 1;
   while (!feof(machines_file)) {
     if (fscanf(machines_file, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -354,7 +357,8 @@ void GoogleTraceSimulator::LoadMachineEvents() {
       } else {
         // schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
       	uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
-      	if (id_hash(machine_id) > proportion_) {
+      	if (SpookyHash::Hash32(&machine_id, sizeof(machine_id), SEED)
+      	    > proportion_) {
       		// skip event
       		continue;
       	}
@@ -453,7 +457,7 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
   if ((tasks_file = fopen(tasks_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace runtime events file.";
   }
-  boost::hash<std::pair<uint64_t, uint64_t>> id_hash;
+
   int64_t num_line = 1;
   while (!feof(tasks_file)) {
     if (fscanf(tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -466,8 +470,7 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
 
-      	if (id_hash(std::make_pair(task_id.job_id, task_id.task_index))
-      	    > proportion_) {
+      	if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED) > proportion_) {
       		// skip event
       		continue;
       	}
@@ -700,7 +703,6 @@ void GoogleTraceSimulator::ReplayTrace(
   FILE* f_task_events_ptr = NULL;
   uint64_t time_interval_bound = FLAGS_bin_time_duration;
 
-  boost::hash<std::pair<uint64_t, uint64_t>> id_hash;
   for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
        file_num++) {
     string fname;
@@ -716,14 +718,12 @@ void GoogleTraceSimulator::ReplayTrace(
           LOG(ERROR) << "Unexpected structure of task event row: found "
                      << vals.size() << " columns.";
         } else {
-          TaskIdentifier task_identifier;
+          TaskIdentifier task_id;
           uint64_t task_time = lexical_cast<uint64_t>(vals[0]);
-          task_identifier.job_id = lexical_cast<uint64_t>(vals[2]);
-          task_identifier.task_index = lexical_cast<uint64_t>(vals[3]);
+          task_id.job_id = lexical_cast<uint64_t>(vals[2]);
+          task_id.task_index = lexical_cast<uint64_t>(vals[3]);
 
-        	if (id_hash(std::make_pair(task_identifier.job_id,
-        			                       task_identifier.task_index))
-        			> proportion_) {
+          if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED) > proportion_) {
         		// skip event
         		continue;
         	}
@@ -784,7 +784,7 @@ void GoogleTraceSimulator::ReplayTrace(
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
-          ProcessTaskEvent(task_time, task_identifier, event_type);
+          ProcessTaskEvent(task_time, task_id, event_type);
         }
       }
     }
