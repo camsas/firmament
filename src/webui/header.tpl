@@ -55,6 +55,7 @@
     }
 
     .pre-x-scroll {
+      overflow-x: scroll;
       word-wrap: normal;
       white-space: pre;
     }

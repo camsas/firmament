@@ -72,6 +72,7 @@ function step() {
 }
 
 $(function() {
+  $.fn.sparkline.defaults.line.height = '50px';
   $("abbr.timeago").each(function (index) {
     $(this).attr("title", new Date(parseInt(this.title)).toISOString());
   });
