@@ -132,8 +132,12 @@ vector<TaskEquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
 
 vector<TaskEquivClass_t>* WhareMapCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
-  LOG(FATAL) << "Not implemented";
-  return NULL;
+  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
+  // Get the machine aggregator corresponding to this machine.
+  TaskEquivClass_t* ec_class = FindOrNull(machine_to_ec_, res_id);
+  CHECK_NOTNULL(ec_class);
+  equiv_classes->push_back(*ec_class);
+  return equiv_classes;
 }
 
 vector<ResourceID_t>* WhareMapCostModel::GetEquivClassPreferenceArcs(

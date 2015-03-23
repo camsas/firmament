@@ -336,9 +336,13 @@ void FlowGraph::AddResourceNode(
   if (!NodeForResourceID(ResourceIDFromString(rtnd.resource_desc().uuid()))) {
     if (rtnd_ptr->resource_desc().type() ==
         ResourceDescriptor::RESOURCE_MACHINE) {
-      generate_trace_.AddMachine(
-          ResourceIDFromString(rtnd_ptr->resource_desc().uuid()));
+      ResourceID_t res_id =
+        ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
+      generate_trace_.AddMachine(res_id);
       cost_model_->AddMachine(rtnd_ptr);
+      vector<TaskEquivClass_t>* equiv_classes =
+        cost_model_->GetResourceEquivClasses(res_id);
+      // TODO(ionel): Add arcs from resource aggregator.
     }
     vector<FlowGraphArc*> *resource_arcs = new vector<FlowGraphArc*>();
     uint64_t id = next_id();
