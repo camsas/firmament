@@ -334,6 +334,12 @@ void FlowGraph::AddResourceNode(
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
   // Add the node if it does not already exist
   if (!NodeForResourceID(ResourceIDFromString(rtnd.resource_desc().uuid()))) {
+    if (rtnd_ptr->resource_desc().type() ==
+        ResourceDescriptor::RESOURCE_MACHINE) {
+      generate_trace_.AddMachine(
+          ResourceIDFromString(rtnd_ptr->resource_desc().uuid()));
+      cost_model_->AddMachine(rtnd_ptr);
+    }
     vector<FlowGraphArc*> *resource_arcs = new vector<FlowGraphArc*>();
     uint64_t id = next_id();
     if (rtnd.resource_desc().has_friendly_name()) {
@@ -828,7 +834,7 @@ void FlowGraph::UpdateResourceNode(
   ResourceID_t res_id = ResourceIDFromString(rtnd.resource_desc().uuid());
   // First of all, check if this node already exists in our resource topology
   uint64_t* found_node = FindOrNull(resource_to_nodeid_map_, res_id);
-  VLOG(1) << "Considering resource " << res_id << ", which is "
+  VLOG(2) << "Considering resource " << res_id << ", which is "
           << (found_node ? *found_node : 0);
   if (found_node) {
     // Check if its parent is identical
@@ -868,12 +874,6 @@ void FlowGraph::UpdateResourceNode(
   } else {
     // It does not already exist, so add it.
     VLOG(1) << "Adding new resource " << res_id << " to flow graph.";
-    if (rtnd_ptr->resource_desc().type() ==
-        ResourceDescriptor::RESOURCE_MACHINE) {
-      generate_trace_.AddMachine(
-          ResourceIDFromString(rtnd_ptr->resource_desc().uuid()));
-      cost_model_->AddMachine(rtnd_ptr);
-    }
     // N.B.: We need to ensure we hook in at the right place here by setting the
     // parent ID appropriately if it is not already.
     AddResourceNode(rtnd_ptr);

@@ -102,4 +102,25 @@ void BFSTraverseResourceProtobufTreeReturnRTND(
   }
 }
 
+void BFSTraverseResourceProtobufTreeToHash(
+    const ResourceTopologyNodeDescriptor* pb, size_t* hash,
+    boost::function<void(const ResourceTopologyNodeDescriptor*, size_t*)> callback) {  // NOLINT
+  VLOG(3) << "BFSTraversal of resource topology, reached "
+          << pb->resource_desc().uuid()
+          << ", invoking callback [" << callback << "]";
+  queue<const ResourceTopologyNodeDescriptor*> to_visit;
+  to_visit.push(pb);
+  while (!to_visit.empty()) {
+    const ResourceTopologyNodeDescriptor* res_node_desc = to_visit.front();
+    to_visit.pop();
+    callback(res_node_desc, hash);
+    for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator
+         rtnd_iter = res_node_desc->children().begin();
+         rtnd_iter != res_node_desc->children().end();
+         ++rtnd_iter) {
+      to_visit.push(&(*rtnd_iter));
+    }
+  }
+}
+
 }  // namespace firmament

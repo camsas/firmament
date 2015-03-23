@@ -56,9 +56,14 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
 
  private:
   const TaskDescriptor& GetTask(TaskID_t task_id);
+  void ComputeMachineTypeHash(const ResourceTopologyNodeDescriptor* rtnd_ptr,
+                              size_t* hash);
 
   shared_ptr<ResourceMap_t> resource_map_;
   shared_ptr<TaskMap_t> task_map_;
+  multimap<uint64_t, ResourceID_t> machine_type_to_res_id_;
+  unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
+    boost::hash<boost::uuids::uuid>> machine_to_rtnd_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
 };

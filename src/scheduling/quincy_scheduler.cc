@@ -100,7 +100,7 @@ QuincyScheduler::QuincyScheduler(
                                          knowledge_base_);
       flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
       knowledge_base_->SetCostModel(cost_model);
-      VLOG(1) << "Using the Whare-Map cost mode";
+      VLOG(1) << "Using the Whare-Map cost model";
       break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
@@ -289,10 +289,11 @@ void QuincyScheduler::UpdateResourceTopology(
   // Run a topology refresh (somewhat expensive!); if only two nodes exist, the
   // flow graph is empty apart from cluster aggregator and sink.
   VLOG(1) << "Num nodes in flow graph is: " << flow_graph_->NumNodes();
-  if (flow_graph_->NumNodes() == 1)
+  if (flow_graph_->NumNodes() == 1) {
     flow_graph_->AddResourceTopology(root);
-  else
+  } else {
     flow_graph_->AddMachine(root);
+  }
 }
 
 }  // namespace scheduler
