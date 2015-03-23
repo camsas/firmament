@@ -67,7 +67,7 @@ DEFINE_string(task_bins_output, "bins.out",
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(stats_file, "", "File to write CSV of statistics.");
 DEFINE_string(graph_output_file, "", "File to write incremental DIMACS export.");
-DEFINE_double(proportion, 1.0, "Proportion of events to retain.");
+DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -95,7 +95,7 @@ void GoogleTraceSimulator::Run() {
   FLAGS_flow_scheduling_strict = true;
 
   const uint32_t MAX_VALUE = UINT32_MAX;
-  proportion_ = FLAGS_proportion * MAX_VALUE;
+  proportion_ = (FLAGS_percentage / (double)100) * MAX_VALUE;
   VLOG(2) << "Retaining events with hash < " << proportion_;
 
   // command line argument sanity checking
