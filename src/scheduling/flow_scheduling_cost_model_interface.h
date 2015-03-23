@@ -62,6 +62,8 @@ class FlowSchedulingCostModelInterface {
                                         TaskEquivClass_t tec2) = 0;
   virtual vector<TaskEquivClass_t>* GetTaskEquivClasses(
       TaskID_t task_id) = 0;
+  virtual vector<TaskEquivClass_t>* GetResourceEquivClasses(
+      ResourceID_t res_id) = 0;
   virtual vector<ResourceID_t>* GetEquivClassPreferenceArcs(
       TaskEquivClass_t tec) = 0;
   virtual vector<ResourceID_t>* GetTaskPreferenceArcs(

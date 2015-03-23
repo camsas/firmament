@@ -80,6 +80,12 @@ vector<TaskEquivClass_t>* TrivialCostModel::GetTaskEquivClasses(
   return equiv_classes;
 }
 
+vector<TaskEquivClass_t>* TrivialCostModel::GetResourceEquivClasses(
+    ResourceID_t res_id) {
+  LOG(FATAL) << "Not implemented";
+  return NULL;
+}
+
 vector<ResourceID_t>* TrivialCostModel::GetEquivClassPreferenceArcs(
     TaskEquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();

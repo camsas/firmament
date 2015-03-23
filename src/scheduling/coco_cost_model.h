@@ -49,6 +49,7 @@ class CocoCostModel : public FlowSchedulingCostModelInterface {
   Cost_t EquivClassToEquivClass(TaskEquivClass_t tec1, TaskEquivClass_t tec2);
   // Get the type of equiv class.
   vector<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
+  vector<TaskEquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
   vector<ResourceID_t>* GetEquivClassPreferenceArcs(TaskEquivClass_t tec);
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
