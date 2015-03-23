@@ -81,7 +81,13 @@ vector<TaskEquivClass_t>* VoidCostModel::GetResourceEquivClasses(
   return NULL;
 }
 
-vector<ResourceID_t>* VoidCostModel::GetEquivClassPreferenceArcs(
+vector<ResourceID_t>* VoidCostModel::GetOutgoingEquivClassPrefArcs(
+    TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return NULL;
+}
+
+vector<TaskID_t>* VoidCostModel::GetIncomingEquivClassPrefArcs(
     TaskEquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
   return NULL;

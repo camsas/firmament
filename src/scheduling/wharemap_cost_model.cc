@@ -140,7 +140,7 @@ vector<TaskEquivClass_t>* WhareMapCostModel::GetResourceEquivClasses(
   return equiv_classes;
 }
 
-vector<ResourceID_t>* WhareMapCostModel::GetEquivClassPreferenceArcs(
+vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
     TaskEquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   if (task_aggs_.find(tec) != task_aggs_.end()) {
@@ -153,6 +153,12 @@ vector<ResourceID_t>* WhareMapCostModel::GetEquivClassPreferenceArcs(
     LOG(FATAL) << "Unexpected type of task equivalence aggregator";
   }
   return prefered_res;
+}
+
+vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
+    TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return NULL;
 }
 
 vector<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(

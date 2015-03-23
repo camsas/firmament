@@ -108,13 +108,12 @@ class FlowGraph {
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   FlowGraphNode* AddEquivClassAggregator(TaskEquivClass_t equiv_class,
                                          vector<FlowGraphArc*>* ec_arcs);
+  void AddEquivClassNode(TaskEquivClass_t ec);
   void AddEquivClassPreferenceArcs(TaskEquivClass_t equiv_class,
                                    FlowGraphNode* equiv_node,
                                    vector<FlowGraphArc*>* ec_arcs);
-  void AddResourceEquivClass(FlowGraphNode* res_node, TaskEquivClass_t ec);
   void AddResourceEquivClasses(FlowGraphNode* res_node);
   void AddSpecialNodes();
-  void AddTaskEquivClass(FlowGraphNode* task_node, TaskEquivClass_t ec);
   void AddTaskEquivClasses(FlowGraphNode* task_node);
   void AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
       JobID_t job, int64_t delta);
@@ -127,7 +126,8 @@ class FlowGraph {
   void DeleteArcGeneratingDelta(FlowGraphArc* arc);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node);
-  void DeleteOrUpdateEquivNode(TaskEquivClass_t task_equiv);
+  void DeleteOrUpdateIncomingEquivNode(TaskEquivClass_t task_equiv);
+  void DeleteOrUpdateOutgoingEquivNode(TaskEquivClass_t task_equiv);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
 
   uint64_t next_id() {

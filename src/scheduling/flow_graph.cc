@@ -163,7 +163,7 @@ void FlowGraph::AddEquivClassPreferenceArcs(
     TaskEquivClass_t equiv_class, FlowGraphNode* equiv_node,
     vector<FlowGraphArc*>* ec_arcs) {
   vector<ResourceID_t>* res_ids =
-    cost_model_->GetEquivClassPreferenceArcs(equiv_class);
+    cost_model_->GetOutgoingEquivClassPrefArcs(equiv_class);
   for (vector<ResourceID_t>::iterator it = res_ids->begin();
        it != res_ids->end(); ++it) {
     VLOG(2) << "Add equiv class preference arc form equiv class "
@@ -319,13 +319,6 @@ void FlowGraph::AddSpecialNodes() {
                                              new vector<FlowGraphArc*>()));
 }
 
-void FlowGraph::AddResourceEquivClass(FlowGraphNode* res_node,
-                                      TaskEquivClass_t ec) {
-  VLOG(2) << "Add resource equiv class " << ec << " for resouce "
-          << res_node->resource_id_;
-  //  vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
-}
-
 void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
   ResourceID_t res_id = res_node->resource_id_;
   vector<TaskEquivClass_t>* equiv_classes =
@@ -335,7 +328,7 @@ void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
     FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
     if (ec_node_ptr == NULL) {
       // Node for resource equiv class doesn't yet exist.
-      AddResourceEquivClass(res_node, *it);
+      AddEquivClassNode(*it);
     } else {
       // Node for resource equiv class already exists. Add arc from it.
       // XXX(ionel): We don't add arcs from tasks or other equiv classes
@@ -430,19 +423,37 @@ void FlowGraph::AddResourceNode(
   }
 }
 
-void FlowGraph::AddTaskEquivClass(FlowGraphNode* task_node,
-                                  TaskEquivClass_t ec) {
-  VLOG(2) << "Add task equiv class " << ec << " for task "
-          << task_node->task_id_;
+void FlowGraph::AddEquivClassNode(TaskEquivClass_t ec) {
+  VLOG(2) << "Add equiv class " << ec;
   vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
   FlowGraphNode* ec_node = AddEquivClassAggregator(ec, ec_arcs);
-  FlowGraphArc* ec_arc = AddArcInternal(task_node->id_, ec_node->id_);
-  // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
-  ec_arc->cap_upper_bound_ = 1;
-  ec_arc->cost_ =
-    cost_model_->TaskToEquivClassAggregator(task_node->task_id_, ec);
+  vector<TaskID_t>* task_pref_arcs =
+    cost_model_->GetIncomingEquivClassPrefArcs(ec);
+  vector<ResourceID_t>* res_pref_arcs =
+    cost_model_->GetOutgoingEquivClassPrefArcs(ec);
+  for (vector<TaskID_t>::iterator it = task_pref_arcs->begin();
+       it != task_pref_arcs->end(); ++it) {
+    FlowGraphArc* ec_arc =
+      AddArcInternal(NodeForTaskID(*it)->id_, ec_node->id_);
+    // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
+    ec_arc->cap_upper_bound_ = 1;
+    ec_arc->cost_ =
+      cost_model_->TaskToEquivClassAggregator(*it, ec);
+    ec_arcs->push_back(ec_arc);
+  }
+  delete task_pref_arcs;
+  for (vector<ResourceID_t>::iterator it = res_pref_arcs->begin();
+       it != res_pref_arcs->end(); ++it) {
+    FlowGraphArc* ec_arc =
+      AddArcInternal(ec_node->id_, NodeForResourceID(*it)->id_);
+    // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
+    ec_arc->cap_upper_bound_ = 1;
+    ec_arc->cost_ =
+      cost_model_->EquivClassToResourceNode(ec, *it);
+    ec_arcs->push_back(ec_arc);
+  }
+  delete res_pref_arcs;
   // Add the new equivalence node to the graph changes
-  ec_arcs->push_back(ec_arc);
   graph_changes_.push_back(new DIMACSAddNode(*ec_node, ec_arcs));
   AddArcsFromToOtherEquivNodes(ec, ec_node);
 }
@@ -455,7 +466,7 @@ void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
     FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
     if (ec_node_ptr == NULL) {
       // Node for task equiv class doesn't yet exist.
-      AddTaskEquivClass(task_node, *it);
+      AddEquivClassNode(*it);
     } else {
       // Node for task equiv class already exists. Add arc to it.
       // XXX(ionel): We don't add new arcs from the equivalence class to
@@ -692,9 +703,37 @@ void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
   leaf_res_ids_->erase(res_id);
   resource_to_nodeid_map_.erase(res_id_tmp);
   DeleteNode(node);
+  vector<TaskEquivClass_t>* equiv_classes =
+    cost_model_->GetResourceEquivClasses(res_id);
+  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    DeleteOrUpdateIncomingEquivNode(*it);
+  }
+  delete equiv_classes;
 }
 
-void FlowGraph::DeleteOrUpdateEquivNode(TaskEquivClass_t task_equiv) {
+void FlowGraph::DeleteOrUpdateIncomingEquivNode(TaskEquivClass_t task_equiv) {
+  FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
+  if (equiv_node_ptr == NULL) {
+    // Equiv class node can be NULL because all it's task are running
+    // and are directly connected to resource nodes.
+    return;
+  }
+  if (equiv_node_ptr->outgoing_arc_map_.size() == 0) {
+    VLOG(2) << "Deleting task_equiv class: " << task_equiv;
+    // The equiv class doesn't have any incoming arcs from tasks.
+    // We can remove the node.
+    tec_to_node_.erase(task_equiv);
+    unused_ids_.push(equiv_node_ptr->id_);
+    DeleteNode(equiv_node_ptr);
+  } else {
+    // TODO(ionel): We may want to reduce the number of outgoing
+    // arcs from the equiv class to cores. However, this is not
+    // mandatory.
+  }
+}
+
+void FlowGraph::DeleteOrUpdateOutgoingEquivNode(TaskEquivClass_t task_equiv) {
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
   if (equiv_node_ptr == NULL) {
     // Equiv class node can be NULL because all it's task are running
@@ -732,13 +771,13 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   task_nodes_.erase(node->task_id_);
   unused_ids_.push(node->id_);
   task_to_nodeid_map_.erase(task_id);
-  DeleteNode(node);
   // Then remove the node itself
+  DeleteNode(node);
   vector<TaskEquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(node->task_id_);
   for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
-    DeleteOrUpdateEquivNode(*it);
+    DeleteOrUpdateOutgoingEquivNode(*it);
   }
   delete equiv_classes;
 }
