@@ -36,4 +36,5 @@ message ResourceDescriptor {
   optional ResourceType type = 7;
   optional bool schedulable = 8 [default = false];
   optional string storage_engine = 9;
+  optional uint64 num_cores = 10;
 }

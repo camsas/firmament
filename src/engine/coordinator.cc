@@ -161,6 +161,7 @@ void Coordinator::DetectLocalResources() {
       local_resource_topology_->add_children();
   topology_manager_->AsProtobuf(root_node);
   root_node->set_parent_id(to_string(uuid_));
+  root_node->mutable_resource_desc()->set_num_cores(num_local_pus);
   DFSTraverseResourceProtobufTree(
       local_resource_topology_,
       boost::bind(&Coordinator::AddResource, this, _1, node_uri_, true));

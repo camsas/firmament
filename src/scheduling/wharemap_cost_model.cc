@@ -118,14 +118,30 @@ Cost_t WhareMapCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
 vector<TaskEquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
-  // TODO(ionel): Compute the task aggregator for the task.
+  TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
+  CHECK_NOTNULL(td_ptr);
+  // We have one task agg per job. The id of the aggregator is the hash
+  // of the job id.
+  size_t hash = 42;
+  boost::hash_combine(hash, td_ptr->job_id());
+  TaskEquivClass_t task_agg = static_cast<TaskEquivClass_t>(hash);
+  equiv_classes->push_back(task_agg);
+  task_aggs_.insert(task_agg);
   return equiv_classes;
 }
 
 vector<ResourceID_t>* WhareMapCostModel::GetEquivClassPreferenceArcs(
     TaskEquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
-  // TODO(ionel): Add arcs from task aggregators to machines.
+  if (task_aggs_.find(tec) != task_aggs_.end()) {
+    // tec is a task aggregator.
+    // TODO(ionel): Add arcs from task aggregators to machines.
+  } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
+    // tec is a machine aggregator.
+    // TODO(ionel): Add arcs from machine aggregators to machines.
+  } else {
+    LOG(FATAL) << "Unexpected type of task equivalence aggregator";
+  }
   return prefered_res;
 }
 
@@ -140,18 +156,24 @@ pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
     WhareMapCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
   vector<TaskEquivClass_t>* incoming_ec = new vector<TaskEquivClass_t>();
   vector<TaskEquivClass_t>* outgoing_ec = new vector<TaskEquivClass_t>();
-  // TODO(ionel): Check if tec represents a task aggregator.
-  if (tec) {
-    // Get the unique keys from the multimap and
-    // add the machine equivalence classes to the vector.
-    for (multimap<uint64_t, ResourceID_t>::iterator
-           it = machine_type_to_res_id_.begin();
-         it != machine_type_to_res_id_.end();
-         it = machine_type_to_res_id_.upper_bound(it->first)) {
-      outgoing_ec->push_back(it->first);
+  if (task_aggs_.find(tec) != task_aggs_.end()) {
+    // Add the machine equivalence classes to the vector.
+    for (unordered_set<TaskEquivClass_t>::iterator
+           it = machine_aggs_.begin();
+         it != machine_aggs_.end();
+         ++it) {
+      outgoing_ec->push_back(*it);
     }
-  } else if (!tec) {
-    // TODO(ionel): Check if tec represents a machine aggregator.
+  } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
+    // Add the task equivalence classes to the vector.
+    for (unordered_set<TaskEquivClass_t>::iterator
+           it = task_aggs_.begin();
+         it != task_aggs_.end();
+         ++it) {
+      incoming_ec->push_back(*it);
+    }
+  } else {
+    LOG(FATAL) << "Unexpected type of task equiv class";
   }
   return pair<vector<TaskEquivClass_t>*,
               vector<TaskEquivClass_t>*>(incoming_ec, outgoing_ec);
@@ -159,23 +181,52 @@ pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
 
 void WhareMapCostModel::AddMachine(
     const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  CHECK_EQ(rtnd_ptr->resource_desc().type(),
+           ResourceDescriptor::RESOURCE_MACHINE);
   size_t hash = 42;
   BFSTraverseResourceProtobufTreeToHash(
       rtnd_ptr, &hash,
       boost::bind(&WhareMapCostModel::ComputeMachineTypeHash, this, _1, _2));
   ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
-  uint64_t machine_type = static_cast<uint64_t>(hash);
-  machine_type_to_res_id_.insert(
-      pair<uint64_t, ResourceID_t>(machine_type, res_id));
+  // Set the number of cores for the machine.
+  TaskEquivClass_t machine_ec = static_cast<TaskEquivClass_t>(hash);
+  // Add mapping between task equiv class and resource id.
+  machine_ec_to_res_id_.insert(
+      pair<TaskEquivClass_t, ResourceID_t>(machine_ec, res_id));
+  // Add mapping between resource id and resource topology node.
   InsertIfNotPresent(&machine_to_rtnd_, res_id, rtnd_ptr);
+  // Add mapping between resource id and machine equiv class.
+  InsertIfNotPresent(&machine_to_ec_, res_id, machine_ec);
+  // Add machine to the machine aggregators set.
+  machine_aggs_.insert(machine_ec);
 }
 
 void WhareMapCostModel::RemoveMachine(ResourceID_t res_id) {
-  const ResourceTopologyNodeDescriptor* rtnd_ptr =
-    FindPtrOrNull(machine_to_rtnd_, res_id);
-  CHECK_NOTNULL(rtnd_ptr);
-  // TODO(ionel): Remove machine from the maps.
+  TaskEquivClass_t* machine_ec = FindOrNull(machine_to_ec_, res_id);
+  CHECK_NOTNULL(machine_ec);
+  // Rempve the machine from the machine ec map.
+  multimap<TaskEquivClass_t, ResourceID_t>::iterator it =
+    machine_ec_to_res_id_.find(*machine_ec);
+  multimap<TaskEquivClass_t, ResourceID_t>::iterator it_to =
+    machine_ec_to_res_id_.upper_bound(*machine_ec);
+  uint32_t num_machines_per_ec = 0;
+  for (; it != it_to; it++, num_machines_per_ec++) {
+    if (it->second == res_id) {
+      break;
+    }
+  }
+  // Check we actually found the machine.
+  if (it == it_to) {
+    LOG(FATAL) << "Could not find the machine";
+  }
+  machine_ec_to_res_id_.erase(it);
   machine_to_rtnd_.erase(res_id);
+  machine_to_ec_.erase(res_id);
+  // Remove the machine ec from the agg set if we removed the
+  // last machine of this type.
+  if (num_machines_per_ec == 1) {
+    machine_aggs_.erase(*machine_ec);
+  }
 }
 
 void WhareMapCostModel::ComputeMachineTypeHash(
