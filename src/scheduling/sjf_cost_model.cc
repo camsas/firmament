@@ -153,4 +153,10 @@ pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
               vector<TaskEquivClass_t>*>(equiv_classes, equiv_classes);
 }
 
+void SJFCostModel::AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+}
+
+void SJFCostModel::RemoveMachine(ResourceID_t res_id) {
+}
+
 }  // namespace firmament

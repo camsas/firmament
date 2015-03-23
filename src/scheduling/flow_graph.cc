@@ -6,6 +6,7 @@
 
 #include <queue>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <cstdio>
@@ -757,6 +758,7 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
 
 void FlowGraph::RemoveMachine(ResourceID_t res_id) {
   generate_trace_.RemoveMachine(res_id);
+  cost_model_->RemoveMachine(res_id);
   DeleteResourceNode(res_id);
 }
 
@@ -870,6 +872,7 @@ void FlowGraph::UpdateResourceNode(
         ResourceDescriptor::RESOURCE_MACHINE) {
       generate_trace_.AddMachine(
           ResourceIDFromString(rtnd_ptr->resource_desc().uuid()));
+      cost_model_->AddMachine(rtnd_ptr);
     }
     // N.B.: We need to ensure we hook in at the right place here by setting the
     // parent ID appropriately if it is not already.

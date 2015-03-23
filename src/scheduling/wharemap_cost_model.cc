@@ -136,4 +136,11 @@ pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
               vector<TaskEquivClass_t>*>(equiv_classes, equiv_classes);
 }
 
+void WhareMapCostModel::AddMachine(
+    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+}
+
+void WhareMapCostModel::RemoveMachine(ResourceID_t res_id) {
+}
+
 }  // namespace firmament
