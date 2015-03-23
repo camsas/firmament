@@ -35,7 +35,20 @@ GenerateTrace::~GenerateTrace() {
   if (FLAGS_generate_trace) {
     fclose(machine_events_);
     fclose(task_events_);
-    // TODO(ionel): Write task runtime events.
+    for (unordered_map<TaskID_t, TaskRuntime>::iterator
+           it = task_to_runtime_.begin();
+         it != task_to_runtime_.end();
+         ++it) {
+      uint64_t* job_id_ptr = FindOrNull(task_to_job_, it->first);
+      uint64_t* task_index_ptr = FindOrNull(task_to_index_, it->first);
+      TaskRuntime task_runtime = it->second;
+      // NOTE: We are using the job id as the job logical name.
+      fprintf(task_runtime_events_, "%" PRId64 " %" PRId64 " %" PRId64 " %"
+              PRId64 " %" PRId64 " %" PRId64 " %" PRId64 "      \n",
+              *job_id_ptr, *task_index_ptr, *job_id_ptr,
+              task_runtime.start_time, task_runtime.total_runtime,
+              task_runtime.runtime, task_runtime.num_runs);
+    }
     fclose(task_runtime_events_);
     for (unordered_map<uint64_t, uint64_t>::iterator
            it = job_num_tasks_.begin();
@@ -45,7 +58,18 @@ GenerateTrace::~GenerateTrace() {
               it->first, it->second);
     }
     fclose(jobs_num_tasks_);
-    // TODO(ionel): Write task usage stats.
+    // TODO(ionel): Collect task usage stats.
+    for (unordered_map<TaskID_t, uint64_t>::iterator
+           it = task_to_job_.begin();
+         it != task_to_job_.end();
+         ++it) {
+      uint64_t* job_id_ptr = FindOrNull(task_to_job_, it->first);
+      uint64_t* task_index_ptr = FindOrNull(task_to_index_, it->first);
+      fprintf(task_usage_stat_,
+              "%" PRId64 " %" PRId64 " 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n",
+              *job_id_ptr, *task_index_ptr);
+    }
     fclose(task_usage_stat_);
   }
 }
@@ -101,6 +125,19 @@ void GenerateTrace::TaskSubmitted(JobID_t job_id, TaskID_t task_id) {
     }
     fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
             timestamp, job_id_hash, task_index, task_event);
+    TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
+    if (tr_ptr == NULL) {
+      TaskRuntime task_runtime;
+      task_runtime.start_time = timestamp;
+      task_runtime.num_runs = 1;
+      // TODO(ionel): We are setting the last schedule time when the task
+      // was submitted. It's not correct.
+      task_runtime.last_schedule_time = timestamp;
+      InsertIfNotPresent(&task_to_runtime_, task_id, task_runtime);
+    } else {
+      tr_ptr->last_schedule_time = timestamp;
+      tr_ptr->num_runs++;
+    }
   }
 }
 
@@ -112,6 +149,12 @@ void GenerateTrace::TaskCompleted(TaskID_t task_id) {
     uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
     fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
             timestamp, *job_id_ptr, *task_index_ptr, task_event);
+    TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
+    CHECK_NOTNULL(tr_ptr);
+    // XXX(ionel): This assumes that only one task with task_id is running
+    // at a time.
+    tr_ptr->total_runtime += timestamp - tr_ptr->last_schedule_time;
+    tr_ptr->runtime = timestamp - tr_ptr->last_schedule_time;
   }
 }
 
@@ -123,6 +166,11 @@ void GenerateTrace::TaskFailed(TaskID_t task_id) {
     uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
     fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
             timestamp, *job_id_ptr, *task_index_ptr, task_event);
+    TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
+    CHECK_NOTNULL(tr_ptr);
+    // XXX(ionel): This assumes that only one task with task_id is running
+    // at a time.
+    tr_ptr->total_runtime += timestamp - tr_ptr->last_schedule_time;
   }
 }
 
@@ -134,6 +182,11 @@ void GenerateTrace::TaskKilled(TaskID_t task_id) {
     uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
     fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
             timestamp, *job_id_ptr, *task_index_ptr, task_event);
+    TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
+    CHECK_NOTNULL(tr_ptr);
+    // XXX(ionel): This assumes that only one task with task_id is running
+    // at a time.
+    tr_ptr->total_runtime += timestamp - tr_ptr->last_schedule_time;
   }
 }
 

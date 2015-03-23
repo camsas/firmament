@@ -10,6 +10,20 @@
 
 namespace firmament {
 
+typedef struct TaskRuntime_st {
+  uint64_t start_time;
+  uint64_t num_runs;
+  uint64_t last_schedule_time;
+  uint64_t total_runtime;
+  uint64_t runtime;
+  int64_t scheduling_class;
+  int64_t priority;
+  double cpu_request;
+  double ram_request;
+  double disk_request;
+  int32_t machine_constraint;
+} TaskRuntime;
+
 class GenerateTrace {
  public:
   GenerateTrace();
@@ -24,6 +38,7 @@ class GenerateTrace {
   unordered_map<TaskID_t, uint64_t> task_to_job_;
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
   unordered_map<TaskID_t, uint64_t> task_to_index_;
+  unordered_map<TaskID_t, TaskRuntime> task_to_runtime_;
   FILE* machine_events_;
   FILE* task_events_;
   FILE* task_runtime_events_;
