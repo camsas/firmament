@@ -117,8 +117,8 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
   return arc;
 }
 
-void FlowGraph::AddArcsToOtherEquivNodes(TaskEquivClass_t equiv_class,
-                                         FlowGraphNode* ec_node) {
+void FlowGraph::AddArcsFromToOtherEquivNodes(TaskEquivClass_t equiv_class,
+                                             FlowGraphNode* ec_node) {
   pair<vector<TaskEquivClass_t>*,
        vector<TaskEquivClass_t>*> equiv_class_to_connect =
     cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
@@ -149,8 +149,7 @@ void FlowGraph::AddArcsToOtherEquivNodes(TaskEquivClass_t equiv_class,
 }
 
 FlowGraphNode* FlowGraph::AddEquivClassAggregator(
-    TaskID_t task_id, TaskEquivClass_t equiv_class,
-    vector<FlowGraphArc*>* ec_arcs) {
+    TaskEquivClass_t equiv_class, vector<FlowGraphArc*>* ec_arcs) {
   FlowGraphNode* ec_node = AddNodeInternal(next_id());
   CHECK(InsertIfNotPresent(&tec_to_node_, equiv_class, ec_node));
   string comment;
@@ -320,6 +319,38 @@ void FlowGraph::AddSpecialNodes() {
                                              new vector<FlowGraphArc*>()));
 }
 
+void FlowGraph::AddResourceEquivClass(FlowGraphNode* res_node,
+                                      TaskEquivClass_t ec) {
+  VLOG(2) << "Add resource equiv class " << ec << " for resouce "
+          << res_node->resource_id_;
+  //  vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
+}
+
+void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
+  ResourceID_t res_id = res_node->resource_id_;
+  vector<TaskEquivClass_t>* equiv_classes =
+    cost_model_->GetResourceEquivClasses(res_id);
+  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
+    if (ec_node_ptr == NULL) {
+      // Node for resource equiv class doesn't yet exist.
+      AddResourceEquivClass(res_node, *it);
+    } else {
+      // Node for resource equiv class already exists. Add arc from it.
+      // XXX(ionel): We don't add arcs from tasks or other equiv classes
+      // to the resource equiv class when a new resource is connected to it.
+      FlowGraphArc* ec_arc =
+        AddArcInternal(ec_node_ptr->id_, res_node->id_);
+      ec_arc->cap_upper_bound_ = 1;
+      ec_arc->cost_ =
+        cost_model_->EquivClassToResourceNode(*it, res_id);
+      graph_changes_.push_back(new DIMACSNewArc(*ec_arc));
+    }
+  }
+  delete equiv_classes;
+}
+
 void FlowGraph::AddResourceTopology(
     const ResourceTopologyNodeDescriptor& resource_tree) {
   BFSTraverseResourceProtobufTreeReturnRTND(
@@ -334,16 +365,6 @@ void FlowGraph::AddResourceNode(
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
   // Add the node if it does not already exist
   if (!NodeForResourceID(ResourceIDFromString(rtnd.resource_desc().uuid()))) {
-    if (rtnd_ptr->resource_desc().type() ==
-        ResourceDescriptor::RESOURCE_MACHINE) {
-      ResourceID_t res_id =
-        ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
-      generate_trace_.AddMachine(res_id);
-      cost_model_->AddMachine(rtnd_ptr);
-      vector<TaskEquivClass_t>* equiv_classes =
-        cost_model_->GetResourceEquivClasses(res_id);
-      // TODO(ionel): Add arcs from resource aggregator.
-    }
     vector<FlowGraphArc*> *resource_arcs = new vector<FlowGraphArc*>();
     uint64_t id = next_id();
     if (rtnd.resource_desc().has_friendly_name()) {
@@ -383,6 +404,14 @@ void FlowGraph::AddResourceNode(
     }
     // Add new resource node to the graph changes.
     graph_changes_.push_back(new DIMACSAddNode(*new_node, resource_arcs));
+    if (rtnd_ptr->resource_desc().type() ==
+        ResourceDescriptor::RESOURCE_MACHINE) {
+      ResourceID_t res_id =
+        ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
+      generate_trace_.AddMachine(res_id);
+      cost_model_->AddMachine(rtnd_ptr);
+      AddResourceEquivClasses(new_node);
+    }
   } else {
     new_node = NodeForResourceID(
         ResourceIDFromString(rtnd.resource_desc().uuid()));
@@ -401,6 +430,23 @@ void FlowGraph::AddResourceNode(
   }
 }
 
+void FlowGraph::AddTaskEquivClass(FlowGraphNode* task_node,
+                                  TaskEquivClass_t ec) {
+  VLOG(2) << "Add task equiv class " << ec << " for task "
+          << task_node->task_id_;
+  vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
+  FlowGraphNode* ec_node = AddEquivClassAggregator(ec, ec_arcs);
+  FlowGraphArc* ec_arc = AddArcInternal(task_node->id_, ec_node->id_);
+  // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
+  ec_arc->cap_upper_bound_ = 1;
+  ec_arc->cost_ =
+    cost_model_->TaskToEquivClassAggregator(task_node->task_id_, ec);
+  // Add the new equivalence node to the graph changes
+  ec_arcs->push_back(ec_arc);
+  graph_changes_.push_back(new DIMACSAddNode(*ec_node, ec_arcs));
+  AddArcsFromToOtherEquivNodes(ec, ec_node);
+}
+
 void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
   vector<TaskEquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(task_node->task_id_);
@@ -408,21 +454,8 @@ void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
        it != equiv_classes->end(); ++it) {
     FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
     if (ec_node_ptr == NULL) {
-      VLOG(2) << "Add task equiv class " << *it << " for task "
-              << task_node->task_id_;
       // Node for task equiv class doesn't yet exist.
-      vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
-      FlowGraphNode* ec_node =
-        AddEquivClassAggregator(task_node->task_id_, *it, ec_arcs);
-      FlowGraphArc* ec_arc = AddArcInternal(task_node->id_, ec_node->id_);
-      // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
-      ec_arc->cap_upper_bound_ = 1;
-      ec_arc->cost_ =
-        cost_model_->TaskToEquivClassAggregator(task_node->task_id_, *it);
-      // Add the new equivalence node to the graph changes
-      ec_arcs->push_back(ec_arc);
-      graph_changes_.push_back(new DIMACSAddNode(*ec_node, ec_arcs));
-      AddArcsToOtherEquivNodes(*it, ec_node);
+      AddTaskEquivClass(task_node, *it);
     } else {
       // Node for task equiv class already exists. Add arc to it.
       // XXX(ionel): We don't add new arcs from the equivalence class to

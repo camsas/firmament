@@ -102,17 +102,19 @@ class FlowGraph {
   void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
                       vector<FlowGraphArc*>* task_arcs);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
-  void AddArcsToOtherEquivNodes(TaskEquivClass_t equiv_class,
-                                FlowGraphNode* ec_node);
+  void AddArcsFromToOtherEquivNodes(TaskEquivClass_t equiv_class,
+                                    FlowGraphNode* ec_node);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
-  FlowGraphNode* AddEquivClassAggregator(TaskID_t task_id,
-                                         TaskEquivClass_t equiv_class,
+  FlowGraphNode* AddEquivClassAggregator(TaskEquivClass_t equiv_class,
                                          vector<FlowGraphArc*>* ec_arcs);
   void AddEquivClassPreferenceArcs(TaskEquivClass_t equiv_class,
                                    FlowGraphNode* equiv_node,
                                    vector<FlowGraphArc*>* ec_arcs);
+  void AddResourceEquivClass(FlowGraphNode* res_node, TaskEquivClass_t ec);
+  void AddResourceEquivClasses(FlowGraphNode* res_node);
   void AddSpecialNodes();
+  void AddTaskEquivClass(FlowGraphNode* task_node, TaskEquivClass_t ec);
   void AddTaskEquivClasses(FlowGraphNode* task_node);
   void AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
       JobID_t job, int64_t delta);
