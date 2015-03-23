@@ -1,5 +1,6 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // WhareMap cost model.
 
@@ -18,14 +19,16 @@
 
 namespace firmament {
 
-WhareMapCostModel::WhareMapCostModel(shared_ptr<TaskMap_t> task_table,
-                           KnowledgeBase* kb)
-  : knowledge_base_(kb),
-    task_table_(task_table) {
+WhareMapCostModel::WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
+                                     shared_ptr<TaskMap_t> task_map,
+                                     KnowledgeBase* kb)
+  : resource_map_(resource_map),
+    task_map_(task_map),
+    knowledge_base_(kb) {
 }
 
 const TaskDescriptor& WhareMapCostModel::GetTask(TaskID_t task_id) {
-  TaskDescriptor* td = FindPtrOrNull(*task_table_, task_id);
+  TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td);
   return *td;
 }
@@ -33,6 +36,7 @@ const TaskDescriptor& WhareMapCostModel::GetTask(TaskID_t task_id) {
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
 Cost_t WhareMapCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
+  // TODO(ionel): Implement!
   const TaskDescriptor& td = GetTask(task_id);
   uint64_t now = GetCurrentTimestamp();
   uint64_t time_since_submit = now - td.submit_time();
@@ -53,6 +57,7 @@ Cost_t WhareMapCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 // task to run on any node in the cluster. The cost of the topology's arcs are
 // the same for all the tasks.
 Cost_t WhareMapCostModel::TaskToClusterAggCost(TaskID_t task_id) {
+  // TODO(ionel): Implement!
   vector<TaskEquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   CHECK_GT(equiv_classes->size(), 0);
   // Avg runtime is in milliseconds, so we convert it to tenths of a second
@@ -63,13 +68,15 @@ Cost_t WhareMapCostModel::TaskToClusterAggCost(TaskID_t task_id) {
 }
 
 Cost_t WhareMapCostModel::TaskToResourceNodeCost(TaskID_t task_id,
-                                            ResourceID_t resource_id) {
+                                                 ResourceID_t resource_id) {
+  // TODO(ionel): Implement!
   return TaskToClusterAggCost(task_id);
 }
 
 Cost_t WhareMapCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {
+  // TODO(ionel): Implement!
   return 0LL;
 }
 
@@ -88,16 +95,19 @@ Cost_t WhareMapCostModel::TaskPreemptionCost(TaskID_t task_id) {
 
 Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
                                                      TaskEquivClass_t tec) {
+  // TODO(ionel): Implement!
   return 0LL;
 }
 
 Cost_t WhareMapCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
                                                    ResourceID_t res_id) {
+  // TODO(ionel): Implement!
   return 0LL;
 }
 
 Cost_t WhareMapCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
                                                  TaskEquivClass_t tec2) {
+  // TODO(ionel): Implement!
   return 0LL;
 }
 

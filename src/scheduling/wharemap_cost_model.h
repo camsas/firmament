@@ -24,8 +24,9 @@ typedef int64_t Cost_t;
 
 class WhareMapCostModel : public FlowSchedulingCostModelInterface {
  public:
-  WhareMapCostModel(shared_ptr<TaskMap_t> task_table,
-               KnowledgeBase* kb);
+  WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
+                    shared_ptr<TaskMap_t> task_map,
+                    KnowledgeBase* kb);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -54,9 +55,10 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
  private:
   const TaskDescriptor& GetTask(TaskID_t task_id);
 
+  shared_ptr<ResourceMap_t> resource_map_;
+  shared_ptr<TaskMap_t> task_map_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
-  shared_ptr<TaskMap_t> task_table_;
 };
 
 }  // namespace firmament

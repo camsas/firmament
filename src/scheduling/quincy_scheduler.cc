@@ -95,6 +95,13 @@ QuincyScheduler::QuincyScheduler(
       knowledge_base_->SetCostModel(cost_model);
       VLOG(1) << "Using the Quincy cost model";
       break;
+    case FlowSchedulingCostModelType::COST_MODEL_WHARE:
+      cost_model = new WhareMapCostModel(resource_map, task_map,
+                                         knowledge_base_);
+      flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
+      knowledge_base_->SetCostModel(cost_model);
+      VLOG(1) << "Using the Whare-Map cost mode";
+      break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
