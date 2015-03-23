@@ -95,6 +95,13 @@ QuincyScheduler::QuincyScheduler(
       knowledge_base_->SetCostModel(cost_model);
       VLOG(1) << "Using the Quincy cost model";
       break;
+    case FlowSchedulingCostModelType::COST_MODEL_WHARE:
+      cost_model = new WhareMapCostModel(resource_map, task_map,
+                                         knowledge_base_);
+      flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
+      knowledge_base_->SetCostModel(cost_model);
+      VLOG(1) << "Using the Whare-Map cost model";
+      break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
@@ -157,13 +164,21 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
   return num_scheduled;
 }
 
+void QuincyScheduler::DeregisterResource(ResourceID_t res_id) {
+  EventDrivenScheduler::DeregisterResource(res_id);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->RemoveMachine(res_id);
+  }
+}
+
 void QuincyScheduler::HandleJobCompletion(JobID_t job_id) {
   // Call into superclass handler
   EventDrivenScheduler::HandleJobCompletion(job_id);
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     // Job completed, so remove its nodes
-    flow_graph_->DeleteNodesForJob(job_id);
+    flow_graph_->JobCompleted(job_id);
   }
 }
 
@@ -173,7 +188,24 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->DeleteTaskNode(td_ptr->uid());
+    flow_graph_->TaskCompleted(td_ptr->uid());
+  }
+}
+
+void QuincyScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
+  EventDrivenScheduler::HandleTaskFailure(td_ptr);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->TaskFailed(td_ptr->uid());
+  }
+}
+
+void QuincyScheduler::KillRunningTask(TaskID_t task_id,
+                                      TaskKillMessage::TaskKillReason reason) {
+  EventDrivenScheduler::KillRunningTask(task_id, reason);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->TaskKilled(task_id);
   }
 }
 
@@ -198,8 +230,11 @@ uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
 }
 
 void QuincyScheduler::RegisterResource(ResourceID_t res_id, bool local) {
-  // Update the flow graph
-  UpdateResourceTopology(resource_topology_);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    // Update the flow graph
+    UpdateResourceTopology(resource_topology_);
+  }
   // Call into superclass method to do scheduler resource initialisation.
   // This will create the executor for the new resource.
   EventDrivenScheduler::RegisterResource(res_id, local);
@@ -254,10 +289,11 @@ void QuincyScheduler::UpdateResourceTopology(
   // Run a topology refresh (somewhat expensive!); if only two nodes exist, the
   // flow graph is empty apart from cluster aggregator and sink.
   VLOG(1) << "Num nodes in flow graph is: " << flow_graph_->NumNodes();
-  if (flow_graph_->NumNodes() == 1)
+  if (flow_graph_->NumNodes() == 1) {
     flow_graph_->AddResourceTopology(root);
-  else
-    flow_graph_->UpdateResourceTopology(root);
+  } else {
+    flow_graph_->AddMachine(root);
+  }
 }
 
 }  // namespace scheduler

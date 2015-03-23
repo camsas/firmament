@@ -15,6 +15,7 @@
 #include "base/types.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "engine/topology_manager.h"
+#include "misc/generate_trace.h"
 #include "misc/map-util.h"
 #include "scheduling/dimacs_change.h"
 #include "scheduling/flow_graph_arc.h"
@@ -32,6 +33,7 @@ class FlowGraph {
                        boost::hash<boost::uuids::uuid>>* leaf_res_ids);
   virtual ~FlowGraph();
   // Public API
+  void AddMachine(const ResourceTopologyNodeDescriptor& root);
   void AddOrUpdateJobNodes(JobDescriptor* jd);
   void AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void AddResourceTopology(
@@ -44,9 +46,14 @@ class FlowGraph {
   void DeleteResourceNode(ResourceID_t res_id);
   void DeleteTaskNode(TaskID_t task_id);
   FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
+  void JobCompleted(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
+  void RemoveMachine(ResourceID_t res_id);
   void ResetChanges();
+  void TaskCompleted(TaskID_t task_id);
+  void TaskFailed(TaskID_t task_id);
+  void TaskKilled(TaskID_t task_id);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
   void UpdateResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
@@ -167,6 +174,7 @@ class FlowGraph {
   queue<uint64_t> unused_ids_;
   // Vector storing the ids of the nodes we've created.
   vector<uint64_t> ids_created_;
+  GenerateTrace generate_trace_;
 };
 
 }  // namespace firmament

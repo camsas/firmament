@@ -40,6 +40,10 @@ void BFSTraverseResourceProtobufTreeReturnRTND(
     const ResourceTopologyNodeDescriptor* pb,
     boost::function<void(const ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
 
+void BFSTraverseResourceProtobufTreeToHash(
+    const ResourceTopologyNodeDescriptor* pb, size_t* hash,
+    boost::function<void(const ResourceTopologyNodeDescriptor*, size_t*)> callback);  // NOLINT
+
 }  // namespace firmament
 
 #endif  // FIRMAMENT_MISC_PB_UTILS_H

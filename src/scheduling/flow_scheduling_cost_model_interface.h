@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "base/common.h"
+#include "base/resource_topology_node_desc.pb.h"
 #include "base/types.h"
 #include "scheduling/common.h"
 
@@ -67,6 +68,9 @@ class FlowSchedulingCostModelInterface {
       TaskID_t task_id) = 0;
   virtual pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
     GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) = 0;
+  // Calls made to the scheduler when machines are added or removed.
+  virtual void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) = 0;
+  virtual void RemoveMachine(ResourceID_t res_id) = 0;
 };
 
 }  // namespace firmament

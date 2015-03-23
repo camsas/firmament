@@ -144,4 +144,11 @@ pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
               vector<TaskEquivClass_t>*>(equiv_classes, equiv_classes);
 }
 
+void QuincyCostModel::AddMachine(
+    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+}
+
+void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
+}
+
 }  // namespace firmament

@@ -92,4 +92,10 @@ pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
   return pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>(NULL, NULL);
 }
 
+void VoidCostModel::AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+}
+
+void VoidCostModel::RemoveMachine(ResourceID_t res_id) {
+}
+
 } // namespace firmament

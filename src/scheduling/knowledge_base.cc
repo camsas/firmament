@@ -80,7 +80,8 @@ void KnowledgeBase::AddMachineSample(
     string message_string;
     sample.SerializeToString(&message_string);
     coded_machine_output_->WriteVarint32(message_string.size());
-    coded_machine_output_->WriteRaw(message_string.data(), message_string.size());
+    coded_machine_output_->WriteRaw(message_string.data(),
+                                    message_string.size());
   }
 }
 

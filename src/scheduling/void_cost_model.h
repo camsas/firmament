@@ -45,6 +45,8 @@ class VoidCostModel : public FlowSchedulingCostModelInterface {
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
     GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec);
+  void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr);
+  void RemoveMachine(ResourceID_t res_id);
 };
 
 }  // namespace firmament

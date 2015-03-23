@@ -24,8 +24,9 @@ typedef int64_t Cost_t;
 
 class WhareMapCostModel : public FlowSchedulingCostModelInterface {
  public:
-  WhareMapCostModel(shared_ptr<TaskMap_t> task_table,
-               KnowledgeBase* kb);
+  WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
+                    shared_ptr<TaskMap_t> task_map,
+                    KnowledgeBase* kb);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -50,13 +51,29 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
     GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec);
+  void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr);
+  void RemoveMachine(ResourceID_t res_id);
 
  private:
   const TaskDescriptor& GetTask(TaskID_t task_id);
+  void ComputeMachineTypeHash(const ResourceTopologyNodeDescriptor* rtnd_ptr,
+                              size_t* hash);
 
+  shared_ptr<ResourceMap_t> resource_map_;
+  shared_ptr<TaskMap_t> task_map_;
+  // Mapping between machine equiv classes and machines.
+  multimap<TaskEquivClass_t, ResourceID_t> machine_ec_to_res_id_;
+  // Mapping betweeen machine res id and resource topology node descriptor.
+  unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
+    boost::hash<boost::uuids::uuid>> machine_to_rtnd_;
+  // Mapping between machine res id and task equiv class.
+  unordered_map<ResourceID_t, TaskEquivClass_t,
+    boost::hash<boost::uuids::uuid>> machine_to_ec_;
+
+  unordered_set<TaskEquivClass_t> task_aggs_;
+  unordered_set<TaskEquivClass_t> machine_aggs_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
-  shared_ptr<TaskMap_t> task_table_;
 };
 
 }  // namespace firmament

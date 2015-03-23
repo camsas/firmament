@@ -118,4 +118,11 @@ pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
               vector<TaskEquivClass_t>*>(equiv_classes, equiv_classes);
 }
 
+void RandomCostModel::AddMachine(
+    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+}
+
+void RandomCostModel::RemoveMachine(ResourceID_t res_id) {
+}
+
 }  // namespace firmament

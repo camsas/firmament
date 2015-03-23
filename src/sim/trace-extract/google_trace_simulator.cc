@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <limits>
 #include <set>
 #include <string>
 #include <utility>
@@ -585,7 +586,8 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
 void GoogleTraceSimulator::ProcessTaskEvent(
     uint64_t cur_time, const TaskIdentifier& task_identifier,
     uint64_t event_type,
-    unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_runtime) {
+    unordered_map<TaskIdentifier, uint64_t,
+      TaskIdentifierHasher>* task_runtime) {
   if (event_type == SUBMIT_EVENT) {
     AddNewTask(task_identifier);
     AddTaskStats(task_identifier, task_runtime);
@@ -802,7 +804,8 @@ void GoogleTraceSimulator::ReplayTrace() {
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
-          ProcessTaskEvent(task_time, task_identifier, event_type, task_runtime);
+          ProcessTaskEvent(task_time, task_identifier, event_type,
+                           task_runtime);
         }
       }
     }
