@@ -161,7 +161,7 @@ void QuincyScheduler::DeregisterResource(ResourceID_t res_id) {
   EventDrivenScheduler::DeregisterResource(res_id);
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->DeleteResourceNode(res_id);
+    flow_graph_->RemoveMachine(res_id);
   }
 }
 
@@ -171,7 +171,7 @@ void QuincyScheduler::HandleJobCompletion(JobID_t job_id) {
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     // Job completed, so remove its nodes
-    flow_graph_->DeleteNodesForJob(job_id);
+    flow_graph_->JobCompleted(job_id);
   }
 }
 
@@ -181,7 +181,7 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->DeleteTaskNode(td_ptr->uid());
+    flow_graph_->TaskCompleted(td_ptr->uid());
   }
 }
 
@@ -189,7 +189,7 @@ void QuincyScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   EventDrivenScheduler::HandleTaskFailure(td_ptr);
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->DeleteTaskNode(td_ptr->uid());
+    flow_graph_->TaskFailed(td_ptr->uid());
   }
 }
 
@@ -198,7 +198,7 @@ void QuincyScheduler::KillRunningTask(TaskID_t task_id,
   EventDrivenScheduler::KillRunningTask(task_id, reason);
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->DeleteTaskNode(task_id);
+    flow_graph_->TaskKilled(task_id);
   }
 }
 
@@ -285,7 +285,7 @@ void QuincyScheduler::UpdateResourceTopology(
   if (flow_graph_->NumNodes() == 1)
     flow_graph_->AddResourceTopology(root);
   else
-    flow_graph_->UpdateResourceTopology(root);
+    flow_graph_->AddMachine(root);
 }
 
 }  // namespace scheduler

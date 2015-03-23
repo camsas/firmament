@@ -57,6 +57,10 @@ FlowGraph::~FlowGraph() {
   // nodes and arcs in the flow graph (which are allocated on the heap)
 }
 
+void FlowGraph::AddMachine(const ResourceTopologyNodeDescriptor& root) {
+  UpdateResourceTopology(root);
+}
+
 void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
                                FlowGraphNode* unsched_agg_node,
                                vector<FlowGraphArc*>* task_arcs) {
@@ -246,6 +250,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
     uint64_t* tn_ptr = FindOrNull(task_to_nodeid_map_, cur->uid());
     FlowGraphNode* task_node = tn_ptr ? Node(*tn_ptr) : NULL;
     if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
+      generate_trace_.TaskSubmitted(JobIDFromString(jd->uuid()), cur->uid());
       vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
       task_node = AddNodeInternal(next_id());
       task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK);
@@ -694,6 +699,19 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   delete equiv_classes;
 }
 
+void FlowGraph::JobCompleted(JobID_t job_id) {
+  uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
+  CHECK_NOTNULL(unsched_node_id);
+  FlowGraphNode* node = Node(*unsched_node_id);
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator
+         it = node->incoming_arc_map_.begin();
+       it != node->incoming_arc_map_.end();
+       it++) {
+    generate_trace_.TaskCompleted(it->second->src_node_->task_id_);
+  }
+  DeleteNodesForJob(job_id);
+}
+
 FlowGraphNode* FlowGraph::NodeForResourceID(const ResourceID_t& res_id) {
   uint64_t* id = FindOrNull(resource_to_nodeid_map_, res_id);
   // Returns NULL if resource unknown
@@ -735,6 +753,26 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
   FlowGraphArc* new_arc = AddArcInternal(task_node, res_node);
   new_arc->cap_upper_bound_ = 1;
   graph_changes_.push_back(new DIMACSNewArc(*new_arc));
+}
+
+void FlowGraph::RemoveMachine(ResourceID_t res_id) {
+  generate_trace_.RemoveMachine(res_id);
+  DeleteResourceNode(res_id);
+}
+
+void FlowGraph::TaskCompleted(TaskID_t tid) {
+  generate_trace_.TaskCompleted(tid);
+  DeleteTaskNode(tid);
+}
+
+void FlowGraph::TaskFailed(TaskID_t tid) {
+  generate_trace_.TaskFailed(tid);
+  DeleteTaskNode(tid);
+}
+
+void FlowGraph::TaskKilled(TaskID_t tid) {
+  generate_trace_.TaskKilled(tid);
+  DeleteTaskNode(tid);
 }
 
 void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
@@ -828,6 +866,11 @@ void FlowGraph::UpdateResourceNode(
   } else {
     // It does not already exist, so add it.
     VLOG(1) << "Adding new resource " << res_id << " to flow graph.";
+    if (rtnd_ptr->resource_desc().type() ==
+        ResourceDescriptor::RESOURCE_MACHINE) {
+      generate_trace_.AddMachine(
+          ResourceIDFromString(rtnd_ptr->resource_desc().uuid()));
+    }
     // N.B.: We need to ensure we hook in at the right place here by setting the
     // parent ID appropriately if it is not already.
     AddResourceNode(rtnd_ptr);
