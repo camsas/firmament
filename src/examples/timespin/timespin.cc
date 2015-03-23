@@ -25,6 +25,7 @@
 
 #include "examples/timespin/timespin.h"
 
+#include <string>
 #include <vector>
 
 #include <stdlib.h>

@@ -3,6 +3,8 @@
 //
 // Generate Google style trace.
 
+#include <string>
+
 #include <boost/functional/hash.hpp>
 
 #include "base/common.h"
@@ -18,11 +20,13 @@ namespace firmament {
 
 GenerateTrace::GenerateTrace() {
   if (FLAGS_generate_trace) {
-    string path = FLAGS_generated_trace_path + "machine_events/part-00000-of-00001.csv";
+    string path =
+      FLAGS_generated_trace_path + "machine_events/part-00000-of-00001.csv";
     machine_events_ = fopen(path.c_str(), "w");
     path = FLAGS_generated_trace_path + "task_events/part-00000-of-00500.csv";
     task_events_ = fopen(path.c_str(), "w");
-    path = FLAGS_generated_trace_path + "task_runtime_events/task_runtime_events.csv";
+    path = FLAGS_generated_trace_path +
+      "task_runtime_events/task_runtime_events.csv";
     task_runtime_events_ = fopen(path.c_str(), "w");
     path = FLAGS_generated_trace_path + "jobs_num_tasks/jobs_num_tasks.csv";
     jobs_num_tasks_ = fopen(path.c_str(), "w");

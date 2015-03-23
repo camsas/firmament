@@ -43,7 +43,7 @@ void LaunchTasklib() {
     firmament::common::InitFirmament(2, argv);
 
   // Set process/thread name for debugging
-  prctl(PR_SET_NAME,"TaskLibMonitor", 0, 0, 0);
+  prctl(PR_SET_NAME, "TaskLibMonitor", 0, 0, 0);
 
   task_lib_ = new TaskLib();
   task_lib_->RunMonitor(task_thread_id);

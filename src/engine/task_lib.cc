@@ -105,7 +105,8 @@ void TaskLib::Stop(bool success) {
     stop_ = true;
     //while (task_running_) {
     //  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-    //   //Wait until the monitor has stopped before sending the finalize message.
+    //   //Wait until the monitor has stopped before sending the finalize
+    //   //message.
     //}
     sleep(1);
     LOG(INFO) << "Sending finalize message to coordinator...";

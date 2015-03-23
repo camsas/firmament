@@ -434,7 +434,8 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
   TemplateDictionary dict("resource_status");
   if (rtnd_ptr) {
     dict.SetValue("RES_ID", rtnd_ptr->resource_desc().uuid());
-    dict.SetValue("RES_FRIENDLY_NAME", rtnd_ptr->resource_desc().friendly_name());
+    dict.SetValue("RES_FRIENDLY_NAME",
+                  rtnd_ptr->resource_desc().friendly_name());
     dict.SetValue("RES_REC", "Not implemented");
     dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
                                              rtnd_ptr->resource_desc().type()));
