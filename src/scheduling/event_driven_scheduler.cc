@@ -21,7 +21,7 @@
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
 
-#define TASK_FAIL_TIMEOUT 10000000ULL
+#define TASK_FAIL_TIMEOUT 60000000ULL
 
 namespace firmament {
 namespace scheduler {
