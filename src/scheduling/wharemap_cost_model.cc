@@ -6,6 +6,7 @@
 
 #include "scheduling/wharemap_cost_model.h"
 
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -148,7 +149,13 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
     // TODO(ionel): Add arcs from task aggregators to machines.
   } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
     // tec is a machine aggregator.
-    // TODO(ionel): Add arcs from machine aggregators to machines.
+    multimap<TaskEquivClass_t, ResourceID_t>::iterator it =
+      machine_ec_to_res_id_.find(tec);
+    multimap<TaskEquivClass_t, ResourceID_t>::iterator it_to =
+      machine_ec_to_res_id_.upper_bound(tec);
+    for (; it != it_to; ++it) {
+      prefered_res->push_back(it->second);
+    }
   } else {
     LOG(FATAL) << "Unexpected type of task equivalence aggregator";
   }
@@ -157,8 +164,18 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
 
 vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
     TaskEquivClass_t tec) {
-  LOG(FATAL) << "Not implemented!";
-  return NULL;
+  vector<TaskID_t>* prefered_task = new vector<TaskID_t>();
+  if (task_aggs_.find(tec) != task_aggs_.end()) {
+    // tec is a task aggregator.
+    // TODO(ionel): Add arcs from tasks to task aggregators.
+  } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
+    // tec is a machine aggregator.
+    // This is where we can add arcs form tasks to machine aggregators.
+    // We do not need to any any arcs in the WhareMap cost model.
+  } else {
+    LOG(FATAL) << "Unexpected type of task equivalence aggregator";
+  }
+  return prefered_task;
 }
 
 vector<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(

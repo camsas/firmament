@@ -6,6 +6,7 @@
 #ifndef FIRMAMENT_SCHEDULING_WHAREMAP_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_WHAREMAP_COST_MODEL_H
 
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <utility>
