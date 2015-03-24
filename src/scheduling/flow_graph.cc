@@ -720,7 +720,7 @@ void FlowGraph::DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv) {
     return;
   }
   if (equiv_node_ptr->outgoing_arc_map_.size() == 0) {
-    VLOG(2) << "Deleting task_equiv class: " << task_equiv;
+    VLOG(2) << "Deleting resource_equiv class: " << task_equiv;
     // The equiv class doesn't have any incoming arcs from tasks.
     // We can remove the node.
     tec_to_node_.erase(task_equiv);
@@ -840,13 +840,18 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
 
 void FlowGraph::RemoveMachine(ResourceID_t res_id) {
   generate_trace_.RemoveMachine(res_id);
-  cost_model_->RemoveMachine(res_id);
   DeleteResourceNode(res_id);
+  cost_model_->RemoveMachine(res_id);
 }
 
 void FlowGraph::TaskCompleted(TaskID_t tid) {
   generate_trace_.TaskCompleted(tid);
   DeleteTaskNode(tid);
+}
+
+void FlowGraph::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
+  generate_trace_.TaskEvicted(tid);
+  UpdateArcsForEvictedTask(tid, res_id);
 }
 
 void FlowGraph::TaskFailed(TaskID_t tid) {

@@ -162,6 +162,22 @@ void GenerateTrace::TaskCompleted(TaskID_t task_id) {
   }
 }
 
+void GenerateTrace::TaskEvicted(TaskID_t task_id) {
+  if (FLAGS_generate_trace) {
+    uint64_t timestamp = GetCurrentTimestamp();
+    int32_t task_event = 2;
+    uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
+    uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
+    fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
+            timestamp, *job_id_ptr, *task_index_ptr, task_event);
+    TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
+    CHECK_NOTNULL(tr_ptr);
+    // XXX(ionel): This assumes that only one task with task_id is running
+    // at a time.
+    tr_ptr->total_runtime += timestamp - tr_ptr->last_schedule_time;
+  }
+}
+
 void GenerateTrace::TaskFailed(TaskID_t task_id) {
   if (FLAGS_generate_trace) {
     uint64_t timestamp = GetCurrentTimestamp();

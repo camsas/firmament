@@ -35,28 +35,23 @@ class FlowGraph {
   // Public API
   void AddMachine(const ResourceTopologyNodeDescriptor& root);
   void AddOrUpdateJobNodes(JobDescriptor* jd);
-  void AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void AddResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
   void AdjustUnscheduledAggArcCosts();
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                  uint64_t cap_upper_bound, uint64_t cost);
   bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
-  void DeleteNodesForJob(JobID_t job_id);
-  void DeleteResourceNode(ResourceID_t res_id);
-  void DeleteTaskNode(TaskID_t task_id);
-  FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   void JobCompleted(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
   void RemoveMachine(ResourceID_t res_id);
   void ResetChanges();
+  // TODO(ionel): Call TaskCompleted from scheduler.
   void TaskCompleted(TaskID_t task_id);
+  void TaskEvicted(TaskID_t task_id, ResourceID_t res_id);
   void TaskFailed(TaskID_t task_id);
   void TaskKilled(TaskID_t task_id);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
-  void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
-  void UpdateResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void UpdateResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
 
@@ -113,6 +108,7 @@ class FlowGraph {
                                    FlowGraphNode* equiv_node,
                                    vector<FlowGraphArc*>* ec_arcs);
   void AddResourceEquivClasses(FlowGraphNode* res_node);
+  void AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void AddSpecialNodes();
   void AddTaskEquivClasses(FlowGraphNode* task_node);
   void AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
@@ -126,9 +122,15 @@ class FlowGraph {
   void DeleteArcGeneratingDelta(FlowGraphArc* arc);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node);
+  void DeleteNodesForJob(JobID_t job_id);
+  void DeleteResourceNode(ResourceID_t res_id);
+  void DeleteTaskNode(TaskID_t task_id);
   void DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv);
   void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv);
+  FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
+  void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
+  void UpdateResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
 
   uint64_t next_id() {
     if (unused_ids_.empty()) {

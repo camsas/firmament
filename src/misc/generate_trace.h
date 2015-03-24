@@ -32,6 +32,7 @@ class GenerateTrace {
   void RemoveMachine(ResourceID_t res_id);
   void TaskSubmitted(JobID_t job_id, TaskID_t task_id);
   void TaskCompleted(TaskID_t task_id);
+  void TaskEvicted(TaskID_t task_id);
   void TaskFailed(TaskID_t task_id);
   void TaskKilled(TaskID_t task_id);
  private:
