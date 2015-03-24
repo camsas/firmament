@@ -234,10 +234,10 @@ void GoogleTraceSimulator::AddTaskStats(
     // Set its runtime to max which means it's a service task.
     runtime = numeric_limits<uint64_t>::max();
   }
-  vector<TaskEquivClass_t>* equiv_classes =
+  vector<EquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(td_ptr->uid());
   // XXX(ionel): This assumes that we have one task equivalence class per task.
-  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     knowledge_base_->SetAvgRuntimeForTEC(*it, runtime);
     if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {

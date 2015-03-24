@@ -43,11 +43,11 @@ class KnowledgeBase {
       ResourceID_t id) const;
   const deque<TaskPerfStatisticsSample>* GetStatsForTask(
       TaskID_t id) const;
-  double GetAvgCPIForTEC(TaskEquivClass_t id);
-  double GetAvgIPMAForTEC(TaskEquivClass_t id);
-  double GetAvgRuntimeForTEC(TaskEquivClass_t id);
+  double GetAvgCPIForTEC(EquivClass_t id);
+  double GetAvgIPMAForTEC(EquivClass_t id);
+  double GetAvgRuntimeForTEC(EquivClass_t id);
   const deque<TaskFinalReport>* GetFinalStatsForTask(TaskID_t task_id) const;
-  vector<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) const;
+  vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) const;
   void LoadKnowledgeBaseFromFile();
   void ProcessTaskFinalReport(const TaskFinalReport& report,
                               TaskID_t task_id);

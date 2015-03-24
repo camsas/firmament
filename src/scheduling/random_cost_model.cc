@@ -63,40 +63,40 @@ Cost_t RandomCostModel::TaskPreemptionCost(TaskID_t task_id) {
 }
 
 Cost_t RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                   TaskEquivClass_t tec) {
+                                                   EquivClass_t tec) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
-Cost_t RandomCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
+Cost_t RandomCostModel::EquivClassToResourceNode(EquivClass_t tec,
                                                  ResourceID_t res_id) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
-Cost_t RandomCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
-                                               TaskEquivClass_t tec2) {
+Cost_t RandomCostModel::EquivClassToEquivClass(EquivClass_t tec1,
+                                               EquivClass_t tec2) {
   return 0LL;
 }
 
-vector<TaskEquivClass_t>* RandomCostModel::GetTaskEquivClasses(
+vector<EquivClass_t>* RandomCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
-  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
+  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
   // A level 0 TEC is the hash of the task binary name.
   size_t hash = 0;
   boost::hash_combine(hash, td_ptr->binary());
-  equiv_classes->push_back(static_cast<TaskEquivClass_t>(hash));
+  equiv_classes->push_back(static_cast<EquivClass_t>(hash));
   return equiv_classes;
 }
 
-vector<TaskEquivClass_t>* RandomCostModel::GetResourceEquivClasses(
+vector<EquivClass_t>* RandomCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
   LOG(FATAL) << "Not implemented";
   return NULL;
 }
 
 vector<ResourceID_t>* RandomCostModel::GetOutgoingEquivClassPrefArcs(
-    TaskEquivClass_t tec) {
+    EquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   // TODO(ionel): Improve logic to decide how many preference arcs to add.
   uint32_t num_pref_arcs = 1;
@@ -113,7 +113,7 @@ vector<ResourceID_t>* RandomCostModel::GetOutgoingEquivClassPrefArcs(
 }
 
 vector<TaskID_t>* RandomCostModel::GetIncomingEquivClassPrefArcs(
-    TaskEquivClass_t tec) {
+    EquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
   return NULL;
 }
@@ -123,11 +123,11 @@ vector<ResourceID_t>* RandomCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   return prefered_res;
 }
 
-pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
-    RandomCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
-  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
-  return pair<vector<TaskEquivClass_t>*,
-              vector<TaskEquivClass_t>*>(equiv_classes, equiv_classes);
+pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
+    RandomCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
+  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+  return pair<vector<EquivClass_t>*,
+              vector<EquivClass_t>*>(equiv_classes, equiv_classes);
 }
 
 void RandomCostModel::AddMachine(

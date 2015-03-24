@@ -55,23 +55,21 @@ class FlowSchedulingCostModelInterface {
   virtual Cost_t TaskPreemptionCost(TaskID_t task_id) = 0;
   // Costs to equivalence class aggregators
   virtual Cost_t TaskToEquivClassAggregator(TaskID_t task_id,
-                                            TaskEquivClass_t tec) = 0;
-  virtual Cost_t EquivClassToResourceNode(TaskEquivClass_t tec,
+                                            EquivClass_t tec) = 0;
+  virtual Cost_t EquivClassToResourceNode(EquivClass_t tec,
                                           ResourceID_t res_id) = 0;
-  virtual Cost_t EquivClassToEquivClass(TaskEquivClass_t tec1,
-                                        TaskEquivClass_t tec2) = 0;
-  virtual vector<TaskEquivClass_t>* GetTaskEquivClasses(
-      TaskID_t task_id) = 0;
-  virtual vector<TaskEquivClass_t>* GetResourceEquivClasses(
+  virtual Cost_t EquivClassToEquivClass(EquivClass_t tec1,
+                                        EquivClass_t tec2) = 0;
+  virtual vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) = 0;
+  virtual vector<EquivClass_t>* GetResourceEquivClasses(
       ResourceID_t res_id) = 0;
   virtual vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(
-      TaskEquivClass_t tec) = 0;
+      EquivClass_t tec) = 0;
   virtual vector<TaskID_t>* GetIncomingEquivClassPrefArcs(
-      TaskEquivClass_t tec) = 0;
-  virtual vector<ResourceID_t>* GetTaskPreferenceArcs(
-      TaskID_t task_id) = 0;
-  virtual pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
-    GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) = 0;
+      EquivClass_t tec) = 0;
+  virtual vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id) = 0;
+  virtual pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
+    GetEquivClassToEquivClassesArcs(EquivClass_t tec) = 0;
   // Calls made to the scheduler when machines are added or removed.
   virtual void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) = 0;
   virtual void RemoveMachine(ResourceID_t res_id) = 0;

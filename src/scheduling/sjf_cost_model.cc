@@ -45,7 +45,7 @@ Cost_t SJFCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   uint64_t wait_time_centamillis = time_since_submit / 100000;
   // Cost is the max of the average runtime and the wait time, so that the
   // average runtime is a lower bound on the cost.
-  vector<TaskEquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+  vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   CHECK_GT(equiv_classes->size(), 0);
   uint64_t avg_runtime =
     knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
@@ -65,7 +65,7 @@ Cost_t SJFCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 // task to run on any node in the cluster. The cost of the topology's arcs are
 // the same for all the tasks.
 Cost_t SJFCostModel::TaskToClusterAggCost(TaskID_t task_id) {
-  vector<TaskEquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+  vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   CHECK_GT(equiv_classes->size(), 0);
   // Avg runtime is in milliseconds, so we convert it to tenths of a second
   uint64_t avg_runtime =
@@ -99,39 +99,39 @@ Cost_t SJFCostModel::TaskPreemptionCost(TaskID_t task_id) {
 }
 
 Cost_t SJFCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                TaskEquivClass_t tec) {
+                                                EquivClass_t tec) {
   return 0LL;
 }
 
-Cost_t SJFCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
+Cost_t SJFCostModel::EquivClassToResourceNode(EquivClass_t tec,
                                               ResourceID_t res_id) {
   return 0LL;
 }
 
-Cost_t SJFCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
-                                            TaskEquivClass_t tec2) {
+Cost_t SJFCostModel::EquivClassToEquivClass(EquivClass_t tec1,
+                                            EquivClass_t tec2) {
   return 0LL;
 }
 
-vector<TaskEquivClass_t>* SJFCostModel::GetTaskEquivClasses(TaskID_t task_id) {
-  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
+vector<EquivClass_t>* SJFCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
   // A level 0 TEC is the hash of the task binary name.
   size_t hash = 0;
   boost::hash_combine(hash, td_ptr->binary());
-  equiv_classes->push_back(static_cast<TaskEquivClass_t>(hash));
+  equiv_classes->push_back(static_cast<EquivClass_t>(hash));
   return equiv_classes;
 }
 
-vector<TaskEquivClass_t>* SJFCostModel::GetResourceEquivClasses(
+vector<EquivClass_t>* SJFCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
   LOG(FATAL) << "Not implemented";
   return NULL;
 }
 
 vector<ResourceID_t>* SJFCostModel::GetOutgoingEquivClassPrefArcs(
-    TaskEquivClass_t tec) {
+    EquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   // TODO(ionel): Improve logic to decide how many preference arcs to add.
   uint32_t num_pref_arcs = 1;
@@ -148,7 +148,7 @@ vector<ResourceID_t>* SJFCostModel::GetOutgoingEquivClassPrefArcs(
 }
 
 vector<TaskID_t>* SJFCostModel::GetIncomingEquivClassPrefArcs(
-    TaskEquivClass_t tec) {
+    EquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
   return NULL;
 }
@@ -158,11 +158,11 @@ vector<ResourceID_t>* SJFCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   return prefered_res;
 }
 
-pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
-    SJFCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
-  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
-  return pair<vector<TaskEquivClass_t>*,
-              vector<TaskEquivClass_t>*>(equiv_classes, equiv_classes);
+pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
+    SJFCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
+  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+  return pair<vector<EquivClass_t>*,
+              vector<EquivClass_t>*>(equiv_classes, equiv_classes);
 }
 
 void SJFCostModel::AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) {

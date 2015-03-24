@@ -42,17 +42,17 @@ class SJFCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskContinuationCost(TaskID_t task_id);
   Cost_t TaskPreemptionCost(TaskID_t task_id);
   // Costs to equivalence class aggregators
-  Cost_t TaskToEquivClassAggregator(TaskID_t task_id, TaskEquivClass_t tec);
-  Cost_t EquivClassToResourceNode(TaskEquivClass_t tec, ResourceID_t res_id);
-  Cost_t EquivClassToEquivClass(TaskEquivClass_t tec1, TaskEquivClass_t tec2);
+  Cost_t TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
+  Cost_t EquivClassToResourceNode(EquivClass_t tec, ResourceID_t res_id);
+  Cost_t EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
   // Get the type of equiv class.
-  vector<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
-  vector<TaskEquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
-  vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(TaskEquivClass_t tec);
-  vector<TaskID_t>* GetIncomingEquivClassPrefArcs(TaskEquivClass_t tec);
+  vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
+  vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
+  vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(EquivClass_t tec);
+  vector<TaskID_t>* GetIncomingEquivClassPrefArcs(EquivClass_t tec);
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
-  pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
-    GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec);
+  pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
+    GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
 

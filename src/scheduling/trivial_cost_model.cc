@@ -54,40 +54,40 @@ Cost_t TrivialCostModel::TaskPreemptionCost(TaskID_t task_id) {
 }
 
 Cost_t TrivialCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                    TaskEquivClass_t tec) {
+                                                    EquivClass_t tec) {
   return 0ULL;
 }
 
-Cost_t TrivialCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
+Cost_t TrivialCostModel::EquivClassToResourceNode(EquivClass_t tec,
                                                   ResourceID_t res_id) {
   return 0ULL;
 }
 
-Cost_t TrivialCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
-                                                TaskEquivClass_t tec2) {
+Cost_t TrivialCostModel::EquivClassToEquivClass(EquivClass_t tec1,
+                                                EquivClass_t tec2) {
   return 0LL;
 }
 
-vector<TaskEquivClass_t>* TrivialCostModel::GetTaskEquivClasses(
+vector<EquivClass_t>* TrivialCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
-  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
+  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
   // A level 0 TEC is the hash of the task binary name.
   size_t hash = 0;
   boost::hash_combine(hash, td_ptr->binary());
-  equiv_classes->push_back(static_cast<TaskEquivClass_t>(hash));
+  equiv_classes->push_back(static_cast<EquivClass_t>(hash));
   return equiv_classes;
 }
 
-vector<TaskEquivClass_t>* TrivialCostModel::GetResourceEquivClasses(
+vector<EquivClass_t>* TrivialCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
   LOG(FATAL) << "Not implemented";
   return NULL;
 }
 
 vector<ResourceID_t>* TrivialCostModel::GetOutgoingEquivClassPrefArcs(
-    TaskEquivClass_t tec) {
+    EquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   // TODO(ionel): Improve logic to decide how many preference arcs to add.
   uint32_t num_pref_arcs = 1;
@@ -104,7 +104,7 @@ vector<ResourceID_t>* TrivialCostModel::GetOutgoingEquivClassPrefArcs(
 }
 
 vector<TaskID_t>* TrivialCostModel::GetIncomingEquivClassPrefArcs(
-    TaskEquivClass_t tec) {
+    EquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
   return NULL;
 }
@@ -115,11 +115,11 @@ vector<ResourceID_t>* TrivialCostModel::GetTaskPreferenceArcs(
   return prefered_res;
 }
 
-pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
-    TrivialCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
-  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
-  return pair<vector<TaskEquivClass_t>*,
-              vector<TaskEquivClass_t>*>(equiv_classes, equiv_classes);
+pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
+    TrivialCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
+  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+  return pair<vector<EquivClass_t>*,
+              vector<EquivClass_t>*>(equiv_classes, equiv_classes);
 }
 
 void TrivialCostModel::AddMachine(
