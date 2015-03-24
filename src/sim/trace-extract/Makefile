@@ -6,7 +6,7 @@ include $(ROOT_DIR)/include/Makefile.config
 LIBS += -lboost_thread -lboost_system -lboost_regex -lssl -lcrypto
 
 BINS = google-trace-simulator google-trace-processor google-trace-simulator-test
-# OPTFLAGS += -fsanitize=address -fno-omit-frame-pointer
+#OPTFLAGS += -fsanitize=address -fno-omit-frame-pointer
 
 LIB =
 SIMULATOR_OBJS = google_trace_simulator.o

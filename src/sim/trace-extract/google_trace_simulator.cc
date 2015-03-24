@@ -185,7 +185,7 @@ ResourceDescriptor* GoogleTraceSimulator::AddMachine(
   ResourceDescriptor* rd = new_machine->mutable_resource_desc();
   rd->set_friendly_name(hn);
   // Add the node to the flow graph.
-  flow_graph_->AddResourceTopology(*new_machine);
+  flow_graph_->AddMachine(*new_machine);
   // Add resource to the google machine_id to ResourceDescriptor* map.
   CHECK(InsertIfNotPresent(&machine_id_to_rd_, machine_id, rd));
   CHECK(InsertIfNotPresent(&machine_id_to_rtnd_, machine_id, new_machine));
@@ -390,7 +390,7 @@ void GoogleTraceSimulator::CreateRootResource() {
 
 void GoogleTraceSimulator::JobCompleted(uint64_t simulator_job_id,
                                         JobID_t job_id) {
-  flow_graph_->DeleteNodesForJob(job_id);
+  flow_graph_->JobCompleted(job_id);
   // This call frees the JobDescriptor* as well.
   job_map_->erase(job_id);
   job_id_to_jd_.erase(simulator_job_id);
@@ -677,7 +677,12 @@ void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
 void GoogleTraceSimulator::RemoveResource(
     ResourceTopologyNodeDescriptor* rtnd) {
   ResourceID_t res_id = ResourceIDFromString(rtnd->resource_desc().uuid());
-  flow_graph_->DeleteResourceNode(res_id);
+  if (rtnd->resource_desc().type() ==
+      ResourceDescriptor::RESOURCE_MACHINE) {
+    flow_graph_->RemoveMachine(res_id);
+  } else {
+    flow_graph_->DeleteResourceNode(res_id);
+  }
   TaskID_t* task_id = FindOrNull(res_id_to_task_id_, res_id);
   if (task_id != NULL) {
     // Evict the task running on the resource.
@@ -702,7 +707,7 @@ void GoogleTraceSimulator::TaskEvicted(TaskID_t task_id,
       FlowNodeType::UNSCHEDULED_TASK);
   // Remove the running arc and add back arcs to EC and UNSCHED.
   // TODO(ionel): Inform the cost model that this task has already failed.
-  flow_graph_->UpdateArcsForEvictedTask(task_id, res_id);
+  flow_graph_->TaskEvicted(task_id, res_id);
 
   // Get the Google trace identifier of the task.
   TaskIdentifier* ti_ptr = FindOrNull(task_id_to_identifier_, task_id);
@@ -864,7 +869,7 @@ void GoogleTraceSimulator::TaskCompleted(
   TaskID_t task_id = (*td_ptr)->uid();
   JobID_t job_id = JobIDFromString((*td_ptr)->job_id());
   // Remove the task node from the flow graph.
-  flow_graph_->DeleteTaskNode(task_id);
+  flow_graph_->TaskCompleted(task_id);
   // Erase from local state: task_id_to_td_, task_id_to_identifier_, task_map_
   // and task_bindings_, task_id_to_end_time_, res_id_to_task_id_.
   task_id_to_td_.erase(task_identifier);
@@ -933,7 +938,7 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       // After the task is bound, we now remove all of its edges into the flow
       // graph apart from the bound resource.
       // N.B.: This disables preemption and migration!
-      flow_graph_->UpdateArcsForBoundTask(task_id, res_id);
+      flow_graph_->TaskScheduled(task_id, res_id);
       TaskIdentifier* task_identifier =
         FindOrNull(task_id_to_identifier_, task_id);
       CHECK_NOTNULL(task_identifier);

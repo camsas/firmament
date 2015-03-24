@@ -864,6 +864,11 @@ void FlowGraph::TaskKilled(TaskID_t tid) {
   DeleteTaskNode(tid);
 }
 
+void FlowGraph::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
+  generate_trace_.TaskScheduled(tid, res_id);
+  UpdateArcsForBoundTask(tid, res_id);
+}
+
 void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(tid);
   FlowGraphNode* assigned_res_node = NodeForResourceID(res_id);

@@ -51,7 +51,7 @@ class FlowGraph {
   void TaskEvicted(TaskID_t task_id, ResourceID_t res_id);
   void TaskFailed(TaskID_t task_id);
   void TaskKilled(TaskID_t task_id);
-  void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
+  void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
   void UpdateResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
 
@@ -129,6 +129,7 @@ class FlowGraph {
   void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv);
   FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
+  void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
   void UpdateResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
 

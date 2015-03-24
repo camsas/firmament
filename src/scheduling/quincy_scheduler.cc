@@ -143,7 +143,7 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
       // After the task is bound, we now remove all of its edges into the flow
       // graph apart from the bound resource.
       // N.B.: This disables preemption and migration!
-      flow_graph_->UpdateArcsForBoundTask(task_id, res_id);
+      flow_graph_->TaskScheduled(task_id, res_id);
       // Tag the job to which this task belongs as running
       JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td->job_id()));
       if (jd->state() != JobDescriptor::RUNNING)

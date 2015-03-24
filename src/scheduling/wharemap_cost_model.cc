@@ -134,8 +134,9 @@ vector<EquivClass_t>* WhareMapCostModel::GetResourceEquivClasses(
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   // Get the machine aggregator corresponding to this machine.
   EquivClass_t* ec_class = FindOrNull(machine_to_ec_, res_id);
-  CHECK_NOTNULL(ec_class);
-  equiv_classes->push_back(*ec_class);
+  if (ec_class != NULL) {
+    equiv_classes->push_back(*ec_class);
+  }
   return equiv_classes;
 }
 
