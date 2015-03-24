@@ -360,8 +360,9 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
   // Task kill message
   if (bm->has_task_kill()) {
     const TaskKillMessage& msg = bm->task_kill();
-    CHECK(KillRunningTask(msg.task_id(), msg.reason()))
-        << "Failed to kill task!";
+    if (!KillRunningTask(msg.task_id(), msg.reason())) {
+      LOG(ERROR)  << "Failed to kill task " << msg.task_id() << "!";
+    }
     handled_extensions++;
   }
   // Task final report
