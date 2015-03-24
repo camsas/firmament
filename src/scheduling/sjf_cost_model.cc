@@ -124,7 +124,13 @@ vector<TaskEquivClass_t>* SJFCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   return equiv_classes;
 }
 
-vector<ResourceID_t>* SJFCostModel::GetEquivClassPreferenceArcs(
+vector<TaskEquivClass_t>* SJFCostModel::GetResourceEquivClasses(
+    ResourceID_t res_id) {
+  LOG(FATAL) << "Not implemented";
+  return NULL;
+}
+
+vector<ResourceID_t>* SJFCostModel::GetOutgoingEquivClassPrefArcs(
     TaskEquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   // TODO(ionel): Improve logic to decide how many preference arcs to add.
@@ -139,6 +145,12 @@ vector<ResourceID_t>* SJFCostModel::GetEquivClassPreferenceArcs(
     prefered_res->push_back(*it);
   }
   return prefered_res;
+}
+
+vector<TaskID_t>* SJFCostModel::GetIncomingEquivClassPrefArcs(
+    TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return NULL;
 }
 
 vector<ResourceID_t>* SJFCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {

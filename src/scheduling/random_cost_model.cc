@@ -89,7 +89,13 @@ vector<TaskEquivClass_t>* RandomCostModel::GetTaskEquivClasses(
   return equiv_classes;
 }
 
-vector<ResourceID_t>* RandomCostModel::GetEquivClassPreferenceArcs(
+vector<TaskEquivClass_t>* RandomCostModel::GetResourceEquivClasses(
+    ResourceID_t res_id) {
+  LOG(FATAL) << "Not implemented";
+  return NULL;
+}
+
+vector<ResourceID_t>* RandomCostModel::GetOutgoingEquivClassPrefArcs(
     TaskEquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   // TODO(ionel): Improve logic to decide how many preference arcs to add.
@@ -104,6 +110,12 @@ vector<ResourceID_t>* RandomCostModel::GetEquivClassPreferenceArcs(
     prefered_res->push_back(*it);
   }
   return prefered_res;
+}
+
+vector<TaskID_t>* RandomCostModel::GetIncomingEquivClassPrefArcs(
+    TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return NULL;
 }
 
 vector<ResourceID_t>* RandomCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {

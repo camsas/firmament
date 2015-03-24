@@ -130,7 +130,17 @@ vector<TaskEquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
   return equiv_classes;
 }
 
-vector<ResourceID_t>* WhareMapCostModel::GetEquivClassPreferenceArcs(
+vector<TaskEquivClass_t>* WhareMapCostModel::GetResourceEquivClasses(
+    ResourceID_t res_id) {
+  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
+  // Get the machine aggregator corresponding to this machine.
+  TaskEquivClass_t* ec_class = FindOrNull(machine_to_ec_, res_id);
+  CHECK_NOTNULL(ec_class);
+  equiv_classes->push_back(*ec_class);
+  return equiv_classes;
+}
+
+vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
     TaskEquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   if (task_aggs_.find(tec) != task_aggs_.end()) {
@@ -143,6 +153,12 @@ vector<ResourceID_t>* WhareMapCostModel::GetEquivClassPreferenceArcs(
     LOG(FATAL) << "Unexpected type of task equivalence aggregator";
   }
   return prefered_res;
+}
+
+vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
+    TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return NULL;
 }
 
 vector<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(

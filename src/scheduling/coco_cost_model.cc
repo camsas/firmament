@@ -115,7 +115,13 @@ vector<TaskEquivClass_t>* CocoCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   return equiv_classes;
 }
 
-vector<ResourceID_t>* CocoCostModel::GetEquivClassPreferenceArcs(
+vector<TaskEquivClass_t>* CocoCostModel::GetResourceEquivClasses(
+    ResourceID_t res_id) {
+  LOG(FATAL) << "Not implemented";
+  return NULL;
+}
+
+vector<ResourceID_t>* CocoCostModel::GetOutgoingEquivClassPrefArcs(
     TaskEquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   // TODO(ionel): Improve logic to decide how many preference arcs to add.
@@ -130,6 +136,12 @@ vector<ResourceID_t>* CocoCostModel::GetEquivClassPreferenceArcs(
     prefered_res->push_back(*it);
   }
   return prefered_res;
+}
+
+vector<TaskID_t>* CocoCostModel::GetIncomingEquivClassPrefArcs(
+    TaskEquivClass_t tec) {
+  LOG(FATAL) << "Not implemented!";
+  return NULL;
 }
 
 vector<ResourceID_t>* CocoCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
