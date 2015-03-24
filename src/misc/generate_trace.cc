@@ -133,14 +133,9 @@ void GenerateTrace::TaskSubmitted(JobID_t job_id, TaskID_t task_id) {
     if (tr_ptr == NULL) {
       TaskRuntime task_runtime;
       task_runtime.start_time = timestamp;
-      task_runtime.num_runs = 1;
-      // TODO(ionel): We are setting the last schedule time when the task
-      // was submitted. It's not correct.
-      task_runtime.last_schedule_time = timestamp;
+      task_runtime.num_runs = 0;
+      task_runtime.last_schedule_time = 0;
       InsertIfNotPresent(&task_to_runtime_, task_id, task_runtime);
-    } else {
-      tr_ptr->last_schedule_time = timestamp;
-      tr_ptr->num_runs++;
     }
   }
 }
@@ -207,6 +202,21 @@ void GenerateTrace::TaskKilled(TaskID_t task_id) {
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
     tr_ptr->total_runtime += timestamp - tr_ptr->last_schedule_time;
+  }
+}
+
+void GenerateTrace::TaskScheduled(TaskID_t task_id, ResourceID_t res_id) {
+  if (FLAGS_generate_trace) {
+    uint64_t timestamp = GetCurrentTimestamp();
+    int32_t task_event = 1;
+    uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
+    uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
+    fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
+            timestamp, *job_id_ptr, *task_index_ptr, task_event);
+    TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
+    CHECK_NOTNULL(tr_ptr);
+    tr_ptr->num_runs++;
+    tr_ptr->last_schedule_time = timestamp;
   }
 }
 

@@ -35,6 +35,7 @@ class GenerateTrace {
   void TaskEvicted(TaskID_t task_id);
   void TaskFailed(TaskID_t task_id);
   void TaskKilled(TaskID_t task_id);
+  void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
  private:
   unordered_map<TaskID_t, uint64_t> task_to_job_;
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
