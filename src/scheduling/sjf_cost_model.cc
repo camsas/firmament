@@ -133,11 +133,10 @@ vector<EquivClass_t>* SJFCostModel::GetResourceEquivClasses(
 vector<ResourceID_t>* SJFCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
-  // TODO(ionel): Improve logic to decide how many preference arcs to add.
-  uint32_t num_pref_arcs = 1;
-  CHECK_GE(leaf_res_ids_->size(),  num_pref_arcs);
+  CHECK_GE(leaf_res_ids_->size(), FLAGS_num_pref_arcs_task_to_res);
   uint32_t rand_seed_ = 0;
-  for (uint32_t num_arc = 0; num_arc < num_pref_arcs; ++num_arc) {
+  for (uint32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs_task_to_res;
+       ++num_arc) {
     size_t index = rand_r(&rand_seed_) % leaf_res_ids_->size();
     unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>::iterator it =
       leaf_res_ids_->begin();

@@ -163,6 +163,18 @@ DataObjectID_t GenerateDataObjectID(
   return doid;
 }
 
+size_t HashJobID(JobID_t job_id) {
+  size_t hash = 42;
+  boost::hash_combine(hash, job_id);
+  return hash;
+}
+
+size_t HashJobID(const TaskDescriptor& td) {
+  size_t hash = 42;
+  boost::hash_combine(hash, td.job_id());
+  return hash;
+}
+
 DataObjectID_t DataObjectIDFromString(const string& str) {
   // N.B.: This assumes that the string is a readable, hexadecimal
   // representation of the ID.

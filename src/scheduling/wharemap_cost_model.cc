@@ -123,9 +123,7 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
   CHECK_NOTNULL(td_ptr);
   // We have one task agg per job. The id of the aggregator is the hash
   // of the job id.
-  size_t hash = 42;
-  boost::hash_combine(hash, td_ptr->job_id());
-  EquivClass_t task_agg = static_cast<EquivClass_t>(hash);
+  EquivClass_t task_agg = static_cast<EquivClass_t>(HashJobID(*td_ptr));
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);
   return equiv_classes;
@@ -146,7 +144,29 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   if (task_aggs_.find(tec) != task_aggs_.end()) {
     // tec is a task aggregator.
-    // TODO(ionel): Add arcs from task aggregators to machines.
+    // Iterate over all the machines.
+    multimap<Cost_t, ResourceID_t> priority_res;
+    for (unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
+           boost::hash<boost::uuids::uuid>>::iterator
+           it = machine_to_rtnd_.begin();
+         it != machine_to_rtnd_.end(); ++it) {
+      Cost_t cost_to_res = EquivClassToResourceNode(tec, it->first);
+      ResourceID_t res_id =
+        ResourceIDFromString(it->second->resource_desc().uuid());
+      if (priority_res.size() < FLAGS_num_pref_arcs_agg_to_res) {
+        priority_res.insert(pair<Cost_t, ResourceID_t>(cost_to_res, res_id));
+      } else {
+        multimap<Cost_t, ResourceID_t>::reverse_iterator rit = priority_res.rbegin();
+        if (cost_to_res < rit->first) {
+          priority_res.erase(priority_res.find(rit->first));
+          priority_res.insert(pair<Cost_t, ResourceID_t>(cost_to_res, res_id));
+        }
+      }
+    }
+    for (multimap<Cost_t, ResourceID_t>::iterator it = priority_res.begin();
+         it != priority_res.end(); ++it) {
+      prefered_res->push_back(it->second);
+    }
   } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
     // tec is a machine aggregator.
     multimap<EquivClass_t, ResourceID_t>::iterator it =
@@ -167,11 +187,21 @@ vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
   vector<TaskID_t>* prefered_task = new vector<TaskID_t>();
   if (task_aggs_.find(tec) != task_aggs_.end()) {
     // tec is a task aggregator.
-    // TODO(ionel): Add arcs from tasks to task aggregators.
+    // This is where we add preference arcs from tasks to new equiv class
+    // aggregators.
+    // XXX(ionel): This is very slow because it iterates over all tasks.
+    for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
+         ++it) {
+      EquivClass_t task_agg =
+        static_cast<EquivClass_t>(HashJobID(*(it->second)));
+      if (task_agg == tec) {
+        prefered_task->push_back(it->first);
+      }
+    }
   } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
     // tec is a machine aggregator.
     // This is where we can add arcs form tasks to machine aggregators.
-    // We do not need to any any arcs in the WhareMap cost model.
+    // We do not need to add any arcs in the WhareMap cost model.
   } else {
     LOG(FATAL) << "Unexpected type of task equivalence aggregator";
   }

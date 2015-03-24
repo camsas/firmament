@@ -17,7 +17,7 @@
 #include "scheduling/flow_graph.h"
 #include "scheduling/trivial_cost_model.h"
 
-DECLARE_int32(num_pref_arcs);
+DECLARE_uint64(num_pref_arcs_task_to_res);
 
 namespace firmament {
 
@@ -123,10 +123,7 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   CHECK_EQ(unsched_agg->arcs_->size(), 1);
   // Arc to unscheduled aggregator and to topology.
   CHECK_EQ(root_task->arcs_->size(), 2);
-  // TODO(ionel): Remove hardcoded value. This assumes that the TrivialCostModel
-  // only adds one preference arc.
-  uint32_t num_pref_arcs = 1;
-  CHECK_EQ(equiv_class->arcs_->size(), 1 + num_pref_arcs);
+  CHECK_EQ(equiv_class->arcs_->size(), 1 + FLAGS_num_pref_arcs_task_to_res);
 }
 
 TEST_F(FlowGraphTest, AddResourceNode) {

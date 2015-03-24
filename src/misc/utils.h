@@ -55,6 +55,8 @@ DataObjectID_t GenerateDataObjectID(TaskID_t producing_task,
 TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task, uint64_t child_num);
+size_t HashJobID(JobID_t job_id);
+size_t HashJobID(const TaskDescriptor& td);
 // Utility functions to parse various types from strings.
 DataObjectID_t DataObjectIDFromString(const string& str);
 DataObjectID_t DataObjectIDFromProtobuf(const string& str);
