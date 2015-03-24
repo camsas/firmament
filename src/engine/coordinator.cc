@@ -683,6 +683,11 @@ void Coordinator::HandleTaskStateChange(
                << "already failed or aborted, but we received a "
                << "TaskStateChangeMessage for it!";
     return;
+  } else if (td_ptr->state() == TaskDescriptor::COMPLETED) {
+    LOG(ERROR) << "Spurious task state change: Task  " << msg.id() << " has "
+               << "already completed, but we received a "
+               << "TaskStateChangeMessage for it!";
+    return;
   }
   // Update the task's state
   td_ptr->set_state(msg.new_state());
