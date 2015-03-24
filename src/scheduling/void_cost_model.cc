@@ -55,40 +55,40 @@ Cost_t VoidCostModel::TaskPreemptionCost(TaskID_t task_id) {
 }
 
 Cost_t VoidCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                 TaskEquivClass_t tec) {
+                                                 EquivClass_t tec) {
   return 0LL;
 }
 
-Cost_t VoidCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
+Cost_t VoidCostModel::EquivClassToResourceNode(EquivClass_t tec,
                                                ResourceID_t res_id) {
   return 0LL;
 }
 
-Cost_t VoidCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
-                                             TaskEquivClass_t tec2) {
+Cost_t VoidCostModel::EquivClassToEquivClass(EquivClass_t tec1,
+                                             EquivClass_t tec2) {
   return 0LL;
 }
 
-vector<TaskEquivClass_t>* VoidCostModel::GetTaskEquivClasses(TaskID_t task_id) {
-  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
+vector<EquivClass_t>* VoidCostModel::GetTaskEquivClasses(TaskID_t task_id) {
+  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   equiv_classes->push_back(task_id);
   return equiv_classes;
 }
 
-vector<TaskEquivClass_t>* VoidCostModel::GetResourceEquivClasses(
+vector<EquivClass_t>* VoidCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
   LOG(FATAL) << "Not implemented";
   return NULL;
 }
 
 vector<ResourceID_t>* VoidCostModel::GetOutgoingEquivClassPrefArcs(
-    TaskEquivClass_t tec) {
+    EquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
 vector<TaskID_t>* VoidCostModel::GetIncomingEquivClassPrefArcs(
-    TaskEquivClass_t tec) {
+    EquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
   return NULL;
 }
@@ -98,10 +98,10 @@ vector<ResourceID_t>* VoidCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   return NULL;
 }
 
-pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
-    VoidCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
+pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
+    VoidCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
   LOG(FATAL) << "Not implemented!";
-  return pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>(NULL, NULL);
+  return pair<vector<EquivClass_t>*, vector<EquivClass_t>*>(NULL, NULL);
 }
 
 void VoidCostModel::AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) {

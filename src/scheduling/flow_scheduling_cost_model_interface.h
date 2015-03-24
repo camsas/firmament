@@ -55,25 +55,63 @@ class FlowSchedulingCostModelInterface {
   virtual Cost_t TaskPreemptionCost(TaskID_t task_id) = 0;
   // Costs to equivalence class aggregators
   virtual Cost_t TaskToEquivClassAggregator(TaskID_t task_id,
-                                            TaskEquivClass_t tec) = 0;
-  virtual Cost_t EquivClassToResourceNode(TaskEquivClass_t tec,
+                                            EquivClass_t tec) = 0;
+  virtual Cost_t EquivClassToResourceNode(EquivClass_t tec,
                                           ResourceID_t res_id) = 0;
-  virtual Cost_t EquivClassToEquivClass(TaskEquivClass_t tec1,
-                                        TaskEquivClass_t tec2) = 0;
-  virtual vector<TaskEquivClass_t>* GetTaskEquivClasses(
-      TaskID_t task_id) = 0;
-  virtual vector<TaskEquivClass_t>* GetResourceEquivClasses(
+  virtual Cost_t EquivClassToEquivClass(EquivClass_t tec1,
+                                        EquivClass_t tec2) = 0;
+  /**
+   * Get the equivalence classes of a task.
+   * @param task_id the task id for which to get the equivalence classes
+   * @return a vector containing the task's equivalence classes
+   */
+  virtual vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) = 0;
+
+  /**
+   * Get the equivalence classes for a resource.
+   * @param res_id the resource id for which to get the equivalence classes
+   * @return a vector containing the resource's equivalence classes
+   */
+  virtual vector<EquivClass_t>* GetResourceEquivClasses(
       ResourceID_t res_id) = 0;
+
+  /**
+   * Get the resource ids to which an equivalence class has arcs.
+   * @param tec the equivalence class for which to get the resource ids
+   */
   virtual vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(
-      TaskEquivClass_t tec) = 0;
+      EquivClass_t tec) = 0;
+
+  /**
+   * Get the task ids that have preference arcs to the given equivalence class.
+   * @param tec the equivalence class for which to get the task ids
+   */
   virtual vector<TaskID_t>* GetIncomingEquivClassPrefArcs(
-      TaskEquivClass_t tec) = 0;
-  virtual vector<ResourceID_t>* GetTaskPreferenceArcs(
-      TaskID_t task_id) = 0;
-  virtual pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
-    GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) = 0;
-  // Calls made to the scheduler when machines are added or removed.
+      EquivClass_t tec) = 0;
+
+  /**
+   * Get the resource preference arcs of a task.
+   * @param task_id the id of the task for which to get the preference arcs
+   */
+  virtual vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id) = 0;
+
+  /**
+   * Get equivlance classes to which an equivalence class is connected.
+   * @return a pair consisting of two vectors. The first one contains the
+   * equivalence classes from which we have an incoming arc and the second one
+   * equivalence classes to which we have an outgoing arc.
+   */
+  virtual pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
+    GetEquivClassToEquivClassesArcs(EquivClass_t tec) = 0;
+
+  /**
+   * Called by the flow_graph when a machine is added.
+   */
   virtual void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) = 0;
+
+  /**
+   * Called by the flow_graph when a machine is removed.
+   */
   virtual void RemoveMachine(ResourceID_t res_id) = 0;
 };
 

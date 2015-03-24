@@ -102,14 +102,14 @@ class FlowGraph {
   void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
                       vector<FlowGraphArc*>* task_arcs);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
-  void AddArcsFromToOtherEquivNodes(TaskEquivClass_t equiv_class,
+  void AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
                                     FlowGraphNode* ec_node);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
-  FlowGraphNode* AddEquivClassAggregator(TaskEquivClass_t equiv_class,
+  FlowGraphNode* AddEquivClassAggregator(EquivClass_t equiv_class,
                                          vector<FlowGraphArc*>* ec_arcs);
-  void AddEquivClassNode(TaskEquivClass_t ec);
-  void AddEquivClassPreferenceArcs(TaskEquivClass_t equiv_class,
+  void AddEquivClassNode(EquivClass_t ec);
+  void AddEquivClassPreferenceArcs(EquivClass_t equiv_class,
                                    FlowGraphNode* equiv_node,
                                    vector<FlowGraphArc*>* ec_arcs);
   void AddResourceEquivClasses(FlowGraphNode* res_node);
@@ -126,8 +126,8 @@ class FlowGraph {
   void DeleteArcGeneratingDelta(FlowGraphArc* arc);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node);
-  void DeleteOrUpdateIncomingEquivNode(TaskEquivClass_t task_equiv);
-  void DeleteOrUpdateOutgoingEquivNode(TaskEquivClass_t task_equiv);
+  void DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv);
+  void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
 
   uint64_t next_id() {
@@ -168,7 +168,7 @@ class FlowGraph {
   unordered_set<uint64_t> unsched_agg_nodes_;
 
   // Mapping storing flow graph nodes for each task equivalence class.
-  unordered_map<TaskEquivClass_t, FlowGraphNode*> tec_to_node_;
+  unordered_map<EquivClass_t, FlowGraphNode*> tec_to_node_;
 
   // Vector storing the graph changes occured since the last scheduling round.
   vector<DIMACSChange*> graph_changes_;

@@ -138,7 +138,7 @@ const deque<TaskPerfStatisticsSample>* KnowledgeBase::GetStatsForTask(
 
 const deque<TaskFinalReport>* KnowledgeBase::GetFinalStatsForTask(
       TaskID_t task_id) const {
-  vector<TaskEquivClass_t>* equiv_classes =
+  vector<EquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(task_id);
   CHECK_GT(equiv_classes->size(), 0);
   // TODO(ionel): This only gets the stats from the first task equiv class.
@@ -147,12 +147,12 @@ const deque<TaskFinalReport>* KnowledgeBase::GetFinalStatsForTask(
   return res;
 }
 
-vector<TaskEquivClass_t>* KnowledgeBase::GetTaskEquivClasses(
+vector<EquivClass_t>* KnowledgeBase::GetTaskEquivClasses(
     TaskID_t task_id) const {
   return cost_model_->GetTaskEquivClasses(task_id);
 }
 
-double KnowledgeBase::GetAvgCPIForTEC(TaskEquivClass_t id) {
+double KnowledgeBase::GetAvgCPIForTEC(EquivClass_t id) {
   const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
   CHECK_NOTNULL(res);
   if (!res || res->size() == 0)
@@ -167,7 +167,7 @@ double KnowledgeBase::GetAvgCPIForTEC(TaskEquivClass_t id) {
   return accumulator / res->size();
 }
 
-double KnowledgeBase::GetAvgIPMAForTEC(TaskEquivClass_t id) {
+double KnowledgeBase::GetAvgIPMAForTEC(EquivClass_t id) {
   const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
   if (!res || res->size() == 0)
     return 0;
@@ -181,7 +181,7 @@ double KnowledgeBase::GetAvgIPMAForTEC(TaskEquivClass_t id) {
   return accumulator / res->size();
 }
 
-double KnowledgeBase::GetAvgRuntimeForTEC(TaskEquivClass_t id) {
+double KnowledgeBase::GetAvgRuntimeForTEC(EquivClass_t id) {
   const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
   if (!res || res->size() == 0)
     return 0;
@@ -261,11 +261,11 @@ void KnowledgeBase::LoadKnowledgeBaseFromFile() {
 void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report,
                                            TaskID_t task_id) {
   boost::lock_guard<boost::mutex> lock(kb_lock_);
-  vector<TaskEquivClass_t>* equiv_classes =
+  vector<EquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(task_id);
-  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
-    TaskEquivClass_t tec = *it;
+    EquivClass_t tec = *it;
     // Check if we already have a record for this equiv class
     deque<TaskFinalReport>* q = FindOrNull(task_exec_reports_, tec);
     if (!q) {

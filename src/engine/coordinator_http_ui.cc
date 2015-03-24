@@ -874,10 +874,10 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     dict.SetIntValue("TASK_LAST_HEARTBEAT",
                      td_ptr->last_heartbeat_time() / 1000);
     // Equivalence classes
-    vector<TaskEquivClass_t>* equiv_classes =
+    vector<EquivClass_t>* equiv_classes =
         coordinator_->knowledge_base()->GetTaskEquivClasses(td_ptr->uid());
     if (equiv_classes) {
-      for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+      for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
            it != equiv_classes->end(); ++it) {
         TemplateDictionary* tec_dict = dict.AddSectionDictionary("TASK_TECS");
         tec_dict->SetIntValue("TASK_TEC", *it);

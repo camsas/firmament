@@ -117,13 +117,13 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
   return arc;
 }
 
-void FlowGraph::AddArcsFromToOtherEquivNodes(TaskEquivClass_t equiv_class,
+void FlowGraph::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
                                              FlowGraphNode* ec_node) {
-  pair<vector<TaskEquivClass_t>*,
-       vector<TaskEquivClass_t>*> equiv_class_to_connect =
+  pair<vector<EquivClass_t>*,
+       vector<EquivClass_t>*> equiv_class_to_connect =
     cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
   // Add incoming arcs.
-  for (vector<TaskEquivClass_t>::iterator
+  for (vector<EquivClass_t>::iterator
          it = equiv_class_to_connect.first->begin();
        it != equiv_class_to_connect.first->end(); ++it) {
     FlowGraphNode* ec_src_ptr = FindPtrOrNull(tec_to_node_, *it);
@@ -135,7 +135,7 @@ void FlowGraph::AddArcsFromToOtherEquivNodes(TaskEquivClass_t equiv_class,
     graph_changes_.push_back(new DIMACSNewArc(*arc));
   }
   // Add outgoing arcs.
-  for (vector<TaskEquivClass_t>::iterator
+  for (vector<EquivClass_t>::iterator
          it = equiv_class_to_connect.second->begin();
        it != equiv_class_to_connect.second->end(); ++it) {
     FlowGraphNode* ec_dst_ptr = FindPtrOrNull(tec_to_node_, *it);
@@ -149,7 +149,7 @@ void FlowGraph::AddArcsFromToOtherEquivNodes(TaskEquivClass_t equiv_class,
 }
 
 FlowGraphNode* FlowGraph::AddEquivClassAggregator(
-    TaskEquivClass_t equiv_class, vector<FlowGraphArc*>* ec_arcs) {
+    EquivClass_t equiv_class, vector<FlowGraphArc*>* ec_arcs) {
   FlowGraphNode* ec_node = AddNodeInternal(next_id());
   CHECK(InsertIfNotPresent(&tec_to_node_, equiv_class, ec_node));
   string comment;
@@ -160,7 +160,7 @@ FlowGraphNode* FlowGraph::AddEquivClassAggregator(
 }
 
 void FlowGraph::AddEquivClassPreferenceArcs(
-    TaskEquivClass_t equiv_class, FlowGraphNode* equiv_node,
+    EquivClass_t equiv_class, FlowGraphNode* equiv_node,
     vector<FlowGraphArc*>* ec_arcs) {
   vector<ResourceID_t>* res_ids =
     cost_model_->GetOutgoingEquivClassPrefArcs(equiv_class);
@@ -321,9 +321,9 @@ void FlowGraph::AddSpecialNodes() {
 
 void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
   ResourceID_t res_id = res_node->resource_id_;
-  vector<TaskEquivClass_t>* equiv_classes =
+  vector<EquivClass_t>* equiv_classes =
     cost_model_->GetResourceEquivClasses(res_id);
-  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
     if (ec_node_ptr == NULL) {
@@ -423,7 +423,7 @@ void FlowGraph::AddResourceNode(
   }
 }
 
-void FlowGraph::AddEquivClassNode(TaskEquivClass_t ec) {
+void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   VLOG(2) << "Add equiv class " << ec;
   vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
   FlowGraphNode* ec_node = AddEquivClassAggregator(ec, ec_arcs);
@@ -459,9 +459,9 @@ void FlowGraph::AddEquivClassNode(TaskEquivClass_t ec) {
 }
 
 void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
-  vector<TaskEquivClass_t>* equiv_classes =
+  vector<EquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(task_node->task_id_);
-  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
     if (ec_node_ptr == NULL) {
@@ -703,16 +703,16 @@ void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
   leaf_res_ids_->erase(res_id);
   resource_to_nodeid_map_.erase(res_id_tmp);
   DeleteNode(node);
-  vector<TaskEquivClass_t>* equiv_classes =
+  vector<EquivClass_t>* equiv_classes =
     cost_model_->GetResourceEquivClasses(res_id);
-  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     DeleteOrUpdateIncomingEquivNode(*it);
   }
   delete equiv_classes;
 }
 
-void FlowGraph::DeleteOrUpdateIncomingEquivNode(TaskEquivClass_t task_equiv) {
+void FlowGraph::DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv) {
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
   if (equiv_node_ptr == NULL) {
     // Equiv class node can be NULL because all it's task are running
@@ -733,7 +733,7 @@ void FlowGraph::DeleteOrUpdateIncomingEquivNode(TaskEquivClass_t task_equiv) {
   }
 }
 
-void FlowGraph::DeleteOrUpdateOutgoingEquivNode(TaskEquivClass_t task_equiv) {
+void FlowGraph::DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv) {
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
   if (equiv_node_ptr == NULL) {
     // Equiv class node can be NULL because all it's task are running
@@ -773,9 +773,9 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   task_to_nodeid_map_.erase(task_id);
   // Then remove the node itself
   DeleteNode(node);
-  vector<TaskEquivClass_t>* equiv_classes =
+  vector<EquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(node->task_id_);
-  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     DeleteOrUpdateOutgoingEquivNode(*it);
   }

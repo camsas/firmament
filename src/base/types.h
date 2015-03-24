@@ -103,7 +103,7 @@ namespace firmament {
 // Various utility typedefs
 typedef uint32_t TaskOutputID_t;
 typedef uint64_t TaskID_t;
-typedef uint64_t TaskEquivClass_t;
+typedef uint64_t EquivClass_t;
 #ifdef __PLATFORM_HAS_BOOST__
 typedef boost::uuids::uuid ResourceID_t;
 typedef boost::uuids::uuid JobID_t;

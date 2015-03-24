@@ -65,47 +65,38 @@ QuincyScheduler::QuincyScheduler(
   switch (FLAGS_flow_scheduling_cost_model) {
     case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
       cost_model = new TrivialCostModel(task_map, leaf_res_ids_);
-      flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
-      knowledge_base_->SetCostModel(cost_model);
       VLOG(1) << "Using the trivial cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
       cost_model = new RandomCostModel(task_map, leaf_res_ids_);
-      flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
-      knowledge_base_->SetCostModel(cost_model);
       VLOG(1) << "Using the random cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_COCO:
       cost_model = new CocoCostModel(task_map, leaf_res_ids_, knowledge_base_);
-      flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
-      knowledge_base_->SetCostModel(cost_model);
       VLOG(1) << "Using the coco cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_SJF:
       cost_model = new SJFCostModel(task_map, leaf_res_ids_, knowledge_base_);
-      flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
-      knowledge_base_->SetCostModel(cost_model);
       VLOG(1) << "Using the SJF cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
       cost_model = new QuincyCostModel(resource_map, job_map, task_map,
                                        &task_bindings_, leaf_res_ids_,
                                        knowledge_base_);
-      flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
-      knowledge_base_->SetCostModel(cost_model);
       VLOG(1) << "Using the Quincy cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_WHARE:
       cost_model = new WhareMapCostModel(resource_map, task_map,
                                          knowledge_base_);
-      flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
-      knowledge_base_->SetCostModel(cost_model);
       VLOG(1) << "Using the Whare-Map cost model";
       break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
   }
+
+  flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
+  knowledge_base_->SetCostModel(cost_model);
 
   LOG(INFO) << "QuincyScheduler initiated; parameters: "
             << parameters_.ShortDebugString();

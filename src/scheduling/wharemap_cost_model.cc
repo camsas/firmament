@@ -6,6 +6,7 @@
 
 #include "scheduling/wharemap_cost_model.h"
 
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -59,7 +60,7 @@ Cost_t WhareMapCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 // the same for all the tasks.
 Cost_t WhareMapCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   // TODO(ionel): Implement!
-  vector<TaskEquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+  vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   CHECK_GT(equiv_classes->size(), 0);
   // Avg runtime is in milliseconds, so we convert it to tenths of a second
   uint64_t avg_runtime =
@@ -98,57 +99,63 @@ Cost_t WhareMapCostModel::TaskPreemptionCost(TaskID_t task_id) {
 }
 
 Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                     TaskEquivClass_t tec) {
+                                                     EquivClass_t tec) {
   // TODO(ionel): Implement!
   return 0LL;
 }
 
-Cost_t WhareMapCostModel::EquivClassToResourceNode(TaskEquivClass_t tec,
+Cost_t WhareMapCostModel::EquivClassToResourceNode(EquivClass_t tec,
                                                    ResourceID_t res_id) {
   // TODO(ionel): Implement!
   return 0LL;
 }
 
-Cost_t WhareMapCostModel::EquivClassToEquivClass(TaskEquivClass_t tec1,
-                                                 TaskEquivClass_t tec2) {
+Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t tec1,
+                                                 EquivClass_t tec2) {
   // TODO(ionel): Implement!
   return 0LL;
 }
 
-vector<TaskEquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
+vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
-  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
+  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
   // We have one task agg per job. The id of the aggregator is the hash
   // of the job id.
   size_t hash = 42;
   boost::hash_combine(hash, td_ptr->job_id());
-  TaskEquivClass_t task_agg = static_cast<TaskEquivClass_t>(hash);
+  EquivClass_t task_agg = static_cast<EquivClass_t>(hash);
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);
   return equiv_classes;
 }
 
-vector<TaskEquivClass_t>* WhareMapCostModel::GetResourceEquivClasses(
+vector<EquivClass_t>* WhareMapCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
-  vector<TaskEquivClass_t>* equiv_classes = new vector<TaskEquivClass_t>();
+  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   // Get the machine aggregator corresponding to this machine.
-  TaskEquivClass_t* ec_class = FindOrNull(machine_to_ec_, res_id);
+  EquivClass_t* ec_class = FindOrNull(machine_to_ec_, res_id);
   CHECK_NOTNULL(ec_class);
   equiv_classes->push_back(*ec_class);
   return equiv_classes;
 }
 
 vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
-    TaskEquivClass_t tec) {
+    EquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   if (task_aggs_.find(tec) != task_aggs_.end()) {
     // tec is a task aggregator.
     // TODO(ionel): Add arcs from task aggregators to machines.
   } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
     // tec is a machine aggregator.
-    // TODO(ionel): Add arcs from machine aggregators to machines.
+    multimap<EquivClass_t, ResourceID_t>::iterator it =
+      machine_ec_to_res_id_.find(tec);
+    multimap<EquivClass_t, ResourceID_t>::iterator it_to =
+      machine_ec_to_res_id_.upper_bound(tec);
+    for (; it != it_to; ++it) {
+      prefered_res->push_back(it->second);
+    }
   } else {
     LOG(FATAL) << "Unexpected type of task equivalence aggregator";
   }
@@ -156,9 +163,19 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
 }
 
 vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
-    TaskEquivClass_t tec) {
-  LOG(FATAL) << "Not implemented!";
-  return NULL;
+    EquivClass_t tec) {
+  vector<TaskID_t>* prefered_task = new vector<TaskID_t>();
+  if (task_aggs_.find(tec) != task_aggs_.end()) {
+    // tec is a task aggregator.
+    // TODO(ionel): Add arcs from tasks to task aggregators.
+  } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
+    // tec is a machine aggregator.
+    // This is where we can add arcs form tasks to machine aggregators.
+    // We do not need to any any arcs in the WhareMap cost model.
+  } else {
+    LOG(FATAL) << "Unexpected type of task equivalence aggregator";
+  }
+  return prefered_task;
 }
 
 vector<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(
@@ -168,13 +185,13 @@ vector<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(
   return prefered_res;
 }
 
-pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
-    WhareMapCostModel::GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec) {
-  vector<TaskEquivClass_t>* incoming_ec = new vector<TaskEquivClass_t>();
-  vector<TaskEquivClass_t>* outgoing_ec = new vector<TaskEquivClass_t>();
+pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
+    WhareMapCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
+  vector<EquivClass_t>* incoming_ec = new vector<EquivClass_t>();
+  vector<EquivClass_t>* outgoing_ec = new vector<EquivClass_t>();
   if (task_aggs_.find(tec) != task_aggs_.end()) {
     // Add the machine equivalence classes to the vector.
-    for (unordered_set<TaskEquivClass_t>::iterator
+    for (unordered_set<EquivClass_t>::iterator
            it = machine_aggs_.begin();
          it != machine_aggs_.end();
          ++it) {
@@ -182,7 +199,7 @@ pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
     }
   } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
     // Add the task equivalence classes to the vector.
-    for (unordered_set<TaskEquivClass_t>::iterator
+    for (unordered_set<EquivClass_t>::iterator
            it = task_aggs_.begin();
          it != task_aggs_.end();
          ++it) {
@@ -191,8 +208,8 @@ pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
   } else {
     LOG(FATAL) << "Unexpected type of task equiv class";
   }
-  return pair<vector<TaskEquivClass_t>*,
-              vector<TaskEquivClass_t>*>(incoming_ec, outgoing_ec);
+  return pair<vector<EquivClass_t>*,
+              vector<EquivClass_t>*>(incoming_ec, outgoing_ec);
 }
 
 void WhareMapCostModel::AddMachine(
@@ -205,10 +222,10 @@ void WhareMapCostModel::AddMachine(
       boost::bind(&WhareMapCostModel::ComputeMachineTypeHash, this, _1, _2));
   ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
   // Set the number of cores for the machine.
-  TaskEquivClass_t machine_ec = static_cast<TaskEquivClass_t>(hash);
+  EquivClass_t machine_ec = static_cast<EquivClass_t>(hash);
   // Add mapping between task equiv class and resource id.
   machine_ec_to_res_id_.insert(
-      pair<TaskEquivClass_t, ResourceID_t>(machine_ec, res_id));
+      pair<EquivClass_t, ResourceID_t>(machine_ec, res_id));
   // Add mapping between resource id and resource topology node.
   InsertIfNotPresent(&machine_to_rtnd_, res_id, rtnd_ptr);
   // Add mapping between resource id and machine equiv class.
@@ -218,12 +235,12 @@ void WhareMapCostModel::AddMachine(
 }
 
 void WhareMapCostModel::RemoveMachine(ResourceID_t res_id) {
-  TaskEquivClass_t* machine_ec = FindOrNull(machine_to_ec_, res_id);
+  EquivClass_t* machine_ec = FindOrNull(machine_to_ec_, res_id);
   CHECK_NOTNULL(machine_ec);
   // Rempve the machine from the machine ec map.
-  multimap<TaskEquivClass_t, ResourceID_t>::iterator it =
+  multimap<EquivClass_t, ResourceID_t>::iterator it =
     machine_ec_to_res_id_.find(*machine_ec);
-  multimap<TaskEquivClass_t, ResourceID_t>::iterator it_to =
+  multimap<EquivClass_t, ResourceID_t>::iterator it_to =
     machine_ec_to_res_id_.upper_bound(*machine_ec);
   uint32_t num_machines_per_ec = 0;
   for (; it != it_to; it++, num_machines_per_ec++) {

@@ -6,6 +6,7 @@
 #ifndef FIRMAMENT_SCHEDULING_WHAREMAP_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_WHAREMAP_COST_MODEL_H
 
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -42,17 +43,17 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskContinuationCost(TaskID_t task_id);
   Cost_t TaskPreemptionCost(TaskID_t task_id);
   // Costs to equivalence class aggregators
-  Cost_t TaskToEquivClassAggregator(TaskID_t task_id, TaskEquivClass_t tec);
-  Cost_t EquivClassToResourceNode(TaskEquivClass_t tec, ResourceID_t res_id);
-  Cost_t EquivClassToEquivClass(TaskEquivClass_t tec1, TaskEquivClass_t tec2);
+  Cost_t TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
+  Cost_t EquivClassToResourceNode(EquivClass_t tec, ResourceID_t res_id);
+  Cost_t EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
   // Get the type of equiv class.
-  vector<TaskEquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
-  vector<TaskEquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
-  vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(TaskEquivClass_t tec);
-  vector<TaskID_t>* GetIncomingEquivClassPrefArcs(TaskEquivClass_t tec);
+  vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
+  vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
+  vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(EquivClass_t tec);
+  vector<TaskID_t>* GetIncomingEquivClassPrefArcs(EquivClass_t tec);
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
-  pair<vector<TaskEquivClass_t>*, vector<TaskEquivClass_t>*>
-    GetEquivClassToEquivClassesArcs(TaskEquivClass_t tec);
+  pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
+    GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
 
@@ -64,16 +65,16 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
   shared_ptr<ResourceMap_t> resource_map_;
   shared_ptr<TaskMap_t> task_map_;
   // Mapping between machine equiv classes and machines.
-  multimap<TaskEquivClass_t, ResourceID_t> machine_ec_to_res_id_;
+  multimap<EquivClass_t, ResourceID_t> machine_ec_to_res_id_;
   // Mapping betweeen machine res id and resource topology node descriptor.
   unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
     boost::hash<boost::uuids::uuid>> machine_to_rtnd_;
   // Mapping between machine res id and task equiv class.
-  unordered_map<ResourceID_t, TaskEquivClass_t,
+  unordered_map<ResourceID_t, EquivClass_t,
     boost::hash<boost::uuids::uuid>> machine_to_ec_;
 
-  unordered_set<TaskEquivClass_t> task_aggs_;
-  unordered_set<TaskEquivClass_t> machine_aggs_;
+  unordered_set<EquivClass_t> task_aggs_;
+  unordered_set<EquivClass_t> machine_aggs_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
 };

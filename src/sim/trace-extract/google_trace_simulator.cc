@@ -18,12 +18,17 @@
 #include <fcntl.h>
 
 #include "sim/trace-extract/google_trace_simulator.h"
+#include "scheduling/coco_cost_model.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
 #include "scheduling/quincy_cost_model.h"
 #include "scheduling/quincy_dispatcher.h"
+#include "scheduling/random_cost_model.h"
+#include "scheduling/sjf_cost_model.h"
+#include "scheduling/trivial_cost_model.h"
+#include "scheduling/wharemap_cost_model.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
@@ -67,6 +72,10 @@ DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2.");
+DEFINE_int32(flow_scheduling_cost_model, 0,
+             "Flow scheduler cost model to use. "
+             "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
+             "4 = WHARE, 5 = COCO");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -74,10 +83,38 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   knowledge_base_(new KnowledgeBaseSimulator) {
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>();
-  cost_model_ =
-    new QuincyCostModel(resource_map_, job_map_, task_map_,
-                        &task_bindings_, leaf_res_ids,
-                        knowledge_base_);
+  switch (FLAGS_flow_scheduling_cost_model) {
+    case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
+      cost_model_ = new TrivialCostModel(task_map_, leaf_res_ids);
+      VLOG(1) << "Using the trivial cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
+      cost_model_ = new RandomCostModel(task_map_, leaf_res_ids);
+      VLOG(1) << "Using the random cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_COCO:
+      cost_model_ = new CocoCostModel(task_map_, leaf_res_ids, knowledge_base_);
+      VLOG(1) << "Using the coco cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_SJF:
+      cost_model_ = new SJFCostModel(task_map_, leaf_res_ids, knowledge_base_);
+      VLOG(1) << "Using the SJF cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
+      cost_model_ =
+        new QuincyCostModel(resource_map_, job_map_, task_map_,
+                            &task_bindings_, leaf_res_ids,
+                            knowledge_base_);
+      VLOG(1) << "Using the Quincy cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_WHARE:
+      cost_model_ = new WhareMapCostModel(resource_map_, task_map_, knowledge_base_);
+      VLOG(1) << "Using the Whare-Map cost model";
+      break;
+    default:
+      LOG(FATAL) << "Unknown flow scheduling cost model specificed "
+                 << "(" << FLAGS_flow_scheduling_cost_model << ")";
+  }
   flow_graph_ = new FlowGraph(cost_model_, leaf_res_ids);
   knowledge_base_->SetCostModel(cost_model_);
   quincy_dispatcher_ =
@@ -234,10 +271,10 @@ void GoogleTraceSimulator::AddTaskStats(
     // Set its runtime to max which means it's a service task.
     runtime = numeric_limits<uint64_t>::max();
   }
-  vector<TaskEquivClass_t>* equiv_classes =
+  vector<EquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(td_ptr->uid());
   // XXX(ionel): This assumes that we have one task equivalence class per task.
-  for (vector<TaskEquivClass_t>::iterator it = equiv_classes->begin();
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     knowledge_base_->SetAvgRuntimeForTEC(*it, runtime);
     if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
