@@ -1022,13 +1022,4 @@ void FlowGraph::ComputeTopologyStatistics(
   }
 }
 
-FlowGraphNode* FlowGraph::GatherWhareMCStats(FlowGraphNode* accumulator,
-                                             FlowGraphNode* other) {
-  if (accumulator->resource_id_.is_nil()) {
-    // It's not a resource node.
-    return accumulator;
-  }
-  return accumulator;
-}
-
 }  // namespace firmament

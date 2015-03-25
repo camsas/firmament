@@ -47,6 +47,8 @@ class QuincyScheduler : public EventDrivenScheduler {
                   const SchedulingParameters& params);
   ~QuincyScheduler();
   void DeregisterResource(ResourceID_t res_id);
+  FlowGraphNode* GatherWhareMCStats(FlowGraphNode* accumulator,
+                                    FlowGraphNode* other);
   void HandleJobCompletion(JobID_t job_id);
   void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);

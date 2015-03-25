@@ -287,5 +287,19 @@ void QuincyScheduler::UpdateResourceTopology(
   }
 }
 
+FlowGraphNode* QuincyScheduler::GatherWhareMCStats(FlowGraphNode* accumulator,
+                                                   FlowGraphNode* other) {
+  if (accumulator->resource_id_.is_nil()) {
+    // It's not a resource node.
+    return accumulator;
+  }
+  if (accumulator->type_.type() == FlowNodeType::MACHINE) {
+  }
+  if (accumulator->type_.type() == FlowNodeType::PU) {
+  }
+  return accumulator;
+}
+
+
 }  // namespace scheduler
 }  // namespace firmament
