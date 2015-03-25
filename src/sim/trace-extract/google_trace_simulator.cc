@@ -704,7 +704,6 @@ void GoogleTraceSimulator::TaskEvicted(TaskID_t task_id,
   flow_graph_->NodeForTaskID(task_id)->type_.set_type(
       FlowNodeType::UNSCHEDULED_TASK);
   // Remove the running arc and add back arcs to EC and UNSCHED.
-  // TODO(ionel): Inform the cost model that this task has already failed.
   flow_graph_->TaskEvicted(task_id, res_id);
 
   // Get the Google trace identifier of the task.
@@ -724,7 +723,7 @@ void GoogleTraceSimulator::TaskEvicted(TaskID_t task_id,
       break;
     }
   }
-  ResourceID_t res_id_tmp(res_id);
+  ResourceID_t res_id_tmp = res_id;
   task_bindings_.erase(task_id);
   res_id_to_task_id_.erase(res_id_tmp);
   // Remove current task end time.

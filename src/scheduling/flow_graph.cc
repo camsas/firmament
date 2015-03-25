@@ -342,6 +342,14 @@ void FlowGraph::AddResourceNode(
               << rtnd.resource_desc().uuid();
     }
     new_node = AddNodeInternal(id);
+    if (rtnd_ptr->resource_desc().type() == ResourceDescriptor::RESOURCE_PU) {
+      new_node->type_.set_type(FlowNodeType::PU);
+    } else if (rtnd_ptr->resource_desc().type() ==
+               ResourceDescriptor::RESOURCE_MACHINE) {
+      new_node->type_.set_type(FlowNodeType::MACHINE);
+    } else {
+      new_node->type_.set_type(FlowNodeType::UNKNOWN);
+    }
     InsertIfNotPresent(&resource_to_nodeid_map_,
                        ResourceIDFromString(rtnd.resource_desc().uuid()),
                        new_node->id_);
@@ -401,6 +409,7 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
   // Add the equivalence class flow graph node.
   FlowGraphNode* ec_node = AddNodeInternal(next_id());
+  ec_node->type_.set_type(FlowNodeType::EQUIVALENCE_CLASS);
   CHECK(InsertIfNotPresent(&tec_to_node_, ec, ec_node));
   string comment;
   spf(&comment, "EC_AGG_%ju", ec);
@@ -815,7 +824,7 @@ void FlowGraph::RemoveMachineSubTree(FlowGraphNode* res_node) {
     unordered_map<uint64_t, FlowGraphArc*>::iterator
       it = res_node->outgoing_arc_map_.begin();
     if (it == res_node->outgoing_arc_map_.end()) {
-      return;
+      break;
     }
     if (it->second->dst_node_->resource_id_.is_nil()) {
       // The node is not a resource node. We will just delete the arc to it.
@@ -872,7 +881,6 @@ void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
   FlowGraphNode* assigned_res_node = NodeForResourceID(res_id);
   CHECK_NOTNULL(task_node);
   CHECK_NOTNULL(assigned_res_node);
-
   if (!FLAGS_preemption) {
     // After the task is bound, we now remove all of its edges into the flow
     // graph apart from the bound resource.
