@@ -1011,4 +1011,24 @@ void FlowGraph::ResetChanges() {
   ids_created_.clear();
 }
 
+void FlowGraph::ComputeTopologyStatistics(
+    FlowGraphNode* node,
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather) {
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+         node->outgoing_arc_map_.begin();
+       it != node->outgoing_arc_map_.end(); ++it) {
+    ComputeTopologyStatistics(it->second->dst_node_, gather);
+    node = gather(node, it->second->dst_node_);
+  }
+}
+
+FlowGraphNode* FlowGraph::GatherWhareMCStats(FlowGraphNode* accumulator,
+                                             FlowGraphNode* other) {
+  if (accumulator->resource_id_.is_nil()) {
+    // It's not a resource node.
+    return accumulator;
+  }
+  return accumulator;
+}
+
 }  // namespace firmament

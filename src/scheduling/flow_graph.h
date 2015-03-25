@@ -41,6 +41,8 @@ class FlowGraph {
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                  uint64_t cap_upper_bound, uint64_t cost);
   bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
+  FlowGraphNode* GatherWhareMCStats(FlowGraphNode* accumulator,
+                                    FlowGraphNode* other);
   void JobCompleted(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
@@ -52,9 +54,11 @@ class FlowGraph {
   void TaskFailed(TaskID_t task_id);
   void TaskKilled(TaskID_t task_id);
   void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
+  void ComputeTopologyStatistics(
+    FlowGraphNode* node,
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
   void UpdateResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
-
   // Simple accessor methods
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
   inline const unordered_map<uint64_t, FlowGraphNode*>& Nodes() const {
