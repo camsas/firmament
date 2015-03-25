@@ -636,8 +636,12 @@ void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
   ResourceTopologyNodeDescriptor* rtnd_ptr =
     FindPtrOrNull(machine_id_to_rtnd_, machine_id);
   CHECK_NOTNULL(rtnd_ptr);
+  // Traverse the resource topology tree in order to evict tasks and
+  // remove resources from resource_map.
   DFSTraverseResourceProtobufTreeReturnRTND(
       rtnd_ptr, boost::bind(&GoogleTraceSimulator::RemoveResource, this, _1));
+  ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
+  flow_graph_->RemoveMachine(res_id);
   if (rtnd_ptr->has_parent_id()) {
     if (rtnd_ptr->parent_id().compare(rtn_root_.resource_desc().uuid()) == 0) {
       RepeatedPtrField<ResourceTopologyNodeDescriptor>* parent_children =
@@ -677,19 +681,11 @@ void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
 void GoogleTraceSimulator::RemoveResource(
     ResourceTopologyNodeDescriptor* rtnd) {
   ResourceID_t res_id = ResourceIDFromString(rtnd->resource_desc().uuid());
-  if (rtnd->resource_desc().type() ==
-      ResourceDescriptor::RESOURCE_MACHINE) {
-    flow_graph_->RemoveMachine(res_id);
-  } else {
-    flow_graph_->DeleteResourceNode(res_id);
-  }
   TaskID_t* task_id = FindOrNull(res_id_to_task_id_, res_id);
   if (task_id != NULL) {
     // Evict the task running on the resource.
     TaskEvicted(*task_id, res_id);
   }
-  // We don't need to set the state of the resource because it gets removed
-  // anyway.
   ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs_ptr);
   resource_map_->erase(res_id);

@@ -636,25 +636,27 @@ void FlowGraph::DeleteNode(FlowGraphNode* node) {
   // First remove all outgoing arcs
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
        node->outgoing_arc_map_.begin();
-       it != node->outgoing_arc_map_.end();
-       ++it) {
+       it != node->outgoing_arc_map_.end();) {
     CHECK_EQ(it->first, it->second->dst_);
     CHECK_EQ(node->id_, it->second->src_);
     CHECK_EQ(it->second->dst_node_->incoming_arc_map_.erase(it->second->src_),
              1);
-    DeleteArc(it->second);
+    unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
+    ++it;
+    DeleteArc(it_tmp->second);
   }
   node->outgoing_arc_map_.clear();
   // Remove all incoming arcs.
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
        node->incoming_arc_map_.begin();
-       it != node->incoming_arc_map_.end();
-       ++it) {
+       it != node->incoming_arc_map_.end();) {
     CHECK_EQ(node->id_, it->second->dst_);
     CHECK_EQ(it->first, it->second->src_);
     CHECK_EQ(it->second->src_node_->outgoing_arc_map_.erase(it->second->dst_),
              1);
-    DeleteArc(it->second);
+    unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
+    ++it;
+    DeleteArc(it_tmp->second);
   }
   node->incoming_arc_map_.clear();
   node_map_.erase(node->id_);
@@ -889,6 +891,14 @@ void FlowGraph::UpdateArcsForEvictedTask(TaskID_t task_id,
                                          ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(task_id);
   if (!FLAGS_preemption) {
+    // Delete outgoing arcs for running task.
+    for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+           task_node->outgoing_arc_map_.begin();
+         it != task_node->outgoing_arc_map_.end();) {
+      unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
+      ++it;
+      DeleteArc(it_tmp->second);
+    }
     // Add back arcs to equiv class node, unscheduled agg and to
     // resource topology agg.
     vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
