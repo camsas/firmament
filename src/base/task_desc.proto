@@ -17,6 +17,13 @@ message TaskDescriptor {
     UNKNOWN = 9;
   }
 
+  enum TaskType {
+    DEVIL = 0;
+    RABBIT = 1;
+    SHEEP = 2;
+    TURTLE = 3;
+  }
+
   required uint64 uid = 1;
   required string name = 2;
   required TaskState state = 3;
@@ -53,5 +60,5 @@ message TaskDescriptor {
   /* Task resource request and priority */
   optional ResourceRequest resource_request = 24;
   optional uint32 priority = 25;
+  optional TaskType task_type = 26;
 }
-
