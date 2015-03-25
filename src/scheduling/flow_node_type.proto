@@ -19,6 +19,7 @@ message FlowNodeType {
     PU = 7;
     SINK = 8;
     UNKNOWN = 9;
+    EQUIVALENCE_CLASS = 10;
   }
 
   required NodeType type = 1 [default = UNKNOWN];

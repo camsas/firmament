@@ -54,6 +54,7 @@ class TrivialCostModel : public FlowSchedulingCostModelInterface {
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
+  void RemoveTask(TaskID_t task_id);
 
  private:
   shared_ptr<TaskMap_t> task_map_;

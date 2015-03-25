@@ -170,4 +170,7 @@ void SJFCostModel::AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) {
 void SJFCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
+void SJFCostModel::RemoveTask(TaskID_t task_id) {
+}
+
 }  // namespace firmament

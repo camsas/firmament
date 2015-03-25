@@ -126,6 +126,15 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
   EquivClass_t task_agg = static_cast<EquivClass_t>(HashJobID(*td_ptr));
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);
+  unordered_map<EquivClass_t, set<TaskID_t> >::iterator task_ec_it =
+    task_ec_to_set_task_id_.find(task_agg);
+  if (task_ec_it != task_ec_to_set_task_id_.end()) {
+    task_ec_it->second.insert(task_id);
+  } else {
+    set<TaskID_t> task_set;
+    task_set.insert(task_id);
+    CHECK(InsertIfNotPresent(&task_ec_to_set_task_id_, task_agg, task_set));
+  }
   return equiv_classes;
 }
 
@@ -290,6 +299,22 @@ void WhareMapCostModel::RemoveMachine(ResourceID_t res_id) {
   // last machine of this type.
   if (num_machines_per_ec == 1) {
     machine_aggs_.erase(*machine_ec);
+  }
+}
+
+void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
+  vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    unordered_map<EquivClass_t, set<TaskID_t> >::iterator set_it =
+      task_ec_to_set_task_id_.find(*it);
+    if (set_it != task_ec_to_set_task_id_.end()) {
+      set_it->second.erase(task_id);
+      if (set_it->second.size() == 0) {
+        task_ec_to_set_task_id_.erase(*it);
+        task_aggs_.erase(*it);
+      }
+    }
   }
 }
 

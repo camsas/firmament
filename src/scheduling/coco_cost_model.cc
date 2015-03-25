@@ -161,4 +161,7 @@ void CocoCostModel::AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) {
 void CocoCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
+void CocoCostModel::RemoveTask(TaskID_t task_id) {
+}
+
 }  // namespace firmament
