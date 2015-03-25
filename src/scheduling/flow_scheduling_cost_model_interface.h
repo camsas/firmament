@@ -113,6 +113,8 @@ class FlowSchedulingCostModelInterface {
    * Called by the flow_graph when a machine is removed.
    */
   virtual void RemoveMachine(ResourceID_t res_id) = 0;
+
+  virtual void RemoveTask(TaskID_t task_id) = 0;
 };
 
 }  // namespace firmament

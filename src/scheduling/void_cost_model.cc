@@ -110,4 +110,7 @@ void VoidCostModel::AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) {
 void VoidCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
+void VoidCostModel::RemoveTask(TaskID_t task_id) {
+}
+
 } // namespace firmament

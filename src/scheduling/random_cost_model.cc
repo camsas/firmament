@@ -136,4 +136,7 @@ void RandomCostModel::AddMachine(
 void RandomCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
+void RandomCostModel::RemoveTask(TaskID_t task_id) {
+}
+
 }  // namespace firmament

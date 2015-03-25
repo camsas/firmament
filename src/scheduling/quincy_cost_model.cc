@@ -162,4 +162,7 @@ void QuincyCostModel::AddMachine(
 void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
+void QuincyCostModel::RemoveTask(TaskID_t task_id) {
+}
+
 }  // namespace firmament

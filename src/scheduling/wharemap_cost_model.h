@@ -56,6 +56,7 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
+  void RemoveTask(TaskID_t task_id);
 
  private:
   const TaskDescriptor& GetTask(TaskID_t task_id);
@@ -72,6 +73,9 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
   // Mapping between machine res id and task equiv class.
   unordered_map<ResourceID_t, EquivClass_t,
     boost::hash<boost::uuids::uuid>> machine_to_ec_;
+
+  // Mapping between task equiv classes and connected tasks.
+  unordered_map<EquivClass_t, set<TaskID_t> > task_ec_to_set_task_id_;
 
   unordered_set<EquivClass_t> task_aggs_;
   unordered_set<EquivClass_t> machine_aggs_;

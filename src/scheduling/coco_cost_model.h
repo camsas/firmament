@@ -57,6 +57,7 @@ class CocoCostModel : public FlowSchedulingCostModelInterface {
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
+  void RemoveTask(TaskID_t task_id);
 
  private:
   const TaskDescriptor& GetTask(TaskID_t task_id);

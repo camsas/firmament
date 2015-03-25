@@ -128,4 +128,7 @@ void TrivialCostModel::AddMachine(
 void TrivialCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
+void TrivialCostModel::RemoveTask(TaskID_t task_id) {
+}
+
 }  // namespace firmament
