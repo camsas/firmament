@@ -91,7 +91,6 @@ class FlowGraph {
   FRIEND_TEST(FlowGraphTest, ChangeArc);
   FRIEND_TEST(FlowGraphTest, DeleteTaskNode);
   FRIEND_TEST(FlowGraphTest, DeleteResourceNode);
-  FRIEND_TEST(FlowGraphTest, DeleteNodesForJob);
   FRIEND_TEST(FlowGraphTest, ResetChanges);
   FRIEND_TEST(FlowGraphTest, UnschedAggCapacityAdjustment);
   void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
@@ -101,12 +100,7 @@ class FlowGraph {
                                     FlowGraphNode* ec_node);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
-  FlowGraphNode* AddEquivClassAggregator(EquivClass_t equiv_class,
-                                         vector<FlowGraphArc*>* ec_arcs);
   void AddEquivClassNode(EquivClass_t ec);
-  void AddEquivClassPreferenceArcs(EquivClass_t equiv_class,
-                                   FlowGraphNode* equiv_node,
-                                   vector<FlowGraphArc*>* ec_arcs);
   void AddResourceEquivClasses(FlowGraphNode* res_node);
   void AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
   void AddSpecialNodes();
@@ -122,13 +116,13 @@ class FlowGraph {
   void DeleteArcGeneratingDelta(FlowGraphArc* arc);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node);
-  void DeleteNodesForJob(JobID_t job_id);
-  void DeleteResourceNode(ResourceID_t res_id);
+  void DeleteResourceNode(FlowGraphNode* res_node);
   void DeleteTaskNode(TaskID_t task_id);
   void DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv);
   void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv);
   FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
+  void RemoveMachineSubTree(FlowGraphNode* res_node);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
   void UpdateResourceNode(const ResourceTopologyNodeDescriptor* rtnd);

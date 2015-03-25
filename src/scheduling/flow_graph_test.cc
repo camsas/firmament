@@ -246,50 +246,12 @@ TEST_F(FlowGraphTest, DeleteResourceNode) {
   uint64_t new_core_graph_id = g.ids_created_[g.ids_created_.size() - 1];
   uint32_t num_changes = g.graph_changes_.size();
   // Delete the core node.
-  g.DeleteResourceNode(
-       ResourceIDFromString(core_node->resource_desc().uuid()));
+  g.DeleteResourceNode(g.NodeForResourceID(
+       ResourceIDFromString(core_node->resource_desc().uuid())));
   CHECK_EQ(g.graph_changes_.size(), num_changes + 1);
   DIMACSRemoveNode* rem_node =
     static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes]);
   CHECK_EQ(rem_node->node_id_, new_core_graph_id);
-}
-
-TEST_F(FlowGraphTest, DeleteNodesForJob) {
-  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
-    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
-  ResourceTopologyNodeDescriptor rtn_root;
-  CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
-  // Now generate a job and add it
-  JobID_t jid = GenerateJobID();
-  JobDescriptor test_job;
-  test_job.set_uuid(to_string(jid));
-  TaskDescriptor* rt = test_job.mutable_root_task();
-  rt->set_state(TaskDescriptor::RUNNABLE);
-  rt->set_uid(GenerateRootTaskID(test_job));
-  rt->set_job_id(test_job.uuid());
-  CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
-  uint32_t num_changes = g.graph_changes_.size();
-  uint32_t num_ids = g.ids_created_.size();
-  g.AddOrUpdateJobNodes(&test_job);
-  CHECK_EQ(g.graph_changes_.size(), num_changes + 4);
-  uint64_t unsched_agg_graph_id = g.ids_created_[num_ids];
-  uint64_t root_task_graph_id = g.ids_created_[num_ids + 1];
-  uint64_t equiv_graph_id = g.ids_created_[num_ids + 2];
-  // Now delete all the nodes for the given job.
-  g.DeleteNodesForJob(jid);
-  CHECK_EQ(g.graph_changes_.size(), num_changes + 7);
-  DIMACSRemoveNode* rm_task =
-    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 4]);
-  DIMACSRemoveNode* rm_equiv =
-    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 5]);
-  DIMACSRemoveNode* rm_unsched =
-    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 6]);
-  CHECK_EQ(rm_task->node_id_, root_task_graph_id);
-  CHECK_EQ(rm_equiv->node_id_, equiv_graph_id);
-  CHECK_EQ(rm_unsched->node_id_, unsched_agg_graph_id);
 }
 
 TEST_F(FlowGraphTest, ResetChanges) {

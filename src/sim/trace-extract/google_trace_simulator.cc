@@ -123,8 +123,10 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
 
 GoogleTraceSimulator::~GoogleTraceSimulator() {
   for (ResourceMap_t::iterator it = resource_map_->begin();
-       it != resource_map_->end(); ++it) {
-    delete it->second;
+       it != resource_map_->end(); ) {
+    ResourceMap_t::iterator it_tmp = it;
+    ++it;
+    delete it_tmp->second;
   }
   delete quincy_dispatcher_;
   delete knowledge_base_;
