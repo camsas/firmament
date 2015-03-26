@@ -1014,11 +1014,22 @@ void FlowGraph::ResetChanges() {
 void FlowGraph::ComputeTopologyStatistics(
     FlowGraphNode* node,
     boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather) {
-  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
-         node->outgoing_arc_map_.begin();
-       it != node->outgoing_arc_map_.end(); ++it) {
-    ComputeTopologyStatistics(it->second->dst_node_, gather);
-    node = gather(node, it->second->dst_node_);
+  queue<FlowGraphNode*> to_visit;
+  set<FlowGraphNode*> processed;
+  to_visit.push(node);
+  processed.insert(node);
+  while (!to_visit.empty()) {
+    FlowGraphNode* cur_node = to_visit.front();
+    to_visit.pop();
+    for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+           cur_node->incoming_arc_map_.begin();
+         it != cur_node->incoming_arc_map_.end(); ++it) {
+      it->second->src_node_ = gather(it->second->src_node_, cur_node);
+      if (processed.find(it->second->src_node_) == processed.end()) {
+        to_visit.push(it->second->src_node_);
+        processed.insert(it->second->src_node_);
+      }
+    }
   }
 }
 

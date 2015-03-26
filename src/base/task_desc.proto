@@ -18,9 +18,9 @@ message TaskDescriptor {
   }
 
   enum TaskType {
-    DEVIL = 0;
+    SHEEP = 0;
     RABBIT = 1;
-    SHEEP = 2;
+    DEVIL = 2;
     TURTLE = 3;
   }
 

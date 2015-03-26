@@ -83,6 +83,9 @@ class FlowGraph {
     return (npp ? *npp : NULL);
   }
   inline vector<DIMACSChange*>& graph_changes() { return graph_changes_; }
+  inline FlowGraphNode* sink_node() {
+    return sink_node_;
+  }
 
  protected:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);

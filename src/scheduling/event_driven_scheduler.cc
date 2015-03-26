@@ -97,6 +97,7 @@ void EventDrivenScheduler::BindTaskToResource(
           << res_desc->uuid();
   // Mark resource as busy and record task binding
   res_desc->set_state(ResourceDescriptor::RESOURCE_BUSY);
+  res_desc->set_current_running_task(task_desc->uid());
   CHECK(InsertIfNotPresent(&task_bindings_, task_desc->uid(),
                            ResourceIDFromString(res_desc->uuid())));
   if (VLOG_IS_ON(2))
@@ -125,7 +126,14 @@ ResourceID_t* EventDrivenScheduler::BoundResourceForTask(TaskID_t task_id) {
 bool EventDrivenScheduler::UnbindResourceForTask(TaskID_t task_id) {
   ResourceID_t* rid = FindOrNull(task_bindings_, task_id);
   if (rid) {
-    return (task_bindings_.erase(task_id) == 1);
+    bool ret = task_bindings_.erase(task_id) == 1;
+    if (ret) {
+      ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, *rid);
+      CHECK_NOTNULL(rs_ptr);
+      ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+      rd_ptr->clear_current_running_task();
+    }
+    return ret;
   } else {
     return false;
   }

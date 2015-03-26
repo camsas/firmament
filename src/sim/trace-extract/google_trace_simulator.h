@@ -178,6 +178,18 @@ class GoogleTraceSimulator {
       TaskIdentifierHasher>* task_runtime,
     multimap<uint64_t, uint64_t>* task_mappings);
 
+  // XXX(ionel): These methods are copied from quincy_scheduler. We copy them
+  // because we don't have access to the scheduler in the simulator.
+  FlowGraphNode* GatherWhareMCStats(FlowGraphNode* accumulator,
+                                    FlowGraphNode* other);
+  void AccumulateWhareMapStats(WhareMapStats* accumulator,
+                               WhareMapStats* other);
+  void PrintResourceStats(uint64_t id, WhareMapStats* wms) {
+    LOG(INFO) << "Node: " << id << " " << wms->num_devils() << " "
+              << wms->num_rabbits() << " " << wms->num_sheep() << " "
+              << wms->num_turtles();
+  }
+
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.
   unordered_map<string, string> uuid_conversion_map_;
