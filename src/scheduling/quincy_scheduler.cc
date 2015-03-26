@@ -268,6 +268,11 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
                  << " remain!";
 
   switch (FLAGS_flow_scheduling_cost_model) {
+    case FlowSchedulingCostModelType::COST_MODEL_COCO:
+      flow_graph_->ComputeTopologyStatistics(
+          flow_graph_->sink_node(),
+          boost::bind(&QuincyScheduler::GatherCocoStats, this, _1, _2));
+      break;
     case FlowSchedulingCostModelType::COST_MODEL_WHARE:
       flow_graph_->ComputeTopologyStatistics(
           flow_graph_->sink_node(),
@@ -308,6 +313,19 @@ void QuincyScheduler::UpdateResourceTopology(
   } else {
     flow_graph_->AddMachine(root);
   }
+}
+
+FlowGraphNode* QuincyScheduler::GatherCocoStats(FlowGraphNode* accumulator,
+                                                FlowGraphNode* other) {
+  // TODO(ionel): Implement.
+  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
+      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_.type() == FlowNodeType::SINK) {
+    // TODO(ionel): Implement.
+  }
+  return accumulator;
 }
 
 FlowGraphNode* QuincyScheduler::GatherWhareMCStats(FlowGraphNode* accumulator,

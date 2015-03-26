@@ -47,6 +47,8 @@ class QuincyScheduler : public EventDrivenScheduler {
                   const SchedulingParameters& params);
   ~QuincyScheduler();
   void DeregisterResource(ResourceID_t res_id);
+  FlowGraphNode* GatherCocoStats(FlowGraphNode* accumulator,
+                                    FlowGraphNode* other);
   FlowGraphNode* GatherOctopusStats(FlowGraphNode* accumulator,
                                     FlowGraphNode* other);
   FlowGraphNode* GatherWhareMCStats(FlowGraphNode* accumulator,
