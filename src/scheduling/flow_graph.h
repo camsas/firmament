@@ -71,7 +71,6 @@ class FlowGraph {
   inline const unordered_set<uint64_t>& unsched_agg_ids() const {
     return unsched_agg_nodes_;
   }
-  inline const FlowGraphNode& sink_node() const { return *sink_node_; }
   inline const FlowGraphNode& cluster_agg_node() const {
     return *cluster_agg_node_;
   }

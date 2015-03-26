@@ -23,6 +23,7 @@
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
+#include "scheduling/octopus_cost_model.h"
 #include "scheduling/quincy_cost_model.h"
 #include "scheduling/quincy_dispatcher.h"
 #include "scheduling/random_cost_model.h"
@@ -75,7 +76,7 @@ DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2.");
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO");
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -110,6 +111,10 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
     case FlowSchedulingCostModelType::COST_MODEL_WHARE:
       cost_model_ = new WhareMapCostModel(resource_map_, task_map_, knowledge_base_);
       VLOG(1) << "Using the Whare-Map cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
+      cost_model_ = new OctopusCostModel();
+      VLOG(1) << "Using the octopus cost model";
       break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "

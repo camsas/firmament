@@ -28,7 +28,7 @@
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO");
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
 
 namespace firmament {
 namespace scheduler {
@@ -89,6 +89,10 @@ QuincyScheduler::QuincyScheduler(
       cost_model = new WhareMapCostModel(resource_map, task_map,
                                          knowledge_base_);
       VLOG(1) << "Using the Whare-Map cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
+      cost_model = new OctopusCostModel();
+      VLOG(1) << "Using the octopus cost model";
       break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "

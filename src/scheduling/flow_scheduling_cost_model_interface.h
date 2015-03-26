@@ -28,7 +28,8 @@ enum FlowSchedulingCostModelType {
   COST_MODEL_QUINCY = 3,
   COST_MODEL_WHARE = 4,
   COST_MODEL_COCO = 5,
-  COST_MODEL_VOID = 6,
+  COST_MODEL_OCTOPUS = 6,
+  COST_MODEL_VOID = 7,
 };
 
 class FlowSchedulingCostModelInterface {
