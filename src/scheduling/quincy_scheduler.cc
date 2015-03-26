@@ -72,7 +72,7 @@ QuincyScheduler::QuincyScheduler(
       VLOG(1) << "Using the random cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_COCO:
-      cost_model = new CocoCostModel(resource_map, task_map, leaf_res_ids_,
+      cost_model_ = new CocoCostModel(resource_map, task_map, leaf_res_ids_,
                                      knowledge_base_);
       VLOG(1) << "Using the coco cost model";
       break;
