@@ -1,15 +1,18 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
+#include "misc/map-util.h"
 #include "scheduling/octopus_cost_model.h"
 
 namespace firmament {
 
-OctopusCostModel::OctopusCostModel() {
+OctopusCostModel::OctopusCostModel(shared_ptr<ResourceMap_t> resource_map)
+  : resource_map_(resource_map) {
 }
 
 Cost_t OctopusCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  return 0LL;
+  // TODO(ionel): Implement!
+  return 10000LL;
 }
 
 Cost_t OctopusCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
@@ -26,9 +29,16 @@ Cost_t OctopusCostModel::TaskToResourceNodeCost(TaskID_t task_id,
 }
 
 Cost_t OctopusCostModel::ResourceNodeToResourceNodeCost(
-    ResourceID_t source,
-    ResourceID_t destination) {
-  return 0LL;
+    ResourceID_t src, ResourceID_t dst) {
+  ResourceStatus* src_rs_ptr = FindPtrOrNull(*resource_map_, src);
+  CHECK_NOTNULL(src_rs_ptr);
+  ResourceDescriptor* src_rd_ptr = src_rs_ptr->mutable_descriptor();
+
+  ResourceStatus* dst_rs_ptr = FindPtrOrNull(*resource_map_, dst);
+  CHECK_NOTNULL(dst_rs_ptr);
+  ResourceDescriptor* dst_rd_ptr = dst_rs_ptr->mutable_descriptor();
+
+  return src_rd_ptr->num_running_tasks() - dst_rd_ptr->num_running_tasks();
 }
 
 Cost_t OctopusCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {

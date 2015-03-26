@@ -126,14 +126,7 @@ ResourceID_t* EventDrivenScheduler::BoundResourceForTask(TaskID_t task_id) {
 bool EventDrivenScheduler::UnbindResourceForTask(TaskID_t task_id) {
   ResourceID_t* rid = FindOrNull(task_bindings_, task_id);
   if (rid) {
-    bool ret = task_bindings_.erase(task_id) == 1;
-    if (ret) {
-      ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, *rid);
-      CHECK_NOTNULL(rs_ptr);
-      ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
-      rd_ptr->clear_current_running_task();
-    }
-    return ret;
+    return task_bindings_.erase(task_id) == 1;
   } else {
     return false;
   }
@@ -219,6 +212,7 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   ResourceStatus* res = FindPtrOrNull(*resource_map_, res_id_tmp);
   CHECK_NOTNULL(res);
   res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  res->mutable_descriptor()->clear_current_running_task();
   // Remove the task's resource binding (as it is no longer currently bound)
   CHECK(UnbindResourceForTask(td_ptr->uid()));
   // Record final report
@@ -295,6 +289,7 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   // point...
   ResourceStatus* res = FindPtrOrNull(*resource_map_, res_id_tmp);
   res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  res->mutable_descriptor()->clear_current_running_task();
   // Executor cleanup: drop the task from the health checker's list, etc.
   ExecutorInterface* executor = GetExecutorForTask(td_ptr->uid());
   CHECK_NOTNULL(executor);
