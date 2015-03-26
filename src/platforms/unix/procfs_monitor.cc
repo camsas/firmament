@@ -85,7 +85,7 @@ void ProcFSMonitor::AggregateStatsForPIDTree(
     pid_t pid,
     bool root,
     ProcessStatistics_t* stats) {
-  LOG(INFO) << "Adding stats for PID " << pid;
+  VLOG(1) << "Adding stats for PID " << pid;
   // Grab information from /proc/[pid]/stat
   if (root)
     GetStatsForPID(pid, stats);
@@ -102,7 +102,7 @@ void ProcFSMonitor::AggregateStatsForPIDTree(
   vector<uint64_t> children;
   uint64_t tmp;
   while (fscanf(chld_input, "%ju ", &tmp) > 0) {
-    LOG(INFO) << "Found child " << tmp << " for " << pid;
+    VLOG(1) << "Found child " << tmp << " for " << pid;
     children.push_back(tmp);
   }
   fclose(chld_input);

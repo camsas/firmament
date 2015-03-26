@@ -363,7 +363,7 @@ void TaskLib::SendHeartbeat(
   SUBMSG_WRITE(bm, task_heartbeat, location, chan_->LocalEndpointString());
   SUBMSG_WRITE(bm, task_heartbeat, sequence_number, heartbeat_seq_number_++);
 
-  LOG(INFO) << "Sending heartbeat message!";
+  //LOG(INFO) << "Sending heartbeat message!";
   SendMessageToCoordinator(&bm);
 }
 
