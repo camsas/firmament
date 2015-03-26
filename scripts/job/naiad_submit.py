@@ -7,9 +7,9 @@ import binascii
 import time
 import shlex
 
-def add_worker_task(task, binary, args, worker_id, num_workers, extra_args):
+def add_worker_task(task, binary, args, job_name, worker_id, num_workers, extra_args):
   task.uid = 0
-  task.name = "worker_%d" % (worker_id)
+  task.name = "%s/%d" % (job_name, worker_id)
   task.state = task_desc_pb2.TaskDescriptor.CREATED
   task.binary = "/usr/bin/python"
   task.args.extend(args)
@@ -53,7 +53,7 @@ job_desc.uuid = "" # UUID will be set automatically on submission
 job_desc.name = job_name
 # set up root task
 job_desc.root_task.uid = 0
-job_desc.root_task.name = "master_task"
+job_desc.root_task.name = "%s/0" % (job_name)
 job_desc.root_task.state = task_desc_pb2.TaskDescriptor.CREATED
 job_desc.root_task.binary = "/usr/bin/python"
 job_desc.root_task.args.extend(basic_args)
@@ -66,7 +66,7 @@ job_desc.root_task.inject_task_lib = True
 # add workers
 for i in range(1, num_workers):
   task = job_desc.root_task.spawned.add()
-  add_worker_task(task, naiad_exe, basic_args, i, num_workers, extra_args)
+  add_worker_task(task, naiad_exe, basic_args, job_name, i, num_workers, extra_args)
 
 input_id = binascii.unhexlify('feedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeeffeedcafedeadbeef')
 output_id = binascii.unhexlify('db33daba280d8e68eea6e490723b02cedb33daba280d8e68eea6e490723b02ce')
