@@ -29,6 +29,8 @@
 
 DEFINE_bool(preemption, false, "Enable preemption and migration of tasks");
 DEFINE_bool(add_root_task_to_graph, true, "Add the job root task to the graph");
+DEFINE_bool(randomize_flow_graph_node_ids, false,
+            "If true the the flow graph will not generate node ids in order");
 
 namespace firmament {
 
@@ -43,6 +45,11 @@ FlowGraph::FlowGraph(FlowSchedulingCostModelInterface *cost_model,
       leaf_res_ids_(leaf_res_ids) {
   // Add sink and cluster aggregator node
   AddSpecialNodes();
+  // We do not randomize the special nodes because the solvers make
+  // assumptions about the the id number of the sink node.
+  if (FLAGS_randomize_flow_graph_node_ids) {
+    PopulateUnusedIds(50);
+  }
 }
 
 FlowGraph::~FlowGraph() {
@@ -168,7 +175,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
   uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_,
                                              JobIDFromString(jd->uuid()));
   if (!unsched_agg_node_id) {
-    unsched_agg_node = AddNodeInternal(next_id());
+    unsched_agg_node = AddNodeInternal(NextId());
     unsched_agg_node->type_.set_type(FlowNodeType::JOB_AGGREGATOR);
     string comment;
     spf(&comment, "UNSCHED_AGG_for_%s", jd->uuid().c_str());
@@ -227,7 +234,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
     if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
       generate_trace_.TaskSubmitted(JobIDFromString(jd->uuid()), cur->uid());
       vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
-      task_node = AddNodeInternal(next_id());
+      task_node = AddNodeInternal(NextId());
       task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK);
       // Add the current task's node
       task_node->excess_ = 1;
@@ -287,7 +294,7 @@ void FlowGraph::AddSpecialNodes() {
   // the root of the resource topology is automatically chosen as the
   // cluster aggregator.
   // Sink node
-  sink_node_ = AddNodeInternal(next_id());
+  sink_node_ = AddNodeInternal(NextId());
   sink_node_->type_.set_type(FlowNodeType::SINK);
   sink_node_->comment_ = "SINK";
   graph_changes_.push_back(new DIMACSAddNode(*sink_node_,
@@ -334,7 +341,7 @@ void FlowGraph::AddResourceNode(
   // Add the node if it does not already exist
   if (!NodeForResourceID(ResourceIDFromString(rtnd.resource_desc().uuid()))) {
     vector<FlowGraphArc*> *resource_arcs = new vector<FlowGraphArc*>();
-    uint64_t id = next_id();
+    uint64_t id = NextId();
     if (rtnd.resource_desc().has_friendly_name()) {
       VLOG(2) << "Adding node " << id << " for resource "
               << rtnd.resource_desc().uuid() << " ("
@@ -410,7 +417,7 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   VLOG(2) << "Add equiv class " << ec;
   vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
   // Add the equivalence class flow graph node.
-  FlowGraphNode* ec_node = AddNodeInternal(next_id());
+  FlowGraphNode* ec_node = AddNodeInternal(NextId());
   ec_node->type_.set_type(FlowNodeType::EQUIVALENCE_CLASS);
   CHECK(InsertIfNotPresent(&tec_to_node_, ec, ec_node));
   string comment;
@@ -770,6 +777,30 @@ void FlowGraph::JobCompleted(JobID_t job_id) {
   DeleteNode(node);
 }
 
+uint64_t FlowGraph::NextId() {
+  if (FLAGS_randomize_flow_graph_node_ids) {
+    if (unused_ids_.empty()) {
+      PopulateUnusedIds(current_id_ * 2);
+    } else {
+      uint64_t new_id = unused_ids_.front();
+      unused_ids_.pop();
+      ids_created_.push_back(new_id);
+      return new_id;
+    }
+    return 0;
+  } else {
+    if (unused_ids_.empty()) {
+      ids_created_.push_back(current_id_);
+      return current_id_++;
+    } else {
+      uint64_t new_id = unused_ids_.front();
+      unused_ids_.pop();
+      ids_created_.push_back(new_id);
+      return new_id;
+    }
+  }
+}
+
 FlowGraphNode* FlowGraph::NodeForResourceID(const ResourceID_t& res_id) {
   uint64_t* id = FindOrNull(resource_to_nodeid_map_, res_id);
   // Returns NULL if resource unknown
@@ -811,6 +842,19 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
   FlowGraphArc* new_arc = AddArcInternal(task_node, res_node);
   new_arc->cap_upper_bound_ = 1;
   graph_changes_.push_back(new DIMACSNewArc(*new_arc));
+}
+
+void FlowGraph::PopulateUnusedIds(uint64_t new_current_id) {
+  srand(42);
+  vector<uint64_t> ids;
+  for (uint64_t index = current_id_; index < new_current_id; ++index) {
+    ids.push_back(index);
+  }
+  random_shuffle(ids.begin(), ids.end());
+  for (vector<uint64_t>::iterator it = ids.begin(); it != ids.end(); ++it) {
+    unused_ids_.push(*it);
+  }
+  current_id_ = new_current_id;
 }
 
 void FlowGraph::RemoveMachine(ResourceID_t res_id) {

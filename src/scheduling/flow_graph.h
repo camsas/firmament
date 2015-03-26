@@ -75,7 +75,6 @@ class FlowGraph {
     return *cluster_agg_node_;
   }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
-  //inline uint64_t NumNodes() const { return node_map_.size(); }
   inline uint64_t NumNodes() const { return current_id_ - 1; }
   inline FlowGraphNode* Node(uint64_t id) {
     FlowGraphNode* const* npp = FindOrNull(node_map_, id);
@@ -125,23 +124,13 @@ class FlowGraph {
   void DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv);
   void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv);
   FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
+  uint64_t NextId();
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
+  void PopulateUnusedIds(uint64_t new_current_id);
   void RemoveMachineSubTree(FlowGraphNode* res_node);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
   void UpdateResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
-
-  uint64_t next_id() {
-    if (unused_ids_.empty()) {
-      ids_created_.push_back(current_id_);
-      return current_id_++;
-    } else {
-      uint64_t new_id = unused_ids_.front();
-      unused_ids_.pop();
-      ids_created_.push_back(new_id);
-      return new_id;
-    }
-  }
 
   // Flow scheduling cost model used
   FlowSchedulingCostModelInterface* cost_model_;

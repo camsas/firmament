@@ -73,8 +73,8 @@ TEST_F(FlowGraphTest, AddArcToNode) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   uint64_t init_node_count = g.NumNodes();
-  FlowGraphNode* n0 = g.AddNodeInternal(g.next_id());
-  FlowGraphNode* n1 = g.AddNodeInternal(g.next_id());
+  FlowGraphNode* n0 = g.AddNodeInternal(g.NextId());
+  FlowGraphNode* n1 = g.AddNodeInternal(g.NextId());
   FlowGraphArc* arc = g.AddArcInternal(n0->id_, n1->id_);
   CHECK_EQ(g.NumNodes(), init_node_count + 2);
   CHECK_EQ(g.NumArcs(), 1);
@@ -193,9 +193,9 @@ TEST_F(FlowGraphTest, ChangeArc) {
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
-  uint64_t n0_id = g.next_id();
+  uint64_t n0_id = g.NextId();
   FlowGraphNode* n0 = g.AddNodeInternal(n0_id);
-  uint64_t n1_id = g.next_id();
+  uint64_t n1_id = g.NextId();
   FlowGraphNode* n1 = g.AddNodeInternal(n1_id);
   FlowGraphArc* arc = g.AddArcInternal(n0->id_, n1->id_);
   uint32_t num_changes = g.graph_changes_.size();
@@ -259,8 +259,8 @@ TEST_F(FlowGraphTest, ResetChanges) {
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
-  FlowGraphNode* n0 = g.AddNodeInternal(g.next_id());
-  FlowGraphNode* n1 = g.AddNodeInternal(g.next_id());
+  FlowGraphNode* n0 = g.AddNodeInternal(g.NextId());
+  FlowGraphNode* n1 = g.AddNodeInternal(g.NextId());
   g.AddArcInternal(n0->id_, n1->id_);
   CHECK_EQ(g.graph_changes_.size(), 1);
   g.ResetChanges();
