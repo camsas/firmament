@@ -781,13 +781,11 @@ uint64_t FlowGraph::NextId() {
   if (FLAGS_randomize_flow_graph_node_ids) {
     if (unused_ids_.empty()) {
       PopulateUnusedIds(current_id_ * 2);
-    } else {
-      uint64_t new_id = unused_ids_.front();
-      unused_ids_.pop();
-      ids_created_.push_back(new_id);
-      return new_id;
     }
-    return 0;
+    uint64_t new_id = unused_ids_.front();
+    unused_ids_.pop();
+    ids_created_.push_back(new_id);
+    return new_id;
   } else {
     if (unused_ids_.empty()) {
       ids_created_.push_back(current_id_);
