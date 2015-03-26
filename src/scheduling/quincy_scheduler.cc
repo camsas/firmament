@@ -91,7 +91,7 @@ QuincyScheduler::QuincyScheduler(
       VLOG(1) << "Using the Whare-Map cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
-      cost_model = new OctopusCostModel();
+      cost_model = new OctopusCostModel(resource_map);
       VLOG(1) << "Using the octopus cost model";
       break;
     default:
@@ -376,6 +376,46 @@ void QuincyScheduler::AccumulateWhareMapStats(WhareMapStats* accumulator,
                              other->num_sheep());
   accumulator->set_num_turtles(accumulator->num_turtles() +
                                other->num_turtles());
+}
+
+FlowGraphNode* QuincyScheduler::GatherOctopusStats(FlowGraphNode* accumulator,
+                                                   FlowGraphNode* other) {
+  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
+      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_.type() == FlowNodeType::SINK ||
+      accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+    // Node is neither part of the topology or an equivalence class.
+    // We don't have to accumulate any state.
+    return accumulator;
+  }
+  if (other->resource_id_.is_nil()) {
+    if (accumulator->type_.type() == FlowNodeType::PU) {
+      // Base case. We are at a PU and we gather the statistics.
+      ResourceStatus* rs_ptr =
+        FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+      CHECK_NOTNULL(rs_ptr);
+      ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+      if (rd_ptr->has_current_running_task()) {
+        rd_ptr->set_num_running_tasks(1);
+      }
+    }
+    return accumulator;
+  }
+
+  ResourceStatus* acc_rs_ptr =
+    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+  CHECK_NOTNULL(acc_rs_ptr);
+  ResourceDescriptor* acc_rd_ptr = acc_rs_ptr->mutable_descriptor();
+
+  ResourceStatus* other_rs_ptr =
+    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+  CHECK_NOTNULL(other_rs_ptr);
+  ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
+  acc_rd_ptr->set_num_running_tasks(acc_rd_ptr->num_running_tasks() +
+                                    other_rd_ptr->num_running_tasks());
+  return accumulator;
 }
 
 }  // namespace scheduler

@@ -15,7 +15,7 @@ typedef int64_t Cost_t;
 
 class OctopusCostModel : public FlowSchedulingCostModelInterface {
  public:
-  OctopusCostModel();
+  OctopusCostModel(shared_ptr<ResourceMap_t> resource_map);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -45,6 +45,8 @@ class OctopusCostModel : public FlowSchedulingCostModelInterface {
   void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
+ private:
+  shared_ptr<ResourceMap_t> resource_map_;
 };
 
 }  // namespace firmament

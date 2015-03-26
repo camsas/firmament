@@ -41,4 +41,7 @@ message ResourceDescriptor {
   optional uint64 num_cores = 10;
   optional uint64 current_running_task = 11;
   optional WhareMapStats whare_map_stats = 12;
+  // Stores the number of running tasks on the resources that
+  // are bellow in the topology tree.
+  optional uint64 num_running_tasks = 13;
 }
