@@ -168,6 +168,15 @@ void QuincyScheduler::DeregisterResource(ResourceID_t res_id) {
   }
 }
 
+FlowGraphArc* QuincyScheduler::GetArc(FlowGraphNode* src, FlowGraphNode* dst) {
+  unordered_map<uint64_t, FlowGraphArc*>::iterator arc_it =
+    src->outgoing_arc_map_.find(dst->id_);
+  if (arc_it == src->outgoing_arc_map_.end()) {
+    LOG(FATAL) << "Could not find arc";
+  }
+  return arc_it->second;
+}
+
 void QuincyScheduler::HandleJobCompletion(JobID_t job_id) {
   // Call into superclass handler
   EventDrivenScheduler::HandleJobCompletion(job_id);
@@ -272,6 +281,9 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
       flow_graph_->ComputeTopologyStatistics(
           flow_graph_->sink_node(),
           boost::bind(&QuincyScheduler::GatherCocoStats, this, _1, _2));
+      flow_graph_->ComputeTopologyStatistics(
+          flow_graph_->sink_node(),
+          boost::bind(&QuincyScheduler::UpdateWhareMCCosts, this, _1, _2));
       break;
     case FlowSchedulingCostModelType::COST_MODEL_WHARE:
       flow_graph_->ComputeTopologyStatistics(
@@ -412,6 +424,37 @@ void QuincyScheduler::AccumulateWhareMapStats(WhareMapStats* accumulator,
                                other->num_turtles());
 }
 
+FlowGraphNode* QuincyScheduler::UpdateWhareMCCosts(FlowGraphNode* accumulator,
+                                                   FlowGraphNode* other) {
+  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
+      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_.type() == FlowNodeType::SINK) {
+    // Node is neither part of the topology or an equivalence class.
+    // We don't have to accumulate any state.
+    return accumulator;
+  }
+  if (other->resource_id_.is_nil()) {
+    // The other is not a resource node.
+    if (other->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+      // TODO(ionel): Implement.
+    } else if (other->type_.type() == FlowNodeType::SINK) {
+      return accumulator;
+    } else {
+      LOG(FATAL) << "Unknown flow graph node type";
+    }
+  }
+
+  FlowGraphArc* arc = GetArc(accumulator, other);
+  // TODO(ionel): Inform the dimacs exporter about the change.
+  arc->cost_ =
+    cost_model_->ResourceNodeToResourceNodeCost(accumulator->resource_id_,
+                                                other->resource_id_);
+
+  return accumulator;
+}
+
 FlowGraphNode* QuincyScheduler::GatherOctopusStats(FlowGraphNode* accumulator,
                                                    FlowGraphNode* other) {
   if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
@@ -467,13 +510,9 @@ FlowGraphNode* QuincyScheduler::UpdateOctopusCosts(FlowGraphNode* accumulator,
   if (other->resource_id_.is_nil()) {
     return accumulator;
   }
-  unordered_map<uint64_t, FlowGraphArc*>::iterator arc_it =
-    accumulator->outgoing_arc_map_.find(other->id_);
-  if (arc_it == accumulator->outgoing_arc_map_.end()) {
-    LOG(FATAL) << "Could not find arc";
-  }
+  FlowGraphArc* arc = GetArc(accumulator, other);
   // TODO(ionel): Inform the dimacs exporter about the change.
-  arc_it->second->cost_ =
+  arc->cost_ =
     cost_model_->ResourceNodeToResourceNodeCost(accumulator->resource_id_,
                                                 other->resource_id_);
   // Reset the state.
