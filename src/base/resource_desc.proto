@@ -5,6 +5,7 @@
 
 package firmament;
 
+import "base/resource_request.proto";
 import "base/whare_map_stats.proto";
 
 message ResourceDescriptor {
@@ -40,5 +41,7 @@ message ResourceDescriptor {
   optional string storage_engine = 9;
   optional uint64 num_cores = 10;
   optional uint64 current_running_task = 11;
+  // XXX(malte): both of these are hacks and should be in more appropriate places
   optional WhareMapStats whare_map_stats = 12;
+  optional ResourceRequest load = 13;
 }
