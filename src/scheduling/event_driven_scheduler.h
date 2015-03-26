@@ -88,7 +88,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   // includes both executors for local and for remote resources.
   map<ResourceID_t, ExecutorInterface*> executors_;
   // The current task bindings managed by this scheduler.
-  map<TaskID_t, ResourceID_t> task_bindings_;
+  unordered_map<TaskID_t, ResourceID_t> task_bindings_;
   // Map of reference subscriptions
   map<DataObjectID_t, set<TaskDescriptor*> > reference_subscriptions_;
   // Pointer to the coordinator's topology manager

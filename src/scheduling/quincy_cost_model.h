@@ -29,7 +29,7 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
   QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
                   shared_ptr<JobMap_t> job_map,
                   shared_ptr<TaskMap_t> task_map,
-                  map<TaskID_t, ResourceID_t> *task_bindings,
+                  unordered_map<TaskID_t, ResourceID_t> *task_bindings,
                   unordered_set<ResourceID_t,
                     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                   KnowledgeBase* kb);
@@ -70,7 +70,7 @@ class QuincyCostModel : public FlowSchedulingCostModelInterface {
   // Information regarding jobs and tasks.
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<TaskMap_t> task_map_;
-  map<TaskID_t, ResourceID_t> *task_bindings_;
+  unordered_map<TaskID_t, ResourceID_t>* task_bindings_;
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;

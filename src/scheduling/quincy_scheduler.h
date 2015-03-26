@@ -78,7 +78,6 @@ class QuincyScheduler : public EventDrivenScheduler {
   void UpdateResourceTopology(
       const ResourceTopologyNodeDescriptor& resource_tree);
 
-  map<TaskID_t, ResourceID_t> task_bindings_;
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
   // Store a pointer to an external knowledge base.
