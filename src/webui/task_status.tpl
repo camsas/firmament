@@ -158,7 +158,7 @@ $(function() {
   </tr>
   <tr>
     <td>Command</td>
-    <td><pre class="pre-x-scroll">{{TASK_BINARY}} {{TASK_ARGS}}</pre></td>
+    <td><pre class="pre-x-scroll" style="width: 60%;">{{TASK_BINARY}} {{TASK_ARGS}}</pre></td>
   </tr>
   <tr>
     <td>Equivalence classes</td>
