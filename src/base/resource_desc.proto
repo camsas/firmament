@@ -5,6 +5,8 @@
 
 package firmament;
 
+import "base/whare_map_stats.proto";
+
 message ResourceDescriptor {
   enum ResourceState {
     RESOURCE_UNKNOWN = 0;
@@ -37,4 +39,6 @@ message ResourceDescriptor {
   optional bool schedulable = 8 [default = false];
   optional string storage_engine = 9;
   optional uint64 num_cores = 10;
+  optional uint64 current_running_task = 11;
+  optional WhareMapStats whare_map_stats = 12;
 }

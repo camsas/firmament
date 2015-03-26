@@ -47,6 +47,8 @@ class QuincyScheduler : public EventDrivenScheduler {
                   const SchedulingParameters& params);
   ~QuincyScheduler();
   void DeregisterResource(ResourceID_t res_id);
+  FlowGraphNode* GatherWhareMCStats(FlowGraphNode* accumulator,
+                                    FlowGraphNode* other);
   void HandleJobCompletion(JobID_t job_id);
   void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
@@ -68,6 +70,8 @@ class QuincyScheduler : public EventDrivenScheduler {
   const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
 
  private:
+  void AccumulateWhareMapStats(WhareMapStats* accumulator,
+                               WhareMapStats* other);
   uint64_t ApplySchedulingDeltas(const vector<SchedulingDelta*>& deltas);
   void ApplyDeltas();
   void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);

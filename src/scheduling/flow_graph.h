@@ -41,8 +41,6 @@ class FlowGraph {
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                  uint64_t cap_upper_bound, uint64_t cost);
   bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
-  FlowGraphNode* GatherWhareMCStats(FlowGraphNode* accumulator,
-                                    FlowGraphNode* other);
   void JobCompleted(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
@@ -73,7 +71,6 @@ class FlowGraph {
   inline const unordered_set<uint64_t>& unsched_agg_ids() const {
     return unsched_agg_nodes_;
   }
-  inline const FlowGraphNode& sink_node() const { return *sink_node_; }
   inline const FlowGraphNode& cluster_agg_node() const {
     return *cluster_agg_node_;
   }
@@ -85,6 +82,9 @@ class FlowGraph {
     return (npp ? *npp : NULL);
   }
   inline vector<DIMACSChange*>& graph_changes() { return graph_changes_; }
+  inline FlowGraphNode* sink_node() {
+    return sink_node_;
+  }
 
  protected:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
