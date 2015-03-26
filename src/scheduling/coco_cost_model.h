@@ -23,12 +23,29 @@ namespace firmament {
 
 typedef int64_t Cost_t;
 
+typedef struct {
+  // record number of dimensions here
+  const uint16_t dimensions_ = 8;
+  // Data follows
+  uint32_t priority_;
+  uint32_t cpu_cores_;
+  uint32_t ram_gb_;
+  uint32_t network_bw_;
+  uint32_t disk_bw_;
+  uint32_t machine_type_score_;
+  uint32_t interference_score_;
+  uint32_t locality_score_;
+} CostVector_t;
+
 class CocoCostModel : public FlowSchedulingCostModelInterface {
  public:
-  CocoCostModel(shared_ptr<TaskMap_t> task_map,
+  CocoCostModel(shared_ptr<ResourceMap_t> resource_map,
+                shared_ptr<TaskMap_t> task_map,
                 unordered_set<ResourceID_t,
                   boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                 KnowledgeBase* kb);
+  // Interference score
+  uint64_t ComputeInterferenceScore(ResourceID_t res_id);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -47,6 +64,7 @@ class CocoCostModel : public FlowSchedulingCostModelInterface {
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
   Cost_t EquivClassToResourceNode(EquivClass_t tec, ResourceID_t res_id);
   Cost_t EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
+  int64_t FlattenCostVector(CostVector_t cv);
   // Get the type of equiv class.
   vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
   vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
@@ -55,17 +73,31 @@ class CocoCostModel : public FlowSchedulingCostModelInterface {
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
+  uint32_t NormalizeCost(uint64_t raw_cost, uint64_t max_cost);
   void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr);
+  void PrintCostVector(CostVector_t cv);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
 
  private:
   const TaskDescriptor& GetTask(TaskID_t task_id);
+  // Fixed value for OMEGA, the normalization ceiling for each dimension's cost
+  // value
+  const uint64_t omega_ = 1000;
+  const Cost_t WAIT_TIME_MULTIPLIER = 1;
 
+  // Lookup maps for various resources from the scheduler.
+  shared_ptr<ResourceMap_t> resource_map_;
   shared_ptr<TaskMap_t> task_map_;
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
+
+  // Largest cost seen so far, plus one
+  uint64_t infinity_;
+  // Vector to track the maximum capacity values in each dimension
+  // present in the cluster (N.B.: these can execeed OMEGA).
+  CostVector_t max_capacity_;
 };
 
 }  // namespace firmament
