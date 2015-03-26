@@ -427,7 +427,7 @@ FlowGraphNode* QuincyScheduler::GatherOctopusStats(FlowGraphNode* accumulator,
   ResourceDescriptor* acc_rd_ptr = acc_rs_ptr->mutable_descriptor();
 
   ResourceStatus* other_rs_ptr =
-    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+    FindPtrOrNull(*resource_map_, other->resource_id_);
   CHECK_NOTNULL(other_rs_ptr);
   ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
   acc_rd_ptr->set_num_running_tasks(acc_rd_ptr->num_running_tasks() +
@@ -443,13 +443,6 @@ FlowGraphNode* QuincyScheduler::UpdateOctopusCosts(FlowGraphNode* accumulator,
       accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
       accumulator->type_.type() == FlowNodeType::SINK ||
       accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
-    // Reset the state.
-    ResourceStatus* other_rs_ptr =
-      FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-    if (other_rs_ptr != NULL) {
-      ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
-      other_rd_ptr->set_num_running_tasks(0);
-    }
     return accumulator;
   }
   if (other->resource_id_.is_nil()) {
@@ -460,12 +453,13 @@ FlowGraphNode* QuincyScheduler::UpdateOctopusCosts(FlowGraphNode* accumulator,
   if (arc_it == accumulator->outgoing_arc_map_.end()) {
     LOG(FATAL) << "Could not find arc";
   }
+  // TODO(ionel): Inform the dimacs exporter about the change.
   arc_it->second->cost_ =
     cost_model_->ResourceNodeToResourceNodeCost(accumulator->resource_id_,
                                                 other->resource_id_);
   // Reset the state.
   ResourceStatus* other_rs_ptr =
-    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+    FindPtrOrNull(*resource_map_, other->resource_id_);
   CHECK_NOTNULL(other_rs_ptr);
   ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
   other_rd_ptr->set_num_running_tasks(0);
