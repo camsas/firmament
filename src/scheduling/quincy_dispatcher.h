@@ -24,10 +24,11 @@ class QuincyDispatcher {
   }
 
   multimap<uint64_t, uint64_t>* Run();
-  void NodeBindingToSchedulingDelta(const FlowGraphNode& src,
-                                    const FlowGraphNode& dst,
-                                    map<TaskID_t, ResourceID_t>* task_bindings,
-                                    SchedulingDelta* delta);
+  void NodeBindingToSchedulingDelta(
+      const FlowGraphNode& src,
+      const FlowGraphNode& dst,
+      unordered_map<TaskID_t, ResourceID_t>* task_bindings,
+      SchedulingDelta* delta);
   uint64_t seq_num() const {
     return debug_seq_num_;
   }
