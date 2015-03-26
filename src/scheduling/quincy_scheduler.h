@@ -51,6 +51,8 @@ class QuincyScheduler : public EventDrivenScheduler {
                                     FlowGraphNode* other);
   FlowGraphNode* GatherWhareMCStats(FlowGraphNode* accumulator,
                                     FlowGraphNode* other);
+  FlowGraphNode* UpdateOctopusCosts(FlowGraphNode* accumulator,
+                                    FlowGraphNode* other);
   void HandleJobCompletion(JobID_t job_id);
   void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
@@ -94,6 +96,7 @@ class QuincyScheduler : public EventDrivenScheduler {
   SchedulingParameters parameters_;
   // The dispatcher runs different flow solvers.
   QuincyDispatcher* quincy_dispatcher_;
+  FlowSchedulingCostModelInterface* cost_model_;
   // Set containing the resource ids of the PUs.
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
 };

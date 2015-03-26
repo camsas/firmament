@@ -61,37 +61,37 @@ QuincyScheduler::QuincyScheduler(
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
           << FLAGS_flow_scheduling_cost_model << "\"";
-  FlowSchedulingCostModelInterface* cost_model;
+
   switch (FLAGS_flow_scheduling_cost_model) {
     case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
-      cost_model = new TrivialCostModel(task_map, leaf_res_ids_);
+      cost_model_ = new TrivialCostModel(task_map, leaf_res_ids_);
       VLOG(1) << "Using the trivial cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
-      cost_model = new RandomCostModel(task_map, leaf_res_ids_);
+      cost_model_ = new RandomCostModel(task_map, leaf_res_ids_);
       VLOG(1) << "Using the random cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_COCO:
-      cost_model = new CocoCostModel(task_map, leaf_res_ids_, knowledge_base_);
+      cost_model_ = new CocoCostModel(task_map, leaf_res_ids_, knowledge_base_);
       VLOG(1) << "Using the coco cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_SJF:
-      cost_model = new SJFCostModel(task_map, leaf_res_ids_, knowledge_base_);
+      cost_model_ = new SJFCostModel(task_map, leaf_res_ids_, knowledge_base_);
       VLOG(1) << "Using the SJF cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
-      cost_model = new QuincyCostModel(resource_map, job_map, task_map,
+      cost_model_ = new QuincyCostModel(resource_map, job_map, task_map,
                                        &task_bindings_, leaf_res_ids_,
                                        knowledge_base_);
       VLOG(1) << "Using the Quincy cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_WHARE:
-      cost_model = new WhareMapCostModel(resource_map, task_map,
+      cost_model_ = new WhareMapCostModel(resource_map, task_map,
                                          knowledge_base_);
       VLOG(1) << "Using the Whare-Map cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
-      cost_model = new OctopusCostModel(resource_map);
+      cost_model_ = new OctopusCostModel(resource_map);
       VLOG(1) << "Using the octopus cost model";
       break;
     default:
@@ -99,8 +99,8 @@ QuincyScheduler::QuincyScheduler(
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
   }
 
-  flow_graph_.reset(new FlowGraph(cost_model, leaf_res_ids_));
-  knowledge_base_->SetCostModel(cost_model);
+  flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids_));
+  knowledge_base_->SetCostModel(cost_model_);
 
   LOG(INFO) << "QuincyScheduler initiated; parameters: "
             << parameters_.ShortDebugString();
@@ -265,9 +265,24 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   if (deltas.size() > 0)
     LOG(WARNING) << "Not all deltas were processed, " << deltas.size()
                  << " remain!";
-  flow_graph_->ComputeTopologyStatistics(
-      flow_graph_->sink_node(),
-      boost::bind(&QuincyScheduler::GatherWhareMCStats, this, _1, _2));
+
+  switch (FLAGS_flow_scheduling_cost_model) {
+    case FlowSchedulingCostModelType::COST_MODEL_WHARE:
+      flow_graph_->ComputeTopologyStatistics(
+          flow_graph_->sink_node(),
+          boost::bind(&QuincyScheduler::GatherWhareMCStats, this, _1, _2));
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
+      flow_graph_->ComputeTopologyStatistics(
+          flow_graph_->sink_node(),
+          boost::bind(&QuincyScheduler::GatherOctopusStats, this, _1, _2));
+      flow_graph_->ComputeTopologyStatistics(
+          flow_graph_->sink_node(),
+          boost::bind(&QuincyScheduler::UpdateOctopusCosts, this, _1, _2));
+      break;
+    default:
+      LOG(INFO) << "No resource stats update required";
+  }
   return num_scheduled;
 }
 
@@ -399,6 +414,8 @@ FlowGraphNode* QuincyScheduler::GatherOctopusStats(FlowGraphNode* accumulator,
       ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
       if (rd_ptr->has_current_running_task()) {
         rd_ptr->set_num_running_tasks(1);
+      } else {
+        rd_ptr->set_num_running_tasks(0);
       }
     }
     return accumulator;
@@ -415,6 +432,44 @@ FlowGraphNode* QuincyScheduler::GatherOctopusStats(FlowGraphNode* accumulator,
   ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
   acc_rd_ptr->set_num_running_tasks(acc_rd_ptr->num_running_tasks() +
                                     other_rd_ptr->num_running_tasks());
+  return accumulator;
+}
+
+FlowGraphNode* QuincyScheduler::UpdateOctopusCosts(FlowGraphNode* accumulator,
+                                                   FlowGraphNode* other) {
+  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
+      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_.type() == FlowNodeType::SINK ||
+      accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+    // Reset the state.
+    ResourceStatus* other_rs_ptr =
+      FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+    if (other_rs_ptr != NULL) {
+      ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
+      other_rd_ptr->set_num_running_tasks(0);
+    }
+    return accumulator;
+  }
+  if (other->resource_id_.is_nil()) {
+    return accumulator;
+  }
+  unordered_map<uint64_t, FlowGraphArc*>::iterator arc_it =
+    accumulator->outgoing_arc_map_.find(other->id_);
+  if (arc_it == accumulator->outgoing_arc_map_.end()) {
+    LOG(FATAL) << "Could not find arc";
+  }
+  arc_it->second->cost_ =
+    cost_model_->ResourceNodeToResourceNodeCost(accumulator->resource_id_,
+                                                other->resource_id_);
+  // Reset the state.
+  ResourceStatus* other_rs_ptr =
+    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+  CHECK_NOTNULL(other_rs_ptr);
+  ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
+  other_rd_ptr->set_num_running_tasks(0);
+
   return accumulator;
 }
 
