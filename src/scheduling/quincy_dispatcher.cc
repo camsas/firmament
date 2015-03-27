@@ -34,6 +34,18 @@ namespace scheduler {
   using boost::algorithm::is_any_of;
   using boost::token_compress_on;
 
+  void *export_to_solver(void *x) {
+  	QuincyDispatcher *qd = (QuincyDispatcher *)x;
+  	// Write to pipe to solver
+  	qd->exporter_.Flush(qd->to_solver_);
+		if (!FLAGS_incremental_flow) {
+			// We need to close the stream because that's what cs expects.
+			fclose(qd->to_solver_);
+		}
+
+		return NULL;
+  }
+
   multimap<uint64_t, uint64_t>* QuincyDispatcher::Run(
   		                        double *algorithm_time, double *flowsolver_time,
 					                    FILE *graph_output) {
@@ -134,15 +146,24 @@ namespace scheduler {
 
     boost::timer::cpu_timer flowsolver_timer;
 
-    // Write to pipe to solver
-    exporter_.Flush(to_solver_);
-    if (!FLAGS_incremental_flow) {
-      // We need to close the stream because that's what cs expects.
-      fclose(to_solver_);
+    // We must export graph and read from STDOUT/STDERR in parallel
+    // Otherwise, the solver might block if STDOUT/STDERR buffer gets full.
+    // (For example, if it outputs lots of warnings on STDERR.)
+
+    // Create thread to write the DIMACS
+    pthread_t exporter_thread;
+    if (pthread_create(&exporter_thread, NULL, export_to_solver, this)) {
+    	PLOG(FATAL) << "Error creating thread";
     }
 
     multimap<uint64_t, uint64_t>* task_mappings;
     task_mappings = ReadOutput(algorithm_time);
+
+    // Wait for exporter to complete. (Should already have happened when we
+    // get here, given we've finished reading the output.)
+    if (pthread_join(exporter_thread, NULL)) {
+    	PLOG(FATAL) << "Error joining thread";
+    }
 
     if (flowsolver_time != NULL) {
     	boost::timer::nanosecond_type one_second = 1e9;
