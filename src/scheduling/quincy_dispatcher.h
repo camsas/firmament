@@ -40,10 +40,10 @@ class QuincyDispatcher {
   multimap<uint64_t, uint64_t>* GetMappings(
       vector< map< uint64_t, uint64_t > >* extracted_flow,
       unordered_set<uint64_t> leaves, uint64_t sink);
+  multimap<uint64_t, uint64_t>* ReadOutput(double *time);
   vector< map< uint64_t, uint64_t> >* ReadFlowGraph(FILE* fptr,
                                                     uint64_t num_vertices);
   multimap<uint64_t, uint64_t>* ReadTaskMappingChanges(FILE* fptr);
-  void ProcessStderr(FILE *stats, double *algorithm_time);
 
   shared_ptr<FlowGraph> flow_graph_;
   // DIMACS exporter for interfacing to the solver

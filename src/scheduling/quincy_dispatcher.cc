@@ -7,6 +7,8 @@
 
 #include <sys/stat.h>
 
+#include <pthread.h>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/timer/timer.hpp>
@@ -140,19 +142,7 @@ namespace scheduler {
     }
 
     multimap<uint64_t, uint64_t>* task_mappings;
-    if (FLAGS_only_read_assignment_changes) {
-      task_mappings = ReadTaskMappingChanges(from_solver_);
-    } else {
-      // Parse and process the result
-      uint64_t num_nodes = flow_graph_->NumNodes();
-      vector<map<uint64_t, uint64_t> >* extracted_flow =
-        ReadFlowGraph(from_solver_, num_nodes);
-      task_mappings = GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
-                                  flow_graph_->sink_node().id_);
-      delete extracted_flow;
-    }
-
-    ProcessStderr(from_solver_stderr_, algorithm_time);
+    task_mappings = ReadOutput(algorithm_time);
 
     if (flowsolver_time != NULL) {
     	boost::timer::nanosecond_type one_second = 1e9;
@@ -312,9 +302,76 @@ namespace scheduler {
     return task_node;
   }
 
+  struct arguments {
+  	FILE *fptr;
+  	double *time;
+  };
+
+  void *process_stderr(void *x) {
+  	struct arguments *args = (struct arguments *)x;
+  	double *algorithm_time = args->time;
+  	FILE *stderr = args->fptr;
+  	char line[100];
+
+
+  	if (algorithm_time) {
+  		*algorithm_time = nan("");
+  	}
+
+  	while (fgets(line, sizeof(line), stderr) != NULL) {
+			double time;
+			int num_matched = sscanf(line, "ALGOTIME: %lf\n", &time);
+			if (num_matched == 1) {
+				if (algorithm_time) {
+					*algorithm_time = time;
+				}
+				break;
+			} else {
+				LOG(WARNING) << "STDERR from algorithm: " << line;
+			}
+  	}
+
+  	return NULL;
+  }
+
   // Returns a vector containing a nodes arcs with flow > 0.
   // In the returned graph the arcs are the inverse of the arcs in the file.
   // If there is (i,j) with flow 1 then in the graph we will have (j,i).
+  multimap<uint64_t, uint64_t>* QuincyDispatcher::ReadOutput(double *time) {
+		multimap<uint64_t, uint64_t>* task_mappings;
+
+		// Reading from two streams: stdout and stderr. Must process both
+		// in parallel. Otherwise, the buffer on one could get full, and the solver
+		// would block. This could result in a situation of deadlock.
+
+		// Create thread to process stderr
+		pthread_t stderr_thread;
+		struct arguments args = { from_solver_stderr_, time };
+		if (pthread_create(&stderr_thread, NULL, process_stderr, &args)) {
+			PLOG(FATAL) << "Error creating thread";
+		}
+
+		// Process stdout in main thread
+  	if (FLAGS_only_read_assignment_changes) {
+			task_mappings = ReadTaskMappingChanges(from_solver_);
+		} else {
+			// Parse and process the result
+			uint64_t num_nodes = flow_graph_->NumNodes();
+			vector<map<uint64_t, uint64_t> >* extracted_flow =
+				ReadFlowGraph(from_solver_, num_nodes);
+			task_mappings = GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
+																	flow_graph_->sink_node().id_);
+			delete extracted_flow;
+		}
+
+  	// Wait for stderr processing to complete
+  	if (pthread_join(stderr_thread, NULL)) {
+  		PLOG(FATAL) << "Error joining thread";
+  	}
+
+  	return task_mappings;
+  }
+
   vector<map< uint64_t, uint64_t> >* QuincyDispatcher::ReadFlowGraph(
        FILE* fptr, uint64_t num_vertices) {
     vector<map< uint64_t, uint64_t > >* adj_list =
@@ -416,27 +473,5 @@ namespace scheduler {
     }
     return task_node;
   }
-
-  void QuincyDispatcher::ProcessStderr(FILE *stats, double *algorithm_time) {
-  	char line[100];
-
-  	if (algorithm_time) {
-  		*algorithm_time = nan("");
-  	}
-
-  	while (fgets(line, sizeof(line), stats) != NULL) {
-			double time;
-			int num_matched = sscanf(line, "ALGOTIME: %lf\n", &time);
-			if (num_matched == 1) {
-				if (algorithm_time) {
-					*algorithm_time = time;
-				}
-				return;
-			} else {
-				LOG(WARNING) << "STDERR from algorithm: " << line;
-			}
-  	}
-  }
-
 } // namespace scheduler
 } // namespace firmament
