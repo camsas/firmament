@@ -23,9 +23,9 @@ namespace firmament {
 
 typedef int64_t Cost_t;
 
-typedef struct {
+typedef struct CostVector {
   // record number of dimensions here
-  const uint16_t dimensions_ = 8;
+  const static uint16_t dimensions_ = 8;
   // Data follows
   uint32_t priority_;
   uint32_t cpu_cores_;
@@ -40,6 +40,7 @@ typedef struct {
 class CocoCostModel : public FlowSchedulingCostModelInterface {
  public:
   CocoCostModel(shared_ptr<ResourceMap_t> resource_map,
+                const ResourceTopologyNodeDescriptor& resource_topology,
                 shared_ptr<TaskMap_t> task_map,
                 unordered_set<ResourceID_t,
                   boost::hash<boost::uuids::uuid>>* leaf_res_ids,
@@ -70,6 +71,7 @@ class CocoCostModel : public FlowSchedulingCostModelInterface {
   vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
   vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(EquivClass_t tec);
   vector<TaskID_t>* GetIncomingEquivClassPrefArcs(EquivClass_t tec);
+  uint64_t GetInterferenceScoreForTask(TaskID_t task_id);
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
@@ -85,13 +87,21 @@ class CocoCostModel : public FlowSchedulingCostModelInterface {
   // value
   const uint64_t omega_ = 1000;
   const Cost_t WAIT_TIME_MULTIPLIER = 1;
+  const uint64_t MAX_PRIORITY_VALUE = 10;
 
   // Lookup maps for various resources from the scheduler.
   shared_ptr<ResourceMap_t> resource_map_;
+  const ResourceTopologyNodeDescriptor& resource_topology_;
   shared_ptr<TaskMap_t> task_map_;
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
+
+  // Mapping between task equiv classes and connected tasks.
+  unordered_map<EquivClass_t, set<TaskID_t> > task_ec_to_set_task_id_;
+  // Track equivalence class aggregators present
+  unordered_set<EquivClass_t> task_aggs_;
+  unordered_set<EquivClass_t> machine_aggs_;
 
   // Largest cost seen so far, plus one
   uint64_t infinity_;
