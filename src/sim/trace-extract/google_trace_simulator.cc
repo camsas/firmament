@@ -751,8 +751,10 @@ void GoogleTraceSimulator::ReplayTrace(
 
             LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
 
-            fprintf(graph_output_file, "c SOI %lu\n", time_interval_bound);
-            fflush(graph_output_file);
+            if (graph_output_file) {
+            	fprintf(graph_output_file, "c SOI %lu\n", time_interval_bound);
+							fflush(graph_output_file);
+            }
             double algorithm_time, flowsolver_time;
             multimap<uint64_t, uint64_t>* task_mappings =
               quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time,
