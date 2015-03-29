@@ -782,7 +782,7 @@ void GoogleTraceSimulator::ReplayTrace(
 							stats_file->flush();
 						}
 						// restart timer; elapsed() returns time from this point
-						timer.stop(); timer.resume();
+						timer.stop(); timer.start();
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
