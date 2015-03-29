@@ -177,7 +177,7 @@ void Coordinator::AddResource(ResourceDescriptor* resource_desc,
   VLOG(1) << "Adding resource " << res_id << " to resource map; "
           << "endpoint URI is " << endpoint_uri;
   CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
-          new ResourceStatus(resource_desc, endpoint_uri,
+          new ResourceStatus(resource_desc, NULL, endpoint_uri,
                              GetCurrentTimestamp())));
   // Register with scheduler if this resource is schedulable
   if (resource_desc->type() == ResourceDescriptor::RESOURCE_PU) {
