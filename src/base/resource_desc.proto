@@ -48,4 +48,6 @@ message ResourceDescriptor {
   // places
   optional WhareMapStats whare_map_stats = 13;
   optional ResourceRequest load = 14;
+  optional ResourceRequest min_load_below = 15;
+  optional ResourceRequest max_load_below = 16;
 }
