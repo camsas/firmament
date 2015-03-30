@@ -88,7 +88,7 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;
@@ -133,7 +133,7 @@ TEST_F(FlowGraphTest, AddResourceNode) {
   FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
   string root_id = rtn_root.mutable_resource_desc()->uuid();
   uint32_t num_changes = g.graph_changes_.size();
   // Add a new core node.
@@ -234,7 +234,7 @@ TEST_F(FlowGraphTest, DeleteResourceNode) {
   FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
   string root_id = rtn_root.mutable_resource_desc()->uuid();
   // Add a new core node.
   ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
@@ -275,7 +275,7 @@ TEST_F(FlowGraphTest, SimpleResourceTopo) {
   FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
 }
 
 // Test correct increment/decrement of unscheduled aggregator capacities.
@@ -286,7 +286,7 @@ TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
   FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;
