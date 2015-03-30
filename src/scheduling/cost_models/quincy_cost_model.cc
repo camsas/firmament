@@ -166,4 +166,14 @@ void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
 void QuincyCostModel::RemoveTask(TaskID_t task_id) {
 }
 
+FlowGraphNode* QuincyCostModel::GatherStats(FlowGraphNode* accumulator,
+                                            FlowGraphNode* other) {
+  return NULL;
+}
+
+FlowGraphNode* QuincyCostModel::UpdateStats(FlowGraphNode* accumulator,
+                                            FlowGraphNode* other) {
+  return NULL;
+}
+
 }  // namespace firmament

@@ -7,6 +7,7 @@
 #ifndef FIRMAMENT_SCHEDULING_COCO_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_COCO_COST_MODEL_H
 
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -80,6 +81,8 @@ class CocoCostModel : public FlowSchedulingCostModelInterface {
   void PrintCostVector(CostVector_t cv);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
+  FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
+  FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
   const TaskDescriptor& GetTask(TaskID_t task_id);

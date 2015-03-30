@@ -7,6 +7,7 @@
 #define FIRMAMENT_SCHEDULING_WHAREMAP_COST_MODEL_H
 
 #include <map>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -57,6 +58,8 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
+  FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
+  FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
   const TaskDescriptor& GetTask(TaskID_t task_id);

@@ -131,4 +131,14 @@ void TrivialCostModel::RemoveMachine(ResourceID_t res_id) {
 void TrivialCostModel::RemoveTask(TaskID_t task_id) {
 }
 
+FlowGraphNode* TrivialCostModel::GatherStats(FlowGraphNode* accumulator,
+                                             FlowGraphNode* other) {
+  return NULL;
+}
+
+FlowGraphNode* TrivialCostModel::UpdateStats(FlowGraphNode* accumulator,
+                                             FlowGraphNode* other) {
+  return NULL;
+}
+
 }  // namespace firmament

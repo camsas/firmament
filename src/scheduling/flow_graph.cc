@@ -5,6 +5,7 @@
 // Representation of a Quincy-style scheduling flow graph.
 
 #include <queue>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>

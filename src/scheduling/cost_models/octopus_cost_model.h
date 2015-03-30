@@ -5,6 +5,9 @@
 #ifndef FIRMAMENT_SCHEDULING_OCTOPUS_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_OCTOPUS_COST_MODEL_H
 
+#include <utility>
+#include <vector>
+
 #include "base/common.h"
 #include "base/types.h"
 #include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
@@ -15,7 +18,7 @@ typedef int64_t Cost_t;
 
 class OctopusCostModel : public FlowSchedulingCostModelInterface {
  public:
-  OctopusCostModel(shared_ptr<ResourceMap_t> resource_map);
+  explicit OctopusCostModel(shared_ptr<ResourceMap_t> resource_map);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -45,6 +48,9 @@ class OctopusCostModel : public FlowSchedulingCostModelInterface {
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
+  FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
+  FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
+
  private:
   shared_ptr<ResourceMap_t> resource_map_;
 };

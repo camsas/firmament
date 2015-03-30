@@ -15,6 +15,7 @@
 #include "base/resource_topology_node_desc.pb.h"
 #include "base/types.h"
 #include "scheduling/common.h"
+#include "scheduling/flow_graph_node.h"
 
 namespace firmament {
 
@@ -145,6 +146,12 @@ class FlowSchedulingCostModelInterface {
   virtual void RemoveMachine(ResourceID_t res_id) = 0;
 
   virtual void RemoveTask(TaskID_t task_id) = 0;
+
+  virtual FlowGraphNode* GatherStats(FlowGraphNode* accumulator,
+                                     FlowGraphNode* other) = 0;
+
+  virtual FlowGraphNode* UpdateStats(FlowGraphNode* accumulator,
+                                     FlowGraphNode* other) = 0;
 };
 
 }  // namespace firmament

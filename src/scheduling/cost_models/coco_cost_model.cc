@@ -5,10 +5,11 @@
 
 #include "scheduling/cost_models/coco_cost_model.h"
 
+#include <cmath>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <cmath>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -373,6 +374,16 @@ void CocoCostModel::RemoveTask(TaskID_t task_id) {
       }
     }
   }
+}
+
+FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
+                                          FlowGraphNode* other) {
+  return NULL;
+}
+
+FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
+                                          FlowGraphNode* other) {
+  return NULL;
 }
 
 }  // namespace firmament

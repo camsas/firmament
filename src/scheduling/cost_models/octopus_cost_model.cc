@@ -1,6 +1,9 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
+#include <utility>
+#include <vector>
+
 #include "misc/map-util.h"
 #include "scheduling/cost_models/octopus_cost_model.h"
 
@@ -114,6 +117,16 @@ void OctopusCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
 void OctopusCostModel::RemoveTask(TaskID_t task_id) {
+}
+
+FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
+                                             FlowGraphNode* other) {
+  return NULL;
+}
+
+FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
+                                             FlowGraphNode* other) {
+  return NULL;
 }
 
 }  // namespace firmament

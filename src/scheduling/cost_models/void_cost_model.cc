@@ -113,4 +113,14 @@ void VoidCostModel::RemoveMachine(ResourceID_t res_id) {
 void VoidCostModel::RemoveTask(TaskID_t task_id) {
 }
 
+FlowGraphNode* VoidCostModel::GatherStats(FlowGraphNode* accumulator,
+                                          FlowGraphNode* other) {
+  return NULL;
+}
+
+FlowGraphNode* VoidCostModel::UpdateStats(FlowGraphNode* accumulator,
+                                          FlowGraphNode* other) {
+  return NULL;
+}
+
 } // namespace firmament

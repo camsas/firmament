@@ -50,6 +50,8 @@ class VoidCostModel : public FlowSchedulingCostModelInterface {
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
+  FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
+  FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 };
 
 }  // namespace firmament

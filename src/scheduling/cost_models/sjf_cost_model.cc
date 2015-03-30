@@ -173,4 +173,14 @@ void SJFCostModel::RemoveMachine(ResourceID_t res_id) {
 void SJFCostModel::RemoveTask(TaskID_t task_id) {
 }
 
+FlowGraphNode* SJFCostModel::GatherStats(FlowGraphNode* accumulator,
+                                         FlowGraphNode* other) {
+  return NULL;
+}
+
+FlowGraphNode* SJFCostModel::UpdateStats(FlowGraphNode* accumulator,
+                                         FlowGraphNode* other) {
+  return NULL;
+}
+
 }  // namespace firmament

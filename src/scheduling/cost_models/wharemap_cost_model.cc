@@ -7,6 +7,7 @@
 #include "scheduling/cost_models/wharemap_cost_model.h"
 
 #include <map>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -166,7 +167,8 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
       if (priority_res.size() < FLAGS_num_pref_arcs_agg_to_res) {
         priority_res.insert(pair<Cost_t, ResourceID_t>(cost_to_res, res_id));
       } else {
-        multimap<Cost_t, ResourceID_t>::reverse_iterator rit = priority_res.rbegin();
+        multimap<Cost_t, ResourceID_t>::reverse_iterator rit =
+          priority_res.rbegin();
         if (cost_to_res < rit->first) {
           priority_res.erase(priority_res.find(rit->first));
           priority_res.insert(pair<Cost_t, ResourceID_t>(cost_to_res, res_id));
@@ -321,6 +323,16 @@ void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
 void WhareMapCostModel::ComputeMachineTypeHash(
     const ResourceTopologyNodeDescriptor* rtnd_ptr, size_t* hash) {
   boost::hash_combine(*hash, rtnd_ptr->resource_desc().type());
+}
+
+FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
+                                              FlowGraphNode* other) {
+  return NULL;
+}
+
+FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
+                                              FlowGraphNode* other) {
+  return NULL;
 }
 
 }  // namespace firmament

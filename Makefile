@@ -48,10 +48,10 @@ ext: ext/.ext-ok
 ext/.ext-ok:
 	$(SCRIPTS_DIR)/fetch-externals.sh
 
-cost_models:
+cost_models: scheduling
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling/cost_models all
 
-engine: base scheduling storage platforms misc sim
+engine: base cost_models scheduling storage platforms misc sim
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
 examples: engine scripts
@@ -60,7 +60,7 @@ examples: engine scripts
 base: ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/base all
 
-scheduling: base misc platforms cost_models
+scheduling: base misc platforms
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling all
 
 sim: base misc

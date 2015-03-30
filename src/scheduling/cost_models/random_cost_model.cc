@@ -140,4 +140,14 @@ void RandomCostModel::RemoveMachine(ResourceID_t res_id) {
 void RandomCostModel::RemoveTask(TaskID_t task_id) {
 }
 
+FlowGraphNode* RandomCostModel::GatherStats(FlowGraphNode* accumulator,
+                                            FlowGraphNode* other) {
+  return NULL;
+}
+
+FlowGraphNode* RandomCostModel::UpdateStats(FlowGraphNode* accumulator,
+                                            FlowGraphNode* other) {
+  return NULL;
+}
+
 }  // namespace firmament
