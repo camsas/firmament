@@ -29,6 +29,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator): $(addprefix $(OBJ_DIR)/, $(SIM
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+	$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
@@ -36,7 +37,6 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator): $(addprefix $(OBJ_DIR)/, $(SIM
 		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
 		$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
-		$(BUILD_DIR)/scheduling/coco_cost_model.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \
 		$(BUILD_DIR)/scheduling/dimacs_add_node.o \
@@ -49,16 +49,11 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator): $(addprefix $(OBJ_DIR)/, $(SIM
 		$(BUILD_DIR)/scheduling/flow_node_type.pb.o \
 		$(BUILD_DIR)/scheduling/knowledge_base.o \
 		$(BUILD_DIR)/scheduling/knowledge_base_simulator.o \
-		$(BUILD_DIR)/scheduling/octopus_cost_model.o \
-		$(BUILD_DIR)/scheduling/quincy_cost_model.o \
 		$(BUILD_DIR)/scheduling/quincy_dispatcher.o \
-		$(BUILD_DIR)/scheduling/random_cost_model.o \
 		$(BUILD_DIR)/scheduling/scheduling_delta.pb.o \
-		$(BUILD_DIR)/scheduling/sjf_cost_model.o \
-		$(BUILD_DIR)/scheduling/trivial_cost_model.o \
-		$(BUILD_DIR)/scheduling/wharemap_cost_model.o \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
+		$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
 		$(LIBS) \
 		-o $(BUILD_DIR)/sim/trace-extract/google_trace_simulator, \
 		"  DYNLNK  $(BUILD_DIR)/sim/trace-extract/google_trace_simulator")
@@ -80,6 +75,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator-test): $(addprefix $(OBJ_DIR)/, 
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+	$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
@@ -87,7 +83,6 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator-test): $(addprefix $(OBJ_DIR)/, 
 		$(GTEST_LIB) $(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
 		$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
-		$(BUILD_DIR)/scheduling/coco_cost_model.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \
 		$(BUILD_DIR)/scheduling/dimacs_add_node.o \
@@ -100,16 +95,11 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator-test): $(addprefix $(OBJ_DIR)/, 
 		$(BUILD_DIR)/scheduling/flow_node_type.pb.o \
 		$(BUILD_DIR)/scheduling/knowledge_base.o \
 		$(BUILD_DIR)/scheduling/knowledge_base_simulator.o \
-		$(BUILD_DIR)/scheduling/octopus_cost_model.o \
-		$(BUILD_DIR)/scheduling/quincy_cost_model.o \
 		$(BUILD_DIR)/scheduling/quincy_dispatcher.o \
-		$(BUILD_DIR)/scheduling/random_cost_model.o \
 		$(BUILD_DIR)/scheduling/scheduling_delta.pb.o \
-		$(BUILD_DIR)/scheduling/sjf_cost_model.o \
-		$(BUILD_DIR)/scheduling/trivial_cost_model.o \
-		$(BUILD_DIR)/scheduling/wharemap_cost_model.o \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
+		$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
 		$(LIBS) \
 		-o $(BUILD_DIR)/sim/trace-extract/google_trace_simulator_test, \
 		"  DYNLNK  $(BUILD_DIR)/sim/trace-extract/google_trace_simulator_test")

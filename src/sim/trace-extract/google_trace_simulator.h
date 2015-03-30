@@ -17,7 +17,6 @@
 #include "misc/map-util.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/knowledge_base_simulator.h"
-#include "scheduling/quincy_cost_model.h"
 #include "scheduling/quincy_dispatcher.h"
 #include "sim/trace-extract/event_desc.pb.h"
 
@@ -222,7 +221,7 @@ class GoogleTraceSimulator {
   shared_ptr<ResourceMap_t> resource_map_;
 
   // Map holding the ResourceID_t of every scheduled task.
-  map<TaskID_t, ResourceID_t> task_bindings_;
+  unordered_map<TaskID_t, ResourceID_t> task_bindings_;
 
   // Map holding the end runtime for every running task.
   unordered_map<TaskID_t, uint64_t> task_id_to_end_time_;

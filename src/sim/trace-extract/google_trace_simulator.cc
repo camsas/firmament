@@ -18,18 +18,12 @@
 #include <fcntl.h>
 
 #include "sim/trace-extract/google_trace_simulator.h"
-#include "scheduling/coco_cost_model.h"
+#include "scheduling/cost_models/cost_models.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
-#include "scheduling/octopus_cost_model.h"
-#include "scheduling/quincy_cost_model.h"
 #include "scheduling/quincy_dispatcher.h"
-#include "scheduling/random_cost_model.h"
-#include "scheduling/sjf_cost_model.h"
-#include "scheduling/trivial_cost_model.h"
-#include "scheduling/wharemap_cost_model.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
@@ -94,7 +88,8 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
       VLOG(1) << "Using the random cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_COCO:
-      cost_model_ = new CocoCostModel(task_map_, leaf_res_ids, knowledge_base_);
+      cost_model_ = new CocoCostModel(resource_map_, rtn_root_, task_map_,
+                                      leaf_res_ids, knowledge_base_);
       VLOG(1) << "Using the coco cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_SJF:
@@ -192,7 +187,7 @@ ResourceDescriptor* GoogleTraceSimulator::AddMachine(
   ResourceDescriptor* rd = new_machine->mutable_resource_desc();
   rd->set_friendly_name(hn);
   // Add the node to the flow graph.
-  flow_graph_->AddMachine(*new_machine);
+  flow_graph_->AddMachine(new_machine);
   // Add resource to the google machine_id to ResourceDescriptor* map.
   CHECK(InsertIfNotPresent(&machine_id_to_rd_, machine_id, rd));
   CHECK(InsertIfNotPresent(&machine_id_to_rtnd_, machine_id, new_machine));
@@ -389,9 +384,9 @@ void GoogleTraceSimulator::CreateRootResource() {
                            to_string(root_uuid)));
 
   // Add resources and job to flow graph
-  flow_graph_->AddResourceTopology(rtn_root_);
+  flow_graph_->AddResourceTopology(&rtn_root_);
   CHECK(InsertIfNotPresent(resource_map_.get(), root_uuid,
-                           new ResourceStatus(rd, "endpoint_uri",
+                           new ResourceStatus(rd, &rtn_root_, "endpoint_uri",
                                               GetCurrentTimestamp())));
 }
 
@@ -773,7 +768,7 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
   // Add the resource node to the map.
   CHECK(InsertIfNotPresent(resource_map_.get(),
                            ResourceIDFromString(rd->uuid()),
-                           new ResourceStatus(rd, "endpoint_uri",
+                           new ResourceStatus(rd, rtnd, "endpoint_uri",
                                               GetCurrentTimestamp())));
 }
 
