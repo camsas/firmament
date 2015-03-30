@@ -41,7 +41,7 @@ using store::ObjectStoreInterface;
 QuincyScheduler::QuincyScheduler(
     shared_ptr<JobMap_t> job_map,
     shared_ptr<ResourceMap_t> resource_map,
-    const ResourceTopologyNodeDescriptor& resource_topology,
+    ResourceTopologyNodeDescriptor* resource_topology,
     shared_ptr<ObjectStoreInterface> object_store,
     shared_ptr<TaskMap_t> task_map,
     KnowledgeBase* kb,
@@ -72,7 +72,7 @@ QuincyScheduler::QuincyScheduler(
       VLOG(1) << "Using the random cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_COCO:
-      cost_model_ = new CocoCostModel(resource_map, resource_topology,
+      cost_model_ = new CocoCostModel(resource_map, *resource_topology,
                                       task_map, leaf_res_ids_,
                                       knowledge_base_);
       VLOG(1) << "Using the coco cost model";
@@ -317,7 +317,7 @@ void QuincyScheduler::PrintGraph(vector< map<uint64_t, uint64_t> > adj_map) {
 }
 
 void QuincyScheduler::UpdateResourceTopology(
-    const ResourceTopologyNodeDescriptor& root) {
+    ResourceTopologyNodeDescriptor* root) {
   // Run a topology refresh (somewhat expensive!); if only two nodes exist, the
   // flow graph is empty apart from cluster aggregator and sink.
   VLOG(1) << "Num nodes in flow graph is: " << flow_graph_->NumNodes();

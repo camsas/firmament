@@ -353,7 +353,7 @@ void CocoCostModel::PrintCostVector(CostVector_t cv) {
   LOG(INFO) << "  LOCALITY: " << cv.locality_score_ << " ]";
 }
 
-void CocoCostModel::AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+void CocoCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
 void CocoCostModel::RemoveMachine(ResourceID_t res_id) {

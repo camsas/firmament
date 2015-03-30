@@ -33,10 +33,10 @@ class FlowGraph {
                        boost::hash<boost::uuids::uuid>>* leaf_res_ids);
   virtual ~FlowGraph();
   // Public API
-  void AddMachine(const ResourceTopologyNodeDescriptor& root);
+  void AddMachine(ResourceTopologyNodeDescriptor* root);
   void AddOrUpdateJobNodes(JobDescriptor* jd);
   void AddResourceTopology(
-      const ResourceTopologyNodeDescriptor& resource_tree);
+      ResourceTopologyNodeDescriptor* resource_tree);
   void AdjustUnscheduledAggArcCosts();
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                  uint64_t cap_upper_bound, uint64_t cost);
@@ -56,7 +56,7 @@ class FlowGraph {
     FlowGraphNode* node,
     boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
   void UpdateResourceTopology(
-      const ResourceTopologyNodeDescriptor& resource_tree);
+      ResourceTopologyNodeDescriptor* resource_tree);
   // Simple accessor methods
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
   inline const unordered_map<uint64_t, FlowGraphNode*>& Nodes() const {
@@ -105,7 +105,7 @@ class FlowGraph {
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   void AddEquivClassNode(EquivClass_t ec);
   void AddResourceEquivClasses(FlowGraphNode* res_node);
-  void AddResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
+  void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void AddSpecialNodes();
   void AddTaskEquivClasses(FlowGraphNode* task_node);
   void AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
@@ -130,7 +130,7 @@ class FlowGraph {
   void RemoveMachineSubTree(FlowGraphNode* res_node);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
-  void UpdateResourceNode(const ResourceTopologyNodeDescriptor* rtnd);
+  void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
 
   // Flow scheduling cost model used
   FlowSchedulingCostModelInterface* cost_model_;

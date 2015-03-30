@@ -36,7 +36,7 @@ class QuincyScheduler : public EventDrivenScheduler {
  public:
   QuincyScheduler(shared_ptr<JobMap_t> job_map,
                   shared_ptr<ResourceMap_t> resource_map,
-                  const ResourceTopologyNodeDescriptor& resource_topology,
+                  ResourceTopologyNodeDescriptor* resource_topology,
                   shared_ptr<ObjectStoreInterface> object_store,
                   shared_ptr<TaskMap_t> task_map,
                   KnowledgeBase* kb,
@@ -89,7 +89,7 @@ class QuincyScheduler : public EventDrivenScheduler {
   void RegisterRemoteResource(ResourceID_t res_id);
   uint64_t RunSchedulingIteration();
   void UpdateResourceTopology(
-      const ResourceTopologyNodeDescriptor& resource_tree);
+      ResourceTopologyNodeDescriptor* resource_tree);
 
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;

@@ -65,7 +65,7 @@ FlowGraph::~FlowGraph() {
   // nodes and arcs in the flow graph (which are allocated on the heap)
 }
 
-void FlowGraph::AddMachine(const ResourceTopologyNodeDescriptor& root) {
+void FlowGraph::AddMachine(ResourceTopologyNodeDescriptor* root) {
   UpdateResourceTopology(root);
 }
 
@@ -327,14 +327,14 @@ void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
 }
 
 void FlowGraph::AddResourceTopology(
-    const ResourceTopologyNodeDescriptor& resource_tree) {
+    ResourceTopologyNodeDescriptor* resource_tree) {
   BFSTraverseResourceProtobufTreeReturnRTND(
-      &resource_tree,
+      resource_tree,
       boost::bind(&FlowGraph::AddResourceNode, this, _1));
 }
 
 void FlowGraph::AddResourceNode(
-    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
   FlowGraphNode* new_node;
   CHECK_NOTNULL(rtnd_ptr);
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
@@ -972,7 +972,7 @@ void FlowGraph::UpdateArcsForEvictedTask(TaskID_t task_id,
 }
 
 void FlowGraph::UpdateResourceNode(
-    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
   CHECK_NOTNULL(rtnd_ptr);
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
   ResourceID_t res_id = ResourceIDFromString(rtnd.resource_desc().uuid());
@@ -1005,13 +1005,13 @@ void FlowGraph::UpdateResourceNode(
       }
     }
     // Check if any children need adding
-    for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator
-         child_iter = rtnd_ptr->children().begin();
-         child_iter != rtnd_ptr->children().end();
+    for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::pointer_iterator
+         child_iter = rtnd_ptr->mutable_children()->pointer_begin();
+         child_iter != rtnd_ptr->mutable_children()->pointer_end();
          ++child_iter) {
       uint64_t* child_node =
         FindOrNull(resource_to_nodeid_map_,
-                   ResourceIDFromString(child_iter->resource_desc().uuid()));
+                   ResourceIDFromString((*child_iter)->resource_desc().uuid()));
       if (!child_node)
         AddResourceTopology(*child_iter);
     }
@@ -1025,12 +1025,12 @@ void FlowGraph::UpdateResourceNode(
 }
 
 void FlowGraph::UpdateResourceTopology(
-    const ResourceTopologyNodeDescriptor& resource_tree) {
+    ResourceTopologyNodeDescriptor* resource_tree) {
   // N.B.: This only considers ADDITION of resources currently; if resources
   // are removed from the topology (e.g. due to a failure), they won't
   // disappear via this method.
   BFSTraverseResourceProtobufTreeReturnRTND(
-      &resource_tree,
+      resource_tree,
       boost::bind(&FlowGraph::UpdateResourceNode, this, _1));
   uint32_t new_num_leaves = 0;
   for (unordered_map<uint64_t, FlowGraphArc*>::const_iterator it =

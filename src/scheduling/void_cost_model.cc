@@ -104,7 +104,7 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
   return pair<vector<EquivClass_t>*, vector<EquivClass_t>*>(NULL, NULL);
 }
 
-void VoidCostModel::AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+void VoidCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
 void VoidCostModel::RemoveMachine(ResourceID_t res_id) {

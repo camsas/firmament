@@ -156,7 +156,7 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
 }
 
 void QuincyCostModel::AddMachine(
-    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
 void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {

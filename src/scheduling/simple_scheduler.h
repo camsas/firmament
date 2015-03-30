@@ -26,7 +26,7 @@ class SimpleScheduler : public EventDrivenScheduler {
  public:
   SimpleScheduler(shared_ptr<JobMap_t> job_map,
                   shared_ptr<ResourceMap_t> resource_map,
-                  const ResourceTopologyNodeDescriptor& resource_topology,
+                  ResourceTopologyNodeDescriptor* resource_topology,
                   shared_ptr<ObjectStoreInterface> object_store,
                   shared_ptr<TaskMap_t> task_map,
                   shared_ptr<TopologyManager> topo_mgr,

@@ -130,7 +130,7 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
 }
 
 void RandomCostModel::AddMachine(
-    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
 void RandomCostModel::RemoveMachine(ResourceID_t res_id) {

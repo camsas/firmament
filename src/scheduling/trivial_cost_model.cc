@@ -122,7 +122,7 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
 }
 
 void TrivialCostModel::AddMachine(
-    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
 void TrivialCostModel::RemoveMachine(ResourceID_t res_id) {

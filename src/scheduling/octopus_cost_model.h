@@ -42,7 +42,7 @@ class OctopusCostModel : public FlowSchedulingCostModelInterface {
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
-  void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr);
+  void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
  private:

@@ -253,7 +253,7 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
 }
 
 void WhareMapCostModel::AddMachine(
-    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
   CHECK_EQ(rtnd_ptr->resource_desc().type(),
            ResourceDescriptor::RESOURCE_MACHINE);
   size_t hash = 42;

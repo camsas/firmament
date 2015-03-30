@@ -108,7 +108,7 @@ class FlowSchedulingCostModelInterface {
   /**
    * Called by the flow_graph when a machine is added.
    */
-  virtual void AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) = 0;
+  virtual void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) = 0;
 
   /**
    * Called by the flow_graph when a machine is removed.

@@ -164,7 +164,7 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
               vector<EquivClass_t>*>(equiv_classes, equiv_classes);
 }
 
-void SJFCostModel::AddMachine(const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+void SJFCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
 void SJFCostModel::RemoveMachine(ResourceID_t res_id) {
