@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#include "scheduling/void_cost_model.h"
+#include "scheduling/cost_models/void_cost_model.h"
 
 #include <vector>
 
@@ -9,7 +9,7 @@
 #include "base/types.h"
 #include "misc/utils.h"
 #include "scheduling/knowledge_base.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
 

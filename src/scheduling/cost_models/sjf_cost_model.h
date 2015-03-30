@@ -1,21 +1,32 @@
 // The Firmament project
+// Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
-//
 
-#ifndef FIRMAMENT_SCHEDULING_OCTOPUS_COST_MODEL_H
-#define FIRMAMENT_SCHEDULING_OCTOPUS_COST_MODEL_H
+#ifndef FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
+#define FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H
+
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/common.h"
+#include "scheduling/knowledge_base.h"
+#include "misc/utils.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
 
 typedef int64_t Cost_t;
 
-class OctopusCostModel : public FlowSchedulingCostModelInterface {
+class SJFCostModel : public FlowSchedulingCostModelInterface {
  public:
-  OctopusCostModel(shared_ptr<ResourceMap_t> resource_map);
+  SJFCostModel(shared_ptr<TaskMap_t> task_map,
+               unordered_set<ResourceID_t,
+                 boost::hash<boost::uuids::uuid>>* leaf_res_ids,
+               KnowledgeBase* kb);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -45,10 +56,18 @@ class OctopusCostModel : public FlowSchedulingCostModelInterface {
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
+
  private:
-  shared_ptr<ResourceMap_t> resource_map_;
+  const Cost_t WAIT_TIME_MULTIPLIER = 1;
+
+  const TaskDescriptor& GetTask(TaskID_t task_id);
+
+  shared_ptr<TaskMap_t> task_map_;
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
+  // A knowledge base instance that we will refer to for job runtime statistics.
+  KnowledgeBase* knowledge_base_;
 };
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_OCTOPUS_COST_MODEL_H
+#endif  // FIRMAMENT_SCHEDULING_SJF_COST_MODEL_H

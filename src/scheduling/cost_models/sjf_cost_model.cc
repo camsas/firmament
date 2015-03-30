@@ -3,7 +3,7 @@
 //
 // Simple shortest-job-first scheduling cost model.
 
-#include "scheduling/sjf_cost_model.h"
+#include "scheduling/cost_models/sjf_cost_model.h"
 
 #include <algorithm>
 #include <string>
@@ -15,7 +15,7 @@
 #include "misc/utils.h"
 #include "misc/map-util.h"
 #include "scheduling/knowledge_base.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
 

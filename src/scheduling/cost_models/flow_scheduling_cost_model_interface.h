@@ -37,28 +37,57 @@ class FlowSchedulingCostModelInterface {
   FlowSchedulingCostModelInterface() {}
   virtual ~FlowSchedulingCostModelInterface() {}
 
-  // Costs pertaining to leaving tasks unscheduled
-  // The method should return a monotonically increasing value upon
-  // subsequent calls. It is used to adjust the cost of
-  // leaving a task unscheduled after each iteration.
+  /**
+   * Get the cost from a task node to its unscheduled aggregator node.
+   * The method should return a monotonically increasing value upon subsequent
+   * calls. It is used to adjust the cost of leaving a task unscheduled after
+   * each iteration.
+   */
   virtual Cost_t TaskToUnscheduledAggCost(TaskID_t task_id) = 0;
   virtual Cost_t UnscheduledAggToSinkCost(JobID_t job_id) = 0;
-  // Per-task costs (into the resource topology)
+
+  /**
+   * Get the cost of an arc from a task node to the cluster
+   * aggregator node.
+   */
   virtual Cost_t TaskToClusterAggCost(TaskID_t task_id) = 0;
+
+  /**
+   * Get the cost of a preference arc from a task node to a resource node.
+   */
   virtual Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                         ResourceID_t resource_id) = 0;
-  // Costs within the resource topology
+
+  /**
+   * Get the cost of an arc between two resource nodes.
+   */
   virtual Cost_t ResourceNodeToResourceNodeCost(ResourceID_t source,
                                                 ResourceID_t destination) = 0;
+  /**
+   * Get the cost of an arc from a resource to the sink.
+   **/
   virtual Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id) = 0;
+
   // Costs pertaining to preemption (i.e. already running tasks)
   virtual Cost_t TaskContinuationCost(TaskID_t task_id) = 0;
   virtual Cost_t TaskPreemptionCost(TaskID_t task_id) = 0;
-  // Costs to equivalence class aggregators
+
+  /**
+   * Get the cost of an arc from a task node to an equivalence class node.
+   */
   virtual Cost_t TaskToEquivClassAggregator(TaskID_t task_id,
                                             EquivClass_t tec) = 0;
+  /**
+   * Get the cost of an arc from an equivalence class node to a resource node.
+   */
   virtual Cost_t EquivClassToResourceNode(EquivClass_t tec,
                                           ResourceID_t res_id) = 0;
+  /**
+   * Get the cost of an arc from an equivalence class node to another
+   * equivalence class node.
+   * @param tec1 the source equivalence class
+   * @param tec2 the destination equivalence class
+   */
   virtual Cost_t EquivClassToEquivClass(EquivClass_t tec1,
                                         EquivClass_t tec2) = 0;
   /**

@@ -11,9 +11,10 @@
 #include "base/types.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/common.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 #include "scheduling/knowledge_base.h"
-#include "scheduling/quincy_cost_model.h"
+#include "scheduling/cost_models/quincy_cost_model.h"
 
 namespace firmament {
 

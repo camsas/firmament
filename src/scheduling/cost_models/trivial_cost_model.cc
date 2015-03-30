@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "misc/map-util.h"
-#include "scheduling/trivial_cost_model.h"
+#include "scheduling/cost_models/trivial_cost_model.h"
 
 namespace firmament {
 

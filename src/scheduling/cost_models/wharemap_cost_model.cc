@@ -4,7 +4,7 @@
 //
 // WhareMap cost model.
 
-#include "scheduling/wharemap_cost_model.h"
+#include "scheduling/cost_models/wharemap_cost_model.h"
 
 #include <map>
 #include <string>
@@ -17,7 +17,7 @@
 #include "misc/pb_utils.h"
 #include "misc/utils.h"
 #include "scheduling/knowledge_base.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
 

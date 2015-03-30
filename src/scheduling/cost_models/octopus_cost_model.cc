@@ -2,7 +2,7 @@
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
 #include "misc/map-util.h"
-#include "scheduling/octopus_cost_model.h"
+#include "scheduling/cost_models/octopus_cost_model.h"
 
 namespace firmament {
 

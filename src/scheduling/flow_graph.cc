@@ -25,7 +25,7 @@
 #include "scheduling/dimacs_new_arc.h"
 #include "scheduling/dimacs_remove_node.h"
 #include "scheduling/flow_graph.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 
 DEFINE_bool(preemption, false, "Enable preemption and migration of tasks");
 DEFINE_bool(add_root_task_to_graph, true, "Add the job root task to the graph");

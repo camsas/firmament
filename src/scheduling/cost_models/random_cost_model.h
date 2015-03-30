@@ -11,7 +11,7 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "scheduling/common.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
 

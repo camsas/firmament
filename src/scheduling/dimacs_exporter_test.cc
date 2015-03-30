@@ -20,7 +20,7 @@
 #include "misc/string_utils.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
-#include "scheduling/trivial_cost_model.h"
+#include "scheduling/cost_models/trivial_cost_model.h"
 
 namespace firmament {
 

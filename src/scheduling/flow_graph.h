@@ -20,7 +20,7 @@
 #include "scheduling/dimacs_change.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 
 DECLARE_bool(preemption);
 

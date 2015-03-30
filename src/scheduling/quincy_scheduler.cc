@@ -21,8 +21,8 @@
 #include "engine/local_executor.h"
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
-#include "scheduling/cost_models.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/cost_models/cost_models.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 #include "scheduling/knowledge_base.h"
 
 DEFINE_int32(flow_scheduling_cost_model, 0,

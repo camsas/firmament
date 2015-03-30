@@ -1,10 +1,11 @@
 // The Firmament project
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
-// WhareMap scheduling cost model, as described in the ISCA 2013 paper.
+// Quincy scheduling cost model, as described in the SOSP 2009 paper.
 
-#ifndef FIRMAMENT_SCHEDULING_WHAREMAP_COST_MODEL_H
-#define FIRMAMENT_SCHEDULING_WHAREMAP_COST_MODEL_H
+#ifndef FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
+#define FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
 
 #include <map>
 #include <string>
@@ -14,20 +15,25 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "scheduling/common.h"
-#include "scheduling/knowledge_base.h"
 #include "misc/utils.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/common.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
+#include "scheduling/knowledge_base.h"
 
 namespace firmament {
 
 typedef int64_t Cost_t;
 
-class WhareMapCostModel : public FlowSchedulingCostModelInterface {
+class QuincyCostModel : public FlowSchedulingCostModelInterface {
  public:
-  WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
-                    shared_ptr<TaskMap_t> task_map,
-                    KnowledgeBase* kb);
+  QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
+                  shared_ptr<JobMap_t> job_map,
+                  shared_ptr<TaskMap_t> task_map,
+                  unordered_map<TaskID_t, ResourceID_t> *task_bindings,
+                  unordered_set<ResourceID_t,
+                    boost::hash<boost::uuids::uuid>>* leaf_res_ids,
+                  KnowledgeBase* kb);
+
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -59,30 +65,18 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
   void RemoveTask(TaskID_t task_id);
 
  private:
-  const TaskDescriptor& GetTask(TaskID_t task_id);
-  void ComputeMachineTypeHash(const ResourceTopologyNodeDescriptor* rtnd_ptr,
-                              size_t* hash);
-
+  // Lookup maps for various resources from the scheduler.
   shared_ptr<ResourceMap_t> resource_map_;
+  // Information regarding jobs and tasks.
+  shared_ptr<JobMap_t> job_map_;
   shared_ptr<TaskMap_t> task_map_;
-  // Mapping between machine equiv classes and machines.
-  multimap<EquivClass_t, ResourceID_t> machine_ec_to_res_id_;
-  // Mapping betweeen machine res id and resource topology node descriptor.
-  unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
-    boost::hash<boost::uuids::uuid>> machine_to_rtnd_;
-  // Mapping between machine res id and task equiv class.
-  unordered_map<ResourceID_t, EquivClass_t,
-    boost::hash<boost::uuids::uuid>> machine_to_ec_;
-
-  // Mapping between task equiv classes and connected tasks.
-  unordered_map<EquivClass_t, set<TaskID_t> > task_ec_to_set_task_id_;
-
-  unordered_set<EquivClass_t> task_aggs_;
-  unordered_set<EquivClass_t> machine_aggs_;
+  unordered_map<TaskID_t, ResourceID_t>* task_bindings_;
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
+  uint32_t rand_seed_ = 0;
 };
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_WHAREMAP_COST_MODEL_H
+#endif  // FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H

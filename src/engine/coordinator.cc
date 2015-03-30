@@ -31,7 +31,7 @@
 #include "scheduling/scheduling_parameters.pb.h"
 #include "scheduling/simple_scheduler.h"
 #include "scheduling/quincy_scheduler.h"
-#include "scheduling/void_cost_model.h"
+#include "scheduling/cost_models/void_cost_model.h"
 #include "storage/simple_object_store.h"
 
 

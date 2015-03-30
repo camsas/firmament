@@ -5,7 +5,8 @@
 #include <string>
 
 #include "misc/map-util.h"
-#include "scheduling/random_cost_model.h"
+#include "scheduling/common.h"
+#include "scheduling/cost_models/random_cost_model.h"
 
 namespace firmament {
 

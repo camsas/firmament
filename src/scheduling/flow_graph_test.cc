@@ -15,7 +15,7 @@
 #include "scheduling/dimacs_new_arc.h"
 #include "scheduling/dimacs_remove_node.h"
 #include "scheduling/flow_graph.h"
-#include "scheduling/trivial_cost_model.h"
+#include "scheduling/cost_models/trivial_cost_model.h"
 
 DECLARE_uint64(num_pref_arcs_task_to_res);
 
