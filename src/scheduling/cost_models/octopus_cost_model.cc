@@ -186,7 +186,6 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
   CHECK_NOTNULL(other_rs_ptr);
   ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
   other_rd_ptr->set_num_running_tasks(0);
-
   return accumulator;
 }
 

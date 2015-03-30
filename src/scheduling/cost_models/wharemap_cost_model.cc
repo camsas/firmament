@@ -19,6 +19,7 @@
 #include "misc/utils.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
+#include "scheduling/dimacs_change_arc.h"
 #include "scheduling/flow_graph.h"
 
 namespace firmament {
@@ -335,12 +336,14 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
       accumulator->type_.type() == FlowNodeType::SINK) {
     // Node is neither part of the topology or an equivalence class.
     // We don't have to accumulate any state.
+    // Cases: 1) TASK -> EQUIV
+    //        2) TASK -> RESOURCE
     return accumulator;
   }
 
   if (other->resource_id_.is_nil()) {
     if (accumulator->type_.type() == FlowNodeType::PU) {
-      // Base case. We are at a PU and we gather the statistics.
+      // Base case: (PU -> SINK). We are at a PU and we gather the statistics.
       ResourceStatus* rs_ptr =
         FindPtrOrNull(*resource_map_, accumulator->resource_id_);
       CHECK_NOTNULL(rs_ptr);
@@ -372,12 +375,18 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
   if (accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
     if (!other->resource_id_.is_nil() &&
         other->type_.type() == FlowNodeType::MACHINE) {
-      // If the other node is a machine.
-      //    AccumulateWhareMapStats(accumulator, other);
+      // Case: (EQUIV -> MACHINE).
+      // We don't have to do anything.
+    } else if (other->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+      // Case: (EQUIV -> EQUIV).
+      // We don't have to do anything.
+    } else {
+      LOG(FATAL) << "Unexpected preference arc";
     }
     // TODO(ionel): Update knowledge base.
     return accumulator;
   }
+  // Case: (RESOURCE -> RESOURCE)
   ResourceStatus* acc_rs_ptr =
     FindPtrOrNull(*resource_map_, accumulator->resource_id_);
   CHECK_NOTNULL(acc_rs_ptr);
@@ -406,31 +415,32 @@ FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
       accumulator->type_.type() == FlowNodeType::SINK) {
     // Node is neither part of the topology or an equivalence class.
     // We don't have to accumulate any state.
+    // Cases: 1) TASK -> EQUIV
+    //        2) TASK -> RESOURCE
     return accumulator;
   }
   if (other->resource_id_.is_nil()) {
-    // The other is not a resource node.
-    if (other->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
-      // TODO(ionel): Implement.
-      if (accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
-        // Arc between two equivalence classes.
-        // TODO(ionel): Get equiv_classes out of accumulator and other.
-        // FlowGraphArc* arc = GetArc(accumulator, other);
-        // arc->cost_ =
-        //   EquivClassToEquivClass(accumulator, other);
-      }
-    } else if (other->type_.type() == FlowNodeType::SINK) {
-      return accumulator;
-    } else {
-      LOG(FATAL) << "Unknown flow graph node type";
+    if (accumulator->type_.type() == FlowNodeType::PU) {
+      // Base case: (PU -> SINK)
+      // We don't have to do anything.
     }
+    return accumulator;
   }
-
+  if (accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+    if (other->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+      // Case: EQUIV -> EQUIV
+    } else if (other->type_.type() == FlowNodeType::MACHINE) {
+      // Case: EQUIV -> MACHINE
+    } else {
+      LOG(FATAL) << "Unexpected preference arc";
+    }
+    return accumulator;
+  }
+  // Case: RESOURCE -> RESOURCE
   FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
-  // TODO(ionel): Inform the dimacs exporter about the change.
   arc->cost_ = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
                                               other->resource_id_);
-
+  flow_graph_->AddGraphChange(new DIMACSChangeArc(*arc));
   return accumulator;
 }
 
