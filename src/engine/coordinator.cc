@@ -81,7 +81,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     // Simple random first-available scheduler
     LOG(INFO) << "Using simple random scheduler.";
     scheduler_ = new SimpleScheduler(
-        job_table_, associated_resources_, *local_resource_topology_,
+        job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, topology_manager_, m_adapter_,
         uuid_, FLAGS_listen_uri);
     knowledge_base_->SetCostModel(new VoidCostModel());
@@ -90,7 +90,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
     SchedulingParameters params;
     scheduler_ = new QuincyScheduler(
-        job_table_, associated_resources_, *local_resource_topology_,
+        job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, knowledge_base_, topology_manager_,
         m_adapter_, uuid_, FLAGS_listen_uri, params);
   } else {
@@ -167,17 +167,19 @@ void Coordinator::DetectLocalResources() {
       boost::bind(&Coordinator::AddResource, this, _1, node_uri_, true));
 }
 
-void Coordinator::AddResource(ResourceDescriptor* resource_desc,
+void Coordinator::AddResource(ResourceTopologyNodeDescriptor* rtnd,
                               const string& endpoint_uri,
                               bool local) {
-  CHECK(resource_desc);
+  CHECK_NOTNULL(rtnd);
+  ResourceDescriptor* resource_desc = rtnd->mutable_resource_desc();
+  CHECK_NOTNULL(resource_desc);
   // Compute resource ID
   ResourceID_t res_id = ResourceIDFromString(resource_desc->uuid());
   // Add resource to local resource set
   VLOG(1) << "Adding resource " << res_id << " to resource map; "
           << "endpoint URI is " << endpoint_uri;
   CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
-          new ResourceStatus(resource_desc, NULL, endpoint_uri,
+          new ResourceStatus(resource_desc, rtnd, endpoint_uri,
                              GetCurrentTimestamp())));
   // Register with scheduler if this resource is schedulable
   if (resource_desc->type() == ResourceDescriptor::RESOURCE_PU) {

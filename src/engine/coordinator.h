@@ -232,7 +232,7 @@ class Coordinator : public Node,
 
  protected:
   void AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id);
-  void AddResource(ResourceDescriptor* resource_desc,
+  void AddResource(ResourceTopologyNodeDescriptor* rtnd,
                    const string& endpoint_uri,
                    bool local);
   bool RegisterWithCoordinator(StreamSocketsChannel<BaseMessage>* chan);
