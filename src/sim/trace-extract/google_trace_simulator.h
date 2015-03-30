@@ -244,7 +244,7 @@ class GoogleTraceSimulator {
   // The root node of the machine topology.
   ResourceTopologyNodeDescriptor rtn_root_;
 
-  FlowGraph* flow_graph_;
+  shared_ptr<FlowGraph> flow_graph_;
 
   FlowSchedulingCostModelInterface* cost_model_;
 

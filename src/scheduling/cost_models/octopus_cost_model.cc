@@ -6,6 +6,7 @@
 
 #include "misc/map-util.h"
 #include "scheduling/cost_models/octopus_cost_model.h"
+#include "scheduling/dimacs_change_arc.h"
 #include "scheduling/flow_graph.h"
 
 namespace firmament {
@@ -176,9 +177,9 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
     return accumulator;
   }
   FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
-  // TODO(ionel): Inform the dimacs exporter about the change.
   arc->cost_ = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
                                               other->resource_id_);
+  flow_graph_->AddGraphChange(new DIMACSChangeArc(*arc));
   // Reset the state.
   ResourceStatus* other_rs_ptr =
     FindPtrOrNull(*resource_map_, other->resource_id_);

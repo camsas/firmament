@@ -33,6 +33,7 @@ class FlowGraph {
                        boost::hash<boost::uuids::uuid>>* leaf_res_ids);
   virtual ~FlowGraph();
   // Public API
+  void AddGraphChange(DIMACSChange* change);
   void AddMachine(ResourceTopologyNodeDescriptor* root);
   void AddOrUpdateJobNodes(JobDescriptor* jd);
   void AddResourceTopology(

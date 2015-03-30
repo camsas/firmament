@@ -33,6 +33,8 @@ enum FlowSchedulingCostModelType {
   COST_MODEL_VOID = 7,
 };
 
+class FlowGraph;
+
 class FlowSchedulingCostModelInterface {
  public:
   FlowSchedulingCostModelInterface() {}
@@ -152,6 +154,12 @@ class FlowSchedulingCostModelInterface {
 
   virtual FlowGraphNode* UpdateStats(FlowGraphNode* accumulator,
                                      FlowGraphNode* other) = 0;
+  inline void SetFlowGraph(shared_ptr<FlowGraph> flow_graph) {
+    flow_graph_ = flow_graph;
+  }
+
+ protected:
+  shared_ptr<FlowGraph> flow_graph_;
 };
 
 }  // namespace firmament

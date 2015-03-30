@@ -104,7 +104,8 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
       VLOG(1) << "Using the Quincy cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_WHARE:
-      cost_model_ = new WhareMapCostModel(resource_map_, task_map_, knowledge_base_);
+      cost_model_ = new WhareMapCostModel(resource_map_, task_map_,
+                                          knowledge_base_);
       VLOG(1) << "Using the Whare-Map cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
@@ -115,7 +116,8 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
   }
-  flow_graph_ = new FlowGraph(cost_model_, leaf_res_ids);
+  flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids));
+  cost_model_->SetFlowGraph(flow_graph_);
   knowledge_base_->SetCostModel(cost_model_);
   quincy_dispatcher_ =
     new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
@@ -840,9 +842,23 @@ void GoogleTraceSimulator::ReplayTrace() {
 
             delete task_mappings;
 
-            flow_graph_->ComputeTopologyStatistics(
-                flow_graph_->sink_node(),
-                boost::bind(&GoogleTraceSimulator::GatherWhareMCStats, this, _1, _2));
+            if (FLAGS_flow_scheduling_cost_model ==
+                FlowSchedulingCostModelType::COST_MODEL_COCO ||
+                FLAGS_flow_scheduling_cost_model ==
+                FlowSchedulingCostModelType::COST_MODEL_OCTOPUS ||
+                FLAGS_flow_scheduling_cost_model ==
+                FlowSchedulingCostModelType::COST_MODEL_WHARE) {
+              flow_graph_->ComputeTopologyStatistics(
+                  flow_graph_->sink_node(),
+                  boost::bind(&FlowSchedulingCostModelInterface::GatherStats,
+                              cost_model_, _1, _2));
+              flow_graph_->ComputeTopologyStatistics(
+                  flow_graph_->sink_node(),
+                  boost::bind(&FlowSchedulingCostModelInterface::UpdateStats,
+                              cost_model_, _1, _2));
+            } else {
+              LOG(INFO) << "No resource stats update required";
+            }
 
             // Update current time.
             while (time_interval_bound < task_time) {

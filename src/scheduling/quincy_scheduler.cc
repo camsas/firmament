@@ -73,8 +73,7 @@ QuincyScheduler::QuincyScheduler(
       break;
     case FlowSchedulingCostModelType::COST_MODEL_COCO:
       cost_model_ = new CocoCostModel(resource_map, *resource_topology,
-                                      task_map, leaf_res_ids_,
-                                      knowledge_base_);
+                                      task_map, leaf_res_ids_, knowledge_base_);
       VLOG(1) << "Using the coco cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_SJF:
@@ -89,7 +88,7 @@ QuincyScheduler::QuincyScheduler(
       break;
     case FlowSchedulingCostModelType::COST_MODEL_WHARE:
       cost_model_ = new WhareMapCostModel(resource_map, task_map,
-                                         knowledge_base_);
+                                          knowledge_base_);
       VLOG(1) << "Using the Whare-Map cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
@@ -102,6 +101,7 @@ QuincyScheduler::QuincyScheduler(
   }
 
   flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids_));
+  cost_model_->SetFlowGraph(flow_graph_);
   knowledge_base_->SetCostModel(cost_model_);
 
   LOG(INFO) << "QuincyScheduler initiated; parameters: "

@@ -66,6 +66,10 @@ FlowGraph::~FlowGraph() {
   // nodes and arcs in the flow graph (which are allocated on the heap)
 }
 
+void FlowGraph::AddGraphChange(DIMACSChange* change) {
+  graph_changes_.push_back(change);
+}
+
 void FlowGraph::AddMachine(ResourceTopologyNodeDescriptor* root) {
   UpdateResourceTopology(root);
 }
