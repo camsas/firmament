@@ -378,7 +378,15 @@ void CocoCostModel::RemoveTask(TaskID_t task_id) {
 
 FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
                                           FlowGraphNode* other) {
-  return NULL;
+  // TODO(ionel): Implement.
+  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
+      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_.type() == FlowNodeType::SINK) {
+    // TODO(ionel): Implement.
+  }
+  return accumulator;
 }
 
 FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,

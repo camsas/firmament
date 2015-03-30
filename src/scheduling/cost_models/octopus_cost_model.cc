@@ -6,6 +6,7 @@
 
 #include "misc/map-util.h"
 #include "scheduling/cost_models/octopus_cost_model.h"
+#include "scheduling/flow_graph.h"
 
 namespace firmament {
 
@@ -121,12 +122,71 @@ void OctopusCostModel::RemoveTask(TaskID_t task_id) {
 
 FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
                                              FlowGraphNode* other) {
-  return NULL;
+  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
+      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_.type() == FlowNodeType::SINK ||
+      accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+    // Node is neither part of the topology or an equivalence class.
+    // We don't have to accumulate any state.
+    return accumulator;
+  }
+  if (other->resource_id_.is_nil()) {
+    if (accumulator->type_.type() == FlowNodeType::PU) {
+      // Base case. We are at a PU and we gather the statistics.
+      ResourceStatus* rs_ptr =
+        FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+      CHECK_NOTNULL(rs_ptr);
+      ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+      if (rd_ptr->has_current_running_task()) {
+        rd_ptr->set_num_running_tasks(1);
+      } else {
+        rd_ptr->set_num_running_tasks(0);
+      }
+    }
+    return accumulator;
+  }
+
+  ResourceStatus* acc_rs_ptr =
+    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+  CHECK_NOTNULL(acc_rs_ptr);
+  ResourceDescriptor* acc_rd_ptr = acc_rs_ptr->mutable_descriptor();
+
+  ResourceStatus* other_rs_ptr =
+    FindPtrOrNull(*resource_map_, other->resource_id_);
+  CHECK_NOTNULL(other_rs_ptr);
+  ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
+  acc_rd_ptr->set_num_running_tasks(acc_rd_ptr->num_running_tasks() +
+                                    other_rd_ptr->num_running_tasks());
+  return accumulator;
 }
 
 FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
                                              FlowGraphNode* other) {
-  return NULL;
+  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
+      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_.type() == FlowNodeType::SINK ||
+      accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+    return accumulator;
+  }
+  if (other->resource_id_.is_nil()) {
+    return accumulator;
+  }
+  FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
+  // TODO(ionel): Inform the dimacs exporter about the change.
+  arc->cost_ = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
+                                              other->resource_id_);
+  // Reset the state.
+  ResourceStatus* other_rs_ptr =
+    FindPtrOrNull(*resource_map_, other->resource_id_);
+  CHECK_NOTNULL(other_rs_ptr);
+  ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
+  other_rd_ptr->set_num_running_tasks(0);
+
+  return accumulator;
 }
 
 }  // namespace firmament

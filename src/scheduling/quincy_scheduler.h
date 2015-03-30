@@ -47,16 +47,6 @@ class QuincyScheduler : public EventDrivenScheduler {
                   const SchedulingParameters& params);
   ~QuincyScheduler();
   void DeregisterResource(ResourceID_t res_id);
-  FlowGraphNode* GatherCocoStats(FlowGraphNode* accumulator,
-                                    FlowGraphNode* other);
-  FlowGraphNode* GatherOctopusStats(FlowGraphNode* accumulator,
-                                    FlowGraphNode* other);
-  FlowGraphNode* GatherWhareMCStats(FlowGraphNode* accumulator,
-                                    FlowGraphNode* other);
-  FlowGraphNode* UpdateOctopusCosts(FlowGraphNode* accumulator,
-                                    FlowGraphNode* other);
-  FlowGraphNode* UpdateWhareMCCosts(FlowGraphNode* accumulator,
-                                    FlowGraphNode* other);
   void HandleJobCompletion(JobID_t job_id);
   void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
@@ -78,11 +68,8 @@ class QuincyScheduler : public EventDrivenScheduler {
   const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
 
  private:
-  void AccumulateWhareMapStats(WhareMapStats* accumulator,
-                               WhareMapStats* other);
   uint64_t ApplySchedulingDeltas(const vector<SchedulingDelta*>& deltas);
   void ApplyDeltas();
-  FlowGraphArc* GetArc(FlowGraphNode* src, FlowGraphNode* dst);
   void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   void RegisterLocalResource(ResourceID_t res_id);

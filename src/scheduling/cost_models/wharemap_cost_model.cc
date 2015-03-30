@@ -19,6 +19,7 @@
 #include "misc/utils.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
+#include "scheduling/flow_graph.h"
 
 namespace firmament {
 
@@ -327,12 +328,122 @@ void WhareMapCostModel::ComputeMachineTypeHash(
 
 FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
                                               FlowGraphNode* other) {
-  return NULL;
+  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
+      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_.type() == FlowNodeType::SINK) {
+    // Node is neither part of the topology or an equivalence class.
+    // We don't have to accumulate any state.
+    return accumulator;
+  }
+
+  if (other->resource_id_.is_nil()) {
+    if (accumulator->type_.type() == FlowNodeType::PU) {
+      // Base case. We are at a PU and we gather the statistics.
+      ResourceStatus* rs_ptr =
+        FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+      CHECK_NOTNULL(rs_ptr);
+      ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+      if (rd_ptr->has_current_running_task()) {
+        TaskDescriptor* td_ptr =
+          FindPtrOrNull(*task_map_, rd_ptr->current_running_task());
+        if (td_ptr->has_task_type()) {
+          // TODO(ionel): Gather the statistics.
+          WhareMapStats* wms_ptr = rd_ptr->mutable_whare_map_stats();
+          if (td_ptr->task_type() == TaskDescriptor::DEVIL) {
+            wms_ptr->set_num_devils(1);
+          } else if (td_ptr->task_type() == TaskDescriptor::RABBIT) {
+            wms_ptr->set_num_rabbits(1);
+          } else if (td_ptr->task_type() == TaskDescriptor::SHEEP) {
+            wms_ptr->set_num_sheep(1);
+          } else if (td_ptr->task_type() == TaskDescriptor::TURTLE) {
+            wms_ptr->set_num_turtles(1);
+          } else {
+            LOG(FATAL) << "Unexpected task type";
+          }
+        } else {
+          LOG(WARNING) << "Task " << td_ptr->uid() << " does not have a type";
+        }
+      }
+    }
+    return accumulator;
+  }
+  if (accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+    if (!other->resource_id_.is_nil() &&
+        other->type_.type() == FlowNodeType::MACHINE) {
+      // If the other node is a machine.
+      //    AccumulateWhareMapStats(accumulator, other);
+    }
+    // TODO(ionel): Update knowledge base.
+    return accumulator;
+  }
+  ResourceStatus* acc_rs_ptr =
+    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+  CHECK_NOTNULL(acc_rs_ptr);
+  WhareMapStats* wms_acc_ptr =
+    acc_rs_ptr->mutable_descriptor()->mutable_whare_map_stats();
+  ResourceStatus* other_rs_ptr =
+    FindPtrOrNull(*resource_map_, other->resource_id_);
+  CHECK_NOTNULL(other_rs_ptr);
+  WhareMapStats* wms_other_ptr =
+    other_rs_ptr->mutable_descriptor()->mutable_whare_map_stats();
+  if (accumulator->type_.type() == FlowNodeType::MACHINE) {
+    AccumulateWhareMapStats(wms_acc_ptr, wms_other_ptr);
+    // TODO(ionel): Update knowledge base.
+    return accumulator;
+  }
+  AccumulateWhareMapStats(wms_acc_ptr, wms_other_ptr);
+  return accumulator;
 }
 
 FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
                                               FlowGraphNode* other) {
-  return NULL;
+  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
+      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_.type() == FlowNodeType::SINK) {
+    // Node is neither part of the topology or an equivalence class.
+    // We don't have to accumulate any state.
+    return accumulator;
+  }
+  if (other->resource_id_.is_nil()) {
+    // The other is not a resource node.
+    if (other->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+      // TODO(ionel): Implement.
+      if (accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+        // Arc between two equivalence classes.
+        // TODO(ionel): Get equiv_classes out of accumulator and other.
+        // FlowGraphArc* arc = GetArc(accumulator, other);
+        // arc->cost_ =
+        //   EquivClassToEquivClass(accumulator, other);
+      }
+    } else if (other->type_.type() == FlowNodeType::SINK) {
+      return accumulator;
+    } else {
+      LOG(FATAL) << "Unknown flow graph node type";
+    }
+  }
+
+  FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
+  // TODO(ionel): Inform the dimacs exporter about the change.
+  arc->cost_ = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
+                                              other->resource_id_);
+
+  return accumulator;
+}
+
+void WhareMapCostModel::AccumulateWhareMapStats(WhareMapStats* accumulator,
+                                                WhareMapStats* other) {
+  accumulator->set_num_devils(accumulator->num_devils() +
+                              other->num_devils());
+  accumulator->set_num_rabbits(accumulator->num_rabbits() +
+                               other->num_rabbits());
+  accumulator->set_num_sheep(accumulator->num_sheep() +
+                             other->num_sheep());
+  accumulator->set_num_turtles(accumulator->num_turtles() +
+                               other->num_turtles());
 }
 
 }  // namespace firmament

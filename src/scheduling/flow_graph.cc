@@ -754,6 +754,15 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   delete equiv_classes;
 }
 
+FlowGraphArc* FlowGraph::GetArc(FlowGraphNode* src, FlowGraphNode* dst) {
+  unordered_map<uint64_t, FlowGraphArc*>::iterator arc_it =
+    src->outgoing_arc_map_.find(dst->id_);
+  if (arc_it == src->outgoing_arc_map_.end()) {
+    LOG(FATAL) << "Could not find arc";
+  }
+  return arc_it->second;
+}
+
 void FlowGraph::JobCompleted(JobID_t job_id) {
   uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
   CHECK_NOTNULL(unsched_node_id);

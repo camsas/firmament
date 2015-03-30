@@ -62,6 +62,8 @@ class WhareMapCostModel : public FlowSchedulingCostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
+  void AccumulateWhareMapStats(WhareMapStats* accumulator,
+                               WhareMapStats* other);
   const TaskDescriptor& GetTask(TaskID_t task_id);
   void ComputeMachineTypeHash(const ResourceTopologyNodeDescriptor* rtnd_ptr,
                               size_t* hash);
