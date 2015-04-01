@@ -20,16 +20,27 @@ DEFINE_bool(debug_flow_graph, false, "Write out a debug copy of the scheduling"
             " flow graph to /tmp/debug.dm.");
 DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
               "The directory to write debug output to.");
-DEFINE_string(flow_scheduling_binary, "", "Path to flow solving executable.");
-DEFINE_string(flow_scheduling_args, "", "Optional: arguments for executable.");
+DEFINE_string(flow_scheduling_solver, "cs2",
+              "Solver to use for flow network optimization. Possible values:"
+              "\"cs2\": Goldberg solver, \"flowlessly\": local Flowlessly "
+              "solver reimplementation; \"custom\": specify custom solver. "
+		          "with -flow_scheduling_binary and -flow_scheduling_args.");
+DEFINE_string(flow_scheduling_binary, "", "Path to flow solving executable. "
+	             "If specified, overrides default path. "
+		           "Must be specified when using custom solver.");
+DEFINE_string(custom_flow_scheduling_args, "", "Arguments for custom solver. "
+		           "Defaults to no arguments.");
 DEFINE_bool(flow_scheduling_strict, false, "Terminate if flow solving binary fails.");
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
 
+const static std::string CS2_BINARY = "ext/cs2-4.6/cs2.exe";
+const static std::string FLOWLESSLY_BINARY =
+		                                 "ext/flowlessly-git/run_fast_cost_scaling";
+
 namespace firmament {
 namespace scheduler {
-
   using boost::lexical_cast;
   using boost::algorithm::is_any_of;
   using boost::token_compress_on;
@@ -47,8 +58,7 @@ namespace scheduler {
   }
 
   multimap<uint64_t, uint64_t>* QuincyDispatcher::Run(
-  		                        double *algorithm_time, double *flowsolver_time,
-					                    FILE *graph_output) {
+  		    double *algorithm_time, double *flowsolver_time, FILE *graph_output) {
     // Set up debug directory if it doesn't exist
     struct stat st;
     if (!FLAGS_debug_output_dir.empty() &&
@@ -115,7 +125,6 @@ namespace scheduler {
     	// outfd[1] == CHILD_WRITE
     	// infd[0] == CHILD_READ
     	// infd[1] == PARENT_WRITE
-     	boost::split(args, FLAGS_flow_scheduling_args, boost::is_any_of(" "));
 
       solver_pid = ExecCommandSync(FLAGS_flow_scheduling_binary, args, infd_, outfd_, errfd_);
       VLOG(2) << "Solver running " << "(PID: " << solver_pid << ")"
@@ -139,9 +148,6 @@ namespace scheduler {
         LOG(ERROR) << "Failed to open FD to solver for writing. FD: "
                    << infd_[1];
       }
-
-      setlinebuf(from_solver_);
-      setlinebuf(from_solver_stderr_);
     }
 
     boost::timer::cpu_timer flowsolver_timer;
@@ -195,6 +201,50 @@ namespace scheduler {
     }
     debug_seq_num_++;
     return task_mappings;
+  }
+
+  void QuincyDispatcher::SolverConfiguration(const string& solver,
+  		                                   string* binary, vector<string> *args) {
+    // New solvers need to have their binary registered here.
+    // Paths are relative to the Firmament root directory.
+  	if (solver == "cs2") {
+		  *binary = CS2_BINARY;
+		} else if (solver == "flowlessly") {
+			*binary = FLOWLESSLY_BINARY;
+		} else if (solver == "custom") {
+			// no-op; set binary below
+		} else {
+			LOG(FATAL) << "Non-existed flow network solver specified: " << solver;
+		}
+
+  	if (!FLAGS_flow_scheduling_binary.empty()) {
+  		*binary = FLAGS_flow_scheduling_binary;
+  	} else {
+  		if (solver == "custom") {
+  			LOG(FATAL) << "Must specify -flow_scheduling_binary "
+  					       << "in conjunction with custom solver.";
+  		}
+  	}
+
+  	if (solver == "custom") {
+  		boost::split(*args, FLAGS_custom_flow_scheduling_args,
+  				         boost::is_any_of(" "));
+  	} else {
+  		if (!FLAGS_custom_flow_scheduling_args.empty()) {
+  			LOG(FATAL) << "Error: cannot specify custom arguments with solver "
+  					       << solver;
+  		}
+
+  		if (solver == "flowlessly") {
+				args->push_back("--graph_has_node_types=true");
+				args->push_back("--global_update=false");
+				if (!FLAGS_incremental_flow) {
+					args->push_back("--daemon=false");
+				}
+			} else {
+				CHECK(false);
+			}
+  	}
   }
 
   void QuincyDispatcher::NodeBindingToSchedulingDelta(
