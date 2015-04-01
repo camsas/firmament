@@ -138,7 +138,8 @@ mem_stats ProcFSMachine::GetMemory() {
   struct sysinfo mem_info;
   sysinfo(&mem_info);
   mem_stats.mem_total = mem_info.totalram * mem_info.mem_unit;
-  mem_stats.mem_free = mem_info.freeram * mem_info.mem_unit;
+  mem_stats.mem_free = mem_info.freeram * mem_info.mem_unit +
+                       mem_info.bufferram * mem_info.mem_unit;
   return mem_stats;
 }
 

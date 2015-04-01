@@ -35,7 +35,9 @@ TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
                          $(BUILD_DIR)/engine/remote_executor.o \
                          $(BUILD_DIR)/engine/task_health_checker.o \
                          $(BUILD_DIR)/engine/topology_manager.o \
+                         $(BUILD_DIR)/scheduling/common.o \
                          $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+                         $(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
                          $(BUILD_DIR)/misc/libfirmament_misc.a \
                          $(BUILD_DIR)/base/libfirmament_base.a \
                          $(BUILD_DIR)/messages/libfirmament_messages.a \
@@ -50,7 +52,9 @@ TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/node.o \
                               $(BUILD_DIR)/engine/task_health_checker.o \
                               $(BUILD_DIR)/engine/topology_manager.o \
                               $(BUILD_DIR)/messages/libfirmament_messages.a \
+                              $(BUILD_DIR)/scheduling/common.o \
                               $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+                              $(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
                               $(BUILD_DIR)/misc/libfirmament_misc.a \
                               $(BUILD_DIR)/base/libfirmament_base.a \
                               $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
@@ -88,6 +92,7 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+	$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a \
 	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a
 	$(call quiet-command, \
@@ -105,7 +110,9 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/engine/topology_manager.o \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
+		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+		$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
@@ -121,6 +128,7 @@ $(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+	$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a \
 	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a
 	$(call quiet-command, \
@@ -138,7 +146,9 @@ $(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/engine/topology_manager.o \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
+		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+		$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
@@ -184,9 +194,9 @@ $(BUILD_DIR)/engine/task_lib_inject.so: task_lib_main.cc task_lib.cc \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a \
 	$(BUILD_DIR)/base/libfirmament_base.a
-	# echo $(NGINX_INCLUDES) #echo $(addprefix(-I $(SRC_ROOT_DIR)/examples/nginx/src, core))
 	$(call quiet-command, \
-		$(CXX) -fPIC -shared -std=c++11 -fvisibility=default $(OPTFLAGS) \
+		$(CXX) -fPIC -shared -std=c++11 -fvisibility=default -O0 -fno-omit-frame-pointer -g \
 		$(INCLUDES) $(DEFINES) \
 		-o $(BUILD_DIR)/engine/task_lib_inject.so $^ -ldl $(TASK_LIB_LIBS), \
 		"  DYNLNK  $(BUILD_DIR)/engine/task_lib_inject.so")
+# echo $(NGINX_INCLUDES) #echo $(addprefix(-I $(SRC_ROOT_DIR)/examples/nginx/src, core))

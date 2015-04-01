@@ -20,12 +20,12 @@
     <tr>
       <td><a href="/task/?id={{TASK_ID}}">{{TASK_ID}}</a></td>
       <td>{{TASK_FRIENDLY_NAME}}</td>
-      <td>{{TASK_JOB_ID}}</td>
+      <td><a href="/job/status/?id={{TASK_JOB_ID}}">{{TASK_JOB_ID}}</a></td>
       <td>{{TASK_STATE}}</td>
-      <td>{{TASK_RESOURCE}}</td>
+      <td><a href="/resource/status/?id={{TASK_RESOURCE}}">{{TASK_RESOURCE}}</a></td>
       <td>
-        <a href="/task/?id={{TASK_ID}}">Status</a>
-        <a href="/task/?id={{TASK_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></a>
+        <a href="/task/?id={{TASK_ID}}"><span class="glyphicon glyphicon-th-list" aria-hidden="true" title="Status"></span></a> 
+        <a href="/task/?id={{TASK_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true" title="Terminate"></span></a>
       </td>
     </tr>
   {{/TASK_DATA}}

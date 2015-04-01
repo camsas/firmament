@@ -4,8 +4,10 @@
 //
 // Google cluster trace simulator tool.
 
+#include <cmath>
 #include <cstdio>
 #include <string>
+#include <limits>
 #include <set>
 #include <string>
 #include <utility>
@@ -20,11 +22,11 @@
 #include "SpookyV2.h"
 
 #include "sim/trace-extract/google_trace_simulator.h"
+#include "scheduling/cost_models/cost_models.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
-#include "scheduling/quincy_cost_model.h"
 #include "scheduling/quincy_dispatcher.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
@@ -56,6 +58,8 @@ namespace sim {
 
 const static uint64_t SEED = 0;
 
+#define EPS 0.00001
+
 DEFINE_uint64(runtime, 9223372036854775807,
               "Time in microsec to extract data for (from start of trace)");
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
@@ -68,23 +72,71 @@ DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(stats_file, "", "File to write CSV of statistics.");
 DEFINE_string(graph_output_file, "", "File to write incremental DIMACS export.");
 DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
+DEFINE_bool(run_incremental_scheduler, false,
+            "Run the Flowlessly incremental scheduler.");
+DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2 | custom.");
+DEFINE_int32(flow_scheduling_cost_model, 0,
+             "Flow scheduler cost model to use. "
+             "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
   resource_map_(new ResourceMap_t), trace_path_(trace_path),
-  knowledge_base_(new KnowledgeBaseSimulator),
-  flow_graph_(new FlowGraph(
-                new QuincyCostModel(resource_map_, job_map_, task_map_,
-                                    &task_bindings_, knowledge_base_))),
-  quincy_dispatcher_(
-    new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_),
-                                    false)) {
+  knowledge_base_(new KnowledgeBaseSimulator) {
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>();
+  switch (FLAGS_flow_scheduling_cost_model) {
+    case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
+      cost_model_ = new TrivialCostModel(task_map_, leaf_res_ids);
+      VLOG(1) << "Using the trivial cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
+      cost_model_ = new RandomCostModel(task_map_, leaf_res_ids);
+      VLOG(1) << "Using the random cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_COCO:
+      cost_model_ = new CocoCostModel(resource_map_, rtn_root_, task_map_,
+                                      leaf_res_ids, knowledge_base_);
+      VLOG(1) << "Using the coco cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_SJF:
+      cost_model_ = new SJFCostModel(task_map_, leaf_res_ids, knowledge_base_);
+      VLOG(1) << "Using the SJF cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
+      cost_model_ =
+        new QuincyCostModel(resource_map_, job_map_, task_map_,
+                            &task_bindings_, leaf_res_ids,
+                            knowledge_base_);
+      VLOG(1) << "Using the Quincy cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_WHARE:
+      cost_model_ = new WhareMapCostModel(resource_map_, task_map_,
+                                          knowledge_base_);
+      VLOG(1) << "Using the Whare-Map cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
+      cost_model_ = new OctopusCostModel(resource_map_);
+      VLOG(1) << "Using the octopus cost model";
+      break;
+    default:
+      LOG(FATAL) << "Unknown flow scheduling cost model specificed "
+                 << "(" << FLAGS_flow_scheduling_cost_model << ")";
+  }
+  flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids));
+  cost_model_->SetFlowGraph(flow_graph_);
+  knowledge_base_->SetCostModel(cost_model_);
+  quincy_dispatcher_ =
+    new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
 }
 
 GoogleTraceSimulator::~GoogleTraceSimulator() {
   for (ResourceMap_t::iterator it = resource_map_->begin();
-       it != resource_map_->end(); ++it) {
-    delete it->second;
+       it != resource_map_->end(); ) {
+    ResourceMap_t::iterator it_tmp = it;
+    ++it;
+    delete it_tmp->second;
   }
   delete quincy_dispatcher_;
   delete knowledge_base_;
@@ -98,13 +150,30 @@ void GoogleTraceSimulator::Run() {
   proportion_ = (FLAGS_percentage / (double)100) * MAX_VALUE;
   VLOG(2) << "Retaining events with hash < " << proportion_;
 
+  if (!FLAGS_solver.compare("flowlessly")) {
+    FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
+    FLAGS_flow_scheduling_solver = "flowlessly";
+    FLAGS_only_read_assignment_changes = true;
+    FLAGS_flow_scheduling_binary =
+    		SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
+  } else if (!FLAGS_solver.compare("cs2")) {
+    FLAGS_incremental_flow = false;
+    FLAGS_flow_scheduling_solver = "cs2";
+    FLAGS_only_read_assignment_changes = false;
+    FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-4.6/cs2.exe";
+  } else if (!FLAGS_solver.compare("custom")) {
+  	FLAGS_flow_scheduling_solver = "custom";
+  } else {
+    LOG(FATAL) << "Unknown solver type: " << FLAGS_solver;
+  }
+
   // command line argument sanity checking
   if (trace_path_.empty()) {
     LOG(FATAL) << "Please specify a path to the Google trace!";
   }
 
-  LOG(INFO) << "Starting Google Trace extraction!";
-  LOG(INFO) << "Time to extract for: " << FLAGS_runtime << " microseconds.";
+  LOG(INFO) << "Starting Google trace simulator!";
+  LOG(INFO) << "Time to simulate for: " << FLAGS_runtime << " microseconds.";
 
   CreateRootResource();
 
@@ -162,7 +231,7 @@ ResourceDescriptor* GoogleTraceSimulator::AddMachine(
   ResourceDescriptor* rd = new_machine->mutable_resource_desc();
   rd->set_friendly_name(hn);
   // Add the node to the flow graph.
-  flow_graph_->AddResourceTopology(*new_machine);
+  flow_graph_->AddMachine(new_machine);
   // Add resource to the google machine_id to ResourceDescriptor* map.
   CHECK(InsertIfNotPresent(&machine_id_to_rd_, machine_id, rd));
   CHECK(InsertIfNotPresent(&machine_id_to_rtnd_, machine_id, new_machine));
@@ -185,6 +254,7 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
   TaskDescriptor* td_ptr = NULL;
   if (FindOrNull(task_id_to_td_, task_identifier) == NULL) {
     td_ptr = AddTaskToJob(jd_ptr);
+    td_ptr->set_binary(lexical_cast<string>(task_identifier.job_id));
     if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
       CHECK(InsertIfNotPresent(&task_id_to_identifier_,
                                td_ptr->uid(), task_identifier));
@@ -225,6 +295,69 @@ void GoogleTraceSimulator::AddTaskEndEvent(
     events_.insert(pair<uint64_t, EventDescriptor>(FLAGS_runtime, event_desc));
     CHECK(InsertIfNotPresent(&task_id_to_end_time_, task_id, FLAGS_runtime));
   }
+}
+
+void GoogleTraceSimulator::AddTaskStats(
+    TaskIdentifier task_identifier,
+    unordered_map<TaskIdentifier, uint64_t,
+      TaskIdentifierHasher>* task_runtime) {
+  TaskStats* task_stats = FindOrNull(task_id_to_stats_, task_identifier);
+  if (task_stats == NULL) {
+    // Already added stats.
+    return;
+  }
+  TaskDescriptor* td_ptr = FindPtrOrNull(task_id_to_td_, task_identifier);
+  CHECK_NOTNULL(td_ptr);
+  uint64_t* task_runtime_ptr = FindOrNull(*task_runtime, task_identifier);
+  uint64_t runtime = 0;
+  if (task_runtime_ptr != NULL) {
+    runtime = *task_runtime_ptr;
+  } else {
+    // We don't have information about this task's runtime.
+    // Set its runtime to max which means it's a service task.
+    runtime = numeric_limits<uint64_t>::max();
+  }
+  vector<EquivClass_t>* equiv_classes =
+    cost_model_->GetTaskEquivClasses(td_ptr->uid());
+  // XXX(ionel): This assumes that we have one task equivalence class per task.
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    knowledge_base_->SetAvgRuntimeForTEC(*it, runtime);
+    if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
+      knowledge_base_->SetAvgMeanCpuUsage(*it, task_stats->avg_mean_cpu_usage);
+    }
+    if (fabs(task_stats->avg_canonical_mem_usage + 1.0) > EPS) {
+      knowledge_base_->SetAvgCanonicalMemUsage(
+          *it, task_stats->avg_canonical_mem_usage);
+    }
+    if (fabs(task_stats->avg_assigned_mem_usage + 1.0) > EPS) {
+      knowledge_base_->SetAvgAssignedMemUsage(
+          *it, task_stats->avg_assigned_mem_usage);
+    }
+    if (fabs(task_stats->avg_unmapped_page_cache + 1.0) > EPS) {
+      knowledge_base_->SetAvgUnmappedPageCache(
+          *it, task_stats->avg_unmapped_page_cache);
+    }
+    if (fabs(task_stats->avg_total_page_cache + 1.0) > EPS) {
+      knowledge_base_->SetAvgTotalPageCache(
+          *it, task_stats->avg_total_page_cache);
+    }
+    if (fabs(task_stats->avg_mean_disk_io_time + 1.0) > EPS) {
+      knowledge_base_->SetAvgMeanDiskIOTime(
+          *it, task_stats->avg_mean_disk_io_time);
+    }
+    if (fabs(task_stats->avg_mean_local_disk_used + 1.0) > EPS) {
+      knowledge_base_->SetAvgMeanLocalDiskUsed(
+          *it, task_stats->avg_mean_local_disk_used);
+    }
+    if (fabs(task_stats->avg_cpi + 1.0) > EPS) {
+      knowledge_base_->SetAvgCPIForTEC(*it, task_stats->avg_cpi);
+    }
+    if (fabs(task_stats->avg_mai + 1.0) > EPS) {
+      knowledge_base_->SetAvgIPMAForTEC(*it, 1.0 / task_stats->avg_mai);
+    }
+  }
+  task_id_to_stats_.erase(task_identifier);
 }
 
 TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
@@ -295,15 +428,15 @@ void GoogleTraceSimulator::CreateRootResource() {
                            to_string(root_uuid)));
 
   // Add resources and job to flow graph
-  flow_graph_->AddResourceTopology(rtn_root_);
+  flow_graph_->AddResourceTopology(&rtn_root_);
   CHECK(InsertIfNotPresent(resource_map_.get(), root_uuid,
-                           new ResourceStatus(rd, "endpoint_uri",
+                           new ResourceStatus(rd, &rtn_root_, "endpoint_uri",
                                               GetCurrentTimestamp())));
 }
 
 void GoogleTraceSimulator::JobCompleted(uint64_t simulator_job_id,
                                         JobID_t job_id) {
-  flow_graph_->DeleteNodesForJob(job_id);
+  flow_graph_->JobCompleted(job_id);
   // This call frees the JobDescriptor* as well.
   job_map_->erase(job_id);
   job_id_to_jd_.erase(simulator_job_id);
@@ -400,43 +533,44 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
         TaskIdentifier task_id;
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
-        // TODO(ionel): Populate the knowledge base. Note a -1 denotes value
-        // unknown.
+        TaskStats task_stats;
+        task_stats.avg_mean_cpu_usage = lexical_cast<double>(cols[4]);
+        task_stats.avg_canonical_mem_usage = lexical_cast<double>(cols[8]);
+        task_stats.avg_assigned_mem_usage = lexical_cast<double>(cols[12]);
+        task_stats.avg_unmapped_page_cache = lexical_cast<double>(cols[16]);
+        task_stats.avg_total_page_cache = lexical_cast<double>(cols[20]);
+        task_stats.avg_mean_disk_io_time = lexical_cast<double>(cols[24]);
+        task_stats.avg_mean_local_disk_used = lexical_cast<double>(cols[28]);
+        task_stats.avg_cpi = lexical_cast<double>(cols[32]);
+        task_stats.avg_mai = lexical_cast<double>(cols[36]);
+        CHECK(InsertIfNotPresent(&task_id_to_stats_, task_id, task_stats));
+
         // double min_mean_cpu_usage = lexical_cast<double>(cols[2]);
         // double max_mean_cpu_usage = lexical_cast<double>(cols[3]);
-        // double avg_mean_cpu_usage = lexical_cast<double>(cols[4]);
         // double sd_mean_cpu_usage = lexical_cast<double>(cols[5]);
         // double min_canonical_mem_usage = lexical_cast<double>(cols[6]);
         // double max_canonical_mem_usage = lexical_cast<double>(cols[7]);
-        // double avg_canonical_mem_usage = lexical_cast<double>(cols[8]);
         // double sd_canonical_mem_usage = lexical_cast<double>(cols[9]);
         // double min_assigned_mem_usage = lexical_cast<double>(cols[10]);
         // double max_assigned_mem_usage = lexical_cast<double>(cols[11]);
-        // double avg_assigned_mem_usage = lexical_cast<double>(cols[12]);
         // double sd_assigned_mem_usage = lexical_cast<double>(cols[13]);
         // double min_unmapped_page_cache = lexical_cast<double>(cols[14]);
         // double max_unmapped_page_cache = lexical_cast<double>(cols[15]);
-        // double avg_unmapped_page_cache = lexical_cast<double>(cols[16]);
         // double sd_unmapped_page_cache = lexical_cast<double>(cols[17]);
         // double min_total_page_cache = lexical_cast<double>(cols[18]);
         // double max_total_page_cache = lexical_cast<double>(cols[19]);
-        // double avg_total_page_cache = lexical_cast<double>(cols[20]);
         // double sd_total_page_cache = lexical_cast<double>(cols[21]);
         // double min_mean_disk_io_time = lexical_cast<double>(cols[22]);
         // double max_mean_disk_io_time = lexical_cast<double>(cols[23]);
-        // double avg_mean_disk_io_time = lexical_cast<double>(cols[24]);
         // double sd_mean_disk_io_time = lexical_cast<double>(cols[25]);
         // double min_mean_local_disk_used = lexical_cast<double>(cols[26]);
         // double max_mean_local_disk_used = lexical_cast<double>(cols[27]);
-        // double avg_mean_local_disk_used = lexical_cast<double>(cols[28]);
         // double sd_mean_local_disk_used = lexical_cast<double>(cols[29]);
         // double min_cpi = lexical_cast<double>(cols[30]);
         // double max_cpi = lexical_cast<double>(cols[31]);
-        // double avg_cpi = lexical_cast<double>(cols[32]);
         // double sd_cpi = lexical_cast<double>(cols[33]);
         // double min_mai = lexical_cast<double>(cols[34]);
         // double max_mai = lexical_cast<double>(cols[35]);
-        // double avg_mai = lexical_cast<double>(cols[36]);
         // double sd_mai = lexical_cast<double>(cols[37]);
       }
     }
@@ -551,46 +685,73 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
 
 void GoogleTraceSimulator::ProcessTaskEvent(
     uint64_t cur_time, const TaskIdentifier& task_identifier,
-    uint64_t event_type) {
+    uint64_t event_type,
+    unordered_map<TaskIdentifier, uint64_t,
+      TaskIdentifierHasher>* task_runtime) {
   if (event_type == SUBMIT_EVENT) {
   	VLOG(3) << "TASK_SUBMIT_EVENT: ID "
   			    << task_identifier.job_id << "/" << task_identifier.task_index
 						<< " @ " << cur_time;
     AddNewTask(task_identifier);
+    AddTaskStats(task_identifier, task_runtime);
   }
 }
 
 void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
-  ResourceDescriptor** rd_ptr = FindOrNull(machine_id_to_rd_, machine_id);
-  CHECK_NOTNULL(rd_ptr);
   machine_id_to_rd_.erase(machine_id);
-  ResourceTopologyNodeDescriptor** rtnd_ptr =
-    FindOrNull(machine_id_to_rtnd_, machine_id);
+  ResourceTopologyNodeDescriptor* rtnd_ptr =
+    FindPtrOrNull(machine_id_to_rtnd_, machine_id);
   CHECK_NOTNULL(rtnd_ptr);
+  // Traverse the resource topology tree in order to evict tasks and
+  // remove resources from resource_map.
   DFSTraverseResourceProtobufTreeReturnRTND(
-      *rtnd_ptr, boost::bind(&GoogleTraceSimulator::RemoveResource, this, _1));
-  if ((*rtnd_ptr)->has_parent_id()) {
-    // TODO(ionel): Delete node from the parent's children list.
+      rtnd_ptr, boost::bind(&GoogleTraceSimulator::RemoveResource, this, _1));
+  ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
+  flow_graph_->RemoveMachine(res_id);
+  if (rtnd_ptr->has_parent_id()) {
+    if (rtnd_ptr->parent_id().compare(rtn_root_.resource_desc().uuid()) == 0) {
+      RepeatedPtrField<ResourceTopologyNodeDescriptor>* parent_children =
+        rtn_root_.mutable_children();
+      int32_t index = 0;
+      for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator it =
+             parent_children->begin(); it != parent_children->end();
+           ++it, ++index) {
+        if (it->resource_desc().uuid()
+              .compare(rtnd_ptr->resource_desc().uuid()) == 0) {
+          break;
+        }
+      }
+      if (index < parent_children->size()) {
+        // Found the node.
+        if (index < parent_children->size() - 1) {
+          // The node is not the last one.
+          parent_children->SwapElements(index, parent_children->size() - 1);
+        }
+        parent_children->RemoveLast();
+      } else {
+        LOG(WARNING) << "Could not found the machine in the parent's list";
+      }
+    } else {
+      LOG(ERROR) << "Machine " << machine_id
+                 << " is not direclty connected to the root";
+    }
   } else {
     LOG(WARNING) << "Machine " << machine_id << " doesn't have a parent";
   }
   machine_id_to_rtnd_.erase(machine_id);
   // We can't delete the node because we haven't removed it from it's parent
   // children list.
-  // delete *rtnd_ptr;
+  // delete rtnd_ptr;
 }
 
 void GoogleTraceSimulator::RemoveResource(
     ResourceTopologyNodeDescriptor* rtnd) {
   ResourceID_t res_id = ResourceIDFromString(rtnd->resource_desc().uuid());
-  flow_graph_->DeleteResourceNode(res_id);
   TaskID_t* task_id = FindOrNull(res_id_to_task_id_, res_id);
   if (task_id != NULL) {
     // Evict the task running on the resource.
     TaskEvicted(*task_id, res_id);
   }
-  // We don't need to set the state of the resource because it gets removed
-  // anyway.
   ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs_ptr);
   resource_map_->erase(res_id);
@@ -607,8 +768,7 @@ void GoogleTraceSimulator::TaskEvicted(TaskID_t task_id,
   flow_graph_->NodeForTaskID(task_id)->type_.set_type(
       FlowNodeType::UNSCHEDULED_TASK);
   // Remove the running arc and add back arcs to EC and UNSCHED.
-  // TODO(ionel): Inform the cost model that this task has already failed.
-  flow_graph_->UpdateArcsForEvictedTask(task_id, res_id);
+  flow_graph_->TaskEvicted(task_id, res_id);
 
   // Get the Google trace identifier of the task.
   TaskIdentifier* ti_ptr = FindOrNull(task_id_to_identifier_, task_id);
@@ -627,7 +787,11 @@ void GoogleTraceSimulator::TaskEvicted(TaskID_t task_id,
       break;
     }
   }
-  ResourceID_t res_id_tmp(res_id);
+  ResourceID_t res_id_tmp = res_id;
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id_tmp);
+  CHECK_NOTNULL(rs_ptr);
+  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+  rd_ptr->clear_current_running_task();
   task_bindings_.erase(task_id);
   res_id_to_task_id_.erase(res_id_tmp);
   // Remove current task end time.
@@ -668,7 +832,7 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
   // Add the resource node to the map.
   CHECK(InsertIfNotPresent(resource_map_.get(),
                            ResourceIDFromString(rd->uuid()),
-                           new ResourceStatus(rd, "endpoint_uri",
+                           new ResourceStatus(rd, rtnd, "endpoint_uri",
                                               GetCurrentTimestamp())));
 }
 
@@ -764,6 +928,24 @@ void GoogleTraceSimulator::ReplayTrace(
 
             delete task_mappings;
 
+            if (FLAGS_flow_scheduling_cost_model ==
+                FlowSchedulingCostModelType::COST_MODEL_COCO ||
+                FLAGS_flow_scheduling_cost_model ==
+                FlowSchedulingCostModelType::COST_MODEL_OCTOPUS ||
+                FLAGS_flow_scheduling_cost_model ==
+                FlowSchedulingCostModelType::COST_MODEL_WHARE) {
+              flow_graph_->ComputeTopologyStatistics(
+                  flow_graph_->sink_node(),
+                  boost::bind(&FlowSchedulingCostModelInterface::GatherStats,
+                              cost_model_, _1, _2));
+              flow_graph_->ComputeTopologyStatistics(
+                  flow_graph_->sink_node(),
+                  boost::bind(&FlowSchedulingCostModelInterface::UpdateStats,
+                              cost_model_, _1, _2));
+            } else {
+              LOG(INFO) << "No resource stats update required";
+            }
+
             // Update current time.
             while (time_interval_bound < task_time) {
               time_interval_bound += FLAGS_bin_time_duration;
@@ -786,7 +968,7 @@ void GoogleTraceSimulator::ReplayTrace(
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
-          ProcessTaskEvent(task_time, task_id, event_type);
+          ProcessTaskEvent(task_time, task_id, event_type, task_runtime);
         }
       }
     }
@@ -808,14 +990,18 @@ void GoogleTraceSimulator::TaskCompleted(
   TaskID_t task_id = (*td_ptr)->uid();
   JobID_t job_id = JobIDFromString((*td_ptr)->job_id());
   // Remove the task node from the flow graph.
-  flow_graph_->DeleteTaskNode(task_id);
+  flow_graph_->TaskCompleted(task_id);
   // Erase from local state: task_id_to_td_, task_id_to_identifier_, task_map_
   // and task_bindings_, task_id_to_end_time_, res_id_to_task_id_.
   task_id_to_td_.erase(task_identifier);
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
   CHECK_NOTNULL(res_id_ptr);
   ResourceID_t res_id_tmp = *res_id_ptr;
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id_tmp);
+  CHECK_NOTNULL(rs_ptr);
+  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
   res_id_to_task_id_.erase(res_id_tmp);
+  rd_ptr->clear_current_running_task();
   task_bindings_.erase(task_id);
   task_map_->erase(task_id);
   task_id_to_identifier_.erase(task_id);
@@ -872,12 +1058,13 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       rd->set_state(ResourceDescriptor::RESOURCE_BUSY);
       pus_used.insert(res_id);
       (*td)->set_state(TaskDescriptor::RUNNING);
+      rd->set_current_running_task(task_id);
       CHECK(InsertIfNotPresent(&task_bindings_, task_id, res_id));
       CHECK(InsertIfNotPresent(&res_id_to_task_id_, res_id, task_id));
       // After the task is bound, we now remove all of its edges into the flow
       // graph apart from the bound resource.
       // N.B.: This disables preemption and migration!
-      flow_graph_->UpdateArcsForBoundTask(task_id, res_id);
+      flow_graph_->TaskScheduled(task_id, res_id);
       TaskIdentifier* task_identifier =
         FindOrNull(task_id_to_identifier_, task_id);
       CHECK_NOTNULL(task_identifier);
@@ -908,6 +1095,7 @@ void GoogleTraceSimulator::UpdateFlowGraph(
         old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
         res_id_to_task_id_.erase(*old_res_id);
       }
+      rd->set_current_running_task(task_id);
       InsertOrUpdate(&task_bindings_, task_id, res_id);
       CHECK(InsertIfNotPresent(&res_id_to_task_id_, res_id, task_id));
     } else {
@@ -915,6 +1103,90 @@ void GoogleTraceSimulator::UpdateFlowGraph(
     }
     delete delta;
   }
+}
+
+FlowGraphNode* GoogleTraceSimulator::GatherWhareMCStats(
+    FlowGraphNode* accumulator, FlowGraphNode* other) {
+  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
+      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_.type() == FlowNodeType::SINK) {
+    // Node is neither part of the topology or an equivalence class.
+    // We don't have to accumulate any state.
+    return accumulator;
+  }
+
+  if (other->resource_id_.is_nil()) {
+    if (accumulator->type_.type() == FlowNodeType::PU) {
+      // Base case. We are at a PU and we gather the statistics.
+      ResourceStatus* rs_ptr =
+        FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+      CHECK_NOTNULL(rs_ptr);
+      ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+      if (rd_ptr->has_current_running_task()) {
+        TaskDescriptor* td_ptr =
+          FindPtrOrNull(*task_map_, rd_ptr->current_running_task());
+        if (td_ptr->has_task_type()) {
+          // TODO(ionel): Gather the statistics.
+          WhareMapStats* wms_ptr = rd_ptr->mutable_whare_map_stats();
+          if (td_ptr->task_type() == TaskDescriptor::DEVIL) {
+            wms_ptr->set_num_devils(1);
+          } else if (td_ptr->task_type() == TaskDescriptor::RABBIT) {
+            wms_ptr->set_num_rabbits(1);
+          } else if (td_ptr->task_type() == TaskDescriptor::SHEEP) {
+            wms_ptr->set_num_sheep(1);
+          } else if (td_ptr->task_type() == TaskDescriptor::TURTLE) {
+            wms_ptr->set_num_turtles(1);
+          } else {
+            LOG(FATAL) << "Unexpected task type";
+          }
+        } else {
+          LOG(WARNING) << "Task " << td_ptr->uid() << " does not have a type";
+        }
+      }
+    }
+    return accumulator;
+  }
+  if (accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+
+    if (!other->resource_id_.is_nil() &&
+        other->type_.type() == FlowNodeType::MACHINE) {
+      // If the other node is a machine.
+      //    AccumulateWhareMapStats(accumulator, other);
+    }
+    // TODO(ionel): Update knowledge base.
+    return accumulator;
+  }
+  ResourceStatus* acc_rs_ptr =
+    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+  CHECK_NOTNULL(acc_rs_ptr);
+  WhareMapStats* wms_acc_ptr =
+    acc_rs_ptr->mutable_descriptor()->mutable_whare_map_stats();
+  ResourceStatus* other_rs_ptr =
+    FindPtrOrNull(*resource_map_, other->resource_id_);
+  CHECK_NOTNULL(other_rs_ptr);
+  WhareMapStats* wms_other_ptr =
+    other_rs_ptr->mutable_descriptor()->mutable_whare_map_stats();
+  if (accumulator->type_.type() == FlowNodeType::MACHINE) {
+    AccumulateWhareMapStats(wms_acc_ptr, wms_other_ptr);
+    // TODO(ionel): Update knowledge base.
+    return accumulator;
+  }
+  AccumulateWhareMapStats(wms_acc_ptr, wms_other_ptr);
+  return accumulator;
+}
+
+void GoogleTraceSimulator::AccumulateWhareMapStats(
+    WhareMapStats* accumulator, WhareMapStats* other) {
+  accumulator->set_num_devils(accumulator->num_devils() +
+                              other->num_devils());
+  accumulator->set_num_rabbits(accumulator->num_rabbits() +
+                               other->num_rabbits());
+  accumulator->set_num_sheep(accumulator->num_sheep() +
+                             other->num_sheep());
+  accumulator->set_num_turtles(accumulator->num_turtles() +
+                               other->num_turtles());
 }
 
 } // namespace sim

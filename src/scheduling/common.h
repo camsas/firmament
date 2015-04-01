@@ -7,6 +7,8 @@
 #include <gflags/gflags.h>
 
 DECLARE_int64(flow_max_arc_cost);
+DECLARE_uint64(num_pref_arcs_task_to_res);
+DECLARE_uint64(num_pref_arcs_agg_to_res);
 
 namespace firmament {
 

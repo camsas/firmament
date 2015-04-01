@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/bind.hpp>
 #include <google/protobuf/text_format.h>
@@ -17,7 +18,6 @@
 
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
-#include "misc/equivclasses.h"
 #include "misc/utils.h"
 #include "misc/uri_tools.h"
 #include "messages/task_kill_message.pb.h"
@@ -34,6 +34,8 @@ namespace firmament {
 namespace webui {
 
 #define WEBUI_PERF_QUEUE_LEN 200LL
+
+using boost::lexical_cast;
 
 using ctemplate::TemplateDictionary;
 
@@ -81,6 +83,41 @@ void CoordinatorHTTPUI::AddFooterToTemplate(TemplateDictionary* dict) {
   TemplateDictionary* pgheader_sub_dict =
       dict->AddIncludeDictionary("PAGE_FOOTER");
   pgheader_sub_dict->SetFilename("src/webui/page_footer.tpl");
+}
+
+void CoordinatorHTTPUI::HandleCollectlGraphsURI(
+    http::request_ptr& http_request, // NOLINT
+    tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Kick off collectl graph generation
+  vector<string> args;
+  args.push_back("-scdnm");
+  args.push_back("-p");
+  args.push_back("/var/log/collectl/20150320*.raw.gz");
+  args.push_back("--from");
+  args.push_back(http_request->get_query("from"));
+  args.push_back("-ozTm");
+  args.push_back("-P");
+  args.push_back("-f");
+  args.push_back("/tmp/collectltmp/");
+  int infd[2];
+  int outfd[2];
+  int errfd[2];
+  ExecCommandSync("/usr/bin/collectl", args, infd, outfd, errfd);
+  //args.clear();
+  //args.push_back("ext/plot_collectl.py");
+  //args.push_back("/tmp/collectltmp");
+  //args.push_back("/tmp/testgraph.pdf");
+  //ExecCommandSync("/usr/bin/python", args, infd, outfd);
+  //ServeFile("/tmp/collectltmp/", tcp_conn, http_request, writer);
+  writer->write("done!");
+  FinishOkResponse(writer);
+}
+
+void CoordinatorHTTPUI::HandleCollectlRawURI(
+    http::request_ptr& http_request, // NOLINT
+    tcp::connection_ptr& tcp_conn) {  // NOLINT
 }
 
 void CoordinatorHTTPUI::HandleJobSubmitURI(http::request_ptr& http_request,  // NOLINT
@@ -257,6 +294,17 @@ void CoordinatorHTTPUI::HandleJobURI(http::request_ptr& http_request,  // NOLINT
       JobIDFromString(job_id));
   TemplateDictionary dict("job_status");
   if (jd_ptr) {
+    if (http_request->get_query("a") == "kill") {
+      if (coordinator_->KillRunningJob(JobIDFromString(jd_ptr->uuid()))) {
+        RedirectResponse(http_request, tcp_conn, "/job/status/?id=" + job_id);
+        return;
+      } else {
+        ErrorMessage_t err("Failed to kill job.",
+                           "The requested job could not be killed; check "
+                           "the ERROR log for more information.");
+        AddHeaderToTemplate(&dict, coordinator_->uuid(), &err);
+      }
+    }
     dict.SetValue("JOB_ID", jd_ptr->uuid());
     dict.SetValue("JOB_NAME", jd_ptr->name());
     dict.SetValue("JOB_STATUS", ENUM_TO_STRING(JobDescriptor::JobState,
@@ -381,30 +429,29 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
     return;
   }
   ResourceID_t rid = ResourceIDFromString(res_id);
-  ResourceDescriptor* rd_ptr = coordinator_->GetResource(rid);
+  ResourceTopologyNodeDescriptor* rtnd_ptr =
+    coordinator_->GetResourceTreeNode(rid);
   ResourceStatus* rs_ptr = coordinator_->GetResourceStatus(rid);
   TemplateDictionary dict("resource_status");
-  if (rd_ptr) {
-    dict.SetValue("RES_ID", rd_ptr->uuid());
-    dict.SetValue("RES_FRIENDLY_NAME", rd_ptr->friendly_name());
-    ResourceTopologyNodeDescriptor* rtnd =
-      coordinator_->GetResourceTreeNode(rid);
-    dict.SetValue("RES_REC",
-                  to_string(GenerateResourceTopologyEquivClass(*rtnd)));
+  if (rtnd_ptr) {
+    dict.SetValue("RES_ID", rtnd_ptr->resource_desc().uuid());
+    dict.SetValue("RES_FRIENDLY_NAME",
+                  rtnd_ptr->resource_desc().friendly_name());
+    dict.SetValue("RES_REC", "Not implemented");
     dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
-                                             rd_ptr->type()));
+                                             rtnd_ptr->resource_desc().type()));
     dict.SetValue("RES_STATUS",
                   ENUM_TO_STRING(ResourceDescriptor::ResourceState,
-                                 rd_ptr->state()));
-    dict.SetValue("RES_PARENT_ID", rd_ptr->parent());
-    dict.SetIntValue("RES_NUM_CHILDREN", rd_ptr->children_size());
-    for (RepeatedPtrField<string>::const_iterator c_iter =
-         rd_ptr->children().begin();
-         c_iter != rd_ptr->children().end();
+                                 rtnd_ptr->resource_desc().state()));
+    dict.SetValue("RES_PARENT_ID", rtnd_ptr->parent_id());
+    dict.SetIntValue("RES_NUM_CHILDREN", rtnd_ptr->children_size());
+    for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator
+           c_iter = rtnd_ptr->children().begin();
+         c_iter != rtnd_ptr->children().end();
          ++c_iter) {
       TemplateDictionary* child_dict =
           dict.AddSectionDictionary("RES_CHILDREN");
-      child_dict->SetValue("RES_CHILD_ID", *c_iter);
+      child_dict->SetValue("RES_CHILD_ID", c_iter->resource_desc().uuid());
     }
     dict.SetValue("RES_LOCATION", rs_ptr->location());
     dict.SetValue("RES_LOCATION_HOST",
@@ -413,7 +460,6 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
     dict.SetIntValue("RES_LAST_HEARTBEAT", rs_ptr->last_heartbeat() / 1000);
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   } else {
-    VLOG(1) << "rd_ptr is: " << rd_ptr;
     ErrorMessage_t err("Resource not found.",
                        "The requested resource does not exist.");
     AddHeaderToTemplate(&dict, coordinator_->uuid(), &err);
@@ -678,8 +724,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     output += "]";
     output += ", \"reports\": [";
     const deque<TaskFinalReport>* report_result =
-        coordinator_->knowledge_base()->GetFinalStatsForTask(
-            GenerateTaskEquivClass(*td));
+      coordinator_->knowledge_base()->GetFinalStatsForTask(td->uid());
     if (report_result) {
       bool first = true;
       for (deque<TaskFinalReport>::const_iterator it =
@@ -768,6 +813,11 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     if (td_ptr->has_name())
       dict.SetValue("TASK_NAME", td_ptr->name());
     dict.SetValue("TASK_BINARY", td_ptr->binary());
+    dict.SetValue("TASK_JOB_ID", td_ptr->job_id());
+    JobDescriptor* jd_ptr = coordinator_->GetJob(
+        JobIDFromString(td_ptr->job_id()));
+    if (jd_ptr)
+      dict.SetValue("TASK_JOB_NAME", jd_ptr->name());
     string arg_string = "";
     for (RepeatedPtrField<string>::const_iterator arg_iter =
          td_ptr->args().begin();
@@ -800,12 +850,41 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
                          URITools::GetHostnameFromURI(
                              td_ptr->delegated_from()));
     }
+    // Timestamps
+    if (td_ptr->has_submit_time()) {
+      dict.SetIntValue("TASK_SUBMIT_TIME", td_ptr->submit_time() / 1000);
+    } else {
+      dict.SetIntValue("TASK_SUBMIT_TIME", 0);
+    }
+    if (td_ptr->has_start_time()) {
+      dict.SetIntValue("TASK_START_TIME", td_ptr->start_time() / 1000);
+      dict.SetValue("TASK_START_TIME_HR",
+          CoarseTimestampToHumanReadble(td_ptr->start_time() / 1000000));
+    } else {
+      dict.SetIntValue("TASK_START_TIME", 0);
+    }
+    if (td_ptr->has_finish_time()) {
+      dict.SetIntValue("TASK_FINISH_TIME", td_ptr->finish_time() / 1000);
+      dict.SetValue("TASK_FINISH_TIME_HR",
+          CoarseTimestampToHumanReadble(td_ptr->finish_time() / 1000000));
+    } else {
+      dict.SetIntValue("TASK_FINISH_TIME", 0);
+    }
     // Heartbeat time
     // JS expects millisecond values
     dict.SetIntValue("TASK_LAST_HEARTBEAT",
                      td_ptr->last_heartbeat_time() / 1000);
     // Equivalence classes
-    dict.SetValue("TASK_TEC", to_string(GenerateTaskEquivClass(*td_ptr)));
+    vector<EquivClass_t>* equiv_classes =
+        coordinator_->knowledge_base()->GetTaskEquivClasses(td_ptr->uid());
+    if (equiv_classes) {
+      for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+           it != equiv_classes->end(); ++it) {
+        TemplateDictionary* tec_dict = dict.AddSectionDictionary("TASK_TECS");
+        tec_dict->SetIntValue("TASK_TEC", *it);
+      }
+    }
+    delete equiv_classes;
     // Dependencies
     if (td_ptr->dependencies_size() > 0)
       dict.SetIntValue("TASK_NUM_DEPS", td_ptr->dependencies_size());
@@ -883,16 +962,17 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
     return;
   }
   string action = http_request->get_query("a");
-  string tasklog_filename = FLAGS_task_log_dir;
+  string tasklog_filename = FLAGS_task_log_dir + "/" + td->job_id() + "-"
+                            + to_string(task_id);
   if (action.empty()) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     return;
   } else {
     if (action == "1") {
-      tasklog_filename += "/" + to_string(task_id) + "-stdout";
+      tasklog_filename += "-stdout";
     } else if (action == "2") {
-      tasklog_filename += "/" + to_string(task_id) + "-stderr";
+      tasklog_filename += "-stderr";
     } else {
       ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                     tcp_conn);
@@ -984,6 +1064,12 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Root URI
     coordinator_http_server_->add_resource("/favicon.ico", boost::bind(
         &CoordinatorHTTPUI::HandleFaviconURI, this, _1, _2));
+    // Collectl graph hook
+    coordinator_http_server_->add_resource("/collectl/graphs/", boost::bind(
+        &CoordinatorHTTPUI::HandleCollectlGraphsURI, this, _1, _2));
+    // Collectl raw data hook
+    coordinator_http_server_->add_resource("/collectl/raw/", boost::bind(
+        &CoordinatorHTTPUI::HandleCollectlRawURI, this, _1, _2));
     // Job list
     coordinator_http_server_->add_resource("/jobs/", boost::bind(
         &CoordinatorHTTPUI::HandleJobsListURI, this, _1, _2));

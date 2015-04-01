@@ -1,11 +1,14 @@
 // The Firmament project
 // Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Representation of a Quincy-style scheduling flow graph.
 
 #include <queue>
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <cstdio>
 #include <cstdlib>
@@ -14,7 +17,6 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "misc/equivclasses.h"
 #include "misc/map-util.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
@@ -24,23 +26,31 @@
 #include "scheduling/dimacs_new_arc.h"
 #include "scheduling/dimacs_remove_node.h"
 #include "scheduling/flow_graph.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 
 DEFINE_bool(preemption, false, "Enable preemption and migration of tasks");
-DEFINE_int32(num_pref_arcs, 1,
-             "Number of preference arcs from equiv class node");
 DEFINE_bool(add_root_task_to_graph, true, "Add the job root task to the graph");
+DEFINE_bool(randomize_flow_graph_node_ids, false,
+            "If true the the flow graph will not generate node ids in order");
 
 namespace firmament {
 
 using machine::topology::TopologyManager;
 
-FlowGraph::FlowGraph(FlowSchedulingCostModelInterface *cost_model)
+FlowGraph::FlowGraph(FlowSchedulingCostModelInterface *cost_model,
+                     unordered_set<ResourceID_t,
+                       boost::hash<boost::uuids::uuid>>* leaf_res_ids)
     : cost_model_(cost_model),
       current_id_(1),
-      cluster_agg_node_(NULL) {
+      cluster_agg_node_(NULL),
+      leaf_res_ids_(leaf_res_ids) {
   // Add sink and cluster aggregator node
   AddSpecialNodes();
+  // We do not randomize the special nodes because the solvers make
+  // assumptions about the the id number of the sink node.
+  if (FLAGS_randomize_flow_graph_node_ids) {
+    PopulateUnusedIds(50);
+  }
 }
 
 FlowGraph::~FlowGraph() {
@@ -54,6 +64,14 @@ FlowGraph::~FlowGraph() {
   ResetChanges();
   // XXX(malte): N.B. this leaks memory as we haven't destroyed all of the
   // nodes and arcs in the flow graph (which are allocated on the heap)
+}
+
+void FlowGraph::AddGraphChange(DIMACSChange* change) {
+  graph_changes_.push_back(change);
+}
+
+void FlowGraph::AddMachine(ResourceTopologyNodeDescriptor* root) {
+  UpdateResourceTopology(root);
 }
 
 void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
@@ -78,6 +96,18 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
   // Set up arc to unscheduled aggregator
   unsched_arc->cap_upper_bound_ = 1;
   task_arcs->push_back(unsched_arc);
+  vector<ResourceID_t>* task_pref_arcs =
+    cost_model_->GetTaskPreferenceArcs(task_node->task_id_);
+  for (vector<ResourceID_t>::iterator it = task_pref_arcs->begin();
+       it != task_pref_arcs->end(); ++it) {
+    FlowGraphArc* arc_to_res =
+      AddArcInternal(task_node, NodeForResourceID(*it));
+    arc_to_res->cost_ =
+      cost_model_->TaskToResourceNodeCost(task_node->task_id_, *it);
+    arc_to_res->cap_upper_bound_ = 1;
+    task_arcs->push_back(arc_to_res);
+  }
+  delete task_pref_arcs;
 }
 
 FlowGraphArc* FlowGraph::AddArcInternal(uint64_t src, uint64_t dst) {
@@ -99,47 +129,39 @@ FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
   return arc;
 }
 
-FlowGraphNode* FlowGraph::AddEquivClassAggregator(
-    const TaskDescriptor& td, vector<FlowGraphArc*>* ec_arcs) {
-  TaskEquivClass_t equiv_class = GenerateTaskEquivClass(td);
-  VLOG(2) << "Equiv class for task " << td.uid() << " is "
-          << equiv_class;
-  FlowGraphNode** ec_node_ptr =
-    FindOrNull(job_to_equiv_node_, JobIDFromString(td.job_id()));
-  FlowGraphNode* ec_node;
-  if (ec_node_ptr != NULL) {
-    ec_node = *ec_node_ptr;
-    LOG(WARNING) << "Equiv class aggregator already exists";
-  } else {
-    ec_node = AddNodeInternal(next_id());
-    CHECK(InsertIfNotPresent(&job_to_equiv_node_,
-                             JobIDFromString(td.job_id()), ec_node));
+void FlowGraph::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
+                                             FlowGraphNode* ec_node) {
+  pair<vector<EquivClass_t>*,
+       vector<EquivClass_t>*> equiv_class_to_connect =
+    cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
+  CHECK_NOTNULL(equiv_class_to_connect.first);
+  CHECK_NOTNULL(equiv_class_to_connect.second);
+  // Add incoming arcs.
+  for (vector<EquivClass_t>::iterator
+         it = equiv_class_to_connect.first->begin();
+       it != equiv_class_to_connect.first->end(); ++it) {
+    FlowGraphNode* ec_src_ptr = FindPtrOrNull(tec_to_node_, *it);
+    CHECK_NOTNULL(ec_src_ptr);
+    FlowGraphArc* arc = AddArcInternal(ec_src_ptr->id_, ec_node->id_);
+    arc->cost_ = cost_model_->EquivClassToEquivClass(*it, equiv_class);
+    // TODO(ionel): Set the capacity on the arc to a sensible value.
+    arc->cap_upper_bound_ = 1;
+    graph_changes_.push_back(new DIMACSNewArc(*arc));
   }
-  string comment;
-  spf(&comment, "EC_AGG_%ju", equiv_class);
-  ec_node->comment_ = comment;
-  AddEquivClassPreferenceArcs(td, ec_node, ec_arcs);
-  return ec_node;
-}
-
-void FlowGraph::AddEquivClassPreferenceArcs(
-    const TaskDescriptor& td, FlowGraphNode* equiv_node,
-    vector<FlowGraphArc*>* ec_arcs) {
-  // TODO(ionel): Use td to add preference arcs.
-  for (int32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs; ) {
-    size_t index = rand_r(&rand_seed_) % leaf_nodes_.size();
-    unordered_set<uint64_t>::iterator it = leaf_nodes_.begin();
-    advance(it, index);
-    if (!FindOrNull(equiv_node->outgoing_arc_map_, *it)) {
-      FlowGraphArc* arc = AddArcInternal(equiv_node->id_, *it);
-      // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
-      arc->cap_upper_bound_ = 1;
-      ec_arcs->push_back(arc);
-      ResourceID_t res_id = Node(*it)->resource_id_;
-      arc->cost_ = cost_model_->EquivClassToResourceNode(td.uid(), res_id);
-      num_arc++;
-    }
+  // Add outgoing arcs.
+  for (vector<EquivClass_t>::iterator
+         it = equiv_class_to_connect.second->begin();
+       it != equiv_class_to_connect.second->end(); ++it) {
+    FlowGraphNode* ec_dst_ptr = FindPtrOrNull(tec_to_node_, *it);
+    CHECK_NOTNULL(ec_dst_ptr);
+    FlowGraphArc* arc = AddArcInternal(ec_node->id_, ec_dst_ptr->id_);
+    arc->cost_ = cost_model_->EquivClassToEquivClass(equiv_class, *it);
+    // TODO(ionel): Set the capacity on the arc to a sensible value.
+    arc->cap_upper_bound_ = 1;
+    graph_changes_.push_back(new DIMACSNewArc(*arc));
   }
+  delete equiv_class_to_connect.first;
+  delete equiv_class_to_connect.second;
 }
 
 FlowGraphNode* FlowGraph::GetUnschedAggForJob(JobID_t job_id) {
@@ -158,7 +180,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
   uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_,
                                              JobIDFromString(jd->uuid()));
   if (!unsched_agg_node_id) {
-    unsched_agg_node = AddNodeInternal(next_id());
+    unsched_agg_node = AddNodeInternal(NextId());
     unsched_agg_node->type_.set_type(FlowNodeType::JOB_AGGREGATOR);
     string comment;
     spf(&comment, "UNSCHED_AGG_for_%s", jd->uuid().c_str());
@@ -215,8 +237,9 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
     uint64_t* tn_ptr = FindOrNull(task_to_nodeid_map_, cur->uid());
     FlowGraphNode* task_node = tn_ptr ? Node(*tn_ptr) : NULL;
     if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
+      generate_trace_.TaskSubmitted(JobIDFromString(jd->uuid()), cur->uid());
       vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
-      task_node = AddNodeInternal(next_id());
+      task_node = AddNodeInternal(NextId());
       task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK);
       // Add the current task's node
       task_node->excess_ = 1;
@@ -233,27 +256,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
       AddArcsForTask(task_node, unsched_agg_node, task_arcs);
       // Add the new task node to the graph changes
       graph_changes_.push_back(new DIMACSAddNode(*task_node, task_arcs));
-      // XXX(malte): hack to add equiv class aggregator nodes
-      FlowGraphNode** ec_node_ptr =
-        FindOrNull(job_to_equiv_node_, task_node->job_id_);
-      if (ec_node_ptr == NULL) {
-        // Job doesn't yet have an equivalence class node.
-        vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
-        FlowGraphNode* ec_node = AddEquivClassAggregator(*cur, ec_arcs);
-        FlowGraphArc* ec_arc = AddArcInternal(task_node->id_,
-                                              ec_node->id_);
-        // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
-        ec_arc->cap_upper_bound_ = 1;
-        ec_arc->cost_ = cost_model_->TaskToEquivClassAggregator(task_node->id_);
-        // Add the new equivalence node to the graph changes
-        ec_arcs->push_back(ec_arc);
-        graph_changes_.push_back(new DIMACSAddNode(*ec_node, ec_arcs));
-      } else {
-        // The equivalence class node already exists. Add arc to it.
-        FlowGraphArc* ec_arc =
-          AddArcInternal(task_node->id_, (*ec_node_ptr)->id_);
-        graph_changes_.push_back(new DIMACSNewArc(*ec_arc));
-      }
+      AddTaskEquivClasses(task_node);
     } else if (cur->state() == TaskDescriptor::RUNNING ||
                cur->state() == TaskDescriptor::ASSIGNED) {
       // The task is already running, so it must have a node already
@@ -296,29 +299,54 @@ void FlowGraph::AddSpecialNodes() {
   // the root of the resource topology is automatically chosen as the
   // cluster aggregator.
   // Sink node
-  sink_node_ = AddNodeInternal(next_id());
+  sink_node_ = AddNodeInternal(NextId());
   sink_node_->type_.set_type(FlowNodeType::SINK);
   sink_node_->comment_ = "SINK";
   graph_changes_.push_back(new DIMACSAddNode(*sink_node_,
                                              new vector<FlowGraphArc*>()));
 }
 
+void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
+  ResourceID_t res_id = res_node->resource_id_;
+  vector<EquivClass_t>* equiv_classes =
+    cost_model_->GetResourceEquivClasses(res_id);
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
+    if (ec_node_ptr == NULL) {
+      // Node for resource equiv class doesn't yet exist.
+      AddEquivClassNode(*it);
+    } else {
+      // Node for resource equiv class already exists. Add arc from it.
+      // XXX(ionel): We don't add arcs from tasks or other equiv classes
+      // to the resource equiv class when a new resource is connected to it.
+      FlowGraphArc* ec_arc =
+        AddArcInternal(ec_node_ptr->id_, res_node->id_);
+      ec_arc->cap_upper_bound_ = 1;
+      ec_arc->cost_ =
+        cost_model_->EquivClassToResourceNode(*it, res_id);
+      graph_changes_.push_back(new DIMACSNewArc(*ec_arc));
+    }
+  }
+  delete equiv_classes;
+}
+
 void FlowGraph::AddResourceTopology(
-    const ResourceTopologyNodeDescriptor& resource_tree) {
+    ResourceTopologyNodeDescriptor* resource_tree) {
   BFSTraverseResourceProtobufTreeReturnRTND(
-      &resource_tree,
+      resource_tree,
       boost::bind(&FlowGraph::AddResourceNode, this, _1));
 }
 
 void FlowGraph::AddResourceNode(
-    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
   FlowGraphNode* new_node;
   CHECK_NOTNULL(rtnd_ptr);
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
   // Add the node if it does not already exist
   if (!NodeForResourceID(ResourceIDFromString(rtnd.resource_desc().uuid()))) {
     vector<FlowGraphArc*> *resource_arcs = new vector<FlowGraphArc*>();
-    uint64_t id = next_id();
+    uint64_t id = NextId();
     if (rtnd.resource_desc().has_friendly_name()) {
       VLOG(2) << "Adding node " << id << " for resource "
               << rtnd.resource_desc().uuid() << " ("
@@ -328,6 +356,14 @@ void FlowGraph::AddResourceNode(
               << rtnd.resource_desc().uuid();
     }
     new_node = AddNodeInternal(id);
+    if (rtnd_ptr->resource_desc().type() == ResourceDescriptor::RESOURCE_PU) {
+      new_node->type_.set_type(FlowNodeType::PU);
+    } else if (rtnd_ptr->resource_desc().type() ==
+               ResourceDescriptor::RESOURCE_MACHINE) {
+      new_node->type_.set_type(FlowNodeType::MACHINE);
+    } else {
+      new_node->type_.set_type(FlowNodeType::UNKNOWN);
+    }
     InsertIfNotPresent(&resource_to_nodeid_map_,
                        ResourceIDFromString(rtnd.resource_desc().uuid()),
                        new_node->id_);
@@ -356,6 +392,14 @@ void FlowGraph::AddResourceNode(
     }
     // Add new resource node to the graph changes.
     graph_changes_.push_back(new DIMACSAddNode(*new_node, resource_arcs));
+    if (rtnd_ptr->resource_desc().type() ==
+        ResourceDescriptor::RESOURCE_MACHINE) {
+      ResourceID_t res_id =
+        ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
+      generate_trace_.AddMachine(res_id);
+      cost_model_->AddMachine(rtnd_ptr);
+      AddResourceEquivClasses(new_node);
+    }
   } else {
     new_node = NodeForResourceID(
         ResourceIDFromString(rtnd.resource_desc().uuid()));
@@ -372,6 +416,74 @@ void FlowGraph::AddResourceNode(
     // 3) Leaves of the resource topology; add an arc to the sink node
     ConfigureResourceLeafNode(rtnd, new_node);
   }
+}
+
+void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
+  VLOG(2) << "Add equiv class " << ec;
+  vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
+  // Add the equivalence class flow graph node.
+  FlowGraphNode* ec_node = AddNodeInternal(NextId());
+  ec_node->type_.set_type(FlowNodeType::EQUIVALENCE_CLASS);
+  CHECK(InsertIfNotPresent(&tec_to_node_, ec, ec_node));
+  string comment;
+  spf(&comment, "EC_AGG_%ju", ec);
+  ec_node->comment_ = comment;
+  vector<TaskID_t>* task_pref_arcs =
+    cost_model_->GetIncomingEquivClassPrefArcs(ec);
+  vector<ResourceID_t>* res_pref_arcs =
+    cost_model_->GetOutgoingEquivClassPrefArcs(ec);
+  // Add the incoming arcs to the equivalence class node.
+  for (vector<TaskID_t>::iterator it = task_pref_arcs->begin();
+       it != task_pref_arcs->end(); ++it) {
+    FlowGraphArc* ec_arc =
+      AddArcInternal(NodeForTaskID(*it)->id_, ec_node->id_);
+    // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
+    ec_arc->cap_upper_bound_ = 1;
+    ec_arc->cost_ =
+      cost_model_->TaskToEquivClassAggregator(*it, ec);
+    ec_arcs->push_back(ec_arc);
+  }
+  delete task_pref_arcs;
+  // Add the outgoing arcs from the equivalence class node.
+  for (vector<ResourceID_t>::iterator it = res_pref_arcs->begin();
+       it != res_pref_arcs->end(); ++it) {
+    FlowGraphArc* ec_arc =
+      AddArcInternal(ec_node->id_, NodeForResourceID(*it)->id_);
+    // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
+    ec_arc->cap_upper_bound_ = 1;
+    ec_arc->cost_ =
+      cost_model_->EquivClassToResourceNode(ec, *it);
+    ec_arcs->push_back(ec_arc);
+  }
+  delete res_pref_arcs;
+  // Add the new equivalence node to the graph changes
+  graph_changes_.push_back(new DIMACSAddNode(*ec_node, ec_arcs));
+  AddArcsFromToOtherEquivNodes(ec, ec_node);
+}
+
+void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
+  vector<EquivClass_t>* equiv_classes =
+    cost_model_->GetTaskEquivClasses(task_node->task_id_);
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
+    if (ec_node_ptr == NULL) {
+      // Node for task equiv class doesn't yet exist.
+      AddEquivClassNode(*it);
+    } else {
+      // Node for task equiv class already exists. Add arc to it.
+      // XXX(ionel): We don't add new arcs from the equivalence class to
+      // resource nodes when we add a new arc from a task to the equiv class.
+      // We may want to do add some in the future.
+      FlowGraphArc* ec_arc =
+        AddArcInternal(task_node->id_, ec_node_ptr->id_);
+      ec_arc->cap_upper_bound_ = 1;
+      ec_arc->cost_ =
+        cost_model_->TaskToEquivClassAggregator(task_node->task_id_, *it);
+      graph_changes_.push_back(new DIMACSNewArc(*ec_arc));
+    }
+  }
+  delete equiv_classes;
 }
 
 void FlowGraph::AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
@@ -395,9 +507,10 @@ void FlowGraph::AdjustUnscheduledAggArcCosts() {
     FlowGraphNode* unsched_node = Node(it->second);
     for (unordered_map<uint64_t, FlowGraphArc*>::iterator
          ait = unsched_node->incoming_arc_map_.begin();
-         ait != unsched_node->incoming_arc_map_.end();
-         ++ait) {
-      FlowGraphArc* arc = ait->second;
+         ait != unsched_node->incoming_arc_map_.end();) {
+      unordered_map<uint64_t, FlowGraphArc*>::iterator ait_tmp = ait;
+      ++ait;
+      FlowGraphArc* arc = ait_tmp->second;
       CHECK_NOTNULL(arc);
       TaskID_t task_id = Node(arc->src_)->task_id_;
       ChangeArc(arc, arc->cap_lower_bound_, arc->cap_upper_bound_,
@@ -427,10 +540,9 @@ void FlowGraph::ConfigureResourceBranchNode(
     CHECK(parent_node != NULL) << "Could not find parent node with ID "
                                << rtnd.parent_id();
     // Find the arc from parent node (which should have been added before)
-    FlowGraphArc** arc_ptr = FindOrNull(parent_node->outgoing_arc_map_,
-                                        new_node->id_);
-    CHECK_NOTNULL(arc_ptr);
-    FlowGraphArc* arc = *arc_ptr;
+    FlowGraphArc* arc = FindPtrOrNull(parent_node->outgoing_arc_map_,
+                                      new_node->id_);
+    CHECK_NOTNULL(arc);
     // Set initial capacity to 0; this will be updated as leaves are added
     // below this node!
     arc->cap_upper_bound_ = 0;
@@ -470,6 +582,7 @@ void FlowGraph::ConfigureResourceLeafNode(
   arc->cost_ =
       cost_model_->LeafResourceNodeToSinkCost(cur_node->resource_id_);
   leaf_nodes_.insert(cur_node->id_);
+  leaf_res_ids_->insert(cur_node->resource_id_);
   graph_changes_.push_back(new DIMACSNewArc(*arc));
   // Add flow capacity to parent nodes until we hit the root node
   FlowGraphNode* parent = cur_node;
@@ -478,15 +591,14 @@ void FlowGraph::ConfigureResourceLeafNode(
                                  parent->resource_id_)) != NULL) {
     uint64_t cur_id = parent->id_;
     parent = NodeForResourceID(*parent_id);
-    FlowGraphArc** arc = FindOrNull(parent->outgoing_arc_map_, cur_id);
+    FlowGraphArc* arc = FindPtrOrNull(parent->outgoing_arc_map_, cur_id);
     CHECK_NOTNULL(arc);
-    CHECK_NOTNULL(*arc);
     VLOG(2) << "Adding capacity on edge from " << *parent_id << " ("
             << parent->id_ << ") to " << cur_id << " ("
-            << (*arc)->cap_upper_bound_ << " -> "
-            << (*arc)->cap_upper_bound_ + 1 << ")";
-    (*arc)->cap_upper_bound_ += 1;
-    graph_changes_.push_back(new DIMACSChangeArc(**arc));
+            << arc->cap_upper_bound_ << " -> "
+            << arc->cap_upper_bound_ + 1 << ")";
+    arc->cap_upper_bound_ += 1;
+    graph_changes_.push_back(new DIMACSChangeArc(*arc));
   }
 }
 
@@ -527,26 +639,28 @@ void FlowGraph::DeleteArc(FlowGraphArc* arc) {
 void FlowGraph::DeleteNode(FlowGraphNode* node) {
   // First remove all outgoing arcs
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
-       node->outgoing_arc_map_.begin();
-       it != node->outgoing_arc_map_.end();
-       ++it) {
+         node->outgoing_arc_map_.begin();
+       it != node->outgoing_arc_map_.end();) {
     CHECK_EQ(it->first, it->second->dst_);
     CHECK_EQ(node->id_, it->second->src_);
     CHECK_EQ(it->second->dst_node_->incoming_arc_map_.erase(it->second->src_),
              1);
-    DeleteArc(it->second);
+    unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
+    ++it;
+    DeleteArc(it_tmp->second);
   }
   node->outgoing_arc_map_.clear();
   // Remove all incoming arcs.
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
-       node->incoming_arc_map_.begin();
-       it != node->incoming_arc_map_.end();
-       ++it) {
+         node->incoming_arc_map_.begin();
+       it != node->incoming_arc_map_.end();) {
     CHECK_EQ(node->id_, it->second->dst_);
     CHECK_EQ(it->first, it->second->src_);
     CHECK_EQ(it->second->src_node_->outgoing_arc_map_.erase(it->second->dst_),
              1);
-    DeleteArc(it->second);
+    unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
+    ++it;
+    DeleteArc(it_tmp->second);
   }
   node->incoming_arc_map_.clear();
   node_map_.erase(node->id_);
@@ -554,58 +668,61 @@ void FlowGraph::DeleteNode(FlowGraphNode* node) {
   delete node;
 }
 
-void FlowGraph::DeleteNodesForJob(JobID_t job_id) {
-  uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
-  CHECK_NOTNULL(unsched_node_id);
-  FlowGraphNode* node = Node(*unsched_node_id);
-  // Remove any remaining task nodes
-  // Clone the incoming_arcs so that we can use the copy to iterate over
-  // incoming arcs. We do so in order to avoid iterating over a collection
-  // that we change while iterating. DeleteTaskNode removes entries
-  // from the incoming_arcs_map.
-  unordered_map<uint64_t, FlowGraphArc*> incoming_arcs(
-      node->incoming_arc_map_.begin(),
-      node->incoming_arc_map_.end());
-  for (unordered_map<uint64_t, FlowGraphArc*>::iterator
-       it = incoming_arcs.begin();
-       it != incoming_arcs.end();
-       it++) {
-    FlowGraphArc* arc = it->second;
-    CHECK_NOTNULL(arc);
-    FlowGraphNode* task_node = arc->src_node_;
-    CHECK_NOTNULL(task_node);
-    CHECK_EQ(task_node->job_id_, job_id);
-    DeleteTaskNode(task_node->task_id_);
-  }
-  CHECK_EQ(node->incoming_arc_map_.size(), 0);
-  incoming_arcs.clear();
-  job_unsched_to_node_id_.erase(job_id);
-  unused_ids_.push(node->id_);
-  DeleteNode(node);
-  DeleteOrUpdateEquivNode(job_id);
-}
-
-void FlowGraph::DeleteResourceNode(ResourceID_t res_id) {
-  uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
-  CHECK_NOTNULL(node_id);
-  FlowGraphNode* node = Node(*node_id);
+void FlowGraph::DeleteResourceNode(FlowGraphNode* res_node) {
+  ResourceID_t res_id = res_node->resource_id_;
   ResourceID_t res_id_tmp = res_id;
   resource_to_parent_map_.erase(res_id);
-  unused_ids_.push(node->id_);
-  leaf_nodes_.erase(*node_id);
+  unused_ids_.push(res_node->id_);
+  leaf_nodes_.erase(res_node->id_);
+  // This erase is going to delete the res_id. That's why we use
+  // res_id_tmp from now onwards.
+  leaf_res_ids_->erase(res_id);
   resource_to_nodeid_map_.erase(res_id_tmp);
-  DeleteNode(node);
+  DeleteNode(res_node);
+  vector<EquivClass_t>* equiv_classes =
+    cost_model_->GetResourceEquivClasses(res_id_tmp);
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    DeleteOrUpdateIncomingEquivNode(*it);
+  }
+  delete equiv_classes;
 }
 
-void FlowGraph::DeleteOrUpdateEquivNode(JobID_t job_id) {
-  FlowGraphNode** equiv_node_ptr = FindOrNull(job_to_equiv_node_, job_id);
-  CHECK_NOTNULL(equiv_node_ptr);
-  if ((*equiv_node_ptr)->incoming_arc_map_.size() == 0) {
+void FlowGraph::DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv) {
+  FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
+  if (equiv_node_ptr == NULL) {
+    // Equiv class node can be NULL because all it's task are running
+    // and are directly connected to resource nodes.
+    return;
+  }
+  if (equiv_node_ptr->outgoing_arc_map_.size() == 0) {
+    VLOG(2) << "Deleting resource_equiv class: " << task_equiv;
     // The equiv class doesn't have any incoming arcs from tasks.
     // We can remove the node.
-    job_to_equiv_node_.erase(job_id);
-    unused_ids_.push((*equiv_node_ptr)->id_);
-    DeleteNode((*equiv_node_ptr));
+    tec_to_node_.erase(task_equiv);
+    unused_ids_.push(equiv_node_ptr->id_);
+    DeleteNode(equiv_node_ptr);
+  } else {
+    // TODO(ionel): We may want to reduce the number of outgoing
+    // arcs from the equiv class to cores. However, this is not
+    // mandatory.
+  }
+}
+
+void FlowGraph::DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv) {
+  FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
+  if (equiv_node_ptr == NULL) {
+    // Equiv class node can be NULL because all it's task are running
+    // and are directly connected to resource nodes.
+    return;
+  }
+  if (equiv_node_ptr->incoming_arc_map_.size() == 0) {
+    VLOG(2) << "Deleting task_equiv class: " << task_equiv;
+    // The equiv class doesn't have any incoming arcs from tasks.
+    // We can remove the node.
+    tec_to_node_.erase(task_equiv);
+    unused_ids_.push(equiv_node_ptr->id_);
+    DeleteNode(equiv_node_ptr);
   } else {
     // TODO(ionel): We may want to reduce the number of outgoing
     // arcs from the equiv class to cores. However, this is not
@@ -632,6 +749,68 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id) {
   task_to_nodeid_map_.erase(task_id);
   // Then remove the node itself
   DeleteNode(node);
+  vector<EquivClass_t>* equiv_classes =
+    cost_model_->GetTaskEquivClasses(node->task_id_);
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    DeleteOrUpdateOutgoingEquivNode(*it);
+  }
+  delete equiv_classes;
+}
+
+FlowGraphArc* FlowGraph::GetArc(FlowGraphNode* src, FlowGraphNode* dst) {
+  unordered_map<uint64_t, FlowGraphArc*>::iterator arc_it =
+    src->outgoing_arc_map_.find(dst->id_);
+  if (arc_it == src->outgoing_arc_map_.end()) {
+    LOG(FATAL) << "Could not find arc";
+  }
+  return arc_it->second;
+}
+
+void FlowGraph::JobCompleted(JobID_t job_id) {
+  uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
+  CHECK_NOTNULL(unsched_node_id);
+  FlowGraphNode* node = Node(*unsched_node_id);
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator
+         it = node->incoming_arc_map_.begin();
+       it != node->incoming_arc_map_.end();) {
+    unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
+    ++it;
+    FlowGraphArc* arc = it_tmp->second;
+    CHECK_NOTNULL(arc);
+    FlowGraphNode* task_node = arc->src_node_;
+    CHECK_NOTNULL(task_node);
+    CHECK_EQ(task_node->job_id_, job_id);
+    generate_trace_.TaskCompleted(task_node->task_id_);
+    DeleteTaskNode(task_node->task_id_);
+    cost_model_->RemoveTask(task_node->task_id_);
+  }
+  CHECK_EQ(node->incoming_arc_map_.size(), 0);
+  job_unsched_to_node_id_.erase(job_id);
+  unused_ids_.push(node->id_);
+  DeleteNode(node);
+}
+
+uint64_t FlowGraph::NextId() {
+  if (FLAGS_randomize_flow_graph_node_ids) {
+    if (unused_ids_.empty()) {
+      PopulateUnusedIds(current_id_ * 2);
+    }
+    uint64_t new_id = unused_ids_.front();
+    unused_ids_.pop();
+    ids_created_.push_back(new_id);
+    return new_id;
+  } else {
+    if (unused_ids_.empty()) {
+      ids_created_.push_back(current_id_);
+      return current_id_++;
+    } else {
+      uint64_t new_id = unused_ids_.front();
+      unused_ids_.pop();
+      ids_created_.push_back(new_id);
+      return new_id;
+    }
+  }
 }
 
 FlowGraphNode* FlowGraph::NodeForResourceID(const ResourceID_t& res_id) {
@@ -660,7 +839,7 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
   // Remove all arcs apart from the task -> resource mapping;
   // note that this effectively disables preemption!
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
-       task_node->outgoing_arc_map_.begin();
+         task_node->outgoing_arc_map_.begin();
        it != task_node->outgoing_arc_map_.end(); ) {
     VLOG(2) << "Deleting arc from " << it->second->src_ << " to "
             << it->second->dst_;
@@ -677,12 +856,89 @@ void FlowGraph::PinTaskToNode(FlowGraphNode* task_node,
   graph_changes_.push_back(new DIMACSNewArc(*new_arc));
 }
 
+void FlowGraph::PopulateUnusedIds(uint64_t new_current_id) {
+  srand(42);
+  vector<uint64_t> ids;
+  for (uint64_t index = current_id_; index < new_current_id; ++index) {
+    ids.push_back(index);
+  }
+  random_shuffle(ids.begin(), ids.end());
+  for (vector<uint64_t>::iterator it = ids.begin(); it != ids.end(); ++it) {
+    unused_ids_.push(*it);
+  }
+  current_id_ = new_current_id;
+}
+
+void FlowGraph::RemoveMachine(ResourceID_t res_id) {
+  generate_trace_.RemoveMachine(res_id);
+  uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
+  CHECK_NOTNULL(node_id);
+  RemoveMachineSubTree(Node(*node_id));
+  cost_model_->RemoveMachine(res_id);
+}
+
+void FlowGraph::RemoveMachineSubTree(FlowGraphNode* res_node) {
+  while (true) {
+    unordered_map<uint64_t, FlowGraphArc*>::iterator
+      it = res_node->outgoing_arc_map_.begin();
+    if (it == res_node->outgoing_arc_map_.end()) {
+      break;
+    }
+    if (it->second->dst_node_->resource_id_.is_nil()) {
+      // The node is not a resource node. We will just delete the arc to it.
+      DeleteArc(it->second);
+      continue;
+    }
+    if (it->second->dst_node_->type_.type() == FlowNodeType::PU ||
+        it->second->dst_node_->type_.type() == FlowNodeType::MACHINE ||
+        it->second->dst_node_->type_.type() == FlowNodeType::UNKNOWN) {
+      RemoveMachineSubTree(it->second->dst_node_);
+    } else {
+      // The node is not a machine related node. We will just delete the arc
+      // to it.
+      DeleteArc(it->second);
+    }
+  }
+  // We've deleted all its children. Now we can delete the node itself.
+  DeleteResourceNode(res_node);
+}
+
+void FlowGraph::TaskCompleted(TaskID_t tid) {
+  generate_trace_.TaskCompleted(tid);
+  DeleteTaskNode(tid);
+  cost_model_->RemoveTask(tid);
+}
+
+void FlowGraph::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
+  generate_trace_.TaskEvicted(tid);
+  UpdateArcsForEvictedTask(tid, res_id);
+  // We do not have to remove the task from the cost model because
+  // the task will still exist in the flow graph at the end of
+  // UpdateArcsForEvictedTask.
+}
+
+void FlowGraph::TaskFailed(TaskID_t tid) {
+  generate_trace_.TaskFailed(tid);
+  DeleteTaskNode(tid);
+  cost_model_->RemoveTask(tid);
+}
+
+void FlowGraph::TaskKilled(TaskID_t tid) {
+  generate_trace_.TaskKilled(tid);
+  DeleteTaskNode(tid);
+  cost_model_->RemoveTask(tid);
+}
+
+void FlowGraph::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
+  generate_trace_.TaskScheduled(tid, res_id);
+  UpdateArcsForBoundTask(tid, res_id);
+}
+
 void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(tid);
   FlowGraphNode* assigned_res_node = NodeForResourceID(res_id);
   CHECK_NOTNULL(task_node);
   CHECK_NOTNULL(assigned_res_node);
-
   if (!FLAGS_preemption) {
     // After the task is bound, we now remove all of its edges into the flow
     // graph apart from the bound resource.
@@ -697,6 +953,14 @@ void FlowGraph::UpdateArcsForEvictedTask(TaskID_t task_id,
                                          ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(task_id);
   if (!FLAGS_preemption) {
+    // Delete outgoing arcs for running task.
+    for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+           task_node->outgoing_arc_map_.begin();
+         it != task_node->outgoing_arc_map_.end();) {
+      unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
+      ++it;
+      DeleteArc(it_tmp->second);
+    }
     // Add back arcs to equiv class node, unscheduled agg and to
     // resource topology agg.
     vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
@@ -713,13 +977,7 @@ void FlowGraph::UpdateArcsForEvictedTask(TaskID_t task_id,
     }
     delete task_arcs;
 
-    FlowGraphNode** ec_node_ptr =
-      FindOrNull(job_to_equiv_node_, task_node->job_id_);
-    CHECK_NOTNULL(ec_node_ptr);
-    // Add arc to equivalence class node.
-    FlowGraphArc* ec_arc =
-      AddArcInternal(task_node->id_, (*ec_node_ptr)->id_);
-    graph_changes_.push_back(new DIMACSNewArc(*ec_arc));
+    AddTaskEquivClasses(task_node);
 
     // Add this task's potential flow from the per-job unscheduled
     // aggregator's outgoing edge
@@ -728,13 +986,13 @@ void FlowGraph::UpdateArcsForEvictedTask(TaskID_t task_id,
 }
 
 void FlowGraph::UpdateResourceNode(
-    const ResourceTopologyNodeDescriptor* rtnd_ptr) {
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
   CHECK_NOTNULL(rtnd_ptr);
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
   ResourceID_t res_id = ResourceIDFromString(rtnd.resource_desc().uuid());
   // First of all, check if this node already exists in our resource topology
   uint64_t* found_node = FindOrNull(resource_to_nodeid_map_, res_id);
-  VLOG(1) << "Considering resource " << res_id << ", which is "
+  VLOG(2) << "Considering resource " << res_id << ", which is "
           << (found_node ? *found_node : 0);
   if (found_node) {
     // Check if its parent is identical
@@ -761,13 +1019,13 @@ void FlowGraph::UpdateResourceNode(
       }
     }
     // Check if any children need adding
-    for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator
-         child_iter = rtnd_ptr->children().begin();
-         child_iter != rtnd_ptr->children().end();
+    for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::pointer_iterator
+         child_iter = rtnd_ptr->mutable_children()->pointer_begin();
+         child_iter != rtnd_ptr->mutable_children()->pointer_end();
          ++child_iter) {
       uint64_t* child_node =
         FindOrNull(resource_to_nodeid_map_,
-                   ResourceIDFromString(child_iter->resource_desc().uuid()));
+                   ResourceIDFromString((*child_iter)->resource_desc().uuid()));
       if (!child_node)
         AddResourceTopology(*child_iter);
     }
@@ -781,12 +1039,12 @@ void FlowGraph::UpdateResourceNode(
 }
 
 void FlowGraph::UpdateResourceTopology(
-    const ResourceTopologyNodeDescriptor& resource_tree) {
+    ResourceTopologyNodeDescriptor* resource_tree) {
   // N.B.: This only considers ADDITION of resources currently; if resources
   // are removed from the topology (e.g. due to a failure), they won't
   // disappear via this method.
   BFSTraverseResourceProtobufTreeReturnRTND(
-      &resource_tree,
+      resource_tree,
       boost::bind(&FlowGraph::UpdateResourceNode, this, _1));
   uint32_t new_num_leaves = 0;
   for (unordered_map<uint64_t, FlowGraphArc*>::const_iterator it =
@@ -802,11 +1060,35 @@ void FlowGraph::UpdateResourceTopology(
 
 void FlowGraph::ResetChanges() {
   for (vector<DIMACSChange*>::iterator it = graph_changes_.begin();
-       it != graph_changes_.end(); ++it) {
-    delete *it;
+       it != graph_changes_.end(); ) {
+    vector<DIMACSChange*>::iterator it_tmp = it;
+    ++it;
+    delete *it_tmp;
   }
   graph_changes_.clear();
   ids_created_.clear();
+}
+
+void FlowGraph::ComputeTopologyStatistics(
+    FlowGraphNode* node,
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather) {
+  queue<FlowGraphNode*> to_visit;
+  set<FlowGraphNode*> processed;
+  to_visit.push(node);
+  processed.insert(node);
+  while (!to_visit.empty()) {
+    FlowGraphNode* cur_node = to_visit.front();
+    to_visit.pop();
+    for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+           cur_node->incoming_arc_map_.begin();
+         it != cur_node->incoming_arc_map_.end(); ++it) {
+      it->second->src_node_ = gather(it->second->src_node_, cur_node);
+      if (processed.find(it->second->src_node_) == processed.end()) {
+        to_visit.push(it->second->src_node_);
+        processed.insert(it->second->src_node_);
+      }
+    }
+  }
 }
 
 }  // namespace firmament

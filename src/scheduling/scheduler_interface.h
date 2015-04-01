@@ -28,7 +28,7 @@ class SchedulerInterface : public PrintableInterface {
   // Constructor.
   SchedulerInterface(shared_ptr<JobMap_t> job_map,
                      shared_ptr<ResourceMap_t> resource_map,
-                     const ResourceTopologyNodeDescriptor& resource_topology,
+                     ResourceTopologyNodeDescriptor* resource_topology,
                      shared_ptr<ObjectStoreInterface> object_store,
                      shared_ptr<TaskMap_t> task_map)
       : job_map_(job_map),  resource_map_(resource_map), task_map_(task_map),
@@ -106,7 +106,7 @@ class SchedulerInterface : public PrintableInterface {
   shared_ptr<TaskMap_t> task_map_;
   shared_ptr<store::ObjectStoreInterface> object_store_;
   // Resource topology (including any registered remote resources)
-  const ResourceTopologyNodeDescriptor& resource_topology_;
+  ResourceTopologyNodeDescriptor* resource_topology_;
 };
 
 }  // namespace scheduler

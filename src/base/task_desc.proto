@@ -1,6 +1,7 @@
 package firmament;
 
 import "base/reference_desc.proto";
+import "base/resource_request.proto";
 
 message TaskDescriptor {
   enum TaskState {
@@ -14,6 +15,13 @@ message TaskDescriptor {
     ABORTED = 7;
     DELEGATED = 8;
     UNKNOWN = 9;
+  }
+
+  enum TaskType {
+    SHEEP = 0;
+    RABBIT = 1;
+    DEVIL = 2;
+    TURTLE = 3;
   }
 
   required uint64 uid = 1;
@@ -47,6 +55,10 @@ message TaskDescriptor {
   /* TODO(malte): move these to sub-messages */
   optional uint64 port = 21;
   optional uint64 input_size = 22;
+  /* TaskLib related stuff */
   optional bool inject_task_lib = 23 [default = false];
+  /* Task resource request and priority */
+  optional ResourceRequest resource_request = 24;
+  optional uint32 priority = 25;
+  optional TaskType task_type = 26;
 }
-

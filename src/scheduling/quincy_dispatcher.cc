@@ -249,7 +249,8 @@ namespace scheduler {
 
   void QuincyDispatcher::NodeBindingToSchedulingDelta(
       const FlowGraphNode& src, const FlowGraphNode& dst,
-      map<TaskID_t, ResourceID_t>* task_bindings, SchedulingDelta* delta) {
+       unordered_map<TaskID_t, ResourceID_t>* task_bindings,
+			 SchedulingDelta* delta) {
     // Figure out what type of scheduling change this is
     // Source must be a task node as this point
     CHECK(src.type_.type() == FlowNodeType::SCHEDULED_TASK ||
@@ -431,7 +432,7 @@ namespace scheduler {
 			vector<map<uint64_t, uint64_t> >* extracted_flow =
 				ReadFlowGraph(from_solver_, num_nodes);
 			task_mappings = GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
-																	flow_graph_->sink_node().id_);
+																	flow_graph_->sink_node()->id_);
 			delete extracted_flow;
 		}
 

@@ -18,10 +18,11 @@ extern "C" {
 #include "base/common.h"
 #include "base/types.h"
 #include "engine/task_health_checker.h"
-#include "misc/equivclasses.h"
 #include "misc/utils.h"
 #include "misc/map-util.h"
 
+DEFINE_bool(pin_tasks_to_cores, true,
+            "Pin tasks to their allocated CPU core when executing.");
 DEFINE_bool(debug_tasks, false,
             "Run tasks through a debugger (gdb).");
 DEFINE_uint64(debug_interactively, 0,
@@ -68,12 +69,16 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
   CreateDirectories();
 }
 
-char* LocalExecutor::AddPerfMonitoringToCommandLine(vector<char*>* argv) {
+char* LocalExecutor::AddPerfMonitoringToCommandLine(
+    const unordered_map<string, string>& env,
+    vector<char*>* argv) {
   // Define the string prefix for performance monitoring
   //string perf_string = "perf stat -x, -o ";
   VLOG(2) << "Enabling performance monitoring...";
   string perf_string = "perf stat -o ";
-  perf_string += getenv("PERF_FNAME");
+  const string* perf_fname = FindOrNull(env, "PERF_FNAME");
+  CHECK_NOTNULL(perf_fname);
+  perf_string += *perf_fname;
   perf_string += " -e instructions,cycles,cache-misses,cache-references -- ";
   return TokenizeIntoArgv(perf_string, argv);
 }
@@ -95,8 +100,17 @@ bool LocalExecutor::CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks) {
 
 void LocalExecutor::CleanUpCompletedTask(const TaskDescriptor& td) {
   // Drop task handler thread
-  boost::unique_lock<boost::shared_mutex> lock(handler_map_mutex_);
+  boost::unique_lock<boost::shared_mutex> handler_lock(handler_map_mutex_);
+  boost::unique_lock<boost::shared_mutex> pid_lock(pid_map_mutex_);
   task_handler_threads_.erase(td.uid());
+  // Issue a kill to make double-sure that the task has finished
+  // XXX(malte): this is a hack!
+  pid_t* pid = FindOrNull(task_pids_, td.uid());
+  CHECK_NOTNULL(pid);
+  string command = "/bin/kill -9 " + to_string(*pid);
+  int64_t ret = system(command.c_str());
+  LOG(INFO) << command << " returned " << ret;
+  task_pids_.erase(td.uid());
 }
 
 
@@ -210,24 +224,31 @@ void LocalExecutor::RunTask(TaskDescriptor* td,
   boost::unique_lock<boost::shared_mutex> handler_lock(handler_map_mutex_);
   boost::thread* task_thread = new boost::thread(
       boost::bind(&LocalExecutor::_RunTask, this, td, firmament_binary));
-  InsertIfNotPresent(&task_handler_threads_, td->uid(), task_thread);
+  CHECK(InsertIfNotPresent(&task_handler_threads_, td->uid(), task_thread));
   exec_condvar_.wait(exec_lock);
 }
 
 bool LocalExecutor::_RunTask(TaskDescriptor* td,
                              bool firmament_binary) {
-  SetUpEnvironmentForTask(*td);
   // Convert arguments as specified in TD into a string vector that we can munge
   // into an actual argv[].
-  vector<string> args = pb_to_vector(td->args());
+  vector<string> args;
+  unordered_map<string, string> env;
+  // Arguments
+  if (td->args_size() > 0) {
+    args = pb_to_vector(td->args());
+  }
+  // Environment variables
+  SetUpEnvironmentForTask(*td, &env);
   // Path for task log files (stdout/stderr)
-  string tasklog = FLAGS_task_log_dir + "/" + to_string(td->uid());
+  string tasklog = FLAGS_task_log_dir + "/" + td->job_id() +
+                   "-" + to_string(td->uid());
   // TODO(malte): This is somewhat hackish
   // arguments: binary (path + name), arguments, performance monitoring on/off,
   // debugging flags, is this a Firmament task binary? (on/off; will cause
   // default arugments to be passed)
   bool res = (RunProcessSync(
-      td->binary(), args, FLAGS_perf_monitoring,
+      td->uid(), td->binary(), args, env, FLAGS_perf_monitoring,
       (FLAGS_debug_tasks || ((FLAGS_debug_interactively != 0) &&
                              (td->uid() == FLAGS_debug_interactively))),
       firmament_binary, tasklog) == 0);
@@ -235,8 +256,10 @@ bool LocalExecutor::_RunTask(TaskDescriptor* td,
   return res;
 }
 
-int32_t LocalExecutor::RunProcessAsync(const string& cmdline,
+int32_t LocalExecutor::RunProcessAsync(TaskID_t task_id,
+                                       const string& cmdline,
                                        vector<string> args,
+                                       unordered_map<string, string> env,
                                        bool perf_monitoring,
                                        bool debug,
                                        bool default_args,
@@ -244,15 +267,17 @@ int32_t LocalExecutor::RunProcessAsync(const string& cmdline,
   // TODO(malte): We lose the thread reference here, so we can never join this
   // thread. Need to return or store if we ever need it for anythign again.
   boost::thread async_process_thread(
-      boost::bind(&LocalExecutor::RunProcessSync, this, cmdline, args,
-                  perf_monitoring, debug, default_args, tasklog));
+      boost::bind(&LocalExecutor::RunProcessSync, this, task_id, cmdline, args,
+                  env, perf_monitoring, debug, default_args, tasklog));
   // We hard-code the return to zero here; maybe should return a thread
   // reference instead.
   return 0;
 }
 
-int32_t LocalExecutor::RunProcessSync(const string& cmdline,
+int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
+                                      const string& cmdline,
                                       vector<string> args,
+                                      unordered_map<string, string> env,
                                       bool perf_monitoring,
                                       bool debug,
                                       bool default_args,
@@ -268,6 +293,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     PLOG(ERROR) << "Failed to create pipe from task.";
   }*/
   vector<char*> argv;
+  vector<char*> envv;
   // Get paths for task logs
   string tasklog_stdout = tasklog + "-stdout";
   string tasklog_stderr = tasklog + "-stderr";
@@ -282,7 +308,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     // performance monitoring is active, so reserve extra space for the
     // "perf" invocation prefix.
     argv.reserve(args.size() + (default_args ? 11 : 10));
-    perf_prefix = AddPerfMonitoringToCommandLine(&argv);
+    perf_prefix = AddPerfMonitoringToCommandLine(env, &argv);
   } else {
     // no performance monitoring, so we only need to reserve space for the
     // default and NULL args
@@ -294,18 +320,26 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
         (char*)"--tryfromenv=coordinator_uri,resource_id,task_id");  // NOLINT
   for (uint32_t i = 0; i < args.size(); ++i) {
     // N.B.: This casts away the const qualifier on the c_str() result.
-    // This is joyfully unsafe, of course.
+    // Unsafe, but okay since args lives beyond the execvpe call.
     VLOG(1) << "Adding extra argument \"" << args[i] << "\"";
     argv.push_back((char*)(args[i].c_str()));  // NOLINT
   }
-  // The last argument to execvp is always NULL.
+  vector<string> env_strings(env.size());
+  uint64_t i = 0;
+  for (unordered_map<string, string>::const_iterator it = env.begin();
+       it != env.end();
+       ++it) {
+    env_strings[i] = it->first + "=" + it->second;
+    // N.B.: This casts away the const qualifier on the c_str() result.
+    // Unsafe, but okay since env_str lives beyond the execvpe call.
+    envv.push_back((char*)(env_strings[i].c_str()));  // NOLINT
+    ++i;
+  }
+  // The last item in the argv and envp for execvpe is always NULL.
   argv.push_back(NULL);
+  envv.push_back(NULL);
   // Print the whole command line
   string full_cmd_line;
-  if (!default_args) {
-    setenv("LD_LIBRARY_PATH", FLAGS_task_lib_dir.c_str(), 1);
-    setenv("LD_PRELOAD", "task_lib_inject.so", 1);
-  }
   for (vector<char*>::const_iterator arg_iter = argv.begin();
        arg_iter != argv.end();
        ++arg_iter) {
@@ -314,10 +348,10 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       full_cmd_line += " ";
     }
   }
-  LOG(INFO) << "COMMAND LINE for task " << getenv("FLAGS_task_id") << ": "
+  LOG(INFO) << "COMMAND LINE for task " << task_id << ": "
             << full_cmd_line;
   VLOG(1) << "About to fork child process for task execution of "
-          << getenv("FLAGS_task_id") << "!";
+          << task_id << "!";
   pid = fork();
   switch (pid) {
     case -1:
@@ -336,7 +370,7 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
       close(stdout_fd);
       close(stderr_fd);
       // Run the task binary
-      execvp(argv[0], &argv[0]);
+      execvpe(argv[0], &argv[0], &envv[0]);
       // execl only returns if there was an error
       PLOG(ERROR) << "execvp failed for task command '" << full_cmd_line << "'";
       //ReportTaskExecutionFailure();
@@ -345,8 +379,12 @@ int32_t LocalExecutor::RunProcessSync(const string& cmdline,
     default:
       // Parent
       VLOG(1) << "Task process with PID " << pid << " created.";
+      {
+        boost::unique_lock<boost::shared_mutex> handler_lock(pid_map_mutex_);
+        CHECK(InsertIfNotPresent(&task_pids_, task_id, pid));
+      }
       // Pin the task to the appropriate resource
-      if (topology_manager_)
+      if (topology_manager_ && FLAGS_pin_tasks_to_cores)
         topology_manager_->BindPIDToResource(pid, local_resource_id_);
       // Notify any other threads waiting to execute processes (?)
       exec_condvar_.notify_one();
@@ -378,7 +416,9 @@ string LocalExecutor::PerfDataFileName(const TaskDescriptor& td) {
   return fname;
 }
 
-void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
+void LocalExecutor::SetUpEnvironmentForTask(
+    const TaskDescriptor& td,
+    unordered_map<string, string>* env) {
   if (coordinator_uri_.empty())
     LOG(WARNING) << "Executor does not have the coordinator_uri_ field set. "
                  << "The task will be unable to communicate with the "
@@ -388,20 +428,26 @@ void LocalExecutor::SetUpEnvironmentForTask(const TaskDescriptor& td) {
                     to_string(td.uid());
   mkdir(data_dir.c_str(), 0700);
   // Set environment variables
-  vector<EnvPair_t> env;
-  env.push_back(EnvPair_t("FLAGS_task_id", to_string(td.uid())));
-  env.push_back(EnvPair_t("PERF_FNAME", PerfDataFileName(td)));
-  env.push_back(EnvPair_t("FLAGS_coordinator_uri", coordinator_uri_));
-  env.push_back(EnvPair_t("FLAGS_resource_id", to_string(local_resource_id_)));
-  env.push_back(EnvPair_t("FLAGS_heartbeat_interval",
-                          to_string(heartbeat_interval_)));
-  env.push_back(EnvPair_t("FLAGS_task_data_dir", data_dir));
-  VLOG(2) << "Task's environment variables:";
-  for (vector<EnvPair_t>::const_iterator env_iter = env.begin();
-       env_iter != env.end();
+  // N.B.: we pass a completely scrubbed environment to the task, so we need to
+  // define even things like PATH that would normally be inherited.
+  InsertIfNotPresent(env, "PATH",
+      "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
+  InsertIfNotPresent(env, "FLAGS_task_id", to_string(td.uid()));
+  InsertIfNotPresent(env, "PERF_FNAME", PerfDataFileName(td));
+  InsertIfNotPresent(env, "FLAGS_coordinator_uri", coordinator_uri_);
+  InsertIfNotPresent(env, "FLAGS_resource_id", to_string(local_resource_id_));
+  InsertIfNotPresent(env, "FLAGS_heartbeat_interval",
+                     to_string(heartbeat_interval_));
+  InsertIfNotPresent(env, "FLAGS_task_data_dir", data_dir);
+  if (td.inject_task_lib()) {
+    InsertIfNotPresent(env, "LD_LIBRARY_PATH", FLAGS_task_lib_dir);
+    InsertIfNotPresent(env, "LD_PRELOAD", "task_lib_inject.so");
+  }
+  VLOG(1) << "Task's environment variables:";
+  for (unordered_map<string, string>::const_iterator env_iter = env->begin();
+       env_iter != env->end();
        ++env_iter) {
-    VLOG(2) << "  " << env_iter->first << ": " << env_iter->second;
-    setenv(env_iter->first.c_str(), env_iter->second.c_str(), 1);
+    VLOG(1) << "  " << env_iter->first << ": " << env_iter->second;
   }
 }
 

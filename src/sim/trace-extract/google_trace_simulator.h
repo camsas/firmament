@@ -17,10 +17,13 @@
 #include "misc/map-util.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/knowledge_base_simulator.h"
-#include "scheduling/quincy_cost_model.h"
 #include "scheduling/quincy_dispatcher.h"
 #include "sim/trace-extract/event_desc.pb.h"
 
+DECLARE_string(flow_scheduling_solver);
+DECLARE_string(flow_scheduling_binary);
+DECLARE_bool(incremental_flow);
+DECLARE_bool(only_read_assignment_changes);
 DECLARE_bool(debug_flow_graph);
 DECLARE_bool(add_root_task_to_graph);
 DECLARE_bool(flow_scheduling_strict);
@@ -41,6 +44,18 @@ struct TaskIdentifierHasher {
   size_t operator()(const TaskIdentifier& key) const {
     return hash<uint64_t>()(key.job_id) * 17 + hash<uint64_t>()(key.task_index);
   }
+};
+
+struct TaskStats {
+  double avg_mean_cpu_usage;
+  double avg_canonical_mem_usage;
+  double avg_assigned_mem_usage;
+  double avg_unmapped_page_cache;
+  double avg_total_page_cache;
+  double avg_mean_disk_io_time;
+  double avg_mean_local_disk_used;
+  double avg_cpi;
+  double avg_mai;
 };
 
 class GoogleTraceSimulator {
@@ -71,6 +86,11 @@ class GoogleTraceSimulator {
       TaskIdentifier task_identifier,
       unordered_map<TaskIdentifier, uint64_t,
                     TaskIdentifierHasher>* task_runtime);
+
+  void AddTaskStats(
+      TaskIdentifier task_identifier,
+      unordered_map<TaskIdentifier, uint64_t,
+        TaskIdentifierHasher>* task_runtime);
 
   /**
    * Creates a new task for a job.
@@ -129,7 +149,9 @@ class GoogleTraceSimulator {
    */
   void ProcessTaskEvent(
       uint64_t cur_time,
-      const TaskIdentifier& task_identifier, uint64_t event_type);
+      const TaskIdentifier& task_identifier, uint64_t event_type,
+      unordered_map<TaskIdentifier, uint64_t,
+        TaskIdentifierHasher>* task_runtime);
 
   void RemoveMachine(uint64_t machine_id);
 
@@ -154,6 +176,18 @@ class GoogleTraceSimulator {
     unordered_map<TaskIdentifier, uint64_t,
       TaskIdentifierHasher>* task_runtime,
     multimap<uint64_t, uint64_t>* task_mappings);
+
+  // XXX(ionel): These methods are copied from quincy_scheduler. We copy them
+  // because we don't have access to the scheduler in the simulator.
+  FlowGraphNode* GatherWhareMCStats(FlowGraphNode* accumulator,
+                                    FlowGraphNode* other);
+  void AccumulateWhareMapStats(WhareMapStats* accumulator,
+                               WhareMapStats* other);
+  void PrintResourceStats(uint64_t id, WhareMapStats* wms) {
+    LOG(INFO) << "Node: " << id << " " << wms->num_devils() << " "
+              << wms->num_rabbits() << " " << wms->num_sheep() << " "
+              << wms->num_turtles();
+  }
 
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.
@@ -187,14 +221,17 @@ class GoogleTraceSimulator {
   shared_ptr<ResourceMap_t> resource_map_;
 
   // Map holding the ResourceID_t of every scheduled task.
-  map<TaskID_t, ResourceID_t> task_bindings_;
+  unordered_map<TaskID_t, ResourceID_t> task_bindings_;
 
   // Map holding the end runtime for every running task.
-  map<TaskID_t, uint64_t> task_id_to_end_time_;
+  unordered_map<TaskID_t, uint64_t> task_id_to_end_time_;
 
   // Map holding the task_id of the task running on the resource with res_id.
   unordered_map<ResourceID_t, TaskID_t,
       boost::hash<boost::uuids::uuid> > res_id_to_task_id_;
+
+  unordered_map<TaskIdentifier, TaskStats, TaskIdentifierHasher>
+      task_id_to_stats_;
 
   // The map storing the simulator events. Maps from timestamp to simulator
   // event.
@@ -207,7 +244,9 @@ class GoogleTraceSimulator {
   // The root node of the machine topology.
   ResourceTopologyNodeDescriptor rtn_root_;
 
-  FlowGraph* flow_graph_;
+  shared_ptr<FlowGraph> flow_graph_;
+
+  FlowSchedulingCostModelInterface* cost_model_;
 
   scheduler::QuincyDispatcher* quincy_dispatcher_;
 

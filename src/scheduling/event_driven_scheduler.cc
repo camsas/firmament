@@ -21,7 +21,7 @@
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
 
-#define TASK_FAIL_TIMEOUT 10000000ULL
+#define TASK_FAIL_TIMEOUT 60000000ULL
 
 namespace firmament {
 namespace scheduler {
@@ -34,7 +34,7 @@ using store::ObjectStoreInterface;
 EventDrivenScheduler::EventDrivenScheduler(
     shared_ptr<JobMap_t> job_map,
     shared_ptr<ResourceMap_t> resource_map,
-    const ResourceTopologyNodeDescriptor& resource_topology,
+    ResourceTopologyNodeDescriptor* resource_topology,
     shared_ptr<ObjectStoreInterface> object_store,
     shared_ptr<TaskMap_t> task_map,
     shared_ptr<TopologyManager> topo_mgr,
@@ -97,6 +97,7 @@ void EventDrivenScheduler::BindTaskToResource(
           << res_desc->uuid();
   // Mark resource as busy and record task binding
   res_desc->set_state(ResourceDescriptor::RESOURCE_BUSY);
+  res_desc->set_current_running_task(task_desc->uid());
   CHECK(InsertIfNotPresent(&task_bindings_, task_desc->uid(),
                            ResourceIDFromString(res_desc->uuid())));
   if (VLOG_IS_ON(2))
@@ -125,7 +126,7 @@ ResourceID_t* EventDrivenScheduler::BoundResourceForTask(TaskID_t task_id) {
 bool EventDrivenScheduler::UnbindResourceForTask(TaskID_t task_id) {
   ResourceID_t* rid = FindOrNull(task_bindings_, task_id);
   if (rid) {
-    return (task_bindings_.erase(task_id) == 1);
+    return task_bindings_.erase(task_id) == 1;
   } else {
     return false;
   }
@@ -147,8 +148,12 @@ void EventDrivenScheduler::CheckRunningTasksHealth() {
         CHECK_NOTNULL(td);
         if (td->state() != TaskDescriptor::COMPLETED &&
             td->last_heartbeat_time() <=
-            (GetCurrentTimestamp() - TASK_FAIL_TIMEOUT))
+            (GetCurrentTimestamp() - TASK_FAIL_TIMEOUT)) {
+          LOG(INFO) << "Task " << td->uid() << " has not reported heartbeats "
+                    << "for " << (TASK_FAIL_TIMEOUT / 1000000) << "s and its "
+                    << "handler thread has exited. Declaring it FAILED!";
           HandleTaskFailure(td);
+        }
       }
     }
   }
@@ -207,6 +212,7 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   ResourceStatus* res = FindPtrOrNull(*resource_map_, res_id_tmp);
   CHECK_NOTNULL(res);
   res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  res->mutable_descriptor()->clear_current_running_task();
   // Remove the task's resource binding (as it is no longer currently bound)
   CHECK(UnbindResourceForTask(td_ptr->uid()));
   // Record final report
@@ -283,6 +289,7 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   // point...
   ResourceStatus* res = FindPtrOrNull(*resource_map_, res_id_tmp);
   res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  res->mutable_descriptor()->clear_current_running_task();
   // Executor cleanup: drop the task from the health checker's list, etc.
   ExecutorInterface* executor = GetExecutorForTask(td_ptr->uid());
   CHECK_NOTNULL(executor);

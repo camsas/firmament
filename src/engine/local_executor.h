@@ -53,7 +53,6 @@ class LocalExecutor : public ExecutorInterface {
   }
 
  protected:
-  typedef pair<string, string> EnvPair_t;
   // Unit tests
   FRIEND_TEST(LocalExecutorTest, SimpleSyncProcessExecutionTest);
   FRIEND_TEST(LocalExecutorTest, SyncProcessExecutionWithArgsTest);
@@ -62,20 +61,25 @@ class LocalExecutor : public ExecutorInterface {
   FRIEND_TEST(LocalExecutorTest, SimpleTaskExecutionTest);
   FRIEND_TEST(LocalExecutorTest, TaskExecutionWithArgsTest);
   ResourceID_t local_resource_id_;
-  char* AddPerfMonitoringToCommandLine(vector<char*>* argv);
+  char* AddPerfMonitoringToCommandLine(const unordered_map<string, string>&,
+                                       vector<char*>* argv);
   char* AddDebuggingToCommandLine(vector<char*>* argv);
   void CleanUpCompletedTask(const TaskDescriptor& td);
   void CreateDirectories();
   void GetPerfDataFromLine(TaskFinalReport* report,
                            const string& line);
-  int32_t RunProcessAsync(const string& cmdline,
+  int32_t RunProcessAsync(TaskID_t task_id,
+                          const string& cmdline,
                           vector<string> args,
+                          unordered_map<string, string> env,
                           bool perf_monitoring,
                           bool debug,
                           bool default_args,
                           const string& tasklog);
-  int32_t RunProcessSync(const string& cmdline,
+  int32_t RunProcessSync(TaskID_t task_id,
+                         const string& cmdline,
                          vector<string> args,
+                         unordered_map<string, string> env,
                          bool perf_monitoring,
                          bool debug,
                          bool default_args,
@@ -84,7 +88,8 @@ class LocalExecutor : public ExecutorInterface {
                 bool firmament_binary);
   string PerfDataFileName(const TaskDescriptor& td);
   void ReadFromPipe(int fd);
-  void SetUpEnvironmentForTask(const TaskDescriptor& td);
+  void SetUpEnvironmentForTask(const TaskDescriptor& td,
+                               unordered_map<string, string>* env);
   char* TokenizeIntoArgv(const string& str, vector<char*>* argv);
   void WriteToPipe(int fd, void* data, size_t len);
   // This holds the currently configured URI of the coordinator for this
@@ -101,9 +106,11 @@ class LocalExecutor : public ExecutorInterface {
   uint64_t heartbeat_interval_;
   boost::mutex exec_mutex_;
   boost::shared_mutex handler_map_mutex_;
+  boost::shared_mutex pid_map_mutex_;
   boost::condition_variable exec_condvar_;
   // Map to each task's local handler thread
   unordered_map<TaskID_t, boost::thread*> task_handler_threads_;
+  unordered_map<TaskID_t, pid_t> task_pids_;
 };
 
 }  // namespace executor

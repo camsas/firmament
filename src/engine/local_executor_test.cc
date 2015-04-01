@@ -54,9 +54,10 @@ TEST_F(LocalExecutorTest, SimpleSyncProcessExecutionTest) {
   ResourceID_t rid;
   LocalExecutor le(rid, "");
   vector<string> empty_args;
+  unordered_map<string, string> empty_env;
   // We expect to get a return code of 0.
-  CHECK_EQ(le.RunProcessSync("/bin/ls", empty_args, false, false, false,
-                             "/dev/null"), 0);
+  CHECK_EQ(le.RunProcessSync(1, "/bin/ls", empty_args, empty_env, false, false,
+                             false, "/dev/null"), 0);
 }
 
 // Tests that we can synchronously execute a binary with arguments.
@@ -64,9 +65,10 @@ TEST_F(LocalExecutorTest, SyncProcessExecutionWithArgsTest) {
   ResourceID_t rid;
   LocalExecutor le(rid, "");
   vector<string> args;
+  unordered_map<string, string> env;
   args.push_back("-l");
   // We expect to get a return code of 0.
-  CHECK_EQ(le.RunProcessSync("/bin/ls", args, false, false, false,
+  CHECK_EQ(le.RunProcessSync(1, "/bin/ls", args, env, false, false, false,
                              "/dev/null"), 0);
 }
 
@@ -87,11 +89,12 @@ TEST_F(LocalExecutorTest, AsyncProcessExecutionWithArgsTest) {
   ResourceID_t rid;
   LocalExecutor le(rid, "");
   vector<string> args;
+  unordered_map<string, string> env;
   args.push_back("-l");
   // We expect to get a return code of 0; this is hard-coded and independent of
   // whether the process execution succeeds (the actual execution happens in a
   // newly spawned thread).
-  CHECK_EQ(le.RunProcessAsync("/bin/ls", args, false, false, false,
+  CHECK_EQ(le.RunProcessAsync(1, "/bin/ls", args, env, false, false, false,
                               "/dev/null"), 0);
 }
 
@@ -103,6 +106,7 @@ TEST_F(LocalExecutorTest, SimpleTaskExecutionTest) {
   TaskDescriptor* td = new TaskDescriptor;
   td->set_uid(1234ULL);
   td->set_binary("/bin/ls");
+  td->set_inject_task_lib(false);
   CHECK(le._RunTask(td, false));
 }
 
@@ -111,7 +115,9 @@ TEST_F(LocalExecutorTest, TaskExecutionWithArgsTest) {
   ResourceID_t rid;
   LocalExecutor le(rid, "");
   TaskDescriptor* td = new TaskDescriptor;
+  td->set_uid(1234ULL);
   td->set_binary("/bin/ls");
+  td->set_inject_task_lib(false);
   td->add_args("-l");
   CHECK(le._RunTask(td, false));
 }

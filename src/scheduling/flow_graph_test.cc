@@ -15,9 +15,9 @@
 #include "scheduling/dimacs_new_arc.h"
 #include "scheduling/dimacs_remove_node.h"
 #include "scheduling/flow_graph.h"
-#include "scheduling/trivial_cost_model.h"
+#include "scheduling/cost_models/trivial_cost_model.h"
 
-DECLARE_int32(num_pref_arcs);
+DECLARE_uint64(num_pref_arcs_task_to_res);
 
 namespace firmament {
 
@@ -56,24 +56,25 @@ class FlowGraphTest : public ::testing::Test {
     ResourceTopologyNodeDescriptor* rtn_c1 = rtn_root->add_children();
     string c1_uid = to_string(GenerateUUID());
     rtn_c1->mutable_resource_desc()->set_uuid(c1_uid);
-    rtn_c1->mutable_resource_desc()->set_parent(root_id);
+    rtn_c1->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
     rtn_c1->set_parent_id(root_id);
-    rtn_root->mutable_resource_desc()->add_children(c1_uid);
     ResourceTopologyNodeDescriptor* rtn_c2 = rtn_root->add_children();
     string c2_uid = to_string(GenerateUUID());
     rtn_c2->mutable_resource_desc()->set_uuid(c2_uid);
-    rtn_c2->mutable_resource_desc()->set_parent(root_id);
+    rtn_c2->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
     rtn_c2->set_parent_id(root_id);
-    rtn_root->mutable_resource_desc()->add_children(c2_uid);
   }
 };
 
 // Tests arc addition to node.
 TEST_F(FlowGraphTest, AddArcToNode) {
-  FlowGraph g(new TrivialCostModel());
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   uint64_t init_node_count = g.NumNodes();
-  FlowGraphNode* n0 = g.AddNodeInternal(g.next_id());
-  FlowGraphNode* n1 = g.AddNodeInternal(g.next_id());
+  FlowGraphNode* n0 = g.AddNodeInternal(g.NextId());
+  FlowGraphNode* n1 = g.AddNodeInternal(g.NextId());
   FlowGraphArc* arc = g.AddArcInternal(n0->id_, n1->id_);
   CHECK_EQ(g.NumNodes(), init_node_count + 2);
   CHECK_EQ(g.NumArcs(), 1);
@@ -81,10 +82,13 @@ TEST_F(FlowGraphTest, AddArcToNode) {
 }
 
 TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
-  FlowGraph g(new TrivialCostModel());
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;
@@ -93,6 +97,7 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   rt->set_state(TaskDescriptor::RUNNABLE);
   rt->set_uid(GenerateRootTaskID(test_job));
   rt->set_job_id(test_job.uuid());
+  CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
   uint32_t num_changes = g.graph_changes_.size();
   uint32_t num_ids = g.ids_created_.size();
   g.AddOrUpdateJobNodes(&test_job);
@@ -118,23 +123,25 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   CHECK_EQ(unsched_agg->arcs_->size(), 1);
   // Arc to unscheduled aggregator and to topology.
   CHECK_EQ(root_task->arcs_->size(), 2);
-  CHECK_EQ(equiv_class->arcs_->size(), 1 + FLAGS_num_pref_arcs);
+  CHECK_EQ(equiv_class->arcs_->size(), 1 + FLAGS_num_pref_arcs_task_to_res);
 }
 
 TEST_F(FlowGraphTest, AddResourceNode) {
-  FlowGraph g(new TrivialCostModel());
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
   string root_id = rtn_root.mutable_resource_desc()->uuid();
   uint32_t num_changes = g.graph_changes_.size();
   // Add a new core node.
   ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
   string core_uid = to_string(GenerateUUID());
   core_node->mutable_resource_desc()->set_uuid(core_uid);
-  core_node->mutable_resource_desc()->set_parent(root_id);
+  core_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   core_node->set_parent_id(root_id);
-  rtn_root.mutable_resource_desc()->add_children(core_uid);
   uint64_t sink_graph_id = g.ids_created_[0];
   uint64_t root_graph_id = g.ids_created_[1];
   g.AddResourceNode(core_node);
@@ -159,17 +166,16 @@ TEST_F(FlowGraphTest, AddResourceNode) {
   ResourceTopologyNodeDescriptor* memory_node = rtn_root.add_children();
   string memory_uid = to_string(GenerateUUID());
   memory_node->mutable_resource_desc()->set_uuid(memory_uid);
-  memory_node->mutable_resource_desc()->set_parent(root_id);
   memory_node->set_parent_id(root_id);
   ResourceTopologyNodeDescriptor* pu1_node = memory_node->add_children();
   string pu1_uid = to_string(GenerateUUID());
   pu1_node->mutable_resource_desc()->set_uuid(pu1_uid);
-  pu1_node->mutable_resource_desc()->set_parent(memory_uid);
+  pu1_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   pu1_node->set_parent_id(memory_uid);
   ResourceTopologyNodeDescriptor* pu2_node = memory_node->add_children();
   string pu2_uid = to_string(GenerateUUID());
   pu2_node->mutable_resource_desc()->set_uuid(pu2_uid);
-  pu2_node->mutable_resource_desc()->set_parent(memory_uid);
+  pu2_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   pu2_node->set_parent_id(memory_uid);
   // Add non-leaf node.
   g.AddResourceNode(memory_node);
@@ -183,10 +189,13 @@ TEST_F(FlowGraphTest, AddResourceNode) {
 
 // Change an arc and check it gets added to changes.
 TEST_F(FlowGraphTest, ChangeArc) {
-  FlowGraph g(new TrivialCostModel());
-  uint64_t n0_id = g.next_id();
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
+  uint64_t n0_id = g.NextId();
   FlowGraphNode* n0 = g.AddNodeInternal(n0_id);
-  uint64_t n1_id = g.next_id();
+  uint64_t n1_id = g.NextId();
   FlowGraphNode* n1 = g.AddNodeInternal(n1_id);
   FlowGraphArc* arc = g.AddArcInternal(n0->id_, n1->id_);
   uint32_t num_changes = g.graph_changes_.size();
@@ -219,68 +228,39 @@ TEST_F(FlowGraphTest, ChangeArc) {
 }
 
 TEST_F(FlowGraphTest, DeleteResourceNode) {
-  FlowGraph g(new TrivialCostModel());
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
   string root_id = rtn_root.mutable_resource_desc()->uuid();
   // Add a new core node.
   ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
   string core_uid = to_string(GenerateUUID());
   core_node->mutable_resource_desc()->set_uuid(core_uid);
-  core_node->mutable_resource_desc()->set_parent(root_id);
+  core_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   core_node->set_parent_id(root_id);
-  rtn_root.mutable_resource_desc()->add_children(core_uid);
   g.AddResourceNode(core_node);
   uint64_t new_core_graph_id = g.ids_created_[g.ids_created_.size() - 1];
   uint32_t num_changes = g.graph_changes_.size();
   // Delete the core node.
-  g.DeleteResourceNode(
-       ResourceIDFromString(core_node->resource_desc().uuid()));
+  g.DeleteResourceNode(g.NodeForResourceID(
+       ResourceIDFromString(core_node->resource_desc().uuid())));
   CHECK_EQ(g.graph_changes_.size(), num_changes + 1);
   DIMACSRemoveNode* rem_node =
     static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes]);
   CHECK_EQ(rem_node->node_id_, new_core_graph_id);
 }
 
-TEST_F(FlowGraphTest, DeleteNodesForJob) {
-  FlowGraph g(new TrivialCostModel());
-  ResourceTopologyNodeDescriptor rtn_root;
-  CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
-  // Now generate a job and add it
-  JobID_t jid = GenerateJobID();
-  JobDescriptor test_job;
-  test_job.set_uuid(to_string(jid));
-  TaskDescriptor* rt = test_job.mutable_root_task();
-  rt->set_state(TaskDescriptor::RUNNABLE);
-  rt->set_uid(GenerateRootTaskID(test_job));
-  rt->set_job_id(test_job.uuid());
-  uint32_t num_changes = g.graph_changes_.size();
-  uint32_t num_ids = g.ids_created_.size();
-  g.AddOrUpdateJobNodes(&test_job);
-  CHECK_EQ(g.graph_changes_.size(), num_changes + 4);
-  uint64_t unsched_agg_graph_id = g.ids_created_[num_ids];
-  uint64_t root_task_graph_id = g.ids_created_[num_ids + 1];
-  uint64_t equiv_graph_id = g.ids_created_[num_ids + 2];
-  // Now delete all the nodes for the given job.
-  g.DeleteNodesForJob(jid);
-  CHECK_EQ(g.graph_changes_.size(), num_changes + 7);
-  DIMACSRemoveNode* rm_task =
-    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 4]);
-  DIMACSRemoveNode* rm_unsched =
-    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 5]);
-  DIMACSRemoveNode* rm_equiv =
-    static_cast<DIMACSRemoveNode*>(g.graph_changes_[num_changes + 6]);
-  CHECK_EQ(rm_task->node_id_, root_task_graph_id);
-  CHECK_EQ(rm_unsched->node_id_, unsched_agg_graph_id);
-  CHECK_EQ(rm_equiv->node_id_, equiv_graph_id);
-}
-
 TEST_F(FlowGraphTest, ResetChanges) {
-  FlowGraph g(new TrivialCostModel());
-  FlowGraphNode* n0 = g.AddNodeInternal(g.next_id());
-  FlowGraphNode* n1 = g.AddNodeInternal(g.next_id());
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
+  FlowGraphNode* n0 = g.AddNodeInternal(g.NextId());
+  FlowGraphNode* n1 = g.AddNodeInternal(g.NextId());
   g.AddArcInternal(n0->id_, n1->id_);
   CHECK_EQ(g.graph_changes_.size(), 1);
   g.ResetChanges();
@@ -289,18 +269,24 @@ TEST_F(FlowGraphTest, ResetChanges) {
 
 // Add simple resource topology to graph
 TEST_F(FlowGraphTest, SimpleResourceTopo) {
-  FlowGraph g(new TrivialCostModel());
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
 }
 
 // Test correct increment/decrement of unscheduled aggregator capacities.
 TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
-  FlowGraph g(new TrivialCostModel());
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;
@@ -309,6 +295,7 @@ TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
   rt->set_state(TaskDescriptor::RUNNABLE);
   rt->set_uid(GenerateRootTaskID(test_job));
   rt->set_job_id(test_job.uuid());
+  CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
   g.AddOrUpdateJobNodes(&test_job);
   // Grab the unscheduled aggregator for the new job
   uint64_t* unsched_agg_node_id = FindOrNull(g.job_unsched_to_node_id_, jid);

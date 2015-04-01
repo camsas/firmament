@@ -226,12 +226,13 @@ class Coordinator : public Node,
   }
 
   void InformStorageEngineNewResource(ResourceDescriptor* rd);
+  bool KillRunningJob(JobID_t job_id);
   bool KillRunningTask(TaskID_t task_id,
                        TaskKillMessage::TaskKillReason reason);
 
  protected:
   void AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id);
-  void AddResource(ResourceDescriptor* resource_desc,
+  void AddResource(ResourceTopologyNodeDescriptor* rtnd,
                    const string& endpoint_uri,
                    bool local);
   bool RegisterWithCoordinator(StreamSocketsChannel<BaseMessage>* chan);

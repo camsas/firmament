@@ -6,22 +6,24 @@
 // task library instance, setting up watcher threads etc., this will delegate to
 // the task's Run() method.
 
+#include <sys/prctl.h>
+#include <cstdlib>
+
 #include "base/common.h"
 #include "engine/task_lib.h"
-#include <cstdlib>
 
 //DECLARE_string(coordinator_uri);
 DECLARE_string(resource_id);
-DECLARE_string(cache_name);
 extern char **environ;
 
 using namespace firmament;  // NOLINT
 
-TaskLib *task_lib;
+TaskLib* task_lib_;
+char self_comm_[64];
 
 void TerminationCleanup() {
-  if (task_lib) {
-    task_lib->Stop(true);
+  if (task_lib_) {
+    task_lib_->Stop(true);
   }
 }
 
@@ -29,8 +31,6 @@ void LaunchTasklib() {
   /* Sets up and runs a TaskLib monitor in the current thread. */
   // Read these important variables from the environment.
   sleep(1);
-
-  FLAGS_v = 1;
 
   string sargs = "--logtostderr";
   string progargs = "task_lib";
@@ -42,8 +42,11 @@ void LaunchTasklib() {
   argv[1] = const_cast<char*>(sargs.c_str());
     firmament::common::InitFirmament(2, argv);
 
-  task_lib = new TaskLib();
-  task_lib->RunMonitor(task_thread_id);
+  // Set process/thread name for debugging
+  prctl(PR_SET_NAME, "TaskLibMonitor", 0, 0, 0);
+
+  task_lib_ = new TaskLib();
+  task_lib_->RunMonitor(task_thread_id);
 }
 
 __attribute__((constructor)) static void task_lib_main() {
@@ -53,6 +56,11 @@ __attribute__((constructor)) static void task_lib_main() {
   the main program continue execution in the current thread.
   */
 
+  // Grab the current process's name via procfs
+  FILE* comm_fd = fopen("/proc/self/comm", "r");
+  fgets(self_comm_, 64, comm_fd);
+  fclose(comm_fd);
+
   // Unset LD_PRELOAD to avoid us from starting launching monitors in
   // child processes, unless we're in a wrapper
   setenv("LD_PRELOAD", "", 1);
@@ -60,6 +68,6 @@ __attribute__((constructor)) static void task_lib_main() {
   // Cleanup task lib before terminating the process.
   atexit(TerminationCleanup);
 
-  LOG(INFO) << "Starting tasklib monitor thread\n";
+  LOG(INFO) << "Starting TaskLib monitor thread for " << self_comm_;
   boost::thread t1(&LaunchTasklib);
 }

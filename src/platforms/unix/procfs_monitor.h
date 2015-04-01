@@ -101,16 +101,20 @@ class ProcFSMonitor {
   uint64_t polling_frequency_;
   uint64_t ticks_per_sec_;
   uint32_t page_size_;
+  void AddStatsForPID(pid_t pid, ProcessStatistics_t* stats);
+  void AddSchedStatsForPID(pid_t pid, ProcessStatistics_t* stats);
+  void AggregateStatsForPIDTree(pid_t pid, bool root,
+                                ProcessStatistics_t* stats);
   // Find a line matching the regular expression provided
   vector<string>* FindMatchingLine(const string& regexp, const string& data);
-  void ProcessPIDStat(pid_t pid, ProcessStatistics_t* stats);
-  void ProcessPIDSchedStat(pid_t pid, ProcessStatistics_t* stats);
+  void GetStatsForPID(pid_t pid, ProcessStatistics_t* stats);
   inline void readone(FILE* input, uint64_t *x) { fscanf(input, "%ju ", x); }
   inline void readunsigned(FILE* input, uint64_t *x) {
     fscanf(input, "%ju ", x);
   }
-  inline void readstr(FILE* input, char *x) {  fscanf(input, "%s ", x);}
-  inline void readchar(FILE* input, char *x) {  fscanf(input, "%c ", x);}
+  inline void readstr(FILE* input, char *x) {  fscanf(input, "%s ", x); }
+  inline void readchar(FILE* input, char *x) {  fscanf(input, "%c ", x); }
+  inline void skip(FILE* input, int64_t num) {  fseek(input, num, SEEK_CUR); }
 };
 
 }  // namespace platform_unix

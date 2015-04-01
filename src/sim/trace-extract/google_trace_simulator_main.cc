@@ -12,8 +12,6 @@ DEFINE_string(trace_path, "", "Path where the trace files are.");
 int main(int argc, char *argv[]) {
   VLOG(1) << "Calling common::InitFirmament";
   common::InitFirmament(argc, argv);
-  FLAGS_logtostderr = true;
-  FLAGS_stderrthreshold = 0;
 
   sim::GoogleTraceSimulator gts(FLAGS_trace_path);
 

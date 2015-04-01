@@ -131,6 +131,8 @@ $(function() {
 
 </script>
 
+<!-- should be in header, but works here too -->
+<meta http-equiv="refresh" content="60" />
 
 <h1>Task {{TASK_ID}}</h1>
 
@@ -144,20 +146,41 @@ $(function() {
     <td>{{TASK_NAME}}</td>
   </tr>
   <tr>
-    <td>Binary</td>
-    <td>{{TASK_BINARY}}</td>
+    <td>Job</td>
+    <td>{{TASK_JOB_ID}} ({{TASK_JOB_NAME}})</td>
   </tr>
   <tr>
-    <td>Arguments</td>
-    <td>{{TASK_ARGS}}</td>
+    <td>Actions</td>
+    <td>
+      <a href="/task/?id={{TASK_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true" title="Terminate"></span></a>
+      <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/collectl/graphs/?from={{TASK_START_TIME_HR}}-{{TASK_FINISH_TIME_HR}}"><span class="glyphicon glyphicon-stats" title="Stats"></span></a>
+    </td>
+  </tr>
+  <tr>
+    <td>Command</td>
+    <td><pre class="pre-x-scroll" style="width: 60%;">{{TASK_BINARY}} {{TASK_ARGS}}</pre></td>
   </tr>
   <tr>
     <td>Equivalence classes</td>
-    <td>{{TASK_TEC}}</td>
+    <td>
+      <ul>
+        {{#TASK_TECS}}
+        <li><a href="/tec/?id={{TASK_TEC}}">{{TASK_TEC}}</a></li>
+        {{/TASK_TECS}}
+      </ul>
+    </td>
   </tr>
   <tr>
     <td>Status</td>
     <td>{{TASK_STATUS}}</td>
+  </tr>
+  <tr>
+    <td>Timestamps</td>
+    <td>
+       Submitted: <abbr class="timeago" title="{{TASK_SUBMIT_TIME}}">{{TASK_SUBMIT_TIME}}</abbr><br />
+       Scheduled: <abbr class="timeago" title="{{TASK_START_TIME}}">{{TASK_START_TIME}}</abbr><br />
+       Finished: <abbr class="timeago" title="{{TASK_FINISH_TIME}}">{{TASK_FINISH_TIME}}</abbr><br />
+    </td>
   </tr>
   <tr>
     <td>Last heartbeat</td>
@@ -207,12 +230,6 @@ $(function() {
     <td>
       <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/tasklog/?id={{TASK_ID}}&a=1">stdout</a> &ndash;
       <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/tasklog/?id={{TASK_ID}}&a=2">stderr</a>
-    </td>
-  </tr>
-  <tr>
-    <td>Actions</td>
-    <td>
-      <a href="/task/?id={{TASK_ID}}&a=kill">Terminate</a>
     </td>
   </tr>
   <tr>

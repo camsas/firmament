@@ -36,7 +36,7 @@ class QuincyScheduler : public EventDrivenScheduler {
  public:
   QuincyScheduler(shared_ptr<JobMap_t> job_map,
                   shared_ptr<ResourceMap_t> resource_map,
-                  const ResourceTopologyNodeDescriptor& resource_topology,
+                  ResourceTopologyNodeDescriptor* resource_topology,
                   shared_ptr<ObjectStoreInterface> object_store,
                   shared_ptr<TaskMap_t> task_map,
                   KnowledgeBase* kb,
@@ -46,9 +46,13 @@ class QuincyScheduler : public EventDrivenScheduler {
                   const string& coordinator_uri,
                   const SchedulingParameters& params);
   ~QuincyScheduler();
+  void DeregisterResource(ResourceID_t res_id);
   void HandleJobCompletion(JobID_t job_id);
   void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
+  void HandleTaskFailure(TaskDescriptor* td_ptr);
+  void KillRunningTask(TaskID_t task_id,
+                       TaskKillMessage::TaskKillReason reason);
   virtual void RegisterResource(ResourceID_t res_id, bool local);
   uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
@@ -72,9 +76,8 @@ class QuincyScheduler : public EventDrivenScheduler {
   void RegisterRemoteResource(ResourceID_t res_id);
   uint64_t RunSchedulingIteration();
   void UpdateResourceTopology(
-      const ResourceTopologyNodeDescriptor& resource_tree);
+      ResourceTopologyNodeDescriptor* resource_tree);
 
-  map<TaskID_t, ResourceID_t> task_bindings_;
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
   // Store a pointer to an external knowledge base.
@@ -85,6 +88,9 @@ class QuincyScheduler : public EventDrivenScheduler {
   SchedulingParameters parameters_;
   // The dispatcher runs different flow solvers.
   QuincyDispatcher* quincy_dispatcher_;
+  FlowSchedulingCostModelInterface* cost_model_;
+  // Set containing the resource ids of the PUs.
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
 };
 
 }  // namespace scheduler

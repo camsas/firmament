@@ -50,7 +50,7 @@ class SimpleSchedulerTest : public ::testing::Test {
     res_map_->clear();
     job_map_->clear();
     obj_store_->Flush();
-    sched_.reset(new SimpleScheduler(job_map_, res_map_, res_topo_,
+    sched_.reset(new SimpleScheduler(job_map_, res_map_, &res_topo_,
                                      obj_store_, task_map_,
                                      shared_ptr<TopologyManager>(), NULL,
                                      GenerateUUID(), ""));

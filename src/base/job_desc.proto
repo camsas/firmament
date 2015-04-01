@@ -15,7 +15,7 @@ message JobDescriptor {
     RUNNING = 2;
     COMPLETED = 3;
     FAILED = 4;
-    CANCELLED = 5;
+    ABORTED = 5;
     UNKNOWN = 6;
   }
 

@@ -38,11 +38,12 @@ bool RemoteExecutor::CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks) {
 
 void RemoteExecutor::HandleTaskCompletion(TaskDescriptor* td,
                                           TaskFinalReport* report) {
-  VLOG(1) << "Remote task completion is currently a no-op!";
+  uint64_t end_time = GetCurrentTimestamp();
+  td->set_finish_time(end_time);
 }
 
 void RemoteExecutor::HandleTaskFailure(TaskDescriptor* td) {
-  VLOG(1) << "Remote task failure handler is currently a no-op!";
+  td->set_finish_time(GetCurrentTimestamp());
 }
 
 void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {

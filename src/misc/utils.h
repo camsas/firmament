@@ -55,6 +55,8 @@ DataObjectID_t GenerateDataObjectID(TaskID_t producing_task,
 TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task, uint64_t child_num);
+size_t HashJobID(JobID_t job_id);
+size_t HashJobID(const TaskDescriptor& td);
 // Utility functions to parse various types from strings.
 DataObjectID_t DataObjectIDFromString(const string& str);
 DataObjectID_t DataObjectIDFromProtobuf(const string& str);
@@ -68,6 +70,8 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
 int32_t WaitForFinish(pid_t pid);
 
 uint8_t* SHA256Hash(uint8_t* bytes, uint64_t len);
+
+string CoarseTimestampToHumanReadble(const time_t rawtime);
 
 set<DataObjectID_t*> DataObjectIDsFromProtobuf(
     const RepeatedPtrField<string>& pb_field);

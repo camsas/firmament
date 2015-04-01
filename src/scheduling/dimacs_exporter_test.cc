@@ -20,7 +20,7 @@
 #include "misc/string_utils.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
-#include "scheduling/trivial_cost_model.h"
+#include "scheduling/cost_models/trivial_cost_model.h"
 
 namespace firmament {
 
@@ -73,7 +73,10 @@ class DIMACSExporterTest : public ::testing::Test {
 // Tests allocation of an empty envelope and puts an integer into it (using
 // memcopy internally).
 TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
-  FlowGraph g(new TrivialCostModel());
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
   string root_id = to_string(GenerateUUID());
@@ -82,12 +85,12 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   string c1_uid = to_string(GenerateUUID());
   rtn_c1->mutable_resource_desc()->set_uuid(c1_uid);
   rtn_c1->set_parent_id(root_id);
-  rtn_root.mutable_resource_desc()->add_children(c1_uid);
+  rtn_c1->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   ResourceTopologyNodeDescriptor* rtn_c2 = rtn_root.add_children();
   string c2_uid = to_string(GenerateUUID());
   rtn_c2->mutable_resource_desc()->set_uuid(c2_uid);
   rtn_c2->set_parent_id(root_id);
-  rtn_root.mutable_resource_desc()->add_children(c2_uid);
+  rtn_c2->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   // Test job
   JobDescriptor jd;
   jd.set_uuid(to_string(GenerateJobID()));
@@ -97,13 +100,17 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   ct1->set_uid(GenerateTaskID(*rt));
   TaskDescriptor* ct2 = rt->add_spawned();
   ct2->set_uid(GenerateTaskID(*rt));
+  CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
+  CHECK(InsertIfNotPresent(task_map.get(), ct1->uid(), ct1));
+  CHECK(InsertIfNotPresent(task_map.get(), ct2->uid(), ct2));
   // Add resources and job to flow graph
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
   g.AddOrUpdateJobNodes(&jd);
   // Export
   DIMACSExporter exp;
   exp.Export(g);
   exp.Flush("test.dm");
+  delete leaf_res_ids;
 }
 
 // Runs the graph export for a single simulated graph (somewhat simplified),
@@ -112,7 +119,10 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
 //  - 100 jobs of 100 tasks each
 //  - 20 preference edges per task
 TEST_F(DIMACSExporterTest, LargeGraph) {
-  FlowGraph g(new TrivialCostModel());
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   // Test resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
   int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
@@ -134,7 +144,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   }
   VLOG(1) << "Added " << n << " machines.";
   // Add resources and job to flow graph
-  g.AddResourceTopology(rtn_root);
+  g.AddResourceTopology(&rtn_root);
   // Test job
   uint64_t j = 100;
   uint64_t t = 100;
@@ -150,11 +160,13 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
     rt->set_binary(bin);
     rt->set_uid(GenerateRootTaskID(jd));
     rt->set_job_id(jd.uuid());
+    CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
     for (uint64_t k = 1; k < t; ++k) {
       TaskDescriptor* ct = rt->add_spawned();
       ct->set_uid(GenerateTaskID(*rt));
       ct->set_state(TaskDescriptor::RUNNABLE);
       ct->set_job_id(jd.uuid());
+      CHECK(InsertIfNotPresent(task_map.get(), ct->uid(), ct));
     }
     g.AddOrUpdateJobNodes(&jd);
   }
@@ -180,6 +192,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   string outname = "/tmp/test.dm";
   VLOG(1) << "Output written to " << outname;
   exp.Flush(outname);
+  delete leaf_res_ids;
 }
 
 // Outputs simplified flow graphs for up to 8092 jobs (in power-of-two steps)
@@ -190,7 +203,10 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
 // Adapt as required :)
 TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
   for (uint64_t f = 1; f < 100; f *= 2) {
-    FlowGraph g(new TrivialCostModel());
+    shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+    unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+      new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+    FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
     // Test resource topology
     ResourceTopologyNodeDescriptor machine_tmpl;
     int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
@@ -212,7 +228,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     }
     VLOG(1) << "Added " << n << " machines.";
     // Add resources and job to flow graph
-    g.AddResourceTopology(rtn_root);
+    g.AddResourceTopology(&rtn_root);
     // Test job
     uint64_t j = f;
     uint64_t t = 100;
@@ -228,11 +244,13 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
       rt->set_binary(bin);
       rt->set_uid(GenerateRootTaskID(jd));
       rt->set_job_id(jd.uuid());
+      CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
       for (uint64_t k = 1; k < t; ++k) {
         TaskDescriptor* ct = rt->add_spawned();
         ct->set_uid(GenerateTaskID(*rt));
         ct->set_state(TaskDescriptor::RUNNABLE);
         ct->set_job_id(jd.uuid());
+        CHECK(InsertIfNotPresent(task_map.get(), ct->uid(), ct));
       }
       g.AddOrUpdateJobNodes(&jd);
     }
@@ -259,6 +277,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     spf(&outname, "/tmp/test%jd.dm", f);
     VLOG(1) << "Output written to " << outname;
     exp.Flush(outname);
+    delete leaf_res_ids;
   }
 }
 

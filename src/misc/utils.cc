@@ -7,11 +7,12 @@
 
 // N.B.: C header for gettimeofday()
 extern "C" {
-#include <unistd.h>
+#include <openssl/sha.h>
 #include <stdio.h>
 #include <sys/wait.h>
 #include <sys/time.h>
-#include <openssl/sha.h>
+#include <time.h>
+#include <unistd.h>
 }
 #include <set>
 #include <string>
@@ -160,6 +161,18 @@ DataObjectID_t GenerateDataObjectID(
   SHA256_Final(hash, &ctx);
   DataObjectID_t doid(hash);
   return doid;
+}
+
+size_t HashJobID(JobID_t job_id) {
+  size_t hash = 42;
+  boost::hash_combine(hash, job_id);
+  return hash;
+}
+
+size_t HashJobID(const TaskDescriptor& td) {
+  size_t hash = 42;
+  boost::hash_combine(hash, td.job_id());
+  return hash;
 }
 
 DataObjectID_t DataObjectIDFromString(const string& str) {
@@ -363,5 +376,14 @@ set<DataObjectID_t*> DataObjectIDsFromProtobuf(
   return return_set;
 }
 
+// Helper function to convert second-granularity timestamps
+// to strings
+string CoarseTimestampToHumanReadble(const time_t rawtime) {
+  struct tm * dt;
+  char buffer[30];
+  dt = localtime(&rawtime);
+  strftime(buffer, sizeof(buffer), "%Y%m%d:%H:%M", dt);
+  return string(buffer);
+}
 
 }  // namespace firmament

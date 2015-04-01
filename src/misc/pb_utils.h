@@ -37,8 +37,12 @@ void BFSTraverseResourceProtobufTree(
     boost::function<void(ResourceDescriptor*)> callback);  // NOLINT
 
 void BFSTraverseResourceProtobufTreeReturnRTND(
-    const ResourceTopologyNodeDescriptor* pb,
-    boost::function<void(const ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
+    ResourceTopologyNodeDescriptor* pb,
+    boost::function<void(ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
+
+void BFSTraverseResourceProtobufTreeToHash(
+    ResourceTopologyNodeDescriptor* pb, size_t* hash,
+    boost::function<void(ResourceTopologyNodeDescriptor*, size_t*)> callback);  // NOLINT
 
 }  // namespace firmament
 

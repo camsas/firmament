@@ -45,6 +45,10 @@ class CoordinatorHTTPUI {
   void LogRequest(const http::request_ptr& http_request);
   void HandleFaviconURI(http::request_ptr& http_request,  // NOLINT
                         tcp::connection_ptr& tcp_conn); // NOLINT
+  void HandleCollectlGraphsURI(http::request_ptr& http_request, // NOLINT
+                               tcp::connection_ptr& tcp_conn);  // NOLINT
+  void HandleCollectlRawURI(http::request_ptr& http_request, // NOLINT
+                            tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleJobCompletionURI(http::request_ptr& http_request, // NOLINT
                               tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleJobURI(http::request_ptr& http_request, // NOLINT

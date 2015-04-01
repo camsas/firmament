@@ -31,6 +31,7 @@
 #include "scheduling/scheduling_parameters.pb.h"
 #include "scheduling/simple_scheduler.h"
 #include "scheduling/quincy_scheduler.h"
+#include "scheduling/cost_models/void_cost_model.h"
 #include "storage/simple_object_store.h"
 
 
@@ -50,6 +51,8 @@ DEFINE_int32(http_ui_port, 8080,
 #endif
 DEFINE_uint64(heartbeat_interval, 1000000,
               "Heartbeat interval in microseconds.");
+DEFINE_bool(populate_knowledge_base_from_file, false,
+            "True if we should load the knowledge base from file.");
 
 namespace firmament {
 
@@ -78,15 +81,16 @@ Coordinator::Coordinator(PlatformID platform_id)
     // Simple random first-available scheduler
     LOG(INFO) << "Using simple random scheduler.";
     scheduler_ = new SimpleScheduler(
-        job_table_, associated_resources_, *local_resource_topology_,
+        job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, topology_manager_, m_adapter_,
         uuid_, FLAGS_listen_uri);
+    knowledge_base_->SetCostModel(new VoidCostModel());
   } else if (FLAGS_scheduler == "quincy") {
     // Quincy-style flow-based scheduling
     LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
     SchedulingParameters params;
     scheduler_ = new QuincyScheduler(
-        job_table_, associated_resources_, *local_resource_topology_,
+        job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, knowledge_base_, topology_manager_,
         m_adapter_, uuid_, FLAGS_listen_uri, params);
   } else {
@@ -113,6 +117,10 @@ Coordinator::Coordinator(PlatformID platform_id)
   health_monitor_thread_ =
     new boost::thread(boost::bind(&HealthMonitor::Run, health_monitor_,
                                   scheduler_, associated_resources_));
+
+  if (FLAGS_populate_knowledge_base_from_file) {
+    knowledge_base_->LoadKnowledgeBaseFromFile();
+  }
 }
 
 Coordinator::~Coordinator() {
@@ -153,24 +161,25 @@ void Coordinator::DetectLocalResources() {
       local_resource_topology_->add_children();
   topology_manager_->AsProtobuf(root_node);
   root_node->set_parent_id(to_string(uuid_));
-  root_node->mutable_resource_desc()->set_parent(to_string(uuid_));
-  resource_desc_.add_children(root_node->resource_desc().uuid());
-  DFSTraverseResourceProtobufTree(
+  root_node->mutable_resource_desc()->set_num_cores(num_local_pus);
+  BFSTraverseResourceProtobufTreeReturnRTND(
       local_resource_topology_,
       boost::bind(&Coordinator::AddResource, this, _1, node_uri_, true));
 }
 
-void Coordinator::AddResource(ResourceDescriptor* resource_desc,
+void Coordinator::AddResource(ResourceTopologyNodeDescriptor* rtnd,
                               const string& endpoint_uri,
                               bool local) {
-  CHECK(resource_desc);
+  CHECK_NOTNULL(rtnd);
+  ResourceDescriptor* resource_desc = rtnd->mutable_resource_desc();
+  CHECK_NOTNULL(resource_desc);
   // Compute resource ID
   ResourceID_t res_id = ResourceIDFromString(resource_desc->uuid());
   // Add resource to local resource set
   VLOG(1) << "Adding resource " << res_id << " to resource map; "
           << "endpoint URI is " << endpoint_uri;
   CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
-          new ResourceStatus(resource_desc, endpoint_uri,
+          new ResourceStatus(resource_desc, rtnd, endpoint_uri,
                              GetCurrentTimestamp())));
   // Register with scheduler if this resource is schedulable
   if (resource_desc->type() == ResourceDescriptor::RESOURCE_PU) {
@@ -353,15 +362,16 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
   // Task kill message
   if (bm->has_task_kill()) {
     const TaskKillMessage& msg = bm->task_kill();
-    CHECK(KillRunningTask(msg.task_id(), msg.reason()))
-        << "Failed to kill task!";
+    if (!KillRunningTask(msg.task_id(), msg.reason())) {
+      LOG(ERROR)  << "Failed to kill task " << msg.task_id() << "!";
+    }
     handled_extensions++;
   }
   // Task final report
   // TODO(malte): The TaskFinalReport protobuf lives in the wrong place (base
   // instead of messages). Move over.
-  if (bm->has_taskfinal_report()) {
-    const TaskFinalReport& msg = bm->taskfinal_report();
+  if (bm->has_task_final_report()) {
+    const TaskFinalReport& msg = bm->task_final_report();
     HandleTaskFinalReport(msg);
     handled_extensions++;
   }
@@ -447,7 +457,7 @@ void Coordinator::HandleTaskFinalReport(const TaskFinalReport& report) {
   TaskDescriptor *td_ptr = FindPtrOrNull(*task_table_, report.task_id());
   CHECK_NOTNULL(td_ptr);
   // Process the report using the KB
-  knowledge_base_->ProcessTaskFinalReport(report, *td_ptr);
+  knowledge_base_->ProcessTaskFinalReport(report, td_ptr->uid());
 }
 
 void Coordinator::HandleIONotification(const BaseMessage& bm,
@@ -525,10 +535,8 @@ void Coordinator::HandleRegistrationRequest(
         local_resource_topology_->add_children();
     rtnd->CopyFrom(msg.rtn_desc());
     rtnd->set_parent_id(resource_desc_.uuid());
-    rtnd->mutable_resource_desc()->set_parent(resource_desc_.uuid());
-    resource_desc_.add_children(rtnd->resource_desc().uuid());
     // Recursively add its child resources to resource map and topology tree
-    DFSTraverseResourceProtobufTree(
+    BFSTraverseResourceProtobufTreeReturnRTND(
         rtnd, boost::bind(&Coordinator::AddResource, this, _1,
                           msg.location(), false));
     //InformStorageEngineNewResource(rd);
@@ -672,6 +680,18 @@ void Coordinator::HandleTaskStateChange(
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_table_, msg.id());
   CHECK(td_ptr) << "Received task state change message for task "
                 << msg.id();
+  if (td_ptr->state() == TaskDescriptor::FAILED ||
+      td_ptr->state() == TaskDescriptor::ABORTED) {
+    LOG(ERROR) << "Spurious task state change: Task  " << msg.id() << " has "
+               << "already failed or aborted, but we received a "
+               << "TaskStateChangeMessage for it!";
+    return;
+  } else if (td_ptr->state() == TaskDescriptor::COMPLETED) {
+    LOG(ERROR) << "Spurious task state change: Task  " << msg.id() << " has "
+               << "already completed, but we received a "
+               << "TaskStateChangeMessage for it!";
+    return;
+  }
   // Update the task's state
   td_ptr->set_state(msg.new_state());
   switch (msg.new_state()) {
@@ -721,7 +741,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
 
     // Send along completion statistics to the coordinator as well.
     // TODO(malte): Make this all const including handle task completion method
-    TaskFinalReport *sending_rep = bm.mutable_taskfinal_report();
+    TaskFinalReport *sending_rep = bm.mutable_task_final_report();
     sending_rep->CopyFrom(report);
     sending_rep->set_task_id(td_ptr->uid());
 
@@ -740,7 +760,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
   }
   if (report.has_task_id()) {
     // Process the final report locally
-    knowledge_base_->ProcessTaskFinalReport(report, *td_ptr);
+    knowledge_base_->ProcessTaskFinalReport(report, td_ptr->uid());
   }
 }
 
@@ -758,6 +778,44 @@ void Coordinator::InitHTTPUI() {
   }
 }
 #endif
+
+bool Coordinator::KillRunningJob(JobID_t job_id) {
+  // Check if this is a local job
+  JobDescriptor* jd = FindOrNull(*job_table_, job_id);
+  if (!jd) {
+    LOG(ERROR) << "Tried to kill unknown job " << job_id;
+    return false;
+  }
+  LOG(INFO) << "Termination of job " << job_id << " requested.";
+  // Iterate over all tasks in the job and kill them
+  queue<TaskID_t> q;
+  q.push(jd->root_task().uid());
+  while (!q.empty()) {
+    TaskID_t cur_task_id = q.front();
+    q.pop();
+    TaskDescriptor* td = FindPtrOrNull(*task_table_, cur_task_id);
+    CHECK_NOTNULL(td);
+    // TODO(malte): this needs to take a copy or a lock, otherwise we can race
+    // with concurrent spawns.
+    for (RepeatedPtrField<TaskDescriptor>::const_iterator it =
+         td->spawned().begin();
+         it != td->spawned().end();
+         it++) {
+      q.push(it->uid());
+    }
+    // Now kill it
+    if (td->state() == TaskDescriptor::RUNNING) {
+      LOG(INFO) << "Killing task " << td->uid();
+      KillRunningTask(cur_task_id, TaskKillMessage::USER_ABORT);
+    } else if (td->state() == TaskDescriptor::RUNNABLE ||
+               td->state() == TaskDescriptor::BLOCKING) {
+      td->set_state(TaskDescriptor::ABORTED);
+    }
+  }
+  jd->set_state(JobDescriptor::ABORTED);
+  return true;
+}
+
 
 bool Coordinator::KillRunningTask(TaskID_t task_id,
                                   TaskKillMessage::TaskKillReason reason) {
@@ -931,6 +989,9 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
 
 void Coordinator::Shutdown(const string& reason) {
   LOG(INFO) << "Coordinator shutting down; reason: " << reason;
+  // TODO(ionel): Move this into the destructor. We can't do it now
+  // because the destructor is not called.
+  delete knowledge_base_;
 #ifdef __HTTP_UI__
   if (FLAGS_http_ui && c_http_ui_ && c_http_ui_->active())
       c_http_ui_->Shutdown(false);

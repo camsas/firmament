@@ -31,21 +31,22 @@ package firmament;
 // 013  - StorageHeartBeatMessage
 // 014  - ObjectInfoMessage
 // 015  - TaskKillMessage
+// 016  - TaskFinalReport   XXX(malte): inconsistent name!
 // -----------------------------
 // libDIOS messages
-// 016  - CopyRequest
-// 017  - CopyResponse
-// 018  - CreateRequest
-// 019  - CreateResponse
-// 020  - DeleteNotification
-// 021  - BeginReadNotification
-// 022  - EndReadNotification
-// 023  - BeginWriteNotification
-// 024  - EndWriteNotification
-// 025  - EndWriteFinalNotification
-// 026  - SelectNotification
-// 027  - LookupRequest
-// 028  - LookupResponse
+// 017  - CopyRequest
+// 018  - CopyResponse
+// 019  - CreateRequest
+// 020  - CreateResponse
+// 021  - DeleteNotification
+// 022  - BeginReadNotification
+// 023  - EndReadNotification
+// 024  - BeginWriteNotification
+// 025  - EndWriteNotification
+// 026  - EndWriteFinalNotification
+// 027  - SelectNotification
+// 028  - LookupRequest
+// 029  - LookupResponse
 // ...
 
 import "messages/test_message.proto";
@@ -87,7 +88,7 @@ message BaseMessage {
   optional StorageHeartBeatMessage storage_heartbeat = 14;
   optional ObjectInfoMessage object_info = 15;
   optional TaskKillMessage task_kill = 16;
-  optional TaskFinalReport taskfinal_report = 17;
+  optional TaskFinalReport task_final_report = 17;
   // -----------------------------
   // libDIOS messages
   optional CopyRequest copy_request = 18;

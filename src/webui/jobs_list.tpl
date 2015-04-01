@@ -24,8 +24,10 @@
       <td>{{JOB_STATE}}</td>
       <td><a href="/task/?id={{JOB_ROOT_TASK_ID}}">{{JOB_ROOT_TASK_ID}}</a></td>
       <td>
-        <a href="/job/status/?id={{JOB_ID}}">Status</a>
-        <a href="/job/dtg-view/?id={{JOB_ID}}">DTG</a>
+        <a href="/job/status/?id={{JOB_ID}}"><span class="glyphicon glyphicon-th-list" aria-hidden="true" title="Status"></span></a> 
+        <a href="/job/completion/?id={{JOB_ID}}"><span class="glyphicon glyphicon-bell" aria-hidden="true" title="Alert"></span></a> 
+        <a href="/job/status/?id={{JOB_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true" title="Terminate"></span></a> 
+        <a href="/job/dtg-view/?id={{JOB_ID}}"><span class="glyphicon glyphicon-search" aria-hidden="true" title="DTG"></span></a>
       </td>
     </tr>
   {{/JOB_DATA}}

@@ -98,24 +98,29 @@ TaskLib::~TaskLib() {
 }
 
 void TaskLib::Stop(bool success) {
-  LOG(INFO) << "STOP CALLED";
-  stop_ = true;
-  //while (task_running_) {
-  //  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-  //   //Wait until the monitor has stopped before sending the finalize message.
-  //}
-  sleep(1);
-  LOG(INFO) << "Sending finalize message to coordinator...";
-  SendFinalizeMessage(success);
-  LOG(INFO) << "Finalise message sent";
-  fflush(stdout);
-  fflush(stderr);
-  // Remove PID file
-  stringstream ss;
-  ss << "/tmp/" << task_id_ << ".pid";
-  string pid_filename = ss.str();
-  unlink(pid_filename.c_str());
-  //exit(0);
+  // This may get called several times by different threads; we only want to
+  // stop once!
+  if (!stop_) {
+    LOG(INFO) << "STOP CALLED";
+    stop_ = true;
+    //while (task_running_) {
+    //  boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+    //   //Wait until the monitor has stopped before sending the finalize
+    //   //message.
+    //}
+    sleep(1);
+    LOG(INFO) << "Sending finalize message to coordinator...";
+    SendFinalizeMessage(success);
+    LOG(INFO) << "Finalise message sent";
+    fflush(stdout);
+    fflush(stderr);
+    // Remove PID file
+    stringstream ss;
+    ss << "/tmp/" << task_id_ << ".pid";
+    string pid_filename = ss.str();
+    unlink(pid_filename.c_str());
+    //exit(0);
+  }
 }
 
 void TaskLib::AddTaskStatisticsToHeartbeat(
@@ -233,7 +238,7 @@ void TaskLib::HandleIncomingMessage(BaseMessage *bm,
                                     const string& remote_endpoint) {
   LOG(INFO) << "Got message from " << remote_endpoint << ": "
             << bm->DebugString();
-  // Registration message
+  // Task kill message
   if (bm->has_task_kill()) {
     const TaskKillMessage& msg = bm->task_kill();
     LOG(ERROR) << "Received task kill request from " << remote_endpoint
@@ -276,7 +281,7 @@ bool TaskLib::PullTaskInformationFromCoordinator(TaskID_t task_id,
 
 void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   FLAGS_logtostderr = true;
-  LOG(INFO) << "COORDINATOR URI: " << FLAGS_coordinator_uri;
+  LOG(INFO) << "Connecting to coordinator at " << FLAGS_coordinator_uri;
   CHECK(ConnectToCoordinator(coordinator_uri_));
   m_adapter_->RegisterAsyncMessageReceiptCallback(
       boost::bind(&TaskLib::HandleIncomingMessage, this, _1, _2));
@@ -292,6 +297,7 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   VLOG(3) << "Setting up process statistics\n";
 
   ProcFSMonitor::ProcessStatistics_t current_stats;
+  bzero(&current_stats, sizeof(ProcFSMonitor::ProcessStatistics_t));
   VLOG(3) << "Finished setting up process statistics\n";
 
   // This will check if the task thread has joined once every heartbeat
@@ -300,27 +306,27 @@ void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   // notification scheme in case the heartbeat interval is large.
 
   while (!stop_) {
-      // TODO(malte): Check if we've exited with an error
-      // if(error)
-      //   task_error_ = true;
-      // Notify the coordinator that we're still running happily
+    // TODO(malte): Check if we've exited with an error
+    // if(error)
+    //   task_error_ = true;
+    // Notify the coordinator that we're still running happily
 
-      VLOG(1) << "Task thread has not yet joined, sending heartbeat...";
+    VLOG(1) << "Task thread has not yet joined, sending heartbeat...";
 
-      if (use_procfs_) {
-        task_perf_monitor_.ProcessInformation(pid_, &current_stats);
-      }
-      SendHeartbeat(current_stats);
-
-      // TODO(malte): We'll need to receive any potential messages from the
-      // coordinator here, too. This is probably best done by a simple RecvA on
-      // the channel.
-      m_adapter_->AwaitNextMessage();
-
-      // Finally, nap for a bit until the next heartbeat is due
-      usleep(FLAGS_heartbeat_interval);
+    if (use_procfs_) {
+      task_perf_monitor_.ProcessInformation(pid_, &current_stats);
     }
-  LOG(INFO) << "STOPPING HEARTBEATS";
+    SendHeartbeat(current_stats);
+
+    // TODO(malte): We'll need to receive any potential messages from the
+    // coordinator here, too. This is probably best done by a simple RecvA on
+    // the channel.
+    m_adapter_->AwaitNextMessage();
+
+    // Finally, nap for a bit until the next heartbeat is due
+    usleep(FLAGS_heartbeat_interval);
+  }
+  LOG(INFO) << "STOPPING HEARTBEATS for " << pid_;
   fflush(stderr);
   task_running_ = false;
 }
@@ -332,12 +338,12 @@ void TaskLib::SendFinalizeMessage(bool success) {
     SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::COMPLETED);
   else
     SUBMSG_WRITE(bm, task_state, new_state, TaskDescriptor::ABORTED);
-  VLOG(1) << "Sending finalize message (task state change to "
-          << (success ? "COMPLETED" : "ABORTED") << ")!";
+  LOG(INFO) << "Sending finalize message (task state change to "
+            << (success ? "COMPLETED" : "ABORTED") << ")!";
   //SendMessageToCoordinator(&bm);
   Envelope<BaseMessage> envelope(&bm);
   CHECK(chan_->SendS(envelope));
-  VLOG(1) << "Done sending message, sleeping before quitting";
+  LOG(INFO) << "Done sending message, sleeping before quitting";
   boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 
@@ -357,7 +363,7 @@ void TaskLib::SendHeartbeat(
   SUBMSG_WRITE(bm, task_heartbeat, location, chan_->LocalEndpointString());
   SUBMSG_WRITE(bm, task_heartbeat, sequence_number, heartbeat_seq_number_++);
 
-  VLOG(1) << "Sending heartbeat message!";
+  //LOG(INFO) << "Sending heartbeat message!";
   SendMessageToCoordinator(&bm);
 }
 

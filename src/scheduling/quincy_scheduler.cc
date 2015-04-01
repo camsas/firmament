@@ -21,14 +21,14 @@
 #include "engine/local_executor.h"
 #include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
-#include "scheduling/cost_models.h"
-#include "scheduling/flow_scheduling_cost_model_interface.h"
+#include "scheduling/cost_models/cost_models.h"
+#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 #include "scheduling/knowledge_base.h"
 
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO");
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
 
 namespace firmament {
 namespace scheduler {
@@ -41,7 +41,7 @@ using store::ObjectStoreInterface;
 QuincyScheduler::QuincyScheduler(
     shared_ptr<JobMap_t> job_map,
     shared_ptr<ResourceMap_t> resource_map,
-    const ResourceTopologyNodeDescriptor& resource_topology,
+    ResourceTopologyNodeDescriptor* resource_topology,
     shared_ptr<ObjectStoreInterface> object_store,
     shared_ptr<TaskMap_t> task_map,
     KnowledgeBase* kb,
@@ -55,34 +55,54 @@ QuincyScheduler::QuincyScheduler(
                            coordinator_res_id, coordinator_uri),
       topology_manager_(topo_mgr),
       knowledge_base_(kb),
-      parameters_(params) {
+      parameters_(params),
+      leaf_res_ids_(new unordered_set<ResourceID_t,
+                      boost::hash<boost::uuids::uuid>>) {
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
           << FLAGS_flow_scheduling_cost_model << "\"";
+
   switch (FLAGS_flow_scheduling_cost_model) {
     case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
-      flow_graph_.reset(new FlowGraph(new TrivialCostModel()));
+      cost_model_ = new TrivialCostModel(task_map, leaf_res_ids_);
       VLOG(1) << "Using the trivial cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
-      flow_graph_.reset(new FlowGraph(new RandomCostModel()));
+      cost_model_ = new RandomCostModel(task_map, leaf_res_ids_);
       VLOG(1) << "Using the random cost model";
       break;
+    case FlowSchedulingCostModelType::COST_MODEL_COCO:
+      cost_model_ = new CocoCostModel(resource_map, *resource_topology,
+                                      task_map, leaf_res_ids_, knowledge_base_);
+      VLOG(1) << "Using the coco cost model";
+      break;
     case FlowSchedulingCostModelType::COST_MODEL_SJF:
-      flow_graph_.reset(new FlowGraph(
-          new SJFCostModel(task_map, knowledge_base_)));
+      cost_model_ = new SJFCostModel(task_map, leaf_res_ids_, knowledge_base_);
       VLOG(1) << "Using the SJF cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
-      flow_graph_.reset(
-          new FlowGraph(new QuincyCostModel(resource_map, job_map, task_map,
-                                            &task_bindings_, knowledge_base_)));
+      cost_model_ = new QuincyCostModel(resource_map, job_map, task_map,
+                                       &task_bindings_, leaf_res_ids_,
+                                       knowledge_base_);
       VLOG(1) << "Using the Quincy cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_WHARE:
+      cost_model_ = new WhareMapCostModel(resource_map, task_map,
+                                          knowledge_base_);
+      VLOG(1) << "Using the Whare-Map cost model";
+      break;
+    case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
+      cost_model_ = new OctopusCostModel(resource_map);
+      VLOG(1) << "Using the octopus cost model";
       break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
   }
+
+  flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids_));
+  cost_model_->SetFlowGraph(flow_graph_);
+  knowledge_base_->SetCostModel(cost_model_);
 
   LOG(INFO) << "QuincyScheduler initiated; parameters: "
             << parameters_.ShortDebugString();
@@ -94,6 +114,7 @@ QuincyScheduler::QuincyScheduler(
 
 QuincyScheduler::~QuincyScheduler() {
   delete quincy_dispatcher_;
+  delete leaf_res_ids_;
   // XXX(ionel): stub
 }
 
@@ -128,7 +149,7 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
       // After the task is bound, we now remove all of its edges into the flow
       // graph apart from the bound resource.
       // N.B.: This disables preemption and migration!
-      flow_graph_->UpdateArcsForBoundTask(task_id, res_id);
+      flow_graph_->TaskScheduled(task_id, res_id);
       // Tag the job to which this task belongs as running
       JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td->job_id()));
       if (jd->state() != JobDescriptor::RUNNING)
@@ -140,13 +161,21 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
   return num_scheduled;
 }
 
+void QuincyScheduler::DeregisterResource(ResourceID_t res_id) {
+  EventDrivenScheduler::DeregisterResource(res_id);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->RemoveMachine(res_id);
+  }
+}
+
 void QuincyScheduler::HandleJobCompletion(JobID_t job_id) {
   // Call into superclass handler
   EventDrivenScheduler::HandleJobCompletion(job_id);
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     // Job completed, so remove its nodes
-    flow_graph_->DeleteNodesForJob(job_id);
+    flow_graph_->JobCompleted(job_id);
   }
 }
 
@@ -156,7 +185,24 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->DeleteTaskNode(td_ptr->uid());
+    flow_graph_->TaskCompleted(td_ptr->uid());
+  }
+}
+
+void QuincyScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
+  EventDrivenScheduler::HandleTaskFailure(td_ptr);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->TaskFailed(td_ptr->uid());
+  }
+}
+
+void QuincyScheduler::KillRunningTask(TaskID_t task_id,
+                                      TaskKillMessage::TaskKillReason reason) {
+  EventDrivenScheduler::KillRunningTask(task_id, reason);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->TaskKilled(task_id);
   }
 }
 
@@ -181,8 +227,11 @@ uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
 }
 
 void QuincyScheduler::RegisterResource(ResourceID_t res_id, bool local) {
-  // Update the flow graph
-  UpdateResourceTopology(resource_topology_);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    // Update the flow graph
+    UpdateResourceTopology(resource_topology_);
+  }
   // Call into superclass method to do scheduler resource initialisation.
   // This will create the executor for the new resource.
   EventDrivenScheduler::RegisterResource(res_id, local);
@@ -210,14 +259,34 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   // Drop all deltas that were actioned
   for (vector<SchedulingDelta*>::iterator it = deltas.begin();
        it != deltas.end(); ) {
-    if ((*it)->actioned())
+    if ((*it)->actioned()) {
       it = deltas.erase(it);
-    else
+    } else {
       it++;
+    }
   }
-  if (deltas.size() > 0)
+  if (deltas.size() > 0) {
     LOG(WARNING) << "Not all deltas were processed, " << deltas.size()
                  << " remain!";
+  }
+
+  if (FLAGS_flow_scheduling_cost_model ==
+      FlowSchedulingCostModelType::COST_MODEL_COCO ||
+      FLAGS_flow_scheduling_cost_model ==
+      FlowSchedulingCostModelType::COST_MODEL_OCTOPUS ||
+      FLAGS_flow_scheduling_cost_model ==
+      FlowSchedulingCostModelType::COST_MODEL_WHARE) {
+    flow_graph_->ComputeTopologyStatistics(
+        flow_graph_->sink_node(),
+        boost::bind(&FlowSchedulingCostModelInterface::GatherStats,
+                    cost_model_, _1, _2));
+    flow_graph_->ComputeTopologyStatistics(
+        flow_graph_->sink_node(),
+        boost::bind(&FlowSchedulingCostModelInterface::UpdateStats,
+                    cost_model_, _1, _2));
+  } else {
+    LOG(INFO) << "No resource stats update required";
+  }
   return num_scheduled;
 }
 
@@ -233,14 +302,15 @@ void QuincyScheduler::PrintGraph(vector< map<uint64_t, uint64_t> > adj_map) {
 }
 
 void QuincyScheduler::UpdateResourceTopology(
-    const ResourceTopologyNodeDescriptor& root) {
+    ResourceTopologyNodeDescriptor* root) {
   // Run a topology refresh (somewhat expensive!); if only two nodes exist, the
   // flow graph is empty apart from cluster aggregator and sink.
   VLOG(1) << "Num nodes in flow graph is: " << flow_graph_->NumNodes();
-  if (flow_graph_->NumNodes() == 1)
+  if (flow_graph_->NumNodes() == 1) {
     flow_graph_->AddResourceTopology(root);
-  else
-    flow_graph_->UpdateResourceTopology(root);
+  } else {
+    flow_graph_->AddMachine(root);
+  }
 }
 
 }  // namespace scheduler

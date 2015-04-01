@@ -28,7 +28,7 @@ class EventDrivenScheduler : public SchedulerInterface {
  public:
   EventDrivenScheduler(shared_ptr<JobMap_t> job_map,
                        shared_ptr<ResourceMap_t> resource_map,
-                       const ResourceTopologyNodeDescriptor& resource_topology,
+                       ResourceTopologyNodeDescriptor* resource_topology,
                        shared_ptr<store::ObjectStoreInterface> object_store,
                        shared_ptr<TaskMap_t> task_map,
                        shared_ptr<TopologyManager> topo_mgr,
@@ -88,7 +88,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   // includes both executors for local and for remote resources.
   map<ResourceID_t, ExecutorInterface*> executors_;
   // The current task bindings managed by this scheduler.
-  map<TaskID_t, ResourceID_t> task_bindings_;
+  unordered_map<TaskID_t, ResourceID_t> task_bindings_;
   // Map of reference subscriptions
   map<DataObjectID_t, set<TaskDescriptor*> > reference_subscriptions_;
   // Pointer to the coordinator's topology manager
