@@ -60,7 +60,7 @@ namespace sim {
       spf(&file_name, "%s/task_events/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
       if ((events_file = fopen(file_name.c_str(), "r")) == NULL) {
-        LOG(ERROR) << "Failed to open trace for reading of task events.";
+        LOG(FATAL) << "Failed to open trace for reading of task events.";
       }
       int64_t num_line = 1;
       while (!feof(events_file)) {
@@ -653,7 +653,7 @@ namespace sim {
     spf(&usage_file_name, "%s/task_usage_stat/task_usage_stat.csv",
         trace_path_.c_str());
     if ((usage_stat_file = fopen(usage_file_name.c_str(), "w")) == NULL) {
-      LOG(ERROR) << "Failed to open task_usage_stat file for writing";
+      LOG(FATAL) << "Failed to open task_usage_stat file for writing";
     }
     uint64_t last_timestamp = 0;
     for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
@@ -663,7 +663,7 @@ namespace sim {
       spf(&file_name, "%s/task_usage/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
       if ((usage_file = fopen(file_name.c_str(), "r")) == NULL) {
-        LOG(ERROR) << "Failed to open trace for reading of task "
+        LOG(FATAL) << "Failed to open trace for reading of task "
                    << "resource usage.";
       }
       int64_t num_line = 1;
@@ -734,7 +734,7 @@ namespace sim {
       spf(&file_name, "%s/job_events/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
       if ((events_file = fopen(file_name.c_str(), "r")) == NULL) {
-        LOG(ERROR) << "Failed to open trace for reading of job events.";
+        LOG(FATAL) << "Failed to open trace for reading of job events.";
       }
       int64_t num_line = 1;
       while (!feof(events_file)) {
@@ -826,12 +826,12 @@ namespace sim {
     spf(&out_file_all_name, "%s/task_runtime_events/all_task_runtime_events.csv",
         trace_path_.c_str());
     if ((out_events_file_all = fopen(out_file_all_name.c_str(), "w")) == NULL) {
-      LOG(ERROR) << "Failed to open task_runtime_events file for writing";
+      LOG(FATAL) << "Failed to open task_runtime_events file for writing";
     }
     spf(&out_file_avg_name, "%s/task_runtime_events/task_runtime_events.csv",
         trace_path_.c_str());
     if ((out_events_file_avg = fopen(out_file_avg_name.c_str(), "w")) == NULL) {
-      LOG(ERROR) << "Failed to open task_runtime_events file for writing";
+      LOG(FATAL) << "Failed to open task_runtime_events file for writing";
     }
     for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
          file_num++) {
@@ -840,7 +840,7 @@ namespace sim {
       spf(&file_name, "%s/task_events/part-%05d-of-00500.csv",
           trace_path_.c_str(), file_num);
       if ((events_file = fopen(file_name.c_str(), "r")) == NULL) {
-        LOG(ERROR) << "Failed to open trace for reading of task events.";
+        LOG(FATAL) << "Failed to open trace for reading of task events.";
       }
       int64_t num_line = 1;
       while (!feof(events_file)) {

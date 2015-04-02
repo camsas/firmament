@@ -544,7 +544,13 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
         task_stats.avg_mean_local_disk_used = lexical_cast<double>(cols[28]);
         task_stats.avg_cpi = lexical_cast<double>(cols[32]);
         task_stats.avg_mai = lexical_cast<double>(cols[36]);
-        CHECK(InsertIfNotPresent(&task_id_to_stats_, task_id, task_stats));
+
+        if (!InsertIfNotPresent(&task_id_to_stats_, task_id, task_stats) &&
+            VLOG_IS_ON(1)) {
+          LOG(ERROR) << "LoadTaskRuntimeStats: There should not be more than an "
+                     << "entry for job " << task_id.job_id
+                     << ", task " << task_id.task_index;
+        }
 
         // double min_mean_cpu_usage = lexical_cast<double>(cols[2]);
         // double max_mean_cpu_usage = lexical_cast<double>(cols[3]);
@@ -613,8 +619,9 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
         if (!InsertIfNotPresent(task_runtime, task_id, runtime) &&
             VLOG_IS_ON(1)) {
-          LOG(ERROR) << "There should not be more than an entry for job "
-                     << task_id.job_id << ", task " << task_id.task_index;
+          LOG(ERROR) << "LoadTasksRunningTime: There should not be more than an "
+                     << "entry for job " << task_id.job_id
+                     << ", task " << task_id.task_index;
         }
       }
     }
