@@ -203,7 +203,7 @@ namespace scheduler {
     	*flowsolver_time = flowsolver_timer.elapsed().wall;
     	*flowsolver_time /= one_second;
     	// restart timer
-    	flowsolver_timer.stop(); flowsolver_timer.resume();
+    	flowsolver_timer.stop(); flowsolver_timer.start();
     }
 
     if (!FLAGS_incremental_flow) {
