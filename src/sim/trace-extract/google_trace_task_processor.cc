@@ -820,11 +820,17 @@ namespace sim {
     char line[200];
     vector<string> line_cols;
     FILE* events_file = NULL;
-    FILE* out_events_file = NULL;
-    string out_file_name;
-    spf(&out_file_name, "%s/task_runtime_events/task_runtime_events.csv",
+    FILE* out_events_file_all;
+    FILE* out_events_file_avg;
+    string out_file_all_name, out_file_avg_name;
+    spf(&out_file_all_name, "%s/task_runtime_events/all_task_runtime_events.csv",
         trace_path_.c_str());
-    if ((out_events_file = fopen(out_file_name.c_str(), "w")) == NULL) {
+    if ((out_events_file_all = fopen(out_file_all_name.c_str(), "w")) == NULL) {
+      LOG(ERROR) << "Failed to open task_runtime_events file for writing";
+    }
+    spf(&out_file_avg_name, "%s/task_runtime_events/task_runtime_events.csv",
+        trace_path_.c_str());
+    if ((out_events_file_avg = fopen(out_file_avg_name.c_str(), "w")) == NULL) {
       LOG(ERROR) << "Failed to open task_runtime_events file for writing";
     }
     for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
@@ -854,13 +860,15 @@ namespace sim {
             task_id.task_index = lexical_cast<uint64_t>(line_cols[3]);
             int32_t event_type = lexical_cast<int32_t>(line_cols[5]);
             ExpandTaskEvent(timestamp, task_id, event_type, &tasks_runtime,
-                            &job_id_to_name, out_events_file, line_cols);
+                            &job_id_to_name, out_events_file_all, line_cols);
           }
         }
         num_line++;
       }
       fclose(events_file);
     }
+    fclose(out_events_file_all);
+
     for (unordered_map<TaskIdentifier, TaskRuntime,
            TaskIdentifierHasher>::iterator it = tasks_runtime.begin();
          it != tasks_runtime.end(); ++it) {
@@ -885,12 +893,12 @@ namespace sim {
         task_runtime.num_runs++;
         task_runtime.total_runtime += runtime;
       }
-      PrintTaskRuntime(out_events_file, task_runtime, task_id,
+      PrintTaskRuntime(out_events_file_avg, task_runtime, task_id,
                        logical_job_name, runtime);
     }
     job_id_to_name.clear();
     delete &job_id_to_name;
-    fclose(out_events_file);
+    fclose(out_events_file_avg);
   }
 
   void GoogleTraceTaskProcessor::JobsNumTasks() {
