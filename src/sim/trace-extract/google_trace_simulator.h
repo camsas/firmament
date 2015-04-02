@@ -27,6 +27,7 @@ DECLARE_bool(only_read_assignment_changes);
 DECLARE_bool(debug_flow_graph);
 DECLARE_bool(add_root_task_to_graph);
 DECLARE_bool(flow_scheduling_strict);
+DECLARE_bool(flow_scheduling_time_reported);
 
 namespace firmament {
 namespace sim {

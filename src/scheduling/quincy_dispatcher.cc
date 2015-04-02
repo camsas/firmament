@@ -30,6 +30,8 @@ DEFINE_string(flow_scheduling_binary, "", "Path to flow solving executable. "
 		           "Must be specified when using custom solver.");
 DEFINE_string(custom_flow_scheduling_args, "", "Arguments for custom solver. "
 		           "Defaults to no arguments.");
+DEFINE_bool(flow_scheduling_time_reported, false,
+		          "Does solver report runtime to stderr?");
 DEFINE_bool(flow_scheduling_strict, false, "Terminate if flow solving binary fails.");
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
@@ -57,8 +59,25 @@ namespace scheduler {
 		return NULL;
   }
 
+  void *process_stderr_justlog(void *x) {
+  	char line[1024];
+  	FILE *stderr = (FILE *)x;
+
+  	while (fgets(line, sizeof(line), stderr) != NULL) {
+  		LOG(WARNING) << "STDERR from algorithm: " << line;
+  	}
+
+  	return NULL;
+  }
+
   multimap<uint64_t, uint64_t>* QuincyDispatcher::Run(
   		    double *algorithm_time, double *flowsolver_time, FILE *graph_output) {
+  	if (algorithm_time && !FLAGS_flow_scheduling_time_reported) {
+  		LOG(ERROR) << "Error: cannot record algorithm time with solver "
+  				       << "which does not report this time.";
+  		*algorithm_time = nan("");
+  	}
+
     // Set up debug directory if it doesn't exist
     struct stat st;
     if (!FLAGS_debug_output_dir.empty() &&
@@ -117,6 +136,7 @@ namespace scheduler {
     // Now run the solver
     vector<string> args;
     pid_t solver_pid;
+    pthread_t logger_thread = -1;
     if (!solver_ran_once_ || !FLAGS_incremental_flow) {
       // Pipe setup
     	// errfd[0] == PARENT_READ
@@ -147,6 +167,13 @@ namespace scheduler {
       if ((to_solver_ = fdopen(infd_[1], "w")) == NULL) {
         LOG(ERROR) << "Failed to open FD to solver for writing. FD: "
                    << infd_[1];
+      }
+
+      if (!FLAGS_flow_scheduling_time_reported) {
+        if (pthread_create(&logger_thread, NULL,
+        		               process_stderr_justlog, from_solver_stderr_)) {
+					PLOG(FATAL) << "Error creating thread";
+				}
       }
     }
 
@@ -189,6 +216,13 @@ namespace scheduler {
       close(errfd_[0]);
       close(outfd_[0]);
       close(infd_[1]);
+
+      if (!FLAGS_flow_scheduling_time_reported) {
+				// wait for logger thread
+				if (pthread_join(logger_thread, NULL)) {
+				  PLOG(FATAL) << "Error joining thread";
+        }
+      }
 
       if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0)) {
       	std::string msg = "Solver terminated abnormally.";
@@ -379,24 +413,19 @@ namespace scheduler {
   	double *time;
   };
 
-  void *process_stderr(void *x) {
+  void *process_stderr_algotime(void *x) {
   	struct arguments *args = (struct arguments *)x;
   	double *algorithm_time = args->time;
   	FILE *stderr = args->fptr;
-  	char line[100];
+  	char line[1024];
 
-
-  	if (algorithm_time) {
-  		*algorithm_time = nan("");
-  	}
+  	*algorithm_time = nan("");
 
   	while (fgets(line, sizeof(line), stderr) != NULL) {
 			double time;
 			int num_matched = sscanf(line, "ALGOTIME: %lf\n", &time);
 			if (num_matched == 1) {
-				if (algorithm_time) {
-					*algorithm_time = time;
-				}
+				*algorithm_time = time;
 				break;
 			} else {
 				LOG(WARNING) << "STDERR from algorithm: " << line;
@@ -416,11 +445,13 @@ namespace scheduler {
 		// in parallel. Otherwise, the buffer on one could get full, and the solver
 		// would block. This could result in a situation of deadlock.
 
-		// Create thread to process stderr
-		pthread_t stderr_thread;
-		struct arguments args = { from_solver_stderr_, time };
-		if (pthread_create(&stderr_thread, NULL, process_stderr, &args)) {
-			PLOG(FATAL) << "Error creating thread";
+		pthread_t stderr_thread = -1;
+		if (FLAGS_flow_scheduling_time_reported) {
+			// Create thread to process stderr
+			struct arguments args = { from_solver_stderr_, time };
+			if (pthread_create(&stderr_thread, NULL, process_stderr_algotime, &args)) {
+				PLOG(FATAL) << "Error creating thread";
+			}
 		}
 
 		// Process stdout in main thread
@@ -436,9 +467,11 @@ namespace scheduler {
 			delete extracted_flow;
 		}
 
-  	// Wait for stderr processing to complete
-  	if (pthread_join(stderr_thread, NULL)) {
-  		PLOG(FATAL) << "Error joining thread";
+  	if (FLAGS_flow_scheduling_time_reported) {
+  		// Wait for stderr processing to complete
+			if (pthread_join(stderr_thread, NULL)) {
+				PLOG(FATAL) << "Error joining thread";
+			}
   	}
 
   	return task_mappings;

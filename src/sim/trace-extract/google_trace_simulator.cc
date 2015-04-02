@@ -163,6 +163,7 @@ void GoogleTraceSimulator::Run() {
     FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-4.6/cs2.exe";
   } else if (!FLAGS_solver.compare("custom")) {
   	FLAGS_flow_scheduling_solver = "custom";
+  	FLAGS_flow_scheduling_time_reported = true;
   } else {
     LOG(FATAL) << "Unknown solver type: " << FLAGS_solver;
   }
