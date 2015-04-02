@@ -155,15 +155,15 @@ void GoogleTraceSimulator::Run() {
     FLAGS_flow_scheduling_solver = "flowlessly";
     FLAGS_only_read_assignment_changes = true;
     FLAGS_flow_scheduling_binary =
-    		SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
+        SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
     FLAGS_flow_scheduling_solver = "cs2";
     FLAGS_only_read_assignment_changes = false;
     FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-4.6/cs2.exe";
   } else if (!FLAGS_solver.compare("custom")) {
-  	FLAGS_flow_scheduling_solver = "custom";
-  	FLAGS_flow_scheduling_time_reported = true;
+    FLAGS_flow_scheduling_solver = "custom";
+    FLAGS_flow_scheduling_time_reported = true;
   } else {
     LOG(FATAL) << "Unknown solver type: " << FLAGS_solver;
   }
@@ -187,32 +187,32 @@ void GoogleTraceSimulator::Run() {
       LOG(ERROR) << "Could not open bin output file.";
     }
   } else {
-  	ofstream *stats_file = NULL;
-  	if (!FLAGS_stats_file.empty()) {
-  		stats_file = new ofstream(FLAGS_stats_file);
-  		if (stats_file->fail()) {
-  			LOG(FATAL) << "Could not open for writing stats file "
-  					       << FLAGS_stats_file;
-  		}
-  	}
+    ofstream *stats_file = NULL;
+    if (!FLAGS_stats_file.empty()) {
+      stats_file = new ofstream(FLAGS_stats_file);
+      if (stats_file->fail()) {
+        LOG(FATAL) << "Could not open for writing stats file "
+                   << FLAGS_stats_file;
+      }
+    }
 
-  	FILE *graph_output_file = NULL;
-  	if (!FLAGS_graph_output_file.empty()) {
-  		graph_output_file = fopen(FLAGS_graph_output_file.c_str(), "w");
-  		if (!graph_output_file) {
-  			LOG(FATAL) << "Could not open for writing graph file "
-  					       << FLAGS_graph_output_file
-									 << ", error: " << strerror(errno);
-  		}
-  	}
+    FILE *graph_output_file = NULL;
+    if (!FLAGS_graph_output_file.empty()) {
+      graph_output_file = fopen(FLAGS_graph_output_file.c_str(), "w");
+      if (!graph_output_file) {
+        LOG(FATAL) << "Could not open for writing graph file "
+                   << FLAGS_graph_output_file
+                   << ", error: " << strerror(errno);
+      }
+    }
 
     ReplayTrace(stats_file, graph_output_file);
 
     if (graph_output_file) {
-    	fclose(graph_output_file);
+      fclose(graph_output_file);
     }
     if (stats_file) {
-    	delete stats_file;
+      delete stats_file;
     }
   }
 }
@@ -490,12 +490,12 @@ void GoogleTraceSimulator::LoadMachineEvents() {
                    << num_line << ": found " << cols.size() << " columns.";
       } else {
         // schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
-      	uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
-      	if (SpookyHash::Hash32(&machine_id, sizeof(machine_id), SEED)
-      	    > proportion_) {
-      		// skip event
-      		continue;
-      	}
+        uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
+        if (SpookyHash::Hash32(&machine_id, sizeof(machine_id), SEED)
+            > proportion_) {
+          // skip event
+          continue;
+        }
 
         EventDescriptor event_desc;
         event_desc.set_machine_id(lexical_cast<uint64_t>(cols[1]));
@@ -605,10 +605,10 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
 
-      	if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED) > proportion_) {
-      		// skip event
-      		continue;
-      	}
+        if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED) > proportion_) {
+          // skip event
+          continue;
+        }
 
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
         if (!InsertIfNotPresent(task_runtime, task_id, runtime) &&
@@ -649,39 +649,39 @@ JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
 void GoogleTraceSimulator::ProcessSimulatorEvents(
     uint64_t cur_time,
     const ResourceTopologyNodeDescriptor& machine_tmpl) {
-	while (true) {
-		multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
-		if (it == events_.end()) {
-			// empty collection
-			break;
-		}
-		if (it->first > cur_time) {
-			// processed all events <=cur_time
-			break;
-		}
+  while (true) {
+    multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
+    if (it == events_.end()) {
+      // empty collection
+      break;
+    }
+    if (it->first > cur_time) {
+      // processed all events <=cur_time
+      break;
+    }
 
-		if (it->second.type() == EventDescriptor::ADD_MACHINE) {
-			VLOG(2) << "ADD_MACHINE " << it->second.machine_id() << " @ " << it->first;
-			AddMachine(machine_tmpl, it->second.machine_id());
-		} else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
-			VLOG(2) << "REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first;
-			RemoveMachine(it->second.machine_id());
-		} else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
-			// TODO(ionel): Handle machine update event.
-		} else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
-			VLOG(2) << "TASK_END_RUNTIME " << it->second.job_id() << " "
-							<< it->second.task_index() << " @ " << it->first;;
-			// Task has finished.
-			TaskIdentifier task_identifier;
-			task_identifier.task_index = it->second.task_index();
-			task_identifier.job_id = it->second.job_id();
-			TaskCompleted(task_identifier);
-		} else {
-			LOG(ERROR) << "Unexpected event type " << it->second.type() << " @ " << it->first;
-		}
+    if (it->second.type() == EventDescriptor::ADD_MACHINE) {
+      VLOG(2) << "ADD_MACHINE " << it->second.machine_id() << " @ " << it->first;
+      AddMachine(machine_tmpl, it->second.machine_id());
+    } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
+      VLOG(2) << "REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first;
+      RemoveMachine(it->second.machine_id());
+    } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
+      // TODO(ionel): Handle machine update event.
+    } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
+      VLOG(2) << "TASK_END_RUNTIME " << it->second.job_id() << " "
+              << it->second.task_index() << " @ " << it->first;;
+      // Task has finished.
+      TaskIdentifier task_identifier;
+      task_identifier.task_index = it->second.task_index();
+      task_identifier.job_id = it->second.job_id();
+      TaskCompleted(task_identifier);
+    } else {
+      LOG(ERROR) << "Unexpected event type " << it->second.type() << " @ " << it->first;
+    }
 
-		events_.erase(it);
-	}
+    events_.erase(it);
+  }
 }
 
 void GoogleTraceSimulator::ProcessTaskEvent(
@@ -690,9 +690,9 @@ void GoogleTraceSimulator::ProcessTaskEvent(
     unordered_map<TaskIdentifier, uint64_t,
       TaskIdentifierHasher>* task_runtime) {
   if (event_type == SUBMIT_EVENT) {
-  	VLOG(3) << "TASK_SUBMIT_EVENT: ID "
-  			    << task_identifier.job_id << "/" << task_identifier.task_index
-						<< " @ " << cur_time;
+    VLOG(3) << "TASK_SUBMIT_EVENT: ID "
+            << task_identifier.job_id << "/" << task_identifier.task_index
+            << " @ " << cur_time;
     AddNewTask(task_identifier);
     AddTaskStats(task_identifier, task_runtime);
   }
@@ -838,14 +838,14 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
 }
 
 void GoogleTraceSimulator::ReplayTrace(
-		                            ofstream *stats_file, FILE *graph_output_file) {
-	// Output CSV header
-	if (stats_file) {
-		*stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,total_time"
-					      << std::endl;
-	}
+                                ofstream *stats_file, FILE *graph_output_file) {
+  // Output CSV header
+  if (stats_file) {
+    *stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,total_time"
+                << std::endl;
+  }
 
-	boost::timer::cpu_timer timer;
+  boost::timer::cpu_timer timer;
 
   // Load all the machine events.
   LoadMachineEvents();
@@ -889,9 +889,9 @@ void GoogleTraceSimulator::ReplayTrace(
           task_id.task_index = lexical_cast<uint64_t>(vals[3]);
 
           if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED) > proportion_) {
-        		// skip event
-        		continue;
-        	}
+            // skip event
+            continue;
+          }
 
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
 
@@ -917,13 +917,13 @@ void GoogleTraceSimulator::ReplayTrace(
             LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
 
             if (graph_output_file) {
-            	fprintf(graph_output_file, "c SOI %lu\n", time_interval_bound);
-							fflush(graph_output_file);
+              fprintf(graph_output_file, "c SOI %lu\n", time_interval_bound);
+              fflush(graph_output_file);
             }
             double algorithm_time, flowsolver_time;
             multimap<uint64_t, uint64_t>* task_mappings =
               quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time,
-              		                    graph_output_file);
+                                      graph_output_file);
 
             UpdateFlowGraph(time_interval_bound, task_runtime, task_mappings);
 
@@ -953,19 +953,19 @@ void GoogleTraceSimulator::ReplayTrace(
             }
 
             // Log stats to CSV file
-						boost::timer::cpu_times total_runtime = timer.elapsed();
-						if (stats_file) {
-							boost::timer::nanosecond_type second = 1000*1000*1000;
-							double total_runtime_float = total_runtime.wall;
-							total_runtime_float /= second;
-							*stats_file << time_interval_bound << ","
-												  << algorithm_time << ","
-												  << flowsolver_time << ","
-												  << total_runtime_float << std::endl;
-							stats_file->flush();
-						}
-						// restart timer; elapsed() returns time from this point
-						timer.stop(); timer.start();
+            boost::timer::cpu_times total_runtime = timer.elapsed();
+            if (stats_file) {
+              boost::timer::nanosecond_type second = 1000*1000*1000;
+              double total_runtime_float = total_runtime.wall;
+              total_runtime_float /= second;
+              *stats_file << time_interval_bound << ","
+                          << algorithm_time << ","
+                          << flowsolver_time << ","
+                          << total_runtime_float << std::endl;
+              stats_file->flush();
+            }
+            // restart timer; elapsed() returns time from this point
+            timer.stop(); timer.start();
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
