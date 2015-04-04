@@ -115,7 +115,7 @@ void DIMACSExporter::Flush(FILE* stream) {
   			         << "bytes out of " << output_.length();
   }
   if (fflush(stream)) {
-    LOG(FATAL) << "Error while flushing";
+    PLOG(FATAL) << "Error while flushing";
   }
 }
 
