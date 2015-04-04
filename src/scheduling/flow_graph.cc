@@ -267,7 +267,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
       // Add the new task node to the graph changes
 
       DIMACSChange *chg = new DIMACSAddNode(*task_node, task_arcs);
-      chg->SetComment("AddOrUpdateJobNodes: unsched_agg");
+      chg->SetComment("AddOrUpdateJobNodes: task node");
       graph_changes_.push_back(chg);
 
       AddTaskEquivClasses(task_node);
@@ -541,9 +541,15 @@ void FlowGraph::AdjustUnscheduledAggArcCosts() {
       FlowGraphArc* arc = ait_tmp->second;
       CHECK_NOTNULL(arc);
       TaskID_t task_id = Node(arc->src_)->task_id_;
-      ChangeArc(arc, arc->cap_lower_bound_, arc->cap_upper_bound_,
-                cost_model_->TaskToUnscheduledAggCost(task_id),
-								"AdjustUnscheduledAggArcCosts");
+
+      Cost_t new_cost = cost_model_->TaskToUnscheduledAggCost(task_id);
+      CHECK_GE(new_cost, 0);
+      if ((uint64_t)new_cost != arc->cost_) {
+        arc->cost_ = new_cost;
+        DIMACSChange *chg = new DIMACSChangeArc(*arc);
+        chg->SetComment("AdjustUnscheduledAggArcCosts");
+        graph_changes_.push_back(chg);
+      }
     }
   }
 }
