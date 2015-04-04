@@ -653,7 +653,7 @@ void FlowGraph::ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
   } else {
   	DIMACSChange *chg = new DIMACSChangeArc(*arc);
   	chg->SetComment(comment);
-    graph_changes_.push_back(new DIMACSChangeArc(*arc));
+    graph_changes_.push_back(chg);
   }
 }
 
