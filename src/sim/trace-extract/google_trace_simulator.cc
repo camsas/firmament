@@ -71,6 +71,8 @@ DEFINE_string(task_bins_output, "bins.out",
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(stats_file, "", "File to write CSV of statistics.");
 DEFINE_string(graph_output_file, "", "File to write incremental DIMACS export.");
+DEFINE_bool(graph_output_events, true, "If -graph_output_file specified: "
+		                                   "export simulator events as comments?");
 DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
@@ -196,20 +198,20 @@ void GoogleTraceSimulator::Run() {
       }
     }
 
-    FILE *graph_output_file = NULL;
+    graph_output_ = NULL;
     if (!FLAGS_graph_output_file.empty()) {
-      graph_output_file = fopen(FLAGS_graph_output_file.c_str(), "w");
-      if (!graph_output_file) {
+      graph_output_ = fopen(FLAGS_graph_output_file.c_str(), "w");
+      if (!graph_output_) {
         LOG(FATAL) << "Could not open for writing graph file "
                    << FLAGS_graph_output_file
                    << ", error: " << strerror(errno);
       }
     }
 
-    ReplayTrace(stats_file, graph_output_file);
+    ReplayTrace(stats_file);
 
-    if (graph_output_file) {
-      fclose(graph_output_file);
+    if (graph_output_) {
+      fclose(graph_output_);
     }
     if (stats_file) {
       delete stats_file;
@@ -217,6 +219,15 @@ void GoogleTraceSimulator::Run() {
   }
 }
 
+#define LOGEVENT(msg) { \
+  ostringstream _ss; \
+  _ss << msg; \
+  std::string _s = _ss.str(); \
+  VLOG(1) << _s; \
+  if (graph_output_ && FLAGS_graph_output_events) { \
+  	fprintf(graph_output_, "c %s\n", _s.c_str()); \
+  } \
+}
 
 ResourceDescriptor* GoogleTraceSimulator::AddMachine(
     const ResourceTopologyNodeDescriptor& machine_tmpl, uint64_t machine_id) {
@@ -668,16 +679,16 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
     }
 
     if (it->second.type() == EventDescriptor::ADD_MACHINE) {
-      VLOG(1) << "ADD_MACHINE " << it->second.machine_id() << " @ " << it->first;
+      LOGEVENT("ADD_MACHINE " << it->second.machine_id() << " @ " << it->first);
       AddMachine(machine_tmpl, it->second.machine_id());
     } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
-      VLOG(1) << "REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first;
+      LOGEVENT("REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first);
       RemoveMachine(it->second.machine_id());
     } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
       // TODO(ionel): Handle machine update event.
     } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
-      VLOG(1) << "TASK_END_RUNTIME " << it->second.job_id() << " "
-              << it->second.task_index() << " @ " << it->first;;
+      LOGEVENT("TASK_END_RUNTIME " << it->second.job_id()
+      		     << " " << it->second.task_index() << " @ " << it->first);
       // Task has finished.
       TaskIdentifier task_identifier;
       task_identifier.task_index = it->second.task_index();
@@ -697,9 +708,9 @@ void GoogleTraceSimulator::ProcessTaskEvent(
     unordered_map<TaskIdentifier, uint64_t,
       TaskIdentifierHasher>* task_runtime) {
   if (event_type == SUBMIT_EVENT) {
-    VLOG(1) << "TASK_SUBMIT_EVENT: ID "
+    LOGEVENT("TASK_SUBMIT_EVENT: ID "
             << task_identifier.job_id << "/" << task_identifier.task_index
-            << " @ " << cur_time;
+            << " @ " << cur_time);
     AddNewTask(task_identifier);
     AddTaskStats(task_identifier, task_runtime);
   }
@@ -844,8 +855,7 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
                                               GetCurrentTimestamp())));
 }
 
-void GoogleTraceSimulator::ReplayTrace(
-                                ofstream *stats_file, FILE *graph_output_file) {
+void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
   // Output CSV header
   if (stats_file) {
     *stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,total_time"
@@ -923,14 +933,14 @@ void GoogleTraceSimulator::ReplayTrace(
 
             LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
 
-            if (graph_output_file) {
-              fprintf(graph_output_file, "c SOI %lu\n", time_interval_bound);
-              fflush(graph_output_file);
+            if (graph_output_) {
+              fprintf(graph_output_, "c SOI %lu\n", time_interval_bound);
+              fflush(graph_output_);
             }
             double algorithm_time, flowsolver_time;
             multimap<uint64_t, uint64_t>* task_mappings =
               quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time,
-                                      graph_output_file);
+                                      graph_output_);
 
             UpdateFlowGraph(time_interval_bound, task_runtime, task_mappings);
 
