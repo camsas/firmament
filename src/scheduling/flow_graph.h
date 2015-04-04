@@ -40,7 +40,8 @@ class FlowGraph {
       ResourceTopologyNodeDescriptor* resource_tree);
   void AdjustUnscheduledAggArcCosts();
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
-                 uint64_t cap_upper_bound, uint64_t cost);
+                 uint64_t cap_upper_bound, uint64_t cost,
+								 const char *comment=NULL);
   bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
   static FlowGraphArc* GetArc(FlowGraphNode* src, FlowGraphNode* dst);
   void JobCompleted(JobID_t job_id);
@@ -118,13 +119,13 @@ class FlowGraph {
                                    FlowGraphNode* new_node);
   void ConfigureResourceLeafNode(const ResourceTopologyNodeDescriptor& rtnd,
                                  FlowGraphNode* new_node);
-  void DeleteArcGeneratingDelta(FlowGraphArc* arc);
+  void DeleteArcGeneratingDelta(FlowGraphArc* arc, const char *comment=NULL);
   void DeleteArc(FlowGraphArc* arc);
-  void DeleteNode(FlowGraphNode* node);
-  void DeleteResourceNode(FlowGraphNode* res_node);
-  void DeleteTaskNode(TaskID_t task_id);
-  void DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv);
-  void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv);
+  void DeleteNode(FlowGraphNode* node, const char *comment=NULL);
+  void DeleteResourceNode(FlowGraphNode* res_node, const char *comment=NULL);
+  void DeleteTaskNode(TaskID_t task_id, const char *comment=NULL);
+  void DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv, const char *comment=NULL);
+  void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv, const char *comment=NULL);
   FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   uint64_t NextId();
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);

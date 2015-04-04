@@ -13,11 +13,13 @@ class DIMACSChange {
   virtual ~DIMACSChange() {
   }
 
-  virtual void SetComment(string &comment) final {
-  	this->comment = comment;
+  virtual void SetComment(const char *comment) final {
+  	if (comment) {
+  		this->comment = comment;
+  	}
   }
 
-  virtual const string GenerateChange() const {
+  virtual const std::string GenerateChange() const {
   	if (!comment.empty()) {
   		stringstream ss;
 			ss << "c " << comment << "\n";
