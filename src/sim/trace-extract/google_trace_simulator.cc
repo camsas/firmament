@@ -668,15 +668,15 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
     }
 
     if (it->second.type() == EventDescriptor::ADD_MACHINE) {
-      VLOG(2) << "ADD_MACHINE " << it->second.machine_id() << " @ " << it->first;
+      VLOG(1) << "ADD_MACHINE " << it->second.machine_id() << " @ " << it->first;
       AddMachine(machine_tmpl, it->second.machine_id());
     } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
-      VLOG(2) << "REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first;
+      VLOG(1) << "REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first;
       RemoveMachine(it->second.machine_id());
     } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
       // TODO(ionel): Handle machine update event.
     } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
-      VLOG(2) << "TASK_END_RUNTIME " << it->second.job_id() << " "
+      VLOG(1) << "TASK_END_RUNTIME " << it->second.job_id() << " "
               << it->second.task_index() << " @ " << it->first;;
       // Task has finished.
       TaskIdentifier task_identifier;
@@ -697,7 +697,7 @@ void GoogleTraceSimulator::ProcessTaskEvent(
     unordered_map<TaskIdentifier, uint64_t,
       TaskIdentifierHasher>* task_runtime) {
   if (event_type == SUBMIT_EVENT) {
-    VLOG(3) << "TASK_SUBMIT_EVENT: ID "
+    VLOG(1) << "TASK_SUBMIT_EVENT: ID "
             << task_identifier.job_id << "/" << task_identifier.task_index
             << " @ " << cur_time;
     AddNewTask(task_identifier);
@@ -908,7 +908,7 @@ void GoogleTraceSimulator::ReplayTrace(
             return;
           }
 
-          VLOG(3) << "TASK EVENT @ " << task_time;
+          VLOG(2) << "TASK EVENT @ " << task_time;
 
           if (task_time > time_interval_bound) {
             ProcessSimulatorEvents(time_interval_bound, machine_tmpl);
