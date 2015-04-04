@@ -13,6 +13,10 @@ class DIMACSChange {
   virtual ~DIMACSChange() {
   }
 
+  virtual const std::string &GetComment() const final {
+  	return comment;
+  }
+
   virtual void SetComment(const char *comment) final {
   	if (comment) {
   		this->comment = comment;

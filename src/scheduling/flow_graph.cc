@@ -67,6 +67,9 @@ FlowGraph::~FlowGraph() {
 }
 
 void FlowGraph::AddGraphChange(DIMACSChange* change) {
+	if (change->GetComment().empty()) {
+		change->SetComment("AddGraphChange: anonymous caller");
+	}
   graph_changes_.push_back(change);
 }
 
