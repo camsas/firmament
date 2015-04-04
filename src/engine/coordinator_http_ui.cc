@@ -69,6 +69,13 @@ void CoordinatorHTTPUI::AddHeaderToTemplate(TemplateDictionary* dict,
   pgheader_sub_dict->SetFilename("src/webui/page_header.tpl");
   pgheader_sub_dict->SetValue("RESOURCE_ID", to_string(uuid));
   pgheader_sub_dict->SetValue("RESOURCE_HOST", coordinator_->hostname());
+  // Statistics for page header
+  pgheader_sub_dict->SetIntValue("NUM_JOBS_RUNNING",
+      coordinator_->NumJobsInState(JobDescriptor::RUNNING));
+  pgheader_sub_dict->SetIntValue("NUM_TASKS_RUNNING",
+      coordinator_->NumTasksInState(TaskDescriptor::RUNNING));
+  pgheader_sub_dict->SetIntValue("NUM_RESOURCES",
+      coordinator_->NumResources());
   // Error message, if set
   if (err) {
     TemplateDictionary* err_dict =
