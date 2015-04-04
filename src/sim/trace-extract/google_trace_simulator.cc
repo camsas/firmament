@@ -60,23 +60,31 @@ const static uint64_t SEED = 0;
 
 #define EPS 0.00001
 
-DEFINE_uint64(runtime, 9223372036854775807,
-              "Time in microsec to extract data for (from start of trace)");
-DEFINE_string(output_dir, "", "Directory for output flow graphs.");
+
 DEFINE_bool(tasks_preemption_bins, false,
             "Compute bins of number of preempted tasks.");
 DEFINE_uint64(bin_time_duration, 10, "Bin size in microseconds.");
 DEFINE_string(task_bins_output, "bins.out",
               "The file in which the task bins are written.");
+
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
+DEFINE_uint64(runtime, 9223372036854775807,
+              "Time in microsec to extract data for (from start of trace)");
+DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
+DEFINE_uint64(batch_step, 0, "Batch mode: time interval to run solver at.");
+DEFINE_double(online_factor, 0.0, "Online mode: speed at which to run at. "
+  "Factor of 1 corresponds to real-time. Larger to include overheads elsewhere "
+  "in Firmament etc., smaller to simulate solver running faster.");
+
 DEFINE_string(stats_file, "", "File to write CSV of statistics.");
 DEFINE_string(graph_output_file, "", "File to write incremental DIMACS export.");
+DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 DEFINE_bool(graph_output_events, true, "If -graph_output_file specified: "
-		                                   "export simulator events as comments?");
-DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
+                                       "export simulator events as comments?");
+
+DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2 | custom.");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
-DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2 | custom.");
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
@@ -152,6 +160,11 @@ void GoogleTraceSimulator::Run() {
   proportion_ = (FLAGS_percentage / (double)100) * MAX_VALUE;
   VLOG(2) << "Retaining events with hash < " << proportion_;
 
+  CHECK(FLAGS_batch_step != 0 || FLAGS_online_factor != 0.0)
+                        << "must specify one of -batch_step or -online_factor.";
+  CHECK(FLAGS_batch_step == 0 || FLAGS_online_factor == 0.0)
+                       << "cannot specify both -batch_step and -online_factor.";
+
   if (!FLAGS_solver.compare("flowlessly")) {
     FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
     FLAGS_flow_scheduling_solver = "flowlessly";
@@ -225,7 +238,7 @@ void GoogleTraceSimulator::Run() {
   std::string _s = _ss.str(); \
   VLOG(1) << _s; \
   if (graph_output_ && FLAGS_graph_output_events) { \
-  	fprintf(graph_output_, "c %s\n", _s.c_str()); \
+    fprintf(graph_output_, "c %s\n", _s.c_str()); \
   } \
 }
 
@@ -664,6 +677,20 @@ JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
   return jd_ptr;
 }
 
+void GoogleTraceSimulator::SeenExogenous(uint64_t time) {
+  first_exogenous_event_seen_ = std::min(time, first_exogenous_event_seen_);
+}
+
+uint64_t GoogleTraceSimulator::NextSimulatorEvent() {
+  multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
+  if (it == events_.end()) {
+    // empty collection
+    return UINT64_MAX;
+  } else {
+    return it->first;
+  }
+}
+
 void GoogleTraceSimulator::ProcessSimulatorEvents(
     uint64_t cur_time,
     const ResourceTopologyNodeDescriptor& machine_tmpl) {
@@ -681,19 +708,22 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
     if (it->second.type() == EventDescriptor::ADD_MACHINE) {
       LOGEVENT("ADD_MACHINE " << it->second.machine_id() << " @ " << it->first);
       AddMachine(machine_tmpl, it->second.machine_id());
+      SeenExogenous(it->first);
     } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
       LOGEVENT("REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first);
       RemoveMachine(it->second.machine_id());
+      SeenExogenous(it->first);
     } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
       // TODO(ionel): Handle machine update event.
     } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
       LOGEVENT("TASK_END_RUNTIME " << it->second.job_id()
-      		     << " " << it->second.task_index() << " @ " << it->first);
+               << " " << it->second.task_index() << " @ " << it->first);
       // Task has finished.
       TaskIdentifier task_identifier;
       task_identifier.task_index = it->second.task_index();
       task_identifier.job_id = it->second.job_id();
       TaskCompleted(task_identifier);
+      SeenExogenous(it->first);
     } else {
       LOG(ERROR) << "Unexpected event type " << it->second.type() << " @ " << it->first;
     }
@@ -713,6 +743,7 @@ void GoogleTraceSimulator::ProcessTaskEvent(
             << " @ " << cur_time);
     AddNewTask(task_identifier);
     AddTaskStats(task_identifier, task_runtime);
+    SeenExogenous(cur_time);
   }
 }
 
@@ -858,8 +889,15 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
 void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
   // Output CSV header
   if (stats_file) {
-    *stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,total_time"
-                << std::endl;
+    if (FLAGS_batch_step == 0) {
+      // online
+      *stats_file << "cluster_timestamp,scheduling_latency,algorithm_time,"
+                  << "flowsolver_time,total_time" << std::endl;
+    } else {
+      // batch
+      *stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,total_time"
+                  << std::endl;
+    }
   }
 
   boost::timer::cpu_timer timer;
@@ -883,7 +921,8 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
   char line[200];
   vector<string> vals;
   FILE* f_task_events_ptr = NULL;
-  uint64_t time_interval_bound = FLAGS_bin_time_duration;
+  uint64_t time_interval_bound = 0;
+  first_exogenous_event_seen_ = UINT64_MAX;
 
   for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
        file_num++) {
@@ -920,7 +959,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
 
           VLOG(2) << "TASK EVENT @ " << task_time;
 
-          if (task_time > time_interval_bound) {
+          while (task_time > time_interval_bound) {
             ProcessSimulatorEvents(time_interval_bound, machine_tmpl);
 
             if (!flow_graph_->graph_changes().empty()) {
@@ -970,29 +1009,67 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               }
 
               // Update current time.
-              while (time_interval_bound < task_time) {
-                time_interval_bound += FLAGS_bin_time_duration;
+              if (FLAGS_batch_step == 0) {
+                // we're in online mode
+                // 1. when we run the solver next depends on how fast we were
+                double time_to_solve = algorithm_time * 1000 * 1000; // to micro
+                // adjust for time warp factor
+                time_to_solve *= FLAGS_online_factor;
+                time_interval_bound += (uint64_t)time_to_solve;
+                // 2. if task assignments changed, then graph will have been
+                // modified, even in the absence of any new events.
+                // Incremental solvers will want to rerun here, as it reduces
+                // latency. But we shouldn't count it as an actual iteration.
+                // Full solvers will not want to rerun: no point.
+                if (FLAGS_incremental_flow) {
+                  EventDescriptor event;
+                  event.set_type(EventDescriptor::TASK_ASSIGNMENT_CHANGED);
+                  events_.insert(make_pair(time_interval_bound, event));
+                }
+              } else {
+                // we're in batch mode
+                time_interval_bound += FLAGS_batch_step;
               }
 
               // Log stats to CSV file
-              boost::timer::cpu_times total_runtime = timer.elapsed();
               if (stats_file) {
+                boost::timer::cpu_times total_runtime = timer.elapsed();
                 boost::timer::nanosecond_type second = 1000*1000*1000;
                 double total_runtime_float = total_runtime.wall;
                 total_runtime_float /= second;
-                *stats_file << time_interval_bound << ","
-                            << algorithm_time << ","
-                            << flowsolver_time << ","
-                            << total_runtime_float << std::endl;
+                if (FLAGS_batch_step == 0) {
+                  // online mode
+                  double scheduling_latency_seconds
+                      = (time_interval_bound - first_exogenous_event_seen_) / (1000 * 1000);
+                  *stats_file << time_interval_bound << ","
+                              << scheduling_latency_seconds << ","
+                              << algorithm_time << ","
+                              << flowsolver_time << ","
+                              << total_runtime_float << std::endl;
+                } else {
+                  // batch mode
+                  *stats_file << time_interval_bound << ","
+                              << algorithm_time << ","
+                              << flowsolver_time << ","
+                              << total_runtime_float << std::endl;
+                }
                 stats_file->flush();
               }
               // restart timer; elapsed() returns time from this point
               timer.stop(); timer.start();
+
+              first_exogenous_event_seen_ = UINT64_MAX;
             }
+
+            // skip time until the next event happens
+            uint64_t next_event = std::min(task_time, NextSimulatorEvent());
+            time_interval_bound = std::max(next_event, time_interval_bound);
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
           ProcessTaskEvent(task_time, task_id, event_type, task_runtime);
+          first_exogenous_event_seen_ =
+                               std::min(first_exogenous_event_seen_, task_time);
         }
       }
     }

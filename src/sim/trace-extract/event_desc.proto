@@ -11,6 +11,8 @@ message EventDescriptor {
     REMOVE_MACHINE = 1;
     UPDATE_MACHINE = 2;
     TASK_END_RUNTIME = 3;
+  // this is a 'fake' event, used to indicate graph changes due to pinning, etc
+    TASK_ASSIGNMENT_CHANGED = 4;
   }
 
   required EventType type = 1;

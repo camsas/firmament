@@ -135,6 +135,16 @@ class GoogleTraceSimulator {
   JobDescriptor* PopulateJob(uint64_t job_id);
 
   /**
+   * Must be called every time an exogenous event is processed.
+   * @param time the time of the exogenous event
+   */
+  void SeenExogenous(uint64_t time);
+  /**
+   * Time of the next simulator event. UINT64_MAX if no more simulator events.
+   */
+  uint64_t NextSimulatorEvent();
+
+  /**
    * Processes all the simulator events that happen at a given time.
    * @param cur_time the timestamp for which to process the simulator events
    * @param machine_tmpl topology to use in case new machines are added
@@ -237,6 +247,14 @@ class GoogleTraceSimulator {
   // The map storing the simulator events. Maps from timestamp to simulator
   // event.
   multimap<uint64_t, EventDescriptor> events_;
+
+  // Timestamp of the first exogenous event seen this iteration. Any event present
+  // in the original trace is exogeneous, as are those which we have created to
+  // replace events in the trace, e.g. when rerunning task runtime.
+  // Currently, the only endogeneous changes are due to graph updates when a
+  // task is scheduled.
+  // If no exogenous event has been, it is UINT64_MAX.
+  uint64_t first_exogenous_event_seen_;
 
   string trace_path_;
 
