@@ -146,7 +146,9 @@ namespace scheduler {
       // infd[0] == CHILD_READ
       // infd[1] == PARENT_WRITE
 
-      solver_pid = ExecCommandSync(FLAGS_flow_scheduling_binary, args, infd_, outfd_, errfd_);
+    	string binary;
+    	SolverConfiguration(FLAGS_flow_scheduling_solver, &binary, &args);
+      solver_pid = ExecCommandSync(binary, args, infd_, outfd_, errfd_);
       VLOG(2) << "Solver running " << "(PID: " << solver_pid << ")"
               << ", CHILD_READ: " << infd_[0]
               << ", CHILD_WRITE_STD: " << outfd_[1]
