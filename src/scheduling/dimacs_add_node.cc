@@ -10,6 +10,7 @@ namespace firmament {
 
   const string DIMACSAddNode::GenerateChange() const {
     stringstream ss;
+    ss << DIMACSChange::GenerateChange();
     ss << "n " << node_.id_ << " " << node_.excess_ << " " << GetNodeType()
        << "\n";
     for (vector<FlowGraphArc*>::const_iterator it = arcs_->begin();
