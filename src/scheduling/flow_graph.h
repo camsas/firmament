@@ -41,7 +41,7 @@ class FlowGraph {
   void AdjustUnscheduledAggArcCosts();
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                  uint64_t cap_upper_bound, uint64_t cost,
-								 const char *comment=NULL);
+								 const char *comment="ChangeArc");
   bool CheckNodeType(uint64_t node, FlowNodeType_NodeType type);
   static FlowGraphArc* GetArc(FlowGraphNode* src, FlowGraphNode* dst);
   void JobCompleted(JobID_t job_id);

@@ -176,12 +176,17 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
   if (other->resource_id_.is_nil()) {
     return accumulator;
   }
+
   FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
-  arc->cost_ = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
-                                              other->resource_id_);
-  DIMACSChange *chg = new DIMACSChangeArc(*arc);
-  chg->SetComment("Octopus/UpdateStats");
-  flow_graph_->AddGraphChange(chg);
+  uint64_t new_cost = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
+                                                     other->resource_id_);
+  if (arc->cost_ != new_cost) {
+  	arc->cost_ = new_cost;
+		DIMACSChange *chg = new DIMACSChangeArc(*arc);
+		chg->SetComment("Octopus/UpdateStats");
+		flow_graph_->AddGraphChange(chg);
+  }
+
   // Reset the state.
   ResourceStatus* other_rs_ptr =
     FindPtrOrNull(*resource_map_, other->resource_id_);

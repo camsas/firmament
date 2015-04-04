@@ -438,11 +438,15 @@ FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
   }
   // Case: RESOURCE -> RESOURCE
   FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
-  arc->cost_ = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
-                                              other->resource_id_);
-  DIMACSChange *chg = new DIMACSChangeArc(*arc);
-  chg->SetComment("WhareMap/UpdateStats");
-  flow_graph_->AddGraphChange(chg);
+  uint64_t new_cost = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
+                                                     other->resource_id_);
+  if (arc->cost_ != new_cost) {
+  	arc->cost_ = new_cost;
+		DIMACSChange *chg = new DIMACSChangeArc(*arc);
+		chg->SetComment("WhareMap/UpdateStats");
+		flow_graph_->AddGraphChange(chg);
+  }
+
   return accumulator;
 }
 
