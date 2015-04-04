@@ -27,7 +27,7 @@ TESTS_dimacs_exporter_DEPS = $(OBJ_DIR)/flow_graph.o \
 			     $(OBJ_DIR)/knowledge_base.o \
 			     $(BUILD_DIR)/misc/libfirmament_misc.a \
 			     $(BUILD_DIR)/base/libfirmament_base.a \
-			     $(BUILD_DIR)/scheduling/cost_models/libfirmament_base.a
+			     $(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a
 
 TESTS_flow_graph_DEPS = $(OBJ_DIR)/flow_node_type.pb.o \
 			$(OBJ_DIR)/common.o \
@@ -40,7 +40,7 @@ TESTS_flow_graph_DEPS = $(OBJ_DIR)/flow_node_type.pb.o \
 			$(OBJ_DIR)/knowledge_base.o \
 			$(BUILD_DIR)/misc/libfirmament_misc.a \
 			$(BUILD_DIR)/base/libfirmament_base.a \
-			$(BUILD_DIR)/scheduling/cost_models/libfirmament_base.a
+			$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
