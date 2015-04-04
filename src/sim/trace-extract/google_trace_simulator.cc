@@ -923,66 +923,72 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
           if (task_time > time_interval_bound) {
             ProcessSimulatorEvents(time_interval_bound, machine_tmpl);
 
-            VLOG(2) << "Job id size: " << job_id_to_jd_.size();
-            VLOG(2) << "Task id size: " << task_id_to_identifier_.size();
-            VLOG(2) << "Job num tasks size: " << job_num_tasks_.size();
-            VLOG(2) << "Job id to jd size: " << job_map_->size();
-            VLOG(2) << "Task id to td size: " << task_map_->size();
-            VLOG(2) << "Res id to rd size: " << resource_map_->size();
-            VLOG(2) << "Task binding: " << task_bindings_.size();
+            if (!flow_graph_->graph_changes().empty()) {
+              // Only run solver if something has actually changed.
+              // (Sometimes, all the events we received in a time interval
+              // have been ignored, e.g. task submit events with duplicate IDs.)
+              VLOG(2) << "Job id size: " << job_id_to_jd_.size();
+              VLOG(2) << "Task id size: " << task_id_to_identifier_.size();
+              VLOG(2) << "Job num tasks size: " << job_num_tasks_.size();
+              VLOG(2) << "Job id to jd size: " << job_map_->size();
+              VLOG(2) << "Task id to td size: " << task_map_->size();
+              VLOG(2) << "Res id to rd size: " << resource_map_->size();
+              VLOG(2) << "Task binding: " << task_bindings_.size();
 
-            LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
+              LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
 
-            if (graph_output_) {
-              fprintf(graph_output_, "c SOI %lu\n", time_interval_bound);
-              fflush(graph_output_);
+              if (graph_output_) {
+                fprintf(graph_output_, "c SOI %lu\n", time_interval_bound);
+                fflush(graph_output_);
+              }
+              double algorithm_time, flowsolver_time;
+
+              multimap<uint64_t, uint64_t>* task_mappings =
+                quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time,
+                                        graph_output_);
+
+              UpdateFlowGraph(time_interval_bound, task_runtime, task_mappings);
+
+              delete task_mappings;
+
+              if (FLAGS_flow_scheduling_cost_model ==
+                  FlowSchedulingCostModelType::COST_MODEL_COCO ||
+                  FLAGS_flow_scheduling_cost_model ==
+                  FlowSchedulingCostModelType::COST_MODEL_OCTOPUS ||
+                  FLAGS_flow_scheduling_cost_model ==
+                  FlowSchedulingCostModelType::COST_MODEL_WHARE) {
+                flow_graph_->ComputeTopologyStatistics(
+                    flow_graph_->sink_node(),
+                    boost::bind(&FlowSchedulingCostModelInterface::GatherStats,
+                                cost_model_, _1, _2));
+                flow_graph_->ComputeTopologyStatistics(
+                    flow_graph_->sink_node(),
+                    boost::bind(&FlowSchedulingCostModelInterface::UpdateStats,
+                                cost_model_, _1, _2));
+              } else {
+                LOG(INFO) << "No resource stats update required";
+              }
+
+              // Update current time.
+              while (time_interval_bound < task_time) {
+                time_interval_bound += FLAGS_bin_time_duration;
+              }
+
+              // Log stats to CSV file
+              boost::timer::cpu_times total_runtime = timer.elapsed();
+              if (stats_file) {
+                boost::timer::nanosecond_type second = 1000*1000*1000;
+                double total_runtime_float = total_runtime.wall;
+                total_runtime_float /= second;
+                *stats_file << time_interval_bound << ","
+                            << algorithm_time << ","
+                            << flowsolver_time << ","
+                            << total_runtime_float << std::endl;
+                stats_file->flush();
+              }
+              // restart timer; elapsed() returns time from this point
+              timer.stop(); timer.start();
             }
-            double algorithm_time, flowsolver_time;
-            multimap<uint64_t, uint64_t>* task_mappings =
-              quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time,
-                                      graph_output_);
-
-            UpdateFlowGraph(time_interval_bound, task_runtime, task_mappings);
-
-            delete task_mappings;
-
-            if (FLAGS_flow_scheduling_cost_model ==
-                FlowSchedulingCostModelType::COST_MODEL_COCO ||
-                FLAGS_flow_scheduling_cost_model ==
-                FlowSchedulingCostModelType::COST_MODEL_OCTOPUS ||
-                FLAGS_flow_scheduling_cost_model ==
-                FlowSchedulingCostModelType::COST_MODEL_WHARE) {
-              flow_graph_->ComputeTopologyStatistics(
-                  flow_graph_->sink_node(),
-                  boost::bind(&FlowSchedulingCostModelInterface::GatherStats,
-                              cost_model_, _1, _2));
-              flow_graph_->ComputeTopologyStatistics(
-                  flow_graph_->sink_node(),
-                  boost::bind(&FlowSchedulingCostModelInterface::UpdateStats,
-                              cost_model_, _1, _2));
-            } else {
-              LOG(INFO) << "No resource stats update required";
-            }
-
-            // Update current time.
-            while (time_interval_bound < task_time) {
-              time_interval_bound += FLAGS_bin_time_duration;
-            }
-
-            // Log stats to CSV file
-            boost::timer::cpu_times total_runtime = timer.elapsed();
-            if (stats_file) {
-              boost::timer::nanosecond_type second = 1000*1000*1000;
-              double total_runtime_float = total_runtime.wall;
-              total_runtime_float /= second;
-              *stats_file << time_interval_bound << ","
-                          << algorithm_time << ","
-                          << flowsolver_time << ","
-                          << total_runtime_float << std::endl;
-              stats_file->flush();
-            }
-            // restart timer; elapsed() returns time from this point
-            timer.stop(); timer.start();
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
