@@ -75,6 +75,10 @@ DEFINE_uint64(batch_step, 0, "Batch mode: time interval to run solver at.");
 DEFINE_double(online_factor, 0.0, "Online mode: speed at which to run at. "
   "Factor of 1 corresponds to real-time. Larger to include overheads elsewhere "
   "in Firmament etc., smaller to simulate solver running faster.");
+DEFINE_double(online_max_time, 100000000.0, "Online mode: cap on time solver "
+	"takes to run, in seconds. If unspecified, no cap imposed. Only use with "
+	"incremental solver, in which case it should be set to the worst case runtime "
+	"of the full solver.");
 
 DEFINE_string(stats_file, "", "File to write CSV of statistics.");
 DEFINE_string(graph_output_file, "", "File to write incremental DIMACS export.");
@@ -1009,14 +1013,23 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               }
 
               // Update current time.
+              double scheduling_latency;
               if (FLAGS_batch_step == 0) {
                 // we're in online mode
-                // 1. when we run the solver next depends on how fast we were
-                double time_to_solve = algorithm_time * 1000 * 1000; // to micro
+
+              	// 1. compute the scheduling latency for statistics
+              	scheduling_latency = time_interval_bound;
+              	scheduling_latency += algorithm_time * 1000 * 1000;
+              	scheduling_latency -= first_exogenous_event_seen_;
+
+                // 2. when we run the solver next depends on how fast we were
+              	double time_to_solve =
+              			            std::min(algorithm_time, FLAGS_online_max_time);
+                time_to_solve *= 1000 * 1000; // to micro
                 // adjust for time warp factor
                 time_to_solve *= FLAGS_online_factor;
                 time_interval_bound += (uint64_t)time_to_solve;
-                // 2. if task assignments changed, then graph will have been
+                // 3. if task assignments changed, then graph will have been
                 // modified, even in the absence of any new events.
                 // Incremental solvers will want to rerun here, as it reduces
                 // latency. But we shouldn't count it as an actual iteration.
@@ -1039,10 +1052,9 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
                 total_runtime_float /= second;
                 if (FLAGS_batch_step == 0) {
                   // online mode
-                  double scheduling_latency_seconds
-                      = (time_interval_bound - first_exogenous_event_seen_) / (1000 * 1000);
+                  scheduling_latency /= (1000 * 1000);
                   *stats_file << time_interval_bound << ","
-                              << scheduling_latency_seconds << ","
+                              << scheduling_latency << ","
                               << algorithm_time << ","
                               << flowsolver_time << ","
                               << total_runtime_float << std::endl;
