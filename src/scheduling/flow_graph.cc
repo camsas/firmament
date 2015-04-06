@@ -513,8 +513,11 @@ void FlowGraph::AdjustUnscheduledAggArcCosts() {
       FlowGraphArc* arc = ait_tmp->second;
       CHECK_NOTNULL(arc);
       TaskID_t task_id = Node(arc->src_)->task_id_;
-      ChangeArc(arc, arc->cap_lower_bound_, arc->cap_upper_bound_,
-                cost_model_->TaskToUnscheduledAggCost(task_id));
+      Cost_t new_cost = cost_model_->TaskToUnscheduledAggCost(task_id);
+      if ((uint64_t)new_cost != arc->cost_) {
+        arc->cost_ = new_cost;
+        graph_changes_.push_back(new DIMACSChangeArc(*arc));
+      }
     }
   }
 }
@@ -608,21 +611,27 @@ bool FlowGraph::CheckNodeType(uint64_t node, FlowNodeType_NodeType type) {
 }
 
 void FlowGraph::ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
-                          uint64_t cap_upper_bound, uint64_t cost) {
+                          uint64_t cap_upper_bound, uint64_t cost,
+													const char *comment) {
   arc->cap_lower_bound_ = cap_lower_bound;
   arc->cap_upper_bound_ = cap_upper_bound;
   arc->cost_ = cost;
   if (!arc->cap_upper_bound_) {
-    DeleteArcGeneratingDelta(arc);
+    DeleteArcGeneratingDelta(arc, comment);
   } else {
-    graph_changes_.push_back(new DIMACSChangeArc(*arc));
+  	DIMACSChange *chg = new DIMACSChangeArc(*arc);
+  	chg->SetComment(comment);
+    graph_changes_.push_back(chg);
   }
 }
 
-void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc) {
+void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc, const char *comment) {
   arc->cap_lower_bound_ = 0;
   arc->cap_upper_bound_ = 0;
-  graph_changes_.push_back(new DIMACSChangeArc(*arc));
+
+  DIMACSChange *chg = new DIMACSChangeArc(*arc);
+  chg->SetComment(comment);
+  graph_changes_.push_back(chg);
   DeleteArc(arc);
 }
 

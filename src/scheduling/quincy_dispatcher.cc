@@ -7,8 +7,11 @@
 
 #include <sys/stat.h>
 
+#include <pthread.h>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/timer/timer.hpp>
 
 #include "misc/string_utils.h"
 #include "misc/utils.h"

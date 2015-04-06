@@ -3,7 +3,8 @@ SUFFIX=scheduling
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_system -lboost_thread -lboost_regex -lhwloc -lssl -lcrypto
+LIBS += -lboost_system -lboost_thread -lboost_regex -lboost_timer \
+        -lhwloc -lssl -lcrypto
 
 LIB = libfirmament_scheduling.a
 OBJS = dimacs_exporter.o event_driven_scheduler.o flow_graph.o \
