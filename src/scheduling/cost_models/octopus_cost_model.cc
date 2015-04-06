@@ -182,7 +182,7 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
                                                      other->resource_id_);
   if (arc->cost_ != new_cost) {
     arc->cost_ = new_cost;
-		 flow_graph_->AddGraphChange(new DIMACSChangeArc(*arc));
+    flow_graph_->AddGraphChange(new DIMACSChangeArc(*arc));
   }
 
   // Reset the state.

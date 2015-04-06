@@ -611,27 +611,21 @@ bool FlowGraph::CheckNodeType(uint64_t node, FlowNodeType_NodeType type) {
 }
 
 void FlowGraph::ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
-                          uint64_t cap_upper_bound, uint64_t cost,
-													const char *comment) {
+                          uint64_t cap_upper_bound, uint64_t cost) {
   arc->cap_lower_bound_ = cap_lower_bound;
   arc->cap_upper_bound_ = cap_upper_bound;
   arc->cost_ = cost;
   if (!arc->cap_upper_bound_) {
-    DeleteArcGeneratingDelta(arc, comment);
+    DeleteArcGeneratingDelta(arc);
   } else {
-  	DIMACSChange *chg = new DIMACSChangeArc(*arc);
-  	chg->SetComment(comment);
-    graph_changes_.push_back(chg);
+    graph_changes_.push_back(new DIMACSChangeArc(*arc));
   }
 }
 
-void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc, const char *comment) {
+void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc) {
   arc->cap_lower_bound_ = 0;
   arc->cap_upper_bound_ = 0;
-
-  DIMACSChange *chg = new DIMACSChangeArc(*arc);
-  chg->SetComment(comment);
-  graph_changes_.push_back(chg);
+  graph_changes_.push_back(new DIMACSChangeArc(*arc));
   DeleteArc(arc);
 }
 

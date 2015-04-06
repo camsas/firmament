@@ -13,6 +13,7 @@
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/timer/timer.hpp>
 
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -44,7 +45,6 @@ namespace sim {
 #define LOST_EVENT 6
 #define UPDATE_PENDING_EVENT 7
 #define UPDATE_RUNNING_EVENT 8
-
 
 #define MACHINE_ADD 0
 #define MACHINE_REMOVE 1
