@@ -701,9 +701,8 @@ uint64_t GoogleTraceSimulator::NextSimulatorEvent() {
   }
 }
 
-void GoogleTraceSimulator::ProcessSimulatorEvents(
-    uint64_t cur_time,
-    const ResourceTopologyNodeDescriptor& machine_tmpl) {
+void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
+                           const ResourceTopologyNodeDescriptor& machine_tmpl) {
   while (true) {
     multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
     if (it == events_.end()) {
@@ -973,7 +972,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
 
           num_events++;
           if (num_events > FLAGS_max_events) {
-            LOG(INFO) << "Terminating after " << num_events << "events";
+            LOG(INFO) << "Terminating after " << num_events << " events";
             return;
           }
 
@@ -1066,14 +1065,14 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               if (FLAGS_batch_step == 0) {
                 // we're in online mode
 
-                // 2. when we run the solver next depends on how fast we were
+                // 1. when we run the solver next depends on how fast we were
                 double time_to_solve =
                                 std::min(algorithm_time, FLAGS_online_max_time);
                 time_to_solve *= 1000 * 1000; // to micro
                 // adjust for time warp factor
                 time_to_solve *= FLAGS_online_factor;
                 time_interval_bound += (uint64_t)time_to_solve;
-                // 3. if task assignments changed, then graph will have been
+                // 2. if task assignments changed, then graph will have been
                 // modified, even in the absence of any new events.
                 // Incremental solvers will want to rerun here, as it reduces
                 // latency. But we shouldn't count it as an actual iteration.
@@ -1091,14 +1090,17 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               first_exogenous_event_seen_ = UINT64_MAX;
             }
 
+            VLOG(1) << "Updated time interval bound to " << time_interval_bound;
             // skip time until the next event happens
             uint64_t next_event = std::min(task_time, NextSimulatorEvent());
+            VLOG(1) << "Next event at " << next_event;
             time_interval_bound = std::max(next_event, time_interval_bound);
+            VLOG(1) << "Time interval bound to " << time_interval_bound;
 
             num_scheduling_rounds++;
             if (num_scheduling_rounds >= FLAGS_max_scheduling_rounds) {
               LOG(INFO) << "Terminating after " << num_scheduling_rounds
-                        << "scheduling rounds.";
+                        << " scheduling rounds.";
               return;
             }
           }
