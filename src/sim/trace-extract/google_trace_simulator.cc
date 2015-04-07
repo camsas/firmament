@@ -70,6 +70,8 @@ DEFINE_string(task_bins_output, "bins.out",
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_uint64(runtime, 9223372036854775807,
           "Maximum time in microsec to extract data for (from start of trace)");
+DEFINE_uint64(max_events, UINT64_MAX,
+		                               "Maximum number of task events to process.");
 DEFINE_uint64(max_scheduling_rounds, UINT64_MAX,
 		                         "Maximum number of scheduling rounds to run for.");
 DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
@@ -196,6 +198,7 @@ void GoogleTraceSimulator::Run() {
 
   LOG(INFO) << "Starting Google trace simulator!";
   LOG(INFO) << "Time to simulate for: " << FLAGS_runtime << " microseconds.";
+  LOG(INFO) << "Number of events to process: " << FLAGS_max_events;
   LOG(INFO) << "Number of scheduling rounds: " << FLAGS_max_scheduling_rounds;
 
   CreateRootResource();
@@ -929,6 +932,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
   vector<string> vals;
   FILE* f_task_events_ptr = NULL;
   uint64_t time_interval_bound = 0;
+  uint64_t num_events = 0;
   uint64_t num_scheduling_rounds = 0;
   first_exogenous_event_seen_ = UINT64_MAX;
 
@@ -963,6 +967,12 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
           if (FLAGS_runtime < task_time) {
             LOG(INFO) << "Terminating at : " << task_time;
             return;
+          }
+
+          num_events++;
+          if (num_events > FLAGS_max_events) {
+          	LOG(INFO) << "Terminating after " << num_events << "events";
+          	return;
           }
 
           VLOG(2) << "TASK EVENT @ " << task_time;
