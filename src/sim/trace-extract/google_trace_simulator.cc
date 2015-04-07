@@ -71,18 +71,18 @@ DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_uint64(runtime, 9223372036854775807,
           "Maximum time in microsec to extract data for (from start of trace)");
 DEFINE_uint64(max_events, UINT64_MAX,
-		                               "Maximum number of task events to process.");
+                                   "Maximum number of task events to process.");
 DEFINE_uint64(max_scheduling_rounds, UINT64_MAX,
-		                         "Maximum number of scheduling rounds to run for.");
+                             "Maximum number of scheduling rounds to run for.");
 DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
 DEFINE_uint64(batch_step, 0, "Batch mode: time interval to run solver at.");
 DEFINE_double(online_factor, 0.0, "Online mode: speed at which to run at. "
   "Factor of 1 corresponds to real-time. Larger to include overheads elsewhere "
   "in Firmament etc., smaller to simulate solver running faster.");
 DEFINE_double(online_max_time, 100000000.0, "Online mode: cap on time solver "
-	"takes to run, in seconds. If unspecified, no cap imposed. Only use with "
-	"incremental solver, in which case it should be set to the worst case runtime "
-	"of the full solver.");
+  "takes to run, in seconds. If unspecified, no cap imposed. Only use with "
+  "incremental solver, in which case it should be set to the worst case runtime "
+  "of the full solver.");
 
 DEFINE_string(stats_file, "", "File to write CSV of statistics.");
 DEFINE_string(graph_output_file, "", "File to write incremental DIMACS export.");
@@ -734,6 +734,8 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
       task_identifier.job_id = it->second.job_id();
       TaskCompleted(task_identifier);
       SeenExogenous(it->first);
+    } else if (it->second.type() == EventDescriptor::TASK_ASSIGNMENT_CHANGED) {
+      // no-op: this event is just used to trigger solver re-run
     } else {
       LOG(ERROR) << "Unexpected event type " << it->second.type() << " @ " << it->first;
     }
@@ -971,8 +973,8 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
 
           num_events++;
           if (num_events > FLAGS_max_events) {
-          	LOG(INFO) << "Terminating after " << num_events << "events";
-          	return;
+            LOG(INFO) << "Terminating after " << num_events << "events";
+            return;
           }
 
           VLOG(2) << "TASK EVENT @ " << task_time;
@@ -1026,19 +1028,47 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
                 LOG(INFO) << "No resource stats update required";
               }
 
+              // Log stats to CSV file
+              if (stats_file) {
+                boost::timer::cpu_times total_runtime = timer.elapsed();
+                boost::timer::nanosecond_type second = 1000*1000*1000;
+                double total_runtime_float = total_runtime.wall;
+                total_runtime_float /= second;
+                if (FLAGS_batch_step == 0) {
+                  // online mode
+
+                  double scheduling_latency = time_interval_bound;
+                  scheduling_latency += algorithm_time * 1000 * 1000;
+                  scheduling_latency -= first_exogenous_event_seen_;
+                  scheduling_latency /= (1000 * 1000);
+
+                  // will be negative if we have not seen any exogeneous event
+                  scheduling_latency = std::max(0.0, scheduling_latency);
+
+                  *stats_file << time_interval_bound << ","
+                              << scheduling_latency << ","
+                              << algorithm_time << ","
+                              << flowsolver_time << ","
+                              << total_runtime_float << std::endl;
+                } else {
+                  // batch mode
+                  *stats_file << time_interval_bound << ","
+                              << algorithm_time << ","
+                              << flowsolver_time << ","
+                              << total_runtime_float << std::endl;
+                }
+                stats_file->flush();
+              }
+              // restart timer; elapsed() returns time from this point
+              timer.stop(); timer.start();
+
               // Update current time.
-              double scheduling_latency;
               if (FLAGS_batch_step == 0) {
                 // we're in online mode
 
-              	// 1. compute the scheduling latency for statistics
-              	scheduling_latency = time_interval_bound;
-              	scheduling_latency += algorithm_time * 1000 * 1000;
-              	scheduling_latency -= first_exogenous_event_seen_;
-
                 // 2. when we run the solver next depends on how fast we were
-              	double time_to_solve =
-              			            std::min(algorithm_time, FLAGS_online_max_time);
+                double time_to_solve =
+                                std::min(algorithm_time, FLAGS_online_max_time);
                 time_to_solve *= 1000 * 1000; // to micro
                 // adjust for time warp factor
                 time_to_solve *= FLAGS_online_factor;
@@ -1058,32 +1088,6 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
                 time_interval_bound += FLAGS_batch_step;
               }
 
-              // Log stats to CSV file
-              if (stats_file) {
-                boost::timer::cpu_times total_runtime = timer.elapsed();
-                boost::timer::nanosecond_type second = 1000*1000*1000;
-                double total_runtime_float = total_runtime.wall;
-                total_runtime_float /= second;
-                if (FLAGS_batch_step == 0) {
-                  // online mode
-                  scheduling_latency /= (1000 * 1000);
-                  *stats_file << time_interval_bound << ","
-                              << scheduling_latency << ","
-                              << algorithm_time << ","
-                              << flowsolver_time << ","
-                              << total_runtime_float << std::endl;
-                } else {
-                  // batch mode
-                  *stats_file << time_interval_bound << ","
-                              << algorithm_time << ","
-                              << flowsolver_time << ","
-                              << total_runtime_float << std::endl;
-                }
-                stats_file->flush();
-              }
-              // restart timer; elapsed() returns time from this point
-              timer.stop(); timer.start();
-
               first_exogenous_event_seen_ = UINT64_MAX;
             }
 
@@ -1093,9 +1097,9 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
 
             num_scheduling_rounds++;
             if (num_scheduling_rounds >= FLAGS_max_scheduling_rounds) {
-            	LOG(INFO) << "Terminating after " << num_scheduling_rounds
-            			      << "scheduling rounds.";
-            	return;
+              LOG(INFO) << "Terminating after " << num_scheduling_rounds
+                        << "scheduling rounds.";
+              return;
             }
           }
 
