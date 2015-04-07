@@ -69,7 +69,9 @@ DEFINE_string(task_bins_output, "bins.out",
 
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_uint64(runtime, 9223372036854775807,
-              "Time in microsec to extract data for (from start of trace)");
+          "Maximum time in microsec to extract data for (from start of trace)");
+DEFINE_uint64(max_scheduling_rounds, UINT64_MAX,
+		                         "Maximum number of scheduling rounds to run for.");
 DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
 DEFINE_uint64(batch_step, 0, "Batch mode: time interval to run solver at.");
 DEFINE_double(online_factor, 0.0, "Online mode: speed at which to run at. "
@@ -194,6 +196,7 @@ void GoogleTraceSimulator::Run() {
 
   LOG(INFO) << "Starting Google trace simulator!";
   LOG(INFO) << "Time to simulate for: " << FLAGS_runtime << " microseconds.";
+  LOG(INFO) << "Number of scheduling rounds: " << FLAGS_max_scheduling_rounds;
 
   CreateRootResource();
 
@@ -926,6 +929,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
   vector<string> vals;
   FILE* f_task_events_ptr = NULL;
   uint64_t time_interval_bound = 0;
+  uint64_t num_scheduling_rounds = 0;
   first_exogenous_event_seen_ = UINT64_MAX;
 
   for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
@@ -1076,6 +1080,13 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
             // skip time until the next event happens
             uint64_t next_event = std::min(task_time, NextSimulatorEvent());
             time_interval_bound = std::max(next_event, time_interval_bound);
+
+            num_scheduling_rounds++;
+            if (num_scheduling_rounds >= FLAGS_max_scheduling_rounds) {
+            	LOG(INFO) << "Terminating after " << num_scheduling_rounds
+            			      << "scheduling rounds.";
+            	return;
+            }
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
