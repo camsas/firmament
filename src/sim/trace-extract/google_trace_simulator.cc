@@ -1087,8 +1087,6 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
                 time_interval_bound += FLAGS_batch_step;
               }
 
-              first_exogenous_event_seen_ = UINT64_MAX;
-
               num_scheduling_rounds++;
               if (num_scheduling_rounds >= FLAGS_max_scheduling_rounds) {
                 LOG(INFO) << "Terminating after " << num_scheduling_rounds
@@ -1103,6 +1101,8 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
             VLOG(1) << "Next event at " << next_event;
             time_interval_bound = std::max(next_event, time_interval_bound);
             VLOG(1) << "Time interval bound to " << time_interval_bound;
+
+            first_exogenous_event_seen_ = UINT64_MAX;
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
