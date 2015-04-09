@@ -1088,6 +1088,13 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               }
 
               first_exogenous_event_seen_ = UINT64_MAX;
+
+              num_scheduling_rounds++;
+              if (num_scheduling_rounds >= FLAGS_max_scheduling_rounds) {
+                LOG(INFO) << "Terminating after " << num_scheduling_rounds
+                          << " scheduling rounds.";
+                return;
+              }
             }
 
             VLOG(1) << "Updated time interval bound to " << time_interval_bound;
@@ -1096,13 +1103,6 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
             VLOG(1) << "Next event at " << next_event;
             time_interval_bound = std::max(next_event, time_interval_bound);
             VLOG(1) << "Time interval bound to " << time_interval_bound;
-
-            num_scheduling_rounds++;
-            if (num_scheduling_rounds >= FLAGS_max_scheduling_rounds) {
-              LOG(INFO) << "Terminating after " << num_scheduling_rounds
-                        << " scheduling rounds.";
-              return;
-            }
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
