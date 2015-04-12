@@ -11,6 +11,10 @@
 #include <boost/lexical_cast.hpp>
 #include <glog/logging.h>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+
 #include "misc/map-util.h"
 #include "misc/string_utils.h"
 #include "misc/utils.h"
@@ -39,6 +43,16 @@ DECLARE_int32(num_files_to_process);
 
 namespace firmament {
 namespace sim {
+
+	void MkdirIfNotPresent(const string &directory) {
+		if (mkdir(directory.c_str(), 0777) < 0) {
+			// mkdir error
+			if (errno != EEXIST) {
+				// it's fine if directory already exists, ignore
+				PLOG(FATAL) << "Could not make directory " << directory;
+			}
+		}
+	}
 
   GoogleTraceTaskProcessor::GoogleTraceTaskProcessor(const string& trace_path):
     trace_path_(trace_path) {
@@ -649,9 +663,11 @@ namespace sim {
     vector<string> line_cols;
     FILE* usage_file = NULL;
     FILE* usage_stat_file = NULL;
+    string usage_directory;
+    spf(&usage_directory, "%s/task_usage_stat", trace_path_.c_str());
+    MkdirIfNotPresent(usage_directory);
     string usage_file_name;
-    spf(&usage_file_name, "%s/task_usage_stat/task_usage_stat.csv",
-        trace_path_.c_str());
+    spf(&usage_file_name, "%s/task_usage_stat.csv", usage_directory.c_str());
     if ((usage_stat_file = fopen(usage_file_name.c_str(), "w")) == NULL) {
       LOG(FATAL) << "Failed to open task_usage_stat file for writing";
     }
@@ -820,16 +836,19 @@ namespace sim {
     char line[200];
     vector<string> line_cols;
     FILE* events_file = NULL;
+    string out_events_directory;
+		spf(&out_events_directory, "%s/task_runtime_events", trace_path_.c_str());
+		MkdirIfNotPresent(out_events_directory);
     FILE* out_events_file_all;
     FILE* out_events_file_avg;
     string out_file_all_name, out_file_avg_name;
-    spf(&out_file_all_name, "%s/task_runtime_events/all_task_runtime_events.csv",
-        trace_path_.c_str());
+    spf(&out_file_all_name, "%s/all_task_runtime_events.csv",
+    		out_events_directory.c_str());
     if ((out_events_file_all = fopen(out_file_all_name.c_str(), "w")) == NULL) {
       LOG(FATAL) << "Failed to open task_runtime_events file for writing";
     }
-    spf(&out_file_avg_name, "%s/task_runtime_events/task_runtime_events.csv",
-        trace_path_.c_str());
+    spf(&out_file_avg_name, "%s/task_runtime_events.csv",
+        out_events_directory.c_str());
     if ((out_events_file_avg = fopen(out_file_avg_name.c_str(), "w")) == NULL) {
       LOG(FATAL) << "Failed to open task_runtime_events file for writing";
     }
@@ -907,10 +926,12 @@ namespace sim {
     multimap<uint64_t, TaskSchedulingEvent>& scheduling_events =
       ReadTaskStateChangingEvents(job_num_tasks);
 
+    string out_directory;
+    spf(&out_directory, "%s/jobs_num_tasks/", trace_path_.c_str());
+    MkdirIfNotPresent(out_directory);
     FILE* out_file = NULL;
     string out_file_name;
-    spf(&out_file_name, "%s/jobs_num_tasks/jobs_num_tasks.csv",
-        trace_path_.c_str());
+    spf(&out_file_name, "%s/jobs_num_tasks.csv", out_directory.c_str());
     if ((out_file = fopen(out_file_name.c_str(), "w")) == NULL) {
       LOG(FATAL) << "Failed to open jobs_num_tasks file for writing";
     }
