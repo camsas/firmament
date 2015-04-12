@@ -303,6 +303,7 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
       LOG(WARNING) << "Duplicate task id: " << td_ptr->uid() << " for task "
                    << task_identifier.job_id << " "
                    << task_identifier.task_index;
+     return NULL;
     }
   }
   return td_ptr;
@@ -752,9 +753,12 @@ void GoogleTraceSimulator::ProcessTaskEvent(
     LOGEVENT("TASK_SUBMIT_EVENT: ID "
             << task_identifier.job_id << "/" << task_identifier.task_index
             << " @ " << cur_time);
-    AddNewTask(task_identifier);
-    AddTaskStats(task_identifier, task_runtime);
-    SeenExogenous(cur_time);
+    if (AddNewTask(task_identifier)) {
+    	AddTaskStats(task_identifier, task_runtime);
+			SeenExogenous(cur_time);
+    } else {
+    	// duplicate task id -- ignore
+    }
   }
 }
 
