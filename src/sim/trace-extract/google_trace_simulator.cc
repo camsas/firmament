@@ -998,6 +998,8 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               VLOG(2) << "Task binding: " << task_bindings_.size();
 
               LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
+              LOG(INFO) << "Nodes: " << flow_graph_->NumNodes()
+              		      << ", arcs: " << flow_graph_->NumArcs();
 
               if (graph_output_) {
                 fprintf(graph_output_, "c SOI %lu\n", time_interval_bound);
