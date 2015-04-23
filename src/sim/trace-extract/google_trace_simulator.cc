@@ -13,11 +13,7 @@
 #include <utility>
 #include <vector>
 #include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/thread.hpp>
 #include <boost/timer/timer.hpp>
 
 #include <sys/stat.h>
@@ -95,7 +91,7 @@ DEFINE_bool(graph_output_events, true, "If -graph_output_file specified: "
                                        "export simulator events as comments?");
 
 DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2 | custom.");
-DEFINE_uint64(solver_timeout, UINT64_MAX, "Timeout: terminate after waiting this number of milliseconds");
+DEFINE_uint64(solver_timeout, UINT64_MAX, "Timeout: terminate after waiting this number of seconds");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
 DEFINE_int32(flow_scheduling_cost_model, 0,
@@ -103,43 +99,22 @@ DEFINE_int32(flow_scheduling_cost_model, 0,
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
              "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
 
-class Timeout
-{
-public:
-    Timeout(boost::asio::io_service &io,
-    		    boost::posix_time::time_duration &period, std::ostream *stats_file)
-                             : t(io), period(period), stats_file(stats_file) { }
-
-    void start() {
-      t.expires_from_now(period); //repeat rate here
-      t.async_wait(boost::bind(&Timeout::timeout, this, boost::asio::placeholders::error));
-    }
-
-    void stop() {
-    	t.cancel();
-    }
-
-    void timeout(const boost::system::error_code &e) {
-        if (e)
-            return;
-        if (stats_file) {
-        	*stats_file << "0,Timeout,Timeout,Timeout,Timeout";
-        	if (FLAGS_batch_step == 0) {
-        		// online
-        		*stats_file << ",Timeout";
-        	}
-        	*stats_file << std::endl;
-        }
-        // N.B. Don't use LOG(FATAL) since we want a successful return code
-        LOG(ERROR) << "Timeout after waiting for solver for " << period;
-        exit(0);
-    }
-
-private:
-    boost::asio::deadline_timer t;
-    boost::posix_time::time_duration &period;
-    std::ostream *stats_file;
-};
+ofstream *timeout_file;
+void alarm_handler(int sig) {
+	signal(SIGALRM, SIG_IGN);
+  if (timeout_file) {
+		*timeout_file << "0,Timeout,Timeout,Timeout,Timeout";
+		if (FLAGS_batch_step == 0) {
+						// online
+						*timeout_file << ",Timeout";
+		}
+		*timeout_file << std::endl;
+   }
+   // N.B. Don't use LOG(FATAL) since we want a successful return code
+   LOG(ERROR) << "Timeout after waiting for solver for "
+  		        << FLAGS_solver_timeout << "seconds.";
+   exit(0);
+}
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -960,10 +935,8 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
 
   // timing
   boost::timer::cpu_timer timer;
-  boost::asio::io_service io;
-  boost::posix_time::time_duration period = boost::posix_time::milliseconds(FLAGS_solver_timeout);
-  Timeout timeout(io, period, stats_file);
-  io.run();
+  timeout_file = stats_file;
+  signal(SIGALRM, alarm_handler);
 
   // Load all the machine events.
   LoadMachineEvents();
@@ -1055,11 +1028,11 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               }
               double algorithm_time, flowsolver_time;
 
-              timeout.start();
+              alarm(FLAGS_solver_timeout);
               multimap<uint64_t, uint64_t>* task_mappings =
                 quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time,
                                         graph_output_);
-              timeout.stop();
+              alarm(0);
 
               UpdateFlowGraph(time_interval_bound, task_runtime, task_mappings);
 
