@@ -43,6 +43,7 @@ class LocalExecutor : public ExecutorInterface {
   bool CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks);
   void HandleTaskCompletion(TaskDescriptor* td,
                             TaskFinalReport* report);
+  void HandleTaskEviction(TaskDescriptor* td);
   void HandleTaskFailure(TaskDescriptor* td);
   void RunTask(TaskDescriptor* td,
                bool firmament_binary);

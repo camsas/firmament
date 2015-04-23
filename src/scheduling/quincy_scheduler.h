@@ -50,6 +50,7 @@ class QuincyScheduler : public EventDrivenScheduler {
   void HandleJobCompletion(JobID_t job_id);
   void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
+  void HandleTaskEviction(TaskDescriptor* td_ptr, ResourceID_t res_id);
   void HandleTaskFailure(TaskDescriptor* td_ptr);
   void KillRunningTask(TaskID_t task_id,
                        TaskKillMessage::TaskKillReason reason);

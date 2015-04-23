@@ -189,6 +189,15 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   }
 }
 
+void QuincyScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
+                                         ResourceID_t res_id) {
+  EventDrivenScheduler::HandleTaskEviction(td_ptr, res_id);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->TaskEvicted(td_ptr->uid(), res_id);
+  }
+}
+
 void QuincyScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   EventDrivenScheduler::HandleTaskFailure(td_ptr);
   {
