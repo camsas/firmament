@@ -23,6 +23,7 @@
 
 #include "sim/trace-extract/google_trace_simulator.h"
 #include "scheduling/cost_models/cost_models.h"
+#include "scheduling/dimacs_change_stats.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
@@ -108,7 +109,7 @@ void alarm_handler(int sig) {
 						// online
 						*timeout_file << ",Timeout";
 		}
-		*timeout_file << std::endl;
+		*timeout_file << ",,,,," << std::endl;
    }
    // N.B. Don't use LOG(FATAL) since we want a successful return code
    LOG(ERROR) << "Timeout after waiting for solver for "
@@ -542,6 +543,12 @@ void GoogleTraceSimulator::LoadMachineEvents() {
         LOG(ERROR) << "Unexpected structure of machine events on line "
                    << num_line << ": found " << cols.size() << " columns.";
       } else {
+      	uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
+      	if (timestamp > FLAGS_runtime) {
+      		// only load the events that we need
+      		break;
+      	}
+
         // schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
         uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
         if (SpookyHash::Hash32(&machine_id, sizeof(machine_id), SEED)
@@ -554,7 +561,6 @@ void GoogleTraceSimulator::LoadMachineEvents() {
         event_desc.set_machine_id(lexical_cast<uint64_t>(cols[1]));
         event_desc.set_type(TranslateMachineEvent(
             lexical_cast<int32_t>(cols[2])));
-        uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
         if (event_desc.type() == EventDescriptor::REMOVE_MACHINE ||
             event_desc.type() == EventDescriptor::ADD_MACHINE) {
           events_.insert(pair<uint64_t, EventDescriptor>(timestamp,
@@ -919,18 +925,26 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
                                               GetCurrentTimestamp())));
 }
 
+const std::string CHANGE_STATS_HEADER = "total_changes,new_node,remove_node,new_arc,change_arc,remove_arc";
+void output_change_stats(DIMACSChangeStats &stats, ofstream &stats_file) {
+	stats_file << stats.total << "," << stats.new_node << ","
+			       << stats.remove_node << "," << stats.new_arc << ","
+						 << stats.change_arc << "," << stats.remove_arc
+						 << std::endl;
+}
+
 void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
   // Output CSV header
   if (stats_file) {
     if (FLAGS_batch_step == 0) {
       // online
       *stats_file << "cluster_timestamp,scheduling_latency,algorithm_time,"
-                  << "flowsolver_time,total_time" << std::endl;
+                  << "flowsolver_time,total_time,";
     } else {
       // batch
-      *stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,total_time"
-                  << std::endl;
+      *stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,total_time,";
     }
+    *stats_file << CHANGE_STATS_HEADER << std::endl;
   }
 
   // timing
@@ -1028,6 +1042,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               }
               double algorithm_time, flowsolver_time;
 
+              DIMACSChangeStats change_stats(flow_graph_->graph_changes());
               alarm(FLAGS_solver_timeout);
               multimap<uint64_t, uint64_t>* task_mappings =
                 quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time,
@@ -1077,14 +1092,16 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
                               << scheduling_latency << ","
                               << algorithm_time << ","
                               << flowsolver_time << ","
-                              << total_runtime_float << std::endl;
+                              << total_runtime_float << ",";
                 } else {
                   // batch mode
                   *stats_file << time_interval_bound << ","
                               << algorithm_time << ","
                               << flowsolver_time << ","
-                              << total_runtime_float << std::endl;
+                              << total_runtime_float << ",";
                 }
+
+                output_change_stats(change_stats, *stats_file);
                 stats_file->flush();
               }
               // restart timer; elapsed() returns time from this point

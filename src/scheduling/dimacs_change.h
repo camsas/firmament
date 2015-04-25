@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include "base/types.h"
+
 namespace firmament {
 
 class DIMACSChange {

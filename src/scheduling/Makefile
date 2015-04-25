@@ -8,7 +8,7 @@ LIBS += -lboost_system -lboost_thread -lboost_regex -lboost_timer \
 
 LIB = libfirmament_scheduling.a
 OBJS = dimacs_exporter.o event_driven_scheduler.o flow_graph.o \
-       quincy_scheduler.o simple_scheduler.o common.o \
+       quincy_scheduler.o simple_scheduler.o common.o dimacs_change_stats.o \
        knowledge_base.o dimacs_change_arc.o dimacs_remove_node.o \
        dimacs_add_node.o flow_graph_node.o flow_graph_arc.o dimacs_new_arc.o \
        quincy_dispatcher.o knowledge_base_simulator.o
@@ -28,7 +28,7 @@ TESTS_dimacs_exporter_DEPS = $(OBJ_DIR)/flow_graph.o \
 			     $(OBJ_DIR)/knowledge_base.o \
 			     $(BUILD_DIR)/misc/libfirmament_misc.a \
 			     $(BUILD_DIR)/base/libfirmament_base.a \
-			     $(BUILD_DIR)/scheduling/cost_models/libfirmament_base.a
+			     $(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a
 
 TESTS_flow_graph_DEPS = $(OBJ_DIR)/flow_node_type.pb.o \
 			$(OBJ_DIR)/common.o \
@@ -41,7 +41,7 @@ TESTS_flow_graph_DEPS = $(OBJ_DIR)/flow_node_type.pb.o \
 			$(OBJ_DIR)/knowledge_base.o \
 			$(BUILD_DIR)/misc/libfirmament_misc.a \
 			$(BUILD_DIR)/base/libfirmament_base.a \
-			$(BUILD_DIR)/scheduling/cost_models/libfirmament_base.a
+			$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))

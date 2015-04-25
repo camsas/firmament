@@ -41,6 +41,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator): $(addprefix $(OBJ_DIR)/, $(SIM
 		$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \
+		$(BUILD_DIR)/scheduling/dimacs_change_stats.o \
 		$(BUILD_DIR)/scheduling/dimacs_add_node.o \
 		$(BUILD_DIR)/scheduling/dimacs_change_arc.o \
 		$(BUILD_DIR)/scheduling/dimacs_new_arc.o \
@@ -88,6 +89,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator-test): $(addprefix $(OBJ_DIR)/, 
 		$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \
+		$(BUILD_DIR)/scheduling/dimacs_change_stats.o \
 		$(BUILD_DIR)/scheduling/dimacs_add_node.o \
 		$(BUILD_DIR)/scheduling/dimacs_change_arc.o \
 		$(BUILD_DIR)/scheduling/dimacs_new_arc.o \
