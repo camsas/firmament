@@ -74,9 +74,14 @@ void SimulatedDFS::removeMachine(ResourceID_t machine) {
 		block_index[block].remove(machine);;
 	}
 	blocks_on_machine.erase(machine);
-	// TODO: doesn't update the priority, nor does it attempt to start immediate
+	// SOMEDAY: doesn't update the priority, nor does it attempt to start immediate
 	// replication. Would probably be good to randomly select machines to move
 	// the orphaned blocks to.
+}
+
+const std::pair<SimulatedDFS::BlockID_t, SimulatedDFS::BlockID_t>
+                   &SimulatedDFS::getBlocks(SimulatedDFS::FileID_t file) const {
+  return files[file];
 }
 
 const std::list<ResourceID_t> &SimulatedDFS::getMachines(BlockID_t block) const {

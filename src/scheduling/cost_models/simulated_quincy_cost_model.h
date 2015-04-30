@@ -35,8 +35,13 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
                   unordered_set<ResourceID_t,
                     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                   KnowledgeBase* kb,
-									SimulatedDFS *dfs,
-									uint64_t machines_per_rack);
+									double delta_preferred_machine,
+									double delta_preferred_rack,
+									Cost_t core_transfer_cost,
+									Cost_t tor_transfer_cost,
+									uint32_t percent_block_tolerance,
+									uint64_t machines_per_rack,
+									SimulatedDFS *dfs);
 
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
@@ -73,6 +78,9 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
+  void BuildTaskFileSet(TaskID_t task_id);
+  void ComputeCostsAndPreferredSet(TaskID_t task_id);
+
   // Lookup maps for various resources from the scheduler.
   shared_ptr<ResourceMap_t> resource_map_;
   // Information regarding jobs and tasks.
@@ -84,15 +92,25 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   KnowledgeBase* knowledge_base_;
   uint32_t rand_seed_ = 0;
 
+  double proportion_machine_preferred_, proportion_rack_preferred_;
+  Cost_t core_transfer_cost_, tor_transfer_cost_;
+  uint32_t percent_block_tolerance_;
+
+  uint64_t machines_per_rack_;
+	unordered_map<ResourceID_t, EquivClass_t> machine_to_rack_map_;
+	vector<std::list<ResourceID_t>> rack_to_machine_map_;
+
   SimulatedDFS *filesystem_;
   unordered_map<TaskID_t, std::unordered_set<SimulatedDFS::FileID_t>> file_map_;
 
-  uint64_t machines_per_rack_;
-  unordered_map<ResourceID_t, EquivClass_t> machine_to_rack_map_;
-  vector<std::list<ResourceID_t>> rack_to_machine_map_;
-
   GoogleRuntimeDistribution runtime_distribution_;
   GoogleBlockDistribution block_distribution_;
+
+  unordered_map<TaskID_t, std::list<std::pair<ResourceID_t, Cost_t>>>
+	                                                       preferred_machine_map_;
+  unordered_map<TaskID_t, std::list<std::pair<EquivClass_t, Cost_t>>>
+	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 preferred_rack_map_;
+  unordered_map<TaskID_t, Cost_t> cluster_aggregator_cost_;
 };
 
 }  // namespace firmament

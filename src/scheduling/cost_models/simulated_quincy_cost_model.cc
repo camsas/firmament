@@ -19,8 +19,6 @@
 
 namespace firmament {
 
-const static EquivClass_t CLUSTER_AGGREGATOR_ID = UINT64_MAX;
-
 SimulatedQuincyCostModel::SimulatedQuincyCostModel(
     shared_ptr<ResourceMap_t> resource_map,
     shared_ptr<JobMap_t> job_map,
@@ -29,16 +27,26 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids,
     KnowledgeBase* kb,
-		SimulatedDFS* dfs,
-		uint64_t machines_per_rack)
+		double delta_preferred_machine,
+		double delta_preferred_rack,
+		Cost_t core_transfer_cost,
+		Cost_t tor_transfer_cost,
+		uint32_t percent_block_tolerance,
+		uint64_t machines_per_rack,
+		SimulatedDFS* dfs)
   : resource_map_(resource_map),
     job_map_(job_map),
     task_map_(task_map),
     task_bindings_(task_bindings),
     leaf_res_ids_(leaf_res_ids),
     knowledge_base_(kb),
-		filesystem_(dfs),
+		proportion_machine_preferred_(delta_preferred_machine),
+		proportion_rack_preferred_(delta_preferred_rack),
+		core_transfer_cost_(core_transfer_cost),
+		tor_transfer_cost_(tor_transfer_cost),
+		percent_block_tolerance_(percent_block_tolerance),
 		machines_per_rack_(machines_per_rack),
+		filesystem_(dfs),
 		// see google_runtime_distribution.h for explanation of these numbers
 		runtime_distribution_(0.298, -0.2627),
 		// these are scaled up number of blocks to get a collection of files
@@ -120,15 +128,16 @@ Cost_t SimulatedQuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
 
 Cost_t SimulatedQuincyCostModel::EquivClassToResourceNode(EquivClass_t tec,
                                                  ResourceID_t res_id) {
-	// cost of arcs from cluster and rack aggregators is always zero
+	// cost of arcs from rack aggregators are always zero
 	// (costs are instead encoded in arc from task to aggregator)
 	return 0LL;
 }
 
 Cost_t SimulatedQuincyCostModel::EquivClassToEquivClass(EquivClass_t tec1,
-                                               EquivClass_t tec2) {
-	CHECK(tec1 == CLUSTER_AGGREGATOR_ID);
-	CHECK(tec1 < rack_to_machine_map_.size());
+                                                        EquivClass_t tec2) {
+	// this shouldn't be called; the only arcs are from cluster aggregator to rack
+	// aggregator, but Firmament considers cluster aggregator to be a special case
+	CHECK(false);
   return 0LL;
 }
 
@@ -148,7 +157,6 @@ vector<EquivClass_t>* SimulatedQuincyCostModel::GetTaskEquivClasses(
 vector<EquivClass_t>* SimulatedQuincyCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
 	vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
-	// TODO(adam): is it right that resources don't need to belong to cluster aggregator?
 	EquivClass_t rack_aggregator = machine_to_rack_map_[res_id];
 	equiv_classes->push_back(rack_aggregator);
 	return equiv_classes;
@@ -188,14 +196,8 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     SimulatedQuincyCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
 	vector<EquivClass_t>* incoming_arcs = new vector<EquivClass_t>();
 	vector<EquivClass_t>* outgoing_arcs = new vector<EquivClass_t>();
-	if (tec == CLUSTER_AGGREGATOR_ID) {
-		EquivClass_t num_racks = rack_to_machine_map_.size();
-	  for (EquivClass_t rack_id = 0; rack_id < num_racks; rack_id++) {
-	  	outgoing_arcs->push_back(rack_id);
-	  }
-	}
 	return pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 (incoming_arcs, outgoing_arcs);
+		 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 (incoming_arcs, outgoing_arcs);
 }
 
 void SimulatedQuincyCostModel::AddMachine(
@@ -218,10 +220,12 @@ void SimulatedQuincyCostModel::AddMachine(
 
 void SimulatedQuincyCostModel::RemoveMachine(ResourceID_t res_id) {
 	filesystem_->removeMachine(res_id);
+	EquivClass_t rack = machine_to_rack_map_[res_id];
+	rack_to_machine_map_[rack].remove(res_id);
+	machine_to_rack_map_.erase(res_id);
 }
 
-const static unsigned int PERCENT_TOLERANCE = 50; // number of blocks
-void SimulatedQuincyCostModel::AddTask(TaskID_t task_id) {
+void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
 	file_map_[task_id] = std::unordered_set<SimulatedDFS::FileID_t>();
 	std::unordered_set<SimulatedDFS::FileID_t> &file_set = file_map_[task_id];
 
@@ -235,7 +239,90 @@ void SimulatedQuincyCostModel::AddTask(TaskID_t task_id) {
 	uint64_t num_blocks = block_distribution_.inverse(cumulative_probability);
 
 	// Finally, select some files. Sample to get approximately the right number of blocks.
-	file_set = filesystem_->sampleFiles(num_blocks, PERCENT_TOLERANCE);
+	file_set = filesystem_->sampleFiles(num_blocks, percent_block_tolerance_);
+}
+
+void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
+  unordered_map<ResourceID_t, uint64_t> machine_frequency;
+  unordered_map<EquivClass_t, uint64_t> rack_frequency;
+  SimulatedDFS::BlockID_t total_num_blocks = 0;
+
+  std::unordered_set<SimulatedDFS::FileID_t> &file_set = file_map_[task_id];
+  for (SimulatedDFS::FileID_t file_id : file_set) {
+  	const std::pair<SimulatedDFS::BlockID_t, SimulatedDFS::BlockID_t>
+  	                                  &blocks = filesystem_->getBlocks(file_id);
+  	SimulatedDFS::BlockID_t start = blocks.first, end = blocks.second;
+  	total_num_blocks += end - start + 1;
+  	for (auto block = start; block <= end; block++) {
+  		const std::list<ResourceID_t> &machines = filesystem_->getMachines(file_id);
+  		std::unordered_set<EquivClass_t> racks;
+  		for (ResourceID_t machine : machines) {
+  			uint32_t frequency = FindWithDefault(machine_frequency, machine, 0);
+  			machine_frequency[machine] = frequency + 1;
+
+  			EquivClass_t rack = machine_to_rack_map_[machine];
+  			racks.insert(rack);
+  		}
+  		for (EquivClass_t rack : racks) {
+  			// N.B. Need to have a set and iterate over it separately to handle the
+  			// case where block is stored in two machines in same rack
+  			uint64_t frequency = FindWithDefault(rack_frequency, rack, 0);
+  			rack_frequency[rack] = frequency + 1;
+  		}
+  	}
+  }
+
+  preferred_machine_map_[task_id] = std::list<std::pair<ResourceID_t, Cost_t>>();
+  auto &preferred_machine_list = preferred_machine_map_[task_id];
+  for (auto freq : machine_frequency) {
+  	SimulatedDFS::BlockID_t num_local_blocks = freq.second;
+  	double proportion = num_local_blocks / total_num_blocks;
+  	if (proportion > proportion_machine_preferred_) {
+  		// add to preferred list and compute cost
+  		ResourceID_t machine = freq.first;
+  		EquivClass_t rack = machine_to_rack_map_[machine];
+  		SimulatedDFS::BlockID_t num_rack_blocks = rack_frequency[rack];
+
+  		// local blocks are charged at 0,
+  		// blocks transferred between nodes in rack charged at tor_transfer_cost_,
+  		// blocks between racks charged at rack_transfer_cost_
+  		// Totals so far are inclusive, calculate exclusive ones
+  		num_rack_blocks -= num_local_blocks;
+  		SimulatedDFS::BlockID_t num_core_blocks =
+			                    total_num_blocks - num_rack_blocks - num_local_blocks;
+
+  		Cost_t cost = num_core_blocks * core_transfer_cost_;
+  		cost += num_rack_blocks * tor_transfer_cost_;
+
+  		preferred_machine_list.push_back(make_pair(machine, cost));
+  	}
+  }
+
+  preferred_rack_map_[task_id] = std::list<std::pair<EquivClass_t, Cost_t>>();
+  auto &preferred_rack_list = preferred_rack_map_[task_id];
+  for (auto freq : rack_frequency) {
+  	SimulatedDFS::BlockID_t num_rack_blocks = freq.second;
+  	double proportion = num_rack_blocks / total_num_blocks;
+  	if (proportion > proportion_rack_preferred_) {
+  		EquivClass_t rack = freq.first;
+
+  		SimulatedDFS::BlockID_t num_core_blocks = total_num_blocks
+  				 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	  - num_rack_blocks;
+
+  		Cost_t cost = num_core_blocks * core_transfer_cost_;
+  		cost += num_rack_blocks * tor_transfer_cost_;
+
+  		preferred_rack_list.push_back(make_pair(rack, cost));
+  	}
+  }
+
+  Cost_t cost = total_num_blocks * core_transfer_cost_;
+  cluster_aggregator_cost_[task_id] = cost;
+}
+
+void SimulatedQuincyCostModel::AddTask(TaskID_t task_id) {
+	BuildTaskFileSet(task_id);
+	ComputeCostsAndPreferredSet(task_id);
 }
 
 void SimulatedQuincyCostModel::RemoveTask(TaskID_t task_id) {

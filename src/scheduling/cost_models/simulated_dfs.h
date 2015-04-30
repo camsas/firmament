@@ -25,6 +25,7 @@ public:
 	void addMachine(ResourceID_t machine);
 	void removeMachine(ResourceID_t machine);
 
+	const std::pair<BlockID_t, BlockID_t> &getBlocks(FileID_t file) const;
 	const std::list<ResourceID_t> &getMachines(BlockID_t block) const;
 	const std::unordered_set<FileID_t> sampleFiles(BlockID_t num_blocks,
 			                                           uint32_t tolerance) const;
