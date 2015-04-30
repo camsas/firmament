@@ -11,9 +11,9 @@ namespace firmament {
 class KnowledgeBaseSimulator : public KnowledgeBase {
  public:
   KnowledgeBaseSimulator();
-  double GetAvgCPIForTEC(EquivClass_t id);
-  double GetAvgIPMAForTEC(EquivClass_t id);
-  double GetAvgRuntimeForTEC(EquivClass_t id);
+  virtual double GetAvgCPIForTEC(EquivClass_t id) override;
+  virtual double GetAvgIPMAForTEC(EquivClass_t id) override;
+  virtual double GetAvgRuntimeForTEC(EquivClass_t id) override;
   double GetAvgMeanCpuUsage(EquivClass_t id);
   double GetAvgCanonicalMemUsage(EquivClass_t id);
   double GetAvgAssignedMemUsage(EquivClass_t id);

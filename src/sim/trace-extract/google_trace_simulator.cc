@@ -305,7 +305,8 @@ ResourceDescriptor* GoogleTraceSimulator::AddMachine(
 }
 
 TaskDescriptor* GoogleTraceSimulator::AddNewTask(
-    const TaskIdentifier& task_identifier) {
+    const TaskIdentifier& task_identifier,
+    unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_runtime) {
   JobDescriptor** jdpp = FindOrNull(job_id_to_jd_, task_identifier.job_id);
   JobDescriptor* jd_ptr;
   if (!jdpp) {
@@ -326,6 +327,9 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
                                td_ptr->uid(), task_identifier));
       // Add task to the google (job_id, task_index) to TaskDescriptor* map.
       CHECK(InsertIfNotPresent(&task_id_to_td_, task_identifier, td_ptr));
+      // Update statistics used by cost models. This must be done PRIOR
+      // to AddOrUpdateJobNodes, as costs computed in that step.
+      AddTaskStats(task_identifier, task_runtime);
       // Update the job in the flow graph. This method also adds the new task to
       // the flow graph.
       flow_graph_->AddOrUpdateJobNodes(jd_ptr);
@@ -384,45 +388,40 @@ void GoogleTraceSimulator::AddTaskStats(
     // Set its runtime to max which means it's a service task.
     runtime = numeric_limits<uint64_t>::max();
   }
-  vector<EquivClass_t>* equiv_classes =
-    cost_model_->GetTaskEquivClasses(td_ptr->uid());
-  // XXX(ionel): This assumes that we have one task equivalence class per task.
-  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
-       it != equiv_classes->end(); ++it) {
-    knowledge_base_->SetAvgRuntimeForTEC(*it, runtime);
-    if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
-      knowledge_base_->SetAvgMeanCpuUsage(*it, task_stats->avg_mean_cpu_usage);
-    }
-    if (fabs(task_stats->avg_canonical_mem_usage + 1.0) > EPS) {
-      knowledge_base_->SetAvgCanonicalMemUsage(
-          *it, task_stats->avg_canonical_mem_usage);
-    }
-    if (fabs(task_stats->avg_assigned_mem_usage + 1.0) > EPS) {
-      knowledge_base_->SetAvgAssignedMemUsage(
-          *it, task_stats->avg_assigned_mem_usage);
-    }
-    if (fabs(task_stats->avg_unmapped_page_cache + 1.0) > EPS) {
-      knowledge_base_->SetAvgUnmappedPageCache(
-          *it, task_stats->avg_unmapped_page_cache);
-    }
-    if (fabs(task_stats->avg_total_page_cache + 1.0) > EPS) {
-      knowledge_base_->SetAvgTotalPageCache(
-          *it, task_stats->avg_total_page_cache);
-    }
-    if (fabs(task_stats->avg_mean_disk_io_time + 1.0) > EPS) {
-      knowledge_base_->SetAvgMeanDiskIOTime(
-          *it, task_stats->avg_mean_disk_io_time);
-    }
-    if (fabs(task_stats->avg_mean_local_disk_used + 1.0) > EPS) {
-      knowledge_base_->SetAvgMeanLocalDiskUsed(
-          *it, task_stats->avg_mean_local_disk_used);
-    }
-    if (fabs(task_stats->avg_cpi + 1.0) > EPS) {
-      knowledge_base_->SetAvgCPIForTEC(*it, task_stats->avg_cpi);
-    }
-    if (fabs(task_stats->avg_mai + 1.0) > EPS) {
-      knowledge_base_->SetAvgIPMAForTEC(*it, 1.0 / task_stats->avg_mai);
-    }
+  EquivClass_t bogus_equiv_class = (EquivClass_t)td_ptr->uid();
+  knowledge_base_->SetAvgRuntimeForTEC(bogus_equiv_class, runtime);
+  if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
+    knowledge_base_->SetAvgMeanCpuUsage(bogus_equiv_class, task_stats->avg_mean_cpu_usage);
+  }
+  if (fabs(task_stats->avg_canonical_mem_usage + 1.0) > EPS) {
+    knowledge_base_->SetAvgCanonicalMemUsage(
+        bogus_equiv_class, task_stats->avg_canonical_mem_usage);
+  }
+  if (fabs(task_stats->avg_assigned_mem_usage + 1.0) > EPS) {
+    knowledge_base_->SetAvgAssignedMemUsage(
+        bogus_equiv_class, task_stats->avg_assigned_mem_usage);
+  }
+  if (fabs(task_stats->avg_unmapped_page_cache + 1.0) > EPS) {
+    knowledge_base_->SetAvgUnmappedPageCache(
+        bogus_equiv_class, task_stats->avg_unmapped_page_cache);
+  }
+  if (fabs(task_stats->avg_total_page_cache + 1.0) > EPS) {
+    knowledge_base_->SetAvgTotalPageCache(
+        bogus_equiv_class, task_stats->avg_total_page_cache);
+  }
+  if (fabs(task_stats->avg_mean_disk_io_time + 1.0) > EPS) {
+    knowledge_base_->SetAvgMeanDiskIOTime(
+        bogus_equiv_class, task_stats->avg_mean_disk_io_time);
+  }
+  if (fabs(task_stats->avg_mean_local_disk_used + 1.0) > EPS) {
+    knowledge_base_->SetAvgMeanLocalDiskUsed(
+        bogus_equiv_class, task_stats->avg_mean_local_disk_used);
+  }
+  if (fabs(task_stats->avg_cpi + 1.0) > EPS) {
+    knowledge_base_->SetAvgCPIForTEC(bogus_equiv_class, task_stats->avg_cpi);
+  }
+  if (fabs(task_stats->avg_mai + 1.0) > EPS) {
+    knowledge_base_->SetAvgIPMAForTEC(bogus_equiv_class, 1.0 / task_stats->avg_mai);
   }
   task_id_to_stats_.erase(task_identifier);
 }
@@ -690,8 +689,8 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
         if (!InsertIfNotPresent(task_runtime, task_id, runtime) &&
             VLOG_IS_ON(1)) {
-          LOG(ERROR) << "LoadTasksRunningTime: There should not be more than an "
-                     << "entry for job " << task_id.job_id
+          LOG(ERROR) << "LoadTasksRunningTime: There should not be more than "
+                     << "one entry for job " << task_id.job_id
                      << ", task " << task_id.task_index;
         }
       }
@@ -789,8 +788,7 @@ void GoogleTraceSimulator::ProcessTaskEvent(
     LOGEVENT("TASK_SUBMIT_EVENT: ID "
             << task_identifier.job_id << "/" << task_identifier.task_index
             << " @ " << cur_time);
-    if (AddNewTask(task_identifier)) {
-    	AddTaskStats(task_identifier, task_runtime);
+    if (AddNewTask(task_identifier, task_runtime)) {
 			SeenExogenous(cur_time);
     } else {
     	// duplicate task id -- ignore

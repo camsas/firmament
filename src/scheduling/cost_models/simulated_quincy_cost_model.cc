@@ -217,16 +217,19 @@ void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
 	std::unordered_set<SimulatedDFS::FileID_t> &file_set = file_map_[task_id];
 
 	// Get runtime
-	// XXX: This is broken because we're using task equivalence classes for rack aggregators
-//	vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
-//	CHECK_GT(equiv_classes->size(), 0);
-//	uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
-	  CHECK_NOTNULL(knowledge_base_); // suppress unused variable warning
-	  uint64_t avg_runtime = 10*1000; // 10 seconds
+	// SOMEDAY(adam): This is a giant hack. Knowledge base stores runtime by
+	// task equivalence classes. Simulator assumes one equivalence class per task.
+	// We DON't do this. But let's pretend we do here.
+	EquivClass_t bogus_equivalence_class = (EquivClass_t)task_id;
+	double avg_runtime =
+	                knowledge_base_->GetAvgRuntimeForTEC(bogus_equivalence_class);
+	VLOG(1) << "Task " << task_id << " has runtime " << avg_runtime;
 
 	// Estimate how many blocks input the task has
 	double cumulative_probability = runtime_distribution_.distribution(avg_runtime);
+	VLOG(2) << "Which has probability " << cumulative_probability;
 	uint64_t num_blocks = block_distribution_.inverse(cumulative_probability);
+	VLOG(2) << "Giving " << num_blocks << " blocks";
 
 	// Finally, select some files. Sample to get approximately the right number of blocks.
 	file_set = filesystem_->sampleFiles(num_blocks, percent_block_tolerance_);
@@ -285,6 +288,9 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
   		cost += num_rack_blocks * tor_transfer_cost_;
 
   		preferred_machines[machine] = cost;
+
+  		// TODO
+  		VLOG(2) << "Task " << task_id << " preferred machine " << machine;
   	}
   }
 

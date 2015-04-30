@@ -8,6 +8,10 @@ public:
 	GoogleRuntimeDistribution(double factor, double power);
 	virtual ~GoogleRuntimeDistribution();
 
+	/*
+	 * @param x runtime in milliseconds
+	 * @return proportion of values in distribution <= x
+	 */
 	double distribution(double x);
 private:
 	double factor, power;

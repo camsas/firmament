@@ -3,6 +3,7 @@
 //
 // Implementation of the simulator's knowledge base.
 
+#include "base/common.h"
 #include "misc/map-util.h"
 #include "scheduling/knowledge_base_simulator.h"
 
@@ -88,7 +89,9 @@ void KnowledgeBaseSimulator::SetAvgIPMAForTEC(EquivClass_t id,
 
 void KnowledgeBaseSimulator::SetAvgRuntimeForTEC(EquivClass_t id,
                                                  double avg_runtime) {
-  InsertIfNotPresent(&tec_avg_runtime_, id, avg_runtime);
+  bool success = InsertIfNotPresent(&tec_avg_runtime_, id, avg_runtime);
+  VLOG(1) << "Tried to update runtime for " << id << " to " << avg_runtime
+          << ": " << (success ? "success" : "failed");
 }
 
 void KnowledgeBaseSimulator::SetAvgMeanCpuUsage(EquivClass_t id,

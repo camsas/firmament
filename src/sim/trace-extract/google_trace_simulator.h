@@ -80,7 +80,8 @@ class GoogleTraceSimulator {
    * @param task_identifier the google trace identifier of the task
    * @return a pointer to the descriptor of the task
    */
-  TaskDescriptor* AddNewTask(const TaskIdentifier& task_identifier);
+  TaskDescriptor* AddNewTask(const TaskIdentifier& task_identifier,
+       unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* runtimes);
 
   void AddTaskEndEvent(
       uint64_t cur_timestamp, const TaskID_t& task_id,
