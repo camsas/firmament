@@ -4,8 +4,8 @@
 //
 // Quincy scheduling cost model, as described in the SOSP 2009 paper.
 
-#ifndef FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
-#define FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
+#ifndef FIRMAMENT_SCHEDULING_SIMULATED_QUINCY_COST_MODEL_H
+#define FIRMAMENT_SCHEDULING_SIMULATED_QUINCY_COST_MODEL_H
 
 #include <map>
 #include <string>
@@ -35,13 +35,13 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
                   unordered_set<ResourceID_t,
                     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                   KnowledgeBase* kb,
+                  SimulatedDFS *dfs,
 									double delta_preferred_machine,
 									double delta_preferred_rack,
 									Cost_t core_transfer_cost,
 									Cost_t tor_transfer_cost,
 									uint32_t percent_block_tolerance,
-									uint64_t machines_per_rack,
-									SimulatedDFS *dfs);
+									uint64_t machines_per_rack);
   ~SimulatedQuincyCostModel();
 
   // Costs pertaining to leaving tasks unscheduled
@@ -95,8 +95,7 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   uint32_t percent_block_tolerance_;
 
   uint64_t machines_per_rack_;
-	unordered_map<ResourceID_t, EquivClass_t, boost::hash<boost::uuids::uuid>>
-	                                                        machine_to_rack_map_;
+  ResourceEquivClassMap_t machine_to_rack_map_;
 	vector<std::list<ResourceID_t>> rack_to_machine_map_;
 
   SimulatedDFS *filesystem_;
@@ -116,4 +115,4 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_QUINCY_COST_MODEL_H
+#endif  // FIRMAMENT_SCHEDULING_SIMULATED_QUINCY_COST_MODEL_H

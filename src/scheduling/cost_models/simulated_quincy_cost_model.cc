@@ -27,13 +27,13 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids,
     KnowledgeBase* kb,
+    SimulatedDFS* dfs,
 		double delta_preferred_machine,
 		double delta_preferred_rack,
 		Cost_t core_transfer_cost,
 		Cost_t tor_transfer_cost,
 		uint32_t percent_block_tolerance,
-		uint64_t machines_per_rack,
-		SimulatedDFS* dfs)
+		uint64_t machines_per_rack)
   : resource_map_(resource_map),
     job_map_(job_map),
     task_map_(task_map),
@@ -230,7 +230,7 @@ void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
 }
 
 void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
-  unordered_map<ResourceID_t, uint64_t> machine_frequency;
+  ResourceFrequencyMap_t machine_frequency;
   unordered_map<EquivClass_t, uint64_t> rack_frequency;
   SimulatedDFS::BlockID_t total_num_blocks = 0;
 
