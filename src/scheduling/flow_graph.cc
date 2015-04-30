@@ -629,13 +629,7 @@ uint32_t FlowGraph::CountTaskSlotsBelowResourceNode(FlowGraphNode* node) {
   // their capacities to the sink.
   // Assumes acyclicity, which we have in any reasonable flow graph
   queue<FlowGraphNode*> q;
-  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
-       node->outgoing_arc_map_.begin();
-       it != node->outgoing_arc_map_.end();
-       ++it) {
-    if (it->second->dst_node_->type_.type() == FlowNodeType::SINK)
-      task_slot_count += it->second->cap_upper_bound_;
-  }
+  q.push(node);
   // BFS over subtree
   while (!q.empty()) {
     FlowGraphNode* n = q.front();
