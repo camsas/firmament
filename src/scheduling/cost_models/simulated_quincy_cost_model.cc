@@ -217,9 +217,12 @@ void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
 	std::unordered_set<SimulatedDFS::FileID_t> &file_set = file_map_[task_id];
 
 	// Get runtime
-	vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
-	CHECK_GT(equiv_classes->size(), 0);
-	uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
+	// XXX: This is broken because we're using task equivalence classes for rack aggregators
+//	vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+//	CHECK_GT(equiv_classes->size(), 0);
+//	uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
+	  CHECK_NOTNULL(knowledge_base_); // suppress unused variable warning
+	  uint64_t avg_runtime = 10*1000; // 10 seconds
 
 	// Estimate how many blocks input the task has
 	double cumulative_probability = runtime_distribution_.distribution(avg_runtime);

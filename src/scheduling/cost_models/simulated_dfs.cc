@@ -6,10 +6,12 @@
 namespace firmament {
 
 // justification for block parameters from Chen, et al (2012)
-// blocks: 64 MB, max blocks 16777216 corresponds to 1 TB
+// blocks: 64 MB, max blocks 16384 corresponds to 1 TB
+// XXX: you've chosen smaller parameters to make it easier to test, substitute more realistic ones
 SimulatedDFS::SimulatedDFS(FileID_t num_files, BlockID_t blocks_per_machine) :
 		blocks_per_machine(blocks_per_machine),
-		uniform(0.0,1.0), blocks_in_file_distn(40, 1, 16777216) {
+		// max file size 5 GB
+		uniform(0.0,1.0), blocks_in_file_distn(40, 1, 80) {
 	addFiles(num_files);
 	if (num_blocks < blocks_per_machine) {
 		LOG(FATAL) << "Requested more blocks " << blocks_per_machine
@@ -97,7 +99,7 @@ const std::unordered_set<SimulatedDFS::FileID_t> SimulatedDFS::sampleFiles
 
 	std::unordered_set<SimulatedDFS::FileID_t> sampled_files;
 
-	std::uniform_int_distribution<size_t> distn(0, sampled_files.size() - 1);
+	std::uniform_int_distribution<size_t> distn(0, files.size() - 1);
 	BlockID_t blocks_sampled = 0;
 	while (blocks_sampled < min_blocks_to_sample) {
 		size_t index = distn(generator);
