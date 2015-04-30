@@ -89,9 +89,7 @@ void KnowledgeBaseSimulator::SetAvgIPMAForTEC(EquivClass_t id,
 
 void KnowledgeBaseSimulator::SetAvgRuntimeForTEC(EquivClass_t id,
                                                  double avg_runtime) {
-  bool success = InsertIfNotPresent(&tec_avg_runtime_, id, avg_runtime);
-  VLOG(1) << "Tried to update runtime for " << id << " to " << avg_runtime
-          << ": " << (success ? "success" : "failed");
+  InsertIfNotPresent(&tec_avg_runtime_, id, avg_runtime);
 }
 
 void KnowledgeBaseSimulator::SetAvgMeanCpuUsage(EquivClass_t id,
