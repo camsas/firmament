@@ -136,7 +136,11 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
     VLOG(1) << "Processing delta of type " << (*it)->type();
     TaskID_t task_id = (*it)->task_id();
     ResourceID_t res_id = ResourceIDFromString((*it)->resource_id());
-    if ((*it)->type() == SchedulingDelta::PLACE) {
+    if ((*it)->type() == SchedulingDelta::NOOP) {
+      // We should not get any NOOP deltas as they get filtered before, but
+      // let's handle it anyway.
+      continue;
+    } else if ((*it)->type() == SchedulingDelta::PLACE) {
       VLOG(1) << "Trying to place task " << task_id
               << " on resource " << (*it)->resource_id();
       TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
@@ -146,9 +150,14 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
       VLOG(1) << "About to bind task " << td->uid() << " to resource "
               << rs->mutable_descriptor()->uuid();
       BindTaskToResource(td, rs->mutable_descriptor());
+      // Mark the task as scheduled
+      FlowGraphNode* node = flow_graph_->NodeForTaskID(task_id);
+      CHECK_NOTNULL(node);
+      node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
       // After the task is bound, we now remove all of its edges into the flow
       // graph apart from the bound resource.
-      // N.B.: This disables preemption and migration!
+      // N.B.: This disables preemption and migration, unless FLAGS_preemption
+      // is set!
       flow_graph_->TaskScheduled(task_id, res_id);
       // Tag the job to which this task belongs as running
       JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td->job_id()));
@@ -215,57 +224,6 @@ void QuincyScheduler::KillRunningTask(TaskID_t task_id,
   }
 }
 
-void QuincyScheduler::NodeBindingToSchedulingDelta(
-    const FlowGraphNode& src, const FlowGraphNode& dst,
-    unordered_map<TaskID_t, ResourceID_t>* task_bindings,
-    SchedulingDelta* delta) {
-  // Figure out what type of scheduling change this is
-  // Source must be a task node as this point
-  CHECK(src.type_.type() == FlowNodeType::SCHEDULED_TASK ||
-        src.type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
-        src.type_.type() == FlowNodeType::ROOT_TASK);
-  // Destination must be a PU node
-  CHECK(dst.type_.type() == FlowNodeType::PU);
-  // Is the source (task) already placed elsewhere?
-  ResourceID_t* bound_res = FindOrNull(*task_bindings, src.task_id_);
-  ResourceStatus* target_res_status =
-    FindPtrOrNull(*resource_map_, dst.resource_id_);
-  CHECK_NOTNULL(target_res_status);
-  TaskID_t current_bound_task_id =
-    target_res_status->descriptor().current_running_task();
-  VLOG(2) << "Task ID: " << src.task_id_ << ", bound_res: " << bound_res
-          << ", current bound task ID: " << current_bound_task_id;
-  if (bound_res && (*bound_res != dst.resource_id_)) {
-    // If so, we have a migration
-    VLOG(1) << "MIGRATION: take " << src.task_id_ << " off "
-            << *bound_res << " and move it to "
-            << dst.resource_id_;
-    delta->set_type(SchedulingDelta::MIGRATE);
-    delta->set_task_id(src.task_id_);
-    delta->set_resource_id(to_string(dst.resource_id_));
-  } else if (bound_res && (*bound_res == dst.resource_id_)) {
-    // We were already scheduled here. No-op.
-    delta->set_type(SchedulingDelta::NOOP);
-  } else if (!bound_res && current_bound_task_id != src.task_id_) {
-    // Is something else bound to the same resource?
-    // If so, we need to kick it off (a preemption)
-    VLOG(1) << "PREEMPTION: take " << current_bound_task_id << " off "
-            << *bound_res << " and replace it with "
-            << src.task_id_;
-    delta->set_type(SchedulingDelta::PREEMPT);
-    delta->set_task_id(current_bound_task_id);
-    delta->set_resource_id(to_string(dst.resource_id_));
-  } else {
-    // If neither, we have a scheduling event
-    VLOG(1) << "SCHEDULING: place " << src.task_id_ << " on "
-            << dst.resource_id_ << ", which was idle.";
-    delta->set_type(SchedulingDelta::PLACE);
-    delta->set_task_id(src.task_id_);
-    delta->set_resource_id(to_string(dst.resource_id_));
-  }
-}
-
-
 uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   LOG(INFO) << "START SCHEDULING " << job_desc->uuid();
@@ -304,16 +262,24 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   vector<SchedulingDelta*> deltas;
   for (it = task_mappings->begin(); it != task_mappings->end(); it++) {
     VLOG(1) << "Bind " << it->first << " to " << it->second << endl;
-    SchedulingDelta* delta = new SchedulingDelta;
-    NodeBindingToSchedulingDelta(
-        *flow_graph_->Node(it->first), *flow_graph_->Node(it->second),
-        &task_bindings_, delta);
-    if (delta->type() == SchedulingDelta::NOOP)
-      continue;
-    // Mark the task as scheduled
-    flow_graph_->Node(it->first)->type_.set_type(FlowNodeType::SCHEDULED_TASK);
-    // Remember the delta
-    deltas.push_back(delta);
+    // Some sanity checks
+    FlowGraphNode* src = flow_graph_->Node(it->first);
+    FlowGraphNode* dst = flow_graph_->Node(it->second);
+    // Source must be a task node as this point
+    CHECK(src->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+          src->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+          src->type_.type() == FlowNodeType::ROOT_TASK);
+    // Destination must be a PU node
+    CHECK(dst->type_.type() == FlowNodeType::PU);
+    // Get the TD and RD for the source and destination
+    TaskDescriptor* task = FindPtrOrNull(*task_map_, src->task_id_);
+    CHECK_NOTNULL(task);
+    ResourceStatus* target_res_status =
+      FindPtrOrNull(*resource_map_, dst->resource_id_);
+    CHECK_NOTNULL(target_res_status);
+    const ResourceDescriptor& resource = target_res_status->descriptor();
+    quincy_dispatcher_->NodeBindingToSchedulingDelta(
+        *task, resource, &task_bindings_, &deltas);
   }
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
   // Drop all deltas that were actioned
