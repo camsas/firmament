@@ -167,6 +167,9 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
 void SJFCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
+void SJFCostModel::AddTask(TaskID_t task_id) {
+}
+
 void SJFCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 

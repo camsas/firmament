@@ -306,6 +306,9 @@ void WhareMapCostModel::RemoveMachine(ResourceID_t res_id) {
   }
 }
 
+void WhareMapCostModel::AddTask(TaskID_t task_id) {
+}
+
 void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();

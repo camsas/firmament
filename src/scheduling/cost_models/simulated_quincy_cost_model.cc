@@ -19,6 +19,8 @@
 
 namespace firmament {
 
+const static EquivClass_t CLUSTER_AGGREGATOR_ID = UINT64_MAX;
+
 SimulatedQuincyCostModel::SimulatedQuincyCostModel(
     shared_ptr<ResourceMap_t> resource_map,
     shared_ptr<JobMap_t> job_map,
@@ -26,16 +28,28 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
     unordered_map<TaskID_t, ResourceID_t> *task_bindings,
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-    KnowledgeBase* kb)
+    KnowledgeBase* kb,
+		SimulatedDFS* dfs,
+		uint64_t machines_per_rack)
   : resource_map_(resource_map),
     job_map_(job_map),
     task_map_(task_map),
     task_bindings_(task_bindings),
     leaf_res_ids_(leaf_res_ids),
-    knowledge_base_(kb) {
+    knowledge_base_(kb),
+		filesystem_(dfs),
+		machines_per_rack_(machines_per_rack),
+		// see google_runtime_distribution.h for explanation of these numbers
+		runtime_distribution_(0.298, -0.2627),
+		// these are scaled up number of blocks to get a collection of files
+		// XXX(adam): come up with realistic numbers
+		block_distribution_(10, 1, 167772160)
+		{
 	// TODO
   //application_stats_ = knowledge_base_->AppStats();
   CHECK_NOTNULL(task_bindings_);
+  // initialise to a single, empty rack
+  rack_to_machine_map_.assign(1, std::list<ResourceID_t>());
 }
 
 // The cost of leaving a task unscheduled should be higher than the cost of
@@ -88,13 +102,13 @@ Cost_t SimulatedQuincyCostModel::LeafResourceNodeToSinkCost(ResourceID_t resourc
   return 0ULL;
 }
 
-// XXX: Are we going to support task preemption? Otherwise I fear the task is
-// a little trivial.
 Cost_t SimulatedQuincyCostModel::TaskContinuationCost(TaskID_t task_id) {
+	// TODO(adam): task preemption support
   return 0ULL;
 }
 
 Cost_t SimulatedQuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {
+	// TODO(adam): task preemption support
   return 0ULL;
 }
 
@@ -106,19 +120,21 @@ Cost_t SimulatedQuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
 
 Cost_t SimulatedQuincyCostModel::EquivClassToResourceNode(EquivClass_t tec,
                                                  ResourceID_t res_id) {
-	// TODO
-  return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
+	// cost of arcs from cluster and rack aggregators is always zero
+	// (costs are instead encoded in arc from task to aggregator)
+	return 0LL;
 }
 
 Cost_t SimulatedQuincyCostModel::EquivClassToEquivClass(EquivClass_t tec1,
                                                EquivClass_t tec2) {
-	// XXX: When is this called?
+	CHECK(tec1 == CLUSTER_AGGREGATOR_ID);
+	CHECK(tec1 < rack_to_machine_map_.size());
   return 0LL;
 }
 
+// In Quincy, a task is in its own equivalence class
 vector<EquivClass_t>* SimulatedQuincyCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
-	// TODO
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
@@ -131,9 +147,11 @@ vector<EquivClass_t>* SimulatedQuincyCostModel::GetTaskEquivClasses(
 
 vector<EquivClass_t>* SimulatedQuincyCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
-	// TODO: rack aggregators?
-  LOG(FATAL) << "Not implemented";
-  return NULL;
+	vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+	// TODO(adam): is it right that resources don't need to belong to cluster aggregator?
+	EquivClass_t rack_aggregator = machine_to_rack_map_[res_id];
+	equiv_classes->push_back(rack_aggregator);
+	return equiv_classes;
 }
 
 vector<ResourceID_t>* SimulatedQuincyCostModel::GetOutgoingEquivClassPrefArcs(
@@ -168,28 +186,62 @@ vector<ResourceID_t>* SimulatedQuincyCostModel::GetTaskPreferenceArcs(TaskID_t t
 
 pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     SimulatedQuincyCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
-	// TODO: is it right for this to be empty?
-  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
-  return pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-             (equiv_classes, equiv_classes);
+	vector<EquivClass_t>* incoming_arcs = new vector<EquivClass_t>();
+	vector<EquivClass_t>* outgoing_arcs = new vector<EquivClass_t>();
+	if (tec == CLUSTER_AGGREGATOR_ID) {
+		EquivClass_t num_racks = rack_to_machine_map_.size();
+	  for (EquivClass_t rack_id = 0; rack_id < num_racks; rack_id++) {
+	  	outgoing_arcs->push_back(rack_id);
+	  }
+	}
+	return pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
+	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 (incoming_arcs, outgoing_arcs);
 }
 
 void SimulatedQuincyCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
-	// TODO: ? Should generate some datasets for it
+	// we use ResourceID_t to identify machines
+	ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
+	// 'replicate' blocks
+	filesystem_->addMachine(res_id);
+	// bin it into a rack
+	EquivClass_t current_rack = rack_to_machine_map_.size() - 1;
+	if (rack_to_machine_map_[current_rack].size() >= machines_per_rack_) {
+		// currrent rack is full
+		current_rack++;
+		rack_to_machine_map_.resize(current_rack + 1);
+		rack_to_machine_map_[current_rack] = std::list<ResourceID_t>();
+	}
+	rack_to_machine_map_[current_rack].push_back(res_id);
+	machine_to_rack_map_[res_id] = current_rack;
 }
 
 void SimulatedQuincyCostModel::RemoveMachine(ResourceID_t res_id) {
-	// TODO: unclear how best to handle, perhaps shuffle datasets to other machines
-	// (in practice, it would be replicated.)
+	filesystem_->removeMachine(res_id);
+}
+
+const static unsigned int PERCENT_TOLERANCE = 50; // number of blocks
+void SimulatedQuincyCostModel::AddTask(TaskID_t task_id) {
+	file_map_[task_id] = std::unordered_set<SimulatedDFS::FileID_t>();
+	std::unordered_set<SimulatedDFS::FileID_t> &file_set = file_map_[task_id];
+
+	// Get runtime
+	vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+	CHECK_GT(equiv_classes->size(), 0);
+	uint64_t avg_runtime = knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
+
+	// Estimate how many blocks input the task has
+	double cumulative_probability = runtime_distribution_.distribution(avg_runtime);
+	uint64_t num_blocks = block_distribution_.inverse(cumulative_probability);
+
+	// Finally, select some files. Sample to get approximately the right number of blocks.
+	file_set = filesystem_->sampleFiles(num_blocks, PERCENT_TOLERANCE);
 }
 
 void SimulatedQuincyCostModel::RemoveTask(TaskID_t task_id) {
-	// TODO: perhaps this can be a no-op for Quincy? It doesn't affect the
-	// data distribution at all
+	file_map_.erase(task_id);
 }
 
-// TODO: think these should be no-op, confirm
 FlowGraphNode* SimulatedQuincyCostModel::GatherStats(FlowGraphNode* accumulator,
                                             FlowGraphNode* other) {
   return NULL;

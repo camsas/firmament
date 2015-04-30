@@ -115,6 +115,9 @@ void OctopusCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
+void OctopusCostModel::AddTask(TaskID_t task_id) {
+}
+
 void OctopusCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 

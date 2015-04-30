@@ -80,6 +80,9 @@ void FlowGraph::AddMachine(ResourceTopologyNodeDescriptor* root) {
 void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
                                FlowGraphNode* unsched_agg_node,
                                vector<FlowGraphArc*>* task_arcs) {
+	// Cost model may need to do some setup for newly added tasks
+	cost_model_->AddTask(task_node->task_id_);
+
   // We always have an edge to the cluster aggregator node
   FlowGraphArc* cluster_agg_arc = AddArcInternal(task_node, cluster_agg_node_);
   // Assign cost to the (task -> cluster agg) edge from cost model

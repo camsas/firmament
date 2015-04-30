@@ -78,6 +78,7 @@ class CocoCostModel : public FlowSchedulingCostModelInterface {
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   uint32_t NormalizeCost(uint64_t raw_cost, uint64_t max_cost);
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
+  void AddTask(TaskID_t task_id);
   void PrintCostVector(CostVector_t cv);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);

@@ -16,5 +16,6 @@
 #include "scheduling/cost_models/sjf_cost_model.h"
 #include "scheduling/cost_models/trivial_cost_model.h"
 #include "scheduling/cost_models/wharemap_cost_model.h"
+#include "scheduling/cost_models/simulated_quincy_cost_model.h"
 
 #endif

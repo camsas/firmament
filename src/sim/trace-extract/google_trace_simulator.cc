@@ -23,6 +23,7 @@
 
 #include "sim/trace-extract/google_trace_simulator.h"
 #include "scheduling/cost_models/cost_models.h"
+#include "scheduling/cost_models/simulated_dfs.h"
 #include "scheduling/dimacs_change_stats.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
@@ -157,6 +158,16 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
       cost_model_ = new OctopusCostModel(resource_map_);
       VLOG(1) << "Using the octopus cost model";
       break;
+    case FlowSchedulingCostModelType::COST_MODEL_SIMULATED_QUINCY:
+    	// XXX: come up with real numbers for this
+    	// probably want to make num_files dependent on percent of trace running on
+      SimulatedDFS *dfs = new SimulatedDFS(10000, 100);
+    	cost_model_ =
+    			new SimulatedQuincyCostModel(resource_map_, job_map_, task_map_,
+              												 &task_bindings_, leaf_res_ids,
+																			 knowledge_base_, dfs);
+    	VLOG(1) << "Using the simulated Quincy cost model";
+    	break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";

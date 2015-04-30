@@ -160,6 +160,9 @@ void QuincyCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
+void QuincyCostModel::AddTask(TaskID_t task_id) {
+}
+
 void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 

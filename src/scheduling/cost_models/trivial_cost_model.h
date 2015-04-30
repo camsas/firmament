@@ -53,6 +53,7 @@ class TrivialCostModel : public FlowSchedulingCostModelInterface {
   pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
+  void AddTask(TaskID_t task_id);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
   FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);

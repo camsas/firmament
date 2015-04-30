@@ -2,35 +2,49 @@
 #define SRC_SCHEDULING_COST_MODELS_SIMULATED_DFS_H_
 
 #include <utility>
+#include <unordered_set>
 #include <unordered_map>
 #include <queue>
+#include <list>
 #include <random>
+
+#include "base/types.h"
+#include "base/resource_topology_node_desc.pb.h"
+#include "scheduling/cost_models/google_block_distribution.h"
 
 namespace firmament {
 
 class SimulatedDFS {
 public:
-	typedef uint64_t File_id;
-	typedef uint64_t Block_id;
-	typedef uint32_t Num_replicas;
+	typedef uint64_t FileID_t;
+	typedef uint64_t BlockID_t;
 
-	SimulatedDFS();
+	SimulatedDFS(FileID_t num_files, BlockID_t blocks_per_machine);
 	virtual ~SimulatedDFS();
 
-	void addFiles(File_id num_files);
-	std::queue<Block_id>* replicateBlocks(Block_id num_blocks);
+	void addMachine(ResourceID_t machine);
+	void removeMachine(ResourceID_t machine);
+
+	const std::list<ResourceID_t> &getMachines(BlockID_t block) const;
+	const std::unordered_set<FileID_t> sampleFiles(BlockID_t num_blocks,
+			                                           uint32_t tolerance) const;
 private:
 	void addFile();
+	uint32_t numBlocksInFile();
+	void addFiles(FileID_t num_files);
 
-	std::default_random_engine generator;
-
-	File_id num_files = 0;
-	Block_id num_blocks = 0;
-	std::vector<Block_id> blocks_priority;
-	std::vector<Block_id> blocks_normal;
-	std::vector<int> replication_factor;
+	BlockID_t blocks_per_machine, num_blocks = 0;
+	std::vector<BlockID_t> blocks_priority;
+	std::vector<BlockID_t> blocks_normal;
+	std::vector<std::list<ResourceID_t>> block_index;;
+	std::unordered_map<ResourceID_t, std::list<BlockID_t>,
+	                   boost::hash<ResourceID_t>> blocks_on_machine;
 	// pair: start block ID, end block ID (inclusive)
-	std::unordered_map<File_id, std::pair<Block_id, Block_id>> files;
+	std::vector<std::pair<BlockID_t, BlockID_t>> files;
+
+	mutable std::default_random_engine generator;
+	std::uniform_real_distribution<double> uniform;
+	GoogleBlockDistribution blocks_in_file_distn;
 };
 
 } /* namespace firmament */

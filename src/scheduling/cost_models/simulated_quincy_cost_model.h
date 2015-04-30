@@ -17,6 +17,8 @@
 #include "base/types.h"
 #include "misc/utils.h"
 #include "scheduling/common.h"
+#include "scheduling/cost_models/google_runtime_distribution.h"
+#include "scheduling/cost_models/simulated_dfs.h"
 #include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 #include "scheduling/knowledge_base.h"
 
@@ -32,7 +34,9 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
                   unordered_map<TaskID_t, ResourceID_t> *task_bindings,
                   unordered_set<ResourceID_t,
                     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-                  KnowledgeBase* kb);
+                  KnowledgeBase* kb,
+									SimulatedDFS *dfs,
+									uint64_t machines_per_rack);
 
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
@@ -62,6 +66,8 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
+  // N.B. Not in generic cost model interface
+  void AddTask(TaskID_t task_id);
   void RemoveTask(TaskID_t task_id);
   FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
@@ -77,6 +83,16 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
   uint32_t rand_seed_ = 0;
+
+  SimulatedDFS *filesystem_;
+  unordered_map<TaskID_t, std::unordered_set<SimulatedDFS::FileID_t>> file_map_;
+
+  uint64_t machines_per_rack_;
+  unordered_map<ResourceID_t, EquivClass_t> machine_to_rack_map_;
+  vector<std::list<ResourceID_t>> rack_to_machine_map_;
+
+  GoogleRuntimeDistribution runtime_distribution_;
+  GoogleBlockDistribution block_distribution_;
 };
 
 }  // namespace firmament

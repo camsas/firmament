@@ -31,6 +31,7 @@ enum FlowSchedulingCostModelType {
   COST_MODEL_COCO = 5,
   COST_MODEL_OCTOPUS = 6,
   COST_MODEL_VOID = 7,
+	COST_MODEL_SIMULATED_QUINCY = 8,
 };
 
 class FlowGraph;
@@ -67,6 +68,7 @@ class FlowSchedulingCostModelInterface {
   virtual Cost_t ResourceNodeToResourceNodeCost(ResourceID_t source,
                                                 ResourceID_t destination) = 0;
   /**
+   *
    * Get the cost of an arc from a resource to the sink.
    **/
   virtual Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id) = 0;
@@ -141,6 +143,11 @@ class FlowSchedulingCostModelInterface {
    * Called by the flow_graph when a machine is added.
    */
   virtual void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) = 0;
+
+  /**
+   * Called by the flow graph when a task is submitted.
+   */
+  virtual void AddTask(TaskID_t task_id) = 0;
 
   /**
    * Called by the flow_graph when a machine is removed.

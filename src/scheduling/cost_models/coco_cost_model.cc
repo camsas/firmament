@@ -357,6 +357,9 @@ void CocoCostModel::PrintCostVector(CostVector_t cv) {
 void CocoCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
+void CocoCostModel::AddTask(TaskID_t task_id) {
+}
+
 void CocoCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
