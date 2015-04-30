@@ -27,7 +27,7 @@ double KnowledgeBaseSimulator::GetAvgIPMAForTEC(EquivClass_t id) {
 double KnowledgeBaseSimulator::GetAvgRuntimeForTEC(EquivClass_t id) {
   double* avg_runtime = FindOrNull(tec_avg_runtime_, id);
   if (!avg_runtime) {
-    LOG(WARNING) << "Missing rumtime for " << id;
+    LOG(WARNING) << "Missing runtime for " << id;
     // XXX: Sample for random distribution? Or fix the missing runtimes?
     return 10000;
   } else {

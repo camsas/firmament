@@ -177,6 +177,7 @@ namespace sim {
         // First event for this task. This means that the task was running
         // from the beginning of the trace.
         TaskRuntime task_runtime = {};
+        task_runtime.last_schedule_time = -1; // unscheduled
         task_runtime.start_time = 0;
         task_runtime.num_runs = 1;
         task_runtime.total_runtime = timestamp;
@@ -185,6 +186,7 @@ namespace sim {
       } else {
         // Update the runtime for the task. The failed tasks are included
         // in the runtime.
+        task_runtime_ptr->last_schedule_time = -1; // unscheduled
         task_runtime_ptr->num_runs++;
         task_runtime_ptr->total_runtime +=
           timestamp - task_runtime_ptr->last_schedule_time;
@@ -196,6 +198,7 @@ namespace sim {
       if (task_runtime_ptr == NULL) {
         // First event for this task.
         TaskRuntime task_runtime = {};
+        task_runtime.last_schedule_time = -1; // unscheduled
         task_runtime.start_time = 0;
         task_runtime.num_runs = 1;
         task_runtime.total_runtime = timestamp;
@@ -204,6 +207,7 @@ namespace sim {
         PrintTaskRuntime(out_events_file, task_runtime, task_id,
                          logical_job_name, timestamp);
       } else {
+        task_runtime_ptr->last_schedule_time = -1; // unscheduled
         task_runtime_ptr->num_runs++;
         task_runtime_ptr->total_runtime +=
           timestamp - task_runtime_ptr->last_schedule_time;
@@ -888,6 +892,7 @@ namespace sim {
     }
     fclose(out_events_file_all);
 
+    // this outputs averages for all tasks
     for (unordered_map<TaskIdentifier, TaskRuntime,
            TaskIdentifierHasher>::iterator it = tasks_runtime.begin();
          it != tasks_runtime.end(); ++it) {
@@ -895,23 +900,34 @@ namespace sim {
       string logical_job_name =  job_id_to_name[task_id.job_id];
       uint64_t runtime = 0;
       TaskRuntime task_runtime = it->second;
-      if (task_runtime.num_runs == 0) {
-        runtime = end_simulation_time - task_runtime.last_schedule_time;
-        task_runtime.num_runs++;
-        task_runtime.total_runtime = runtime;
-      } else {
-        uint64_t avg_runtime =
-          task_runtime.total_runtime / task_runtime.num_runs;
-        runtime = end_simulation_time - task_runtime.last_schedule_time;
-        // If the average runtime to failure is bigger than the current
-        // runtime then we assume that the task is going to run for avg
-        // runtime to failure.
-        if (avg_runtime > runtime) {
-          runtime = avg_runtime;
+
+      if (task_runtime.last_schedule_time >= 0) {
+        // task is still running
+        if (task_runtime.num_runs == 0) {
+          runtime = end_simulation_time - task_runtime.last_schedule_time;
+          task_runtime.num_runs++;
+          task_runtime.total_runtime = runtime;
+        } else {
+          uint64_t avg_runtime =
+            task_runtime.total_runtime / task_runtime.num_runs;
+          runtime = end_simulation_time - task_runtime.last_schedule_time;
+          // If the average runtime to failure is bigger than the current
+          // runtime then we assume that the task is going to run for avg
+          // runtime to failure.
+          if (avg_runtime > runtime) {
+            runtime = avg_runtime;
+          }
+          task_runtime.num_runs++;
+          task_runtime.total_runtime += runtime;
         }
-        task_runtime.num_runs++;
-        task_runtime.total_runtime += runtime;
+      } else {
+        // task has finished, compute average
+        // XXX
+        uint64_t avg_runtime =
+                    task_runtime.total_runtime / task_runtime.num_runs;
+        runtime = avg_runtime;
       }
+
       PrintTaskRuntime(out_events_file_avg, task_runtime, task_id,
                        logical_job_name, runtime);
     }
