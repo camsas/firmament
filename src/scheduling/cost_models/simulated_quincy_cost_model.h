@@ -106,9 +106,9 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   GoogleRuntimeDistribution runtime_distribution_;
   GoogleBlockDistribution block_distribution_;
 
-  unordered_map<TaskID_t, std::list<std::pair<ResourceID_t, Cost_t>>>
+  unordered_map<TaskID_t, unordered_map<ResourceID_t, Cost_t>>
 	                                                       preferred_machine_map_;
-  unordered_map<TaskID_t, std::list<std::pair<EquivClass_t, Cost_t>>>
+  unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t>>
 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 preferred_rack_map_;
   unordered_map<TaskID_t, Cost_t> cluster_aggregator_cost_;
 };
