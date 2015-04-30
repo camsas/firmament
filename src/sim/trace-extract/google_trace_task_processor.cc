@@ -186,11 +186,11 @@ namespace sim {
       } else {
         // Update the runtime for the task. The failed tasks are included
         // in the runtime.
-        task_runtime_ptr->last_schedule_time = -1; // unscheduled
         task_runtime_ptr->num_runs++;
         task_runtime_ptr->total_runtime +=
           timestamp - task_runtime_ptr->last_schedule_time;
         PopulateTaskRuntime(task_runtime_ptr, line_cols);
+        task_runtime_ptr->last_schedule_time = -1; // unscheduled
       }
     } else if (event_type == TASK_FINISH) {
       string logical_job_name = (*job_id_to_name)[task_id.job_id];
@@ -207,7 +207,6 @@ namespace sim {
         PrintTaskRuntime(out_events_file, task_runtime, task_id,
                          logical_job_name, timestamp);
       } else {
-        task_runtime_ptr->last_schedule_time = -1; // unscheduled
         task_runtime_ptr->num_runs++;
         task_runtime_ptr->total_runtime +=
           timestamp - task_runtime_ptr->last_schedule_time;
@@ -215,6 +214,7 @@ namespace sim {
         PrintTaskRuntime(out_events_file, *task_runtime_ptr, task_id,
                          logical_job_name,
                          timestamp - task_runtime_ptr->last_schedule_time);
+        task_runtime_ptr->last_schedule_time = -2; // unscheduled
       }
     } else if (event_type == TASK_UPDATE_PENDING ||
                event_type == TASK_UPDATE_RUNNING) {
@@ -922,7 +922,10 @@ namespace sim {
         }
       } else {
         // task has finished, compute average
-        // XXX
+        // (most the time, there will be just one run)
+        // SOMEDAY(adam): unclear if this is the 'right' way of handling it
+        // e.g. if you had task be killed, rescheduled, then finish probably
+        // only want to count the last run (ignore the failed one)
         uint64_t avg_runtime =
                     task_runtime.total_runtime / task_runtime.num_runs;
         runtime = avg_runtime;
