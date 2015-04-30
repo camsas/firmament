@@ -37,8 +37,6 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
   : resource_map_(resource_map),
     job_map_(job_map),
     task_map_(task_map),
-    task_bindings_(task_bindings),
-    leaf_res_ids_(leaf_res_ids),
     knowledge_base_(kb),
 		proportion_machine_preferred_(delta_preferred_machine),
 		proportion_rack_preferred_(delta_preferred_rack),
@@ -53,11 +51,19 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
 		// XXX(adam): come up with realistic numbers
 		block_distribution_(10, 1, 167772160)
 		{
-	// TODO
-  //application_stats_ = knowledge_base_->AppStats();
-  CHECK_NOTNULL(task_bindings_);
+  // Shut up unused warnings for now
+  CHECK_NOTNULL(leaf_res_ids);
+  CHECK_NOTNULL(task_bindings);
+
   // initialise to a single, empty rack
   rack_to_machine_map_.assign(1, std::list<ResourceID_t>());
+}
+
+SimulatedQuincyCostModel::~SimulatedQuincyCostModel() {
+  for (auto elt : preferred_machine_map_) {
+    ResourceCostMap_t *map = elt.second;
+    delete map;
+  }
 }
 
 // The cost of leaving a task unscheduled should be higher than the cost of
@@ -84,9 +90,8 @@ Cost_t SimulatedQuincyCostModel::TaskToClusterAggCost(TaskID_t task_id) {
 
 Cost_t SimulatedQuincyCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                                ResourceID_t resource_id) {
-	unordered_map<ResourceID_t, Cost_t> &preferred_machines =
-	                                              preferred_machine_map_[task_id];
-	return preferred_machines[resource_id];
+  ResourceCostMap_t *cost_map = preferred_machine_map_[task_id];
+  return (*cost_map)[resource_id];
 }
 
 // Cost from machines to cores, always 0.
@@ -114,9 +119,7 @@ Cost_t SimulatedQuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {
 Cost_t SimulatedQuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
                                                    EquivClass_t tec) {
   // task to rack aggregators
-  unordered_map<EquivClass_t, Cost_t> &preferred_racks =
-                                                   preferred_rack_map_[task_id];
-  return preferred_racks[tec];
+  return preferred_rack_map_[task_id][tec];
 }
 
 Cost_t SimulatedQuincyCostModel::EquivClassToResourceNode(EquivClass_t tec,
@@ -138,10 +141,9 @@ Cost_t SimulatedQuincyCostModel::EquivClassToEquivClass(EquivClass_t tec1,
 vector<EquivClass_t>* SimulatedQuincyCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   vector<EquivClass_t>* preferred_res = new vector<EquivClass_t>();
-  std::unordered_map<EquivClass_t, Cost_t> &preferred_racks =
-                                                   preferred_rack_map_[task_id];
+  auto &preferred_racks = preferred_rack_map_[task_id];
   for (auto elt : preferred_racks) {
-    EquivClass_t rack = preferred_racks.second;
+    EquivClass_t rack = elt.second;
     preferred_res->push_back(rack);
   }
   return preferred_res;
@@ -163,14 +165,13 @@ vector<ResourceID_t>* SimulatedQuincyCostModel::GetOutgoingEquivClassPrefArcs(
 
 vector<TaskID_t>* SimulatedQuincyCostModel::GetIncomingEquivClassPrefArcs(
     EquivClass_t tec) {
-  vector<ResourceID_t>* res = new vector<ResourceID_t>();
+  vector<TaskID_t>* res = new vector<TaskID_t>();
   return res;
 }
 
 vector<ResourceID_t>* SimulatedQuincyCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   vector<ResourceID_t>* preferred_res = new vector<ResourceID_t>();
-  std::unordered_map<ResourceID_t, Cost_t> &preferred_machines
-	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	= preferred_machine_map_[task_id];
+  auto &preferred_machines = *(preferred_machine_map_[task_id]);
   for (auto elt : preferred_machines) {
   	ResourceID_t machine = elt.first;
   	preferred_res->push_back(machine);
@@ -258,8 +259,8 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
   	}
   }
 
-  preferred_machine_map_[task_id] = std::unordered_map<ResourceID_t, Cost_t>();
-  auto &preferred_machines = preferred_machine_map_[task_id];
+  preferred_machine_map_[task_id] = new ResourceCostMap_t();
+  auto &preferred_machines = *(preferred_machine_map_[task_id]);
   for (auto freq : machine_frequency) {
   	SimulatedDFS::BlockID_t num_local_blocks = freq.second;
   	double proportion = num_local_blocks / total_num_blocks;
@@ -284,7 +285,7 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
   	}
   }
 
-  preferred_rack_map_[task_id] = std::unordered_map<EquivClass_t, Cost_t>();
+  preferred_rack_map_[task_id] = unordered_map<EquivClass_t, Cost_t>();
   auto &preferred_racks = preferred_rack_map_[task_id];
   for (auto freq : rack_frequency) {
   	SimulatedDFS::BlockID_t num_rack_blocks = freq.second;

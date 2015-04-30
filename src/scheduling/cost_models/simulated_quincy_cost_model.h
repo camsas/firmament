@@ -42,6 +42,7 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
 									uint32_t percent_block_tolerance,
 									uint64_t machines_per_rack,
 									SimulatedDFS *dfs);
+  ~SimulatedQuincyCostModel();
 
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
@@ -86,18 +87,16 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   // Information regarding jobs and tasks.
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<TaskMap_t> task_map_;
-  unordered_map<TaskID_t, ResourceID_t>* task_bindings_;
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
-  uint32_t rand_seed_ = 0;
 
   double proportion_machine_preferred_, proportion_rack_preferred_;
   Cost_t core_transfer_cost_, tor_transfer_cost_;
   uint32_t percent_block_tolerance_;
 
   uint64_t machines_per_rack_;
-	unordered_map<ResourceID_t, EquivClass_t> machine_to_rack_map_;
+	unordered_map<ResourceID_t, EquivClass_t, boost::hash<boost::uuids::uuid>>
+	                                                        machine_to_rack_map_;
 	vector<std::list<ResourceID_t>> rack_to_machine_map_;
 
   SimulatedDFS *filesystem_;
@@ -106,10 +105,12 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   GoogleRuntimeDistribution runtime_distribution_;
   GoogleBlockDistribution block_distribution_;
 
-  unordered_map<TaskID_t, unordered_map<ResourceID_t, Cost_t>>
-	                                                       preferred_machine_map_;
-  unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t>>
-	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 preferred_rack_map_;
+  unordered_map<TaskID_t, ResourceCostMap_t*> preferred_machine_map_;
+  unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t>> preferred_rack_map_;
+//  unordered_map<TaskID_t, unordered_map<ResourceID_t, Cost_t,
+//                boost::hash<boost::uuids::uuid>>> preferred_machine_map_;
+//  unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t,
+//                boost::hash<boost::uuids::uuid>>> preferred_rack_map_;
   unordered_map<TaskID_t, Cost_t> cluster_aggregator_cost_;
 };
 
