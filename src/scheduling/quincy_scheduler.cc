@@ -82,8 +82,8 @@ QuincyScheduler::QuincyScheduler(
       break;
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
       cost_model_ = new QuincyCostModel(resource_map, job_map, task_map,
-                                       &task_bindings_, leaf_res_ids_,
-                                       knowledge_base_);
+                                        &task_bindings_, leaf_res_ids_,
+                                        knowledge_base_);
       VLOG(1) << "Using the Quincy cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_WHARE:
@@ -215,6 +215,57 @@ void QuincyScheduler::KillRunningTask(TaskID_t task_id,
   }
 }
 
+void QuincyScheduler::NodeBindingToSchedulingDelta(
+    const FlowGraphNode& src, const FlowGraphNode& dst,
+    unordered_map<TaskID_t, ResourceID_t>* task_bindings,
+    SchedulingDelta* delta) {
+  // Figure out what type of scheduling change this is
+  // Source must be a task node as this point
+  CHECK(src.type_.type() == FlowNodeType::SCHEDULED_TASK ||
+        src.type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+        src.type_.type() == FlowNodeType::ROOT_TASK);
+  // Destination must be a PU node
+  CHECK(dst.type_.type() == FlowNodeType::PU);
+  // Is the source (task) already placed elsewhere?
+  ResourceID_t* bound_res = FindOrNull(*task_bindings, src.task_id_);
+  ResourceStatus* target_res_status =
+    FindPtrOrNull(*resource_map_, dst.resource_id_);
+  CHECK_NOTNULL(target_res_status);
+  TaskID_t current_bound_task_id =
+    target_res_status->descriptor().current_running_task();
+  VLOG(2) << "Task ID: " << src.task_id_ << ", bound_res: " << bound_res
+          << ", current bound task ID: " << current_bound_task_id;
+  if (bound_res && (*bound_res != dst.resource_id_)) {
+    // If so, we have a migration
+    VLOG(1) << "MIGRATION: take " << src.task_id_ << " off "
+            << *bound_res << " and move it to "
+            << dst.resource_id_;
+    delta->set_type(SchedulingDelta::MIGRATE);
+    delta->set_task_id(src.task_id_);
+    delta->set_resource_id(to_string(dst.resource_id_));
+  } else if (bound_res && (*bound_res == dst.resource_id_)) {
+    // We were already scheduled here. No-op.
+    delta->set_type(SchedulingDelta::NOOP);
+  } else if (!bound_res && current_bound_task_id != src.task_id_) {
+    // Is something else bound to the same resource?
+    // If so, we need to kick it off (a preemption)
+    VLOG(1) << "PREEMPTION: take " << current_bound_task_id << " off "
+            << *bound_res << " and replace it with "
+            << src.task_id_;
+    delta->set_type(SchedulingDelta::PREEMPT);
+    delta->set_task_id(current_bound_task_id);
+    delta->set_resource_id(to_string(dst.resource_id_));
+  } else {
+    // If neither, we have a scheduling event
+    VLOG(1) << "SCHEDULING: place " << src.task_id_ << " on "
+            << dst.resource_id_ << ", which was idle.";
+    delta->set_type(SchedulingDelta::PLACE);
+    delta->set_task_id(src.task_id_);
+    delta->set_resource_id(to_string(dst.resource_id_));
+  }
+}
+
+
 uint64_t QuincyScheduler::ScheduleJob(JobDescriptor* job_desc) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   LOG(INFO) << "START SCHEDULING " << job_desc->uuid();
@@ -254,7 +305,7 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   for (it = task_mappings->begin(); it != task_mappings->end(); it++) {
     VLOG(1) << "Bind " << it->first << " to " << it->second << endl;
     SchedulingDelta* delta = new SchedulingDelta;
-    quincy_dispatcher_->NodeBindingToSchedulingDelta(
+    NodeBindingToSchedulingDelta(
         *flow_graph_->Node(it->first), *flow_graph_->Node(it->second),
         &task_bindings_, delta);
     if (delta->type() == SchedulingDelta::NOOP)

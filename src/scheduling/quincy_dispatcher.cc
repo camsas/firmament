@@ -280,49 +280,6 @@ namespace scheduler {
     }
   }
 
-  void QuincyDispatcher::NodeBindingToSchedulingDelta(
-      const FlowGraphNode& src, const FlowGraphNode& dst,
-      unordered_map<TaskID_t, ResourceID_t>* task_bindings,
-      SchedulingDelta* delta) {
-    // Figure out what type of scheduling change this is
-    // Source must be a task node as this point
-    CHECK(src.type_.type() == FlowNodeType::SCHEDULED_TASK ||
-          src.type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
-          src.type_.type() == FlowNodeType::ROOT_TASK);
-    // Destination must be a PU node
-    CHECK(dst.type_.type() == FlowNodeType::PU);
-    // Is the source (task) already placed elsewhere?
-    ResourceID_t* bound_res = FindOrNull(*task_bindings, src.task_id_);
-    VLOG(2) << "task ID: " << src.task_id_ << ", bound_res: " << bound_res;
-    if (bound_res && (*bound_res != dst.resource_id_)) {
-      // If so, we have a migration
-      VLOG(1) << "MIGRATION: take " << src.task_id_ << " off "
-              << *bound_res << " and move it to "
-              << dst.resource_id_;
-      delta->set_type(SchedulingDelta::MIGRATE);
-      delta->set_task_id(src.task_id_);
-      delta->set_resource_id(to_string(dst.resource_id_));
-    } else if (bound_res && (*bound_res == dst.resource_id_)) {
-      // We were already scheduled here. No-op.
-      delta->set_type(SchedulingDelta::NOOP);
-    } else if (!bound_res && false) {  // Is something else bound to the same
-      // resource?
-      // If so, we have a preemption
-      // XXX(malte): This code is NOT WORKING!
-      VLOG(1) << "PREEMPTION: take " << src.task_id_ << " off "
-              << *bound_res << " and replace it with "
-              << src.task_id_;
-      delta->set_type(SchedulingDelta::PREEMPT);
-    } else {
-      // If neither, we have a scheduling event
-      VLOG(1) << "SCHEDULING: place " << src.task_id_ << " on "
-              << dst.resource_id_ << ", which was idle.";
-      delta->set_type(SchedulingDelta::PLACE);
-      delta->set_task_id(src.task_id_);
-      delta->set_resource_id(to_string(dst.resource_id_));
-    }
-  }
-
   // Assigns a leaf node to a worker|root task. At each step it checks if there
   // is an arc to a worker|root task, if not then it goes one layer up in the
   // graph.
