@@ -470,10 +470,11 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   // Add the outgoing arcs from the equivalence class node.
   for (vector<ResourceID_t>::iterator it = res_pref_arcs->begin();
        it != res_pref_arcs->end(); ++it) {
+    FlowGraphNode* rn = NodeForResourceID(*it);
     FlowGraphArc* ec_arc =
-      AddArcInternal(ec_node->id_, NodeForResourceID(*it)->id_);
-    // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
-    ec_arc->cap_upper_bound_ = 1;
+      AddArcInternal(ec_node->id_, rn->id_);
+    // TODO(malte): N.B.: this assumes no PU sharing.
+    ec_arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(rn);
     ec_arc->cost_ =
       cost_model_->EquivClassToResourceNode(ec, *it);
     ec_arcs->push_back(ec_arc);
@@ -664,6 +665,37 @@ void FlowGraph::ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
   	chg->SetComment(comment);
     graph_changes_.push_back(chg);
   }
+}
+
+uint32_t FlowGraph::CountTaskSlotsBelowResourceNode(FlowGraphNode* node) {
+  uint32_t task_slot_count = 0;
+  // Iterate over the children of this node to find leaves and aggregate
+  // their capacities to the sink.
+  // Assumes acyclicity, which we have in any reasonable flow graph
+  queue<FlowGraphNode*> q;
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+       node->outgoing_arc_map_.begin();
+       it != node->outgoing_arc_map_.end();
+       ++it) {
+    if (it->second->dst_node_->type_.type() == FlowNodeType::SINK)
+      task_slot_count += it->second->cap_upper_bound_;
+  }
+  // BFS over subtree
+  while (!q.empty()) {
+    FlowGraphNode* n = q.front();
+    q.pop();
+    for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+         n->outgoing_arc_map_.begin();
+         it != n->outgoing_arc_map_.end();
+         ++it) {
+      if (it->second->dst_node_->type_.type() == FlowNodeType::SINK) {
+        task_slot_count += it->second->cap_upper_bound_;
+      } else {
+        q.push(it->second->dst_node_);
+      }
+    }
+  }
+  return task_slot_count;
 }
 
 void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc, const char *comment) {
