@@ -202,6 +202,7 @@ void SimulatedQuincyCostModel::AddMachine(
 	}
 	rack_to_machine_map_[current_rack].push_back(res_id);
 	machine_to_rack_map_[res_id] = current_rack;
+	VLOG(1) << "Added machine " << res_id << " to rack " << current_rack;
 }
 
 void SimulatedQuincyCostModel::RemoveMachine(ResourceID_t res_id) {

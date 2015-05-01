@@ -13,11 +13,9 @@ SimulatedDFS::SimulatedDFS(uint64_t num_machines, BlockID_t blocks_per_machine,
 		uniform(0.0,1.0), blocks_in_file_distn(block_distribution) {
   double total_block_capacity = num_machines * blocks_per_machine
                                              / replication_factor;
-  // rather have slightly more replication than too little
-  total_block_capacity *= 0.95;
-  BlockID_t target_blocks = std::round(total_block_capacity);
-
   LOG(INFO) << "Total capacity of " << total_block_capacity << " blocks.";
+  // rather have slightly more replication than too little
+  BlockID_t target_blocks = std::round(total_block_capacity * 0.95);
 
   // create files until we hit storage limit
   while (num_blocks < target_blocks) {
@@ -78,12 +76,17 @@ void SimulatedDFS::addMachine(ResourceID_t machine) {
       size_t last_index = priority_files.size() - 1;
       std::swap(priority_files[index], priority_files[last_index]);
       priority_files.resize(last_index);
+
+      VLOG(2) << "Replicated entirety of file " << index;
     } else {
       // only have space to replicate fragment
       copy_until = blocks_to_replicate;
 
       // some parts of the file maximally replicated, others still priority
       block_range.first = copy_until + 1;
+
+      VLOG(2) << "Replicated " << copy_until << " out of " << num_blocks_in_file
+              << " blocks of file " << index;
     }
     for (BlockID_t block = start; block <= copy_until; block++) {
       block_index[block].push_back(machine);

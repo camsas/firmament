@@ -3,7 +3,7 @@ SUFFIX=sim/trace-extract
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_timer \
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_timer -lboost_filesystem \
         -lssl -lcrypto
 
 BINS = google-trace-simulator google-trace-processor google-trace-simulator-test

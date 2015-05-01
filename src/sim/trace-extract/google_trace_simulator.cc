@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/timer/timer.hpp>
 
@@ -55,7 +56,7 @@ namespace sim {
 #define MACHINE_UPDATE 2
 
 #define MACHINE_TMPL_FILE "../../../tests/testdata/machine_topo.pbin"
-//#define MACHINE_TMPL_FILE "/tmp/mach_test.pbin"
+//#define MACHINE_TMPL_FILE "../../../tests/testdata/michael.pbin"
 
 const static uint64_t SEED = 0;
 
@@ -230,12 +231,12 @@ SimulatedQuincyCostModel *GoogleTraceSimulator::SetupSimulatedQuincyCostModel(
                                         FLAGS_simulated_quincy_runtime_power);
 
   uint64_t num_machines = std::round(MACHINES_IN_TRACE * FLAGS_percentage / 100.0);
-  LOG(INFO) << "Assuming " << num_machines << " in cluster.";
+  LOG(INFO) << "Assuming " << num_machines << " machines in cluster.";
   SimulatedDFS *dfs = new SimulatedDFS(num_machines,
                                    FLAGS_simulated_quincy_blocks_per_machine,
                                    FLAGS_simulated_quincy_replication_factor,
                                    file_block_distn);
-  cost_model_ = new SimulatedQuincyCostModel(resource_map_, job_map_,
+  return new SimulatedQuincyCostModel(resource_map_, job_map_,
           task_map_,  &task_bindings_, leaf_res_ids, knowledge_base_,
           dfs, runtime_distn, input_block_distn,
           FLAGS_simulated_quincy_delta_preferred_machine,
@@ -1023,6 +1024,15 @@ void output_change_stats(DIMACSChangeStats &stats, ofstream &stats_file) {
 						 << std::endl;
 }
 
+int get_binary_directory(char *pBuf, ssize_t len) {
+  char szTmp[32];
+  sprintf(szTmp, "/proc/%d/exe", getpid());
+  int bytes = std::min(readlink(szTmp, pBuf, len), len - 1);
+  if(bytes >= 0)
+    pBuf[bytes] = '\0';
+  return bytes;
+}
+
 void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
   // Output CSV header
   if (stats_file) {
@@ -1053,8 +1063,21 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
   LoadTaskRuntimeStats();
 
   // Import a fictional machine resource topology
+  char binary_path[1024];
+  size_t bytes = get_binary_directory(binary_path, sizeof(binary_path));
+  CHECK(bytes < sizeof(binary_path));
+  // lookup file relative to directory of binary
+  boost::filesystem::path machine_tmpl_path(binary_path);
+  machine_tmpl_path.remove_filename();
+  machine_tmpl_path /= boost::filesystem::path(MACHINE_TMPL_FILE);
+
   ResourceTopologyNodeDescriptor machine_tmpl;
-  int fd = open(MACHINE_TMPL_FILE, O_RDONLY);
+  std::string machine_tmpl_fname(machine_tmpl_path.string());
+  LOG(INFO) << "Loading machine descriptor from " << machine_tmpl_fname;
+  int fd = open(machine_tmpl_fname.c_str(), O_RDONLY);
+  if (fd < 0) {
+    PLOG(FATAL) << "Could not load " << machine_tmpl_fname;
+  }
   machine_tmpl.ParseFromFileDescriptor(fd);
   close(fd);
 

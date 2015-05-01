@@ -370,10 +370,12 @@ void FlowGraph::AddResourceNode(
     if (rtnd.resource_desc().has_friendly_name()) {
       VLOG(2) << "Adding node " << id << " for resource "
               << rtnd.resource_desc().uuid() << " ("
-              << rtnd.resource_desc().friendly_name() << ")";
+              << rtnd.resource_desc().friendly_name() << ")"
+              << ", type " << rtnd.resource_desc().type();
     } else {
       VLOG(2) << "Adding node " << id << " for resource "
-              << rtnd.resource_desc().uuid();
+              << rtnd.resource_desc().uuid()
+              << ", type " << rtnd.resource_desc().type();
     }
     new_node = AddNodeInternal(id);
     if (rtnd_ptr->resource_desc().type() == ResourceDescriptor::RESOURCE_PU) {
