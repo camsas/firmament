@@ -375,6 +375,8 @@ void GoogleTraceSimulator::AddTaskStats(
   TaskStats* task_stats = FindOrNull(task_id_to_stats_, task_identifier);
   if (task_stats == NULL) {
     // Already added stats.
+    VLOG(2) << "Skipping setting runtime for "
+            << task_identifier.job_id << "/" << task_identifier.task_index;
     return;
   }
   TaskDescriptor* td_ptr = FindPtrOrNull(task_id_to_td_, task_identifier);
@@ -389,6 +391,8 @@ void GoogleTraceSimulator::AddTaskStats(
     runtime = numeric_limits<uint64_t>::max();
   }
   EquivClass_t bogus_equiv_class = (EquivClass_t)td_ptr->uid();
+  VLOG(2) << "Setting runtime of " << runtime << " for "
+          << task_identifier.job_id << "/" << task_identifier.task_index;
   knowledge_base_->SetAvgRuntimeForTEC(bogus_equiv_class, runtime);
   if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
     knowledge_base_->SetAvgMeanCpuUsage(bogus_equiv_class, task_stats->avg_mean_cpu_usage);
@@ -600,6 +604,8 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
     if (fscanf(usage_file, "%[^\n]%*[\n]", &line[0]) > 0) {
       boost::split(cols, line, is_any_of(" "), token_compress_off);
       if (cols.size() != 38) {
+        LOG(WARNING) << "Malformed task usage, " << cols.size()
+                     << " != 38 columns at line " << num_line;
       } else {
         TaskIdentifier task_id;
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
@@ -620,6 +626,9 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
           LOG(ERROR) << "LoadTaskRuntimeStats: There should not be more than an "
                      << "entry for job " << task_id.job_id
                      << ", task " << task_id.task_index;
+        } else {
+          VLOG(2) << "Loaded stats for "
+                  << task_id.job_id << "/" << task_id.task_index;
         }
 
         // double min_mean_cpu_usage = lexical_cast<double>(cols[2]);
@@ -692,6 +701,9 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
           LOG(ERROR) << "LoadTasksRunningTime: There should not be more than "
                      << "one entry for job " << task_id.job_id
                      << ", task " << task_id.task_index;
+        } else {
+          VLOG(2) << "Loaded runtime for "
+                  << task_id.job_id << "/" << task_id.task_index;
         }
       }
     }
