@@ -68,9 +68,10 @@ void SimulatedDFS::addMachine(ResourceID_t machine) {
     BlockID_t num_blocks_in_file = end - start + 1;
 
     BlockID_t copy_until = 0;
-    if (num_blocks_in_file <= blocks_to_replicate) {
+    if (blocks_to_replicate >= num_blocks_in_file) {
       // replicate entire file
       copy_until = end;
+      blocks_to_replicate -= num_blocks_in_file;
 
       // file is now as highly replicated as others: delete it from priority
       size_t last_index = priority_files.size() - 1;
@@ -80,7 +81,8 @@ void SimulatedDFS::addMachine(ResourceID_t machine) {
       VLOG(2) << "Replicated entirety of file " << index;
     } else {
       // only have space to replicate fragment
-      copy_until = blocks_to_replicate;
+      copy_until = start + blocks_to_replicate;
+      blocks_to_replicate = 0;
 
       // some parts of the file maximally replicated, others still priority
       block_range.first = copy_until + 1;
