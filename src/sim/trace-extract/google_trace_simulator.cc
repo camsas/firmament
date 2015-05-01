@@ -382,12 +382,14 @@ void GoogleTraceSimulator::AddTaskStats(
   TaskDescriptor* td_ptr = FindPtrOrNull(task_id_to_td_, task_identifier);
   CHECK_NOTNULL(td_ptr);
   uint64_t* task_runtime_ptr = FindOrNull(*task_runtime, task_identifier);
-  uint64_t runtime = 0;
+  double runtime = 0.0;
   if (task_runtime_ptr != NULL) {
-    runtime = *task_runtime_ptr;
+    // knowledge base has runtime in ms, but we get it in micros
+    runtime = *task_runtime_ptr / 1000.0;
   } else {
     // We don't have information about this task's runtime.
     // Set its runtime to max which means it's a service task.
+    // TODO(adam): or float infinity?
     runtime = numeric_limits<uint64_t>::max();
   }
   EquivClass_t bogus_equiv_class = (EquivClass_t)td_ptr->uid();

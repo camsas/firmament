@@ -6,12 +6,10 @@
 namespace firmament {
 
 // justification for block parameters from Chen, et al (2012)
-// blocks: 64 MB, max blocks 16384 corresponds to 1 TB
-// XXX: you've chosen smaller parameters to make it easier to test, substitute more realistic ones
+// blocks: 64 MB, max blocks 160 corresponds to 10 GB
 SimulatedDFS::SimulatedDFS(FileID_t num_files, BlockID_t blocks_per_machine) :
 		blocks_per_machine(blocks_per_machine),
-		// max file size 5 GB
-		uniform(0.0,1.0), blocks_in_file_distn(40, 1, 80) {
+		uniform(0.0,1.0), blocks_in_file_distn(20, 1, 160) {
 	addFiles(num_files);
 	if (num_blocks < blocks_per_machine) {
 		LOG(FATAL) << "Requested more blocks " << blocks_per_machine

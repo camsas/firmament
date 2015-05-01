@@ -49,7 +49,7 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
 		runtime_distribution_(0.298, -0.2627),
 		// these are scaled up number of blocks to get a collection of files
 		// XXX(adam): come up with realistic numbers
-		block_distribution_(10, 1, 300)
+		block_distribution_(50, 1, 320)
 		{
   // Shut up unused warnings for now
   CHECK_NOTNULL(leaf_res_ids);
