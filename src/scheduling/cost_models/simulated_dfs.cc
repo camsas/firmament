@@ -17,10 +17,14 @@ SimulatedDFS::SimulatedDFS(uint64_t num_machines, BlockID_t blocks_per_machine,
   total_block_capacity *= 0.95;
   BlockID_t target_blocks = std::round(total_block_capacity);
 
+  LOG(INFO) << "Total capacity of " << total_block_capacity << " blocks.";
+
   // create files until we hit storage limit
   while (num_blocks < target_blocks) {
     addFile();
   }
+  LOG(INFO) << num_blocks << " blocks used, across "
+            << files.size() << " files.";
 }
 
 SimulatedDFS::~SimulatedDFS() { }

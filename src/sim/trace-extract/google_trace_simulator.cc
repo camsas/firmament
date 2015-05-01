@@ -230,11 +230,12 @@ SimulatedQuincyCostModel *GoogleTraceSimulator::SetupSimulatedQuincyCostModel(
                                         FLAGS_simulated_quincy_runtime_power);
 
   uint64_t num_machines = std::round(MACHINES_IN_TRACE * FLAGS_percentage / 100.0);
+  LOG(INFO) << "Assuming " << num_machines << " in cluster.";
   SimulatedDFS *dfs = new SimulatedDFS(num_machines,
                                    FLAGS_simulated_quincy_blocks_per_machine,
                                    FLAGS_simulated_quincy_replication_factor,
                                    file_block_distn);
-  return new SimulatedQuincyCostModel(resource_map_, job_map_,
+  cost_model_ = new SimulatedQuincyCostModel(resource_map_, job_map_,
           task_map_,  &task_bindings_, leaf_res_ids, knowledge_base_,
           dfs, runtime_distn, input_block_distn,
           FLAGS_simulated_quincy_delta_preferred_machine,
