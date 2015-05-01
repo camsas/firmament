@@ -32,9 +32,9 @@ void SimulatedDFS::addFile() {
 	SimulatedDFS::BlockID_t block_end = num_blocks - 1;
 
 	files.push_back(std::make_pair(block_start, block_end));
+	priority_files.push_back(std::make_pair(block_start, block_end));
 	for (SimulatedDFS::BlockID_t block = block_start; block <= block_end; block++) {
 		block_index.push_back(std::list<ResourceID_t>());
-		blocks_priority.push_back(block);
 	}
 }
 
@@ -44,28 +44,48 @@ uint32_t SimulatedDFS::numBlocksInFile() {
 }
 
 void SimulatedDFS::addMachine(ResourceID_t machine) {
-	std::list<BlockID_t> &local_blocks = blocks_on_machine[machine];
-	for (BlockID_t num_replicated = 0; num_replicated < blocks_per_machine;
-			 num_replicated++) {
-		if (blocks_priority.empty()) {
-			std::swap(blocks_normal, blocks_priority);
-		}
+  std::list<BlockID_t> &local_blocks = blocks_on_machine[machine];
+  BlockID_t blocks_to_replicate = blocks_per_machine;
+  while (blocks_to_replicate > 0) {
+    if (priority_files.empty()) {
+      // deep copy of files
+      size_t num_files = files.size();
+      priority_files.resize(num_files);
+      for (size_t i = 0; i < num_files; i++) {
+        priority_files[i] = std::pair<BlockID_t, BlockID_t>(files[i]);
+      }
 
-		// select block
-		std::uniform_int_distribution<size_t> distn(0, blocks_priority.size() - 1);
-		size_t index = distn(generator);
-		BlockID_t block = blocks_priority[index];
+      num_replications++;
+      LOG(INFO) << "Replication factor reached " << num_replications;
+    }
 
-		// remove from blocks_priority, add to blocks_normal
-		size_t last_index = blocks_priority.size() - 1;
-		std::swap(blocks_priority[index], blocks_priority[last_index]);
-		blocks_priority.resize(last_index);
-		blocks_normal.push_back(block);
+    std::uniform_int_distribution<size_t> distn(0, priority_files.size() - 1);
+    size_t index = distn(generator);
+    std::pair<BlockID_t, BlockID_t> &block_range = priority_files[index];
+    BlockID_t start = block_range.first, end = block_range.second;
+    BlockID_t num_blocks_in_file = end - start + 1;
 
-		// update indices
-		block_index[block].push_back(machine);
-		local_blocks.push_back(block);
-	}
+    BlockID_t copy_until = 0;
+    if (num_blocks_in_file <= blocks_to_replicate) {
+      // replicate entire file
+      copy_until = end;
+
+      // file is now as highly replicated as others: delete it from priority
+      size_t last_index = priority_files.size() - 1;
+      std::swap(priority_files[index], priority_files[last_index]);
+      priority_files.resize(last_index);
+    } else {
+      // only have space to replicate fragment
+      copy_until = blocks_to_replicate;
+
+      // some parts of the file maximally replicated, others still priority
+      block_range.first = copy_until + 1;
+    }
+    for (BlockID_t block = start; block <= copy_until; block++) {
+      block_index[block].push_back(machine);
+      local_blocks.push_back(block);
+    }
+  }
 }
 
 void SimulatedDFS::removeMachine(ResourceID_t machine) {

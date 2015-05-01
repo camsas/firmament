@@ -29,19 +29,23 @@ public:
 	const std::list<ResourceID_t> &getMachines(BlockID_t block) const;
 	const std::unordered_set<FileID_t> sampleFiles(BlockID_t num_blocks,
 			                                           uint32_t tolerance) const;
+
+	uint32_t getNumReplications() const {
+	  return num_replications;
+	}
 private:
 	void addFile();
 	uint32_t numBlocksInFile();
 	void addFiles(FileID_t num_files);
 
 	BlockID_t blocks_per_machine, num_blocks = 0;
-	std::vector<BlockID_t> blocks_priority;
-	std::vector<BlockID_t> blocks_normal;
 	std::vector<std::list<ResourceID_t>> block_index;;
 	std::unordered_map<ResourceID_t, std::list<BlockID_t>,
 	                   boost::hash<ResourceID_t>> blocks_on_machine;
 	// pair: start block ID, end block ID (inclusive)
-	std::vector<std::pair<BlockID_t, BlockID_t>> files;
+	std::vector<std::pair<BlockID_t, BlockID_t>> files, priority_files;
+
+	uint32_t num_replications = 0;
 
 	mutable std::default_random_engine generator;
 	std::uniform_real_distribution<double> uniform;
