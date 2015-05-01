@@ -34,4 +34,16 @@ uint64_t GoogleBlockDistribution::inverse(double y) {
 	}
 }
 
+const static double STEP = 0.01;
+double GoogleBlockDistribution::mean() {
+  double mean = 0;
+  mean += p_min * min_blocks;
+  // estimate for rest of tail
+  for (double y = p_min + STEP; y <= 1.0; y += STEP) {
+    mean += STEP * inverse(y);
+  }
+
+  return mean;
+}
+
 } /* namespace firmament */

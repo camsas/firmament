@@ -18,6 +18,7 @@
 #include "scheduling/flow_graph.h"
 #include "scheduling/knowledge_base_simulator.h"
 #include "scheduling/quincy_dispatcher.h"
+#include "scheduling/cost_models/cost_models.h"
 #include "sim/trace-extract/event_desc.pb.h"
 
 DECLARE_string(flow_scheduling_solver);
@@ -66,6 +67,9 @@ class GoogleTraceSimulator {
   void Run();
 
  private:
+  SimulatedQuincyCostModel *SetupSimulatedQuincyCostModel(
+    unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids);
+
   /**
    * Add new machine to the topology. The method updates simulator's mapping state.
    * @param machine_tmp the topology descriptor of the new machine

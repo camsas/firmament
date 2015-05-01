@@ -22,7 +22,6 @@
 #include "SpookyV2.h"
 
 #include "sim/trace-extract/google_trace_simulator.h"
-#include "scheduling/cost_models/cost_models.h"
 #include "scheduling/cost_models/simulated_dfs.h"
 #include "scheduling/dimacs_change_stats.h"
 #include "scheduling/dimacs_exporter.h"
@@ -101,6 +100,46 @@ DEFINE_int32(flow_scheduling_cost_model, 0,
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
              "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
 
+// Racks contain "between 29 and 31 computers" in Quincy test setup
+DEFINE_uint64(simulated_quincy_machines_per_rack, 30,
+                           "Machines are binned into racks of specified size.");
+// Defaults from Quincy paper
+DEFINE_double(simulated_quincy_delta_preferred_machine, 0.1,
+    "Threshold of proportion of data stored on machine for it to be on preferred list.");
+DEFINE_double(simulated_quincy_delta_preferred_rack, 0.1,
+    "Threshold of proportion of data stored on rack for it to be on preferred list.");
+DEFINE_uint64(simulated_quincy_tor_transfer_cost, 1,
+    "Cost per unit of data transferred in core switch.");
+// Cost was 2 for most experiments, 20 for constrained network experiments
+DEFINE_uint64(simulated_quincy_core_transfer_cost, 2,
+    "Cost per unit of data transferred in core switch.");
+// Distributed filesystem options
+DEFINE_uint64(simulated_quincy_blocks_per_machine, 98304,
+   "Number of 64 MB blocks each machine stores. Defaults to 98304, i.e. 6 TB.");
+DEFINE_uint64(simulated_quincy_replication_factor, 3,
+    "The number of times each block should be replicated.");
+// See google_runtime_distribution.h for explanation of these defaults
+DEFINE_double(simulated_quincy_runtime_factor, 0.298,
+                           "Runtime power law distribution: factor parameter.");
+DEFINE_double(simulated_quincy_runtime_power, -0.2627,
+                           "Runtime power law distribution: factor parameter.");
+// Input size distribution. See Evaluation Plan for derivation of defaults.
+DEFINE_uint64(simulated_quincy_input_percent_min, 50,
+                         "Percentage of input files which are minimum # of blocks.");
+DEFINE_double(simulated_quincy_input_min_blocks, 1, "Minimum # of blocks in input file.");
+DEFINE_double(simulated_quincy_input_max_blocks, 320, "Maximum # of blocks in input file.");
+DEFINE_uint64(simulated_quincy_input_percent_over_tolerance, 50,
+               "Percentage # of blocks allowed to exceed the value predicted.");
+// File size distribution. See Evaluation Plan for derivation of defaults.
+DEFINE_uint64(simulated_quincy_file_percent_min, 20,
+                         "Percentage of files which are minimum # of blocks.");
+DEFINE_double(simulated_quincy_file_min_blocks, 1, "Minimum # of blocks in file.");
+DEFINE_double(simulated_quincy_file_max_blocks, 160, "Maximum # of blocks in file.");
+
+// It varies a little over time, but relatively constant. Used for calculation
+// of how much storage space we have.
+const static uint64_t MACHINES_IN_TRACE = 10000;
+
 ofstream *timeout_file;
 void alarm_handler(int sig) {
 	signal(SIGALRM, SIG_IGN);
@@ -160,12 +199,7 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
       break;
     case FlowSchedulingCostModelType::COST_MODEL_SIMULATED_QUINCY:
     {
-    	// XXX: come up with real numbers for these parameters
-    	// probably want to make num_files dependent on percent of trace running on
-      SimulatedDFS *dfs = new SimulatedDFS(10000, 100);
-    	cost_model_ =	new SimulatedQuincyCostModel(resource_map_, job_map_,
-    	        task_map_,  &task_bindings_, leaf_res_ids, knowledge_base_,
-    	        dfs, 0.1, 0.1, 50, 10, 50, 24);
+      cost_model_ = SetupSimulatedQuincyCostModel(leaf_res_ids);
     	VLOG(1) << "Using the simulated Quincy cost model";
     	break;
     }
@@ -178,6 +212,37 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   knowledge_base_->SetCostModel(cost_model_);
   quincy_dispatcher_ =
     new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
+}
+
+SimulatedQuincyCostModel *GoogleTraceSimulator::SetupSimulatedQuincyCostModel(
+   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids) {
+  // probably want to make num_files dependent on percent of trace running on
+  GoogleBlockDistribution *input_block_distn = new GoogleBlockDistribution(
+                                      FLAGS_simulated_quincy_input_percent_min,
+                                      FLAGS_simulated_quincy_input_min_blocks,
+                                      FLAGS_simulated_quincy_input_max_blocks);
+  GoogleBlockDistribution *file_block_distn = new GoogleBlockDistribution(
+                                        FLAGS_simulated_quincy_file_percent_min,
+                                        FLAGS_simulated_quincy_file_min_blocks,
+                                        FLAGS_simulated_quincy_file_max_blocks);
+  GoogleRuntimeDistribution *runtime_distn = new GoogleRuntimeDistribution(
+                                        FLAGS_simulated_quincy_runtime_factor,
+                                        FLAGS_simulated_quincy_runtime_power);
+
+  uint64_t num_machines = std::round(MACHINES_IN_TRACE * FLAGS_percentage / 100.0);
+  SimulatedDFS *dfs = new SimulatedDFS(num_machines,
+                                   FLAGS_simulated_quincy_blocks_per_machine,
+                                   FLAGS_simulated_quincy_replication_factor,
+                                   file_block_distn);
+  return new SimulatedQuincyCostModel(resource_map_, job_map_,
+          task_map_,  &task_bindings_, leaf_res_ids, knowledge_base_,
+          dfs, runtime_distn, input_block_distn,
+          FLAGS_simulated_quincy_delta_preferred_machine,
+          FLAGS_simulated_quincy_delta_preferred_rack,
+          FLAGS_simulated_quincy_core_transfer_cost,
+          FLAGS_simulated_quincy_tor_transfer_cost,
+          FLAGS_simulated_quincy_input_percent_over_tolerance,
+          FLAGS_simulated_quincy_machines_per_rack);
 }
 
 GoogleTraceSimulator::~GoogleTraceSimulator() {

@@ -35,7 +35,9 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
                   unordered_set<ResourceID_t,
                     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                   KnowledgeBase* kb,
-                  SimulatedDFS *dfs,
+                  SimulatedDFS* dfs,
+                  GoogleRuntimeDistribution *runtime_distribution,
+                  GoogleBlockDistribution *block_distribution,
 									double delta_preferred_machine,
 									double delta_preferred_rack,
 									Cost_t core_transfer_cost,
@@ -101,8 +103,8 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   SimulatedDFS *filesystem_;
   unordered_map<TaskID_t, std::unordered_set<SimulatedDFS::FileID_t>> file_map_;
 
-  GoogleRuntimeDistribution runtime_distribution_;
-  GoogleBlockDistribution block_distribution_;
+  GoogleRuntimeDistribution *runtime_distribution_;
+  GoogleBlockDistribution *block_distribution_;
 
   unordered_map<TaskID_t, ResourceCostMap_t*> preferred_machine_map_;
   unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t>> preferred_rack_map_;

@@ -19,7 +19,8 @@ public:
 	typedef uint64_t FileID_t;
 	typedef uint64_t BlockID_t;
 
-	SimulatedDFS(FileID_t num_files, BlockID_t blocks_per_machine);
+	SimulatedDFS(uint64_t num_machines, BlockID_t blocks_per_machine,
+	    uint32_t replication_factor, GoogleBlockDistribution *block_distribution);
 	virtual ~SimulatedDFS();
 
 	void addMachine(ResourceID_t machine);
@@ -36,7 +37,6 @@ public:
 private:
 	void addFile();
 	uint32_t numBlocksInFile();
-	void addFiles(FileID_t num_files);
 
 	BlockID_t blocks_per_machine, num_blocks = 0;
 	std::vector<std::list<ResourceID_t>> block_index;;
@@ -49,7 +49,7 @@ private:
 
 	mutable std::default_random_engine generator;
 	std::uniform_real_distribution<double> uniform;
-	GoogleBlockDistribution blocks_in_file_distn;
+	GoogleBlockDistribution *blocks_in_file_distn;
 };
 
 } /* namespace firmament */

@@ -11,6 +11,7 @@ public:
 			                    uint64_t max_blocks);
 	virtual ~GoogleBlockDistribution();
 	uint64_t inverse(double y);
+	double mean();
 private:
 	double p_min, coef;
 	uint64_t min_blocks;

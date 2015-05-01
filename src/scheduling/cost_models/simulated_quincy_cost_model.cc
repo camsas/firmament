@@ -28,6 +28,8 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
       boost::hash<boost::uuids::uuid>>* leaf_res_ids,
     KnowledgeBase* kb,
     SimulatedDFS* dfs,
+    GoogleRuntimeDistribution *runtime_distribution,
+    GoogleBlockDistribution *block_distribution,
 		double delta_preferred_machine,
 		double delta_preferred_rack,
 		Cost_t core_transfer_cost,
@@ -45,11 +47,8 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
 		percent_block_tolerance_(percent_block_tolerance),
 		machines_per_rack_(machines_per_rack),
 		filesystem_(dfs),
-		// see google_runtime_distribution.h for explanation of these numbers
-		runtime_distribution_(0.298, -0.2627),
-		// these are scaled up number of blocks to get a collection of files
-		// XXX(adam): come up with realistic numbers
-		block_distribution_(50, 1, 320)
+		runtime_distribution_(runtime_distribution),
+		block_distribution_(block_distribution)
 		{
   // Shut up unused warnings for now
   CHECK_NOTNULL(leaf_res_ids);
@@ -226,9 +225,9 @@ void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
 	VLOG(1) << "Task " << task_id << " has runtime " << avg_runtime;
 
 	// Estimate how many blocks input the task has
-	double cumulative_probability = runtime_distribution_.distribution(avg_runtime);
+	double cumulative_probability = runtime_distribution_->distribution(avg_runtime);
 	VLOG(2) << "Which has probability " << cumulative_probability;
-	uint64_t num_blocks = block_distribution_.inverse(cumulative_probability);
+	uint64_t num_blocks = block_distribution_->inverse(cumulative_probability);
 	VLOG(2) << "Giving " << num_blocks << " blocks";
 
 	// Finally, select some files. Sample to get approximately the right number of blocks.

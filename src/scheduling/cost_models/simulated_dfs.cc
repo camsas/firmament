@@ -7,23 +7,23 @@ namespace firmament {
 
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
-SimulatedDFS::SimulatedDFS(FileID_t num_files, BlockID_t blocks_per_machine) :
+SimulatedDFS::SimulatedDFS(uint64_t num_machines, BlockID_t blocks_per_machine,
+    uint32_t replication_factor, GoogleBlockDistribution *block_distribution) :
 		blocks_per_machine(blocks_per_machine),
-		uniform(0.0,1.0), blocks_in_file_distn(20, 1, 160) {
-	addFiles(num_files);
-	if (num_blocks < blocks_per_machine) {
-		LOG(FATAL) << "Requested more blocks " << blocks_per_machine
-				       << "than in system " << num_blocks;
-	}
+		uniform(0.0,1.0), blocks_in_file_distn(block_distribution) {
+  double total_block_capacity = num_machines * blocks_per_machine
+                                             / replication_factor;
+  // rather have slightly more replication than too little
+  total_block_capacity *= 0.95;
+  BlockID_t target_blocks = std::round(total_block_capacity);
+
+  // create files until we hit storage limit
+  while (num_blocks < target_blocks) {
+    addFile();
+  }
 }
 
 SimulatedDFS::~SimulatedDFS() { }
-
-void SimulatedDFS::addFiles(uint64_t files_to_add) {
-	for (uint64_t i = 0; i < files_to_add; i++) {
-		addFile();
-	}
-}
 
 void SimulatedDFS::addFile() {
 	uint32_t file_size = numBlocksInFile();  // in blocks
@@ -40,7 +40,7 @@ void SimulatedDFS::addFile() {
 
 uint32_t SimulatedDFS::numBlocksInFile() {
 	double r = uniform(generator);
-	return blocks_in_file_distn.inverse(r);
+	return blocks_in_file_distn->inverse(r);
 }
 
 void SimulatedDFS::addMachine(ResourceID_t machine) {
