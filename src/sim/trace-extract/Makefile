@@ -6,7 +6,7 @@ include $(ROOT_DIR)/include/Makefile.config
 LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_timer -lboost_filesystem \
         -lssl -lcrypto
 
-BINS = google-trace-simulator google-trace-processor google-trace-simulator-test
+BINS = google_trace_simulator google_trace_processor google_trace_simulator_test
 #OPTFLAGS += -fsanitize=address -fno-omit-frame-pointer
 
 LIB =
@@ -26,7 +26,7 @@ protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 SOLVER_DIR = $(shell readlink -f $(ROOT_DIR)/ext)
 DEFINES += -DSOLVER_DIR=\"$(SOLVER_DIR)\" 
 
-$(addprefix $(OBJ_DIR)/, google-trace-simulator): $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
+$(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
@@ -63,7 +63,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-simulator): $(addprefix $(OBJ_DIR)/, $(SIM
 		-o $(BUILD_DIR)/sim/trace-extract/google_trace_simulator, \
 		"  DYNLNK  $(BUILD_DIR)/sim/trace-extract/google_trace_simulator")
 
-$(addprefix $(OBJ_DIR)/, google-trace-processor): $(addprefix $(OBJ_DIR)/, $(PROCESSOR_OBJS)) \
+$(OBJ_DIR)/google_trace_processor: $(addprefix $(OBJ_DIR)/, $(PROCESSOR_OBJS)) \
 	$(BUILD_DIR)/misc/libfirmament_misc.a
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
@@ -76,7 +76,7 @@ $(addprefix $(OBJ_DIR)/, google-trace-processor): $(addprefix $(OBJ_DIR)/, $(PRO
 		"  DYNLNK  $(BUILD_DIR)/sim/trace-extract/google_trace_processor")
 
 # Does not use the standard testing infrastructure because the simulator is not compiled by default.
-$(addprefix $(OBJ_DIR)/, google-trace-simulator-test): $(addprefix $(OBJ_DIR)/, google-trace-simulator) \
+$(OBJ_DIR)/google_trace_simulator_test: $(addprefix $(OBJ_DIR)/, google_trace_simulator) \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \

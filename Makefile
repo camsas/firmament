@@ -21,7 +21,7 @@ endif
 # Get common build settings
 include include/Makefile.config
 
-all: tests-clean ext platforms misc engine scripts
+all: tests-clean ext platforms misc engine scripts trace_simulator
 
 help: info
 
@@ -65,6 +65,9 @@ scheduling: base misc platforms
 
 sim: base misc
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim all
+	
+trace_simulator: base misc cost_models
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim/trace-extract all
 
 misc: messages ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/misc all
