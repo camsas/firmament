@@ -142,8 +142,8 @@ vector<EquivClass_t>* SimulatedQuincyCostModel::GetTaskEquivClasses(
   vector<EquivClass_t>* preferred_res = new vector<EquivClass_t>();
   auto &preferred_racks = preferred_rack_map_[task_id];
   for (auto elt : preferred_racks) {
-    EquivClass_t rack = elt.second;
-    VLOG(1) << "Task " << task_id << " preferred rack " << rack;
+    EquivClass_t rack = elt.first;
+    VLOG(1) << "Task " << task_id << " has arc to rack aggregator " << rack;
     preferred_res->push_back(rack);
   }
   return preferred_res;
@@ -154,7 +154,7 @@ vector<EquivClass_t>* SimulatedQuincyCostModel::GetResourceEquivClasses(
 	vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
 	EquivClass_t rack_aggregator = machine_to_rack_map_[res_id];
 	equiv_classes->push_back(rack_aggregator);
-	VLOG(1) << "Machine " << task_id << " belongs to rack " << rack;
+	VLOG(1) << "Machine " << res_id << " belongs to rack " << rack_aggregator;
 	return equiv_classes;
 }
 
@@ -176,6 +176,7 @@ vector<ResourceID_t>* SimulatedQuincyCostModel::GetTaskPreferenceArcs(TaskID_t t
   for (auto elt : preferred_machines) {
   	ResourceID_t machine = elt.first;
   	preferred_res->push_back(machine);
+  	VLOG(1) << "Task " << task_id << " has preference arc to machine " << machine;
   }
   return preferred_res;
 }
@@ -235,6 +236,7 @@ void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
 
 	// Finally, select some files. Sample to get approximately the right number of blocks.
 	file_set = filesystem_->sampleFiles(num_blocks, percent_block_tolerance_);
+	VLOG(1) << "Task " << task_id << " has " << file_set.size() << " inputs.";
 }
 
 void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
@@ -249,7 +251,7 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
   	SimulatedDFS::BlockID_t start = blocks.first, end = blocks.second;
   	total_num_blocks += end - start + 1;
   	for (auto block = start; block <= end; block++) {
-  		const std::list<ResourceID_t> &machines = filesystem_->getMachines(file_id);
+  		const std::list<ResourceID_t> &machines = filesystem_->getMachines(block);
   		std::unordered_set<EquivClass_t> racks;
   		for (ResourceID_t machine : machines) {
   			uint32_t frequency = FindWithDefault(machine_frequency, machine, 0);
@@ -271,8 +273,9 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
   auto &preferred_machines = *(preferred_machine_map_[task_id]);
   for (auto freq : machine_frequency) {
   	SimulatedDFS::BlockID_t num_local_blocks = freq.second;
-  	double proportion = num_local_blocks / total_num_blocks;
-  	if (proportion > proportion_machine_preferred_) {
+  	double proportion = num_local_blocks;
+  	proportion /= total_num_blocks;
+  	if (proportion >= proportion_machine_preferred_) {
   		// add to preferred list and compute cost
   		ResourceID_t machine = freq.first;
   		EquivClass_t rack = machine_to_rack_map_[machine];
@@ -291,8 +294,10 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
 
   		preferred_machines[machine] = cost;
 
-  		// TODO
-  		VLOG(2) << "Task " << task_id << " preferred machine " << machine;
+  		VLOG(2) << "Task " << task_id << " preferred machine " << machine
+  		        << " cost " << cost << "; proportion " << proportion
+  		        << ", local " << num_local_blocks << " rack " << num_rack_blocks
+  		        << " total " << total_num_blocks;
   	}
   }
 
@@ -300,7 +305,8 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
   auto &preferred_racks = preferred_rack_map_[task_id];
   for (auto freq : rack_frequency) {
   	SimulatedDFS::BlockID_t num_rack_blocks = freq.second;
-  	double proportion = num_rack_blocks / total_num_blocks;
+  	double proportion = num_rack_blocks;
+  	proportion /= total_num_blocks;
   	if (proportion > proportion_rack_preferred_) {
   		EquivClass_t rack = freq.first;
 
@@ -311,6 +317,8 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
   		cost += num_rack_blocks * tor_transfer_cost_;
 
   		preferred_racks[rack] = cost;
+
+  		VLOG(2) << "Task " << task_id << " preferred rack " << rack;
   	}
   }
 

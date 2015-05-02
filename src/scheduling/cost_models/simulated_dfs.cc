@@ -87,8 +87,8 @@ void SimulatedDFS::addMachine(ResourceID_t machine) {
       // some parts of the file maximally replicated, others still priority
       block_range.first = copy_until + 1;
 
-      VLOG(2) << "Replicated " << copy_until << " out of " << num_blocks_in_file
-              << " blocks of file " << index;
+      VLOG(2) << "Replicated " << blocks_to_replicate << " out of "
+              << num_blocks_in_file << " blocks of file " << index;
     }
     for (BlockID_t block = start; block <= copy_until; block++) {
       block_index[block].push_back(machine);
@@ -144,6 +144,8 @@ const std::unordered_set<SimulatedDFS::FileID_t> SimulatedDFS::sampleFiles
 		}
 		sampled_files.insert(index);
 		blocks_sampled += blocks_in_file;
+
+		VLOG(2) << "Sampled file " << index << " with " << blocks_in_file << " blocks";
 	}
 
 	return sampled_files;
