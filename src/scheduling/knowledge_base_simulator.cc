@@ -138,4 +138,17 @@ void KnowledgeBaseSimulator::SetAvgMeanLocalDiskUsed(
                      avg_mean_local_disk_used);
 }
 
+void KnowledgeBaseSimulator::EraseStats(EquivClass_t id) {
+  tec_avg_cpi_.erase(id);
+  tec_avg_ipma_.erase(id);
+  tec_avg_runtime_.erase(id);
+  tec_avg_mean_cpu_usage_.erase(id);
+  tec_avg_canonical_mem_usage_.erase(id);
+  tec_avg_assigned_mem_usage_.erase(id);
+  tec_avg_unmapped_page_cache_.erase(id);
+  tec_avg_total_page_cache_.erase(id);
+  tec_avg_mean_disk_io_time_.erase(id);
+  tec_avg_mean_local_disk_used_.erase(id);
+}
+
 } // namespace firmament

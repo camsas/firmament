@@ -98,6 +98,8 @@ class GoogleTraceSimulator {
       unordered_map<TaskIdentifier, uint64_t,
         TaskIdentifierHasher>* task_runtime);
 
+  void RemoveTaskStats(TaskID_t task_id);
+
   /**
    * Creates a new task for a job.
    * @param jd_ptr the job descriptor of the job for which to create a new task

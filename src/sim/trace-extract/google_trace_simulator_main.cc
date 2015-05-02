@@ -15,9 +15,9 @@ int main(int argc, char *argv[]) {
   VLOG(1) << "Calling common::InitFirmament";
   common::InitFirmament(argc, argv);
 
-  HeapProfilerStart("ts");
+  //HeapProfilerStart("ts");
   sim::GoogleTraceSimulator gts(FLAGS_trace_path);
-  HeapProfilerStop();
+  //HeapProfilerStop();
 
   gts.Run();
 }

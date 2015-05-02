@@ -498,6 +498,11 @@ void GoogleTraceSimulator::AddTaskStats(
   task_id_to_stats_.erase(task_identifier);
 }
 
+void GoogleTraceSimulator::RemoveTaskStats(TaskID_t task_id) {
+  EquivClass_t bogus_equiv_class = (EquivClass_t)task_id;
+  knowledge_base_->EraseStats(bogus_equiv_class);
+}
+
 TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
   CHECK_NOTNULL(jd_ptr);
   TaskDescriptor* root_task = jd_ptr->mutable_root_task();
@@ -1293,6 +1298,8 @@ void GoogleTraceSimulator::TaskCompleted(
   JobID_t job_id = JobIDFromString((*td_ptr)->job_id());
   // Remove the task node from the flow graph.
   flow_graph_->TaskCompleted(task_id);
+  // Erase from knowledge base
+  RemoveTaskStats(task_id);
   // Erase from local state: task_id_to_td_, task_id_to_identifier_, task_map_
   // and task_bindings_, task_id_to_end_time_, res_id_to_task_id_.
   task_id_to_td_.erase(task_identifier);

@@ -39,6 +39,8 @@ class KnowledgeBaseSimulator : public KnowledgeBase {
   void SetAvgMeanLocalDiskUsed(EquivClass_t id,
                                double avg_mean_local_disk_used);
 
+  void EraseStats(EquivClass_t id);
+
  private:
   unordered_map<EquivClass_t, double> tec_avg_cpi_;
   unordered_map<EquivClass_t, double> tec_avg_ipma_;

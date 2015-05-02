@@ -331,9 +331,10 @@ void SimulatedQuincyCostModel::AddTask(TaskID_t task_id) {
 void SimulatedQuincyCostModel::RemoveTask(TaskID_t task_id) {
   delete preferred_machine_map_[task_id];
 
+  file_map_.erase(task_id);
   preferred_machine_map_.erase(task_id);
   preferred_rack_map_.erase(task_id);
-	file_map_.erase(task_id);
+	cluster_aggregator_cost_.erase(task_id);
 }
 
 FlowGraphNode* SimulatedQuincyCostModel::GatherStats(FlowGraphNode* accumulator,
