@@ -143,6 +143,7 @@ vector<EquivClass_t>* SimulatedQuincyCostModel::GetTaskEquivClasses(
   auto &preferred_racks = preferred_rack_map_[task_id];
   for (auto elt : preferred_racks) {
     EquivClass_t rack = elt.second;
+    VLOG(1) << "Task " << task_id << " preferred rack " << rack;
     preferred_res->push_back(rack);
   }
   return preferred_res;
@@ -153,6 +154,7 @@ vector<EquivClass_t>* SimulatedQuincyCostModel::GetResourceEquivClasses(
 	vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
 	EquivClass_t rack_aggregator = machine_to_rack_map_[res_id];
 	equiv_classes->push_back(rack_aggregator);
+	VLOG(1) << "Machine " << task_id << " belongs to rack " << rack;
 	return equiv_classes;
 }
 
