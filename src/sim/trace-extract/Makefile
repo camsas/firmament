@@ -10,7 +10,7 @@ BINS = google_trace_simulator google_trace_processor google_trace_simulator_test
 #OPTFLAGS += -fsanitize=address -fno-omit-frame-pointer
 
 LIB =
-SIMULATOR_OBJS = google_trace_simulator.o SpookyV2.o
+SIMULATOR_OBJS = google_trace_simulator.o
 PROCESSOR_OBJS = google_trace_task_processor.o
 PBS = event_desc.pb.o
 
@@ -38,7 +38,6 @@ $(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 		$(SRC_ROOT_DIR)/sim/trace-extract/google_trace_simulator_main.cc \
 		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
-		$(BUILD_DIR)/sim/trace-extract/SpookyV2.o \
 		$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \
