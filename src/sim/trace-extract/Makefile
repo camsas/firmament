@@ -89,7 +89,6 @@ $(OBJ_DIR)/google_trace_simulator_test: $(addprefix $(OBJ_DIR)/, google_trace_si
 		$(SRC_ROOT_DIR)/sim/trace-extract/google_trace_simulator_test.cc \
 		$(GTEST_LIB) $(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
-		$(BUILD_DIR)/sim/trace-extract/SpookyV2.o \
 		$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/dimacs_exporter.o \

@@ -242,51 +242,48 @@ void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
 void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
   ResourceFrequencyMap_t machine_frequency;
   unordered_map<EquivClass_t, uint64_t> rack_frequency;
-  SimulatedDFS::BlockID_t total_num_blocks = 0;
+  SimulatedDFS::NumBlocks_t total_num_blocks = 0;
 
   std::unordered_set<SimulatedDFS::FileID_t> &file_set = file_map_[task_id];
   for (SimulatedDFS::FileID_t file_id : file_set) {
-  	const std::pair<SimulatedDFS::BlockID_t, SimulatedDFS::BlockID_t>
-  	                                  &blocks = filesystem_->getBlocks(file_id);
-  	SimulatedDFS::BlockID_t start = blocks.first, end = blocks.second;
-  	total_num_blocks += end - start + 1;
-  	for (auto block = start; block <= end; block++) {
-  		const std::list<ResourceID_t> &machines = filesystem_->getMachines(block);
-  		std::unordered_set<EquivClass_t> racks;
-  		for (ResourceID_t machine : machines) {
-  			uint32_t frequency = FindWithDefault(machine_frequency, machine, 0);
-  			machine_frequency[machine] = frequency + 1;
+    SimulatedDFS::NumBlocks_t num_blocks = filesystem_->getNumBlocks(file_id);
+    total_num_blocks += num_blocks;
 
-  			EquivClass_t rack = machine_to_rack_map_[machine];
-  			racks.insert(rack);
-  		}
-  		for (EquivClass_t rack : racks) {
-  			// N.B. Need to have a set and iterate over it separately to handle the
-  			// case where block is stored in two machines in same rack
-  			uint64_t frequency = FindWithDefault(rack_frequency, rack, 0);
-  			rack_frequency[rack] = frequency + 1;
-  		}
-  	}
+    const std::list<ResourceID_t> machines = filesystem_->getMachines(file_id);
+  	std::unordered_set<EquivClass_t> racks;
+    for (ResourceID_t machine : machines) {
+      uint32_t frequency = FindWithDefault(machine_frequency, machine, 0);
+      machine_frequency[machine] = frequency + num_blocks;
+
+      EquivClass_t rack = machine_to_rack_map_[machine];
+      racks.insert(rack);
+    }
+    for (EquivClass_t rack : racks) {
+      // N.B. Need to have a set and iterate over it separately to handle the
+      // case where block is stored in two machines in same rack
+      uint64_t frequency = FindWithDefault(rack_frequency, rack, 0);
+      rack_frequency[rack] = frequency + num_blocks;
+    }
   }
 
   preferred_machine_map_[task_id] = new ResourceCostMap_t();
   auto &preferred_machines = *(preferred_machine_map_[task_id]);
   for (auto freq : machine_frequency) {
-  	SimulatedDFS::BlockID_t num_local_blocks = freq.second;
+  	SimulatedDFS::NumBlocks_t num_local_blocks = freq.second;
   	double proportion = num_local_blocks;
   	proportion /= total_num_blocks;
   	if (proportion >= proportion_machine_preferred_) {
   		// add to preferred list and compute cost
   		ResourceID_t machine = freq.first;
   		EquivClass_t rack = machine_to_rack_map_[machine];
-  		SimulatedDFS::BlockID_t num_rack_blocks = rack_frequency[rack];
+  		SimulatedDFS::NumBlocks_t num_rack_blocks = rack_frequency[rack];
 
   		// local blocks are charged at 0,
   		// blocks transferred between nodes in rack charged at tor_transfer_cost_,
   		// blocks between racks charged at rack_transfer_cost_
   		// Totals so far are inclusive, calculate exclusive ones
   		num_rack_blocks -= num_local_blocks;
-  		SimulatedDFS::BlockID_t num_core_blocks =
+  		SimulatedDFS::NumBlocks_t num_core_blocks =
 			                    total_num_blocks - num_rack_blocks - num_local_blocks;
 
   		Cost_t cost = num_core_blocks * core_transfer_cost_;
@@ -304,13 +301,13 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
   preferred_rack_map_[task_id] = unordered_map<EquivClass_t, Cost_t>();
   auto &preferred_racks = preferred_rack_map_[task_id];
   for (auto freq : rack_frequency) {
-  	SimulatedDFS::BlockID_t num_rack_blocks = freq.second;
+  	SimulatedDFS::NumBlocks_t num_rack_blocks = freq.second;
   	double proportion = num_rack_blocks;
   	proportion /= total_num_blocks;
   	if (proportion > proportion_rack_preferred_) {
   		EquivClass_t rack = freq.first;
 
-  		SimulatedDFS::BlockID_t num_core_blocks = total_num_blocks
+  		SimulatedDFS::NumBlocks_t num_core_blocks = total_num_blocks
   				 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	  - num_rack_blocks;
 
   		Cost_t cost = num_core_blocks * core_transfer_cost_;
@@ -332,6 +329,10 @@ void SimulatedQuincyCostModel::AddTask(TaskID_t task_id) {
 }
 
 void SimulatedQuincyCostModel::RemoveTask(TaskID_t task_id) {
+  delete preferred_machine_map_[task_id];
+
+  preferred_machine_map_.erase(task_id);
+  preferred_rack_map_.erase(task_id);
 	file_map_.erase(task_id);
 }
 

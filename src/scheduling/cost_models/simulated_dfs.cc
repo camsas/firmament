@@ -3,22 +3,22 @@
 
 #include <algorithm>
 
+#include "misc/SpookyV2.h"
+
 namespace firmament {
 
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
-SimulatedDFS::SimulatedDFS(uint64_t num_machines, BlockID_t blocks_per_machine,
+SimulatedDFS::SimulatedDFS(uint64_t num_machines, NumBlocks_t blocks_per_machine,
     uint32_t replication_factor, GoogleBlockDistribution *block_distribution) :
-		blocks_per_machine(blocks_per_machine),
+    replication_factor(replication_factor),
 		uniform(0.0,1.0), blocks_in_file_distn(block_distribution) {
-  double total_block_capacity = num_machines * blocks_per_machine
-                                             / replication_factor;
+  NumBlocks_t total_block_capacity = blocks_per_machine * num_machines;
+  total_block_capacity /= replication_factor;
   LOG(INFO) << "Total capacity of " << total_block_capacity << " blocks.";
-  // rather have slightly more replication than too little
-  BlockID_t target_blocks = std::round(total_block_capacity * 0.95);
 
   // create files until we hit storage limit
-  while (num_blocks < target_blocks) {
+  while (num_blocks < total_block_capacity) {
     addFile();
   }
   LOG(INFO) << num_blocks << " blocks used, across "
@@ -29,15 +29,8 @@ SimulatedDFS::~SimulatedDFS() { }
 
 void SimulatedDFS::addFile() {
 	uint32_t file_size = numBlocksInFile();  // in blocks
-	SimulatedDFS::BlockID_t block_start = num_blocks;
 	num_blocks += file_size;
-	SimulatedDFS::BlockID_t block_end = num_blocks - 1;
-
-	files.push_back(std::make_pair(block_start, block_end));
-	priority_files.push_back(std::make_pair(block_start, block_end));
-	for (SimulatedDFS::BlockID_t block = block_start; block <= block_end; block++) {
-		block_index.push_back(std::list<ResourceID_t>());
-	}
+	files.push_back(file_size);
 }
 
 uint32_t SimulatedDFS::numBlocksInFile() {
@@ -46,93 +39,48 @@ uint32_t SimulatedDFS::numBlocksInFile() {
 }
 
 void SimulatedDFS::addMachine(ResourceID_t machine) {
-  std::list<BlockID_t> &local_blocks = blocks_on_machine[machine];
-  BlockID_t blocks_to_replicate = blocks_per_machine;
-  while (blocks_to_replicate > 0) {
-    if (priority_files.empty()) {
-      // deep copy of files
-      size_t num_files = files.size();
-      priority_files.resize(num_files);
-      for (size_t i = 0; i < num_files; i++) {
-        priority_files[i] = std::pair<BlockID_t, BlockID_t>(files[i]);
-      }
-
-      num_replications++;
-      LOG(INFO) << "Replication factor reached " << num_replications;
-    }
-
-    std::uniform_int_distribution<size_t> distn(0, priority_files.size() - 1);
-    size_t index = distn(generator);
-    std::pair<BlockID_t, BlockID_t> &block_range = priority_files[index];
-    BlockID_t start = block_range.first, end = block_range.second;
-    BlockID_t num_blocks_in_file = end - start + 1;
-
-    BlockID_t copy_until = 0;
-    if (blocks_to_replicate >= num_blocks_in_file) {
-      // replicate entire file
-      copy_until = end;
-      blocks_to_replicate -= num_blocks_in_file;
-
-      // file is now as highly replicated as others: delete it from priority
-      size_t last_index = priority_files.size() - 1;
-      std::swap(priority_files[index], priority_files[last_index]);
-      priority_files.resize(last_index);
-
-      VLOG(2) << "Replicated entirety of file " << index;
-    } else {
-      // only have space to replicate fragment
-      copy_until = start + blocks_to_replicate;
-      blocks_to_replicate = 0;
-
-      // some parts of the file maximally replicated, others still priority
-      block_range.first = copy_until + 1;
-
-      VLOG(2) << "Replicated " << blocks_to_replicate << " out of "
-              << num_blocks_in_file << " blocks of file " << index;
-    }
-    for (BlockID_t block = start; block <= copy_until; block++) {
-      block_index[block].push_back(machine);
-      local_blocks.push_back(block);
-    }
-  }
+  machines.push_back(machine);
 }
 
 void SimulatedDFS::removeMachine(ResourceID_t machine) {
-	std::list<BlockID_t> &local_blocks = blocks_on_machine[machine];
-	for (BlockID_t block : local_blocks) {
-		block_index[block].remove(machine);;
-	}
-	blocks_on_machine.erase(machine);
-	// SOMEDAY: doesn't update the priority, nor does it attempt to start immediate
-	// replication. Would probably be good to randomly select machines to move
-	// the orphaned blocks to.
+  for (auto it = machines.begin(); it != machines.end(); ++it) {
+    if (*it == machine) {
+      machines.erase(it);
+      return;
+    }
+  }
+  // machine not in list of machines
+  CHECK(false);
 }
 
-const std::pair<SimulatedDFS::BlockID_t, SimulatedDFS::BlockID_t>
-                   &SimulatedDFS::getBlocks(SimulatedDFS::FileID_t file) const {
-  return files[file];
-}
+const std::list<ResourceID_t> SimulatedDFS::getMachines(FileID_t file) const {
+  std::list<ResourceID_t> res;
+  uint32_t num_machines = machines.size();
+  for (uint32_t i = 0; i < replication_factor; i++) {
+    uint64_t machine_id = SpookyHash::Hash32(&file, sizeof(file), i);
+    machine_id *= num_machines; // 32-bit*32-bit fits in 64-bits
+    // always produces an answer in range [0,num_machines-1]
+    machine_id /= (uint64_t)UINT32_MAX + 1;
 
-const std::list<ResourceID_t> &SimulatedDFS::getMachines(BlockID_t block) const {
-	return block_index[block];
+    res.push_back(machines[machine_id]);
+  }
+  return res;
 }
 
 const std::unordered_set<SimulatedDFS::FileID_t> SimulatedDFS::sampleFiles
-          								 (BlockID_t target_blocks, uint32_t tolerance) const {
+          								 (NumBlocks_t target_blocks, uint32_t tolerance) const {
 	CHECK_LE(target_blocks, num_blocks);
-	BlockID_t min_blocks_to_sample = (target_blocks * (100 - tolerance)) / 100;
-	min_blocks_to_sample = std::max(min_blocks_to_sample, (unsigned long)1);
-	BlockID_t max_blocks_to_sample = (target_blocks * (100 + tolerance)) / 100;
+	NumBlocks_t min_blocks_to_sample = (target_blocks * (100 - tolerance)) / 100;
+	min_blocks_to_sample = std::max(min_blocks_to_sample, (NumBlocks_t)1);
+	NumBlocks_t max_blocks_to_sample = (target_blocks * (100 + tolerance)) / 100;
 
 	std::unordered_set<SimulatedDFS::FileID_t> sampled_files;
 
 	std::uniform_int_distribution<size_t> distn(0, files.size() - 1);
-	BlockID_t blocks_sampled = 0;
+	NumBlocks_t blocks_sampled = 0;
 	while (blocks_sampled < min_blocks_to_sample) {
 		size_t index = distn(generator);
-		std::pair<BlockID_t, BlockID_t> block_range = files[index];
-		BlockID_t start = block_range.first, end = block_range.second;
-		BlockID_t blocks_in_file = end - start + 1;
+		NumBlocks_t blocks_in_file = files[index];
 
 		if (sampled_files.count(index) > 0) {
 			// already sampled once

@@ -17,35 +17,35 @@ namespace firmament {
 class SimulatedDFS {
 public:
 	typedef uint64_t FileID_t;
-	typedef uint64_t BlockID_t;
+	typedef uint32_t NumBlocks_t;
 
-	SimulatedDFS(uint64_t num_machines, BlockID_t blocks_per_machine,
+	SimulatedDFS(uint64_t num_machines, NumBlocks_t blocks_per_machine,
 	    uint32_t replication_factor, GoogleBlockDistribution *block_distribution);
 	virtual ~SimulatedDFS();
 
 	void addMachine(ResourceID_t machine);
 	void removeMachine(ResourceID_t machine);
 
-	const std::pair<BlockID_t, BlockID_t> &getBlocks(FileID_t file) const;
-	const std::list<ResourceID_t> &getMachines(BlockID_t block) const;
-	const std::unordered_set<FileID_t> sampleFiles(BlockID_t num_blocks,
+	NumBlocks_t getNumBlocks(FileID_t file) const {
+	  return files[file];
+	}
+	const std::list<ResourceID_t> getMachines(FileID_t file) const;
+	const std::unordered_set<FileID_t> sampleFiles(NumBlocks_t num_blocks,
 			                                           uint32_t tolerance) const;
 
-	uint32_t getNumReplications() const {
-	  return num_replications;
+	uint32_t getReplicationFactor() const {
+	  return replication_factor;
 	}
 private:
 	void addFile();
 	uint32_t numBlocksInFile();
 
-	BlockID_t blocks_per_machine, num_blocks = 0;
-	std::vector<std::list<ResourceID_t>> block_index;;
-	std::unordered_map<ResourceID_t, std::list<BlockID_t>,
-	                   boost::hash<ResourceID_t>> blocks_on_machine;
+	uint64_t num_blocks = 0;
 	// pair: start block ID, end block ID (inclusive)
-	std::vector<std::pair<BlockID_t, BlockID_t>> files, priority_files;
+	std::vector<NumBlocks_t> files;
+	std::vector<ResourceID_t> machines;
 
-	uint32_t num_replications = 0;
+	uint32_t replication_factor = 0;
 
 	mutable std::default_random_engine generator;
 	std::uniform_real_distribution<double> uniform;

@@ -108,10 +108,6 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
 
   unordered_map<TaskID_t, ResourceCostMap_t*> preferred_machine_map_;
   unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t>> preferred_rack_map_;
-//  unordered_map<TaskID_t, unordered_map<ResourceID_t, Cost_t,
-//                boost::hash<boost::uuids::uuid>>> preferred_machine_map_;
-//  unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t,
-//                boost::hash<boost::uuids::uuid>>> preferred_rack_map_;
   unordered_map<TaskID_t, Cost_t> cluster_aggregator_cost_;
 };
 
