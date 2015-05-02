@@ -27,6 +27,7 @@ SOLVER_DIR = $(shell readlink -f $(ROOT_DIR)/ext)
 DEFINES += -DSOLVER_DIR=\"$(SOLVER_DIR)\" 
 
 $(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
+  $(SRC_ROOT_DIR)/sim/trace-extract/google_trace_simulator_main.cc \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
@@ -64,6 +65,7 @@ $(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 		"  DYNLNK  $(BUILD_DIR)/sim/trace-extract/google_trace_simulator")
 
 $(OBJ_DIR)/google_trace_processor: $(addprefix $(OBJ_DIR)/, $(PROCESSOR_OBJS)) \
+  $(SRC_ROOT_DIR)/sim/trace-extract/google_trace_processor_main.cc \
 	$(BUILD_DIR)/misc/libfirmament_misc.a
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
@@ -77,6 +79,7 @@ $(OBJ_DIR)/google_trace_processor: $(addprefix $(OBJ_DIR)/, $(PROCESSOR_OBJS)) \
 
 # Does not use the standard testing infrastructure because the simulator is not compiled by default.
 $(OBJ_DIR)/google_trace_simulator_test: $(addprefix $(OBJ_DIR)/, google_trace_simulator) \
+  $(SRC_ROOT_DIR)/sim/trace-extract/google_trace_simulator_test.cc \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
