@@ -1062,13 +1062,17 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
   LoadTaskRuntimeStats();
 
   // Import a fictional machine resource topology
-  char binary_path[1024];
-  size_t bytes = get_binary_directory(binary_path, sizeof(binary_path));
-  CHECK(bytes < sizeof(binary_path));
-  // lookup file relative to directory of binary
-  boost::filesystem::path machine_tmpl_path(binary_path);
-  machine_tmpl_path.remove_filename();
-  machine_tmpl_path /= boost::filesystem::path(FLAGS_machine_tmpl_file);
+  boost::filesystem::path machine_tmpl_path(FLAGS_machine_tmpl_file);
+  if (machine_tmpl_path.is_relative()) {
+    // lookup file relative to directory of binary, not CWD
+    char binary_path[1024];
+    size_t bytes = get_binary_directory(binary_path, sizeof(binary_path));
+    CHECK(bytes < sizeof(binary_path));
+    boost::filesystem::path binary_path_boost(binary_path);
+    binary_path_boost.remove_filename();
+
+    machine_tmpl_path = binary_path_boost / machine_tmpl_path;
+  }
 
   ResourceTopologyNodeDescriptor machine_tmpl;
   std::string machine_tmpl_fname(machine_tmpl_path.string());
