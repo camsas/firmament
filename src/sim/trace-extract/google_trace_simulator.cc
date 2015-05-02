@@ -55,13 +55,12 @@ namespace sim {
 #define MACHINE_REMOVE 1
 #define MACHINE_UPDATE 2
 
-#define MACHINE_TMPL_FILE "../../../tests/testdata/machine_topo.pbin"
-//#define MACHINE_TMPL_FILE "../../../tests/testdata/michael.pbin"
-
 const static uint64_t SEED = 0;
 
 #define EPS 0.00001
 
+DEFINE_string(machine_tmpl_file, "../../../tests/testdata/machine_topo.pbin",
+              "File specifying machine topology.");
 
 DEFINE_bool(tasks_preemption_bins, false,
             "Compute bins of number of preempted tasks.");
@@ -99,7 +98,7 @@ DEFINE_bool(run_incremental_scheduler, false,
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 8 = SIMULATED QUINCY");
 
 // Racks contain "between 29 and 31 computers" in Quincy test setup
 DEFINE_uint64(simulated_quincy_machines_per_rack, 30,
@@ -1069,7 +1068,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
   // lookup file relative to directory of binary
   boost::filesystem::path machine_tmpl_path(binary_path);
   machine_tmpl_path.remove_filename();
-  machine_tmpl_path /= boost::filesystem::path(MACHINE_TMPL_FILE);
+  machine_tmpl_path /= boost::filesystem::path(FLAGS_machine_tmpl_file);
 
   ResourceTopologyNodeDescriptor machine_tmpl;
   std::string machine_tmpl_fname(machine_tmpl_path.string());
