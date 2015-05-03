@@ -210,6 +210,14 @@ void SimulatedQuincyCostModel::AddMachine(
 
 void SimulatedQuincyCostModel::RemoveMachine(ResourceID_t res_id) {
 	filesystem_->removeMachine(res_id);
+
+	// delete any preference arcs to this machine
+	for (auto elt : preferred_machine_map_) {
+	  ResourceCostMap_t *preferred_machines = elt.second;
+	  preferred_machines->erase(res_id);
+	}
+	// SOMEDAY(adam): should really recompute preferences, may lose preference
+	// arc to the rack the machine is in; but remove machine events very rare
 	EquivClass_t rack = machine_to_rack_map_[res_id];
 	rack_to_machine_map_[rack].remove(res_id);
 	machine_to_rack_map_.erase(res_id);
@@ -249,7 +257,7 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
     SimulatedDFS::NumBlocks_t num_blocks = filesystem_->getNumBlocks(file_id);
     total_num_blocks += num_blocks;
 
-    const std::list<ResourceID_t> machines = filesystem_->getMachines(file_id);
+    ResourceSet_t machines = filesystem_->getMachines(file_id);
   	std::unordered_set<EquivClass_t> racks;
     for (ResourceID_t machine : machines) {
       uint32_t frequency = FindWithDefault(machine_frequency, machine, 0);

@@ -29,7 +29,7 @@ public:
 	NumBlocks_t getNumBlocks(FileID_t file) const {
 	  return files[file];
 	}
-	const std::list<ResourceID_t> getMachines(FileID_t file) const;
+	const ResourceSet_t getMachines(FileID_t file) const;
 	const std::unordered_set<FileID_t> sampleFiles(NumBlocks_t num_blocks,
 			                                           uint32_t tolerance) const;
 

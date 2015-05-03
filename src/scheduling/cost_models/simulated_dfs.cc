@@ -53,8 +53,8 @@ void SimulatedDFS::removeMachine(ResourceID_t machine) {
   CHECK(false);
 }
 
-const std::list<ResourceID_t> SimulatedDFS::getMachines(FileID_t file) const {
-  std::list<ResourceID_t> res;
+const ResourceSet_t SimulatedDFS::getMachines(FileID_t file) const {
+  ResourceSet_t res;
   uint32_t num_machines = machines.size();
   for (uint32_t i = 0; i < replication_factor; i++) {
     uint64_t machine_id = SpookyHash::Hash32(&file, sizeof(file), i);
@@ -62,7 +62,7 @@ const std::list<ResourceID_t> SimulatedDFS::getMachines(FileID_t file) const {
     // always produces an answer in range [0,num_machines-1]
     machine_id /= (uint64_t)UINT32_MAX + 1;
 
-    res.push_back(machines[machine_id]);
+    res.insert(machines[machine_id]);
   }
   return res;
 }
