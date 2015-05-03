@@ -205,11 +205,10 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
                              JobIDFromString(jd->uuid()),
                              unsched_agg_node->id_));
     // Add new job unscheduled agg to the graph changes.
-    vector<FlowGraphArc*> *unsched_arcs = new vector<FlowGraphArc*>();
-    unsched_arcs->push_back(unsched_agg_to_sink_arc);
+    vector<FlowGraphArc*> unsched_arcs;
+    unsched_arcs.push_back(unsched_agg_to_sink_arc);
 
-    DIMACSChange *chg = new DIMACSAddNode(*unsched_agg_node,
-                                          unsched_arcs);
+    DIMACSChange *chg = new DIMACSAddNode(*unsched_agg_node, unsched_arcs);
     chg->SetComment("AddOrUpdateJobNodes: unsched_agg");
     graph_changes_.push_back(chg);
   } else {
@@ -251,7 +250,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
     FlowGraphNode* task_node = tn_ptr ? Node(*tn_ptr) : NULL;
     if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
       generate_trace_.TaskSubmitted(JobIDFromString(jd->uuid()), cur->uid());
-      vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
+      vector<FlowGraphArc*> task_arcs;
       task_node = AddNodeInternal(NextId());
       task_node->type_.set_type(FlowNodeType::UNSCHEDULED_TASK);
       // Add the current task's node
@@ -266,7 +265,7 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
       VLOG(2) << "Adding edges for task " << cur->uid() << "'s node ("
               << task_node->id_ << "); task state is " << cur->state();
       // Arcs for this node
-      AddArcsForTask(task_node, unsched_agg_node, task_arcs);
+      AddArcsForTask(task_node, unsched_agg_node, &task_arcs);
       // Add the new task node to the graph changes
 
       DIMACSChange *chg = new DIMACSAddNode(*task_node, task_arcs);
@@ -320,7 +319,7 @@ void FlowGraph::AddSpecialNodes() {
   sink_node_->type_.set_type(FlowNodeType::SINK);
   sink_node_->comment_ = "SINK";
   graph_changes_.push_back(new DIMACSAddNode(*sink_node_,
-                                             new vector<FlowGraphArc*>()));
+                                             vector<FlowGraphArc*>()));
 }
 
 void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
@@ -365,7 +364,7 @@ void FlowGraph::AddResourceNode(
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
   // Add the node if it does not already exist
   if (!NodeForResourceID(ResourceIDFromString(rtnd.resource_desc().uuid()))) {
-    vector<FlowGraphArc*> *resource_arcs = new vector<FlowGraphArc*>();
+    vector<FlowGraphArc*> resource_arcs;
     uint64_t id = NextId();
     if (rtnd.resource_desc().has_friendly_name()) {
       VLOG(2) << "Adding node " << id << " for resource "
@@ -406,7 +405,7 @@ void FlowGraph::AddResourceNode(
                 << rtnd.resource_desc().uuid() << "("  << id << ").";
         // The arc will have a 0 capacity, but it will be updated
         // by the ConfigureResource methods.
-        resource_arcs->push_back(AddArcInternal(parent_node->id_, id));
+        resource_arcs.push_back(AddArcInternal(parent_node->id_, id));
       }
       InsertIfNotPresent(&resource_to_parent_map_,
                          new_node->resource_id_,
@@ -445,7 +444,7 @@ void FlowGraph::AddResourceNode(
 
 void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   VLOG(2) << "Add equiv class " << ec;
-  vector<FlowGraphArc*> *ec_arcs = new vector<FlowGraphArc*>();
+  vector<FlowGraphArc*> ec_arcs;
   // Add the equivalence class flow graph node.
   FlowGraphNode* ec_node = AddNodeInternal(NextId());
   ec_node->type_.set_type(FlowNodeType::EQUIVALENCE_CLASS);
@@ -466,7 +465,7 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
     ec_arc->cap_upper_bound_ = 1;
     ec_arc->cost_ =
       cost_model_->TaskToEquivClassAggregator(*it, ec);
-    ec_arcs->push_back(ec_arc);
+    ec_arcs.push_back(ec_arc);
   }
   delete task_pref_arcs;
   // Add the outgoing arcs from the equivalence class node.
@@ -479,13 +478,14 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
     ec_arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(rn);
     ec_arc->cost_ =
       cost_model_->EquivClassToResourceNode(ec, *it);
-    ec_arcs->push_back(ec_arc);
+    ec_arcs.push_back(ec_arc);
   }
   delete res_pref_arcs;
   // Add the new equivalence node to the graph changes
   DIMACSChange *chg = new DIMACSAddNode(*ec_node, ec_arcs);
   chg->SetComment("AddEquivClassNode");
   graph_changes_.push_back(chg);
+  VLOG(1) << "Adding equivalence class node, with change " << chg->GenerateChange();
   AddArcsFromToOtherEquivNodes(ec, ec_node);
 }
 

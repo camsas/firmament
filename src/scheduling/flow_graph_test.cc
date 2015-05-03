@@ -120,10 +120,10 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   CHECK_EQ(arc_to_sink->dst_, sink_graph_id);
   CHECK_EQ(arc_to_sink->cap_upper_bound_, 1);
   // Arc to sink.
-  CHECK_EQ(unsched_agg->arcs_->size(), 1);
+  CHECK_EQ(unsched_agg->arc_additions_.size(), 1);
   // Arc to unscheduled aggregator and to topology.
-  CHECK_EQ(root_task->arcs_->size(), 2);
-  CHECK_EQ(equiv_class->arcs_->size(), 1 + FLAGS_num_pref_arcs_task_to_res);
+  CHECK_EQ(root_task->arc_additions_.size(), 2);
+  CHECK_EQ(equiv_class->arc_additions_.size(), 1 + FLAGS_num_pref_arcs_task_to_res);
 }
 
 TEST_F(FlowGraphTest, AddResourceNode) {
@@ -152,7 +152,7 @@ TEST_F(FlowGraphTest, AddResourceNode) {
   CHECK_EQ(g.graph_changes_.size(), num_changes + 3);
   DIMACSAddNode* add_node =
     static_cast<DIMACSAddNode*>(g.graph_changes_[num_changes]);
-  CHECK_EQ(add_node->node_.id_, new_core_graph_id);
+  CHECK_EQ(add_node->id_, new_core_graph_id);
   DIMACSNewArc* arc_to_sink =
     static_cast<DIMACSNewArc*>(g.graph_changes_[num_changes + 1]);
   CHECK_EQ(arc_to_sink->src_, new_core_graph_id);
@@ -182,9 +182,9 @@ TEST_F(FlowGraphTest, AddResourceNode) {
   uint64_t non_leaf_node_id = g.ids_created_[g.ids_created_.size() - 1];
   DIMACSAddNode* non_leaf_node =
     static_cast<DIMACSAddNode*>(g.graph_changes_[g.graph_changes_.size() - 1]);
-  CHECK_EQ(non_leaf_node->node_.id_, non_leaf_node_id);
+  CHECK_EQ(non_leaf_node->id_, non_leaf_node_id);
   // Arc to parent.
-  CHECK_EQ(non_leaf_node->arcs_->size(), 1);
+  CHECK_EQ(non_leaf_node->arc_additions_.size(), 1);
 }
 
 // Change an arc and check it gets added to changes.
