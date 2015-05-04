@@ -82,8 +82,8 @@ QuincyScheduler::QuincyScheduler(
       break;
     case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
       cost_model_ = new QuincyCostModel(resource_map, job_map, task_map,
-                                       &task_bindings_, leaf_res_ids_,
-                                       knowledge_base_);
+                                        &task_bindings_, leaf_res_ids_,
+                                        knowledge_base_);
       VLOG(1) << "Using the Quincy cost model";
       break;
     case FlowSchedulingCostModelType::COST_MODEL_WHARE:
@@ -136,7 +136,11 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
     VLOG(1) << "Processing delta of type " << (*it)->type();
     TaskID_t task_id = (*it)->task_id();
     ResourceID_t res_id = ResourceIDFromString((*it)->resource_id());
-    if ((*it)->type() == SchedulingDelta::PLACE) {
+    if ((*it)->type() == SchedulingDelta::NOOP) {
+      // We should not get any NOOP deltas as they get filtered before, but
+      // let's handle it anyway.
+      continue;
+    } else if ((*it)->type() == SchedulingDelta::PLACE) {
       VLOG(1) << "Trying to place task " << task_id
               << " on resource " << (*it)->resource_id();
       TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
@@ -146,9 +150,14 @@ uint64_t QuincyScheduler::ApplySchedulingDeltas(
       VLOG(1) << "About to bind task " << td->uid() << " to resource "
               << rs->mutable_descriptor()->uuid();
       BindTaskToResource(td, rs->mutable_descriptor());
+      // Mark the task as scheduled
+      FlowGraphNode* node = flow_graph_->NodeForTaskID(task_id);
+      CHECK_NOTNULL(node);
+      node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
       // After the task is bound, we now remove all of its edges into the flow
       // graph apart from the bound resource.
-      // N.B.: This disables preemption and migration!
+      // N.B.: This disables preemption and migration, unless FLAGS_preemption
+      // is set!
       flow_graph_->TaskScheduled(task_id, res_id);
       // Tag the job to which this task belongs as running
       JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td->job_id()));
@@ -186,6 +195,15 @@ void QuincyScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     flow_graph_->TaskCompleted(td_ptr->uid());
+  }
+}
+
+void QuincyScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
+                                         ResourceID_t res_id) {
+  EventDrivenScheduler::HandleTaskEviction(td_ptr, res_id);
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+    flow_graph_->TaskEvicted(td_ptr->uid(), res_id);
   }
 }
 
@@ -244,16 +262,24 @@ uint64_t QuincyScheduler::RunSchedulingIteration() {
   vector<SchedulingDelta*> deltas;
   for (it = task_mappings->begin(); it != task_mappings->end(); it++) {
     VLOG(1) << "Bind " << it->first << " to " << it->second << endl;
-    SchedulingDelta* delta = new SchedulingDelta;
+    // Some sanity checks
+    FlowGraphNode* src = flow_graph_->Node(it->first);
+    FlowGraphNode* dst = flow_graph_->Node(it->second);
+    // Source must be a task node as this point
+    CHECK(src->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+          src->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+          src->type_.type() == FlowNodeType::ROOT_TASK);
+    // Destination must be a PU node
+    CHECK(dst->type_.type() == FlowNodeType::PU);
+    // Get the TD and RD for the source and destination
+    TaskDescriptor* task = FindPtrOrNull(*task_map_, src->task_id_);
+    CHECK_NOTNULL(task);
+    ResourceStatus* target_res_status =
+      FindPtrOrNull(*resource_map_, dst->resource_id_);
+    CHECK_NOTNULL(target_res_status);
+    const ResourceDescriptor& resource = target_res_status->descriptor();
     quincy_dispatcher_->NodeBindingToSchedulingDelta(
-        *flow_graph_->Node(it->first), *flow_graph_->Node(it->second),
-        &task_bindings_, delta);
-    if (delta->type() == SchedulingDelta::NOOP)
-      continue;
-    // Mark the task as scheduled
-    flow_graph_->Node(it->first)->type_.set_type(FlowNodeType::SCHEDULED_TASK);
-    // Remember the delta
-    deltas.push_back(delta);
+        *task, resource, &task_bindings_, &deltas);
   }
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
   // Drop all deltas that were actioned

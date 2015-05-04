@@ -50,6 +50,7 @@ class QuincyScheduler : public EventDrivenScheduler {
   void HandleJobCompletion(JobID_t job_id);
   void HandleTaskCompletion(TaskDescriptor* td_ptr,
                             TaskFinalReport* report);
+  void HandleTaskEviction(TaskDescriptor* td_ptr, ResourceID_t res_id);
   void HandleTaskFailure(TaskDescriptor* td_ptr);
   void KillRunningTask(TaskID_t task_id,
                        TaskKillMessage::TaskKillReason reason);
@@ -69,7 +70,6 @@ class QuincyScheduler : public EventDrivenScheduler {
 
  private:
   uint64_t ApplySchedulingDeltas(const vector<SchedulingDelta*>& deltas);
-  void ApplyDeltas();
   void PrintGraph(vector< map<uint64_t, uint64_t> > adj_map);
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   void RegisterLocalResource(ResourceID_t res_id);

@@ -58,6 +58,56 @@ namespace scheduler {
     return NULL;
   }
 
+  void QuincyDispatcher::NodeBindingToSchedulingDelta(
+      const TaskDescriptor& task, const ResourceDescriptor& res,
+      unordered_map<TaskID_t, ResourceID_t>* task_bindings,
+      vector<SchedulingDelta*>* deltas) {
+    // Is the source (task) already placed elsewhere?
+    ResourceID_t* bound_res = FindOrNull(*task_bindings, task.uid());
+    // Does the destination (resource) already have a task bound?
+    TaskID_t current_bound_task_id = res.current_running_task();
+    VLOG(2) << "Task ID: " << task.uid() << ", bound_res: " << bound_res
+            << ", current bound task ID: " << current_bound_task_id;
+    if (bound_res && (*bound_res != ResourceIDFromString(res.uuid()))) {
+      // If so, we have a migration
+      VLOG(1) << "MIGRATION: take " << task.uid() << " off "
+              << *bound_res << " and move it to "
+              << res.uuid();
+      SchedulingDelta* delta = new SchedulingDelta;
+      delta->set_type(SchedulingDelta::MIGRATE);
+      delta->set_task_id(task.uid());
+      delta->set_resource_id(res.uuid());
+      deltas->push_back(delta);
+    } else if (bound_res && (*bound_res == ResourceIDFromString(res.uuid()))) {
+      // We were already scheduled here. No-op, so insert no delta.
+    } else if (!bound_res && current_bound_task_id != task.uid()) {
+      // Is something else bound to the same resource?
+      // If so, we need to kick it off (a preemption)
+      VLOG(1) << "PREEMPTION: take " << current_bound_task_id << " off "
+              << *bound_res << " and replace it with "
+              << task.uid();
+      SchedulingDelta* preempt_delta = new SchedulingDelta;
+      preempt_delta->set_type(SchedulingDelta::PREEMPT);
+      preempt_delta->set_task_id(current_bound_task_id);
+      preempt_delta->set_resource_id(res.uuid());
+      deltas->push_back(preempt_delta);
+      SchedulingDelta* place_delta = new SchedulingDelta;
+      place_delta->set_type(SchedulingDelta::PLACE);
+      place_delta->set_task_id(task.uid());
+      place_delta->set_resource_id(res.uuid());
+      deltas->push_back(place_delta);
+    } else {
+      // If neither, we have a scheduling event
+      VLOG(1) << "SCHEDULING: place " << task.uid() << " on "
+              << res.uuid() << ", which was idle.";
+      SchedulingDelta* delta = new SchedulingDelta;
+      delta->set_type(SchedulingDelta::PLACE);
+      delta->set_task_id(task.uid());
+      delta->set_resource_id(res.uuid());
+      deltas->push_back(delta);
+    }
+  }
+
   void *ProcessStderrJustlog(void *x) {
     char line[1024];
     FILE *stderr = (FILE *)x;
@@ -279,49 +329,6 @@ namespace scheduler {
       } else {
         CHECK(false) << "Unknown flow solver chosen!";
       }
-    }
-  }
-
-  void QuincyDispatcher::NodeBindingToSchedulingDelta(
-      const FlowGraphNode& src, const FlowGraphNode& dst,
-      unordered_map<TaskID_t, ResourceID_t>* task_bindings,
-      SchedulingDelta* delta) {
-    // Figure out what type of scheduling change this is
-    // Source must be a task node as this point
-    CHECK(src.type_.type() == FlowNodeType::SCHEDULED_TASK ||
-          src.type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
-          src.type_.type() == FlowNodeType::ROOT_TASK);
-    // Destination must be a PU node
-    CHECK(dst.type_.type() == FlowNodeType::PU);
-    // Is the source (task) already placed elsewhere?
-    ResourceID_t* bound_res = FindOrNull(*task_bindings, src.task_id_);
-    VLOG(2) << "task ID: " << src.task_id_ << ", bound_res: " << bound_res;
-    if (bound_res && (*bound_res != dst.resource_id_)) {
-      // If so, we have a migration
-      VLOG(1) << "MIGRATION: take " << src.task_id_ << " off "
-              << *bound_res << " and move it to "
-              << dst.resource_id_;
-      delta->set_type(SchedulingDelta::MIGRATE);
-      delta->set_task_id(src.task_id_);
-      delta->set_resource_id(to_string(dst.resource_id_));
-    } else if (bound_res && (*bound_res == dst.resource_id_)) {
-      // We were already scheduled here. No-op.
-      delta->set_type(SchedulingDelta::NOOP);
-    } else if (!bound_res && false) {  // Is something else bound to the same
-      // resource?
-      // If so, we have a preemption
-      // XXX(malte): This code is NOT WORKING!
-      VLOG(1) << "PREEMPTION: take " << src.task_id_ << " off "
-              << *bound_res << " and replace it with "
-              << src.task_id_;
-      delta->set_type(SchedulingDelta::PREEMPT);
-    } else {
-      // If neither, we have a scheduling event
-      VLOG(1) << "SCHEDULING: place " << src.task_id_ << " on "
-              << dst.resource_id_ << ", which was idle.";
-      delta->set_type(SchedulingDelta::PLACE);
-      delta->set_task_id(src.task_id_);
-      delta->set_resource_id(to_string(dst.resource_id_));
     }
   }
 

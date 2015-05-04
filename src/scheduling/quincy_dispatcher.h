@@ -23,12 +23,13 @@ class QuincyDispatcher {
       debug_seq_num_(0) {
   }
 
+  void NodeBindingToSchedulingDelta(
+      const TaskDescriptor& task, const ResourceDescriptor& res,
+      unordered_map<TaskID_t, ResourceID_t>* task_bindings,
+      vector<SchedulingDelta*>* deltas);
   multimap<uint64_t, uint64_t>* Run(double *algorithm_time = NULL,
                                     double *flowsolver_time = NULL,
                                     FILE *graph_output = NULL);
-  void NodeBindingToSchedulingDelta(const FlowGraphNode& src, const FlowGraphNode& dst,
-                                    unordered_map<TaskID_t, ResourceID_t>* task_bindings,
-                                    SchedulingDelta* delta);
   uint64_t seq_num() const {
     return debug_seq_num_;
   }

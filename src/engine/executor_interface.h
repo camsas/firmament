@@ -21,6 +21,7 @@ class ExecutorInterface : public PrintableInterface {
   virtual bool CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks) = 0;
   virtual void HandleTaskCompletion(TaskDescriptor* td,
                                     TaskFinalReport* report) = 0;
+  virtual void HandleTaskEviction(TaskDescriptor* td) = 0;
   virtual void HandleTaskFailure(TaskDescriptor* td) = 0;
   virtual void RunTask(TaskDescriptor* td,
                        bool firmament_binary) = 0;

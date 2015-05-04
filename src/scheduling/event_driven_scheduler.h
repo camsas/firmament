@@ -44,8 +44,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                   const ReferenceInterface& new_ref,
                                   TaskDescriptor* td_ptr);
-  void HandleTaskCompletion(TaskDescriptor* td_ptr,
-                            TaskFinalReport* report);
+  void HandleTaskCompletion(TaskDescriptor* td_ptr, TaskFinalReport* report);
+  void HandleTaskEviction(TaskDescriptor* td_ptr, ResourceID_t res_id);
   void HandleTaskFailure(TaskDescriptor* td_ptr);
   void KillRunningTask(TaskID_t task_id,
                        TaskKillMessage::TaskKillReason reason);
@@ -99,6 +99,10 @@ class EventDrivenScheduler : public SchedulerInterface {
   // A lock indicating if the scheduler is currently
   // in the process of making scheduling decisions.
   boost::recursive_mutex scheduling_lock_;
+
+
+ private:
+  void UpdateTaskNotRunningOnResource(TaskID_t task_id, ResourceID_t res_id);
 };
 
 }  // namespace scheduler
