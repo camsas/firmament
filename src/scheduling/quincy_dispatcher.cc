@@ -274,8 +274,10 @@ namespace scheduler {
         if (!FLAGS_incremental_flow) {
           args->push_back("--daemon=false");
         }
+      } else if (solver == "cs2") {
+        // Nothing to do
       } else {
-        CHECK(false);
+        CHECK(false) << "Unknown flow solver chosen!";
       }
     }
   }
