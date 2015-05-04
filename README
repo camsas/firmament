@@ -45,7 +45,7 @@ Binaries are in the build/ subdirectory of the project root, and all accept the
 
 Start by running a coordinator:
 
-$ build/engine/coordinator --platform PL_UNIX --listen_uri tcp://<host>:<port>
+$ build/engine/coordinator --listen_uri tcp://<host>:<port> --task_lib_path=$(PWD)/build/engine/
 
 Once the coordinator is up and running, you can access its HTTP interface at
 http://<host>:8080/ (the port can be customized using --http_ui_port argument).
