@@ -7,6 +7,8 @@
 
 // N.B.: C header for gettimeofday()
 extern "C" {
+#include <sys/types.h>
+#include <limits.h>
 #include <openssl/sha.h>
 #include <stdio.h>
 #include <sys/wait.h>
@@ -17,6 +19,16 @@ extern "C" {
 #include <set>
 #include <string>
 #include <vector>
+
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+
+#ifdef OPEN_MAX
+#define OPEN_MAX_GUESS OPEN_MAX
+#else
+#define OPEN_MAX_GUESS 256 // reasonable value
+#endif
 
 #include "misc/utils.h"
 
@@ -279,18 +291,23 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       break;
     case 0: {
       // Child
-      // Close parent pipe descriptors
-      close(infd[1]);
-      close(outfd[0]);
-      close(errfd[0]);
+      int fd, fds;
+
       // set up pipes
       CHECK(dup2(infd[0], STDIN_FILENO) == STDIN_FILENO);
       CHECK(dup2(outfd[1], STDOUT_FILENO) == STDOUT_FILENO);
       CHECK(dup2(errfd[1], STDERR_FILENO) == STDERR_FILENO);
-      // close unnecessary pipe descriptors
-      close(infd[0]);
-      close(outfd[1]);
-      close(errfd[1]);
+
+      // Close all file descriptors other than stdin, stdout and stderr
+      if ((fds = getdtablesize()) == -1) fds = OPEN_MAX_GUESS;
+      for (fd = 3; fd < fds; fd++) close(fd);
+
+      // kill child process if parent terminates
+      // SOMEDAY(adam): make this portable beyond Linux?
+#ifdef __linux__
+      prctl(PR_SET_PDEATHSIG, SIGHUP);
+#endif
+
       // Run the task binary
       execvp(argv[0], &argv[0]);
       // execl only returns if there was an error

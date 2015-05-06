@@ -153,7 +153,7 @@ void alarm_handler(int sig) {
    }
    // N.B. Don't use LOG(FATAL) since we want a successful return code
    LOG(ERROR) << "Timeout after waiting for solver for "
-  		        << FLAGS_solver_timeout << "seconds.";
+  		        << FLAGS_solver_timeout << " seconds.";
    exit(0);
 }
 
