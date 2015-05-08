@@ -13,10 +13,10 @@
       <div id="navbar" class="navbar-collapse collapse">
         <ul class="nav navbar-nav">
           <li class="active"><a href="/">Home</a></li>
-          <li><a href="/jobs">Jobs</a></li>
-          <li><a href="/tasks">Tasks</a></li>
-          <li><a href="/resources">Resources</a></li>
-          <li><a href="/refs">References</a></li>
+          <li><a href="/jobs">Jobs <span class="badge">{{NUM_JOBS_RUNNING}}</span></a></li>
+          <li><a href="/tasks">Tasks <span class="badge">{{NUM_TASKS_RUNNING}}</span></a></li>
+          <li><a href="/resources">Resources <span class="badge">{{NUM_RESOURCES}}</span></a></li>
+          <li><a href="/refs">References <span class="badge">{{NUM_REFERENCES}}</span></a></li>
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Actions <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu">

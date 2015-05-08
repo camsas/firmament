@@ -23,12 +23,12 @@ class QuincyDispatcher {
       debug_seq_num_(0) {
   }
 
-  multimap<uint64_t, uint64_t>* Run(
-  		            double *algorithm_time = NULL, double *flowsolver_time = NULL,
-                  FILE *graph_output = NULL);
+  multimap<uint64_t, uint64_t>* Run(double *algorithm_time = NULL,
+                                    double *flowsolver_time = NULL,
+                                    FILE *graph_output = NULL);
   void NodeBindingToSchedulingDelta(const FlowGraphNode& src, const FlowGraphNode& dst,
-                           unordered_map<TaskID_t, ResourceID_t>* task_bindings,
-	                         SchedulingDelta* delta);
+                                    unordered_map<TaskID_t, ResourceID_t>* task_bindings,
+                                    SchedulingDelta* delta);
   uint64_t seq_num() const {
     return debug_seq_num_;
   }
@@ -43,8 +43,9 @@ class QuincyDispatcher {
   vector< map< uint64_t, uint64_t> >* ReadFlowGraph(FILE* fptr,
                                                     uint64_t num_vertices);
   multimap<uint64_t, uint64_t>* ReadTaskMappingChanges(FILE* fptr);
-  void SolverConfiguration(const string& solver,
-  		                  string* binary, vector<string> *args);
+  void SolverConfiguration(const string& solver, string* binary,
+                           vector<string> *args);
+  friend void *ExportToSolver(void *x);
 
   shared_ptr<FlowGraph> flow_graph_;
   // DIMACS exporter for interfacing to the solver

@@ -42,6 +42,10 @@ void RemoteExecutor::HandleTaskCompletion(TaskDescriptor* td,
   td->set_finish_time(end_time);
 }
 
+void RemoteExecutor::HandleTaskEviction(TaskDescriptor* td) {
+  // TODO(ionel): Implement.
+}
+
 void RemoteExecutor::HandleTaskFailure(TaskDescriptor* td) {
   td->set_finish_time(GetCurrentTimestamp());
 }

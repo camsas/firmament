@@ -258,7 +258,7 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
   }
   if (pipe(errfd) != 0) {
       LOG(ERROR) << "Failed to create pipe from task.";
-    }
+  }
   // Convert args from string to char*
   vector<char*> argv;
   // no performance monitoring, so we only need to reserve space for the

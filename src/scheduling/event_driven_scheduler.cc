@@ -208,17 +208,24 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   ResourceID_t res_id_tmp = *res_id_ptr;
   VLOG(1) << "Handling completion of task " << td_ptr->uid()
           << ", freeing resource " << res_id_tmp;
-  // Set the bound resource idle again.
-  ResourceStatus* res = FindPtrOrNull(*resource_map_, res_id_tmp);
-  CHECK_NOTNULL(res);
-  res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
-  res->mutable_descriptor()->clear_current_running_task();
-  // Remove the task's resource binding (as it is no longer currently bound)
-  CHECK(UnbindResourceForTask(td_ptr->uid()));
+  UpdateTaskNotRunningOnResource(td_ptr->uid(), res_id_tmp);
   // Record final report
   ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
   CHECK_NOTNULL(exec);
   exec->HandleTaskCompletion(td_ptr, report);
+}
+
+void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
+                                              ResourceID_t res_id) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  ResourceID_t res_id_tmp = res_id;
+  VLOG(1) << "Handling completion of task " << td_ptr->uid()
+          << ", freeing resource " << res_id_tmp;
+  UpdateTaskNotRunningOnResource(td_ptr->uid(), res_id_tmp);
+  // Record final report
+  ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
+  CHECK_NOTNULL(exec);
+  exec->HandleTaskEviction(td_ptr);
 }
 
 void EventDrivenScheduler::HandleReferenceStateChange(
@@ -568,6 +575,17 @@ set<TaskDescriptor*> EventDrivenScheduler::ProducingTasksForDataObjectID(
     }
   }
   return producing_tasks;
+}
+
+void EventDrivenScheduler::UpdateTaskNotRunningOnResource(TaskID_t task_id,
+                                                          ResourceID_t res_id) {
+  // Set the bound resource idle again.
+  ResourceStatus* res = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(res);
+  res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  res->mutable_descriptor()->clear_current_running_task();
+  // Remove the task's resource binding (as it is no longer currently bound)
+  CHECK(UnbindResourceForTask(task_id));
 }
 
 }  // namespace scheduler

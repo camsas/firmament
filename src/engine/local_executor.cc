@@ -204,6 +204,10 @@ void LocalExecutor::HandleTaskCompletion(TaskDescriptor* td,
   CleanUpCompletedTask(*td);
 }
 
+void LocalExecutor::HandleTaskEviction(TaskDescriptor* td) {
+  // TODO(ionel): Implement.
+}
+
 void LocalExecutor::HandleTaskFailure(TaskDescriptor* td) {
   td->set_finish_time(GetCurrentTimestamp());
   // Nothing to be done other than cleaning up; there is no final

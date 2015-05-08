@@ -26,20 +26,20 @@ DEFINE_string(flow_scheduling_solver, "cs2",
               "solver reimplementation; \"custom\": specify custom solver. "
               "with -flow_scheduling_binary and -flow_scheduling_args.");
 DEFINE_string(flow_scheduling_binary, "", "Path to flow solving executable. "
-               "If specified, overrides default path. "
-               "Must be specified when using custom solver.");
+              "If specified, overrides default path. "
+              "Must be specified when using custom solver.");
 DEFINE_string(custom_flow_scheduling_args, "", "Arguments for custom solver. "
-               "Defaults to no arguments.");
+              "Defaults to no arguments.");
 DEFINE_bool(flow_scheduling_time_reported, false,
-              "Does solver report runtime to stderr?");
-DEFINE_bool(flow_scheduling_strict, false, "Terminate if flow solving binary fails.");
+            "Does solver report runtime to stderr?");
+DEFINE_bool(flow_scheduling_strict, false, "Terminate if flow solving binary"
+            " fails.");
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
-
-const static std::string CS2_BINARY = "ext/cs2-4.6/cs2.exe";
-const static std::string FLOWLESSLY_BINARY =
-                                     "ext/flowlessly-git/run_fast_cost_scaling";
+DEFINE_string(flowlessly_binary, "ext/flowlessly-git/run_fast_cost_scaling",
+              "Path to the flowlessly binary.");
+DEFINE_string(cs2_binary, "ext/cs2-4.6/cs2.exe", "Path to the cs2 binary.");
 
 namespace firmament {
 namespace scheduler {
@@ -47,7 +47,7 @@ namespace scheduler {
   using boost::algorithm::is_any_of;
   using boost::token_compress_on;
 
-  void *export_to_solver(void *x) {
+  void *ExportToSolver(void *x) {
     QuincyDispatcher *qd = (QuincyDispatcher *)x;
     // Write to pipe to solver
     qd->exporter_.Flush(qd->to_solver_);
@@ -55,18 +55,15 @@ namespace scheduler {
       // We need to close the stream because that's what cs expects.
       fclose(qd->to_solver_);
     }
-
     return NULL;
   }
 
-  void *process_stderr_justlog(void *x) {
+  void *ProcessStderrJustlog(void *x) {
     char line[1024];
     FILE *stderr = (FILE *)x;
-
     while (fgets(line, sizeof(line), stderr) != NULL) {
-      LOG(WARNING) << "STDERR from algorithm: " << line;
+      LOG(WARNING) << "STDERR from solver: " << line;
     }
-
     return NULL;
   }
 
@@ -145,9 +142,8 @@ namespace scheduler {
       // outfd[1] == CHILD_WRITE
       // infd[0] == CHILD_READ
       // infd[1] == PARENT_WRITE
-
-    	string binary;
-    	SolverConfiguration(FLAGS_flow_scheduling_solver, &binary, &args);
+      string binary;
+      SolverConfiguration(FLAGS_flow_scheduling_solver, &binary, &args);
       solver_pid = ExecCommandSync(binary, args, infd_, outfd_, errfd_);
       VLOG(2) << "Solver running " << "(PID: " << solver_pid << ")"
               << ", CHILD_READ: " << infd_[0]
@@ -156,6 +152,7 @@ namespace scheduler {
               << ", PARENT_WRITE: " << infd_[1]
               << ", PARENT_READ_STD: " << outfd_[0]
               << ", PARENT_READ_ERR: " << errfd_[0];
+
 
       solver_ran_once_ = true;
       if ((from_solver_stderr_ = fdopen(errfd_[0], "r")) == NULL) {
@@ -173,7 +170,7 @@ namespace scheduler {
 
       if (!FLAGS_flow_scheduling_time_reported) {
         if (pthread_create(&logger_thread, NULL,
-                           process_stderr_justlog, from_solver_stderr_)) {
+                           ProcessStderrJustlog, from_solver_stderr_)) {
           PLOG(FATAL) << "Error creating thread";
         }
       }
@@ -187,7 +184,7 @@ namespace scheduler {
 
     // Create thread to write the DIMACS
     pthread_t exporter_thread;
-    if (pthread_create(&exporter_thread, NULL, export_to_solver, this)) {
+    if (pthread_create(&exporter_thread, NULL, ExportToSolver, this)) {
       PLOG(FATAL) << "Error creating thread";
     }
 
@@ -240,13 +237,14 @@ namespace scheduler {
   }
 
   void QuincyDispatcher::SolverConfiguration(const string& solver,
-                                         string* binary, vector<string> *args) {
+                                             string* binary,
+                                             vector<string> *args) {
     // New solvers need to have their binary registered here.
     // Paths are relative to the Firmament root directory.
     if (solver == "cs2") {
-      *binary = CS2_BINARY;
+      *binary = FLAGS_cs2_binary;
     } else if (solver == "flowlessly") {
-      *binary = FLOWLESSLY_BINARY;
+      *binary = FLAGS_flowlessly_binary;
     } else if (solver == "custom") {
       // no-op; set binary below
     } else {
@@ -415,7 +413,7 @@ namespace scheduler {
     double *time;
   };
 
-  void *process_stderr_algotime(void *x) {
+  void *ProcessStderrAlgoTime(void *x) {
     struct arguments *args = (struct arguments *)x;
     double *algorithm_time = args->time;
     FILE *stderr = args->fptr;
@@ -451,7 +449,7 @@ namespace scheduler {
     if (FLAGS_flow_scheduling_time_reported) {
       // Create thread to process stderr
       struct arguments args = { from_solver_stderr_, time };
-      if (pthread_create(&stderr_thread, NULL, process_stderr_algotime, &args)) {
+      if (pthread_create(&stderr_thread, NULL, ProcessStderrAlgoTime, &args)) {
         PLOG(FATAL) << "Error creating thread";
       }
     }

@@ -147,7 +147,7 @@ $(function() {
   </tr>
   <tr>
     <td>Job</td>
-    <td>{{TASK_JOB_ID}} ({{TASK_JOB_NAME}})</td>
+    <td><a href="/job/?id={{TASK_JOB_ID}}">{{TASK_JOB_ID}}</a> ({{TASK_JOB_NAME}})</td>
   </tr>
   <tr>
     <td>Actions</td>
