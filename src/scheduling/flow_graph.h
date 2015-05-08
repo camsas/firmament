@@ -119,8 +119,8 @@ class FlowGraph {
                                    FlowGraphNode* new_node);
   void ConfigureResourceLeafNode(const ResourceTopologyNodeDescriptor& rtnd,
                                  FlowGraphNode* new_node);
-  void DeleteArcGeneratingDelta(FlowGraphArc* arc, const char *comment=NULL);
   uint32_t CountTaskSlotsBelowResourceNode(FlowGraphNode* node);
+  void DeleteArcGeneratingDelta(FlowGraphArc* arc, const char *comment=NULL);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node, const char *comment=NULL);
   void DeleteResourceNode(FlowGraphNode* res_node, const char *comment=NULL);

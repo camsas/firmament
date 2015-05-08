@@ -1341,32 +1341,51 @@ void GoogleTraceSimulator::UpdateFlowGraph(
     unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_runtime,
     multimap<uint64_t, uint64_t>* task_mappings) {
   set<ResourceID_t> pus_used;
+  vector<SchedulingDelta*> deltas;
   for (multimap<uint64_t, uint64_t>::iterator it = task_mappings->begin();
        it != task_mappings->end(); ++it) {
-    SchedulingDelta* delta = new SchedulingDelta();
+    // Some sanity checks
+    FlowGraphNode* src = flow_graph_->Node(it->first);
+    FlowGraphNode* dst = flow_graph_->Node(it->second);
+    // Source must be a task node as this point
+    CHECK(src->type_.type() == FlowNodeType::SCHEDULED_TASK ||
+          src->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
+          src->type_.type() == FlowNodeType::ROOT_TASK);
+    // Destination must be a PU node
+    CHECK(dst->type_.type() == FlowNodeType::PU);
+    // Get the TD and RD for the source and destination
+    TaskDescriptor* task = FindPtrOrNull(*task_map_, src->task_id_);
+    CHECK_NOTNULL(task);
+    ResourceStatus* target_res_status =
+      FindPtrOrNull(*resource_map_, dst->resource_id_);
+    CHECK_NOTNULL(target_res_status);
+    const ResourceDescriptor& resource = target_res_status->descriptor();
     // Populate the scheduling delta.
     quincy_dispatcher_->NodeBindingToSchedulingDelta(
-        *flow_graph_->Node(it->first), *flow_graph_->Node(it->second),
-        &task_bindings_, delta);
+        *task, resource, &task_bindings_, &deltas);
+  }
+  for (vector<SchedulingDelta*>::const_iterator it = deltas.begin();
+       it != deltas.end(); ++it) {
+    SchedulingDelta* delta = *it;
     if (delta->type() == SchedulingDelta::NOOP) {
       // We don't have to do anything.
-      delete delta;
       continue;
     } else if (delta->type() == SchedulingDelta::PLACE) {
       // Apply the scheduling delta.
       TaskID_t task_id = delta->task_id();
       ResourceID_t res_id = ResourceIDFromString(delta->resource_id());
       // Mark the task as scheduled
-      flow_graph_->Node(it->first)->type_.set_type(
-          FlowNodeType::SCHEDULED_TASK);
-      TaskDescriptor** td = FindOrNull(*task_map_, task_id);
-      ResourceStatus** rs = FindOrNull(*resource_map_, res_id);
+      FlowGraphNode* node = flow_graph_->NodeForTaskID(delta->task_id());
+      CHECK_NOTNULL(node);
+      node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+      TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
+      ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
       CHECK_NOTNULL(td);
       CHECK_NOTNULL(rs);
-      ResourceDescriptor* rd = (*rs)->mutable_descriptor();
+      ResourceDescriptor* rd = rs->mutable_descriptor();
       rd->set_state(ResourceDescriptor::RESOURCE_BUSY);
       pus_used.insert(res_id);
-      (*td)->set_state(TaskDescriptor::RUNNING);
+      td->set_state(TaskDescriptor::RUNNING);
       rd->set_current_running_task(task_id);
       CHECK(InsertIfNotPresent(&task_bindings_, task_id, res_id));
       CHECK(InsertIfNotPresent(&res_id_to_task_id_, res_id, task_id));
@@ -1384,23 +1403,24 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       TaskID_t task_id = delta->task_id();
       ResourceID_t res_id = ResourceIDFromString(delta->resource_id());
       // Mark the task as scheduled
-      flow_graph_->Node(it->first)->type_.set_type(
-          FlowNodeType::SCHEDULED_TASK);
-      TaskDescriptor** td = FindOrNull(*task_map_, task_id);
-      ResourceStatus** rs = FindOrNull(*resource_map_, res_id);
+      FlowGraphNode* node = flow_graph_->NodeForTaskID(delta->task_id());
+      CHECK_NOTNULL(node);
+      node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+      TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
+      ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
       CHECK_NOTNULL(td);
       CHECK_NOTNULL(rs);
-      ResourceDescriptor* rd = (*rs)->mutable_descriptor();
+      ResourceDescriptor* rd = rs->mutable_descriptor();
       rd->set_state(ResourceDescriptor::RESOURCE_BUSY);
       pus_used.insert(res_id);
-      (*td)->set_state(TaskDescriptor::RUNNING);
+      td->set_state(TaskDescriptor::RUNNING);
       ResourceID_t* old_res_id = FindOrNull(task_bindings_, task_id);
       CHECK_NOTNULL(old_res_id);
       if (pus_used.find(*old_res_id) == pus_used.end()) {
         // The resource is now idle.
-        ResourceStatus** old_rs = FindOrNull(*resource_map_, *old_res_id);
+        ResourceStatus* old_rs = FindPtrOrNull(*resource_map_, *old_res_id);
         CHECK_NOTNULL(old_rs);
-        ResourceDescriptor* old_rd = (*old_rs)->mutable_descriptor();
+        ResourceDescriptor* old_rd = old_rs->mutable_descriptor();
         old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
         res_id_to_task_id_.erase(*old_res_id);
       }
