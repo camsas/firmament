@@ -1389,15 +1389,21 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       rd->set_current_running_task(task_id);
       CHECK(InsertIfNotPresent(&task_bindings_, task_id, res_id));
       CHECK(InsertIfNotPresent(&res_id_to_task_id_, res_id, task_id));
-      // After the task is bound, we now remove all of its edges into the flow
-      // graph apart from the bound resource.
-      // N.B.: This disables preemption and migration!
+      // Unless FLAGS_preemption is set, all edges are removed except into
+      // the bound resource, disabling preemption and migration
       flow_graph_->TaskScheduled(task_id, res_id);
       TaskIdentifier* task_identifier =
         FindOrNull(task_id_to_identifier_, task_id);
       CHECK_NOTNULL(task_identifier);
       AddTaskEndEvent(scheduling_timestamp, task_id, *task_identifier,
                       task_runtime);
+    } else if (delta->type() == SchedulingDelta::PREEMPT) {
+      // Apply the scheduling delta.
+      TaskID_t old_task_id = delta->task_id();
+      ResourceID_t res_id = ResourceIDFromString(delta->resource_id());
+      // Mark the old task as unscheduled
+      // XXX: Does this do everything?
+      TaskEvicted(old_task_id, res_id);
     } else if (delta->type() == SchedulingDelta::MIGRATE) {
       // Apply the scheduling delta.
       TaskID_t task_id = delta->task_id();
