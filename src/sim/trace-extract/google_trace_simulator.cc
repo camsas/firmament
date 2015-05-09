@@ -216,7 +216,6 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
 
 SimulatedQuincyCostModel *GoogleTraceSimulator::SetupSimulatedQuincyCostModel(
    unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids) {
-  // probably want to make num_files dependent on percent of trace running on
   GoogleBlockDistribution *input_block_distn = new GoogleBlockDistribution(
                                       FLAGS_simulated_quincy_input_percent_min,
                                       FLAGS_simulated_quincy_input_min_blocks,
@@ -1353,6 +1352,7 @@ void GoogleTraceSimulator::UpdateFlowGraph(
           src->type_.type() == FlowNodeType::ROOT_TASK);
     // Destination must be a PU node
     CHECK(dst->type_.type() == FlowNodeType::PU);
+    // XXX: what about unscheduled tasks?
     // Get the TD and RD for the source and destination
     TaskDescriptor* task = FindPtrOrNull(*task_map_, src->task_id_);
     CHECK_NOTNULL(task);
@@ -1404,6 +1404,10 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       // Mark the old task as unscheduled
       // XXX: Does this do everything?
       TaskEvicted(old_task_id, res_id);
+      ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+      CHECK_NOTNULL(rs);
+      ResourceDescriptor* rd = rs->mutable_descriptor();
+      rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
     } else if (delta->type() == SchedulingDelta::MIGRATE) {
       // Apply the scheduling delta.
       TaskID_t task_id = delta->task_id();
@@ -1421,18 +1425,21 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       pus_used.insert(res_id);
       td->set_state(TaskDescriptor::RUNNING);
       ResourceID_t* old_res_id = FindOrNull(task_bindings_, task_id);
-      CHECK_NOTNULL(old_res_id);
-      if (pus_used.find(*old_res_id) == pus_used.end()) {
-        // The resource is now idle.
-        ResourceStatus* old_rs = FindPtrOrNull(*resource_map_, *old_res_id);
-        CHECK_NOTNULL(old_rs);
-        ResourceDescriptor* old_rd = old_rs->mutable_descriptor();
-        old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
-        res_id_to_task_id_.erase(*old_res_id);
+      if (old_res_id) {
+        // could be null if we've already processed a PREEMPTION event for this
+        if (pus_used.find(*old_res_id) == pus_used.end()) {
+          // The resource is now idle.
+          ResourceStatus* old_rs = FindPtrOrNull(*resource_map_, *old_res_id);
+          CHECK_NOTNULL(old_rs);
+          ResourceDescriptor* old_rd = old_rs->mutable_descriptor();
+          old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
+          res_id_to_task_id_.erase(*old_res_id);
+        }
       }
       rd->set_current_running_task(task_id);
       InsertOrUpdate(&task_bindings_, task_id, res_id);
-      CHECK(InsertIfNotPresent(&res_id_to_task_id_, res_id, task_id));
+      // may already be present if there's another migration/preemption event
+      InsertOrUpdate(&res_id_to_task_id_, res_id, task_id);
     } else {
       LOG(FATAL) << "Unhandled scheduling delta case.";
     }

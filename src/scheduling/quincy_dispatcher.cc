@@ -80,12 +80,14 @@ namespace scheduler {
       deltas->push_back(delta);
     } else if (bound_res && (*bound_res == ResourceIDFromString(res.uuid()))) {
       // We were already scheduled here. No-op, so insert no delta.
-    } else if (!bound_res && current_bound_task_id != task.uid()) {
+    } else if (!bound_res
+               && current_bound_task_id // resource is not idle
+               && current_bound_task_id != task.uid()) {
+      // XXX: wrong, need to check if unscheduled?
       // Is something else bound to the same resource?
       // If so, we need to kick it off (a preemption)
       VLOG(1) << "PREEMPTION: take " << current_bound_task_id << " off "
-              << *bound_res << " and replace it with "
-              << task.uid();
+              << res.uuid() << " and replace it with " << task.uid();
       SchedulingDelta* preempt_delta = new SchedulingDelta;
       preempt_delta->set_type(SchedulingDelta::PREEMPT);
       preempt_delta->set_task_id(current_bound_task_id);
