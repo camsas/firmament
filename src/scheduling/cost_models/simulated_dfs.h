@@ -20,7 +20,8 @@ public:
 	typedef uint32_t NumBlocks_t;
 
 	SimulatedDFS(uint64_t num_machines, NumBlocks_t blocks_per_machine,
-	    uint32_t replication_factor, GoogleBlockDistribution *block_distribution);
+	    uint32_t replication_factor, GoogleBlockDistribution *block_distribution,
+	    uint64_t random_seed);
 	virtual ~SimulatedDFS();
 
 	void addMachine(ResourceID_t machine);

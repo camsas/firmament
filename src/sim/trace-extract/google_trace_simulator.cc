@@ -135,6 +135,8 @@ DEFINE_uint64(simulated_quincy_file_percent_min, 20,
                          "Percentage of files which are minimum # of blocks.");
 DEFINE_double(simulated_quincy_file_min_blocks, 1, "Minimum # of blocks in file.");
 DEFINE_double(simulated_quincy_file_max_blocks, 160, "Maximum # of blocks in file.");
+// Random seed
+DEFINE_uint64(simulated_quincy_random_seed, 42, "Seed for random generators.");
 
 // It varies a little over time, but relatively constant. Used for calculation
 // of how much storage space we have.
@@ -233,7 +235,8 @@ SimulatedQuincyCostModel *GoogleTraceSimulator::SetupSimulatedQuincyCostModel(
   SimulatedDFS *dfs = new SimulatedDFS(num_machines,
                                    FLAGS_simulated_quincy_blocks_per_machine,
                                    FLAGS_simulated_quincy_replication_factor,
-                                   file_block_distn);
+                                   file_block_distn,
+                                   FLAGS_simulated_quincy_random_seed);
   return new SimulatedQuincyCostModel(resource_map_, job_map_,
           task_map_,  &task_bindings_, leaf_res_ids, knowledge_base_,
           dfs, runtime_distn, input_block_distn,

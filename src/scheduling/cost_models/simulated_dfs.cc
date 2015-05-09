@@ -10,8 +10,9 @@ namespace firmament {
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
 SimulatedDFS::SimulatedDFS(uint64_t num_machines, NumBlocks_t blocks_per_machine,
-    uint32_t replication_factor, GoogleBlockDistribution *block_distribution) :
-    replication_factor(replication_factor),
+    uint32_t replication_factor, GoogleBlockDistribution *block_distribution,
+    uint64_t random_seed) :
+    replication_factor(replication_factor), generator(random_seed),
 		uniform(0.0,1.0), blocks_in_file_distn(block_distribution) {
   NumBlocks_t total_block_capacity = blocks_per_machine * num_machines;
   total_block_capacity /= replication_factor;
