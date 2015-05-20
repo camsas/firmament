@@ -33,8 +33,6 @@
 #include "base/task_graph.h"
 #include "engine/health_monitor.h"
 #include "engine/node.h"
-// XXX(malte): include order dependency
-#include "platforms/unix/common.h"
 #include "messages/heartbeat_message.pb.h"
 #include "messages/registration_message.pb.h"
 #include "messages/task_delegation_message.pb.h"

@@ -23,8 +23,6 @@
 #include "base/resource_desc.pb.h"
 #include "engine/node.h"
 #include "messages/base_message.pb.h"
-// XXX(malte): include order dependency
-#include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
 #include "platforms/common.h"

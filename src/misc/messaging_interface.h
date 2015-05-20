@@ -11,20 +11,12 @@
 #include "base/common.h"
 #include "misc/envelope.h"
 #include "misc/printable_interface.h"
+#include "platforms/unix/common.h"
 
 namespace firmament {
 
-#ifdef __PLATFORM_UNIX__
-#include "platforms/unix/common.h"
-  /*typedef platform_unix::AsyncSendHandler<T>::type GenericAsyncSendHandler;
-  typedef platform_unix::AsyncRecvHandler<T>::type GenericAsyncRecvHandler;*/
 using platform_unix::AsyncSendHandler;
 using platform_unix::AsyncRecvHandler;
-#else
-  typedef void(*AsyncSendHandler)(void*, void*);
-  typedef void(*AsyncRecvHandler)(void*, void*);
-#endif
-
 using firmament::misc::Envelope;
 
 template <typename T>

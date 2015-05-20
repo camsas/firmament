@@ -11,8 +11,6 @@
 
 #include "base/common.h"
 #include "engine/executor_interface.h"
-// XXX(malte): include order dependency
-#include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
 #include "messages/base_message.pb.h"
 

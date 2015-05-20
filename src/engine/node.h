@@ -22,8 +22,6 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
-// XXX(malte): include order dependency
-#include "platforms/unix/common.h"
 #include "platforms/unix/signal_handler.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"

@@ -16,6 +16,7 @@
 #include "base/task_desc.pb.h"
 #include "base/task_final_report.pb.h"
 #include "engine/executor_interface.h"
+#include "misc/messaging_interface.h"
 #include "scheduling/scheduler_interface.h"
 #include "storage/reference_interface.h"
 
