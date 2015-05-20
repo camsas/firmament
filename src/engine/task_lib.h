@@ -14,28 +14,6 @@
 #include <string>
 #include <vector>
 
-
-#ifdef __PLATFORM_HAS_BOOST__
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include "boost/interprocess/segment_manager.hpp"
-#include <boost/interprocess/file_mapping.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/shared_memory_object.hpp>
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/sync/named_mutex.hpp>
-#include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/interprocess/sync/sharable_lock.hpp>
-#include <boost/interprocess/sync/interprocess_condition.hpp>
-#else
-// Currently this won't build if __PLATFORM_HAS_BOOST__ is not defined.
-#error __PLATFORM_HAS_BOOST__ not set, so cannot build task library!
-#endif
-
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
@@ -43,8 +21,6 @@
 #include "storage/reference_types.h"
 #include "base/task_interface.h"
 #include "messages/base_message.pb.h"
-// XXX(malte): include order dependency
-#include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
 #include "platforms/common.h"
@@ -59,18 +35,6 @@ namespace firmament {
 using platform_unix::ProcFSMonitor;
 using platform_unix::streamsockets::StreamSocketsAdapter;
 using platform_unix::streamsockets::StreamSocketsChannel;
-// TODO(malte): Get rid of this and import the interprocess primitives at a
-// higher level.
-using namespace boost::interprocess;  // NOLINT
-using store::Cache_t;
-using store::ReferenceNotification_t;
-using store::SharedVector_t;
-using store::ReadLock_t;
-using store::WriteLock_t;
-// TODO(malte): This is suboptimal...
-using store::GET_OBJECT;
-using store::PUT_OBJECT;
-using store::FREE;
 
 class TaskLib {
  public:
@@ -98,10 +62,6 @@ class TaskLib {
 
   // Terminate tasklib.
   void Stop(bool success);
-
-  Cache_t* getCache() {
-    return cache;
-  }
 
  protected:
   StreamSocketsAdapter<BaseMessage>* m_adapter_;
@@ -142,14 +102,6 @@ class TaskLib {
   // If set, gives the fraction of task completed.
   volatile double completed_;
   ProcFSMonitor task_perf_monitor_;
-
-  Cache_t* cache;
-  string storage_uri;
-  //managed_shared_memory* segment;
-  named_mutex* mutex;
-  scoped_lock<named_mutex>* cache_lock;
-  ReferenceNotification_t* reference_not_t;
-
   unique_ptr<FILE> completion_file_;
 };
 

@@ -335,18 +335,6 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
     HandleTaskInfoRequest(msg, remote_endpoint);
     handled_extensions++;
   }
-  // Storage engine registration
-  if (bm->has_storage_registration()) {
-    const StorageRegistrationMessage& msg = bm->storage_registration();
-    HandleStorageRegistrationRequest(msg);
-    handled_extensions++;
-  }
-  // Storage engine discovery
-  if (bm->has_storage_discover()) {
-    const StorageDiscoverMessage& msg = bm->storage_discover();
-    HandleStorageDiscoverRequest(msg);
-    handled_extensions++;
-  }
   // Task delegation message
   if (bm->has_task_delegation_request()) {
     const TaskDelegationRequestMessage& msg = bm->task_delegation_request();
@@ -1000,99 +988,6 @@ void Coordinator::Shutdown(const string& reason) {
   VLOG(1) << "All connections shut down; now exiting...";
   // Toggling the exit flag will make the Coordinator drop out of its main loop.
   exit_ = true;
-}
-
-/* Storage Engine Interface - The storage engine is notified of the location
- * of new storage engines in one of three ways:
- * 1) if a new resource is added to the coordinator, then all the local
- * storage engines (which share the same coordinator) should be informed.
- * Automatically add this to the list of peers
- * 2) if receive a StorageRegistrationRequest, this signals the desire of a
- * storage engine to be registered with (either) all of the storage engines
- * managed by this coordinator, or its local engine. StorageRegistrationRequests
- * can also arrive directly to the storage engine. The coordinator supports this
- * because outside resources/coordinators may not know the whole topology within
- * the coordinator. I *suspect* this technique will be faster
- * TODO(tach): improve efficiency */
-void Coordinator::InformStorageEngineNewResource(ResourceDescriptor* rd_new) {
-  VLOG(2) << "Inform Storage Engine of New Resources ";
-
-  /* Create Storage Registration Message */
-  BaseMessage base;
-  StorageRegistrationMessage* message = new StorageRegistrationMessage();
-  message->set_peer(true);
-  //CHECK_NE(rd_new->storage_engine(), "")
-  //  << "Storage engine URI missing on resource " << rd_new->uuid();
-  //message->set_storage_interface(rd_new->storage_engine());
-  message->set_uuid(rd_new->uuid());
-
-  StorageRegistrationMessage& message_ref = *message;
-
-  vector<ResourceStatus*> rs_vec = associated_resources();
-
-  /* Handle Local Engine First */
-
-  object_store_->HandleStorageRegistrationRequest(message_ref);
-
-  /* Handle other resources' engines*/
-  for (vector<ResourceStatus*>::iterator it = rs_vec.begin();
-       it != rs_vec.end();
-       ++it) {
-    ResourceStatus* rs = *it;
-    // Only machine-level resources can have a storage engine
-    // TODO(malte): is this a correct assumption? We could have per-core
-    // storage engines.
-    if (rs->descriptor().type() != ResourceDescriptor::RESOURCE_MACHINE)
-      continue;
-    if (rs->descriptor().storage_engine() != "") {
-      VLOG(2) << "Resource " << rs->descriptor().uuid() << " does not have a "
-              << "storage engine URI set; skipping notification!";
-      continue;
-    }
-    const string& uri = rs->descriptor().storage_engine();
-    CHECK_NE(uri, "") << "Missing storage engine URI on RD for "
-                      << rs->descriptor().uuid();
-    if (!m_adapter_->GetChannelForEndpoint(uri)) {
-      StreamSocketsChannel<BaseMessage>* chan =
-          new StreamSocketsChannel<BaseMessage > (
-              StreamSocketsChannel<BaseMessage>::SS_TCP);
-      Coordinator::ConnectToRemote(uri, chan);
-    } else {
-      m_adapter_->SendMessageToEndpoint(uri, (BaseMessage&)message_ref);
-    }
-  }
-}
-
-/* Wrapper Method - Forward to Object Store. This method is useful
- * for other storage engines which simply talk to the coordinator,
- * letting it to the broadcast to its resources
- */
-void Coordinator::HandleStorageRegistrationRequest(
-        const StorageRegistrationMessage& msg) {
-  if (!object_store_) { // In theory, each node should have an object
-                        // store which has already been instantiated. So
-                        // this case should never happen.
-      VLOG(1) << "No object store detected for this node. Storage Registration"
-              << "Message discarded";
-  } else {
-      object_store_->HandleStorageRegistrationRequest(msg);
-  }
-}
-
-/* This is a message sent by TaskLib which seeks to discover
- where the storage engine is - this is only important if the
- storage engine is not guaranteed to be local */
-void Coordinator::HandleStorageDiscoverRequest(
-    const StorageDiscoverMessage& msg) {
-  ResourceID_t uuid = ResourceIDFromString(msg.uuid());
-  ResourceStatus** rsp = FindOrNull(*associated_resources_, uuid);
-  ResourceDescriptor* rd = (*rsp)->mutable_descriptor();
-  const string& uri = rd->storage_engine();
-  StorageDiscoverMessage* reply = new StorageDiscoverMessage();
-  reply->set_uuid(msg.uuid());
-  reply->set_uri(msg.uri());
-  reply->set_storage_uri(uri);
-  /* Send Message*/
 }
 
 } // namespace firmament
