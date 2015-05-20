@@ -26,8 +26,6 @@ namespace store {
 class ObjectStoreInterface : public PrintableInterface {
  public:
   virtual ostream& ToString(ostream* stream) const = 0;
-  virtual void HandleStorageRegistrationRequest(
-      const StorageRegistrationMessage& msg) = 0;
   bool AddReference(const DataObjectID_t& id, ReferenceDescriptor* rd) {
     // Check if we have an entry for this reference already
     set<ReferenceInterface*>* held_set = FindOrNull(*object_table_, id);

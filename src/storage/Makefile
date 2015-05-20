@@ -7,7 +7,7 @@ LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time
 
 LIB = libfirmament_storage.a
 
-OBJS =  simple_object_store.o StorageInfo.o Cache.o   
+OBJS =  simple_object_store.o
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 
