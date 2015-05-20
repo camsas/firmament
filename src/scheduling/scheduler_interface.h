@@ -8,8 +8,10 @@
 
 #include <set>
 
-#include "base/types.h"
+#include "base/common.h"
+#include "messages/base_message.pb.h"
 #include "base/job_desc.pb.h"
+#include "base/types.h"
 #include "base/task_final_report.pb.h"
 #include "misc/printable_interface.h"
 #include "engine/executor_interface.h"
