@@ -83,9 +83,13 @@ TaskLib::TaskLib()
 
   FILE* pid_file;
   pid_file = fopen(pid_filename.c_str(), "w");
-  int pid = getpid();
-  fprintf(pid_file, "%d", pid);
-  fclose(pid_file);
+  if (!pid_file) {
+    PLOG(ERROR) << "Failed to create PID file (" << pid_filename << ")";
+  } else {
+    int pid = getpid();
+    fprintf(pid_file, "%d", pid);
+    fclose(pid_file);
+  }
 
   use_procfs_ = true;
 }
