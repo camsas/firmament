@@ -76,16 +76,16 @@ TaskLib::TaskLib()
   VLOG(1) << "Task ID is " << task_id_env;
   CHECK_NOTNULL(task_id_env);
   task_id_ = TaskIDFromString(task_id_env);
-  //setUpStorageEngine();
 
   stringstream ss;
   ss << "/tmp/" << task_id_env << ".pid";
   string pid_filename = ss.str();
 
-  ofstream pid_file;
-  pid_file.open(pid_filename);
-  pid_file << getpid();
-  pid_file.close();
+  FILE* pid_file;
+  pid_file = fopen(pid_filename.c_str(), "w");
+  int pid = getpid();
+  fprintf(pid_file, "%d", pid);
+  fclose(pid_file);
 
   use_procfs_ = true;
 }
