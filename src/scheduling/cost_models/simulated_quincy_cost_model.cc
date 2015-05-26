@@ -194,7 +194,7 @@ void SimulatedQuincyCostModel::AddMachine(
 	// we use ResourceID_t to identify machines
 	ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
 	// 'replicate' blocks
-	filesystem_->addMachine(res_id);
+	filesystem_->AddMachine(res_id);
 	// bin it into a rack
 	EquivClass_t current_rack = rack_to_machine_map_.size() - 1;
 	if (rack_to_machine_map_[current_rack].size() >= machines_per_rack_) {
@@ -209,7 +209,7 @@ void SimulatedQuincyCostModel::AddMachine(
 }
 
 void SimulatedQuincyCostModel::RemoveMachine(ResourceID_t res_id) {
-	filesystem_->removeMachine(res_id);
+	filesystem_->RemoveMachine(res_id);
 
 	// delete any preference arcs to this machine
 	for (auto elt : preferred_machine_map_) {
@@ -243,7 +243,7 @@ void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
 	VLOG(2) << "Giving " << num_blocks << " blocks";
 
 	// Finally, select some files. Sample to get approximately the right number of blocks.
-	file_set = filesystem_->sampleFiles(num_blocks, percent_block_tolerance_);
+	file_set = filesystem_->SampleFiles(num_blocks, percent_block_tolerance_);
 	VLOG(1) << "Task " << task_id << " has " << file_set.size() << " inputs.";
 }
 
@@ -254,10 +254,10 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
 
   std::unordered_set<SimulatedDFS::FileID_t> &file_set = file_map_[task_id];
   for (SimulatedDFS::FileID_t file_id : file_set) {
-    SimulatedDFS::NumBlocks_t num_blocks = filesystem_->getNumBlocks(file_id);
+    SimulatedDFS::NumBlocks_t num_blocks = filesystem_->GetNumBlocks(file_id);
     total_num_blocks += num_blocks;
 
-    ResourceSet_t machines = filesystem_->getMachines(file_id);
+    ResourceSet_t machines = filesystem_->GetMachines(file_id);
   	std::unordered_set<EquivClass_t> racks;
     for (ResourceID_t machine : machines) {
       uint32_t frequency = FindWithDefault(machine_frequency, machine, 0);

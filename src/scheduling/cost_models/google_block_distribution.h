@@ -9,7 +9,6 @@ class GoogleBlockDistribution {
  public:
   GoogleBlockDistribution(uint64_t percent_min, uint64_t min_blocks,
                           uint64_t max_blocks);
-  virtual ~GoogleBlockDistribution();
   uint64_t inverse(double y);
   double mean();
  private:
@@ -19,4 +18,4 @@ class GoogleBlockDistribution {
 
 } // namespace firmament
 
-#endif /* SRC_SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H */
+#endif /* SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H */
