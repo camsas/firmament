@@ -485,7 +485,8 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   DIMACSChange *chg = new DIMACSAddNode(*ec_node, ec_arcs);
   chg->SetComment("AddEquivClassNode");
   graph_changes_.push_back(chg);
-  VLOG(1) << "Adding equivalence class node, with change " << chg->GenerateChange();
+  VLOG(1) << "Adding equivalence class node, with change "
+          << chg->GenerateChange();
   AddArcsFromToOtherEquivNodes(ec, ec_node);
 }
 
@@ -694,7 +695,8 @@ uint32_t FlowGraph::CountTaskSlotsBelowResourceNode(FlowGraphNode* node) {
   return task_slot_count;
 }
 
-void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc, const char *comment) {
+void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc,
+                                         const char *comment) {
   arc->cap_lower_bound_ = 0;
   arc->cap_upper_bound_ = 0;
 
@@ -749,7 +751,8 @@ void FlowGraph::DeleteNode(FlowGraphNode* node, const char *comment) {
   delete node;
 }
 
-void FlowGraph::DeleteResourceNode(FlowGraphNode* res_node, const char *comment) {
+void FlowGraph::DeleteResourceNode(FlowGraphNode* res_node,
+                                   const char *comment) {
   ResourceID_t res_id = res_node->resource_id_;
   ResourceID_t res_id_tmp = res_id;
   resource_to_parent_map_.erase(res_id);

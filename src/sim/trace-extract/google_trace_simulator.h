@@ -255,9 +255,9 @@ class GoogleTraceSimulator {
   // event.
   multimap<uint64_t, EventDescriptor> events_;
 
-  // Timestamp of the first exogenous event seen this iteration. Any event present
-  // in the original trace is exogeneous, as are those which we have created to
-  // replace events in the trace, e.g. when rerunning task runtime.
+  // Timestamp of the first exogenous event seen this iteration. Any event
+  // present in the original trace is exogeneous, as are those which we have
+  // created to replace events in the trace, e.g. when rerunning task runtime.
   // Currently, the only endogeneous changes are due to graph updates when a
   // task is scheduled.
   // If no exogenous event has been, it is UINT64_MAX.

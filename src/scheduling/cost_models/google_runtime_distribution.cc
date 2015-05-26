@@ -1,4 +1,7 @@
-#include "google_runtime_distribution.h"
+// The Firmament project
+// Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
+
+#include "scheduling/cost_models/google_runtime_distribution.h"
 
 #include <algorithm>
 #include <cmath>

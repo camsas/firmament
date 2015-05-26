@@ -1,3 +1,6 @@
+// The Firmament project
+// Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
+
 #ifndef SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H
 #define SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H
 

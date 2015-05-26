@@ -8,8 +8,9 @@
 
 #include <stdint.h>
 #include <map>
-#include <utility>
+#include <set>
 #include <string>
+#include <utility>
 
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid.hpp>

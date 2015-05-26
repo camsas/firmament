@@ -291,7 +291,8 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       break;
     case 0: {
       // Child
-      int fd, fds;
+      int fd;
+      int fds;
 
       // set up pipes
       CHECK(dup2(infd[0], STDIN_FILENO) == STDIN_FILENO);

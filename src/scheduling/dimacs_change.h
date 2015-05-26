@@ -16,26 +16,27 @@ class DIMACSChange {
   }
 
   virtual const std::string &GetComment() const final {
-  	return comment;
+    return comment;
   }
 
   virtual void SetComment(const char *comment) final {
-  	if (comment) {
-  		this->comment = comment;
-  	}
+    if (comment) {
+      this->comment = comment;
+    }
   }
 
   virtual const std::string GenerateChange() const {
-  	if (!comment.empty()) {
-  		stringstream ss;
-			ss << "c " << comment << "\n";
-			return ss.str();
-  	} else {
-  		return "";
-  	}
+    if (!comment.empty()) {
+      stringstream ss;
+      ss << "c " << comment << "\n";
+      return ss.str();
+    } else {
+      return "";
+    }
   }
+
  private:
-  std::string comment;
+  string comment;
 };
 
 } // namespace firmament

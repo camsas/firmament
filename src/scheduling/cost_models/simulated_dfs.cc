@@ -1,4 +1,7 @@
-#include "simulated_dfs.h"
+// The Firmament project
+// Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
+
+#include "scheduling/cost_models/simulated_dfs.h"
 
 #include <algorithm>
 
@@ -9,12 +12,13 @@ namespace firmament {
 
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
-SimulatedDFS::SimulatedDFS(uint64_t num_machines, NumBlocks_t blocks_per_machine,
+SimulatedDFS::SimulatedDFS(uint64_t num_machines,
+                           NumBlocks_t blocks_per_machine,
                            uint32_t replication_factor,
                            GoogleBlockDistribution *block_distribution,
                            uint64_t random_seed) :
     replication_factor_(replication_factor), generator_(random_seed),
-    uniform_(0.0,1.0), blocks_in_file_distn_(block_distribution) {
+    uniform_(0.0, 1.0), blocks_in_file_distn_(block_distribution) {
   NumBlocks_t total_block_capacity = blocks_per_machine * num_machines;
   total_block_capacity /= replication_factor;
   LOG(INFO) << "Total capacity of " << total_block_capacity << " blocks.";
@@ -91,7 +95,8 @@ const std::unordered_set<SimulatedDFS::FileID_t> SimulatedDFS::SampleFiles(
     sampled_files.insert(index);
     blocks_sampled += blocks_in_file;
 
-    VLOG(2) << "Sampled file " << index << " with " << blocks_in_file << " blocks";
+    VLOG(2) << "Sampled file " << index << " with " << blocks_in_file
+            << " blocks";
   }
 
   return sampled_files;
