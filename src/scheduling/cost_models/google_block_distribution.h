@@ -1,22 +1,22 @@
-#ifndef SRC_SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H_
-#define SRC_SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H_
+#ifndef SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H
+#define SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H
 
 #include <cstdint>
 
 namespace firmament {
 
 class GoogleBlockDistribution {
-public:
-	GoogleBlockDistribution(uint64_t percent_min, uint64_t min_blocks,
-			                    uint64_t max_blocks);
-	virtual ~GoogleBlockDistribution();
-	uint64_t inverse(double y);
-	double mean();
-private:
-	double p_min, coef;
-	uint64_t min_blocks;
+ public:
+  GoogleBlockDistribution(uint64_t percent_min, uint64_t min_blocks,
+                          uint64_t max_blocks);
+  virtual ~GoogleBlockDistribution();
+  uint64_t inverse(double y);
+  double mean();
+ private:
+  double p_min, coef;
+  uint64_t min_blocks;
 };
 
-} /* namespace firmament */
+} // namespace firmament
 
-#endif /* SRC_SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H_ */
+#endif /* SRC_SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H */
