@@ -1,3 +1,6 @@
+// The Firmament project
+// Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
+
 #ifndef SCHEDULING_COST_MODELS_SIMULATED_DFS_H
 #define SCHEDULING_COST_MODELS_SIMULATED_DFS_H
 
@@ -7,6 +10,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "base/resource_topology_node_desc.pb.h"
 #include "base/types.h"
@@ -20,7 +24,8 @@ class SimulatedDFS {
   typedef uint32_t NumBlocks_t;
 
   SimulatedDFS(uint64_t num_machines, NumBlocks_t blocks_per_machine,
-               uint32_t replication_factor, GoogleBlockDistribution *block_distribution,
+               uint32_t replication_factor,
+               GoogleBlockDistribution *block_distribution,
                uint64_t random_seed);
 
   void AddMachine(ResourceID_t machine);

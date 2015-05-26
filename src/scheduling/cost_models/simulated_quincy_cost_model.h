@@ -2,11 +2,11 @@
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
-// Quincy scheduling cost model, as described in the SOSP 2009 paper.
 
 #ifndef FIRMAMENT_SCHEDULING_SIMULATED_QUINCY_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_SIMULATED_QUINCY_COST_MODEL_H
 
+#include <list>
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -28,22 +28,18 @@ typedef int64_t Cost_t;
 
 class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
  public:
-  SimulatedQuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
-                  shared_ptr<JobMap_t> job_map,
-                  shared_ptr<TaskMap_t> task_map,
-                  unordered_map<TaskID_t, ResourceID_t> *task_bindings,
-                  unordered_set<ResourceID_t,
+  SimulatedQuincyCostModel(
+      shared_ptr<ResourceMap_t> resource_map, shared_ptr<JobMap_t> job_map,
+      shared_ptr<TaskMap_t> task_map,
+      unordered_map<TaskID_t, ResourceID_t> *task_bindings,
+      unordered_set<ResourceID_t,
                     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-                  KnowledgeBase* kb,
-                  SimulatedDFS* dfs,
-                  GoogleRuntimeDistribution *runtime_distribution,
-                  GoogleBlockDistribution *block_distribution,
-									double delta_preferred_machine,
-									double delta_preferred_rack,
-									Cost_t core_transfer_cost,
-									Cost_t tor_transfer_cost,
-									uint32_t percent_block_tolerance,
-									uint64_t machines_per_rack);
+      KnowledgeBase* kb, SimulatedDFS* dfs,
+      GoogleRuntimeDistribution *runtime_distribution,
+      GoogleBlockDistribution *block_distribution,
+      double delta_preferred_machine, double delta_preferred_rack,
+      Cost_t core_transfer_cost, Cost_t tor_transfer_cost,
+      uint32_t percent_block_tolerance, uint64_t machines_per_rack);
   ~SimulatedQuincyCostModel();
 
   // Costs pertaining to leaving tasks unscheduled
@@ -74,7 +70,6 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void RemoveMachine(ResourceID_t res_id);
-  // N.B. Not in generic cost model interface
   void AddTask(TaskID_t task_id);
   void RemoveTask(TaskID_t task_id);
   FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
@@ -92,13 +87,15 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
 
-  double proportion_machine_preferred_, proportion_rack_preferred_;
-  Cost_t core_transfer_cost_, tor_transfer_cost_;
+  double proportion_machine_preferred_;
+  double proportion_rack_preferred_;
+  Cost_t core_transfer_cost_;
+  Cost_t tor_transfer_cost_;
   uint32_t percent_block_tolerance_;
 
   uint64_t machines_per_rack_;
   ResourceEquivClassMap_t machine_to_rack_map_;
-	vector<std::list<ResourceID_t>> rack_to_machine_map_;
+  vector<std::list<ResourceID_t>> rack_to_machine_map_;
 
   SimulatedDFS *filesystem_;
   unordered_map<TaskID_t, std::unordered_set<SimulatedDFS::FileID_t>> file_map_;
@@ -107,7 +104,8 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   GoogleBlockDistribution *block_distribution_;
 
   unordered_map<TaskID_t, ResourceCostMap_t*> preferred_machine_map_;
-  unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t>> preferred_rack_map_;
+  unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t>>
+    preferred_rack_map_;
   unordered_map<TaskID_t, Cost_t> cluster_aggregator_cost_;
 };
 

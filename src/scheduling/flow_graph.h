@@ -125,8 +125,10 @@ class FlowGraph {
   void DeleteNode(FlowGraphNode* node, const char *comment = NULL);
   void DeleteResourceNode(FlowGraphNode* res_node, const char *comment = NULL);
   void DeleteTaskNode(TaskID_t task_id, const char *comment = NULL);
-  void DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv, const char *comment = NULL);
-  void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv, const char *comment = NULL);
+  void DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv,
+                                       const char *comment = NULL);
+  void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
+                                       const char *comment = NULL);
   FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   uint64_t NextId();
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
