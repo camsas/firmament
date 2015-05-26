@@ -44,15 +44,15 @@ DECLARE_int32(num_files_to_process);
 namespace firmament {
 namespace sim {
 
-	void MkdirIfNotPresent(const string &directory) {
-		if (mkdir(directory.c_str(), 0777) < 0) {
-			// mkdir error
-			if (errno != EEXIST) {
-				// it's fine if directory already exists, ignore
-				PLOG(FATAL) << "Could not make directory " << directory;
-			}
-		}
-	}
+  void MkdirIfNotPresent(const string &directory) {
+    if (mkdir(directory.c_str(), 0777) < 0) {
+      // mkdir error
+      if (errno != EEXIST) {
+        // it's fine if directory already exists, ignore
+        PLOG(FATAL) << "Could not make directory " << directory;
+      }
+    }
+  }
 
   GoogleTraceTaskProcessor::GoogleTraceTaskProcessor(const string& trace_path):
     trace_path_(trace_path) {
@@ -841,13 +841,13 @@ namespace sim {
     vector<string> line_cols;
     FILE* events_file = NULL;
     string out_events_directory;
-		spf(&out_events_directory, "%s/task_runtime_events", trace_path_.c_str());
-		MkdirIfNotPresent(out_events_directory);
+    spf(&out_events_directory, "%s/task_runtime_events", trace_path_.c_str());
+    MkdirIfNotPresent(out_events_directory);
     FILE* out_events_file_all;
     FILE* out_events_file_avg;
     string out_file_all_name, out_file_avg_name;
     spf(&out_file_all_name, "%s/all_task_runtime_events.csv",
-    		out_events_directory.c_str());
+        out_events_directory.c_str());
     if ((out_events_file_all = fopen(out_file_all_name.c_str(), "w")) == NULL) {
       LOG(FATAL) << "Failed to open task_runtime_events file for writing";
     }

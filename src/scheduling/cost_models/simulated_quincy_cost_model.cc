@@ -239,7 +239,7 @@ void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
 	// Estimate how many blocks input the task has
 	double cumulative_probability = runtime_distribution_->distribution(avg_runtime);
 	VLOG(2) << "Which has probability " << cumulative_probability;
-	uint64_t num_blocks = block_distribution_->inverse(cumulative_probability);
+	uint64_t num_blocks = block_distribution_->Inverse(cumulative_probability);
 	VLOG(2) << "Giving " << num_blocks << " blocks";
 
 	// Finally, select some files. Sample to get approximately the right number of blocks.

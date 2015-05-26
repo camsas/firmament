@@ -9,12 +9,12 @@ const static double STEP = 0.01;
 GoogleBlockDistribution::GoogleBlockDistribution(uint64_t percent_min,
                                                  uint64_t min_blocks,
                                                  uint64_t max_blocks) {
-  p_min = percent_min / 100.0;
-  this->min_blocks = min_blocks;
-  coef = (1 - p_min) / log2(max_blocks);
+  percent_min_ = percent_min / 100.0;
+  min_blocks_ = min_blocks;
+  coef_ = (1 - percent_min_) / log2(max_blocks);
 }
 
-uint64_t GoogleBlockDistribution::inverse(double y) {
+uint64_t GoogleBlockDistribution::Inverse(double y) {
   // distribution is F(x) = a + b*lg(x) from Chen
   // we crop it from MIN_NUM_BLOCKS <= x <= MAX_NUM_BLOCKS
   // MIN: justified in the paper, large number of single block jobs
@@ -24,21 +24,21 @@ uint64_t GoogleBlockDistribution::inverse(double y) {
 
   // inverse of this: x = 2^((y-a)/b)
   // sample from this using standard trick of taking U[0,1] and using inverse
-  if (y <= p_min) {
-    return min_blocks;
+  if (y <= percent_min_) {
+    return min_blocks_;
   } else {
-    double x = (y - p_min) / coef;
+    double x = (y - percent_min_) / coef_;
     x = exp2(x);
     return std::round(x);
   }
 }
 
-double GoogleBlockDistribution::mean() {
+double GoogleBlockDistribution::Mean() {
   double mean = 0;
-  mean += p_min * min_blocks;
+  mean += percent_min_ * min_blocks_;
   // estimate for rest of tail
-  for (double y = p_min + STEP; y <= 1.0; y += STEP) {
-    mean += STEP * inverse(y);
+  for (double y = percent_min_ + STEP; y <= 1.0; y += STEP) {
+    mean += STEP * Inverse(y);
   }
   return mean;
 }

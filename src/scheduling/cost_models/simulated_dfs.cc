@@ -35,7 +35,7 @@ void SimulatedDFS::AddFile() {
 
 uint32_t SimulatedDFS::NumBlocksInFile() {
   double r = uniform_(generator_);
-  return blocks_in_file_distn_->inverse(r);
+  return blocks_in_file_distn_->Inverse(r);
 }
 
 void SimulatedDFS::AddMachine(ResourceID_t machine) {

@@ -4,6 +4,7 @@
 //
 // Google cluster trace simulator tool.
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <limits>
@@ -203,14 +204,14 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
     VLOG(1) << "Using the octopus cost model";
     break;
   case FlowSchedulingCostModelType::COST_MODEL_VOID:
-    cost_model = new VoidCostModel();
+    cost_model_ = new VoidCostModel();
     VLOG(1) << "Using the void cost model";
     break;
   case FlowSchedulingCostModelType::COST_MODEL_SIMULATED_QUINCY:
     cost_model_ = SetupSimulatedQuincyCostModel(leaf_res_ids);
     VLOG(1) << "Using the simulated Quincy cost model";
     break;
-  } default:
+  default:
   LOG(FATAL) << "Unknown flow scheduling cost model specificed "
              << "(" << FLAGS_flow_scheduling_cost_model << ")";
   }
@@ -1501,7 +1502,6 @@ FlowGraphNode* GoogleTraceSimulator::GatherWhareMCStats(
     return accumulator;
   }
   if (accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
-
     if (!other->resource_id_.is_nil() &&
         other->type_.type() == FlowNodeType::MACHINE) {
       // If the other node is a machine.

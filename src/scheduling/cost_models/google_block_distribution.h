@@ -9,11 +9,12 @@ class GoogleBlockDistribution {
  public:
   GoogleBlockDistribution(uint64_t percent_min, uint64_t min_blocks,
                           uint64_t max_blocks);
-  uint64_t inverse(double y);
-  double mean();
+  uint64_t Inverse(double y);
+  double Mean();
  private:
-  double p_min, coef;
-  uint64_t min_blocks;
+  double percent_min_;
+  double coef_;
+  uint64_t min_blocks_;
 };
 
 } // namespace firmament
