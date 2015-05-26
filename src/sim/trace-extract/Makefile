@@ -25,7 +25,7 @@ all: protobufs $(BIN) .setup
 protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 
 SOLVER_DIR = $(shell readlink -f $(ROOT_DIR)/ext)
-DEFINES += -DSOLVER_DIR=\"$(SOLVER_DIR)\" 
+DEFINES += -DSOLVER_DIR=\"$(SOLVER_DIR)\"
 
 $(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
   $(SRC_ROOT_DIR)/sim/trace-extract/google_trace_simulator_main.cc \
