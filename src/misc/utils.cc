@@ -7,12 +7,12 @@
 
 // N.B.: C header for gettimeofday()
 extern "C" {
-#include <sys/types.h>
 #include <limits.h>
 #include <openssl/sha.h>
 #include <stdio.h>
-#include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 }
