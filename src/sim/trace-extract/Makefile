@@ -32,6 +32,7 @@ $(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 	$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
+	$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
 	$(BUILD_DIR)/storage/libfirmament_storage.a
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
@@ -83,6 +84,7 @@ $(OBJ_DIR)/google_trace_simulator_test: $(addprefix $(OBJ_DIR)/, google_trace_si
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 	$(BUILD_DIR)/scheduling/cost_models/libfirmament_cost_models.a \
+	$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
 	$(BUILD_DIR)/storage/libfirmament_storage.a
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
