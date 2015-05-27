@@ -18,6 +18,9 @@
 
 namespace firmament {
 
+typedef thread_safe::set<ResourceID_t> ResourceSet_t;
+typedef thread_safe::map<ResourceID_t, uint64_t> ResourceFrequencyMap_t;
+
 class SimulatedDFS {
  public:
   typedef uint64_t FileID_t;

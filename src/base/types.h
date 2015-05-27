@@ -122,8 +122,6 @@ typedef thread_safe::map<JobID_t, TaskGraph*> TaskGraphMap_t;
 #else
 typedef uint64_t ResourceID_t;
 typedef uint64_t JobID_t;
-typedef unordered_set<ResourceID_t> ResourceSet_t;
-typedef unordered_map<ResourceID_t, uint64_t> ResourceFrequencyMap_t;
 typedef unordered_map<ResourceID_t, EquivClass_t> ResourceEquivClassMap_t;
 typedef unordered_map<ResourceID_t, int64_t> ResourceCostMap_t;
 typedef unordered_map<ResourceID_t, ResourceStatus*> ResourceMap_t;
