@@ -4,8 +4,7 @@ SUFFIX=sim/trace-extract
 include $(ROOT_DIR)/include/Makefile.config
 
 LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_timer -lboost_filesystem \
-        -lssl -lcrypto
-LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_timer -lssl -lcrypto
+        -lssl -lcrypto ${EXT_DIR}/spooky_hash/SpookyV2.o
 
 BINS = google_trace_simulator google_trace_processor google_trace_simulator_test
 #OPTFLAGS += -fsanitize=address -fno-omit-frame-pointer

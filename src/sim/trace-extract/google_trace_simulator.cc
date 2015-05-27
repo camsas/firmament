@@ -20,7 +20,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "misc/SpookyV2.h"
+#include "../ext/spooky_hash/SpookyV2.h"
 
 #include "sim/trace-extract/google_trace_simulator.h"
 #include "scheduling/cost_models/simulated_dfs.h"

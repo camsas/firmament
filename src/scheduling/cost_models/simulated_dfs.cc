@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #include "base/common.h"
-#include "misc/SpookyV2.h"
+#include "../ext/spooky_hash/SpookyV2.h"
 
 namespace firmament {
 
