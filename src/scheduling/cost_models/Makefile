@@ -10,13 +10,9 @@ LIB = libfirmament_cost_models.a
 OBJS = coco_cost_model.o quincy_cost_model.o sjf_cost_model.o \
        trivial_cost_model.o random_cost_model.o \
        wharemap_cost_model.o void_cost_model.o \
-       octopus_cost_model.o simulated_dfs.o simulated_quincy_cost_model.o \
-       google_block_distribution.o google_runtime_distribution.o
-
+       octopus_cost_model.o simulated_quincy_cost_model.o
 PBS =
-
 TESTS =
-
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 
 include $(ROOT_DIR)/include/Makefile.common

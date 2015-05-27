@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
-#ifndef SCHEDULING_COST_MODELS_GOOGLE_RUNTIME_DISTRIBUTION_H
-#define SCHEDULING_COST_MODELS_GOOGLE_RUNTIME_DISTRIBUTION_H
+#ifndef SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
+#define SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
 
 namespace firmament {
 
@@ -21,4 +21,4 @@ class GoogleRuntimeDistribution {
 
 } // namespace firmament
 
-#endif /* SCHEDULING_COST_MODELS_GOOGLE_RUNTIME_DISTRIBUTION_H */
+#endif /* SIM_GOOGLE_RUNTIME_DISTRIBUTION_H */

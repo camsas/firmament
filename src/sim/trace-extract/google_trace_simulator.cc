@@ -22,14 +22,14 @@
 
 #include "../ext/spooky_hash/SpookyV2.h"
 
-#include "sim/trace-extract/google_trace_simulator.h"
-#include "scheduling/cost_models/simulated_dfs.h"
 #include "scheduling/dimacs_change_stats.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
 #include "scheduling/quincy_dispatcher.h"
+#include "sim/dfs/simulated_dfs.h"
+#include "sim/trace-extract/google_trace_simulator.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"

@@ -17,10 +17,10 @@
 #include "base/types.h"
 #include "misc/utils.h"
 #include "scheduling/common.h"
-#include "scheduling/cost_models/google_runtime_distribution.h"
-#include "scheduling/cost_models/simulated_dfs.h"
 #include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 #include "scheduling/knowledge_base.h"
+#include "sim/google_runtime_distribution.h"
+#include "sim/dfs/simulated_dfs.h"
 
 namespace firmament {
 

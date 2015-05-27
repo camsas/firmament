@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#include "scheduling/cost_models/google_block_distribution.h"
+#include "sim/dfs/google_block_distribution.h"
 
 #include <cmath>
 

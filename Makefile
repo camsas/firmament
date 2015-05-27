@@ -48,7 +48,7 @@ ext: ext/.ext-ok
 ext/.ext-ok:
 	$(SCRIPTS_DIR)/fetch-externals.sh
 
-cost_models: scheduling
+cost_models: scheduling sim
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling/cost_models all
 
 engine: base cost_models scheduling storage platforms misc sim

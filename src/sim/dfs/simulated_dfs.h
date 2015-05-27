@@ -1,8 +1,8 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#ifndef SCHEDULING_COST_MODELS_SIMULATED_DFS_H
-#define SCHEDULING_COST_MODELS_SIMULATED_DFS_H
+#ifndef SIM_DFS_SIMULATED_DFS_H
+#define SIM_DFS_SIMULATED_DFS_H
 
 #include <list>
 #include <queue>
@@ -14,7 +14,7 @@
 
 #include "base/resource_topology_node_desc.pb.h"
 #include "base/types.h"
-#include "scheduling/cost_models/google_block_distribution.h"
+#include "sim/dfs/google_block_distribution.h"
 
 namespace firmament {
 
@@ -59,4 +59,4 @@ class SimulatedDFS {
 
 } // namespace firmament
 
-#endif /* SCHEDULING_COST_MODELS_SIMULATED_DFS_H */
+#endif /* SIM_DFS_SIMULATED_DFS_H */

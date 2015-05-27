@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#include "scheduling/cost_models/simulated_dfs.h"
+#include "sim/dfs/simulated_dfs.h"
 
 #include <algorithm>
 

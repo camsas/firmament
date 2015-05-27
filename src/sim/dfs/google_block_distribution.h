@@ -1,8 +1,8 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#ifndef SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H
-#define SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H
+#ifndef SIM_DFS_GOOGLE_BLOCK_DISTRIBUTION_H
+#define SIM_DFS_GOOGLE_BLOCK_DISTRIBUTION_H
 
 #include <cstdint>
 
@@ -22,4 +22,4 @@ class GoogleBlockDistribution {
 
 } // namespace firmament
 
-#endif /* SCHEDULING_COST_MODELS_GOOGLE_BLOCK_DISTRIBUTION_H */
+#endif /* SIM_DFS_GOOGLE_BLOCK_DISTRIBUTION_H */
