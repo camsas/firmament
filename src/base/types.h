@@ -114,8 +114,6 @@ typedef unordered_map<JobID_t, JobDescriptor,
         boost::hash<boost::uuids::uuid> > JobMap_t;
 typedef unordered_map<JobID_t, TaskGraph*,
         boost::hash<boost::uuids::uuid> > TaskGraphMap_t;*/
-typedef thread_safe::set<ResourceID_t> ResourceSet_t;
-typedef thread_safe::map<ResourceID_t, uint64_t> ResourceFrequencyMap_t;
 typedef thread_safe::map<ResourceID_t, EquivClass_t> ResourceEquivClassMap_t;
 typedef thread_safe::map<ResourceID_t, int64_t> ResourceCostMap_t;
 typedef thread_safe::map<ResourceID_t, ResourceStatus*> ResourceMap_t;
