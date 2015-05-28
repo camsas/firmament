@@ -59,8 +59,8 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
 }
 
 SimulatedQuincyCostModel::~SimulatedQuincyCostModel() {
-  for (auto elt : preferred_machine_map_) {
-    ResourceCostMap_t *map = elt.second;
+  for (auto mapping : preferred_machine_map_) {
+    ResourceCostMap_t *map = mapping.second;
     delete map;
   }
 }
@@ -141,8 +141,8 @@ vector<EquivClass_t>* SimulatedQuincyCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   vector<EquivClass_t>* preferred_res = new vector<EquivClass_t>();
   auto &preferred_racks = preferred_rack_map_[task_id];
-  for (auto elt : preferred_racks) {
-    EquivClass_t rack = elt.first;
+  for (auto mapping : preferred_racks) {
+    EquivClass_t rack = mapping.first;
     VLOG(1) << "Task " << task_id << " has arc to rack aggregator " << rack;
     preferred_res->push_back(rack);
   }
@@ -173,8 +173,8 @@ vector<TaskID_t>* SimulatedQuincyCostModel::GetIncomingEquivClassPrefArcs(
 vector<ResourceID_t>* SimulatedQuincyCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   vector<ResourceID_t>* preferred_res = new vector<ResourceID_t>();
   auto &preferred_machines = *(preferred_machine_map_[task_id]);
-  for (auto elt : preferred_machines) {
-  	ResourceID_t machine = elt.first;
+  for (auto mapping : preferred_machines) {
+  	ResourceID_t machine = mapping.first;
   	preferred_res->push_back(machine);
   	VLOG(1) << "Task " << task_id << " has preference arc to machine " << machine;
   }
@@ -212,8 +212,8 @@ void SimulatedQuincyCostModel::RemoveMachine(ResourceID_t res_id) {
 	filesystem_->removeMachine(res_id);
 
 	// delete any preference arcs to this machine
-	for (auto elt : preferred_machine_map_) {
-	  ResourceCostMap_t *preferred_machines = elt.second;
+	for (auto mapping : preferred_machine_map_) {
+	  ResourceCostMap_t *preferred_machines = mapping.second;
 	  preferred_machines->erase(res_id);
 	}
 	// SOMEDAY(adam): should really recompute preferences, may lose preference

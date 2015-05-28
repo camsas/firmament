@@ -17,8 +17,6 @@
 
 namespace firmament {
 
-typedef int64_t Cost_t;
-
 class TrivialCostModel : public FlowSchedulingCostModelInterface {
  public:
   TrivialCostModel(shared_ptr<TaskMap_t> task_map,

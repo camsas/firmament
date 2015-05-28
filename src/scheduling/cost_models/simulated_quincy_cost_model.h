@@ -24,8 +24,6 @@
 
 namespace firmament {
 
-typedef int64_t Cost_t;
-
 class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
  public:
   SimulatedQuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
@@ -92,7 +90,8 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
 
-  double proportion_machine_preferred_, proportion_rack_preferred_;
+  double proportion_machine_preferred_;
+  double proportion_rack_preferred_;
   Cost_t core_transfer_cost_, tor_transfer_cost_;
   uint32_t percent_block_tolerance_;
 

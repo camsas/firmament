@@ -9,13 +9,11 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "scheduling/common.h"
 #include "misc/utils.h"
+#include "scheduling/common.h"
 #include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
 
 namespace firmament {
-
-typedef int64_t Cost_t;
 
 class VoidCostModel : public FlowSchedulingCostModelInterface {
  public:

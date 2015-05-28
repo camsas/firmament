@@ -14,8 +14,6 @@
 
 namespace firmament {
 
-typedef int64_t Cost_t;
-
 class OctopusCostModel : public FlowSchedulingCostModelInterface {
  public:
   explicit OctopusCostModel(shared_ptr<ResourceMap_t> resource_map);

@@ -22,8 +22,6 @@
 
 namespace firmament {
 
-typedef int64_t Cost_t;
-
 class QuincyCostModel : public FlowSchedulingCostModelInterface {
  public:
   QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,

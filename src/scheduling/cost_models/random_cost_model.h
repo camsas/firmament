@@ -15,8 +15,6 @@
 
 namespace firmament {
 
-typedef int64_t Cost_t;
-
 class RandomCostModel : public FlowSchedulingCostModelInterface {
  public:
   RandomCostModel(shared_ptr<TaskMap_t> task_map,

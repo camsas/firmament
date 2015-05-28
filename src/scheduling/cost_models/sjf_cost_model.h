@@ -19,8 +19,6 @@
 
 namespace firmament {
 
-typedef int64_t Cost_t;
-
 class SJFCostModel : public FlowSchedulingCostModelInterface {
  public:
   SJFCostModel(shared_ptr<TaskMap_t> task_map,
