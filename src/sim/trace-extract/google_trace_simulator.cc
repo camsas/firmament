@@ -4,9 +4,9 @@
 //
 // Google cluster trace simulator tool.
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
-#include <string>
 #include <limits>
 #include <set>
 #include <string>
@@ -20,16 +20,16 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "misc/SpookyV2.h"
+#include "../ext/spooky_hash/SpookyV2.h"
 
-#include "sim/trace-extract/google_trace_simulator.h"
-#include "scheduling/cost_models/simulated_dfs.h"
 #include "scheduling/dimacs_change_stats.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
 #include "scheduling/quincy_dispatcher.h"
+#include "sim/dfs/simulated_dfs.h"
+#include "sim/trace-extract/google_trace_simulator.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
@@ -70,35 +70,39 @@ DEFINE_string(task_bins_output, "bins.out",
 
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_uint64(runtime, 9223372036854775807,
-          "Maximum time in microsec to extract data for (from start of trace)");
+              "Maximum time in microsec to extract data for"
+              "(from start of trace)");
 DEFINE_uint64(max_events, UINT64_MAX,
-                                   "Maximum number of task events to process.");
+              "Maximum number of task events to process.");
 DEFINE_uint64(max_scheduling_rounds, UINT64_MAX,
-                             "Maximum number of scheduling rounds to run for.");
+              "Maximum number of scheduling rounds to run for.");
 DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
 DEFINE_uint64(batch_step, 0, "Batch mode: time interval to run solver at.");
 DEFINE_double(online_factor, 0.0, "Online mode: speed at which to run at. "
-  "Factor of 1 corresponds to real-time. Larger to include overheads elsewhere "
-  "in Firmament etc., smaller to simulate solver running faster.");
+              "Factor of 1 corresponds to real-time. Larger to include"
+              " overheads elsewhere in Firmament etc., smaller to simulate"
+              " solver running faster.");
 DEFINE_double(online_max_time, 100000000.0, "Online mode: cap on time solver "
-  "takes to run, in seconds. If unspecified, no cap imposed. Only use with "
-  "incremental solver, in which case it should be set to the worst case runtime "
-  "of the full solver.");
+              "takes to run, in seconds. If unspecified, no cap imposed."
+              " Only use with incremental solver, in which case it should"
+              " be set to the worst case runtime of the full solver.");
 
 DEFINE_string(stats_file, "", "File to write CSV of statistics.");
-DEFINE_string(graph_output_file, "", "File to write incremental DIMACS export.");
+DEFINE_string(graph_output_file, "",
+              "File to write incremental DIMACS export.");
 DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 DEFINE_bool(graph_output_events, true, "If -graph_output_file specified: "
                                        "export simulator events as comments?");
 
 DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2 | custom.");
-DEFINE_uint64(solver_timeout, UINT64_MAX, "Timeout: terminate after waiting this number of seconds");
+DEFINE_uint64(solver_timeout, UINT64_MAX,
+              "Timeout: terminate after waiting this number of seconds");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 8 = SIMULATED QUINCY");
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, 8 = SIMULATED QUINCY");
 
 // Racks contain "between 29 and 31 computers" in Quincy test setup
 DEFINE_uint64(simulated_quincy_machines_per_rack, 30,
@@ -144,18 +148,18 @@ const static uint64_t MACHINES_IN_TRACE = 10000;
 
 ofstream *timeout_file;
 void alarm_handler(int sig) {
-	signal(SIGALRM, SIG_IGN);
+  signal(SIGALRM, SIG_IGN);
   if (timeout_file) {
-		*timeout_file << "0,Timeout,Timeout,Timeout,Timeout";
-		if (FLAGS_batch_step == 0) {
-						// online
-						*timeout_file << ",Timeout";
-		}
-		*timeout_file << ",,,,," << std::endl;
+    *timeout_file << "0,Timeout,Timeout,Timeout,Timeout";
+    if (FLAGS_batch_step == 0) {
+      // online
+      *timeout_file << ",Timeout";
+    }
+    *timeout_file << ",,,,," << std::endl;
    }
    // N.B. Don't use LOG(FATAL) since we want a successful return code
    LOG(ERROR) << "Timeout after waiting for solver for "
-  		        << FLAGS_solver_timeout << " seconds.";
+              << FLAGS_solver_timeout << " seconds.";
    exit(0);
 }
 
@@ -166,48 +170,50 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>();
   switch (FLAGS_flow_scheduling_cost_model) {
-    case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
-      cost_model_ = new TrivialCostModel(task_map_, leaf_res_ids);
-      VLOG(1) << "Using the trivial cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
-      cost_model_ = new RandomCostModel(task_map_, leaf_res_ids);
-      VLOG(1) << "Using the random cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_COCO:
-      cost_model_ = new CocoCostModel(resource_map_, rtn_root_, task_map_,
-                                      leaf_res_ids, knowledge_base_);
-      VLOG(1) << "Using the coco cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_SJF:
-      cost_model_ = new SJFCostModel(task_map_, leaf_res_ids, knowledge_base_);
-      VLOG(1) << "Using the SJF cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
-      cost_model_ =
-        new QuincyCostModel(resource_map_, job_map_, task_map_,
-                            &task_bindings_, leaf_res_ids,
-                            knowledge_base_);
-      VLOG(1) << "Using the Quincy cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_WHARE:
-      cost_model_ = new WhareMapCostModel(resource_map_, task_map_,
-                                          knowledge_base_);
-      VLOG(1) << "Using the Whare-Map cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
-      cost_model_ = new OctopusCostModel(resource_map_);
-      VLOG(1) << "Using the octopus cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_SIMULATED_QUINCY:
-    {
-      cost_model_ = SetupSimulatedQuincyCostModel(leaf_res_ids);
-    	VLOG(1) << "Using the simulated Quincy cost model";
-    	break;
-    }
-    default:
-      LOG(FATAL) << "Unknown flow scheduling cost model specificed "
-                 << "(" << FLAGS_flow_scheduling_cost_model << ")";
+  case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
+    cost_model_ = new TrivialCostModel(task_map_, leaf_res_ids);
+    VLOG(1) << "Using the trivial cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
+    cost_model_ = new RandomCostModel(task_map_, leaf_res_ids);
+    VLOG(1) << "Using the random cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_COCO:
+    cost_model_ = new CocoCostModel(resource_map_, rtn_root_, task_map_,
+                                    leaf_res_ids, knowledge_base_);
+    VLOG(1) << "Using the coco cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_SJF:
+    cost_model_ = new SJFCostModel(task_map_, leaf_res_ids, knowledge_base_);
+    VLOG(1) << "Using the SJF cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
+    cost_model_ =
+      new QuincyCostModel(resource_map_, job_map_, task_map_,
+                          &task_bindings_, leaf_res_ids,
+                          knowledge_base_);
+    VLOG(1) << "Using the Quincy cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_WHARE:
+    cost_model_ = new WhareMapCostModel(resource_map_, task_map_,
+                                        knowledge_base_);
+    VLOG(1) << "Using the Whare-Map cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
+    cost_model_ = new OctopusCostModel(resource_map_);
+    VLOG(1) << "Using the octopus cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_VOID:
+    cost_model_ = new VoidCostModel();
+    VLOG(1) << "Using the void cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_SIMULATED_QUINCY:
+    cost_model_ = SetupSimulatedQuincyCostModel(leaf_res_ids);
+    VLOG(1) << "Using the simulated Quincy cost model";
+    break;
+  default:
+  LOG(FATAL) << "Unknown flow scheduling cost model specificed "
+             << "(" << FLAGS_flow_scheduling_cost_model << ")";
   }
   flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids));
   cost_model_->SetFlowGraph(flow_graph_);
@@ -237,15 +243,15 @@ SimulatedQuincyCostModel *GoogleTraceSimulator::SetupSimulatedQuincyCostModel(
                                    FLAGS_simulated_quincy_replication_factor,
                                    file_block_distn,
                                    FLAGS_simulated_quincy_random_seed);
-  return new SimulatedQuincyCostModel(resource_map_, job_map_,
-          task_map_,  &task_bindings_, leaf_res_ids, knowledge_base_,
-          dfs, runtime_distn, input_block_distn,
-          FLAGS_simulated_quincy_delta_preferred_machine,
-          FLAGS_simulated_quincy_delta_preferred_rack,
-          FLAGS_simulated_quincy_core_transfer_cost,
-          FLAGS_simulated_quincy_tor_transfer_cost,
-          FLAGS_simulated_quincy_input_percent_over_tolerance,
-          FLAGS_simulated_quincy_machines_per_rack);
+  return new SimulatedQuincyCostModel(
+      resource_map_, job_map_, task_map_, &task_bindings_, leaf_res_ids,
+      knowledge_base_, dfs, runtime_distn, input_block_distn,
+      FLAGS_simulated_quincy_delta_preferred_machine,
+      FLAGS_simulated_quincy_delta_preferred_rack,
+      FLAGS_simulated_quincy_core_transfer_cost,
+      FLAGS_simulated_quincy_tor_transfer_cost,
+      FLAGS_simulated_quincy_input_percent_over_tolerance,
+      FLAGS_simulated_quincy_machines_per_rack);
 }
 
 GoogleTraceSimulator::~GoogleTraceSimulator() {
@@ -264,7 +270,7 @@ void GoogleTraceSimulator::Run() {
   FLAGS_flow_scheduling_strict = true;
 
   const uint32_t MAX_VALUE = UINT32_MAX;
-  proportion_ = (FLAGS_percentage / (double)100) * MAX_VALUE;
+  proportion_ = (FLAGS_percentage / 100.0) * MAX_VALUE;
   VLOG(2) << "Retaining events with hash < " << proportion_;
 
   CHECK(FLAGS_batch_step != 0 || FLAGS_online_factor != 0.0)
@@ -817,7 +823,7 @@ void GoogleTraceSimulator::SeenExogenous(uint64_t time) {
 uint64_t GoogleTraceSimulator::NextSimulatorEvent() {
   multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
   if (it == events_.end()) {
-    // empty collection
+    // Empty collection.
     return UINT64_MAX;
   } else {
     return it->first;
@@ -829,11 +835,11 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
   while (true) {
     multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
     if (it == events_.end()) {
-      // empty collection
+      // Empty collection.
       break;
     }
     if (it->first > cur_time) {
-      // processed all events <=cur_time
+      // Processed all events <= cur_time.
       break;
     }
 
@@ -876,9 +882,9 @@ void GoogleTraceSimulator::ProcessTaskEvent(
             << task_identifier.job_id << "/" << task_identifier.task_index
             << " @ " << cur_time);
     if (AddNewTask(task_identifier, task_runtime)) {
-			SeenExogenous(cur_time);
+      SeenExogenous(cur_time);
     } else {
-    	// duplicate task id -- ignore
+      // duplicate task id -- ignore
     }
   }
 }
@@ -1022,12 +1028,14 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
                                               GetCurrentTimestamp())));
 }
 
-const std::string CHANGE_STATS_HEADER = "total_changes,new_node,remove_node,new_arc,change_arc,remove_arc";
-void output_change_stats(DIMACSChangeStats &stats, ofstream &stats_file) {
-	stats_file << stats.total << "," << stats.new_node << ","
-			       << stats.remove_node << "," << stats.new_arc << ","
-						 << stats.change_arc << "," << stats.remove_arc
-						 << std::endl;
+const string CHANGE_STATS_HEADER =
+             "total_changes,new_node,remove_node,new_arc,change_arc,remove_arc";
+
+void OutputChangeStats(DIMACSChangeStats &stats, ofstream &stats_file) {
+  stats_file << stats.total << "," << stats.new_node << ","
+             << stats.remove_node << "," << stats.new_arc << ","
+             << stats.change_arc << "," << stats.remove_arc
+             << std::endl;
 }
 
 int get_binary_directory(char *pBuf, ssize_t len) {
@@ -1157,7 +1165,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
 
               LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
               LOG(INFO) << "Nodes: " << flow_graph_->NumNodes()
-              		      << ", arcs: " << flow_graph_->NumArcs();
+                        << ", arcs: " << flow_graph_->NumArcs();
 
               if (graph_output_) {
                 fprintf(graph_output_, "c SOI %lu\n", time_interval_bound);
@@ -1224,7 +1232,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
                               << total_runtime_float << ",";
                 }
 
-                output_change_stats(change_stats, *stats_file);
+                OutputChangeStats(change_stats, *stats_file);
                 stats_file->flush();
               }
               // restart timer; elapsed() returns time from this point
@@ -1494,7 +1502,6 @@ FlowGraphNode* GoogleTraceSimulator::GatherWhareMCStats(
     return accumulator;
   }
   if (accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
-
     if (!other->resource_id_.is_nil() &&
         other->type_.type() == FlowNodeType::MACHINE) {
       // If the other node is a machine.

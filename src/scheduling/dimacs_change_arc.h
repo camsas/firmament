@@ -24,7 +24,7 @@ class DIMACSChangeArc : public DIMACSChange {
 
  protected:
   uint64_t upper_bound() {
-  	return cap_upper_bound_;
+    return cap_upper_bound_;
   }
 
  private:

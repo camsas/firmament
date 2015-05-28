@@ -123,7 +123,8 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   CHECK_EQ(unsched_agg->arc_additions_.size(), 1);
   // Arc to unscheduled aggregator and to topology.
   CHECK_EQ(root_task->arc_additions_.size(), 2);
-  CHECK_EQ(equiv_class->arc_additions_.size(), 1 + FLAGS_num_pref_arcs_task_to_res);
+  CHECK_EQ(equiv_class->arc_additions_.size(),
+           1 + FLAGS_num_pref_arcs_task_to_res);
 }
 
 TEST_F(FlowGraphTest, AddResourceNode) {

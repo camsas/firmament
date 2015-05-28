@@ -7,12 +7,12 @@
 
 // N.B.: C header for gettimeofday()
 extern "C" {
-#include <sys/types.h>
 #include <limits.h>
 #include <openssl/sha.h>
 #include <stdio.h>
-#include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 }
@@ -291,7 +291,8 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       break;
     case 0: {
       // Child
-      int fd, fds;
+      int fd;
+      int fds;
 
       // set up pipes
       CHECK(dup2(infd[0], STDIN_FILENO) == STDIN_FILENO);

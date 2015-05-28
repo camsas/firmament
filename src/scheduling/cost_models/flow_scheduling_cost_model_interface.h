@@ -31,7 +31,7 @@ enum FlowSchedulingCostModelType {
   COST_MODEL_COCO = 5,
   COST_MODEL_OCTOPUS = 6,
   COST_MODEL_VOID = 7,
-	COST_MODEL_SIMULATED_QUINCY = 8,
+  COST_MODEL_SIMULATED_QUINCY = 8,
 };
 
 class FlowGraph;
@@ -68,7 +68,6 @@ class FlowSchedulingCostModelInterface {
   virtual Cost_t ResourceNodeToResourceNodeCost(ResourceID_t source,
                                                 ResourceID_t destination) = 0;
   /**
-   *
    * Get the cost of an arc from a resource to the sink.
    **/
   virtual Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id) = 0;

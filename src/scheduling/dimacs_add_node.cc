@@ -18,8 +18,7 @@ namespace firmament {
   const string DIMACSAddNode::GenerateChange() const {
     stringstream ss;
     ss << DIMACSChange::GenerateChange();
-    ss << "n " << id_ << " " << excess_ << " " << GetNodeType()
-       << "\n";
+    ss << "n " << id_ << " " << excess_ << " " << GetNodeType() << "\n";
     for (const DIMACSNewArc &new_arc : arc_additions_) {
       ss << new_arc.GenerateChange();
     }

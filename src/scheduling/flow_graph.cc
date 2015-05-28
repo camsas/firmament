@@ -67,9 +67,9 @@ FlowGraph::~FlowGraph() {
 }
 
 void FlowGraph::AddGraphChange(DIMACSChange* change) {
-	if (change->GetComment().empty()) {
-		change->SetComment("AddGraphChange: anonymous caller");
-	}
+  if (change->GetComment().empty()) {
+    change->SetComment("AddGraphChange: anonymous caller");
+  }
   graph_changes_.push_back(change);
 }
 
@@ -80,8 +80,8 @@ void FlowGraph::AddMachine(ResourceTopologyNodeDescriptor* root) {
 void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
                                FlowGraphNode* unsched_agg_node,
                                vector<FlowGraphArc*>* task_arcs) {
-	// Cost model may need to do some setup for newly added tasks
-	cost_model_->AddTask(task_node->task_id_);
+  // Cost model may need to do some setup for newly added tasks
+  cost_model_->AddTask(task_node->task_id_);
 
   // We always have an edge to the cluster aggregator node
   FlowGraphArc* cluster_agg_arc = AddArcInternal(task_node, cluster_agg_node_);
@@ -485,7 +485,8 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   DIMACSChange *chg = new DIMACSAddNode(*ec_node, ec_arcs);
   chg->SetComment("AddEquivClassNode");
   graph_changes_.push_back(chg);
-  VLOG(1) << "Adding equivalence class node, with change " << chg->GenerateChange();
+  VLOG(1) << "Adding equivalence class node, with change "
+          << chg->GenerateChange();
   AddArcsFromToOtherEquivNodes(ec, ec_node);
 }
 
@@ -656,15 +657,15 @@ bool FlowGraph::CheckNodeType(uint64_t node, FlowNodeType_NodeType type) {
 
 void FlowGraph::ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                           uint64_t cap_upper_bound, uint64_t cost,
-													const char *comment) {
+                          const char *comment) {
   arc->cap_lower_bound_ = cap_lower_bound;
   arc->cap_upper_bound_ = cap_upper_bound;
   arc->cost_ = cost;
   if (!arc->cap_upper_bound_) {
     DeleteArcGeneratingDelta(arc, comment);
   } else {
-  	DIMACSChange *chg = new DIMACSChangeArc(*arc);
-  	chg->SetComment(comment);
+    DIMACSChange *chg = new DIMACSChangeArc(*arc);
+    chg->SetComment(comment);
     graph_changes_.push_back(chg);
   }
 }
@@ -694,7 +695,8 @@ uint32_t FlowGraph::CountTaskSlotsBelowResourceNode(FlowGraphNode* node) {
   return task_slot_count;
 }
 
-void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc, const char *comment) {
+void FlowGraph::DeleteArcGeneratingDelta(FlowGraphArc* arc,
+                                         const char *comment) {
   arc->cap_lower_bound_ = 0;
   arc->cap_upper_bound_ = 0;
 
@@ -749,7 +751,8 @@ void FlowGraph::DeleteNode(FlowGraphNode* node, const char *comment) {
   delete node;
 }
 
-void FlowGraph::DeleteResourceNode(FlowGraphNode* res_node, const char *comment) {
+void FlowGraph::DeleteResourceNode(FlowGraphNode* res_node,
+                                   const char *comment) {
   ResourceID_t res_id = res_node->resource_id_;
   ResourceID_t res_id_tmp = res_id;
   resource_to_parent_map_.erase(res_id);
@@ -791,8 +794,8 @@ void FlowGraph::DeleteOrUpdateIncomingEquivNode
   }
 }
 
-void FlowGraph::DeleteOrUpdateOutgoingEquivNode
-                            (EquivClass_t task_equiv, const char *comment) {
+void FlowGraph::DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
+                                                const char *comment) {
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
   if (equiv_node_ptr == NULL) {
     // Equiv class node can be NULL because all it's task are running
@@ -1059,8 +1062,8 @@ void FlowGraph::UpdateArcsForEvictedTask(TaskID_t task_id,
     AddArcsForTask(task_node, *unsched_agg_node_ptr, task_arcs);
     for (vector<FlowGraphArc*>::iterator it = task_arcs->begin();
          it != task_arcs->end(); ++it) {
-    	DIMACSChange *chg = new DIMACSNewArc(**it);
-    	chg->SetComment("UpdateArcsForEvictedTask");
+      DIMACSChange *chg = new DIMACSNewArc(**it);
+      chg->SetComment("UpdateArcsForEvictedTask");
       graph_changes_.push_back(chg);
     }
     delete task_arcs;

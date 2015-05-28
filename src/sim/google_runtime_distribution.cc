@@ -1,4 +1,7 @@
-#include "google_runtime_distribution.h"
+// The Firmament project
+// Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
+
+#include "sim/google_runtime_distribution.h"
 
 #include <algorithm>
 #include <cmath>
@@ -22,19 +25,17 @@ namespace firmament {
 // This gives:
 // y = 1 - 0.298*x^-0.2627
 
-GoogleRuntimeDistribution::GoogleRuntimeDistribution(double factor, double power) {
-	this->factor = factor;
-	this->power = power;
+GoogleRuntimeDistribution::GoogleRuntimeDistribution(double factor,
+                                                     double power):
+  factor_(factor), power_(power) {
 }
-
-GoogleRuntimeDistribution::~GoogleRuntimeDistribution() { }
 
 double GoogleRuntimeDistribution::distribution(double x) {
-	// x is in milliseconds, but distribution was specified in hours
-	x /= 1000.0; // seconds
-	x /= 3600.0; // hours
-	double y = 1 - factor*pow(x, power);
-	return std::min(y, 1.0);
+  // x is in milliseconds, but distribution was specified in hours
+  x /= 1000.0; // seconds
+  x /= 3600.0; // hours
+  double y = 1 - factor_ * pow(x, power_);
+  return std::min(y, 1.0);
 }
 
-} /* namespace firmament */
+} // namespace firmament

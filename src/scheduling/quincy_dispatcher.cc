@@ -205,7 +205,6 @@ namespace scheduler {
               << ", PARENT_READ_STD: " << outfd_[0]
               << ", PARENT_READ_ERR: " << errfd_[0];
 
-
       solver_ran_once_ = true;
       if ((from_solver_stderr_ = fdopen(errfd_[0], "r")) == NULL) {
         LOG(ERROR) << "Failed to open FD for reading solver's output. FD "
