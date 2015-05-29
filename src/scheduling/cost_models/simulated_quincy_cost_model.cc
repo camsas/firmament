@@ -44,7 +44,7 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
   CHECK_NOTNULL(task_bindings);
 
   // initialise to a single, empty rack
-  rack_to_machine_map_.assign(1, std::list<ResourceID_t>());
+  rack_to_machine_map_.assign(1, list<ResourceID_t>());
 }
 
 SimulatedQuincyCostModel::~SimulatedQuincyCostModel() {
@@ -190,11 +190,15 @@ void SimulatedQuincyCostModel::AddMachine(
   filesystem_->AddMachine(res_id);
   // bin it into a rack
   EquivClass_t current_rack = rack_to_machine_map_.size() - 1;
+  // TODO(malte): N.B.: this currently just sequentially fills up racks of
+  // machines, but if machines are removed, we don't keep track of the empty
+  // slots and bring machines back into them. We should change this in the
+  // future.
   if (rack_to_machine_map_[current_rack].size() >= machines_per_rack_) {
     // currrent rack is full
     current_rack++;
     rack_to_machine_map_.resize(current_rack + 1);
-    rack_to_machine_map_[current_rack] = std::list<ResourceID_t>();
+    rack_to_machine_map_[current_rack] = list<ResourceID_t>();
   }
   rack_to_machine_map_[current_rack].push_back(res_id);
   machine_to_rack_map_[res_id] = current_rack;
@@ -217,8 +221,8 @@ void SimulatedQuincyCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
 void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
-  file_map_[task_id] = std::unordered_set<SimulatedDFS::FileID_t>();
-  std::unordered_set<SimulatedDFS::FileID_t> &file_set = file_map_[task_id];
+  file_map_[task_id] = unordered_set<SimulatedDFS::FileID_t>();
+  unordered_set<SimulatedDFS::FileID_t>& file_set = file_map_[task_id];
 
   // Get runtime
   // SOMEDAY(adam): This is a giant hack. Knowledge base stores runtime by
@@ -247,13 +251,13 @@ void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
   unordered_map<EquivClass_t, uint64_t> rack_frequency;
   SimulatedDFS::NumBlocks_t total_num_blocks = 0;
 
-  std::unordered_set<SimulatedDFS::FileID_t> &file_set = file_map_[task_id];
+  unordered_set<SimulatedDFS::FileID_t> &file_set = file_map_[task_id];
   for (SimulatedDFS::FileID_t file_id : file_set) {
     SimulatedDFS::NumBlocks_t num_blocks = filesystem_->GetNumBlocks(file_id);
     total_num_blocks += num_blocks;
 
     ResourceSet_t machines = filesystem_->GetMachines(file_id);
-    std::unordered_set<EquivClass_t> racks;
+    unordered_set<EquivClass_t> racks;
     for (ResourceID_t machine : machines) {
       uint32_t frequency = FindWithDefault(machine_frequency, machine, 0);
       machine_frequency[machine] = frequency + num_blocks;

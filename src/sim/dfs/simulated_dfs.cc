@@ -69,16 +69,16 @@ const ResourceSet_t SimulatedDFS::GetMachines(FileID_t file) const {
   return res;
 }
 
-const std::unordered_set<SimulatedDFS::FileID_t> SimulatedDFS::SampleFiles(
+unordered_set<SimulatedDFS::FileID_t> SimulatedDFS::SampleFiles(
     NumBlocks_t target_blocks, uint32_t tolerance) const {
   CHECK_LE(target_blocks, num_blocks_);
   NumBlocks_t min_blocks_to_sample = (target_blocks * (100 - tolerance)) / 100;
-  min_blocks_to_sample = std::max(min_blocks_to_sample, (NumBlocks_t)1);
+  min_blocks_to_sample = max(min_blocks_to_sample, (NumBlocks_t)1);
   NumBlocks_t max_blocks_to_sample = (target_blocks * (100 + tolerance)) / 100;
 
-  std::unordered_set<SimulatedDFS::FileID_t> sampled_files;
+  unordered_set<SimulatedDFS::FileID_t> sampled_files;
 
-  std::uniform_int_distribution<size_t> distn(0, files_.size() - 1);
+  uniform_int_distribution<size_t> distn(0, files_.size() - 1);
   NumBlocks_t blocks_sampled = 0;
   while (blocks_sampled < min_blocks_to_sample) {
     size_t index = distn(generator_);

@@ -96,10 +96,10 @@ class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
 
   uint64_t machines_per_rack_;
   ResourceEquivClassMap_t machine_to_rack_map_;
-  vector<std::list<ResourceID_t>> rack_to_machine_map_;
+  vector<list<ResourceID_t>> rack_to_machine_map_;
 
   SimulatedDFS *filesystem_;
-  unordered_map<TaskID_t, std::unordered_set<SimulatedDFS::FileID_t>> file_map_;
+  unordered_map<TaskID_t, unordered_set<SimulatedDFS::FileID_t>> file_map_;
 
   GoogleRuntimeDistribution *runtime_distribution_;
   GoogleBlockDistribution *block_distribution_;

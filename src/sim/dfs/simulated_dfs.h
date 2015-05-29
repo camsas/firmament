@@ -38,8 +38,8 @@ class SimulatedDFS {
     return files_[file];
   }
   const ResourceSet_t GetMachines(FileID_t file) const;
-  const std::unordered_set<FileID_t> SampleFiles(NumBlocks_t num_blocks,
-                                                 uint32_t tolerance) const;
+  unordered_set<FileID_t> SampleFiles(NumBlocks_t num_blocks,
+                                      uint32_t tolerance) const;
 
  private:
   void AddFile();
@@ -52,8 +52,8 @@ class SimulatedDFS {
 
   uint32_t replication_factor_ = 0;
 
-  mutable std::default_random_engine generator_;
-  std::uniform_real_distribution<double> uniform_;
+  mutable default_random_engine generator_;
+  uniform_real_distribution<double> uniform_;
   GoogleBlockDistribution *blocks_in_file_distn_;
 };
 
