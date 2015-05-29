@@ -287,7 +287,7 @@ class GoogleTraceSimulator {
   scheduler::QuincyDispatcher* quincy_dispatcher_;
 
   // Proportion of events to retain, as a ratio out of UINT32_MAX
-  uint32_t proportion_;
+  uint32_t proportion_to_retain_;
 
   // File to output graph to. (Optional; NULL if unspecified.)
   FILE *graph_output_;

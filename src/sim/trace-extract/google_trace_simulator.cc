@@ -270,8 +270,8 @@ void GoogleTraceSimulator::Run() {
   FLAGS_flow_scheduling_strict = true;
 
   const uint32_t MAX_VALUE = UINT32_MAX;
-  proportion_ = (FLAGS_percentage / 100.0) * MAX_VALUE;
-  VLOG(2) << "Retaining events with hash < " << proportion_;
+  proportion_to_retain_ = (FLAGS_percentage / 100.0) * MAX_VALUE;
+  VLOG(2) << "Retaining events with hash < " << proportion_to_retain_;
 
   CHECK(FLAGS_batch_step != 0 || FLAGS_online_factor != 0.0)
                         << "must specify one of -batch_step or -online_factor.";
@@ -637,8 +637,9 @@ void GoogleTraceSimulator::LoadMachineEvents() {
 
         // schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
         uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
+        // Sub-sample the trace if we only retain < 100% of machines.
         if (SpookyHash::Hash32(&machine_id, sizeof(machine_id), SEED)
-            > proportion_) {
+            > proportion_to_retain_) {
           // skip event
           continue;
         }
@@ -761,7 +762,9 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
 
-        if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED) > proportion_) {
+        // Sub-sample the trace if we only retain < 100% of tasks.
+        if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED) >
+            proportion_to_retain_) {
           // skip event
           continue;
         }
@@ -1117,7 +1120,9 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
           task_id.job_id = lexical_cast<uint64_t>(vals[2]);
           task_id.task_index = lexical_cast<uint64_t>(vals[3]);
 
-          if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED) > proportion_) {
+          // Sub-sample the trace if we only retain < 100% of tasks.
+          if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED)
+              > proportion_to_retain_) {
             // skip event
             continue;
           }
