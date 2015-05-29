@@ -38,27 +38,6 @@ using boost::lexical_cast;
 using boost::algorithm::is_any_of;
 using boost::token_compress_off;
 
-namespace firmament {
-namespace sim {
-
-#define SUBMIT_EVENT 0
-#define SCHEDULE_EVENT 1
-#define EVICT_EVENT 2
-#define FAIL_EVENT 3
-#define FINISH_EVENT 4
-#define KILL_EVENT 5
-#define LOST_EVENT 6
-#define UPDATE_PENDING_EVENT 7
-#define UPDATE_RUNNING_EVENT 8
-
-#define MACHINE_ADD 0
-#define MACHINE_REMOVE 1
-#define MACHINE_UPDATE 2
-
-const static uint64_t SEED = 0;
-
-#define EPS 0.00001
-
 DEFINE_string(machine_tmpl_file, "../../../tests/testdata/machine_topo.pbin",
               "File specifying machine topology.");
 
@@ -141,6 +120,27 @@ DEFINE_double(simulated_quincy_file_min_blocks, 1, "Minimum # of blocks in file.
 DEFINE_double(simulated_quincy_file_max_blocks, 160, "Maximum # of blocks in file.");
 // Random seed
 DEFINE_uint64(simulated_quincy_random_seed, 42, "Seed for random generators.");
+
+namespace firmament {
+namespace sim {
+
+#define SUBMIT_EVENT 0
+#define SCHEDULE_EVENT 1
+#define EVICT_EVENT 2
+#define FAIL_EVENT 3
+#define FINISH_EVENT 4
+#define KILL_EVENT 5
+#define LOST_EVENT 6
+#define UPDATE_PENDING_EVENT 7
+#define UPDATE_RUNNING_EVENT 8
+
+#define MACHINE_ADD 0
+#define MACHINE_REMOVE 1
+#define MACHINE_UPDATE 2
+
+const static uint64_t SEED = 0;
+
+#define EPS 0.00001
 
 // It varies a little over time, but relatively constant. Used for calculation
 // of how much storage space we have.
