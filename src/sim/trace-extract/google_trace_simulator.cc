@@ -347,16 +347,6 @@ void GoogleTraceSimulator::Run() {
   }
 }
 
-#define LOGEVENT(msg) { \
-  ostringstream _ss; \
-  _ss << msg; \
-  std::string _s = _ss.str(); \
-  VLOG(1) << _s; \
-  if (graph_output_ && FLAGS_graph_output_events) { \
-    fprintf(graph_output_, "c %s\n", _s.c_str()); \
-  } \
-}
-
 ResourceDescriptor* GoogleTraceSimulator::AddMachine(
     const ResourceTopologyNodeDescriptor& machine_tmpl, uint64_t machine_id) {
   // Create a new machine topology descriptor.
@@ -844,17 +834,17 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
     }
 
     if (it->second.type() == EventDescriptor::ADD_MACHINE) {
-      LOGEVENT("ADD_MACHINE " << it->second.machine_id() << " @ " << it->first);
+      LogEvent("ADD_MACHINE " << it->second.machine_id() << " @ " << it->first);
       AddMachine(machine_tmpl, it->second.machine_id());
       SeenExogenous(it->first);
     } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
-      LOGEVENT("REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first);
+      LogEvent("REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first);
       RemoveMachine(it->second.machine_id());
       SeenExogenous(it->first);
     } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
       // TODO(ionel): Handle machine update event.
     } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
-      LOGEVENT("TASK_END_RUNTIME " << it->second.job_id()
+      LogEvent("TASK_END_RUNTIME " << it->second.job_id()
                << " " << it->second.task_index() << " @ " << it->first);
       // Task has finished.
       TaskIdentifier task_identifier;
@@ -878,7 +868,7 @@ void GoogleTraceSimulator::ProcessTaskEvent(
     unordered_map<TaskIdentifier, uint64_t,
       TaskIdentifierHasher>* task_runtime) {
   if (event_type == SUBMIT_EVENT) {
-    LOGEVENT("TASK_SUBMIT_EVENT: ID "
+    LogEvent("TASK_SUBMIT_EVENT: ID "
             << task_identifier.job_id << "/" << task_identifier.task_index
             << " @ " << cur_time);
     if (AddNewTask(task_identifier, task_runtime)) {

@@ -134,6 +134,16 @@ class GoogleTraceSimulator {
   unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
       LoadTasksRunningTime();
 
+  inline void LogEvent(const string& msg) {
+    ostringstream ss;
+    ss << msg;
+    string s = ss.str();
+    VLOG(1) << s;
+    if (graph_output_ && FLAGS_graph_output_events) {
+      fprintf(graph_output_, "c %s\n", s.c_str());
+    }
+  }
+
   /**
    * Create and populate a new job.
    * @param job_id the Google trace job id
