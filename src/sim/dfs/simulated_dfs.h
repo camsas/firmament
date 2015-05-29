@@ -12,14 +12,15 @@
 #include <utility>
 #include <vector>
 
+#include "base/common.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "base/types.h"
 #include "sim/dfs/google_block_distribution.h"
 
 namespace firmament {
 
-typedef thread_safe::set<ResourceID_t> ResourceSet_t;
-typedef thread_safe::map<ResourceID_t, uint64_t> ResourceFrequencyMap_t;
+typedef unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid> >
+        ResourceSet_t;
 
 class SimulatedDFS {
  public:

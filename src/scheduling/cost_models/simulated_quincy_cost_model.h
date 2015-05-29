@@ -24,8 +24,14 @@
 
 namespace firmament {
 
-typedef thread_safe::set<ResourceID_t> ResourceSet_t;
-typedef thread_safe::map<ResourceID_t, uint64_t> ResourceFrequencyMap_t;
+typedef unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid> >
+        ResourceSet_t;
+typedef unordered_map<ResourceID_t, uint64_t, boost::hash<boost::uuids::uuid> >
+        ResourceFrequencyMap_t;
+typedef unordered_map<ResourceID_t, EquivClass_t,
+        boost::hash<boost::uuids::uuid> > ResourceEquivClassMap_t;
+typedef unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid> >
+        ResourceCostMap_t;
 
 class SimulatedQuincyCostModel : public FlowSchedulingCostModelInterface {
  public:
