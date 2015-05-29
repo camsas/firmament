@@ -29,6 +29,7 @@ DECLARE_bool(debug_flow_graph);
 DECLARE_bool(add_root_task_to_graph);
 DECLARE_bool(flow_scheduling_strict);
 DECLARE_bool(flow_scheduling_time_reported);
+DECLARE_bool(graph_output_events);
 
 namespace firmament {
 namespace sim {
@@ -135,12 +136,9 @@ class GoogleTraceSimulator {
       LoadTasksRunningTime();
 
   inline void LogEvent(const string& msg) {
-    ostringstream ss;
-    ss << msg;
-    string s = ss.str();
-    VLOG(1) << s;
+    VLOG(1) << msg;
     if (graph_output_ && FLAGS_graph_output_events) {
-      fprintf(graph_output_, "c %s\n", s.c_str());
+      fprintf(graph_output_, "c %s\n", msg.c_str());
     }
   }
 

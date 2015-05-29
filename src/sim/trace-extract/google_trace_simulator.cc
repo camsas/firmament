@@ -870,19 +870,25 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
       break;
     }
 
+    string log_string;
     if (it->second.type() == EventDescriptor::ADD_MACHINE) {
-      LogEvent("ADD_MACHINE " << it->second.machine_id() << " @ " << it->first);
+      spf(&log_string, "ADD_MACHINE %ju @ %ju\n", it->second.machine_id(),
+          it->first);
+      LogEvent(log_string);
       AddMachine(machine_tmpl, it->second.machine_id());
       SeenExogenous(it->first);
     } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
-      LogEvent("REMOVE_MACHINE " << it->second.machine_id()  << " @ " << it->first);
+      spf(&log_string, "REMOVE_MACHINE %ju @ %ju\n", it->second.machine_id(),
+          it->first);
+      LogEvent(log_string);
       RemoveMachine(it->second.machine_id());
       SeenExogenous(it->first);
     } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
       // TODO(ionel): Handle machine update event.
     } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
-      LogEvent("TASK_END_RUNTIME " << it->second.job_id()
-               << " " << it->second.task_index() << " @ " << it->first);
+      spf(&log_string, "TASK_END_RUNTIME %s:%ju @ %ju\n", it->second.job_id(),
+          it->second.task_index(), it->first);
+      LogEvent(log_string);
       // Task has finished.
       TaskIdentifier task_identifier;
       task_identifier.task_index = it->second.task_index();
@@ -904,10 +910,12 @@ void GoogleTraceSimulator::ProcessTaskEvent(
     uint64_t event_type,
     unordered_map<TaskIdentifier, uint64_t,
       TaskIdentifierHasher>* task_runtime) {
+  string log_string;
   if (event_type == SUBMIT_EVENT) {
-    LogEvent("TASK_SUBMIT_EVENT: ID "
-            << task_identifier.job_id << "/" << task_identifier.task_index
-            << " @ " << cur_time);
+    spf(&log_string, "TASK_SUBMIT_EVENT: ID %s:%ju @ %ju\n",
+        task_identifier.job_id, task_identifier.task_index,
+        cur_time);
+    LogEvent(log_string);
     if (AddNewTask(task_identifier, task_runtime)) {
       SeenExogenous(cur_time);
     } else {
