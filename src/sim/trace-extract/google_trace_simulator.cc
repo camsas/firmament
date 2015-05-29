@@ -456,49 +456,83 @@ void GoogleTraceSimulator::AddTaskStats(
     // TODO(adam): or float infinity?
     runtime = numeric_limits<uint64_t>::max();
   }
-  EquivClass_t bogus_equiv_class = (EquivClass_t)td_ptr->uid();
-  VLOG(2) << "Setting runtime of " << runtime << " for "
-          << task_identifier.job_id << "/" << task_identifier.task_index;
-  knowledge_base_->SetAvgRuntimeForTEC(bogus_equiv_class, runtime);
-  if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
-    knowledge_base_->SetAvgMeanCpuUsage(bogus_equiv_class, task_stats->avg_mean_cpu_usage);
+  vector<EquivClass_t>* task_equiv_classes =
+    cost_model_->GetTaskEquivClasses(td_ptr->uid());
+  CHECK_NOTNULL(task_equiv_classes);
+  // XXX(malte): This uses the task ID as an additional implicit EC, so that
+  // statistics are recorded on a per-task basis. Instead, what we want to do is
+  // to record them for each of the task's equivalence classes, plus possibly
+  // for the task ID, if the cost model requires per-task record keeping.
+  //
+  // Note that we might also need support for recording statistics under
+  // different equivalence classes than we use in the flow graph. This isn't
+  // currently supported.
+  EquivClass_t bogus_equiv_class = static_cast<EquivClass_t>(td_ptr->uid());
+  task_equiv_classes->push_back(bogus_equiv_class);
+  // Add statistics to all relevant ECs
+  for (vector<EquivClass_t>::iterator it = task_equiv_classes->begin();
+       it != task_equiv_classes->end();
+       ++it) {
+    VLOG(2) << "Setting runtime of " << runtime << " for "
+            << task_identifier.job_id << "/" << task_identifier.task_index;
+    knowledge_base_->SetAvgRuntimeForTEC(*it, runtime);
+    if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
+      knowledge_base_->SetAvgMeanCpuUsage(*it, task_stats->avg_mean_cpu_usage);
+    }
+    if (fabs(task_stats->avg_canonical_mem_usage + 1.0) > EPS) {
+      knowledge_base_->SetAvgCanonicalMemUsage(
+          *it, task_stats->avg_canonical_mem_usage);
+    }
+    if (fabs(task_stats->avg_assigned_mem_usage + 1.0) > EPS) {
+      knowledge_base_->SetAvgAssignedMemUsage(
+          *it, task_stats->avg_assigned_mem_usage);
+    }
+    if (fabs(task_stats->avg_unmapped_page_cache + 1.0) > EPS) {
+      knowledge_base_->SetAvgUnmappedPageCache(
+          *it, task_stats->avg_unmapped_page_cache);
+    }
+    if (fabs(task_stats->avg_total_page_cache + 1.0) > EPS) {
+      knowledge_base_->SetAvgTotalPageCache(
+          *it, task_stats->avg_total_page_cache);
+    }
+    if (fabs(task_stats->avg_mean_disk_io_time + 1.0) > EPS) {
+      knowledge_base_->SetAvgMeanDiskIOTime(
+          *it, task_stats->avg_mean_disk_io_time);
+    }
+    if (fabs(task_stats->avg_mean_local_disk_used + 1.0) > EPS) {
+      knowledge_base_->SetAvgMeanLocalDiskUsed(
+          *it, task_stats->avg_mean_local_disk_used);
+    }
+    if (fabs(task_stats->avg_cpi + 1.0) > EPS) {
+      knowledge_base_->SetAvgCPIForTEC(*it, task_stats->avg_cpi);
+    }
+    if (fabs(task_stats->avg_mai + 1.0) > EPS) {
+      knowledge_base_->SetAvgIPMAForTEC(*it, 1.0 / task_stats->avg_mai);
+    }
+    task_id_to_stats_.erase(task_identifier);
   }
-  if (fabs(task_stats->avg_canonical_mem_usage + 1.0) > EPS) {
-    knowledge_base_->SetAvgCanonicalMemUsage(
-        bogus_equiv_class, task_stats->avg_canonical_mem_usage);
-  }
-  if (fabs(task_stats->avg_assigned_mem_usage + 1.0) > EPS) {
-    knowledge_base_->SetAvgAssignedMemUsage(
-        bogus_equiv_class, task_stats->avg_assigned_mem_usage);
-  }
-  if (fabs(task_stats->avg_unmapped_page_cache + 1.0) > EPS) {
-    knowledge_base_->SetAvgUnmappedPageCache(
-        bogus_equiv_class, task_stats->avg_unmapped_page_cache);
-  }
-  if (fabs(task_stats->avg_total_page_cache + 1.0) > EPS) {
-    knowledge_base_->SetAvgTotalPageCache(
-        bogus_equiv_class, task_stats->avg_total_page_cache);
-  }
-  if (fabs(task_stats->avg_mean_disk_io_time + 1.0) > EPS) {
-    knowledge_base_->SetAvgMeanDiskIOTime(
-        bogus_equiv_class, task_stats->avg_mean_disk_io_time);
-  }
-  if (fabs(task_stats->avg_mean_local_disk_used + 1.0) > EPS) {
-    knowledge_base_->SetAvgMeanLocalDiskUsed(
-        bogus_equiv_class, task_stats->avg_mean_local_disk_used);
-  }
-  if (fabs(task_stats->avg_cpi + 1.0) > EPS) {
-    knowledge_base_->SetAvgCPIForTEC(bogus_equiv_class, task_stats->avg_cpi);
-  }
-  if (fabs(task_stats->avg_mai + 1.0) > EPS) {
-    knowledge_base_->SetAvgIPMAForTEC(bogus_equiv_class, 1.0 / task_stats->avg_mai);
-  }
-  task_id_to_stats_.erase(task_identifier);
 }
 
 void GoogleTraceSimulator::RemoveTaskStats(TaskID_t task_id) {
-  EquivClass_t bogus_equiv_class = (EquivClass_t)task_id;
-  knowledge_base_->EraseStats(bogus_equiv_class);
+  vector<EquivClass_t>* task_equiv_classes =
+    cost_model_->GetTaskEquivClasses(task_id);
+  CHECK_NOTNULL(task_equiv_classes);
+  // XXX(malte): This uses the task ID as an additional implicit EC, so that
+  // statistics are recorded on a per-task basis. Instead, what we want to do is
+  // to record them for each of the task's equivalence classes, plus possibly
+  // for the task ID, if the cost model requires per-task record keeping.
+  //
+  // Note that we might also need support for recording statistics under
+  // different equivalence classes than we use in the flow graph. This isn't
+  // currently supported.
+  EquivClass_t bogus_equiv_class = static_cast<EquivClass_t>(task_id);
+  task_equiv_classes->push_back(bogus_equiv_class);
+  // Add statistics to all relevant ECs
+  for (vector<EquivClass_t>::iterator it = task_equiv_classes->begin();
+       it != task_equiv_classes->end();
+       ++it) {
+    knowledge_base_->EraseStats(*it);
+  }
 }
 
 TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
