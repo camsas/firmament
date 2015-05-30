@@ -59,6 +59,17 @@ uint64_t MakeEnsembleUID(Ensemble *ens) {
   return hasher(ens->name());
 }*/
 
+// Helper function to get the directory in which the currently
+// running executable lives
+int ExecutableDirectory(char *pBuf, ssize_t len) {
+  char szTmp[32];
+  sprintf(szTmp, "/proc/%d/exe", getpid());
+  int bytes = min(readlink(szTmp, pBuf, len), len - 1);
+  if(bytes >= 0)
+    pBuf[bytes] = '\0';
+  return bytes;
+}
+
 // DEPRECATED wrapper for backwards compatibility
 ResourceID_t GenerateUUID() {
   return GenerateResourceID();
