@@ -126,7 +126,9 @@ Cost_t SimulatedQuincyCostModel::EquivClassToEquivClass(EquivClass_t tec1,
   return 0LL;
 }
 
-// In Quincy, a task is in its own equivalence class
+// The equivalence classes for a task are those corresponding to its
+// preferred rack.
+// TODO(malte): This is a bit of a hack, maybe we should revisit it.
 vector<EquivClass_t>* SimulatedQuincyCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   vector<EquivClass_t>* preferred_res = new vector<EquivClass_t>();
