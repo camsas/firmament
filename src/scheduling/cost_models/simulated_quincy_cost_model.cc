@@ -215,7 +215,7 @@ void SimulatedQuincyCostModel::RemoveMachine(ResourceID_t res_id) {
     ResourceCostMap_t *preferred_machines = mapping.second;
     preferred_machines->erase(res_id);
   }
-  // SOMEDAY(adam): should really recompute preferences, may lose preference
+  // TODO(adam): should really recompute preferences, may lose preference
   // arc to the rack the machine is in; but remove machine events very rare
   EquivClass_t rack = machine_to_rack_map_[res_id];
   rack_to_machine_map_[rack].remove(res_id);
@@ -227,7 +227,7 @@ void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
   unordered_set<SimulatedDFS::FileID_t>& file_set = file_map_[task_id];
 
   // Get runtime
-  // SOMEDAY(adam): This is a giant hack. Knowledge base stores runtime by
+  // XXX(adam): This is a giant hack. Knowledge base stores runtime by
   // task equivalence classes. Simulator assumes one equivalence class per task.
   // We DON't do this. But let's pretend we do here.
   EquivClass_t bogus_equivalence_class = (EquivClass_t)task_id;
