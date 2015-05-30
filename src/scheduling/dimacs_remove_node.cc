@@ -5,11 +5,17 @@
 
 namespace firmament {
 
-  const string DIMACSRemoveNode::GenerateChange() const {
-    stringstream ss;
-    ss << DIMACSChange::GenerateChange();
-    ss << "r " << node_id_ << "\n";
-    return ss.str();
-  }
+DIMACSRemoveNode::DIMACSRemoveNode(const FlowGraphNode& node) :
+  DIMACSChange(),
+  node_id_(node.id_) {
+  stats_.nodes_removed_++;
+}
+
+const string DIMACSRemoveNode::GenerateChange() const {
+  stringstream ss;
+  ss << DIMACSChange::GenerateChange();
+  ss << "r " << node_id_ << "\n";
+  return ss.str();
+}
 
 } // namespace firmament

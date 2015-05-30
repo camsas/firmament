@@ -446,7 +446,7 @@ FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
   if (arc->cost_ != new_cost) {
     arc->cost_ = new_cost;
     DIMACSChange *chg = new DIMACSChangeArc(*arc);
-    chg->SetComment("WhareMap/UpdateStats");
+    chg->set_comment("WhareMap/UpdateStats");
     flow_graph_->AddGraphChange(chg);
   }
 

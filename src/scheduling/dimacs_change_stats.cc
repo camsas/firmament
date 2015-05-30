@@ -1,5 +1,6 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
+
 #include "scheduling/dimacs_change_stats.h"
 
 #include "scheduling/dimacs_add_node.h"
@@ -9,32 +10,19 @@
 
 namespace firmament {
 
-template<typename Base>
-bool isInstanceOf(DIMACSChange* x) {
-  Base *base = dynamic_cast<Base *>(x);
-  return base != nullptr;
-}
-
-DIMACSChangeStats::DIMACSChangeStats(std::vector<DIMACSChange *> &changes) {
-  total = changes.size();
-  new_node = remove_node = new_arc = change_arc = remove_arc = 0;
+DIMACSChangeStats::DIMACSChangeStats(const vector<DIMACSChange*>& changes) {
+  total_ = changes.size();
+  nodes_added_ = 0;
+  nodes_removed_ = 0;
+  arcs_added_ = 0;
+  arcs_changed_ = 0;
+  arcs_removed_ = 0;
   for (DIMACSChange *chg : changes) {
-    if (isInstanceOf<DIMACSAddNode>(chg)) {
-      new_node++;
-    } else if (isInstanceOf<DIMACSRemoveNode>(chg)) {
-      remove_node++;
-    } else if (isInstanceOf<DIMACSNewArc>(chg)) {
-      new_arc++;
-    } else if (isInstanceOf<DIMACSChangeArc>(chg)) {
-      DIMACSChangeArc *arc_chg = dynamic_cast<DIMACSChangeArc *>(chg);
-      if (arc_chg->upper_bound() > 0) {
-        change_arc++;
-      } else {
-        remove_arc++;
-      }
-    } else {
-      LOG(WARNING) << "Unrecognised DIMACS change.";
-    }
+    nodes_added_ += chg->stats().nodes_added_;
+    nodes_removed_ += chg->stats().nodes_removed_;
+    arcs_added_ += chg->stats().arcs_added_;
+    arcs_changed_ += chg->stats().arcs_changed_;
+    arcs_removed_ += chg->stats().arcs_removed_;
   }
 }
 

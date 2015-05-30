@@ -186,7 +186,7 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
   if (arc->cost_ != new_cost) {
     arc->cost_ = new_cost;
     DIMACSChange *chg = new DIMACSChangeArc(*arc);
-    chg->SetComment("Octopus/UpdateStats");
+    chg->set_comment("Octopus/UpdateStats");
     flow_graph_->AddGraphChange(chg);
   }
 

@@ -15,10 +15,7 @@ namespace firmament {
 
 class DIMACSChangeArc : public DIMACSChange {
  public:
-  explicit DIMACSChangeArc(const FlowGraphArc& arc): DIMACSChange(),
-    src_(arc.src_), dst_(arc.dst_), cap_lower_bound_(arc.cap_lower_bound_),
-    cap_upper_bound_(arc.cap_upper_bound_), cost_(arc.cost_) {
-  }
+  explicit DIMACSChangeArc(const FlowGraphArc& arc);
 
   const string GenerateChange() const;
 

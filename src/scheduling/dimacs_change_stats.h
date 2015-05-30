@@ -1,28 +1,34 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#ifndef SCHEDULING_DIMACS_CHANGE_STATS_H
-#define SCHEDULING_DIMACS_CHANGE_STATS_H
+#ifndef FIRMAMENT_SCHEDULING_DIMACS_CHANGE_STATS_H
+#define FIRMAMENT_SCHEDULING_DIMACS_CHANGE_STATS_H
 
 #include <vector>
 
-#include "scheduling/dimacs_change.h"
+#include "base/types.h"
 
 namespace firmament {
 
-struct DIMACSChangeStats {
- public:
-  unsigned int total;
-  unsigned int new_node;
-  unsigned int remove_node;
-  unsigned int new_arc;
-  unsigned int change_arc;
-  unsigned int remove_arc;
+// Forward declaration, since DIMACSChange contains a DIMACSChangeStats
+// instance itself
+class DIMACSChange;
 
-  explicit DIMACSChangeStats(vector<DIMACSChange *> &changes);
+struct DIMACSChangeStats {
+  unsigned int total_;
+  unsigned int nodes_added_;
+  unsigned int nodes_removed_;
+  unsigned int arcs_added_;
+  unsigned int arcs_changed_;
+  unsigned int arcs_removed_;
+ 
+  DIMACSChangeStats() : total_(0), nodes_added_(0), nodes_removed_(0),
+      arcs_added_(0), arcs_changed_(0), arcs_removed_(0)
+  {}
+  explicit DIMACSChangeStats(const vector<DIMACSChange*>& changes);
   virtual ~DIMACSChangeStats();
 };
 
 } // namespace firmament
 
-#endif /* SCHEDULING_DIMACS_CHANGE_STATS_H */
+#endif // FIRMAMENT_SCHEDULING_DIMACS_CHANGE_STATS_H
