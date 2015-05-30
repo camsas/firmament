@@ -10,11 +10,13 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <boost/timer/timer.hpp>
 
 #include "base/common.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "misc/utils.h"
 #include "misc/map-util.h"
+#include "scheduling/dimacs_change_stats.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/knowledge_base_simulator.h"
 #include "scheduling/quincy_dispatcher.h"
@@ -125,6 +127,8 @@ class GoogleTraceSimulator {
    */
   void LoadMachineEvents();
 
+  void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl);
+
   void LoadJobsNumTasks();
 
   void LoadTaskRuntimeStats();
@@ -132,8 +136,9 @@ class GoogleTraceSimulator {
   /**
    * Loads all the task runtimes and returns map task_identifier -> runtime.
    */
-  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
-      LoadTasksRunningTime();
+  void LoadTasksRunningTime();
+
+  void LoadTraceData();
 
   inline void LogEvent(const string& msg) {
     VLOG(1) << msg;
@@ -141,6 +146,17 @@ class GoogleTraceSimulator {
       fprintf(graph_output_, "c %s\n", msg.c_str());
     }
   }
+
+  void LogStartOfSolverRun(uint64_t time_interval_bound);
+  void LogSolverRunStats(const boost::timer::cpu_timer timer,
+                         uint64_t time_interval_bound,
+                         double algorithm_time,
+                         double flowsolver_time,
+                         const DIMACSChangeStats& change_stats,
+                         ofstream* stats_file);
+
+  uint64_t NextTimeIntervalBound(uint64_t cur_time_interval_bound,
+                                 double algorithm_time);
 
   /**
    * Create and populate a new job.
@@ -158,6 +174,10 @@ class GoogleTraceSimulator {
    * Time of the next simulator event. UINT64_MAX if no more simulator events.
    */
   uint64_t NextSimulatorEvent();
+
+  void OutputStatsHeader(ofstream* stats_file);
+  void OutputChangeStats(const DIMACSChangeStats& stats,
+                         ofstream* stats_file);
 
   /**
    * Processes all the simulator events that happen at a given time.
@@ -202,6 +222,7 @@ class GoogleTraceSimulator {
     unordered_map<TaskIdentifier, uint64_t,
       TaskIdentifierHasher>* task_runtime,
     multimap<uint64_t, uint64_t>* task_mappings);
+  void UpdateResourceStats();
 
   // XXX(ionel): These methods are copied from quincy_scheduler. We copy them
   // because we don't have access to the scheduler in the simulator.
@@ -245,6 +266,9 @@ class GoogleTraceSimulator {
   shared_ptr<TaskMap_t> task_map_;
   // Map from ResourceID_t to ResourceStatus*
   shared_ptr<ResourceMap_t> resource_map_;
+
+  // Map holding the per-task runtime information
+  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_runtime_;
 
   // Map holding the ResourceID_t of every scheduled task.
   unordered_map<TaskID_t, ResourceID_t> task_bindings_;
