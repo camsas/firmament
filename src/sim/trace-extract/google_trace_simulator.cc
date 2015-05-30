@@ -1200,9 +1200,9 @@ void GoogleTraceSimulator::OutputStatsHeader(ofstream* stats_file) {
 
 void GoogleTraceSimulator::OutputChangeStats(const DIMACSChangeStats& stats,
                                              ofstream* stats_file) {
-  *stats_file << stats.total << "," << stats.new_node << ","
-              << stats.remove_node << "," << stats.new_arc << ","
-              << stats.change_arc << "," << stats.remove_arc
+  *stats_file << stats.total_ << "," << stats.nodes_added_ << ","
+              << stats.nodes_removed_ << "," << stats.arcs_added_ << ","
+              << stats.arcs_changed_ << "," << stats.arcs_removed_
               << endl;
 }
 
