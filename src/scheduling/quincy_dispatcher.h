@@ -64,8 +64,6 @@ class QuincyDispatcher {
   FILE* to_solver_;
   FILE* from_solver_;
   FILE* from_solver_stderr_;
-
-  friend void *export_to_solver(void *x);
 };
 
 } // namespace scheduler
