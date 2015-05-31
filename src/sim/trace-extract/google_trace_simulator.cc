@@ -30,6 +30,7 @@
 #include "scheduling/quincy_dispatcher.h"
 #include "sim/dfs/simulated_dfs.h"
 #include "sim/trace-extract/google_trace_simulator.h"
+#include "sim/trace-extract/simulated_quincy_factory.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
@@ -73,7 +74,8 @@ DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 DEFINE_bool(graph_output_events, true, "If -graph_output_file specified: "
                                        "export simulator events as comments?");
 
-DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2 | custom.");
+DEFINE_string(solver, "flowlessly",
+              "Solver to use: flowlessly | cs2 | custom.");
 DEFINE_uint64(solver_timeout, UINT64_MAX,
               "Timeout: terminate after waiting this number of seconds");
 DEFINE_bool(run_incremental_scheduler, false,
@@ -81,45 +83,8 @@ DEFINE_bool(run_incremental_scheduler, false,
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, 8 = SIMULATED QUINCY");
-
-// Racks contain "between 29 and 31 computers" in Quincy test setup
-DEFINE_uint64(simulated_quincy_machines_per_rack, 30,
-                           "Machines are binned into racks of specified size.");
-// Defaults from Quincy paper
-DEFINE_double(simulated_quincy_delta_preferred_machine, 0.1,
-    "Threshold of proportion of data stored on machine for it to be on preferred list.");
-DEFINE_double(simulated_quincy_delta_preferred_rack, 0.1,
-    "Threshold of proportion of data stored on rack for it to be on preferred list.");
-DEFINE_uint64(simulated_quincy_tor_transfer_cost, 1,
-    "Cost per unit of data transferred in core switch.");
-// Cost was 2 for most experiments, 20 for constrained network experiments
-DEFINE_uint64(simulated_quincy_core_transfer_cost, 2,
-    "Cost per unit of data transferred in core switch.");
-// Distributed filesystem options
-DEFINE_uint64(simulated_quincy_blocks_per_machine, 98304,
-   "Number of 64 MB blocks each machine stores. Defaults to 98304, i.e. 6 TB.");
-DEFINE_uint64(simulated_quincy_replication_factor, 3,
-    "The number of times each block should be replicated.");
-// See google_runtime_distribution.h for explanation of these defaults
-DEFINE_double(simulated_quincy_runtime_factor, 0.298,
-                           "Runtime power law distribution: factor parameter.");
-DEFINE_double(simulated_quincy_runtime_power, -0.2627,
-                           "Runtime power law distribution: factor parameter.");
-// Input size distribution. See Evaluation Plan for derivation of defaults.
-DEFINE_uint64(simulated_quincy_input_percent_min, 50,
-                         "Percentage of input files which are minimum # of blocks.");
-DEFINE_double(simulated_quincy_input_min_blocks, 1, "Minimum # of blocks in input file.");
-DEFINE_double(simulated_quincy_input_max_blocks, 320, "Maximum # of blocks in input file.");
-DEFINE_uint64(simulated_quincy_input_percent_over_tolerance, 50,
-               "Percentage # of blocks allowed to exceed the value predicted.");
-// File size distribution. See Evaluation Plan for derivation of defaults.
-DEFINE_uint64(simulated_quincy_file_percent_min, 20,
-                         "Percentage of files which are minimum # of blocks.");
-DEFINE_double(simulated_quincy_file_min_blocks, 1, "Minimum # of blocks in file.");
-DEFINE_double(simulated_quincy_file_max_blocks, 160, "Maximum # of blocks in file.");
-// Random seed
-DEFINE_uint64(simulated_quincy_random_seed, 42, "Seed for random generators.");
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, "
+             "8 = SIMULATED QUINCY");
 
 namespace firmament {
 namespace sim {
@@ -140,11 +105,11 @@ namespace sim {
 
 const static uint64_t SEED = 0;
 
-#define EPS 0.00001
-
 // It varies a little over time, but relatively constant. Used for calculation
 // of how much storage space we have.
-const static uint64_t MACHINES_IN_TRACE = 10000;
+const static uint64_t MACHINES_IN_TRACE_APPROXIMATION = 10000;
+
+#define EPS 0.00001
 
 ofstream *timeout_file;
 void alarm_handler(int sig) {
@@ -156,11 +121,11 @@ void alarm_handler(int sig) {
       *timeout_file << ",Timeout";
     }
     *timeout_file << ",,,,," << std::endl;
-   }
-   // N.B. Don't use LOG(FATAL) since we want a successful return code
-   LOG(ERROR) << "Timeout after waiting for solver for "
-              << FLAGS_solver_timeout << " seconds.";
-   exit(0);
+  }
+  // N.B. Don't use LOG(FATAL) since we want a successful return code
+  LOG(ERROR) << "Timeout after waiting for solver for "
+             << FLAGS_solver_timeout << " seconds.";
+  exit(0);
 }
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
@@ -169,6 +134,8 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   knowledge_base_(new KnowledgeBaseSimulator) {
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>();
+  uint64_t num_machines =
+    std::round(MACHINES_IN_TRACE_APPROXIMATION * FLAGS_percentage / 100.0);
   switch (FLAGS_flow_scheduling_cost_model) {
   case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
     cost_model_ = new TrivialCostModel(task_map_, leaf_res_ids);
@@ -208,7 +175,10 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
     VLOG(1) << "Using the void cost model";
     break;
   case FlowSchedulingCostModelType::COST_MODEL_SIMULATED_QUINCY:
-    cost_model_ = SetupSimulatedQuincyCostModel(leaf_res_ids);
+    cost_model_ =
+      SetupSimulatedQuincyCostModel(resource_map_, job_map_, task_map_,
+                                    task_bindings_, knowledge_base_,
+                                    num_machines, leaf_res_ids);
     VLOG(1) << "Using the simulated Quincy cost model";
     break;
   default:
@@ -222,37 +192,6 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
     new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
 }
 
-SimulatedQuincyCostModel *GoogleTraceSimulator::SetupSimulatedQuincyCostModel(
-   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids) {
-  GoogleBlockDistribution *input_block_distn = new GoogleBlockDistribution(
-                                      FLAGS_simulated_quincy_input_percent_min,
-                                      FLAGS_simulated_quincy_input_min_blocks,
-                                      FLAGS_simulated_quincy_input_max_blocks);
-  GoogleBlockDistribution *file_block_distn = new GoogleBlockDistribution(
-                                        FLAGS_simulated_quincy_file_percent_min,
-                                        FLAGS_simulated_quincy_file_min_blocks,
-                                        FLAGS_simulated_quincy_file_max_blocks);
-  GoogleRuntimeDistribution *runtime_distn = new GoogleRuntimeDistribution(
-                                        FLAGS_simulated_quincy_runtime_factor,
-                                        FLAGS_simulated_quincy_runtime_power);
-
-  uint64_t num_machines = std::round(MACHINES_IN_TRACE * FLAGS_percentage / 100.0);
-  LOG(INFO) << "Assuming " << num_machines << " machines in cluster.";
-  SimulatedDFS *dfs = new SimulatedDFS(num_machines,
-                                   FLAGS_simulated_quincy_blocks_per_machine,
-                                   FLAGS_simulated_quincy_replication_factor,
-                                   file_block_distn,
-                                   FLAGS_simulated_quincy_random_seed);
-  return new SimulatedQuincyCostModel(
-      resource_map_, job_map_, task_map_, &task_bindings_, leaf_res_ids,
-      knowledge_base_, dfs, runtime_distn, input_block_distn,
-      FLAGS_simulated_quincy_delta_preferred_machine,
-      FLAGS_simulated_quincy_delta_preferred_rack,
-      FLAGS_simulated_quincy_core_transfer_cost,
-      FLAGS_simulated_quincy_tor_transfer_cost,
-      FLAGS_simulated_quincy_input_percent_over_tolerance,
-      FLAGS_simulated_quincy_machines_per_rack);
-}
 
 GoogleTraceSimulator::~GoogleTraceSimulator() {
   for (ResourceMap_t::iterator it = resource_map_->begin();
@@ -269,7 +208,7 @@ void GoogleTraceSimulator::Run() {
   FLAGS_add_root_task_to_graph = false;
   FLAGS_flow_scheduling_strict = true;
 
-  const uint32_t MAX_VALUE = UINT32_MAX;
+  const uint64_t MAX_VALUE = UINT64_MAX;
   proportion_to_retain_ = (FLAGS_percentage / 100.0) * MAX_VALUE;
   VLOG(2) << "Retaining events with hash < " << proportion_to_retain_;
 
@@ -370,7 +309,8 @@ ResourceDescriptor* GoogleTraceSimulator::AddMachine(
 
 TaskDescriptor* GoogleTraceSimulator::AddNewTask(
     const TaskIdentifier& task_identifier,
-    unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_runtime) {
+    unordered_map<TaskIdentifier, uint64_t,
+      TaskIdentifierHasher>* task_runtime) {
   JobDescriptor** jdpp = FindOrNull(job_id_to_jd_, task_identifier.job_id);
   JobDescriptor* jd_ptr;
   if (!jdpp) {
@@ -663,16 +603,16 @@ void GoogleTraceSimulator::LoadMachineEvents() {
         LOG(ERROR) << "Unexpected structure of machine events on line "
                    << num_line << ": found " << cols.size() << " columns.";
       } else {
-      	uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
-      	if (timestamp > FLAGS_runtime) {
-      		// only load the events that we need
-      		break;
-      	}
+        uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
+        if (timestamp > FLAGS_runtime) {
+          // only load the events that we need
+          break;
+        }
 
         // schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
         uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
         // Sub-sample the trace if we only retain < 100% of machines.
-        if (SpookyHash::Hash32(&machine_id, sizeof(machine_id), SEED)
+        if (SpookyHash::Hash64(&machine_id, sizeof(machine_id), SEED)
             > proportion_to_retain_) {
           // skip event
           continue;
@@ -753,8 +693,8 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
 
         if (!InsertIfNotPresent(&task_id_to_stats_, task_id, task_stats) &&
             VLOG_IS_ON(1)) {
-          LOG(ERROR) << "LoadTaskRuntimeStats: There should not be more than an "
-                     << "entry for job " << task_id.job_id
+          LOG(ERROR) << "LoadTaskRuntimeStats: There should not be more than an"
+                     << " entry for job " << task_id.job_id
                      << ", task " << task_id.task_index;
         } else {
           VLOG(2) << "Loaded stats for "
@@ -820,7 +760,7 @@ void GoogleTraceSimulator::LoadTasksRunningTime() {
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
 
         // Sub-sample the trace if we only retain < 100% of tasks.
-        if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED) >
+        if (SpookyHash::Hash64(&task_id, sizeof(task_id), SEED) >
             proportion_to_retain_) {
           // skip event
           continue;
@@ -1017,7 +957,8 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
     } else if (it->second.type() == EventDescriptor::TASK_ASSIGNMENT_CHANGED) {
       // no-op: this event is just used to trigger solver re-run
     } else {
-      LOG(ERROR) << "Unexpected event type " << it->second.type() << " @ " << it->first;
+      LOG(ERROR) << "Unexpected event type " << it->second.type() << " @ "
+                 << it->first;
     }
 
     events_.erase(it);
@@ -1192,7 +1133,8 @@ void GoogleTraceSimulator::OutputStatsHeader(ofstream* stats_file) {
                   << "flowsolver_time,total_time,";
     } else {
       // batch
-      *stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,total_time,";
+      *stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,"
+                  << "total_time,";
     }
     *stats_file << change_stats_header << std::endl;
   }
@@ -1251,7 +1193,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
           task_id.task_index = lexical_cast<uint64_t>(vals[3]);
 
           // Sub-sample the trace if we only retain < 100% of tasks.
-          if (SpookyHash::Hash32(&task_id, sizeof(task_id), SEED)
+          if (SpookyHash::Hash64(&task_id, sizeof(task_id), SEED)
               > proportion_to_retain_) {
             // skip event
             continue;

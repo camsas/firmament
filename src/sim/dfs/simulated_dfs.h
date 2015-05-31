@@ -39,6 +39,12 @@ class SimulatedDFS {
     return files_[file];
   }
   const ResourceSet_t GetMachines(FileID_t file) const;
+  /**
+   * Returns a set of files that have uniformly been sampled. The files
+   * have consist of num_blocks +- tolerance.
+   * @param num_blocks the number of blocks the files are expected to have
+   * @param tolerance the tolerance (in percentage)
+   */
   unordered_set<FileID_t> SampleFiles(NumBlocks_t num_blocks,
                                       uint32_t tolerance) const;
 
