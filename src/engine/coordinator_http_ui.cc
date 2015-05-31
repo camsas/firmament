@@ -22,8 +22,8 @@
 #include "misc/uri_tools.h"
 #include "messages/task_kill_message.pb.h"
 #include "scheduling/knowledge_base.h"
-#include "scheduling/quincy_dispatcher.h"
-#include "scheduling/quincy_scheduler.h"
+#include "scheduling/flow/flow_scheduler.h"
+#include "scheduling/flow/solver_dispatcher.h"
 #include "storage/types.h"
 
 DECLARE_string(task_log_dir);
@@ -186,8 +186,8 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
     dict.SetValue("SCHEDULER_NAME", "queue-based");
   } else if (FLAGS_scheduler == "quincy") {
     dict.SetValue("SCHEDULER_NAME", "flow optimization");
-    const QuincyScheduler* sched =
-      dynamic_cast<const QuincyScheduler*>(coordinator_->scheduler());
+    const FlowScheduler* sched =
+      dynamic_cast<const FlowScheduler*>(coordinator_->scheduler());
     for (uint64_t i = 0; i < sched->dispatcher().seq_num(); ++i) {
       TemplateDictionary* iteration_dict =
           dict.AddSectionDictionary("SCHEDULER_ITER");
