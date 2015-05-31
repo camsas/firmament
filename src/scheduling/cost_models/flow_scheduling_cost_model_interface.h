@@ -31,6 +31,7 @@ enum FlowSchedulingCostModelType {
   COST_MODEL_COCO = 5,
   COST_MODEL_OCTOPUS = 6,
   COST_MODEL_VOID = 7,
+  COST_MODEL_SIMULATED_QUINCY = 8,
 };
 
 class FlowGraph;
@@ -141,6 +142,11 @@ class FlowSchedulingCostModelInterface {
    * Called by the flow_graph when a machine is added.
    */
   virtual void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) = 0;
+
+  /**
+   * Called by the flow graph when a task is submitted.
+   */
+  virtual void AddTask(TaskID_t task_id) = 0;
 
   /**
    * Called by the flow_graph when a machine is removed.

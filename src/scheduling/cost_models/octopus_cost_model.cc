@@ -115,6 +115,9 @@ void OctopusCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
+void OctopusCostModel::AddTask(TaskID_t task_id) {
+}
+
 void OctopusCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
@@ -182,7 +185,9 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
                                                      other->resource_id_);
   if (arc->cost_ != new_cost) {
     arc->cost_ = new_cost;
-    flow_graph_->AddGraphChange(new DIMACSChangeArc(*arc));
+    DIMACSChange *chg = new DIMACSChangeArc(*arc);
+    chg->set_comment("Octopus/UpdateStats");
+    flow_graph_->AddGraphChange(chg);
   }
 
   // Reset the state.

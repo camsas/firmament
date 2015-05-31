@@ -11,6 +11,10 @@
 #include <boost/lexical_cast.hpp>
 #include <glog/logging.h>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+
 #include "misc/map-util.h"
 #include "misc/string_utils.h"
 #include "misc/utils.h"
@@ -39,6 +43,16 @@ DECLARE_int32(num_files_to_process);
 
 namespace firmament {
 namespace sim {
+
+  void MkdirIfNotPresent(const string &directory) {
+    if (mkdir(directory.c_str(), 0777) < 0) {
+      // mkdir error
+      if (errno != EEXIST) {
+        // it's fine if directory already exists, ignore
+        PLOG(FATAL) << "Could not make directory " << directory;
+      }
+    }
+  }
 
   GoogleTraceTaskProcessor::GoogleTraceTaskProcessor(const string& trace_path):
     trace_path_(trace_path) {
@@ -163,6 +177,7 @@ namespace sim {
         // First event for this task. This means that the task was running
         // from the beginning of the trace.
         TaskRuntime task_runtime = {};
+        task_runtime.last_schedule_time = -1; // unscheduled
         task_runtime.start_time = 0;
         task_runtime.num_runs = 1;
         task_runtime.total_runtime = timestamp;
@@ -175,6 +190,7 @@ namespace sim {
         task_runtime_ptr->total_runtime +=
           timestamp - task_runtime_ptr->last_schedule_time;
         PopulateTaskRuntime(task_runtime_ptr, line_cols);
+        task_runtime_ptr->last_schedule_time = -1; // unscheduled
       }
     } else if (event_type == TASK_FINISH) {
       string logical_job_name = (*job_id_to_name)[task_id.job_id];
@@ -182,6 +198,7 @@ namespace sim {
       if (task_runtime_ptr == NULL) {
         // First event for this task.
         TaskRuntime task_runtime = {};
+        task_runtime.last_schedule_time = -1; // unscheduled
         task_runtime.start_time = 0;
         task_runtime.num_runs = 1;
         task_runtime.total_runtime = timestamp;
@@ -197,6 +214,7 @@ namespace sim {
         PrintTaskRuntime(out_events_file, *task_runtime_ptr, task_id,
                          logical_job_name,
                          timestamp - task_runtime_ptr->last_schedule_time);
+        task_runtime_ptr->last_schedule_time = -2; // unscheduled
       }
     } else if (event_type == TASK_UPDATE_PENDING ||
                event_type == TASK_UPDATE_RUNNING) {
@@ -649,9 +667,11 @@ namespace sim {
     vector<string> line_cols;
     FILE* usage_file = NULL;
     FILE* usage_stat_file = NULL;
+    string usage_directory;
+    spf(&usage_directory, "%s/task_usage_stat", trace_path_.c_str());
+    MkdirIfNotPresent(usage_directory);
     string usage_file_name;
-    spf(&usage_file_name, "%s/task_usage_stat/task_usage_stat.csv",
-        trace_path_.c_str());
+    spf(&usage_file_name, "%s/task_usage_stat.csv", usage_directory.c_str());
     if ((usage_stat_file = fopen(usage_file_name.c_str(), "w")) == NULL) {
       LOG(FATAL) << "Failed to open task_usage_stat file for writing";
     }
@@ -820,12 +840,21 @@ namespace sim {
     char line[200];
     vector<string> line_cols;
     FILE* events_file = NULL;
-    FILE* out_events_file = NULL;
-    string out_file_name;
-    spf(&out_file_name, "%s/task_runtime_events/task_runtime_events.csv",
-        trace_path_.c_str());
-    if ((out_events_file = fopen(out_file_name.c_str(), "w")) == NULL) {
-      LOG(ERROR) << "Failed to open task_runtime_events file for writing";
+    string out_events_directory;
+    spf(&out_events_directory, "%s/task_runtime_events", trace_path_.c_str());
+    MkdirIfNotPresent(out_events_directory);
+    FILE* out_events_file_all;
+    FILE* out_events_file_avg;
+    string out_file_all_name, out_file_avg_name;
+    spf(&out_file_all_name, "%s/all_task_runtime_events.csv",
+        out_events_directory.c_str());
+    if ((out_events_file_all = fopen(out_file_all_name.c_str(), "w")) == NULL) {
+      LOG(FATAL) << "Failed to open task_runtime_events file for writing";
+    }
+    spf(&out_file_avg_name, "%s/task_runtime_events.csv",
+        out_events_directory.c_str());
+    if ((out_events_file_avg = fopen(out_file_avg_name.c_str(), "w")) == NULL) {
+      LOG(FATAL) << "Failed to open task_runtime_events file for writing";
     }
     for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
          file_num++) {
@@ -854,13 +883,16 @@ namespace sim {
             task_id.task_index = lexical_cast<uint64_t>(line_cols[3]);
             int32_t event_type = lexical_cast<int32_t>(line_cols[5]);
             ExpandTaskEvent(timestamp, task_id, event_type, &tasks_runtime,
-                            &job_id_to_name, out_events_file, line_cols);
+                            &job_id_to_name, out_events_file_all, line_cols);
           }
         }
         num_line++;
       }
       fclose(events_file);
     }
+    fclose(out_events_file_all);
+
+    // this outputs averages for all tasks
     for (unordered_map<TaskIdentifier, TaskRuntime,
            TaskIdentifierHasher>::iterator it = tasks_runtime.begin();
          it != tasks_runtime.end(); ++it) {
@@ -868,29 +900,43 @@ namespace sim {
       string logical_job_name =  job_id_to_name[task_id.job_id];
       uint64_t runtime = 0;
       TaskRuntime task_runtime = it->second;
-      if (task_runtime.num_runs == 0) {
-        runtime = end_simulation_time - task_runtime.last_schedule_time;
-        task_runtime.num_runs++;
-        task_runtime.total_runtime = runtime;
-      } else {
-        uint64_t avg_runtime =
-          task_runtime.total_runtime / task_runtime.num_runs;
-        runtime = end_simulation_time - task_runtime.last_schedule_time;
-        // If the average runtime to failure is bigger than the current
-        // runtime then we assume that the task is going to run for avg
-        // runtime to failure.
-        if (avg_runtime > runtime) {
-          runtime = avg_runtime;
+
+      if (task_runtime.last_schedule_time >= 0) {
+        // task is still running
+        if (task_runtime.num_runs == 0) {
+          runtime = end_simulation_time - task_runtime.last_schedule_time;
+          task_runtime.num_runs++;
+          task_runtime.total_runtime = runtime;
+        } else {
+          uint64_t avg_runtime =
+            task_runtime.total_runtime / task_runtime.num_runs;
+          runtime = end_simulation_time - task_runtime.last_schedule_time;
+          // If the average runtime to failure is bigger than the current
+          // runtime then we assume that the task is going to run for avg
+          // runtime to failure.
+          if (avg_runtime > runtime) {
+            runtime = avg_runtime;
+          }
+          task_runtime.num_runs++;
+          task_runtime.total_runtime += runtime;
         }
-        task_runtime.num_runs++;
-        task_runtime.total_runtime += runtime;
+      } else {
+        // task has finished, compute average
+        // (most the time, there will be just one run)
+        // SOMEDAY(adam): unclear if this is the 'right' way of handling it
+        // e.g. if you had task be killed, rescheduled, then finish probably
+        // only want to count the last run (ignore the failed one)
+        uint64_t avg_runtime =
+                    task_runtime.total_runtime / task_runtime.num_runs;
+        runtime = avg_runtime;
       }
-      PrintTaskRuntime(out_events_file, task_runtime, task_id,
+
+      PrintTaskRuntime(out_events_file_avg, task_runtime, task_id,
                        logical_job_name, runtime);
     }
     job_id_to_name.clear();
     delete &job_id_to_name;
-    fclose(out_events_file);
+    fclose(out_events_file_avg);
   }
 
   void GoogleTraceTaskProcessor::JobsNumTasks() {
@@ -899,10 +945,12 @@ namespace sim {
     multimap<uint64_t, TaskSchedulingEvent>& scheduling_events =
       ReadTaskStateChangingEvents(job_num_tasks);
 
+    string out_directory;
+    spf(&out_directory, "%s/jobs_num_tasks/", trace_path_.c_str());
+    MkdirIfNotPresent(out_directory);
     FILE* out_file = NULL;
     string out_file_name;
-    spf(&out_file_name, "%s/jobs_num_tasks/jobs_num_tasks.csv",
-        trace_path_.c_str());
+    spf(&out_file_name, "%s/jobs_num_tasks.csv", out_directory.c_str());
     if ((out_file = fopen(out_file_name.c_str(), "w")) == NULL) {
       LOG(FATAL) << "Failed to open jobs_num_tasks file for writing";
     }

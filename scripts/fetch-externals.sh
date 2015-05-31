@@ -515,9 +515,19 @@ fi
 print_succ_or_fail ${RES}
 cd ${EXT_DIR}
 
+## Spooky Hash
+# http://burtleburtle.net/bob/hash/spooky.html
+print_hdr "SPOOKY HASH v2 CODE"
+mkdir -p spooky_hash
+cd spooky_hash
+get_dep_wget "spooky_hash" "http://burtleburtle.net/bob/c/SpookyV2.h"
+get_dep_wget "spooky_hash" "http://burtleburtle.net/bob/c/SpookyV2.cpp"
+RES=! $(${CXX} ${CXXFLAGS} -O3 -c SpookyV2.cpp)
+print_succ_or_fail ${RES}
+cd ${EXT_DIR}
 
 ## Flowlessly solver code for min-cost max-flow scheduler.
-print_hdr "CHECKING OUT FLOWLESSLY CODE"
+print_hdr "FLOWLESSLY SOLVER CODE"
 if [[ ${NONINTERACTIVE} -eq 1 ]]; then
   echo "Trying to check out Flowlessly..."
   CONT="0"

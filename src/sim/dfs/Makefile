@@ -1,19 +1,18 @@
 ROOT_DIR=../../..
-SUFFIX=scheduling/cost_models
+SUFFIX=sim/dfs
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_system
-
-LIB = libfirmament_cost_models.a
-
-OBJS = coco_cost_model.o quincy_cost_model.o sjf_cost_model.o \
-       trivial_cost_model.o random_cost_model.o \
-       wharemap_cost_model.o void_cost_model.o \
-       octopus_cost_model.o simulated_quincy_cost_model.o
+BINS =
+LIB = libfirmament_sim_dfs.a
+OBJS = google_block_distribution.o simulated_dfs.o
 PBS =
 TESTS =
+TESTS_DEPS =
+
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
+#TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
+TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
 include $(ROOT_DIR)/include/Makefile.common
 

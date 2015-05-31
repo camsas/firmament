@@ -306,6 +306,9 @@ void WhareMapCostModel::RemoveMachine(ResourceID_t res_id) {
   }
 }
 
+void WhareMapCostModel::AddTask(TaskID_t task_id) {
+}
+
 void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
@@ -442,7 +445,9 @@ FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
                                                      other->resource_id_);
   if (arc->cost_ != new_cost) {
     arc->cost_ = new_cost;
-    flow_graph_->AddGraphChange(new DIMACSChangeArc(*arc));
+    DIMACSChange *chg = new DIMACSChangeArc(*arc);
+    chg->set_comment("WhareMap/UpdateStats");
+    flow_graph_->AddGraphChange(chg);
   }
 
   return accumulator;

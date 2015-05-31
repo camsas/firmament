@@ -8,18 +8,21 @@
 
 #include "base/types.h"
 #include "scheduling/dimacs_change.h"
+#include "scheduling/dimacs_change_stats.h"
 #include "scheduling/flow_graph_arc.h"
 
 namespace firmament {
 
 class DIMACSChangeArc : public DIMACSChange {
  public:
-  explicit DIMACSChangeArc(const FlowGraphArc& arc): DIMACSChange(),
-    src_(arc.src_), dst_(arc.dst_), cap_lower_bound_(arc.cap_lower_bound_),
-    cap_upper_bound_(arc.cap_upper_bound_), cost_(arc.cost_) {
-  }
+  explicit DIMACSChangeArc(const FlowGraphArc& arc);
 
   const string GenerateChange() const;
+
+ protected:
+  uint64_t upper_bound() {
+    return cap_upper_bound_;
+  }
 
  private:
   FRIEND_TEST(FlowGraphTest, AddResourceNode);
@@ -30,6 +33,8 @@ class DIMACSChangeArc : public DIMACSChange {
   uint64_t cap_lower_bound_;
   uint64_t cap_upper_bound_;
   uint64_t cost_;
+
+  friend DIMACSChangeStats;
 };
 
 } // namespace firmament

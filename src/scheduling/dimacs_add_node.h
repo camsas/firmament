@@ -10,6 +10,7 @@
 #include "base/types.h"
 #include "misc/map-util.h"
 #include "scheduling/dimacs_change.h"
+#include "scheduling/dimacs_new_arc.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
 
@@ -17,13 +18,8 @@ namespace firmament {
 
 class DIMACSAddNode : public DIMACSChange {
  public:
-  DIMACSAddNode(const FlowGraphNode& node, vector<FlowGraphArc*>* arcs):
-    DIMACSChange(), node_(node), arcs_(arcs) {
-  }
-
-  ~DIMACSAddNode() {
-    delete arcs_;
-  }
+  DIMACSAddNode(const FlowGraphNode& node, const vector<FlowGraphArc*>& arcs);
+  ~DIMACSAddNode() {}
 
   const string GenerateChange() const;
 
@@ -31,8 +27,10 @@ class DIMACSAddNode : public DIMACSChange {
   uint32_t GetNodeType() const;
   FRIEND_TEST(FlowGraphTest, AddResourceNode);
   FRIEND_TEST(FlowGraphTest, AddOrUpdateJobNodes);
-  const FlowGraphNode& node_;
-  vector<FlowGraphArc*>* arcs_;
+  const uint64_t id_;
+  const uint64_t excess_;
+  const FlowNodeType type_;
+  vector<DIMACSNewArc> arc_additions_;
 };
 
 } // namespace firmament

@@ -107,6 +107,9 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
 void VoidCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
+void VoidCostModel::AddTask(TaskID_t task_id) {
+}
+
 void VoidCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 

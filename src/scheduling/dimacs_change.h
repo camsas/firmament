@@ -6,14 +6,42 @@
 
 #include <string>
 
+#include "base/types.h"
+#include "scheduling/dimacs_change_stats.h"
+
 namespace firmament {
 
 class DIMACSChange {
  public:
   virtual ~DIMACSChange() {
   }
+  virtual const string& comment() const final {
+    return comment_;
+  }
+  virtual void set_comment(const char* comment) final {
+    if (comment) {
+      comment_ = comment;
+    }
+  }
+  inline const DIMACSChangeStats& stats() const {
+    return stats_;
+  }
 
-  virtual const string GenerateChange() const = 0;
+  const string GenerateChangeDescription() const {
+    if (!comment_.empty()) {
+      stringstream ss;
+      ss << "c " << comment_ << "\n";
+      return ss.str();
+    } else {
+      return "";
+    }
+  }
+
+  virtual const std::string GenerateChange() const = 0;
+
+ protected:
+  string comment_;
+  DIMACSChangeStats stats_;
 };
 
 } // namespace firmament

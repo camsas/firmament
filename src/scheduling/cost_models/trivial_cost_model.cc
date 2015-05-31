@@ -125,6 +125,9 @@ void TrivialCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
+void TrivialCostModel::AddTask(TaskID_t task_id) {
+}
+
 void TrivialCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 

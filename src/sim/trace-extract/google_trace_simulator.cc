@@ -4,6 +4,7 @@
 //
 // Google cluster trace simulator tool.
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <limits>
@@ -12,19 +13,24 @@
 #include <utility>
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/timer/timer.hpp>
 
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "sim/trace-extract/google_trace_simulator.h"
-#include "scheduling/cost_models/cost_models.h"
+#include "../ext/spooky_hash/SpookyV2.h"
+
+#include "scheduling/dimacs_change_stats.h"
 #include "scheduling/dimacs_exporter.h"
 #include "scheduling/flow_graph.h"
 #include "scheduling/flow_graph_arc.h"
 #include "scheduling/flow_graph_node.h"
 #include "scheduling/quincy_dispatcher.h"
+#include "sim/dfs/simulated_dfs.h"
+#include "sim/trace-extract/google_trace_simulator.h"
+#include "sim/trace-extract/simulated_quincy_factory.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
@@ -32,6 +38,53 @@
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;
 using boost::token_compress_off;
+
+DEFINE_string(machine_tmpl_file, "../../../tests/testdata/machine_topo.pbin",
+              "File specifying machine topology.");
+
+DEFINE_bool(tasks_preemption_bins, false,
+            "Compute bins of number of preempted tasks.");
+DEFINE_uint64(bin_time_duration, 10, "Bin size in microseconds.");
+DEFINE_string(task_bins_output, "bins.out",
+              "The file in which the task bins are written.");
+
+DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
+DEFINE_uint64(runtime, 9223372036854775807,
+              "Maximum time in microsec to extract data for"
+              "(from start of trace)");
+DEFINE_uint64(max_events, UINT64_MAX,
+              "Maximum number of task events to process.");
+DEFINE_uint64(max_scheduling_rounds, UINT64_MAX,
+              "Maximum number of scheduling rounds to run for.");
+DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
+DEFINE_uint64(batch_step, 0, "Batch mode: time interval to run solver at.");
+DEFINE_double(online_factor, 0.0, "Online mode: speed at which to run at. "
+              "Factor of 1 corresponds to real-time. Larger to include"
+              " overheads elsewhere in Firmament etc., smaller to simulate"
+              " solver running faster.");
+DEFINE_double(online_max_time, 100000000.0, "Online mode: cap on time solver "
+              "takes to run, in seconds. If unspecified, no cap imposed."
+              " Only use with incremental solver, in which case it should"
+              " be set to the worst case runtime of the full solver.");
+
+DEFINE_string(stats_file, "", "File to write CSV of statistics.");
+DEFINE_string(graph_output_file, "",
+              "File to write incremental DIMACS export.");
+DEFINE_string(output_dir, "", "Directory for output flow graphs.");
+DEFINE_bool(graph_output_events, true, "If -graph_output_file specified: "
+                                       "export simulator events as comments?");
+
+DEFINE_string(solver, "flowlessly",
+              "Solver to use: flowlessly | cs2 | custom.");
+DEFINE_uint64(solver_timeout, UINT64_MAX,
+              "Timeout: terminate after waiting this number of seconds");
+DEFINE_bool(run_incremental_scheduler, false,
+            "Run the Flowlessly incremental scheduler.");
+DEFINE_int32(flow_scheduling_cost_model, 0,
+             "Flow scheduler cost model to use. "
+             "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, "
+             "8 = SIMULATED QUINCY");
 
 namespace firmament {
 namespace sim {
@@ -50,27 +103,30 @@ namespace sim {
 #define MACHINE_REMOVE 1
 #define MACHINE_UPDATE 2
 
-#define MACHINE_TMPL_FILE "../../../tests/testdata/machine_topo.pbin"
-//#define MACHINE_TMPL_FILE "/tmp/mach_test.pbin"
+const static uint64_t SEED = 0;
+
+// It varies a little over time, but relatively constant. Used for calculation
+// of how much storage space we have.
+const static uint64_t MACHINES_IN_TRACE_APPROXIMATION = 10000;
 
 #define EPS 0.00001
 
-DEFINE_uint64(runtime, 9223372036854775807,
-              "Time in microsec to extract data for (from start of trace)");
-DEFINE_string(output_dir, "", "Directory for output flow graphs.");
-DEFINE_bool(tasks_preemption_bins, false,
-            "Compute bins of number of preempted tasks.");
-DEFINE_uint64(bin_time_duration, 10, "Bin size in microseconds.");
-DEFINE_string(task_bins_output, "bins.out",
-              "The file in which the task bins are written.");
-DEFINE_bool(run_incremental_scheduler, false,
-            "Run the Flowlessly incremental scheduler.");
-DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
-DEFINE_string(solver, "flowlessly", "Solver to use: flowlessly | cs2.");
-DEFINE_int32(flow_scheduling_cost_model, 0,
-             "Flow scheduler cost model to use. "
-             "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
+ofstream *timeout_file;
+void alarm_handler(int sig) {
+  signal(SIGALRM, SIG_IGN);
+  if (timeout_file) {
+    *timeout_file << "0,Timeout,Timeout,Timeout,Timeout";
+    if (FLAGS_batch_step == 0) {
+      // online
+      *timeout_file << ",Timeout";
+    }
+    *timeout_file << ",,,,," << std::endl;
+  }
+  // N.B. Don't use LOG(FATAL) since we want a successful return code
+  LOG(ERROR) << "Timeout after waiting for solver for "
+             << FLAGS_solver_timeout << " seconds.";
+  exit(0);
+}
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -78,43 +134,56 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   knowledge_base_(new KnowledgeBaseSimulator) {
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>();
+  uint64_t num_machines =
+    std::round(MACHINES_IN_TRACE_APPROXIMATION * FLAGS_percentage / 100.0);
   switch (FLAGS_flow_scheduling_cost_model) {
-    case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
-      cost_model_ = new TrivialCostModel(task_map_, leaf_res_ids);
-      VLOG(1) << "Using the trivial cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
-      cost_model_ = new RandomCostModel(task_map_, leaf_res_ids);
-      VLOG(1) << "Using the random cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_COCO:
-      cost_model_ = new CocoCostModel(resource_map_, rtn_root_, task_map_,
-                                      leaf_res_ids, knowledge_base_);
-      VLOG(1) << "Using the coco cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_SJF:
-      cost_model_ = new SJFCostModel(task_map_, leaf_res_ids, knowledge_base_);
-      VLOG(1) << "Using the SJF cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
-      cost_model_ =
-        new QuincyCostModel(resource_map_, job_map_, task_map_,
-                            &task_bindings_, leaf_res_ids,
-                            knowledge_base_);
-      VLOG(1) << "Using the Quincy cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_WHARE:
-      cost_model_ = new WhareMapCostModel(resource_map_, task_map_,
-                                          knowledge_base_);
-      VLOG(1) << "Using the Whare-Map cost model";
-      break;
-    case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
-      cost_model_ = new OctopusCostModel(resource_map_);
-      VLOG(1) << "Using the octopus cost model";
-      break;
-    default:
-      LOG(FATAL) << "Unknown flow scheduling cost model specificed "
-                 << "(" << FLAGS_flow_scheduling_cost_model << ")";
+  case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
+    cost_model_ = new TrivialCostModel(task_map_, leaf_res_ids);
+    VLOG(1) << "Using the trivial cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
+    cost_model_ = new RandomCostModel(task_map_, leaf_res_ids);
+    VLOG(1) << "Using the random cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_COCO:
+    cost_model_ = new CocoCostModel(resource_map_, rtn_root_, task_map_,
+                                    leaf_res_ids, knowledge_base_);
+    VLOG(1) << "Using the coco cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_SJF:
+    cost_model_ = new SJFCostModel(task_map_, leaf_res_ids, knowledge_base_);
+    VLOG(1) << "Using the SJF cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
+    cost_model_ =
+      new QuincyCostModel(resource_map_, job_map_, task_map_,
+                          &task_bindings_, leaf_res_ids,
+                          knowledge_base_);
+    VLOG(1) << "Using the Quincy cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_WHARE:
+    cost_model_ = new WhareMapCostModel(resource_map_, task_map_,
+                                        knowledge_base_);
+    VLOG(1) << "Using the Whare-Map cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
+    cost_model_ = new OctopusCostModel(resource_map_);
+    VLOG(1) << "Using the octopus cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_VOID:
+    cost_model_ = new VoidCostModel();
+    VLOG(1) << "Using the void cost model";
+    break;
+  case FlowSchedulingCostModelType::COST_MODEL_SIMULATED_QUINCY:
+    cost_model_ =
+      SetupSimulatedQuincyCostModel(resource_map_, job_map_, task_map_,
+                                    task_bindings_, knowledge_base_,
+                                    num_machines, leaf_res_ids);
+    VLOG(1) << "Using the simulated Quincy cost model";
+    break;
+  default:
+  LOG(FATAL) << "Unknown flow scheduling cost model specificed "
+             << "(" << FLAGS_flow_scheduling_cost_model << ")";
   }
   flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids));
   cost_model_->SetFlowGraph(flow_graph_);
@@ -122,6 +191,7 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   quincy_dispatcher_ =
     new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
 }
+
 
 GoogleTraceSimulator::~GoogleTraceSimulator() {
   for (ResourceMap_t::iterator it = resource_map_->begin();
@@ -135,19 +205,32 @@ GoogleTraceSimulator::~GoogleTraceSimulator() {
 }
 
 void GoogleTraceSimulator::Run() {
-  FLAGS_debug_flow_graph = true;
   FLAGS_add_root_task_to_graph = false;
+  FLAGS_flow_scheduling_strict = true;
+
+  const uint64_t MAX_VALUE = UINT64_MAX;
+  proportion_to_retain_ = (FLAGS_percentage / 100.0) * MAX_VALUE;
+  VLOG(2) << "Retaining events with hash < " << proportion_to_retain_;
+
+  CHECK(FLAGS_batch_step != 0 || FLAGS_online_factor != 0.0)
+                        << "must specify one of -batch_step or -online_factor.";
+  CHECK(FLAGS_batch_step == 0 || FLAGS_online_factor == 0.0)
+                       << "cannot specify both -batch_step and -online_factor.";
+
   if (!FLAGS_solver.compare("flowlessly")) {
     FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
     FLAGS_flow_scheduling_solver = "flowlessly";
     FLAGS_only_read_assignment_changes = true;
-    FLAGS_flowlessly_binary =
-      SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
+    FLAGS_flow_scheduling_binary =
+        SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
     FLAGS_flow_scheduling_solver = "cs2";
     FLAGS_only_read_assignment_changes = false;
-    FLAGS_cs2_binary = SOLVER_DIR "/cs2-4.6/cs2.exe";
+    FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-4.6/cs2.exe";
+  } else if (!FLAGS_solver.compare("custom")) {
+    FLAGS_flow_scheduling_solver = "custom";
+    FLAGS_flow_scheduling_time_reported = true;
   } else {
     LOG(FATAL) << "Unknown solver type: " << FLAGS_solver;
   }
@@ -159,6 +242,8 @@ void GoogleTraceSimulator::Run() {
 
   LOG(INFO) << "Starting Google trace simulator!";
   LOG(INFO) << "Time to simulate for: " << FLAGS_runtime << " microseconds.";
+  LOG(INFO) << "Number of events to process: " << FLAGS_max_events;
+  LOG(INFO) << "Number of scheduling rounds: " << FLAGS_max_scheduling_rounds;
 
   CreateRootResource();
 
@@ -171,7 +256,33 @@ void GoogleTraceSimulator::Run() {
       LOG(ERROR) << "Could not open bin output file.";
     }
   } else {
-    ReplayTrace();
+    ofstream *stats_file = NULL;
+    if (!FLAGS_stats_file.empty()) {
+      stats_file = new ofstream(FLAGS_stats_file);
+      if (stats_file->fail()) {
+        LOG(FATAL) << "Could not open for writing stats file "
+                   << FLAGS_stats_file;
+      }
+    }
+
+    graph_output_ = NULL;
+    if (!FLAGS_graph_output_file.empty()) {
+      graph_output_ = fopen(FLAGS_graph_output_file.c_str(), "w");
+      if (!graph_output_) {
+        LOG(FATAL) << "Could not open for writing graph file "
+                   << FLAGS_graph_output_file
+                   << ", error: " << strerror(errno);
+      }
+    }
+
+    ReplayTrace(stats_file);
+
+    if (graph_output_) {
+      fclose(graph_output_);
+    }
+    if (stats_file) {
+      delete stats_file;
+    }
   }
 }
 
@@ -197,7 +308,9 @@ ResourceDescriptor* GoogleTraceSimulator::AddMachine(
 }
 
 TaskDescriptor* GoogleTraceSimulator::AddNewTask(
-    const TaskIdentifier& task_identifier) {
+    const TaskIdentifier& task_identifier,
+    unordered_map<TaskIdentifier, uint64_t,
+      TaskIdentifierHasher>* task_runtime) {
   JobDescriptor** jdpp = FindOrNull(job_id_to_jd_, task_identifier.job_id);
   JobDescriptor* jd_ptr;
   if (!jdpp) {
@@ -218,6 +331,9 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
                                td_ptr->uid(), task_identifier));
       // Add task to the google (job_id, task_index) to TaskDescriptor* map.
       CHECK(InsertIfNotPresent(&task_id_to_td_, task_identifier, td_ptr));
+      // Update statistics used by cost models. This must be done PRIOR
+      // to AddOrUpdateJobNodes, as costs computed in that step.
+      AddTaskStats(task_identifier, task_runtime);
       // Update the job in the flow graph. This method also adds the new task to
       // the flow graph.
       flow_graph_->AddOrUpdateJobNodes(jd_ptr);
@@ -226,6 +342,7 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
       LOG(WARNING) << "Duplicate task id: " << td_ptr->uid() << " for task "
                    << task_identifier.job_id << " "
                    << task_identifier.task_index;
+     return NULL;
     }
   }
   return td_ptr;
@@ -262,24 +379,42 @@ void GoogleTraceSimulator::AddTaskStats(
   TaskStats* task_stats = FindOrNull(task_id_to_stats_, task_identifier);
   if (task_stats == NULL) {
     // Already added stats.
+    VLOG(2) << "Skipping setting runtime for "
+            << task_identifier.job_id << "/" << task_identifier.task_index;
     return;
   }
   TaskDescriptor* td_ptr = FindPtrOrNull(task_id_to_td_, task_identifier);
   CHECK_NOTNULL(td_ptr);
   uint64_t* task_runtime_ptr = FindOrNull(*task_runtime, task_identifier);
-  uint64_t runtime = 0;
+  double runtime = 0.0;
   if (task_runtime_ptr != NULL) {
-    runtime = *task_runtime_ptr;
+    // knowledge base has runtime in ms, but we get it in micros
+    runtime = *task_runtime_ptr / 1000.0;
   } else {
     // We don't have information about this task's runtime.
     // Set its runtime to max which means it's a service task.
+    // TODO(adam): or float infinity?
     runtime = numeric_limits<uint64_t>::max();
   }
-  vector<EquivClass_t>* equiv_classes =
+  vector<EquivClass_t>* task_equiv_classes =
     cost_model_->GetTaskEquivClasses(td_ptr->uid());
-  // XXX(ionel): This assumes that we have one task equivalence class per task.
-  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
-       it != equiv_classes->end(); ++it) {
+  CHECK_NOTNULL(task_equiv_classes);
+  // XXX(malte): This uses the task ID as an additional implicit EC, so that
+  // statistics are recorded on a per-task basis. Instead, what we want to do is
+  // to record them for each of the task's equivalence classes, plus possibly
+  // for the task ID, if the cost model requires per-task record keeping.
+  //
+  // Note that we might also need support for recording statistics under
+  // different equivalence classes than we use in the flow graph. This isn't
+  // currently supported.
+  EquivClass_t bogus_equiv_class = static_cast<EquivClass_t>(td_ptr->uid());
+  task_equiv_classes->push_back(bogus_equiv_class);
+  // Add statistics to all relevant ECs
+  for (vector<EquivClass_t>::iterator it = task_equiv_classes->begin();
+       it != task_equiv_classes->end();
+       ++it) {
+    VLOG(2) << "Setting runtime of " << runtime << " for "
+            << task_identifier.job_id << "/" << task_identifier.task_index;
     knowledge_base_->SetAvgRuntimeForTEC(*it, runtime);
     if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
       knowledge_base_->SetAvgMeanCpuUsage(*it, task_stats->avg_mean_cpu_usage);
@@ -314,8 +449,30 @@ void GoogleTraceSimulator::AddTaskStats(
     if (fabs(task_stats->avg_mai + 1.0) > EPS) {
       knowledge_base_->SetAvgIPMAForTEC(*it, 1.0 / task_stats->avg_mai);
     }
+    task_id_to_stats_.erase(task_identifier);
   }
-  task_id_to_stats_.erase(task_identifier);
+}
+
+void GoogleTraceSimulator::RemoveTaskStats(TaskID_t task_id) {
+  vector<EquivClass_t>* task_equiv_classes =
+    cost_model_->GetTaskEquivClasses(task_id);
+  CHECK_NOTNULL(task_equiv_classes);
+  // XXX(malte): This uses the task ID as an additional implicit EC, so that
+  // statistics are recorded on a per-task basis. Instead, what we want to do is
+  // to record them for each of the task's equivalence classes, plus possibly
+  // for the task ID, if the cost model requires per-task record keeping.
+  //
+  // Note that we might also need support for recording statistics under
+  // different equivalence classes than we use in the flow graph. This isn't
+  // currently supported.
+  EquivClass_t bogus_equiv_class = static_cast<EquivClass_t>(task_id);
+  task_equiv_classes->push_back(bogus_equiv_class);
+  // Add statistics to all relevant ECs
+  for (vector<EquivClass_t>::iterator it = task_equiv_classes->begin();
+       it != task_equiv_classes->end();
+       ++it) {
+    knowledge_base_->EraseStats(*it);
+  }
 }
 
 TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
@@ -437,6 +594,7 @@ void GoogleTraceSimulator::LoadMachineEvents() {
   if ((machines_file = fopen(machines_file_name.c_str(), "r")) == NULL) {
     LOG(ERROR) << "Failed to open trace for reading machine events.";
   }
+
   int64_t num_line = 1;
   while (!feof(machines_file)) {
     if (fscanf(machines_file, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -445,12 +603,25 @@ void GoogleTraceSimulator::LoadMachineEvents() {
         LOG(ERROR) << "Unexpected structure of machine events on line "
                    << num_line << ": found " << cols.size() << " columns.";
       } else {
+        uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
+        if (timestamp > FLAGS_runtime) {
+          // only load the events that we need
+          break;
+        }
+
         // schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
+        uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
+        // Sub-sample the trace if we only retain < 100% of machines.
+        if (SpookyHash::Hash64(&machine_id, sizeof(machine_id), SEED)
+            > proportion_to_retain_) {
+          // skip event
+          continue;
+        }
+
         EventDescriptor event_desc;
         event_desc.set_machine_id(lexical_cast<uint64_t>(cols[1]));
         event_desc.set_type(TranslateMachineEvent(
             lexical_cast<int32_t>(cols[2])));
-        uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
         if (event_desc.type() == EventDescriptor::REMOVE_MACHINE ||
             event_desc.type() == EventDescriptor::ADD_MACHINE) {
           events_.insert(pair<uint64_t, EventDescriptor>(timestamp,
@@ -463,6 +634,30 @@ void GoogleTraceSimulator::LoadMachineEvents() {
     num_line++;
   }
   fclose(machines_file);
+}
+
+void GoogleTraceSimulator::LoadMachineTemplate(
+    ResourceTopologyNodeDescriptor* machine_tmpl) {
+  boost::filesystem::path machine_tmpl_path(FLAGS_machine_tmpl_file);
+  if (machine_tmpl_path.is_relative()) {
+    // lookup file relative to directory of binary, not CWD
+    char binary_path[1024];
+    size_t bytes = ExecutableDirectory(binary_path, sizeof(binary_path));
+    CHECK(bytes < sizeof(binary_path));
+    boost::filesystem::path binary_path_boost(binary_path);
+    binary_path_boost.remove_filename();
+
+    machine_tmpl_path = binary_path_boost / machine_tmpl_path;
+  }
+
+  std::string machine_tmpl_fname(machine_tmpl_path.string());
+  LOG(INFO) << "Loading machine descriptor from " << machine_tmpl_fname;
+  int fd = open(machine_tmpl_fname.c_str(), O_RDONLY);
+  if (fd < 0) {
+    PLOG(FATAL) << "Could not load " << machine_tmpl_fname;
+  }
+  machine_tmpl->ParseFromFileDescriptor(fd);
+  close(fd);
 }
 
 void GoogleTraceSimulator::LoadTaskRuntimeStats() {
@@ -479,6 +674,8 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
     if (fscanf(usage_file, "%[^\n]%*[\n]", &line[0]) > 0) {
       boost::split(cols, line, is_any_of(" "), token_compress_off);
       if (cols.size() != 38) {
+        LOG(WARNING) << "Malformed task usage, " << cols.size()
+                     << " != 38 columns at line " << num_line;
       } else {
         TaskIdentifier task_id;
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
@@ -493,7 +690,16 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
         task_stats.avg_mean_local_disk_used = lexical_cast<double>(cols[28]);
         task_stats.avg_cpi = lexical_cast<double>(cols[32]);
         task_stats.avg_mai = lexical_cast<double>(cols[36]);
-        CHECK(InsertIfNotPresent(&task_id_to_stats_, task_id, task_stats));
+
+        if (!InsertIfNotPresent(&task_id_to_stats_, task_id, task_stats) &&
+            VLOG_IS_ON(1)) {
+          LOG(ERROR) << "LoadTaskRuntimeStats: There should not be more than an"
+                     << " entry for job " << task_id.job_id
+                     << ", task " << task_id.task_index;
+        } else {
+          VLOG(2) << "Loaded stats for "
+                  << task_id.job_id << "/" << task_id.task_index;
+        }
 
         // double min_mean_cpu_usage = lexical_cast<double>(cols[2]);
         // double max_mean_cpu_usage = lexical_cast<double>(cols[3]);
@@ -529,9 +735,8 @@ void GoogleTraceSimulator::LoadTaskRuntimeStats() {
   fclose(usage_file);
 }
 
-unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
-    GoogleTraceSimulator::LoadTasksRunningTime() {
-  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher> *task_runtime =
+void GoogleTraceSimulator::LoadTasksRunningTime() {
+  task_runtime_ =
     new unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>();
   char line[200];
   vector<string> cols;
@@ -541,6 +746,7 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
   if ((tasks_file = fopen(tasks_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace runtime events file.";
   }
+
   int64_t num_line = 1;
   while (!feof(tasks_file)) {
     if (fscanf(tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -552,18 +758,126 @@ unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
         TaskIdentifier task_id;
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
+
+        // Sub-sample the trace if we only retain < 100% of tasks.
+        if (SpookyHash::Hash64(&task_id, sizeof(task_id), SEED) >
+            proportion_to_retain_) {
+          // skip event
+          continue;
+        }
+
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
-        if (!InsertIfNotPresent(task_runtime, task_id, runtime) &&
+        if (!InsertIfNotPresent(task_runtime_, task_id, runtime) &&
             VLOG_IS_ON(1)) {
-          LOG(ERROR) << "There should not be more than an entry for job "
-                     << task_id.job_id << ", task " << task_id.task_index;
+          LOG(ERROR) << "LoadTasksRunningTime: There should not be more than "
+                     << "one entry for job " << task_id.job_id
+                     << ", task " << task_id.task_index;
+        } else {
+          VLOG(2) << "Loaded runtime for "
+                  << task_id.job_id << "/" << task_id.task_index;
         }
       }
     }
     num_line++;
   }
   fclose(tasks_file);
-  return task_runtime;
+}
+
+void GoogleTraceSimulator::LoadTraceData() {
+  // Load all the machine events.
+  LoadMachineEvents();
+  // Populate the job_id to number of tasks mapping.
+  LoadJobsNumTasks();
+  // Load tasks' runtime.
+  LoadTasksRunningTime();
+  // Populate the knowledge base.
+  LoadTaskRuntimeStats();
+}
+
+void GoogleTraceSimulator::LogStartOfSolverRun(uint64_t time_interval_bound) {
+  VLOG(2) << "Job id size: " << job_id_to_jd_.size();
+  VLOG(2) << "Task id size: " << task_id_to_identifier_.size();
+  VLOG(2) << "Job num tasks size: " << job_num_tasks_.size();
+  VLOG(2) << "Job id to jd size: " << job_map_->size();
+  VLOG(2) << "Task id to td size: " << task_map_->size();
+  VLOG(2) << "Res id to rd size: " << resource_map_->size();
+  VLOG(2) << "Task binding: " << task_bindings_.size();
+
+  LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
+  LOG(INFO) << "Nodes: " << flow_graph_->NumNodes()
+            << ", arcs: " << flow_graph_->NumArcs();
+
+  if (graph_output_) {
+    fprintf(graph_output_, "c SOI %lu\n", time_interval_bound);
+    fflush(graph_output_);
+  }
+}
+
+void GoogleTraceSimulator::LogSolverRunStats(
+    const boost::timer::cpu_timer timer,
+    uint64_t time_interval_bound,
+    double algorithm_time,
+    double flowsolver_time,
+    const DIMACSChangeStats& change_stats,
+    ofstream* stats_file) {
+  if (stats_file) {
+    boost::timer::cpu_times total_runtime = timer.elapsed();
+    boost::timer::nanosecond_type second = 1000*1000*1000;
+    double total_runtime_float = total_runtime.wall;
+    total_runtime_float /= second;
+    if (FLAGS_batch_step == 0) {
+      // online mode
+      double scheduling_latency = time_interval_bound;
+      scheduling_latency += algorithm_time * 1000 * 1000;
+      scheduling_latency -= first_exogenous_event_seen_;
+      scheduling_latency /= (1000 * 1000);
+
+      // will be negative if we have not seen any exogeneous event
+      scheduling_latency = max(0.0, scheduling_latency);
+
+      *stats_file << time_interval_bound << ","
+                  << scheduling_latency << ","
+                  << algorithm_time << ","
+                  << flowsolver_time << ","
+                  << total_runtime_float << ",";
+    } else {
+      // batch mode
+      *stats_file << time_interval_bound << ","
+                  << algorithm_time << ","
+                  << flowsolver_time << ","
+                  << total_runtime_float << ",";
+    }
+    OutputChangeStats(change_stats, stats_file);
+    stats_file->flush();
+  }
+}
+
+uint64_t GoogleTraceSimulator::NextTimeIntervalBound(
+    uint64_t cur_time_interval_bound,
+    double algorithm_time) {
+  if (FLAGS_batch_step == 0) {
+    // we're in online mode
+    // 1. when we run the solver next depends on how fast we were
+    double time_to_solve = min(algorithm_time, FLAGS_online_max_time);
+    time_to_solve *= 1000 * 1000; // to micro
+    // adjust for time warp factor
+    time_to_solve *= FLAGS_online_factor;
+    cur_time_interval_bound += static_cast<uint64_t>(time_to_solve);
+    // 2. if task assignments changed, then graph will have been
+    // modified, even in the absence of any new events.
+    // Incremental solvers will want to rerun here, as it reduces
+    // latency. But we shouldn't count it as an actual iteration.
+    // Full solvers will not want to rerun: no point.
+    if (FLAGS_incremental_flow) {
+      EventDescriptor event;
+      event.set_type(EventDescriptor::TASK_ASSIGNMENT_CHANGED);
+      events_.insert(make_pair(cur_time_interval_bound, event));
+    }
+  } else {
+    // we're in batch mode
+    cur_time_interval_bound += FLAGS_batch_step;
+  }
+  return cur_time_interval_bound;
 }
 
 JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
@@ -588,9 +902,22 @@ JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
   return jd_ptr;
 }
 
-void GoogleTraceSimulator::ProcessSimulatorEvents(
-    uint64_t cur_time,
-    const ResourceTopologyNodeDescriptor& machine_tmpl) {
+void GoogleTraceSimulator::SeenExogenous(uint64_t time) {
+  first_exogenous_event_seen_ = std::min(time, first_exogenous_event_seen_);
+}
+
+uint64_t GoogleTraceSimulator::NextSimulatorEvent() {
+  multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
+  if (it == events_.end()) {
+    // Empty collection.
+    return UINT64_MAX;
+  } else {
+    return it->first;
+  }
+}
+
+void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
+                           const ResourceTopologyNodeDescriptor& machine_tmpl) {
   while (true) {
     multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
     if (it == events_.end()) {
@@ -598,28 +925,42 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
       break;
     }
     if (it->first > cur_time) {
-      // Processed all the events we are interested in.
+      // Processed all events <= cur_time.
       break;
     }
+
+    string log_string;
     if (it->second.type() == EventDescriptor::ADD_MACHINE) {
-      VLOG(2) << "ADD_MACHINE " << it->second.machine_id();
+      spf(&log_string, "ADD_MACHINE %ju @ %ju\n", it->second.machine_id(),
+          it->first);
+      LogEvent(log_string);
       AddMachine(machine_tmpl, it->second.machine_id());
+      SeenExogenous(it->first);
     } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
-      VLOG(2) << "REMOVE_MACHINE " << it->second.machine_id();
+      spf(&log_string, "REMOVE_MACHINE %ju @ %ju\n", it->second.machine_id(),
+          it->first);
+      LogEvent(log_string);
       RemoveMachine(it->second.machine_id());
+      SeenExogenous(it->first);
     } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
       // TODO(ionel): Handle machine update event.
     } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
-      VLOG(2) << "TASK_END_RUNTIME " << it->second.job_id() << " "
-              << it->second.task_index();
+      spf(&log_string, "TASK_END_RUNTIME %s:%ju @ %ju\n", it->second.job_id(),
+          it->second.task_index(), it->first);
+      LogEvent(log_string);
       // Task has finished.
       TaskIdentifier task_identifier;
       task_identifier.task_index = it->second.task_index();
       task_identifier.job_id = it->second.job_id();
       TaskCompleted(task_identifier);
+      SeenExogenous(it->first);
+    } else if (it->second.type() == EventDescriptor::TASK_ASSIGNMENT_CHANGED) {
+      // no-op: this event is just used to trigger solver re-run
     } else {
-      LOG(ERROR) << "Unexpected machine event";
+      LOG(ERROR) << "Unexpected event type " << it->second.type() << " @ "
+                 << it->first;
     }
+
     events_.erase(it);
   }
 }
@@ -629,9 +970,17 @@ void GoogleTraceSimulator::ProcessTaskEvent(
     uint64_t event_type,
     unordered_map<TaskIdentifier, uint64_t,
       TaskIdentifierHasher>* task_runtime) {
+  string log_string;
   if (event_type == SUBMIT_EVENT) {
-    AddNewTask(task_identifier);
-    AddTaskStats(task_identifier, task_runtime);
+    spf(&log_string, "TASK_SUBMIT_EVENT: ID %s:%ju @ %ju\n",
+        task_identifier.job_id, task_identifier.task_index,
+        cur_time);
+    LogEvent(log_string);
+    if (AddNewTask(task_identifier, task_runtime)) {
+      SeenExogenous(cur_time);
+    } else {
+      // duplicate task id -- ignore
+    }
   }
 }
 
@@ -774,27 +1123,55 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
                                               GetCurrentTimestamp())));
 }
 
-void GoogleTraceSimulator::ReplayTrace() {
-  // Load all the machine events.
-  LoadMachineEvents();
-  // Populate the job_id to number of tasks mapping.
-  LoadJobsNumTasks();
-  // Load tasks' runtime.
-  unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* task_runtime =
-    LoadTasksRunningTime();
-  // Populate the knowledge base.
-  LoadTaskRuntimeStats();
+void GoogleTraceSimulator::OutputStatsHeader(ofstream* stats_file) {
+  const string change_stats_header =
+    "total_changes,new_node,remove_node,new_arc,change_arc,remove_arc";
+  if (stats_file) {
+    if (FLAGS_batch_step == 0) {
+      // online
+      *stats_file << "cluster_timestamp,scheduling_latency,algorithm_time,"
+                  << "flowsolver_time,total_time,";
+    } else {
+      // batch
+      *stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,"
+                  << "total_time,";
+    }
+    *stats_file << change_stats_header << std::endl;
+  }
+}
+
+void GoogleTraceSimulator::OutputChangeStats(const DIMACSChangeStats& stats,
+                                             ofstream* stats_file) {
+  *stats_file << stats.total_ << "," << stats.nodes_added_ << ","
+              << stats.nodes_removed_ << "," << stats.arcs_added_ << ","
+              << stats.arcs_changed_ << "," << stats.arcs_removed_
+              << endl;
+}
+
+void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
+  // Output CSV header
+  OutputStatsHeader(stats_file);
+
+  // Timing facilities
+  boost::timer::cpu_timer timer;
+  timeout_file = stats_file;
+  signal(SIGALRM, alarm_handler);
+
+  // Load the trace ingredients
+  LoadTraceData();
 
   // Import a fictional machine resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
-  int fd = open(MACHINE_TMPL_FILE, O_RDONLY);
-  machine_tmpl.ParseFromFileDescriptor(fd);
-  close(fd);
+  LoadMachineTemplate(&machine_tmpl);
 
   char line[200];
   vector<string> vals;
   FILE* f_task_events_ptr = NULL;
-  uint64_t time_interval_bound = FLAGS_bin_time_duration;
+  uint64_t time_interval_bound = 0;
+  uint64_t num_events = 0;
+  uint64_t num_scheduling_rounds = 0;
+  first_exogenous_event_seen_ = UINT64_MAX;
+
   for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
        file_num++) {
     string fname;
@@ -810,10 +1187,18 @@ void GoogleTraceSimulator::ReplayTrace() {
           LOG(ERROR) << "Unexpected structure of task event row: found "
                      << vals.size() << " columns.";
         } else {
-          TaskIdentifier task_identifier;
+          TaskIdentifier task_id;
           uint64_t task_time = lexical_cast<uint64_t>(vals[0]);
-          task_identifier.job_id = lexical_cast<uint64_t>(vals[2]);
-          task_identifier.task_index = lexical_cast<uint64_t>(vals[3]);
+          task_id.job_id = lexical_cast<uint64_t>(vals[2]);
+          task_id.task_index = lexical_cast<uint64_t>(vals[3]);
+
+          // Sub-sample the trace if we only retain < 100% of tasks.
+          if (SpookyHash::Hash64(&task_id, sizeof(task_id), SEED)
+              > proportion_to_retain_) {
+            // skip event
+            continue;
+          }
+
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
 
           // We only run for the first FLAGS_runtime microseconds.
@@ -822,59 +1207,82 @@ void GoogleTraceSimulator::ReplayTrace() {
             return;
           }
 
-          if (task_time > time_interval_bound) {
+          num_events++;
+          if (num_events > FLAGS_max_events) {
+            LOG(INFO) << "Terminating after " << num_events << " events";
+            return;
+          }
+
+          VLOG(2) << "TASK EVENT @ " << task_time;
+
+          while (task_time > time_interval_bound) {
             ProcessSimulatorEvents(time_interval_bound, machine_tmpl);
 
-            VLOG(2) << "Job id size: " << job_id_to_jd_.size();
-            VLOG(2) << "Task id size: " << task_id_to_identifier_.size();
-            VLOG(2) << "Job num tasks size: " << job_num_tasks_.size();
-            VLOG(2) << "Job id to jd size: " << job_map_->size();
-            VLOG(2) << "Task id to td size: " << task_map_->size();
-            VLOG(2) << "Res id to rd size: " << resource_map_->size();
-            VLOG(2) << "Task binding: " << task_bindings_.size();
+            if (!flow_graph_->graph_changes().empty()) {
+              // Only run solver if something has actually changed.
+              // (Sometimes, all the events we received in a time interval
+              // have been ignored, e.g. task submit events with duplicate IDs.)
+              double algorithm_time;
+              double flowsolver_time;
+              // Do some logging
+              LogStartOfSolverRun(time_interval_bound);
 
-            LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
+              DIMACSChangeStats change_stats(flow_graph_->graph_changes());
+              // Set a timeout on the solver's run
+              alarm(FLAGS_solver_timeout);
+              multimap<uint64_t, uint64_t>* task_mappings =
+                quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time,
+                                        graph_output_);
+              alarm(0);
 
-            multimap<uint64_t, uint64_t>* task_mappings =
-              quincy_dispatcher_->Run();
+              // We're done, now update the flow graph with the results
+              UpdateFlowGraph(time_interval_bound, task_runtime_,
+                              task_mappings);
+              delete task_mappings;
+              // Also update any resource statistics, if required
+              UpdateResourceStats();
 
-            UpdateFlowGraph(time_interval_bound, task_runtime, task_mappings);
+              // Log stats to CSV file
+              LogSolverRunStats(timer, time_interval_bound, algorithm_time,
+                                flowsolver_time, change_stats, stats_file);
 
-            delete task_mappings;
+              // restart timer; elapsed() returns time from this point
+              timer.stop();
+              timer.start();
 
-            if (FLAGS_flow_scheduling_cost_model ==
-                FlowSchedulingCostModelType::COST_MODEL_COCO ||
-                FLAGS_flow_scheduling_cost_model ==
-                FlowSchedulingCostModelType::COST_MODEL_OCTOPUS ||
-                FLAGS_flow_scheduling_cost_model ==
-                FlowSchedulingCostModelType::COST_MODEL_WHARE) {
-              flow_graph_->ComputeTopologyStatistics(
-                  flow_graph_->sink_node(),
-                  boost::bind(&FlowSchedulingCostModelInterface::GatherStats,
-                              cost_model_, _1, _2));
-              flow_graph_->ComputeTopologyStatistics(
-                  flow_graph_->sink_node(),
-                  boost::bind(&FlowSchedulingCostModelInterface::UpdateStats,
-                              cost_model_, _1, _2));
-            } else {
-              LOG(INFO) << "No resource stats update required";
+              // Update current time.
+              time_interval_bound = NextTimeIntervalBound(time_interval_bound,
+                                                          algorithm_time);
+
+              // We've done another round, check if we should keep going
+              num_scheduling_rounds++;
+              if (num_scheduling_rounds >= FLAGS_max_scheduling_rounds) {
+                LOG(INFO) << "Terminating after " << num_scheduling_rounds
+                          << " scheduling rounds.";
+                return;
+              }
             }
 
-            // Update current time.
-            while (time_interval_bound < task_time) {
-              time_interval_bound += FLAGS_bin_time_duration;
-            }
+            VLOG(1) << "Updated time interval bound to " << time_interval_bound;
+            // skip time until the next event happens
+            uint64_t next_event = min(task_time, NextSimulatorEvent());
+            VLOG(1) << "Next event at " << next_event;
+            time_interval_bound = max(next_event, time_interval_bound);
+            VLOG(1) << "Time interval bound to " << time_interval_bound;
+
+            first_exogenous_event_seen_ = UINT64_MAX;
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
-          ProcessTaskEvent(task_time, task_identifier, event_type,
-                           task_runtime);
+          ProcessTaskEvent(task_time, task_id, event_type, task_runtime_);
+          first_exogenous_event_seen_ =
+                               std::min(first_exogenous_event_seen_, task_time);
         }
       }
     }
     fclose(f_task_events_ptr);
   }
-  delete task_runtime;
+  delete task_runtime_;
 }
 
 void GoogleTraceSimulator::TaskCompleted(
@@ -944,6 +1352,7 @@ void GoogleTraceSimulator::UpdateFlowGraph(
           src->type_.type() == FlowNodeType::ROOT_TASK);
     // Destination must be a PU node
     CHECK(dst->type_.type() == FlowNodeType::PU);
+    // XXX: what about unscheduled tasks?
     // Get the TD and RD for the source and destination
     TaskDescriptor* task = FindPtrOrNull(*task_map_, src->task_id_);
     CHECK_NOTNULL(task);
@@ -980,15 +1389,25 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       rd->set_current_running_task(task_id);
       CHECK(InsertIfNotPresent(&task_bindings_, task_id, res_id));
       CHECK(InsertIfNotPresent(&res_id_to_task_id_, res_id, task_id));
-      // After the task is bound, we now remove all of its edges into the flow
-      // graph apart from the bound resource.
-      // N.B.: This disables preemption and migration!
+      // Unless FLAGS_preemption is set, all edges are removed except into
+      // the bound resource, disabling preemption and migration
       flow_graph_->TaskScheduled(task_id, res_id);
       TaskIdentifier* task_identifier =
         FindOrNull(task_id_to_identifier_, task_id);
       CHECK_NOTNULL(task_identifier);
       AddTaskEndEvent(scheduling_timestamp, task_id, *task_identifier,
                       task_runtime);
+    } else if (delta->type() == SchedulingDelta::PREEMPT) {
+      // Apply the scheduling delta.
+      TaskID_t old_task_id = delta->task_id();
+      ResourceID_t res_id = ResourceIDFromString(delta->resource_id());
+      // Mark the old task as unscheduled
+      // XXX: Does this do everything?
+      TaskEvicted(old_task_id, res_id);
+      ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+      CHECK_NOTNULL(rs);
+      ResourceDescriptor* rd = rs->mutable_descriptor();
+      rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
     } else if (delta->type() == SchedulingDelta::MIGRATE) {
       // Apply the scheduling delta.
       TaskID_t task_id = delta->task_id();
@@ -1006,22 +1425,45 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       pus_used.insert(res_id);
       td->set_state(TaskDescriptor::RUNNING);
       ResourceID_t* old_res_id = FindOrNull(task_bindings_, task_id);
-      CHECK_NOTNULL(old_res_id);
-      if (pus_used.find(*old_res_id) == pus_used.end()) {
-        // The resource is now idle.
-        ResourceStatus* old_rs = FindPtrOrNull(*resource_map_, *old_res_id);
-        CHECK_NOTNULL(old_rs);
-        ResourceDescriptor* old_rd = old_rs->mutable_descriptor();
-        old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
-        res_id_to_task_id_.erase(*old_res_id);
+      if (old_res_id) {
+        // could be null if we've already processed a PREEMPTION event for this
+        if (pus_used.find(*old_res_id) == pus_used.end()) {
+          // The resource is now idle.
+          ResourceStatus* old_rs = FindPtrOrNull(*resource_map_, *old_res_id);
+          CHECK_NOTNULL(old_rs);
+          ResourceDescriptor* old_rd = old_rs->mutable_descriptor();
+          old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
+          res_id_to_task_id_.erase(*old_res_id);
+        }
       }
       rd->set_current_running_task(task_id);
       InsertOrUpdate(&task_bindings_, task_id, res_id);
-      CHECK(InsertIfNotPresent(&res_id_to_task_id_, res_id, task_id));
+      // may already be present if there's another migration/preemption event
+      InsertOrUpdate(&res_id_to_task_id_, res_id, task_id);
     } else {
       LOG(FATAL) << "Unhandled scheduling delta case.";
     }
     delete delta;
+  }
+}
+
+void GoogleTraceSimulator::UpdateResourceStats() {
+  if (FLAGS_flow_scheduling_cost_model ==
+      FlowSchedulingCostModelType::COST_MODEL_COCO ||
+      FLAGS_flow_scheduling_cost_model ==
+      FlowSchedulingCostModelType::COST_MODEL_OCTOPUS ||
+      FLAGS_flow_scheduling_cost_model ==
+      FlowSchedulingCostModelType::COST_MODEL_WHARE) {
+    flow_graph_->ComputeTopologyStatistics(
+        flow_graph_->sink_node(),
+        boost::bind(&FlowSchedulingCostModelInterface::GatherStats,
+                    cost_model_, _1, _2));
+    flow_graph_->ComputeTopologyStatistics(
+        flow_graph_->sink_node(),
+        boost::bind(&FlowSchedulingCostModelInterface::UpdateStats,
+                    cost_model_, _1, _2));
+  } else {
+    LOG(INFO) << "No resource stats update required";
   }
 }
 
@@ -1069,7 +1511,6 @@ FlowGraphNode* GoogleTraceSimulator::GatherWhareMCStats(
     return accumulator;
   }
   if (accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
-
     if (!other->resource_id_.is_nil() &&
         other->type_.type() == FlowNodeType::MACHINE) {
       // If the other node is a machine.
@@ -1108,7 +1549,6 @@ void GoogleTraceSimulator::AccumulateWhareMapStats(
   accumulator->set_num_turtles(accumulator->num_turtles() +
                                other->num_turtles());
 }
-
 
 } // namespace sim
 } // namespace firmament

@@ -13,8 +13,10 @@
 #include "scheduling/cost_models/octopus_cost_model.h"
 #include "scheduling/cost_models/quincy_cost_model.h"
 #include "scheduling/cost_models/random_cost_model.h"
+#include "scheduling/cost_models/simulated_quincy_cost_model.h"
 #include "scheduling/cost_models/sjf_cost_model.h"
 #include "scheduling/cost_models/trivial_cost_model.h"
+#include "scheduling/cost_models/void_cost_model.h"
 #include "scheduling/cost_models/wharemap_cost_model.h"
 
 #endif

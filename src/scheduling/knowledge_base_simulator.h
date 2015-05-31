@@ -11,9 +11,9 @@ namespace firmament {
 class KnowledgeBaseSimulator : public KnowledgeBase {
  public:
   KnowledgeBaseSimulator();
-  double GetAvgCPIForTEC(EquivClass_t id);
-  double GetAvgIPMAForTEC(EquivClass_t id);
-  double GetAvgRuntimeForTEC(EquivClass_t id);
+  double GetAvgCPIForTEC(EquivClass_t id) override;
+  double GetAvgIPMAForTEC(EquivClass_t id) override;
+  double GetAvgRuntimeForTEC(EquivClass_t id) override;
   double GetAvgMeanCpuUsage(EquivClass_t id);
   double GetAvgCanonicalMemUsage(EquivClass_t id);
   double GetAvgAssignedMemUsage(EquivClass_t id);
@@ -38,6 +38,8 @@ class KnowledgeBaseSimulator : public KnowledgeBase {
                             double avg_mean_disk_io_time);
   void SetAvgMeanLocalDiskUsed(EquivClass_t id,
                                double avg_mean_local_disk_used);
+
+  void EraseStats(EquivClass_t id);
 
  private:
   unordered_map<EquivClass_t, double> tec_avg_cpi_;

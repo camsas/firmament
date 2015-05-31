@@ -8,8 +8,9 @@
 
 #include <stdint.h>
 #include <map>
-#include <utility>
+#include <set>
 #include <string>
+#include <utility>
 
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/uuid/uuid.hpp>
@@ -31,6 +32,12 @@ using std::map;
 using std::pair;
 using std::string;
 
+#ifdef __CXX_11_ENABLED__
+#include <unordered_map>
+#include <unordered_set>
+using std::unordered_map;
+using std::unordered_set;
+#else
 // Use TR1 implementation for hash map.
 #include <tr1/unordered_map>
 #include <tr1/unordered_set>
@@ -41,6 +48,7 @@ using tr1::unordered_map;
 using tr1::unordered_set;
 
 }  // namespace firmament
+#endif
 
 // Smart pointers
 // Depending on compiler support and library available, we use the following, in
@@ -76,19 +84,6 @@ using boost::weak_ptr;
 }  // namespace firmament
 
 #else
-// Neither C++11 support nor Boost available; fall back to Yasper wrapped with
-// home-brew classes.
-#include "ext/yasper/yasper.h"
-
-namespace firmament {
-
-// reference-counted shared pointer
-class shared_ptr<T> : public yasper::ptr<T> {
-};
-
-// TODO(malte): consider using Google's scoped_ptr implementation here (Apache
-// 2.0 license).
-
 // TODO(malte): Add support for scoped and weak pointers
 #error "No current support for scoped_ptr and weak_ptr using yasper " \
     "Smart pointers not available on this platform; this needs fixing before " \

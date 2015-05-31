@@ -42,6 +42,7 @@ uint64_t GetCurrentTimestamp();
 //              descriptor may carry this information.
 uint64_t MakeEnsembleUID(Ensemble *ens);*/
 
+int ExecutableDirectory(char *pBuf, ssize_t len);
 ResourceID_t GenerateUUID();  // DEPRECATED, exists only for backwards compat
 ResourceID_t GenerateResourceID();
 ResourceID_t GenerateRootResourceID(const string& hostname);

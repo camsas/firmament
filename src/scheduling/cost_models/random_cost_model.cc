@@ -134,6 +134,9 @@ void RandomCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
 }
 
+void RandomCostModel::AddTask(TaskID_t task_id) {
+}
+
 void RandomCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 

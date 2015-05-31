@@ -3,6 +3,7 @@
 //
 // Implementation of the simulator's knowledge base.
 
+#include "base/common.h"
 #include "misc/map-util.h"
 #include "scheduling/knowledge_base_simulator.h"
 
@@ -25,8 +26,13 @@ double KnowledgeBaseSimulator::GetAvgIPMAForTEC(EquivClass_t id) {
 
 double KnowledgeBaseSimulator::GetAvgRuntimeForTEC(EquivClass_t id) {
   double* avg_runtime = FindOrNull(tec_avg_runtime_, id);
-  CHECK_NOTNULL(avg_runtime);
-  return *avg_runtime;
+  if (!avg_runtime) {
+    LOG(WARNING) << "Missing runtime for " << id;
+    // TODO(ionel): Sample for random distribution? Or fix the missing runtimes?
+    return 10000;
+  } else {
+    return *avg_runtime;
+  }
 }
 
 double KnowledgeBaseSimulator::GetAvgMeanCpuUsage(EquivClass_t id) {
@@ -130,6 +136,19 @@ void KnowledgeBaseSimulator::SetAvgMeanLocalDiskUsed(
     EquivClass_t id, double avg_mean_local_disk_used) {
   InsertIfNotPresent(&tec_avg_mean_local_disk_used_, id,
                      avg_mean_local_disk_used);
+}
+
+void KnowledgeBaseSimulator::EraseStats(EquivClass_t id) {
+  tec_avg_cpi_.erase(id);
+  tec_avg_ipma_.erase(id);
+  tec_avg_runtime_.erase(id);
+  tec_avg_mean_cpu_usage_.erase(id);
+  tec_avg_canonical_mem_usage_.erase(id);
+  tec_avg_assigned_mem_usage_.erase(id);
+  tec_avg_unmapped_page_cache_.erase(id);
+  tec_avg_total_page_cache_.erase(id);
+  tec_avg_mean_disk_io_time_.erase(id);
+  tec_avg_mean_local_disk_used_.erase(id);
 }
 
 } // namespace firmament

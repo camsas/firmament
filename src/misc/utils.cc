@@ -7,16 +7,28 @@
 
 // N.B.: C header for gettimeofday()
 extern "C" {
+#include <limits.h>
 #include <openssl/sha.h>
 #include <stdio.h>
-#include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 }
 #include <set>
 #include <string>
 #include <vector>
+
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+
+#ifdef OPEN_MAX
+#define OPEN_MAX_GUESS OPEN_MAX
+#else
+#define OPEN_MAX_GUESS 256 // reasonable value
+#endif
 
 #include "misc/utils.h"
 
@@ -46,6 +58,17 @@ uint64_t MakeEnsembleUID(Ensemble *ens) {
   boost::hash<string> hasher;
   return hasher(ens->name());
 }*/
+
+// Helper function to get the directory in which the currently
+// running executable lives
+int ExecutableDirectory(char *pBuf, ssize_t len) {
+  char szTmp[32];
+  sprintf(szTmp, "/proc/%d/exe", getpid());
+  int bytes = min(readlink(szTmp, pBuf, len), len - 1);
+  if(bytes >= 0)
+    pBuf[bytes] = '\0';
+  return bytes;
+}
 
 // DEPRECATED wrapper for backwards compatibility
 ResourceID_t GenerateUUID() {
@@ -279,18 +302,26 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       break;
     case 0: {
       // Child
-      // Close parent pipe descriptors
-      close(infd[1]);
-      close(outfd[0]);
-      close(errfd[0]);
+      int fd;
+      int fds;
+
       // set up pipes
       CHECK(dup2(infd[0], STDIN_FILENO) == STDIN_FILENO);
       CHECK(dup2(outfd[1], STDOUT_FILENO) == STDOUT_FILENO);
       CHECK(dup2(errfd[1], STDERR_FILENO) == STDERR_FILENO);
-      // close unnecessary pipe descriptors
-      close(infd[0]);
-      close(outfd[1]);
-      close(errfd[1]);
+
+      // XXX(ionel): It's not clear to me while we're closing all the fds >= 3.
+
+      // Close all file descriptors other than stdin, stdout and stderr
+      if ((fds = getdtablesize()) == -1) fds = OPEN_MAX_GUESS;
+      for (fd = 3; fd < fds; fd++) close(fd);
+
+      // kill child process if parent terminates
+      // SOMEDAY(adam): make this portable beyond Linux?
+#ifdef __linux__
+      prctl(PR_SET_PDEATHSIG, SIGHUP);
+#endif
+
       // Run the task binary
       execvp(argv[0], &argv[0]);
       // execl only returns if there was an error

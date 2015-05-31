@@ -35,7 +35,7 @@ namespace firmament {
 class KnowledgeBase {
  public:
   KnowledgeBase();
-  ~KnowledgeBase();
+  virtual ~KnowledgeBase();
   void AddMachineSample(const MachinePerfStatisticsSample& sample);
   void AddTaskSample(const TaskPerfStatisticsSample& sample);
   void DumpMachineStats(const ResourceID_t& res_id) const;
@@ -43,9 +43,9 @@ class KnowledgeBase {
       ResourceID_t id) const;
   const deque<TaskPerfStatisticsSample>* GetStatsForTask(
       TaskID_t id) const;
-  double GetAvgCPIForTEC(EquivClass_t id);
-  double GetAvgIPMAForTEC(EquivClass_t id);
-  double GetAvgRuntimeForTEC(EquivClass_t id);
+  virtual double GetAvgCPIForTEC(EquivClass_t id);
+  virtual double GetAvgIPMAForTEC(EquivClass_t id);
+  virtual double GetAvgRuntimeForTEC(EquivClass_t id);
   const deque<TaskFinalReport>* GetFinalStatsForTask(TaskID_t task_id) const;
   vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) const;
   void LoadKnowledgeBaseFromFile();
