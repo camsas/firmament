@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
@@ -25,7 +24,7 @@
 #include "base/machine_perf_statistics_sample.pb.h"
 #include "base/task_perf_statistics_sample.pb.h"
 #include "base/task_final_report.pb.h"
-#include "scheduling/cost_models/flow_scheduling_cost_model_interface.h"
+#include "scheduling/flow/cost_model_interface.h"
 
 namespace firmament {
 
@@ -51,7 +50,7 @@ class KnowledgeBase {
   void LoadKnowledgeBaseFromFile();
   void ProcessTaskFinalReport(const TaskFinalReport& report,
                               TaskID_t task_id);
-  void SetCostModel(FlowSchedulingCostModelInterface* cost_model);
+  void SetCostModel(CostModelInterface* cost_model);
 
  protected:
   map<ResourceID_t, deque<MachinePerfStatisticsSample> > machine_map_;
@@ -60,7 +59,7 @@ class KnowledgeBase {
   unordered_map<TaskID_t, deque<TaskPerfStatisticsSample> > task_map_;
   unordered_map<TaskID_t, deque<TaskFinalReport> > task_exec_reports_;
   boost::mutex kb_lock_;
-  FlowSchedulingCostModelInterface* cost_model_;
+  CostModelInterface* cost_model_;
 
  private:
   fstream serial_machine_samples_;
