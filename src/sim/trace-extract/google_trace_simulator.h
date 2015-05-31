@@ -16,11 +16,11 @@
 #include "base/resource_topology_node_desc.pb.h"
 #include "misc/utils.h"
 #include "misc/map-util.h"
-#include "scheduling/dimacs_change_stats.h"
-#include "scheduling/flow_graph.h"
 #include "scheduling/knowledge_base_simulator.h"
-#include "scheduling/quincy_dispatcher.h"
-#include "scheduling/cost_models/cost_models.h"
+#include "scheduling/flow/cost_models.h"
+#include "scheduling/flow/dimacs_change_stats.h"
+#include "scheduling/flow/flow_graph.h"
+#include "scheduling/flow/solver_dispatcher.h"
 #include "sim/trace-extract/event_desc.pb.h"
 
 DECLARE_string(flow_scheduling_solver);
@@ -301,9 +301,9 @@ class GoogleTraceSimulator {
 
   shared_ptr<FlowGraph> flow_graph_;
 
-  FlowSchedulingCostModelInterface* cost_model_;
+  CostModelInterface* cost_model_;
 
-  scheduler::QuincyDispatcher* quincy_dispatcher_;
+  scheduler::SolverDispatcher* solver_dispatcher_;
 
   // Proportion of events to retain, as a ratio out of UINT64_MAX
   uint64_t proportion_to_retain_;
