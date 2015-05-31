@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "facab960_ec60a237",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1360,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-05-31T00:06:53Z",
+      "side": 0,
+      "message": "Bla bla.",
+      "revId": "ea3be4c6163a72ad6576f35394493cfabf61b2ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
