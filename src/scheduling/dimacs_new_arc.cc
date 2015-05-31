@@ -15,7 +15,7 @@ DIMACSNewArc::DIMACSNewArc(const FlowGraphArc& arc) : DIMACSChange(),
 
 const string DIMACSNewArc::GenerateChange() const {
   stringstream ss;
-  ss << DIMACSChange::GenerateChange();
+  ss << DIMACSChange::GenerateChangeDescription();
   ss << "a " << src_ << " " << dst_ << " " << cap_lower_bound_
      << " " << cap_upper_bound_ << " " << cost_ << "\n";
   return ss.str();

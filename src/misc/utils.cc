@@ -310,6 +310,8 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       CHECK(dup2(outfd[1], STDOUT_FILENO) == STDOUT_FILENO);
       CHECK(dup2(errfd[1], STDERR_FILENO) == STDERR_FILENO);
 
+      // XXX(ionel): It's not clear to me while we're closing all the fds >= 3.
+
       // Close all file descriptors other than stdin, stdout and stderr
       if ((fds = getdtablesize()) == -1) fds = OPEN_MAX_GUESS;
       for (fd = 3; fd < fds; fd++) close(fd);

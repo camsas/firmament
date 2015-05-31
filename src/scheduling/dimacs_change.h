@@ -27,7 +27,7 @@ class DIMACSChange {
     return stats_;
   }
 
-  virtual const std::string GenerateChange() const {
+  const string GenerateChangeDescription() const {
     if (!comment_.empty()) {
       stringstream ss;
       ss << "c " << comment_ << "\n";
@@ -36,6 +36,8 @@ class DIMACSChange {
       return "";
     }
   }
+
+  virtual const std::string GenerateChange() const = 0;
 
  protected:
   string comment_;
