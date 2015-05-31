@@ -13,7 +13,7 @@ DIMACSRemoveNode::DIMACSRemoveNode(const FlowGraphNode& node) :
 
 const string DIMACSRemoveNode::GenerateChange() const {
   stringstream ss;
-  ss << DIMACSChange::GenerateChange();
+  ss << DIMACSChange::GenerateChangeDescription();
   ss << "r " << node_id_ << "\n";
   return ss.str();
 }

@@ -167,8 +167,8 @@ vector<ResourceID_t>* SimulatedQuincyCostModel::GetTaskPreferenceArcs(
   vector<ResourceID_t>* preferred_res = new vector<ResourceID_t>();
   auto &preferred_machines = *(preferred_machine_map_[task_id]);
   for (auto mapping : preferred_machines) {
-  	ResourceID_t machine = mapping.first;
-  	preferred_res->push_back(machine);
+    ResourceID_t machine = mapping.first;
+    preferred_res->push_back(machine);
     VLOG(1) << "Task " << task_id << " has preference arc to machine "
             << machine;
   }

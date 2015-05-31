@@ -21,7 +21,7 @@ struct DIMACSChangeStats {
   unsigned int arcs_added_;
   unsigned int arcs_changed_;
   unsigned int arcs_removed_;
- 
+
   DIMACSChangeStats() : total_(0), nodes_added_(0), nodes_removed_(0),
       arcs_added_(0), arcs_changed_(0), arcs_removed_(0)
   {}

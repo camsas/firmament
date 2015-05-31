@@ -20,7 +20,7 @@ DIMACSAddNode::DIMACSAddNode(const FlowGraphNode& node,
 
 const string DIMACSAddNode::GenerateChange() const {
   stringstream ss;
-  ss << DIMACSChange::GenerateChange();
+  ss << DIMACSChange::GenerateChangeDescription();
   ss << "n " << id_ << " " << excess_ << " " << GetNodeType() << "\n";
   for (const DIMACSNewArc &new_arc : arc_additions_) {
     ss << new_arc.GenerateChange();

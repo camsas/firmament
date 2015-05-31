@@ -70,9 +70,6 @@ class GoogleTraceSimulator {
   void Run();
 
  private:
-  SimulatedQuincyCostModel *SetupSimulatedQuincyCostModel(
-    unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids);
-
   /**
    * Add new machine to the topology. The method updates simulator's mapping state.
    * @param machine_tmp the topology descriptor of the new machine
@@ -308,8 +305,8 @@ class GoogleTraceSimulator {
 
   scheduler::QuincyDispatcher* quincy_dispatcher_;
 
-  // Proportion of events to retain, as a ratio out of UINT32_MAX
-  uint32_t proportion_to_retain_;
+  // Proportion of events to retain, as a ratio out of UINT64_MAX
+  uint64_t proportion_to_retain_;
 
   // File to output graph to. (Optional; NULL if unspecified.)
   FILE *graph_output_;
