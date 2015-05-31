@@ -20,6 +20,7 @@ TESTS_dimacs_exporter_DEPS = $(OBJ_DIR)/flow_graph.o \
 			     $(OBJ_DIR)/flow_node_type.pb.o \
 			     $(OBJ_DIR)/common.o \
 			     $(OBJ_DIR)/dimacs_change_arc.o \
+			     $(OBJ_DIR)/dimacs_change_stats.o \
 			     $(OBJ_DIR)/dimacs_new_arc.o \
 			     $(OBJ_DIR)/dimacs_remove_node.o \
 			     $(OBJ_DIR)/dimacs_add_node.o \
@@ -34,6 +35,7 @@ TESTS_flow_graph_DEPS = $(OBJ_DIR)/flow_node_type.pb.o \
 			$(OBJ_DIR)/common.o \
 			$(OBJ_DIR)/flow_graph_arc.o \
 			$(OBJ_DIR)/dimacs_change_arc.o \
+			$(OBJ_DIR)/dimacs_change_stats.o \
 			$(OBJ_DIR)/dimacs_new_arc.o \
 			$(OBJ_DIR)/dimacs_remove_node.o \
 			$(OBJ_DIR)/dimacs_add_node.o \
