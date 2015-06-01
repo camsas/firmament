@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "facab960_9d4e62c0",
+        "filename": "src/scheduling/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-01T14:40:31Z",
+      "side": 1,
+      "message": "Is there any particular reason for which the knowledge_base simulator is still under the scheduler? Can we move it to the sim/ directory?",
+      "revId": "c2be7f14463279a1763d3f9f682523c0a7abcf3b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_1dd252d2",
+        "filename": "src/scheduling/flow/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-01T14:40:31Z",
+      "side": 1,
+      "message": "Can you align this with the previous line? The same for the following lines.",
+      "revId": "c2be7f14463279a1763d3f9f682523c0a7abcf3b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_3dd716c3",
+        "filename": "src/scheduling/flow/cost_models.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-01T14:40:31Z",
+      "side": 1,
+      "message": "FIRMAMENT_SCHEDULING_FLOW_COST_MODELS_H. (nit)",
+      "revId": "c2be7f14463279a1763d3f9f682523c0a7abcf3b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_bde2469d",
+        "filename": "src/scheduling/flow/flow_graph_node.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-01T14:40:31Z",
+      "side": 1,
+      "message": "It may be helpful to add comments next to the ones that currently are not used. For example, I think RACK is not used anywhere.\nCurrently, someone less familiar with the code base might end up assuming that all are used and try to match the node type against every single one of them.",
+      "revId": "c2be7f14463279a1763d3f9f682523c0a7abcf3b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_ddee2a8b",
+        "filename": "src/scheduling/flow/wharemap_cost_model.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-01T14:40:31Z",
+      "side": 1,
+      "message": "Remove the empty line.",
+      "revId": "c2be7f14463279a1763d3f9f682523c0a7abcf3b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
