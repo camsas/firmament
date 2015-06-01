@@ -16,6 +16,24 @@
       "revId": "fd322904618c639f2073fda9d778b074a7760158",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_fd1dae74",
+        "filename": "Makefile",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-01T16:00:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "facab960_7dffde34",
+      "revId": "fd322904618c639f2073fda9d778b074a7760158",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
