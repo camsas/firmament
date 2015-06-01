@@ -282,7 +282,7 @@ void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report,
   }
 }
 
-void KnowledgeBase::SetCostModel(FlowSchedulingCostModelInterface* cost_model) {
+void KnowledgeBase::SetCostModel(CostModelInterface* cost_model) {
   cost_model_ = cost_model;
 }
 

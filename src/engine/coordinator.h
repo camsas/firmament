@@ -51,8 +51,8 @@
 #include "engine/coordinator_http_ui.h"
 #endif
 #include "scheduling/knowledge_base.h"
-#include "scheduling/simple_scheduler.h"
-#include "scheduling/quincy_scheduler.h"
+#include "scheduling/flow/flow_scheduler.h"
+#include "scheduling/simple/simple_scheduler.h"
 #include "storage/object_store_interface.h"
 #include "engine/topology_manager.h"
 #ifdef __SIMULATE_SYNTHETIC_DTG__
@@ -68,9 +68,9 @@ using platform_unix::SignalHandler;
 using platform_unix::streamsockets::StreamSocketsChannel;
 using platform_unix::streamsockets::StreamSocketsAdapter;
 using platform_unix::ProcFSMachine;
+using scheduler::FlowScheduler;
 using scheduler::SchedulerInterface;
 using scheduler::SimpleScheduler;
-using scheduler::QuincyScheduler;
 using store::ObjectStoreInterface;
 
 #ifdef __HTTP_UI__

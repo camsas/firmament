@@ -28,10 +28,10 @@
 #include "misc/protobuf_envelope.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
-#include "scheduling/scheduling_parameters.pb.h"
-#include "scheduling/simple_scheduler.h"
-#include "scheduling/quincy_scheduler.h"
-#include "scheduling/cost_models/void_cost_model.h"
+#include "scheduling/flow/flow_scheduler.h"
+#include "scheduling/flow/scheduling_parameters.pb.h"
+#include "scheduling/flow/void_cost_model.h"
+#include "scheduling/simple/simple_scheduler.h"
 #include "storage/simple_object_store.h"
 
 
@@ -89,7 +89,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     // Quincy-style flow-based scheduling
     LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
     SchedulingParameters params;
-    scheduler_ = new QuincyScheduler(
+    scheduler_ = new FlowScheduler(
         job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, knowledge_base_, topology_manager_,
         m_adapter_, uuid_, FLAGS_listen_uri, params);

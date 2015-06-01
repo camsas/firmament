@@ -48,10 +48,7 @@ ext: ext/.ext-ok
 ext/.ext-ok:
 	$(SCRIPTS_DIR)/fetch-externals.sh
 
-cost_models: scheduling sim
-	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling/cost_models all
-
-engine: base cost_models scheduling storage platforms misc sim
+engine: base scheduling storage platforms misc sim
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
 examples: engine scripts
@@ -60,13 +57,21 @@ examples: engine scripts
 base: ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/base all
 
-scheduling: base misc platforms
+scheduling: scheduling_base flow_scheduler simple_scheduler
+
+scheduling_base: base misc platforms
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling all
+
+flow_scheduler: scheduling_base sim
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling/flow all
+
+simple_scheduler: scheduling_base
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling/simple all
 
 sim: base misc
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim all
-	
-trace_simulator: base misc cost_models
+
+trace_simulator: base misc flow_scheduler
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim/trace-extract all
 
 misc: messages ext

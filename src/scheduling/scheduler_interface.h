@@ -3,8 +3,8 @@
 //
 // The scheduler interface assumed by the engine.
 
-#ifndef FIRMAMENT_ENGINE_SCHEDULER_INTERFACE_H
-#define FIRMAMENT_ENGINE_SCHEDULER_INTERFACE_H
+#ifndef FIRMAMENT_SCHEDULING_SCHEDULER_INTERFACE_H
+#define FIRMAMENT_SCHEDULING_SCHEDULER_INTERFACE_H
 
 #include <set>
 
@@ -114,4 +114,4 @@ class SchedulerInterface : public PrintableInterface {
 }  // namespace scheduler
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_SCHEDULER_INTERFACE_H
+#endif  // FIRMAMENT_SCHEDULING_SCHEDULER_INTERFACE_H

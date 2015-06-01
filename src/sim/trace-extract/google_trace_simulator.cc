@@ -22,12 +22,12 @@
 
 #include "../ext/spooky_hash/SpookyV2.h"
 
-#include "scheduling/dimacs_change_stats.h"
-#include "scheduling/dimacs_exporter.h"
-#include "scheduling/flow_graph.h"
-#include "scheduling/flow_graph_arc.h"
-#include "scheduling/flow_graph_node.h"
-#include "scheduling/quincy_dispatcher.h"
+#include "scheduling/flow/dimacs_change_stats.h"
+#include "scheduling/flow/dimacs_exporter.h"
+#include "scheduling/flow/flow_graph.h"
+#include "scheduling/flow/flow_graph_arc.h"
+#include "scheduling/flow/flow_graph_node.h"
+#include "scheduling/flow/solver_dispatcher.h"
 #include "sim/dfs/simulated_dfs.h"
 #include "sim/trace-extract/google_trace_simulator.h"
 #include "sim/trace-extract/simulated_quincy_factory.h"
@@ -137,44 +137,44 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   uint64_t num_machines =
     std::round(MACHINES_IN_TRACE_APPROXIMATION * FLAGS_percentage / 100.0);
   switch (FLAGS_flow_scheduling_cost_model) {
-  case FlowSchedulingCostModelType::COST_MODEL_TRIVIAL:
+  case CostModelType::COST_MODEL_TRIVIAL:
     cost_model_ = new TrivialCostModel(task_map_, leaf_res_ids);
     VLOG(1) << "Using the trivial cost model";
     break;
-  case FlowSchedulingCostModelType::COST_MODEL_RANDOM:
+  case CostModelType::COST_MODEL_RANDOM:
     cost_model_ = new RandomCostModel(task_map_, leaf_res_ids);
     VLOG(1) << "Using the random cost model";
     break;
-  case FlowSchedulingCostModelType::COST_MODEL_COCO:
+  case CostModelType::COST_MODEL_COCO:
     cost_model_ = new CocoCostModel(resource_map_, rtn_root_, task_map_,
                                     leaf_res_ids, knowledge_base_);
     VLOG(1) << "Using the coco cost model";
     break;
-  case FlowSchedulingCostModelType::COST_MODEL_SJF:
+  case CostModelType::COST_MODEL_SJF:
     cost_model_ = new SJFCostModel(task_map_, leaf_res_ids, knowledge_base_);
     VLOG(1) << "Using the SJF cost model";
     break;
-  case FlowSchedulingCostModelType::COST_MODEL_QUINCY:
+  case CostModelType::COST_MODEL_QUINCY:
     cost_model_ =
       new QuincyCostModel(resource_map_, job_map_, task_map_,
                           &task_bindings_, leaf_res_ids,
                           knowledge_base_);
     VLOG(1) << "Using the Quincy cost model";
     break;
-  case FlowSchedulingCostModelType::COST_MODEL_WHARE:
+  case CostModelType::COST_MODEL_WHARE:
     cost_model_ = new WhareMapCostModel(resource_map_, task_map_,
                                         knowledge_base_);
     VLOG(1) << "Using the Whare-Map cost model";
     break;
-  case FlowSchedulingCostModelType::COST_MODEL_OCTOPUS:
+  case CostModelType::COST_MODEL_OCTOPUS:
     cost_model_ = new OctopusCostModel(resource_map_);
     VLOG(1) << "Using the octopus cost model";
     break;
-  case FlowSchedulingCostModelType::COST_MODEL_VOID:
+  case CostModelType::COST_MODEL_VOID:
     cost_model_ = new VoidCostModel();
     VLOG(1) << "Using the void cost model";
     break;
-  case FlowSchedulingCostModelType::COST_MODEL_SIMULATED_QUINCY:
+  case CostModelType::COST_MODEL_SIMULATED_QUINCY:
     cost_model_ =
       SetupSimulatedQuincyCostModel(resource_map_, job_map_, task_map_,
                                     task_bindings_, knowledge_base_,
@@ -188,8 +188,8 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids));
   cost_model_->SetFlowGraph(flow_graph_);
   knowledge_base_->SetCostModel(cost_model_);
-  quincy_dispatcher_ =
-    new scheduler::QuincyDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
+  solver_dispatcher_ =
+    new scheduler::SolverDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
 }
 
 
@@ -200,7 +200,7 @@ GoogleTraceSimulator::~GoogleTraceSimulator() {
     ++it;
     delete it_tmp->second;
   }
-  delete quincy_dispatcher_;
+  delete solver_dispatcher_;
   delete knowledge_base_;
 }
 
@@ -1052,8 +1052,7 @@ void GoogleTraceSimulator::TaskEvicted(TaskID_t task_id,
   CHECK_NOTNULL(td_ptr);
   // Change the state of the task from running to runnable.
   (*td_ptr)->set_state(TaskDescriptor::RUNNABLE);
-  flow_graph_->NodeForTaskID(task_id)->type_.set_type(
-      FlowNodeType::UNSCHEDULED_TASK);
+  flow_graph_->NodeForTaskID(task_id)->type_ = FlowNodeType::UNSCHEDULED_TASK;
   // Remove the running arc and add back arcs to EC and UNSCHED.
   flow_graph_->TaskEvicted(task_id, res_id);
 
@@ -1231,7 +1230,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               // Set a timeout on the solver's run
               alarm(FLAGS_solver_timeout);
               multimap<uint64_t, uint64_t>* task_mappings =
-                quincy_dispatcher_->Run(&algorithm_time, &flowsolver_time,
+                solver_dispatcher_->Run(&algorithm_time, &flowsolver_time,
                                         graph_output_);
               alarm(0);
 
@@ -1347,11 +1346,11 @@ void GoogleTraceSimulator::UpdateFlowGraph(
     FlowGraphNode* src = flow_graph_->Node(it->first);
     FlowGraphNode* dst = flow_graph_->Node(it->second);
     // Source must be a task node as this point
-    CHECK(src->type_.type() == FlowNodeType::SCHEDULED_TASK ||
-          src->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
-          src->type_.type() == FlowNodeType::ROOT_TASK);
+    CHECK(src->type_ == FlowNodeType::SCHEDULED_TASK ||
+          src->type_ == FlowNodeType::UNSCHEDULED_TASK ||
+          src->type_ == FlowNodeType::ROOT_TASK);
     // Destination must be a PU node
-    CHECK(dst->type_.type() == FlowNodeType::PU);
+    CHECK(dst->type_ == FlowNodeType::PU);
     // XXX: what about unscheduled tasks?
     // Get the TD and RD for the source and destination
     TaskDescriptor* task = FindPtrOrNull(*task_map_, src->task_id_);
@@ -1361,7 +1360,7 @@ void GoogleTraceSimulator::UpdateFlowGraph(
     CHECK_NOTNULL(target_res_status);
     const ResourceDescriptor& resource = target_res_status->descriptor();
     // Populate the scheduling delta.
-    quincy_dispatcher_->NodeBindingToSchedulingDelta(
+    solver_dispatcher_->NodeBindingToSchedulingDelta(
         *task, resource, &task_bindings_, &deltas);
   }
   for (vector<SchedulingDelta*>::const_iterator it = deltas.begin();
@@ -1377,7 +1376,7 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       // Mark the task as scheduled
       FlowGraphNode* node = flow_graph_->NodeForTaskID(delta->task_id());
       CHECK_NOTNULL(node);
-      node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+      node->type_ = FlowNodeType::SCHEDULED_TASK;
       TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
       ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
       CHECK_NOTNULL(td);
@@ -1415,7 +1414,7 @@ void GoogleTraceSimulator::UpdateFlowGraph(
       // Mark the task as scheduled
       FlowGraphNode* node = flow_graph_->NodeForTaskID(delta->task_id());
       CHECK_NOTNULL(node);
-      node->type_.set_type(FlowNodeType::SCHEDULED_TASK);
+      node->type_ = FlowNodeType::SCHEDULED_TASK;
       TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
       ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
       CHECK_NOTNULL(td);
@@ -1449,18 +1448,18 @@ void GoogleTraceSimulator::UpdateFlowGraph(
 
 void GoogleTraceSimulator::UpdateResourceStats() {
   if (FLAGS_flow_scheduling_cost_model ==
-      FlowSchedulingCostModelType::COST_MODEL_COCO ||
+      CostModelType::COST_MODEL_COCO ||
       FLAGS_flow_scheduling_cost_model ==
-      FlowSchedulingCostModelType::COST_MODEL_OCTOPUS ||
+      CostModelType::COST_MODEL_OCTOPUS ||
       FLAGS_flow_scheduling_cost_model ==
-      FlowSchedulingCostModelType::COST_MODEL_WHARE) {
+      CostModelType::COST_MODEL_WHARE) {
     flow_graph_->ComputeTopologyStatistics(
         flow_graph_->sink_node(),
-        boost::bind(&FlowSchedulingCostModelInterface::GatherStats,
+        boost::bind(&CostModelInterface::GatherStats,
                     cost_model_, _1, _2));
     flow_graph_->ComputeTopologyStatistics(
         flow_graph_->sink_node(),
-        boost::bind(&FlowSchedulingCostModelInterface::UpdateStats,
+        boost::bind(&CostModelInterface::UpdateStats,
                     cost_model_, _1, _2));
   } else {
     LOG(INFO) << "No resource stats update required";
@@ -1469,18 +1468,18 @@ void GoogleTraceSimulator::UpdateResourceStats() {
 
 FlowGraphNode* GoogleTraceSimulator::GatherWhareMCStats(
     FlowGraphNode* accumulator, FlowGraphNode* other) {
-  if (accumulator->type_.type() == FlowNodeType::ROOT_TASK ||
-      accumulator->type_.type() == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_.type() == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_.type() == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_.type() == FlowNodeType::SINK) {
+  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
+      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_ == FlowNodeType::SINK) {
     // Node is neither part of the topology or an equivalence class.
     // We don't have to accumulate any state.
     return accumulator;
   }
 
   if (other->resource_id_.is_nil()) {
-    if (accumulator->type_.type() == FlowNodeType::PU) {
+    if (accumulator->type_ == FlowNodeType::PU) {
       // Base case. We are at a PU and we gather the statistics.
       ResourceStatus* rs_ptr =
         FindPtrOrNull(*resource_map_, accumulator->resource_id_);
@@ -1510,9 +1509,9 @@ FlowGraphNode* GoogleTraceSimulator::GatherWhareMCStats(
     }
     return accumulator;
   }
-  if (accumulator->type_.type() == FlowNodeType::EQUIVALENCE_CLASS) {
+  if (accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
     if (!other->resource_id_.is_nil() &&
-        other->type_.type() == FlowNodeType::MACHINE) {
+        other->type_ == FlowNodeType::MACHINE) {
       // If the other node is a machine.
       //    AccumulateWhareMapStats(accumulator, other);
     }
@@ -1529,7 +1528,7 @@ FlowGraphNode* GoogleTraceSimulator::GatherWhareMCStats(
   CHECK_NOTNULL(other_rs_ptr);
   WhareMapStats* wms_other_ptr =
     other_rs_ptr->mutable_descriptor()->mutable_whare_map_stats();
-  if (accumulator->type_.type() == FlowNodeType::MACHINE) {
+  if (accumulator->type_ == FlowNodeType::MACHINE) {
     AccumulateWhareMapStats(wms_acc_ptr, wms_other_ptr);
     // TODO(ionel): Update knowledge base.
     return accumulator;

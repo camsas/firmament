@@ -3,8 +3,8 @@
 //
 // General abstract superclass for event-driven schedulers.
 
-#ifndef FIRMAMENT_ENGINE_EVENT_DRIVEN_SCHEDULER_H
-#define FIRMAMENT_ENGINE_EVENT_DRIVEN_SCHEDULER_H
+#ifndef FIRMAMENT_SCHEDULING_EVENT_DRIVEN_SCHEDULER_H
+#define FIRMAMENT_SCHEDULING_EVENT_DRIVEN_SCHEDULER_H
 
 #include <map>
 #include <set>
@@ -109,4 +109,4 @@ class EventDrivenScheduler : public SchedulerInterface {
 }  // namespace scheduler
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_EVENT_DRIVEN_SCHEDULER_H
+#endif  // FIRMAMENT_SCHEDULING_EVENT_DRIVEN_SCHEDULER_H
