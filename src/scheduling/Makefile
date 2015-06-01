@@ -7,7 +7,7 @@ LIBS += -lboost_system
 
 LIB = libfirmament_scheduling.a
 OBJS = event_driven_scheduler.o common.o \
-       knowledge_base.o knowledge_base_simulator.o
+       knowledge_base.o
 
 PBS = scheduling_delta.pb.o
 TESTS =

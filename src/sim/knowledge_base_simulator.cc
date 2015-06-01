@@ -5,7 +5,7 @@
 
 #include "base/common.h"
 #include "misc/map-util.h"
-#include "scheduling/knowledge_base_simulator.h"
+#include "sim/knowledge_base_simulator.h"
 
 namespace firmament {
 

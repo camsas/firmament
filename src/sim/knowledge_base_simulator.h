@@ -1,8 +1,8 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#ifndef FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_SIMULATOR_H
-#define FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_SIMULATOR_H
+#ifndef FIRMAMENT_SIM_KNOWLEDGE_BASE_SIMULATOR_H
+#define FIRMAMENT_SIM_KNOWLEDGE_BASE_SIMULATOR_H
 
 #include "scheduling/knowledge_base.h"
 
@@ -56,4 +56,4 @@ class KnowledgeBaseSimulator : public KnowledgeBase {
 
 } // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_SIMULATOR_H
+#endif  // FIRMAMENT_SIM_KNOWLEDGE_BASE_SIMULATOR_H

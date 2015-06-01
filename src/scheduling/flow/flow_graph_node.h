@@ -24,7 +24,7 @@ enum FlowNodeType {
   UNSCHEDULED_TASK = 2,
   GLOBAL_AGGREGATOR = 3,
   JOB_AGGREGATOR = 4,
-  RACK = 5,
+  RACK_AGGREGATOR = 5,  // currently unused
   MACHINE = 6,
   PU = 7,
   SINK = 8,
