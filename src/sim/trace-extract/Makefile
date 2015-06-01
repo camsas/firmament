@@ -42,7 +42,7 @@ $(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 		$(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
 		$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
-		$(BUILD_DIR)/scheduling/knowledge_base_simulator.o \
+		$(BUILD_DIR)/sim/knowledge_base_simulator.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
@@ -85,7 +85,7 @@ $(OBJ_DIR)/google_trace_simulator_test: $(addprefix $(OBJ_DIR)/, google_trace_si
 		$(GTEST_LIB) $(OPTFLAGS) $(DEFINES) \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
 		$(BUILD_DIR)/sim/trace-extract/event_desc.pb.o \
-		$(BUILD_DIR)/scheduling/knowledge_base_simulator.o \
+		$(BUILD_DIR)/sim/knowledge_base_simulator.o \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \

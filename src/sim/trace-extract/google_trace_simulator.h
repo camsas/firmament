@@ -16,11 +16,11 @@
 #include "base/resource_topology_node_desc.pb.h"
 #include "misc/utils.h"
 #include "misc/map-util.h"
-#include "scheduling/knowledge_base_simulator.h"
 #include "scheduling/flow/cost_models.h"
 #include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/flow_graph.h"
 #include "scheduling/flow/solver_dispatcher.h"
+#include "sim/knowledge_base_simulator.h"
 #include "sim/trace-extract/event_desc.pb.h"
 
 DECLARE_string(flow_scheduling_solver);

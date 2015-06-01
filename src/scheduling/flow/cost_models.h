@@ -3,8 +3,8 @@
 //
 // Handy convenience header that includes all known cost models.
 
-#ifndef FIRMAMENT_SCHEDULING_COST_MODELS_H
-#define FIRMAMENT_SCHEDULING_COST_MODELS_H
+#ifndef FIRMAMENT_SCHEDULING_FLOW_COST_MODELS_H
+#define FIRMAMENT_SCHEDULING_FLOW_COST_MODELS_H
 
 // Cost model interface
 #include "scheduling/flow/cost_model_interface.h"
@@ -19,4 +19,4 @@
 #include "scheduling/flow/void_cost_model.h"
 #include "scheduling/flow/wharemap_cost_model.h"
 
-#endif
+#endif  // FIRMAMENT_SCHEDULING_FLOW_COST_MODELS_H
