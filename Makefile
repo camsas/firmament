@@ -70,7 +70,7 @@ simple_scheduler: scheduling_base
 
 sim: base misc
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim all
-	
+
 trace_simulator: base misc flow_scheduler
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim/trace-extract all
 
