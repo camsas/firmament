@@ -16,11 +16,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/timer/timer.hpp>
+#include <SpookyV2.h>
 
 #include <sys/stat.h>
 #include <fcntl.h>
-
-#include "../ext/spooky_hash/SpookyV2.h"
 
 #include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/dimacs_exporter.h"

@@ -4,9 +4,9 @@
 #include "sim/dfs/simulated_dfs.h"
 
 #include <algorithm>
+#include <SpookyV2.h>
 
 #include "base/common.h"
-#include "../ext/spooky_hash/SpookyV2.h"
 
 namespace firmament {
 
