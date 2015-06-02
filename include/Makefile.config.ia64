@@ -86,11 +86,26 @@ export TSSTLC_INC_DIR
 
 
 #######################################
+# SpookyV2-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for Spooky hash
+SPOOKY_INC_DIR ?= $(EXT_DIR)/spooky_hash/
+export PION_INC_DIR
+
+# Path to the compiled pion library (usually under
+# "make" in the pion-git directory in "ext").
+SPOOKY_OBJ ?= $(EXT_DIR)/spooky_hash/SpookyV2.o
+export SPOOKY_OBJ
+
+
+#######################################
 # INCLUDES
 #######################################
 
 INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(CSRC_GEN_DIR) \
 	   -I$(GTEST_INC_DIR) -I$(PB2JSON_INC_DIR) -I$(TSSTLC_INC_DIR) \
+	   -I$(SPOOKY_INC_DIR)
 	   #-I$(GPERFTOOLS_INC_DIR)
 
 
