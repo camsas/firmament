@@ -16,6 +16,24 @@
       "revId": "9e77d3977200fcfa1463d012650793c10c73550e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_16a050f3",
+        "filename": "src/scheduling/knowledge_base.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-08T16:59:17Z",
+      "side": 1,
+      "message": "It does -- there is only one place, which is coordinator_http_ui.cc, line 734. We could instead return an empty report, but that would off-load the responsibility of freeing the memory to the caller (unlike with reports resident in the KB). I\u0027d prefer mandating a NULL check in callers, as a general principle for methods that return pointers.",
+      "parentUuid": "facab960_f6276cb4",
+      "revId": "9e77d3977200fcfa1463d012650793c10c73550e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
