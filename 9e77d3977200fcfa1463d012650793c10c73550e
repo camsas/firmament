@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "facab960_f6276cb4",
+        "filename": "src/scheduling/knowledge_base.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-08T15:04:55Z",
+      "side": 1,
+      "message": "I wonder if we should return an empty TaskFinalReport instead. Does the code that uses the method check for NULL?",
+      "revId": "9e77d3977200fcfa1463d012650793c10c73550e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
