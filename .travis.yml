@@ -1,0 +1,24 @@
+language: cpp
+
+compiler:
+  - clang
+
+before_install:
+  - if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get update; fi
+
+install: make ext
+
+script: rake ci
+
+branches:
+  only:
+    - master
+
+notifications:
+  email: true
+
+env:
+  - NONINTERACTIVE="1"
+
+os:
+  - linux
