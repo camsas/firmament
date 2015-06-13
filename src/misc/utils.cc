@@ -70,15 +70,10 @@ int ExecutableDirectory(char *pBuf, ssize_t len) {
   return bytes;
 }
 
-// DEPRECATED wrapper for backwards compatibility
-ResourceID_t GenerateUUID() {
-  return GenerateResourceID();
-}
-
 ResourceID_t GenerateResourceID() {
   if (!resource_id_rg_init_) {
-    // TODO(malte): This crude method captures the first 100 chars of the
-    // hostname (not the FQDN). It remains to be seen if it is sufficient.
+    // In the absence of a seed, we use a crude method that captures the first
+    // 100 chars of the hostname (not the FQDN).
     SetupResourceID(&resource_id_rg_, NULL);
     resource_id_rg_init_ = true;
   }
@@ -86,18 +81,28 @@ ResourceID_t GenerateResourceID() {
   return gen();
 }
 
-void SetupResourceID(boost::mt19937 *resource_id, const char *hostname) {
+ResourceID_t GenerateResourceID(const string& seed) {
+  if (!resource_id_rg_init_) {
+    // Use the seed string to create a hash with which we seed the RNG.
+    SetupResourceID(&resource_id_rg_, seed.c_str());
+    resource_id_rg_init_ = true;
+  }
+  boost::uuids::basic_random_generator<boost::mt19937> gen(&resource_id_rg_);
+  return gen();
+}
+
+void SetupResourceID(boost::mt19937 *resource_id, const char *seed) {
   size_t hash = 42;
   char hn[100];
   bzero(&hn, 100);
-  if (hostname == NULL) {
+  if (seed == NULL) {
     gethostname(hn, 100);
   } else {
-    snprintf(hn, sizeof(hn), "%s", hn);
+    snprintf(hn, sizeof(hn), "%s", seed);
   }
   // Hash the hostname (truncated to 100 characters)
   boost::hash_combine(hash, hn);
-  VLOG(2) << "Seeing resource ID RNG with " << hash << " from hostname "
+  VLOG(2) << "Seeding resource ID RNG with " << hash << " from seed "
           << hn;
   resource_id->seed(hash);
 }

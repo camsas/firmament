@@ -31,7 +31,7 @@ class SimpleSchedulerTest : public ::testing::Test {
   SimpleSchedulerTest() :
     job_map_(new JobMap_t),
     res_map_(new ResourceMap_t),
-    obj_store_(new store::SimpleObjectStore(GenerateUUID())),
+    obj_store_(new store::SimpleObjectStore(GenerateResourceID())),
     task_map_(new TaskMap_t) {
     // You can do set-up work for each test here.
     FLAGS_v = 3;
@@ -53,7 +53,7 @@ class SimpleSchedulerTest : public ::testing::Test {
     sched_.reset(new SimpleScheduler(job_map_, res_map_, &res_topo_,
                                      obj_store_, task_map_,
                                      shared_ptr<TopologyManager>(), NULL,
-                                     GenerateUUID(), ""));
+                                     GenerateResourceID(), "test"));
   }
 
   virtual void TearDown() {

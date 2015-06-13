@@ -96,7 +96,7 @@ vector<ResourceDescriptor> TopologyManager::FlatResourceSet() {
   // It only returns the leaf nodes in the resource tree.
   vector<ResourceDescriptor> rds;
   for (uint32_t i = 0; i < NumProcessingUnits(); ++i) {
-    ResourceID_t rid = GenerateUUID();
+    ResourceID_t rid = GenerateResourceID();
     ResourceDescriptor rd;
     rd.set_uuid(to_string(rid));
     rd.set_state(ResourceDescriptor::RESOURCE_IDLE);
@@ -117,7 +117,7 @@ void TopologyManager::MakeProtobufTree(
   string obj_id;
   if (!res_id) {
     // If this object is not already known, we generate a new resource ID.
-    ResourceID_t new_rid = GenerateUUID();
+    ResourceID_t new_rid = GenerateResourceID();
     obj_id = to_string(new_rid);
     InsertIfNotPresent(&obj_to_resourceID_, node, new_rid);
     InsertIfNotPresent(&resourceID_to_obj_, new_rid, node);

@@ -168,6 +168,7 @@ $(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
+	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a \
 	$(BUILD_DIR)/base/libfirmament_base.a
 	$(call quiet-command, \
@@ -177,6 +178,7 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/engine/node.o \
 		$(BUILD_DIR)/engine/worker.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
+		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \

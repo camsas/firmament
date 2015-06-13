@@ -55,7 +55,7 @@ class DIMACSExporterTest : public ::testing::Test {
   void reset_uuid(ResourceTopologyNodeDescriptor* rtnd) {
     string old_parent_id = rtnd->parent_id();
     rtnd->set_parent_id(*FindOrNull(uuid_conversion_map_, rtnd->parent_id()));
-    string new_uuid = to_string(GenerateUUID());
+    string new_uuid = to_string(GenerateResourceID());
     VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid()
             << " to " << new_uuid << ", parent is " << rtnd->parent_id()
             << ", was " << old_parent_id;
@@ -79,15 +79,15 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
-  string root_id = to_string(GenerateUUID());
+  string root_id = to_string(GenerateResourceID("test"));
   rtn_root.mutable_resource_desc()->set_uuid(root_id);
   ResourceTopologyNodeDescriptor* rtn_c1 = rtn_root.add_children();
-  string c1_uid = to_string(GenerateUUID());
+  string c1_uid = to_string(GenerateResourceID("test-c1"));
   rtn_c1->mutable_resource_desc()->set_uuid(c1_uid);
   rtn_c1->set_parent_id(root_id);
   rtn_c1->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   ResourceTopologyNodeDescriptor* rtn_c2 = rtn_root.add_children();
-  string c2_uid = to_string(GenerateUUID());
+  string c2_uid = to_string(GenerateResourceID("test-c2"));
   rtn_c2->mutable_resource_desc()->set_uuid(c2_uid);
   rtn_c2->set_parent_id(root_id);
   rtn_c2->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
@@ -131,7 +131,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   // Create N machines
   uint64_t n = 2500;
   ResourceTopologyNodeDescriptor rtn_root;
-  ResourceID_t root_uuid = GenerateUUID();
+  ResourceID_t root_uuid = GenerateResourceID("test");
   rtn_root.mutable_resource_desc()->set_uuid(to_string(root_uuid));
   InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
                      to_string(root_uuid));
@@ -215,7 +215,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     // Create N machines
     uint64_t n = 120;
     ResourceTopologyNodeDescriptor rtn_root;
-    ResourceID_t root_uuid = GenerateUUID();
+    ResourceID_t root_uuid = GenerateResourceID("test");
     rtn_root.mutable_resource_desc()->set_uuid(to_string(root_uuid));
     InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
                        to_string(root_uuid));

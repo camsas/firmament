@@ -43,7 +43,6 @@ class Worker : public Node {
   // TODO(malte): transform this into a better representation
   string coordinator_uri_;
 
-  ResourceID_t GenerateUUID();
   void HandleIncomingMessage(BaseMessage *bm,
                              const string& remote_endpoint);
   bool RegisterWithCoordinator();

@@ -43,8 +43,8 @@ uint64_t GetCurrentTimestamp();
 uint64_t MakeEnsembleUID(Ensemble *ens);*/
 
 int ExecutableDirectory(char *pBuf, ssize_t len);
-ResourceID_t GenerateUUID();  // DEPRECATED, exists only for backwards compat
 ResourceID_t GenerateResourceID();
+ResourceID_t GenerateResourceID(const string& seed);
 ResourceID_t GenerateRootResourceID(const string& hostname);
 JobID_t GenerateJobID();
 JobID_t GenerateJobID(uint64_t job_id);

@@ -14,11 +14,13 @@
 #include "base/common.h"
 #include "messages/heartbeat_message.pb.h"
 #include "messages/registration_message.pb.h"
+#include "misc/utils.h"
 #include "platforms/common.pb.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 
 // N.B.: We will be inheriting a bunch of standard flags from Node here (in
 // addition to those specified below).
+DECLARE_string(listen_uri);
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 DEFINE_string(name, "", "A friendly name for this worker.");
 
@@ -31,7 +33,7 @@ using boost::posix_time::seconds;
 #endif
 
 Worker::Worker(PlatformID platform_id)
-  : Node(platform_id, GenerateUUID()),
+  : Node(platform_id, GenerateResourceID(FLAGS_listen_uri)),
     chan_(new StreamSocketsChannel<BaseMessage>(
           StreamSocketsChannel<BaseMessage>::SS_TCP)),
     coordinator_uri_(FLAGS_coordinator_uri) {
@@ -107,11 +109,6 @@ bool Worker::ConnectToCoordinator(const string& coordinator_uri) {
     return false;
   // Send registration message
   return RegisterWithCoordinator();
-}
-
-ResourceID_t Worker::GenerateUUID() {
-  boost::uuids::random_generator gen;
-  return gen();
 }
 
 void Worker::Run() {
