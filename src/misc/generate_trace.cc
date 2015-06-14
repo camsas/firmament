@@ -3,12 +3,14 @@
 //
 // Generate Google style trace.
 
-#include <string>
+#include "misc/generate_trace.h"
 
+#include <inttypes.h>
+
+#include <string>
 #include <boost/functional/hash.hpp>
 
 #include "base/common.h"
-#include "misc/generate_trace.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
