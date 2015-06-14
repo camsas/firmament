@@ -162,6 +162,9 @@ CPPFLAGS = $(INCLUDES) -std=c++11 -Wall -Wextra -Werror -Wno-error=unused-parame
 # XXX(malte): this is a hack to enable support for configuration #defines; we
 # should move this to a proper configuration stage
 DEFINES = -D__FIRMAMENT__ -D__HTTP_UI__ -D__PLATFORM_HAS_BOOST__ -D_GNU_SOURCE
+BUILD_HTTP_UI = 1
+BOOST_VERSION =
+
 
 #######################################
 # PROTOBUF COMPILER

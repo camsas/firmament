@@ -18,6 +18,7 @@
 #include <boost/timer/timer.hpp>
 #include <SpookyV2.h>
 
+#include <signal.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 

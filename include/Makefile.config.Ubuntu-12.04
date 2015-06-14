@@ -168,6 +168,7 @@ ifndef TRAVIS
   BUILD_HTTP_UI = 1
   DEFINES += -D__HTTP_UI__
 endif
+BOOST_VERSION = "1.48"
 
 
 #######################################

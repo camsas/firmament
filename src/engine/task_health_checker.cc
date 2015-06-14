@@ -6,7 +6,9 @@
 
 #include <vector>
 
+#if BOOST_VERSION <= 104800
 #include <boost/chrono.hpp>
+#endif
 
 #include "misc/map-util.h"
 #include "misc/utils.h"
@@ -42,7 +44,7 @@ bool TaskHealthChecker::CheckTaskLiveness(TaskID_t task_id,
   if (!handler_thread)
     return false;
 #if BOOST_VERSION <= 104800
-  if (handler_thread->timed_join(boost::chrono::seconds(1)))
+  if (handler_thread->timed_join(boost::posix_time::seconds(1)))
     return false;
 #else
   if (handler_thread->try_join_for(boost::chrono::seconds(1)))

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BASE_PKGS="wget subversion autoconf"
-CLANG_PKGS="clang"
+CLANG_PKGS="clang-3.4"
 COMPILER_PKGS="g++ libprotobuf-dev protobuf-compiler python-protobuf"
 GOOGLE_PKGS="libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler"
 PERFTOOLS_PKGS="google-perftools"

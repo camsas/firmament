@@ -5,8 +5,6 @@
 #include "base/common.h"
 #include "sim/trace-extract/google_trace_simulator.h"
 
-#include <gperftools/heap-profiler.h>
-
 using namespace firmament;  // NOLINT
 
 DEFINE_string(trace_path, "", "Path where the trace files are.");
