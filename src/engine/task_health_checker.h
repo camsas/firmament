@@ -11,7 +11,11 @@
 
 #ifdef __PLATFORM_HAS_BOOST__
 #include <boost/thread.hpp>
+#if BOOST_VERSION <= 104800
+#include <boost/thread/shared_mutex.hpp>
+#else
 #include <boost/thread/lockable_concepts.hpp>
+#endif
 #else
 #error Boost not available!
 #endif
