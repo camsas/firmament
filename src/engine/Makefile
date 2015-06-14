@@ -5,14 +5,23 @@ include $(ROOT_DIR)/include/Makefile.config
 
 TASK_LIB_LIBS := $(LIBS) -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc -lssl -lcrypto
 LIBS += -lboost_chrono -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lboost_timer -lhwloc -lssl -lcrypto
-HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -llog4cpp -ljansson -lctemplate
+ifdef BUILD_HTTP_UI
+  HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -llog4cpp -ljansson -lctemplate
+else
+  HTTP_UI_LIBS =
+endif
 
 LIB = libfirmament_engine.a
 TASK_LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim
-OBJS = coordinator_http_ui.o coordinator.o health_monitor.o local_executor.o \
-       node.o remote_executor.o worker.o task_health_checker.o \
-       topology_manager.o
+GENERIC_OBJS = health_monitor.o local_executor.o node.o remote_executor.o \
+               task_health_checker.o topology_manager.o
+COORD_OBJS = $(GENERIC_OBJS) coordinator.o
+ifdef BUILD_HTTP_UI
+  COORD_OBJS += coordinator_http_ui.o
+endif
+WORKER_OBJS = $(GENERIC_OBJS) worker.o
+OBJS = $(GENERIC_OBJS) $(COORD_OBJS) $(WORKER_OBJS)
 PBS =
 TESTS = coordinator_test local_executor_test simple_scheduler_test \
         topology_manager_test worker_test
@@ -26,15 +35,9 @@ TESTS_DEPS = $(BUILD_DIR)/misc/libfirmament_misc.a \
 # to avoid cyclic dependencies that will break test compilation.
 # E.g. worker_test would depend on coordinator.o if it had coordinator_http_ui.o
 # as a dependency.
-TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
-                         $(BUILD_DIR)/engine/node.o \
+TESTS_coordinator_DEPS = $(addprefix $(OBJ_DIR)/, $(GENERIC_OBJS)) \
                          $(BUILD_DIR)/scheduling/knowledge_base.o \
                          $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
-                         $(BUILD_DIR)/engine/health_monitor.o \
-                         $(BUILD_DIR)/engine/local_executor.o \
-                         $(BUILD_DIR)/engine/remote_executor.o \
-                         $(BUILD_DIR)/engine/task_health_checker.o \
-                         $(BUILD_DIR)/engine/topology_manager.o \
                          $(BUILD_DIR)/scheduling/common.o \
                          $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                          $(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
@@ -42,8 +45,11 @@ TESTS_coordinator_DEPS = $(BUILD_DIR)/engine/coordinator_http_ui.o \
                          $(BUILD_DIR)/misc/libfirmament_misc.a \
                          $(BUILD_DIR)/base/libfirmament_base.a \
                          $(BUILD_DIR)/messages/libfirmament_messages.a \
-                         $(BUILD_DIR)/storage/libfirmament_storage.a \
-                         $(HTTP_UI_LIBS)
+                         $(BUILD_DIR)/storage/libfirmament_storage.a
+ifdef BUILD_HTTP_UI
+TESTS_coordinator_DEPS += $(BUILD_DIR)/engine/coordinator_http_ui.o \
+                          $(HTTP_UI_LIBS)
+endif
 # N.B.: Note that simple_scheduler_test lives in the engine makefile as it
 # depends on engine components that are not yet built when the schedulers (which
 # the coordinator depends on) are built.
@@ -89,7 +95,7 @@ protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 # TODO: check if any of the below targets can make use of a generic
 # build rule from Makefile.common, or can be converted to do so.
 
-$(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
+$(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
@@ -102,15 +108,8 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
 		$(OPTFLAGS) -fsanitize=address $(DEFINES) \
-		$(BUILD_DIR)/engine/coordinator.o \
 		$(BUILD_DIR)/scheduling/knowledge_base.o \
-		$(BUILD_DIR)/engine/node.o \
-		$(BUILD_DIR)/engine/coordinator_http_ui.o \
-		$(BUILD_DIR)/engine/health_monitor.o \
-		$(BUILD_DIR)/engine/local_executor.o \
-		$(BUILD_DIR)/engine/remote_executor.o \
-		$(BUILD_DIR)/engine/task_health_checker.o \
-		$(BUILD_DIR)/engine/topology_manager.o \
+		$(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/scheduling/common.o \
@@ -126,7 +125,7 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		"  DYNLNK  $(BUILD_DIR)/engine/coordinator")
 
 # XXX(malte): temporary hack
-$(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
+$(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 	$(BUILD_DIR)/sim/libfirmament_sim.a \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
@@ -140,15 +139,8 @@ $(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
 		$(OPTFLAGS) -fsanitize=address $(DEFINES) \
-		$(SRC_ROOT_DIR)/engine/coordinator.cc \
-		$(BUILD_DIR)/engine/node.o \
 		$(BUILD_DIR)/scheduling/knowledge_base.o \
-		$(BUILD_DIR)/engine/coordinator_http_ui.o \
-		$(BUILD_DIR)/engine/health_monitor.o \
-		$(BUILD_DIR)/engine/local_executor.o \
-		$(BUILD_DIR)/engine/remote_executor.o \
-		$(BUILD_DIR)/engine/task_health_checker.o \
-		$(BUILD_DIR)/engine/topology_manager.o \
+		$(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/scheduling/common.o \

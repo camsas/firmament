@@ -12,7 +12,9 @@
 #include "engine/coordinator.h"
 
 DECLARE_string(platform);
+#ifdef __HTTP_UI__
 DECLARE_bool(http_ui);
+#endif
 
 namespace {
 
@@ -54,7 +56,9 @@ class CoordinatorTest : public ::testing::Test {
 // Tests that the platform gets set correctly when instantiating a worker.
 TEST_F(CoordinatorTest, PlatformSetTest) {
   FLAGS_platform = "PL_UNIX";
+#ifdef __HTTP_UI__
   FLAGS_http_ui = false;
+#endif
   Coordinator test_coordinator(GetPlatformID(FLAGS_platform));
   // We expect this worker to have been configured as a UNIX worker.
   EXPECT_EQ(test_coordinator.platform_id(), firmament::PL_UNIX);
@@ -64,7 +68,9 @@ TEST_F(CoordinatorTest, PlatformSetTest) {
 // Tests that the platform gets set correctly when instantiating a worker.
 TEST_F(CoordinatorTest, HTTPUIStartStopTest) {
   FLAGS_platform = "PL_UNIX";
+#ifdef __HTTP_UI__
   FLAGS_http_ui = true;
+#endif
   FLAGS_v = 2;
   Coordinator test_coordinator(GetPlatformID(FLAGS_platform));
   // Hold on for 1 second
