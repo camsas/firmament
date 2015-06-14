@@ -41,8 +41,13 @@ bool TaskHealthChecker::CheckTaskLiveness(TaskID_t task_id,
                                           boost::thread* handler_thread) {
   if (!handler_thread)
     return false;
+#if BOOST_VERSION <= 104800
+  if (handler_thread->timed_join(boost::chrono::seconds(1)))
+    return false;
+#else
   if (handler_thread->try_join_for(boost::chrono::seconds(1)))
     return false;
+#endif
   return true;
 }
 

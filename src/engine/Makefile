@@ -8,14 +8,14 @@ LIBS += -lboost_chrono -lboost_thread -lboost_system -lboost_regex -lboost_date_
 ifdef BUILD_HTTP_UI
   HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -llog4cpp -ljansson -lctemplate
 else
-  HTTP_UI_LIBS =
+  HTTP_UI_LIBS = 
 endif
 
 LIB = libfirmament_engine.a
 TASK_LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim
 GENERIC_OBJS = health_monitor.o local_executor.o node.o remote_executor.o \
-               task_health_checker.o topology_manager.o
+               task_health_checker.o topology_manager.o 
 COORD_OBJS = $(GENERIC_OBJS) coordinator.o
 ifdef BUILD_HTTP_UI
   COORD_OBJS += coordinator_http_ui.o
@@ -38,7 +38,7 @@ TESTS_DEPS = $(BUILD_DIR)/misc/libfirmament_misc.a \
 TESTS_coordinator_DEPS = $(addprefix $(OBJ_DIR)/, $(GENERIC_OBJS)) \
                          $(BUILD_DIR)/scheduling/knowledge_base.o \
                          $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
-                         $(BUILD_DIR)/scheduling/common.o \
+												 $(BUILD_DIR)/scheduling/common.o \
                          $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                          $(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
                          $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
