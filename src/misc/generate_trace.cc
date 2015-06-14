@@ -5,8 +5,6 @@
 
 #include "misc/generate_trace.h"
 
-#include <inttypes.h>
-
 #include <string>
 #include <boost/functional/hash.hpp>
 
@@ -49,8 +47,7 @@ GenerateTrace::~GenerateTrace() {
       uint64_t* task_index_ptr = FindOrNull(task_to_index_, it->first);
       TaskRuntime task_runtime = it->second;
       // NOTE: We are using the job id as the job logical name.
-      fprintf(task_runtime_events_, "%" PRId64 " %" PRId64 " %" PRId64 " %"
-              PRId64 " %" PRId64 " %" PRId64 " %" PRId64 "      \n",
+      fprintf(task_runtime_events_, "%jd %jd %jd %jd %jd %jd %jd\n",
               *job_id_ptr, *task_index_ptr, *job_id_ptr,
               task_runtime.start_time, task_runtime.total_runtime,
               task_runtime.runtime, task_runtime.num_runs);
@@ -60,8 +57,7 @@ GenerateTrace::~GenerateTrace() {
            it = job_num_tasks_.begin();
          it != job_num_tasks_.end();
          ++it) {
-      fprintf(jobs_num_tasks_, "%" PRId64 " %" PRId64 "\n",
-              it->first, it->second);
+      fprintf(jobs_num_tasks_, "%jd %jd\n", it->first, it->second);
     }
     fclose(jobs_num_tasks_);
     // TODO(ionel): Collect task usage stats.
@@ -71,10 +67,9 @@ GenerateTrace::~GenerateTrace() {
          ++it) {
       uint64_t* job_id_ptr = FindOrNull(task_to_job_, it->first);
       uint64_t* task_index_ptr = FindOrNull(task_to_index_, it->first);
-      fprintf(task_usage_stat_,
-              "%" PRId64 " %" PRId64 " 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
-              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n",
-              *job_id_ptr, *task_index_ptr);
+      fprintf(task_usage_stat_, "%jd %jd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n", *job_id_ptr,
+              *task_index_ptr);
     }
     fclose(task_usage_stat_);
   }
@@ -88,7 +83,7 @@ void GenerateTrace::AddMachine(ResourceID_t res_id) {
     uint64_t machine_id = static_cast<uint64_t>(hash);
     // 0 corresponds to add machine.
     int32_t machine_event = 0;
-    fprintf(machine_events_, "%" PRId64 ",%" PRId64 ",%d,,,\n",
+    fprintf(machine_events_, "%jd %jd %d,,,\n",
             timestamp, machine_id, machine_event);
   }
 }
@@ -101,7 +96,7 @@ void GenerateTrace::RemoveMachine(ResourceID_t res_id) {
     uint64_t machine_id = static_cast<uint64_t>(hash);
     // 0 corresponds to add machine.
     int32_t machine_event = 1;
-    fprintf(machine_events_, "%" PRId64 ",%" PRId64 ",%d,,,\n",
+    fprintf(machine_events_, "%jd,%jd,%d,,,\n",
             timestamp, machine_id, machine_event);
   }
 }
@@ -129,7 +124,7 @@ void GenerateTrace::TaskSubmitted(JobID_t job_id, TaskID_t task_id) {
       uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
       task_index = *task_index_ptr;
     }
-    fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
+    fprintf(task_events_, "%jd,,%jd,%jd,%d,,,,,,,\n",
             timestamp, job_id_hash, task_index, task_event);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     if (tr_ptr == NULL) {
@@ -148,7 +143,7 @@ void GenerateTrace::TaskCompleted(TaskID_t task_id) {
     int32_t task_event = 4;
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
-    fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
+    fprintf(task_events_, "%jd,,%jd,%jd,%d,,,,,,,\n",
             timestamp, *job_id_ptr, *task_index_ptr, task_event);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
@@ -165,7 +160,7 @@ void GenerateTrace::TaskEvicted(TaskID_t task_id) {
     int32_t task_event = 2;
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
-    fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
+    fprintf(task_events_, "%jd,,%jd,%jd,%d,,,,,,,\n",
             timestamp, *job_id_ptr, *task_index_ptr, task_event);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
@@ -181,7 +176,7 @@ void GenerateTrace::TaskFailed(TaskID_t task_id) {
     int32_t task_event = 3;
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
-    fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
+    fprintf(task_events_, "%jd,,%jd,%jd,%d,,,,,,,\n",
             timestamp, *job_id_ptr, *task_index_ptr, task_event);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
@@ -197,7 +192,7 @@ void GenerateTrace::TaskKilled(TaskID_t task_id) {
     int32_t task_event = 5;
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
-    fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
+    fprintf(task_events_, "%jd,,%jd,%jd,%d,,,,,,,\n",
             timestamp, *job_id_ptr, *task_index_ptr, task_event);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
@@ -213,7 +208,7 @@ void GenerateTrace::TaskScheduled(TaskID_t task_id, ResourceID_t res_id) {
     int32_t task_event = 1;
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     uint64_t* task_index_ptr = FindOrNull(task_to_index_, task_id);
-    fprintf(task_events_, "%" PRId64 ",,%" PRId64 ",%" PRId64 ",%d,,,,,,,\n",
+    fprintf(task_events_, "%jd,,%jd,%jd,%d,,,,,,,\n",
             timestamp, *job_id_ptr, *task_index_ptr, task_event);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
