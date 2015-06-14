@@ -617,7 +617,7 @@ namespace sim {
     TaskResourceUsage max_task_usage = MaxTaskUsage(task_resource);
     TaskResourceUsage sd_task_usage = StandardDevTaskUsage(task_resource);
     fprintf(usage_stat_file,
-            "%" PRId64 " %" PRId64 " %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf "
+            "%jd %jd %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf "
             "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf "
             "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
             task_id.job_id, task_id.task_index,
@@ -795,8 +795,8 @@ namespace sim {
       FILE* out_events_file, const TaskRuntime& task_runtime,
       const TaskIdentifier& task_id, string logical_job_name,
       uint64_t runtime) {
-    fprintf(out_events_file, "%" PRId64 " %" PRId64 " %s %" PRId64 " %" PRId64
-            " %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %lf %lf %lf %d\n",
+    fprintf(out_events_file, "%jd %jd %s %jd %jd"
+            " %jd %jd %jd %jd %lf %lf %lf %d\n",
             task_id.job_id, task_id.task_index, logical_job_name.c_str(),
             task_runtime.start_time, task_runtime.total_runtime, runtime,
             task_runtime.num_runs, task_runtime.scheduling_class,
@@ -958,7 +958,7 @@ namespace sim {
     for (unordered_map<uint64_t, uint64_t>::iterator
            it = job_num_tasks->begin();
          it != job_num_tasks->end(); ++it) {
-      fprintf(out_file, "%" PRId64 " %" PRId64 "\n", it->first, it->second);
+      fprintf(out_file, "%jd %jd\n", it->first, it->second);
     }
     fclose(out_file);
     scheduling_events.clear();
