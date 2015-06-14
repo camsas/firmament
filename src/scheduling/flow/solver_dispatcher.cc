@@ -569,7 +569,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::ReadTaskMappingChanges(
       if (line[0] == 'm') {
         uint64_t task_id;
         uint64_t core_id;
-        sscanf(line, "%*c %" SCNd64 " %" SCNd64, &task_id, &core_id);
+        sscanf(line, "%*c %jd %jd", &task_id, &core_id);
         VLOG(1) << "Assigning task node " << task_id << " to PU node "
                 << core_id;
         task_node->insert(pair<uint64_t, uint64_t>(task_id, core_id));
