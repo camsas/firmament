@@ -4,17 +4,19 @@ Firmament is a cluster manager and scheduling platform developed CamSaS
 It is currently in early alpha stage, with much of the high-level functionality
 still missing, and interfaces frequently changing.
 
+[![Build Status](https://travis-ci.org/ms705/firmament.svg)](https://travis-ci.org/ms705/firmament)
 
 ## System requirements
 
-Firmament is currently known to work on Ubuntu 13.04 (raring) and 14.04
-(trusty); with caveats (see below) on 13.10 (saucy); it does NOT work on
-versions prior to 12.10 (quantal) as they cannot build libpion, which is now
-included as a self-built dependency in order to ease transition to libpion v5
-and for compatibility with Arch Linux.
+Firmament is currently known to work on Ubuntu LTS releases 12.04 (precise) and
+14.04 (trusty). With caveats (see below), it works on 13.04 (raring) and 13.10
+(saucy); it does NOT work on other versions prior to 12.10 (quantal) as they
+cannot build libpion, which is now included as a self-built dependency in order
+to ease transition to libpion v5 and for compatibility with Arch Linux.
 
 Other configurations are untested - YMMV. Recent Debian versions typically work
-with a bit of fiddling.
+with a bit of fiddling of the build configuration files in the `include`
+directory.
 
 Reasons for known breakage:
  * Ubuntu 13.04 - segfault failures when using Boost 1.53 packages; use 1.49
