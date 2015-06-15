@@ -103,6 +103,10 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
   task_arcs->push_back(unsched_arc);
   vector<ResourceID_t>* task_pref_arcs =
     cost_model_->GetTaskPreferenceArcs(task_node->task_id_);
+  // Nothing to do if there are no task preference arcs for this task
+  if (!task_pref_arcs)
+    return;
+  // Otherwise add the arcs
   for (vector<ResourceID_t>::iterator it = task_pref_arcs->begin();
        it != task_pref_arcs->end(); ++it) {
     FlowGraphArc* arc_to_res =
@@ -139,8 +143,9 @@ void FlowGraph::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
   pair<vector<EquivClass_t>*,
        vector<EquivClass_t>*> equiv_class_to_connect =
     cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
-  CHECK_NOTNULL(equiv_class_to_connect.first);
-  CHECK_NOTNULL(equiv_class_to_connect.second);
+  if (!equiv_class_to_connect.first || !equiv_class_to_connect.second)
+    // Nothing to do, no source or destination equivalence classes
+    return;
   // Add incoming arcs.
   for (vector<EquivClass_t>::iterator
          it = equiv_class_to_connect.first->begin();
@@ -325,6 +330,10 @@ void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
   ResourceID_t res_id = res_node->resource_id_;
   vector<EquivClass_t>* equiv_classes =
     cost_model_->GetResourceEquivClasses(res_id);
+  // If we have no equivalence classes, there's nothing to do
+  if (!equiv_classes)
+    return;
+  // Otherwise, add the ECs
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
@@ -453,33 +462,41 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   ec_node->comment_ = comment;
   vector<TaskID_t>* task_pref_arcs =
     cost_model_->GetIncomingEquivClassPrefArcs(ec);
+  if (task_pref_arcs) {
+    // Add the incoming arcs to the equivalence class node.
+    for (vector<TaskID_t>::iterator it = task_pref_arcs->begin();
+         it != task_pref_arcs->end(); ++it) {
+      FlowGraphArc* ec_arc =
+        AddArcInternal(NodeForTaskID(*it)->id_, ec_node->id_);
+      // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
+      ec_arc->cap_upper_bound_ = 1;
+      ec_arc->cost_ =
+        cost_model_->TaskToEquivClassAggregator(*it, ec);
+      ec_arcs.push_back(ec_arc);
+    }
+    delete task_pref_arcs;
+  }
   vector<ResourceID_t>* res_pref_arcs =
     cost_model_->GetOutgoingEquivClassPrefArcs(ec);
-  // Add the incoming arcs to the equivalence class node.
-  for (vector<TaskID_t>::iterator it = task_pref_arcs->begin();
-       it != task_pref_arcs->end(); ++it) {
-    FlowGraphArc* ec_arc =
-      AddArcInternal(NodeForTaskID(*it)->id_, ec_node->id_);
-    // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
-    ec_arc->cap_upper_bound_ = 1;
-    ec_arc->cost_ =
-      cost_model_->TaskToEquivClassAggregator(*it, ec);
-    ec_arcs.push_back(ec_arc);
+  if (res_pref_arcs) {
+    // Add the outgoing arcs from the equivalence class node.
+    for (vector<ResourceID_t>::iterator it = res_pref_arcs->begin();
+         it != res_pref_arcs->end(); ++it) {
+      FlowGraphNode* rn = NodeForResourceID(*it);
+      CHECK_NOTNULL(rn);
+      FlowGraphArc* ec_arc =
+        AddArcInternal(ec_node->id_, rn->id_);
+      // TODO(malte): N.B.: this assumes no PU sharing.
+      ec_arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(rn);
+      ec_arc->cost_ =
+        cost_model_->EquivClassToResourceNode(ec, *it);
+      VLOG(2) << "    adding arc from EC node " << ec_node->id_
+              << " to " << rn->id_ << " at cap "
+              << ec_arc->cap_upper_bound_ << ", cost " << ec_arc->cost_ << "!";
+      ec_arcs.push_back(ec_arc);
+    }
+    delete res_pref_arcs;
   }
-  delete task_pref_arcs;
-  // Add the outgoing arcs from the equivalence class node.
-  for (vector<ResourceID_t>::iterator it = res_pref_arcs->begin();
-       it != res_pref_arcs->end(); ++it) {
-    FlowGraphNode* rn = NodeForResourceID(*it);
-    FlowGraphArc* ec_arc =
-      AddArcInternal(ec_node->id_, rn->id_);
-    // TODO(malte): N.B.: this assumes no PU sharing.
-    ec_arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(rn);
-    ec_arc->cost_ =
-      cost_model_->EquivClassToResourceNode(ec, *it);
-    ec_arcs.push_back(ec_arc);
-  }
-  delete res_pref_arcs;
   // Add the new equivalence node to the graph changes
   DIMACSChange *chg = new DIMACSAddNode(*ec_node, ec_arcs);
   chg->set_comment("AddEquivClassNode");
@@ -492,6 +509,10 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
 void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
   vector<EquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(task_node->task_id_);
+  // If there are no equivalence classes, there's nothing to do
+  if (!equiv_classes)
+    return;
+  // Otherwise, add the ECs
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
@@ -764,6 +785,10 @@ void FlowGraph::DeleteResourceNode(FlowGraphNode* res_node,
   DeleteNode(res_node, comment);
   vector<EquivClass_t>* equiv_classes =
     cost_model_->GetResourceEquivClasses(res_id_tmp);
+  // If there are no equivalence classes, we're done
+  if (!equiv_classes)
+    return;
+  // Otherwise, delete the equivalence class nodes if required
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     DeleteOrUpdateIncomingEquivNode(*it, comment);
@@ -832,10 +857,15 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id, const char *comment) {
   task_nodes_.erase(node->task_id_);
   unused_ids_.push(node->id_);
   task_to_nodeid_map_.erase(task_id);
-  // Then remove the node itself
+  // Then remove the node itself. This needs to happen first, so that the arc
+  // counts for ECs are correct.
   DeleteNode(node, comment);
   vector<EquivClass_t>* equiv_classes =
-    cost_model_->GetTaskEquivClasses(node->task_id_);
+    cost_model_->GetTaskEquivClasses(task_id);
+  // If there are no ECs, we're done
+  if (!equiv_classes)
+    return;
+  // Otherwise, delete the EC aggregators if necessary
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     DeleteOrUpdateOutgoingEquivNode(*it, comment);
