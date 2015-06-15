@@ -10,6 +10,7 @@ extern "C" {
 #include <stdio.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 }
@@ -107,9 +108,8 @@ void LocalExecutor::CleanUpCompletedTask(const TaskDescriptor& td) {
   // XXX(malte): this is a hack!
   pid_t* pid = FindOrNull(task_pids_, td.uid());
   CHECK_NOTNULL(pid);
-  string command = "/bin/kill -9 " + to_string(*pid);
-  int64_t ret = system(command.c_str());
-  LOG(INFO) << command << " returned " << ret;
+  int ret = kill(*pid, SIGKILL);
+  LOG(INFO) << "kill(2) for task " << td.uid() << " returned " << ret;
   task_pids_.erase(td.uid());
 }
 
