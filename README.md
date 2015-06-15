@@ -85,3 +85,15 @@ built, though.)
 
 If this all works, you should see the job print "Hello world" in the
 coordinator's console.
+
+## Contributing
+
+We always welcome contributions to Firmament. We use GerritHub for
+code review; you can find the Firmament review board there:
+
+https://review.gerrithub.io/#/q/project:ms705/firmament
+
+The easiest way to submit changes for review is to check our
+Firmament from GerritHub, or to add GerritHub as a remote.
+Alternatively, you can submit a pull request on GitHub and it will
+appear for review on GerritHub.
