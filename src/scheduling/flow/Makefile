@@ -3,7 +3,7 @@ SUFFIX=scheduling/flow
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_system -lboost_timer
+LIBS += -lboost_system -lboost_timer -lssl -lcrypto
 
 LIB = libfirmament_scheduling_flow.a
 
@@ -19,17 +19,18 @@ TESTS = dimacs_exporter_test flow_graph_test
 TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a
 TESTS_dimacs_exporter_DEPS = $(BUILD_DIR)/scheduling/common.o \
                              $(BUILD_DIR)/scheduling/knowledge_base.o \
+                             $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                              $(BUILD_DIR)/misc/libfirmament_misc.a \
-                             $(BUILD_DIR)/base/libfirmament_base.a \
-                             $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a
+                             $(BUILD_DIR)/base/libfirmament_base.a
 
 TESTS_flow_graph_DEPS = $(BUILD_DIR)/scheduling/common.o \
                         $(BUILD_DIR)/scheduling/knowledge_base.o \
+                        $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                         $(BUILD_DIR)/misc/libfirmament_misc.a \
-                        $(BUILD_DIR)/base/libfirmament_base.a \
-                        $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a
+                        $(BUILD_DIR)/base/libfirmament_base.a
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
+TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
 include $(ROOT_DIR)/include/Makefile.common
 
