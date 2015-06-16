@@ -27,7 +27,6 @@ class TrivialCostModel : public CostModelInterface {
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
   // Per-task costs (into the resource topology)
-  Cost_t TaskToClusterAggCost(TaskID_t task_id);
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                 ResourceID_t resource_id);
   // Costs within the resource topology
@@ -58,8 +57,13 @@ class TrivialCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
-  shared_ptr<TaskMap_t> task_map_;
+  // EC corresponding to the CLUSTER_AGG node
+  EquivClass_t cluster_aggregator_ec_;
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
+  // Mapping betweeen machine res id and resource topology node descriptor.
+  unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
+    boost::hash<boost::uuids::uuid>> machine_to_rtnd_;
+  shared_ptr<TaskMap_t> task_map_;
 };
 
 }  // namespace firmament
