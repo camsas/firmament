@@ -10,6 +10,7 @@
 
 #include "base/common.h"
 #include "misc/utils.h"
+#include "misc/generate_trace.h"
 #include "scheduling/flow/dimacs_add_node.h"
 #include "scheduling/flow/dimacs_change_arc.h"
 #include "scheduling/flow/dimacs_new_arc.h"
@@ -51,15 +52,17 @@ class FlowGraphTest : public ::testing::Test {
 
   // Objects declared here can be used by all tests.
   void CreateSimpleResourceTopo(ResourceTopologyNodeDescriptor *rtn_root) {
-    string root_id = to_string(GenerateUUID());
+    string root_id = to_string(GenerateResourceID("test"));
     rtn_root->mutable_resource_desc()->set_uuid(root_id);
+    rtn_root->mutable_resource_desc()->set_type(
+        ResourceDescriptor::RESOURCE_MACHINE);
     ResourceTopologyNodeDescriptor* rtn_c1 = rtn_root->add_children();
-    string c1_uid = to_string(GenerateUUID());
+    string c1_uid = to_string(GenerateResourceID("test-c1"));
     rtn_c1->mutable_resource_desc()->set_uuid(c1_uid);
     rtn_c1->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
     rtn_c1->set_parent_id(root_id);
     ResourceTopologyNodeDescriptor* rtn_c2 = rtn_root->add_children();
-    string c2_uid = to_string(GenerateUUID());
+    string c2_uid = to_string(GenerateResourceID("test-c2"));
     rtn_c2->mutable_resource_desc()->set_uuid(c2_uid);
     rtn_c2->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
     rtn_c2->set_parent_id(root_id);
@@ -104,7 +107,7 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   // This should add one new node for the agg, one arc change from agg to
   // sink, one new node for the root task, one new node for the
   // equivalence class.
-  CHECK_EQ(g.graph_changes_.size(), num_changes + 4);
+  CHECK_EQ(g.graph_changes_.size(), num_changes + 5);
   uint64_t sink_graph_id = g.ids_created_[0];
   DIMACSAddNode* unsched_agg =
     static_cast<DIMACSAddNode*>(g.graph_changes_[num_changes]);
@@ -123,8 +126,8 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   CHECK_EQ(unsched_agg->arc_additions_.size(), 1);
   // Arc to unscheduled aggregator and to topology.
   CHECK_EQ(root_task->arc_additions_.size(), 2);
-  CHECK_EQ(equiv_class->arc_additions_.size(),
-           1 + FLAGS_num_pref_arcs_task_to_res);
+  // The equiv class won't have any arcs
+  CHECK_EQ(equiv_class->arc_additions_.size(), 0);
 }
 
 TEST_F(FlowGraphTest, AddResourceNode) {
@@ -139,7 +142,7 @@ TEST_F(FlowGraphTest, AddResourceNode) {
   uint32_t num_changes = g.graph_changes_.size();
   // Add a new core node.
   ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
-  string core_uid = to_string(GenerateUUID());
+  string core_uid = to_string(GenerateResourceID());
   core_node->mutable_resource_desc()->set_uuid(core_uid);
   core_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   core_node->set_parent_id(root_id);
@@ -165,16 +168,16 @@ TEST_F(FlowGraphTest, AddResourceNode) {
 
   // Add two new PUs.
   ResourceTopologyNodeDescriptor* memory_node = rtn_root.add_children();
-  string memory_uid = to_string(GenerateUUID());
+  string memory_uid = to_string(GenerateResourceID());
   memory_node->mutable_resource_desc()->set_uuid(memory_uid);
   memory_node->set_parent_id(root_id);
   ResourceTopologyNodeDescriptor* pu1_node = memory_node->add_children();
-  string pu1_uid = to_string(GenerateUUID());
+  string pu1_uid = to_string(GenerateResourceID());
   pu1_node->mutable_resource_desc()->set_uuid(pu1_uid);
   pu1_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   pu1_node->set_parent_id(memory_uid);
   ResourceTopologyNodeDescriptor* pu2_node = memory_node->add_children();
-  string pu2_uid = to_string(GenerateUUID());
+  string pu2_uid = to_string(GenerateResourceID());
   pu2_node->mutable_resource_desc()->set_uuid(pu2_uid);
   pu2_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   pu2_node->set_parent_id(memory_uid);
@@ -239,7 +242,7 @@ TEST_F(FlowGraphTest, DeleteResourceNode) {
   string root_id = rtn_root.mutable_resource_desc()->uuid();
   // Add a new core node.
   ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
-  string core_uid = to_string(GenerateUUID());
+  string core_uid = to_string(GenerateResourceID());
   core_node->mutable_resource_desc()->set_uuid(core_uid);
   core_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   core_node->set_parent_id(root_id);
@@ -319,6 +322,101 @@ TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
   // The unscheduled aggregator's outbound capacity should have been
   // decremented.
   CHECK_EQ(unsched_agg_to_sink_arc->cap_upper_bound_, 0);
+}
+
+TEST_F(FlowGraphTest, DeleteReAddResourceTopo) {
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
+  ResourceTopologyNodeDescriptor rtn_root;
+  CreateSimpleResourceTopo(&rtn_root);
+  uint64_t num_nodes = g.NumNodes();
+  uint64_t num_arcs = g.NumArcs();
+  g.AddResourceTopology(&rtn_root);
+  // Three resource nodes, plus cluster aggregator EC
+  CHECK_EQ(g.NumNodes(), num_nodes + 4);
+  // Two internal to topology, two to sink, one from cluster agg EC to
+  // root resource
+  CHECK_EQ(g.NumArcs(), num_arcs + 5);
+  for (auto it = rtn_root.mutable_children()->begin();
+       it != rtn_root.mutable_children()->end();
+       ++it) {
+    FlowGraphNode* n =
+      g.NodeForResourceID(ResourceIDFromString(it->resource_desc().uuid()));
+    g.DeleteResourceNode(n);
+  }
+  // Still have cluster agg and topology root here
+  CHECK_EQ(g.NumNodes(), num_nodes + 2);
+  CHECK_EQ(g.NumArcs(), num_arcs + 1);
+  FlowGraphNode* n =
+    g.NodeForResourceID(ResourceIDFromString(rtn_root.resource_desc().uuid()));
+  g.DeleteResourceNode(n);
+  CHECK_EQ(g.NumNodes(), num_nodes);
+  CHECK_EQ(g.NumArcs(), num_arcs);
+  g.AddResourceTopology(&rtn_root);
+  // Three resource nodes, plus cluster aggregator EC
+  CHECK_EQ(g.NumNodes(), num_nodes + 4);
+  // Two internal to topology, two to sink, one from cluster agg EC to
+  // root resource
+  CHECK_EQ(g.NumArcs(), num_arcs + 5);
+}
+
+TEST_F(FlowGraphTest, DeleteReAddResourceTopoAndJob) {
+  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  FlowGraph g(new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
+  ResourceTopologyNodeDescriptor rtn_root;
+  CreateSimpleResourceTopo(&rtn_root);
+  uint64_t num_nodes = g.NumNodes();
+  uint64_t num_arcs = g.NumArcs();
+  g.AddResourceTopology(&rtn_root);
+  // Now generate a job and add it
+  JobID_t jid = GenerateJobID();
+  JobDescriptor test_job;
+  test_job.set_uuid(to_string(jid));
+  TaskDescriptor* rt = test_job.mutable_root_task();
+  rt->set_state(TaskDescriptor::RUNNABLE);
+  rt->set_uid(GenerateRootTaskID(test_job));
+  rt->set_job_id(test_job.uuid());
+  CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
+  g.AddOrUpdateJobNodes(&test_job);
+  // Three resource nodes, plus one task, plus unsched aggregator,
+  // plus cluster aggregator EC, plus task EC
+  CHECK_EQ(g.NumNodes(), num_nodes + 7);
+  // Two internal to topology, two to sink, one from cluster agg EC to
+  // root resource, one from task to cluster agg, one from task to
+  // preferred resource, one from task to unscheduled aggregator, one
+  // from unscheduled aggregator to sink
+  CHECK_EQ(g.NumArcs(), num_arcs + 9);
+  // Job "finishes"
+  rt->set_state(TaskDescriptor::COMPLETED);
+  g.JobCompleted(jid);
+  // Three resource nodes (cluster agg EC has been deleted, as it no longer
+  // has any outgoing arcs).
+  CHECK_EQ(g.NumNodes(), num_nodes + 3);
+  // Two internal to topology, two to sink
+  CHECK_EQ(g.NumArcs(), num_arcs + 4);
+  for (auto it = rtn_root.mutable_children()->begin();
+       it != rtn_root.mutable_children()->end();
+       ++it) {
+    FlowGraphNode* n =
+      g.NodeForResourceID(ResourceIDFromString(it->resource_desc().uuid()));
+    g.DeleteResourceNode(n);
+  }
+  FlowGraphNode* n =
+    g.NodeForResourceID(ResourceIDFromString(rtn_root.resource_desc().uuid()));
+  g.DeleteResourceNode(n);
+  // Everything should be as in the beginning
+  CHECK_EQ(g.NumNodes(), num_nodes);
+  CHECK_EQ(g.NumArcs(), num_arcs);
+  g.AddResourceTopology(&rtn_root);
+  // Three resource nodes, plus cluster aggregator EC
+  CHECK_EQ(g.NumNodes(), num_nodes + 4);
+  // Two internal to topology, two to sink, one from cluster agg EC to
+  // root resource
+  CHECK_EQ(g.NumArcs(), num_arcs + 5);
 }
 
 }  // namespace firmament

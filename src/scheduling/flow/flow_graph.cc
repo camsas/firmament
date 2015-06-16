@@ -41,7 +41,6 @@ FlowGraph::FlowGraph(CostModelInterface *cost_model,
                        boost::hash<boost::uuids::uuid>>* leaf_res_ids)
     : cost_model_(cost_model),
       current_id_(1),
-      cluster_agg_node_(NULL),
       leaf_res_ids_(leaf_res_ids) {
   // Add sink and cluster aggregator node
   AddSpecialNodes();
@@ -81,16 +80,7 @@ void FlowGraph::AddArcsForTask(FlowGraphNode* task_node,
                                vector<FlowGraphArc*>* task_arcs) {
   // Cost model may need to do some setup for newly added tasks
   cost_model_->AddTask(task_node->task_id_);
-
-  // We always have an edge to the cluster aggregator node
-  FlowGraphArc* cluster_agg_arc = AddArcInternal(task_node, cluster_agg_node_);
-  // Assign cost to the (task -> cluster agg) edge from cost model
-  cluster_agg_arc->cost_ =
-      cost_model_->TaskToClusterAggCost(task_node->task_id_);
-  cluster_agg_arc->cap_upper_bound_ = 1;
-  task_arcs->push_back(cluster_agg_arc);
-
-  // We also always have an edge to our job's unscheduled node
+  // We always have an edge to our job's unscheduled node
   FlowGraphArc* unsched_arc = AddArcInternal(task_node, unsched_agg_node);
   // Add this task's potential flow to the per-job unscheduled
   // aggregator's outgoing edge
@@ -310,20 +300,21 @@ void FlowGraph::AddOrUpdateJobNodes(JobDescriptor* jd) {
 
 FlowGraphNode* FlowGraph::AddNodeInternal(uint64_t id) {
   FlowGraphNode* node = new FlowGraphNode(id);
+  CHECK_NOTNULL(node);
   CHECK(InsertIfNotPresent(&node_map_, id, node));
   return node;
 }
 
 void FlowGraph::AddSpecialNodes() {
-  // N.B.: we do NOT create a cluster aggregator node X here, since
-  // the root of the resource topology is automatically chosen as the
-  // cluster aggregator.
   // Sink node
   sink_node_ = AddNodeInternal(NextId());
   sink_node_->type_ = FlowNodeType::SINK;
   sink_node_->comment_ = "SINK";
   graph_changes_.push_back(new DIMACSAddNode(*sink_node_,
                                              vector<FlowGraphArc*>()));
+  // N.B.: we do NOT create a cluster aggregator node here, since
+  // not all cost models use one. Instead, cost models add it as a special
+  // equivalence class.
 }
 
 void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
@@ -334,11 +325,14 @@ void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
   if (!equiv_classes)
     return;
   // Otherwise, add the ECs
+  VLOG(2) << "Adding resource equiv classes for node " << res_node->id_;
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
+    VLOG(2) << "   EC: " << *it;
     if (ec_node_ptr == NULL) {
       // Node for resource equiv class doesn't yet exist.
+      VLOG(2) << "    Adding node EC node for " << *it;
       AddEquivClassNode(*it);
     } else {
       // Node for resource equiv class already exists. Add arc from it.
@@ -346,9 +340,13 @@ void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
       // to the resource equiv class when a new resource is connected to it.
       FlowGraphArc* ec_arc =
         AddArcInternal(ec_node_ptr->id_, res_node->id_);
-      ec_arc->cap_upper_bound_ = 1;
+      // TODO(malte): N.B.: this assumes no PU sharing.
+      ec_arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(res_node);
       ec_arc->cost_ =
         cost_model_->EquivClassToResourceNode(*it, res_id);
+      VLOG(2) << "    Adding arc from EC node " << ec_node_ptr->id_
+              << " to " << res_node->id_ << " at cap "
+              << ec_arc->cap_upper_bound_ << ", cost " << ec_arc->cost_ << "!";
 
       DIMACSChange *chg = new DIMACSNewArc(*ec_arc);
       chg->set_comment("AddResourceEquivClasses");
@@ -363,6 +361,9 @@ void FlowGraph::AddResourceTopology(
   BFSTraverseResourceProtobufTreeReturnRTND(
       resource_tree,
       boost::bind(&FlowGraph::AddResourceNode, this, _1));
+  BFSTraverseResourceProtobufTreeReturnRTND(
+      resource_tree,
+      boost::bind(&FlowGraph::ConfigureResourceNodeECs, this, _1));
 }
 
 void FlowGraph::AddResourceNode(
@@ -378,11 +379,13 @@ void FlowGraph::AddResourceNode(
       VLOG(2) << "Adding node " << id << " for resource "
               << rtnd.resource_desc().uuid() << " ("
               << rtnd.resource_desc().friendly_name() << ")"
-              << ", type " << rtnd.resource_desc().type();
+              << ", type " << ENUM_TO_STRING(ResourceDescriptor::ResourceType,
+                                             rtnd.resource_desc().type());
     } else {
       VLOG(2) << "Adding node " << id << " for resource "
               << rtnd.resource_desc().uuid()
-              << ", type " << rtnd.resource_desc().type();
+              << ", type " << ENUM_TO_STRING(ResourceDescriptor::ResourceType,
+                                             rtnd.resource_desc().type());
     }
     new_node = AddNodeInternal(id);
     if (rtnd_ptr->resource_desc().type() == ResourceDescriptor::RESOURCE_PU) {
@@ -429,24 +432,32 @@ void FlowGraph::AddResourceNode(
       ResourceID_t res_id =
         ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
       generate_trace_.AddMachine(res_id);
+      // We call AddMachine here, but do *not* yet create the ECs, since the
+      // outgoing arcs from the ECs must know the number of task slots in the
+      // machine, which isn't clear until we've recursed further.
       cost_model_->AddMachine(rtnd_ptr);
-      AddResourceEquivClasses(new_node);
     }
   } else {
     new_node = NodeForResourceID(
         ResourceIDFromString(rtnd.resource_desc().uuid()));
   }
-  // Consider different cases: root node, internal node and leaf node
-  if (!rtnd.has_parent_id()) {
-    // 1) Root node
-    ConfigureResourceRootNode(rtnd, new_node);
+  // Consider different cases: internal (branch) node and leaf node
+  if (rtnd_ptr->children_size() > 0) {
+    // 1) Node inside the tree with non-zero children (i.e. no leaf node)
+    ConfigureResourceBranchNode(*rtnd_ptr, new_node);
+  } else if (rtnd_ptr->has_parent_id()) {
+    // 2) Leaves of the resource topology; add an arc to the sink node
+    ConfigureResourceLeafNode(*rtnd_ptr, new_node);
   }
-  if (rtnd.children_size() > 0) {
-    // 2) Node inside the tree with non-zero children (i.e. no leaf node)
-    ConfigureResourceBranchNode(rtnd, new_node);
-  } else if (rtnd.has_parent_id()) {
-    // 3) Leaves of the resource topology; add an arc to the sink node
-    ConfigureResourceLeafNode(rtnd, new_node);
+}
+
+void FlowGraph::ConfigureResourceNodeECs(ResourceTopologyNodeDescriptor* rtnd) {
+  FlowGraphNode* node = NodeForResourceID(
+      ResourceIDFromString(rtnd->resource_desc().uuid()));
+  // We only add the EC here so that we know the correct number of task slots
+  // below it.
+  if (rtnd->resource_desc().type() == ResourceDescriptor::RESOURCE_MACHINE) {
+    AddResourceEquivClasses(node);
   }
 }
 
@@ -466,8 +477,10 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
     // Add the incoming arcs to the equivalence class node.
     for (vector<TaskID_t>::iterator it = task_pref_arcs->begin();
          it != task_pref_arcs->end(); ++it) {
+      FlowGraphNode* task_node = NodeForTaskID(*it);
+      CHECK_NOTNULL(task_node);
       FlowGraphArc* ec_arc =
-        AddArcInternal(NodeForTaskID(*it)->id_, ec_node->id_);
+        AddArcInternal(task_node->id_, ec_node->id_);
       // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
       ec_arc->cap_upper_bound_ = 1;
       ec_arc->cost_ =
@@ -581,18 +594,6 @@ void FlowGraph::AdjustUnscheduledAggArcCosts() {
   }
 }
 
-void FlowGraph::ConfigureResourceRootNode(
-    const ResourceTopologyNodeDescriptor& rtnd, FlowGraphNode* new_node) {
-  // 1) Root node
-  // N.B. a root node without parent is always automatically taken as the
-  // cluster aggregator.
-  new_node->type_ = FlowNodeType::GLOBAL_AGGREGATOR;
-  new_node->comment_ = "CLUSTER_AGG";
-  // Reset cluster aggregator to this node
-  CHECK(cluster_agg_node_ == NULL);
-  cluster_agg_node_ = new_node;
-}
-
 void FlowGraph::ConfigureResourceBranchNode(
     const ResourceTopologyNodeDescriptor& rtnd, FlowGraphNode* new_node) {
   // Add internal arc from parent
@@ -615,8 +616,18 @@ void FlowGraph::ConfigureResourceBranchNode(
     // removal by the DIMACS extended. We add the arc to the graph changes later
     // when we change the capacity.
     // graph_changes_.push_back(new DIMACSChangeArc(*arc));
-  } else if (new_node->type_ != FlowNodeType::GLOBAL_AGGREGATOR) {
+  } else if (new_node->type_ != FlowNodeType::GLOBAL_AGGREGATOR &&
+             rtnd.resource_desc().type() !=
+               ResourceDescriptor::RESOURCE_COORDINATOR &&
+             rtnd.resource_desc().type() !=
+               ResourceDescriptor::RESOURCE_MACHINE &&
+             rtnd.resource_desc().type() !=
+               ResourceDescriptor::RESOURCE_PU) {
     // Having no parent is only okay if we're the root node
+    // TODO(malte): we currently override this for the RESOURCE_MACHINE
+    // and RESOURCE_PU cases to avoid unit tests (which have no coordinator
+    // node) failing.
+    // Come back to fix.
     LOG(FATAL) << "Found child without parent_id set! This will lead to an "
                << "inconsistent flow graph! child ID: "
                << rtnd.resource_desc().uuid();
@@ -782,6 +793,7 @@ void FlowGraph::DeleteResourceNode(FlowGraphNode* res_node,
   // res_id_tmp from now onwards.
   leaf_res_ids_->erase(res_id);
   resource_to_nodeid_map_.erase(res_id_tmp);
+  VLOG(2) << "Deleting node " << res_node->id_;
   DeleteNode(res_node, comment);
   vector<EquivClass_t>* equiv_classes =
     cost_model_->GetResourceEquivClasses(res_id_tmp);
@@ -1166,16 +1178,7 @@ void FlowGraph::UpdateResourceTopology(
   BFSTraverseResourceProtobufTreeReturnRTND(
       resource_tree,
       boost::bind(&FlowGraph::UpdateResourceNode, this, _1));
-  uint32_t new_num_leaves = 0;
-  for (unordered_map<uint64_t, FlowGraphArc*>::const_iterator it =
-       cluster_agg_node_->outgoing_arc_map_.begin();
-       it != cluster_agg_node_->outgoing_arc_map_.end();
-       ++it) {
-    new_num_leaves += it->second->cap_upper_bound_;
-  }
-  VLOG(2) << "Updated resource topology in flow scheduler. New "
-          << "number of schedulable leaves: "
-          << (new_num_leaves);
+  VLOG(2) << "Updated resource topology in flow scheduler.";
 }
 
 void FlowGraph::ResetChanges() {
