@@ -6,6 +6,7 @@
 #include <set>
 #include <string>
 
+#include "misc/utils.h"
 #include "misc/map-util.h"
 #include "scheduling/common.h"
 
@@ -16,6 +17,9 @@ RandomCostModel::RandomCostModel(
     unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids)
   : task_map_(task_map),
     leaf_res_ids_(leaf_res_ids) {
+  // Create the cluster aggregator EC, which all machines are members of.
+  cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
+  VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;
 }
 
 // The cost of leaving a task unscheduled should be higher than the cost of
@@ -31,13 +35,6 @@ Cost_t RandomCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
 // aggregator.
 Cost_t RandomCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
   return 0LL;
-}
-
-// The cost from the task to the cluster aggregator models how expensive is a
-// task to run on any node in the cluster. The cost of the topology's arcs are
-// the same for all the tasks.
-Cost_t RandomCostModel::TaskToClusterAggCost(TaskID_t task_id) {
-  return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
 Cost_t RandomCostModel::TaskToResourceNodeCost(TaskID_t task_id,
@@ -65,92 +62,182 @@ Cost_t RandomCostModel::TaskPreemptionCost(TaskID_t task_id) {
 }
 
 Cost_t RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                   EquivClass_t tec) {
-  return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
+                                                   EquivClass_t ec) {
+  // The cost of scheduling via the cluster aggregator
+  if (ec == cluster_aggregator_ec_)
+    return TaskToUnscheduledAggCost(task_id);
+  else
+    // XXX(malte): Implement other EC's costs!
+    return 0;
 }
 
-Cost_t RandomCostModel::EquivClassToResourceNode(EquivClass_t tec,
+Cost_t RandomCostModel::EquivClassToResourceNode(EquivClass_t ec,
                                                  ResourceID_t res_id) {
   return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
-Cost_t RandomCostModel::EquivClassToEquivClass(EquivClass_t tec1,
-                                               EquivClass_t tec2) {
+Cost_t RandomCostModel::EquivClassToEquivClass(EquivClass_t ec1,
+                                               EquivClass_t ec2) {
   return 0LL;
 }
 
 vector<EquivClass_t>* RandomCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+  // All tasks have an arc to the cluster aggregator.
+  equiv_classes->push_back(cluster_aggregator_ec_);
+  // An additional TEC is the hash of the task binary name.
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
-  // A level 0 TEC is the hash of the task binary name.
   size_t hash = 0;
   boost::hash_combine(hash, td_ptr->binary());
-  equiv_classes->push_back(static_cast<EquivClass_t>(hash));
+  EquivClass_t task_agg = static_cast<EquivClass_t>(hash);
+  equiv_classes->push_back(task_agg);
+  task_aggs_.insert(task_agg);
+  unordered_map<EquivClass_t, set<TaskID_t> >::iterator task_ec_it =
+    task_ec_to_set_task_id_.find(task_agg);
+  if (task_ec_it != task_ec_to_set_task_id_.end()) {
+    task_ec_it->second.insert(task_id);
+  } else {
+    set<TaskID_t> task_set;
+    task_set.insert(task_id);
+    CHECK(InsertIfNotPresent(&task_ec_to_set_task_id_, task_agg, task_set));
+  }
   return equiv_classes;
 }
 
 vector<EquivClass_t>* RandomCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
-  LOG(FATAL) << "Not implemented";
-  return NULL;
+  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+  // Every machine is in the special cluster aggregator EC
+  equiv_classes->push_back(cluster_aggregator_ec_);
+  return equiv_classes;
 }
 
 vector<ResourceID_t>* RandomCostModel::GetOutgoingEquivClassPrefArcs(
-    EquivClass_t tec) {
-  vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
-  CHECK_GE(leaf_res_ids_->size(), FLAGS_num_pref_arcs_task_to_res);
-  uint32_t rand_seed_ = 0;
-  for (uint32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs_task_to_res;
-       ++num_arc) {
-    size_t index = rand_r(&rand_seed_) % leaf_res_ids_->size();
-    unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>::iterator it =
-      leaf_res_ids_->begin();
-    advance(it, index);
-    prefered_res->push_back(*it);
+    EquivClass_t ec) {
+  vector<ResourceID_t>* arc_destinations = new vector<ResourceID_t>();
+  if (ec == cluster_aggregator_ec_) {
+    // Cluster aggregator, put arcs to all machines
+    for (auto it = machines_.begin();
+         it != machines_.end();
+         ++it) {
+      arc_destinations->push_back(*it);
+    }
+  } else if (task_aggs_.find(ec) != task_aggs_.end()) {
+    // Task equivalence class, put some random preference arcs
+    CHECK_GE(leaf_res_ids_->size(), FLAGS_num_pref_arcs_task_to_res);
+    uint32_t rand_seed_ = 0;
+    for (uint32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs_task_to_res;
+         ++num_arc) {
+      size_t index = rand_r(&rand_seed_) % leaf_res_ids_->size();
+      unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>::iterator it =
+        leaf_res_ids_->begin();
+      advance(it, index);
+      arc_destinations->push_back(*it);
+    }
   }
-  return prefered_res;
+  return arc_destinations;
 }
 
 vector<TaskID_t>* RandomCostModel::GetIncomingEquivClassPrefArcs(
-    EquivClass_t tec) {
-  LOG(FATAL) << "Not implemented!";
-  return NULL;
+    EquivClass_t ec) {
+  vector<TaskID_t>* prefered_task = new vector<TaskID_t>();
+  if (ec == cluster_aggregator_ec_) {
+    // ec is the cluster aggregator.
+    // We add an arc from each task to the cluster aggregator.
+    // XXX(malte): This is very slow because it iterates over all tasks; we
+    // should instead only return the set of tasks that do not yet have the
+    // appropriate arcs.
+    for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
+         ++it) {
+      // XXX(malte): task_map_ contains ALL tasks ever seen by the system,
+      // including those that have completed, failed or are otherwise no longer
+      // present in the flow graph. We do some crude filtering here, but clearly
+      // we should instead maintain a collection of tasks actually eligible for
+      // scheduling.
+      if (it->second->state() == TaskDescriptor::RUNNABLE ||
+          it->second->state() == TaskDescriptor::RUNNING)
+        prefered_task->push_back(it->first);
+    }
+  } else if (task_aggs_.find(ec) != task_aggs_.end()) {
+    // ec is a task aggregator.
+    // This is where we add preference arcs from tasks to new equiv class
+    // aggregators.
+    // XXX(ionel): This is very slow because it iterates over all tasks.
+    for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
+         ++it) {
+      size_t hash = 0;
+      boost::hash_combine(hash, it->second->binary());
+      EquivClass_t task_ec = static_cast<EquivClass_t>(hash);
+      if (task_ec == ec) {
+        prefered_task->push_back(it->first);
+      }
+    }
+  } else {
+    LOG(FATAL) << "Unexpected type of task equivalence aggregator";
+  }
+  return prefered_task;
 }
 
 vector<ResourceID_t>* RandomCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
+  // Tasks do not have preference arcs to resources, but all tasks
+  // have arcs to the cluster aggregator. This arc is added in
+  // GetIncomingEquivClassPrefArcs(), rather than here, since this
+  // method returns a vector of ResourceID_t, i.e. it is used for
+  // direct preferences to resources.
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   return prefered_res;
 }
 
 pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    RandomCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
-  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+    RandomCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t ec) {
+  // Not used in the random cost model
   return pair<vector<EquivClass_t>*,
-              vector<EquivClass_t>*>(equiv_classes, equiv_classes);
+              vector<EquivClass_t>*>(NULL, NULL);
 }
 
 void RandomCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  CHECK_NOTNULL(rtnd_ptr);
+  // Keep track of the new machine
+  CHECK(rtnd_ptr->resource_desc().type() == 
+      ResourceDescriptor::RESOURCE_MACHINE);
+  machines_.insert(ResourceIDFromString(rtnd_ptr->resource_desc().uuid()));
 }
 
 void RandomCostModel::AddTask(TaskID_t task_id) {
 }
 
 void RandomCostModel::RemoveMachine(ResourceID_t res_id) {
+  CHECK_EQ(machines_.erase(res_id), 1);
 }
 
 void RandomCostModel::RemoveTask(TaskID_t task_id) {
+  vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+       it != equiv_classes->end(); ++it) {
+    unordered_map<EquivClass_t, set<TaskID_t> >::iterator set_it =
+      task_ec_to_set_task_id_.find(*it);
+    if (set_it != task_ec_to_set_task_id_.end()) {
+      set_it->second.erase(task_id);
+      if (set_it->second.size() == 0) {
+        task_ec_to_set_task_id_.erase(*it);
+        task_aggs_.erase(*it);
+      }
+    }
+  }
 }
 
 FlowGraphNode* RandomCostModel::GatherStats(FlowGraphNode* accumulator,
                                             FlowGraphNode* other) {
+  // No-op in random cost model
   return NULL;
 }
 
 FlowGraphNode* RandomCostModel::UpdateStats(FlowGraphNode* accumulator,
                                             FlowGraphNode* other) {
+  // No-op in random cost model
   return NULL;
 }
 

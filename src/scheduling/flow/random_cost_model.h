@@ -25,7 +25,6 @@ class RandomCostModel : public CostModelInterface {
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
   // Per-task costs (into the resource topology)
-  Cost_t TaskToClusterAggCost(TaskID_t task_id);
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                 ResourceID_t resource_id);
   // Costs within the resource topology
@@ -55,9 +54,20 @@ class RandomCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
+  // EC corresponding to the CLUSTER_AGG node
+  EquivClass_t cluster_aggregator_ec_;
+  // Set of node IDs corresponding to machines
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>> machines_;
+  // Set of task ECs
+  unordered_set<EquivClass_t> task_aggs_;
+  // Mapping between task equiv classes and connected tasks.
+  unordered_map<EquivClass_t, set<TaskID_t> > task_ec_to_set_task_id_;
+  // The task map used in the rest of the system
   shared_ptr<TaskMap_t> task_map_;
+  // Leaf resource's resource IDs
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
-  uint32_t rand_seed_ = 0;
+  // A seed for the RNG
+  uint32_t rand_seed_ = 1234;
 };
 
 }  // namespace firmament
