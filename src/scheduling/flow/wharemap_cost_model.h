@@ -67,8 +67,16 @@ class WhareMapCostModel : public CostModelInterface {
   void ComputeMachineTypeHash(const ResourceTopologyNodeDescriptor* rtnd_ptr,
                               size_t* hash);
 
+  // Map of resources present in the system, initialised externally
   shared_ptr<ResourceMap_t> resource_map_;
+  // Map of tasks present in the system, initialised externally
   shared_ptr<TaskMap_t> task_map_;
+  // A knowledge base instance that we refer to for job runtime statistics,
+  // initialised externally
+  KnowledgeBase* knowledge_base_;
+
+  // EC corresponding to the CLUSTER_AGG node
+  EquivClass_t cluster_aggregator_ec_;
   // Mapping between machine equiv classes and machines.
   multimap<EquivClass_t, ResourceID_t> machine_ec_to_res_id_;
   // Mapping betweeen machine res id and resource topology node descriptor.
@@ -77,14 +85,12 @@ class WhareMapCostModel : public CostModelInterface {
   // Mapping between machine res id and task equiv class.
   unordered_map<ResourceID_t, EquivClass_t,
     boost::hash<boost::uuids::uuid>> machine_to_ec_;
-
   // Mapping between task equiv classes and connected tasks.
   unordered_map<EquivClass_t, set<TaskID_t> > task_ec_to_set_task_id_;
-
+  // Set of task ECs
   unordered_set<EquivClass_t> task_aggs_;
+  // Set of machine ECs
   unordered_set<EquivClass_t> machine_aggs_;
-  // A knowledge base instance that we will refer to for job runtime statistics.
-  KnowledgeBase* knowledge_base_;
 };
 
 }  // namespace firmament

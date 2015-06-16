@@ -30,6 +30,9 @@ WhareMapCostModel::WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
   : resource_map_(resource_map),
     task_map_(task_map),
     knowledge_base_(kb) {
+  // Create the cluster aggregator EC, which all machines are members of.
+  cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
+  VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;
 }
 
 const TaskDescriptor& WhareMapCostModel::GetTask(TaskID_t task_id) {
@@ -102,9 +105,13 @@ Cost_t WhareMapCostModel::TaskPreemptionCost(TaskID_t task_id) {
 }
 
 Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                     EquivClass_t tec) {
-  // TODO(ionel): Implement!
-  return 0LL;
+                                                     EquivClass_t ec) {
+  // The cost of scheduling via the cluster aggregator
+  if (ec == cluster_aggregator_ec_)
+    return TaskToUnscheduledAggCost(task_id);
+  else
+    // XXX(malte): Implement other EC's costs!
+    return 0;
 }
 
 Cost_t WhareMapCostModel::EquivClassToResourceNode(EquivClass_t tec,
@@ -124,6 +131,8 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
+  // All tasks have an arc to the cluster aggregator.
+  equiv_classes->push_back(cluster_aggregator_ec_);
   // We have one task agg per job. The id of the aggregator is the hash
   // of the job id.
   EquivClass_t task_agg = static_cast<EquivClass_t>(HashJobID(*td_ptr));
@@ -146,24 +155,35 @@ vector<EquivClass_t>* WhareMapCostModel::GetResourceEquivClasses(
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   // Get the machine aggregator corresponding to this machine.
   EquivClass_t* ec_class = FindOrNull(machine_to_ec_, res_id);
-  if (ec_class != NULL) {
+  if (ec_class) {
     equiv_classes->push_back(*ec_class);
   }
+  // Every machine is also in the special cluster aggregator EC
+  equiv_classes->push_back(cluster_aggregator_ec_);
   return equiv_classes;
 }
 
 vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
-    EquivClass_t tec) {
+    EquivClass_t ec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
-  if (task_aggs_.find(tec) != task_aggs_.end()) {
-    // tec is a task aggregator.
+  if (ec == cluster_aggregator_ec_) {
+    // ec is the cluster aggregator, and has arcs to all machines.
+    // XXX(malte): This is inefficient, as it needlessly adds all the
+    // machines every time we call this. To optimize, we can just include
+    // the ones for which arcs are missing.
+    for (auto it = machine_to_rtnd_.begin();
+         it != machine_to_rtnd_.end();
+         ++it) {
+      prefered_res->push_back(it->first);
+    }
+  } else if (task_aggs_.find(ec) != task_aggs_.end()) {
+    // ec is a task aggregator.
     // Iterate over all the machines.
     multimap<Cost_t, ResourceID_t> priority_res;
-    for (unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
-           boost::hash<boost::uuids::uuid>>::iterator
-           it = machine_to_rtnd_.begin();
-         it != machine_to_rtnd_.end(); ++it) {
-      Cost_t cost_to_res = EquivClassToResourceNode(tec, it->first);
+    for (auto it = machine_to_rtnd_.begin();
+         it != machine_to_rtnd_.end();
+         ++it) {
+      Cost_t cost_to_res = EquivClassToResourceNode(ec, it->first);
       ResourceID_t res_id =
         ResourceIDFromString(it->second->resource_desc().uuid());
       if (priority_res.size() < FLAGS_num_pref_arcs_agg_to_res) {
@@ -181,12 +201,12 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
          it != priority_res.end(); ++it) {
       prefered_res->push_back(it->second);
     }
-  } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
-    // tec is a machine aggregator.
+  } else if (machine_aggs_.find(ec) != machine_aggs_.end()) {
+    // ec is a machine aggregator.
     multimap<EquivClass_t, ResourceID_t>::iterator it =
-      machine_ec_to_res_id_.find(tec);
+      machine_ec_to_res_id_.find(ec);
     multimap<EquivClass_t, ResourceID_t>::iterator it_to =
-      machine_ec_to_res_id_.upper_bound(tec);
+      machine_ec_to_res_id_.upper_bound(ec);
     for (; it != it_to; ++it) {
       prefered_res->push_back(it->second);
     }
@@ -199,7 +219,24 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
 vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
     EquivClass_t tec) {
   vector<TaskID_t>* prefered_task = new vector<TaskID_t>();
-  if (task_aggs_.find(tec) != task_aggs_.end()) {
+  if (tec == cluster_aggregator_ec_) {
+    // tec is the cluster aggregator.
+    // We add an arc from each task to the cluster aggregator.
+    // XXX(malte): This is very slow because it iterates over all tasks; we
+    // should instead only return the set of tasks that do not yet have the
+    // appropriate arcs.
+    for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
+         ++it) {
+      // XXX(malte): task_map_ contains ALL tasks ever seen by the system,
+      // including those that have completed, failed or are otherwise no longer
+      // present in the flow graph. We do some crude filtering here, but clearly
+      // we should instead maintain a collection of tasks actually eligible for
+      // scheduling.
+      if (it->second->state() == TaskDescriptor::RUNNABLE ||
+          it->second->state() == TaskDescriptor::RUNNING)
+        prefered_task->push_back(it->first);
+    }
+  } else if (task_aggs_.find(tec) != task_aggs_.end()) {
     // tec is a task aggregator.
     // This is where we add preference arcs from tasks to new equiv class
     // aggregators.
@@ -224,7 +261,11 @@ vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
 
 vector<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(
     TaskID_t task_id) {
-  // Tasks do not have preference arcs to resources.
+  // Tasks do not have preference arcs to resources, but all tasks
+  // have arcs to the cluster aggregator. This arc is added in
+  // GetIncomingEquivClassPrefArcs(), rather than here, since this
+  // method returns a vector of ResourceID_t, i.e. it is used for
+  // direct preferences to resources.
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   return prefered_res;
 }
@@ -233,7 +274,10 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     WhareMapCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
   vector<EquivClass_t>* incoming_ec = new vector<EquivClass_t>();
   vector<EquivClass_t>* outgoing_ec = new vector<EquivClass_t>();
-  if (task_aggs_.find(tec) != task_aggs_.end()) {
+  if (tec == cluster_aggregator_ec_) {
+    // Cluster aggregator: has no outgoing arcs to other ECs in this
+    // cost model. (Could have, e.g., arcs to rack aggregators, though!).
+  } else if (task_aggs_.find(tec) != task_aggs_.end()) {
     // Add the machine equivalence classes to the vector.
     for (unordered_set<EquivClass_t>::iterator
            it = machine_aggs_.begin();
@@ -281,7 +325,7 @@ void WhareMapCostModel::AddMachine(
 void WhareMapCostModel::RemoveMachine(ResourceID_t res_id) {
   EquivClass_t* machine_ec = FindOrNull(machine_to_ec_, res_id);
   CHECK_NOTNULL(machine_ec);
-  // Rempve the machine from the machine ec map.
+  // Remove the machine from the machine ec map.
   multimap<EquivClass_t, ResourceID_t>::iterator it =
     machine_ec_to_res_id_.find(*machine_ec);
   multimap<EquivClass_t, ResourceID_t>::iterator it_to =
@@ -384,7 +428,9 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
       // Case: (EQUIV -> EQUIV).
       // We don't have to do anything.
     } else {
-      LOG(FATAL) << "Unexpected preference arc";
+      LOG(FATAL) << "Unexpected preference arc from node " << accumulator->id_
+                 << " of type " << accumulator->type_ << " to " << other->id_
+                 << " of type " << other->type_;
     }
     // TODO(ionel): Update knowledge base.
     return accumulator;
