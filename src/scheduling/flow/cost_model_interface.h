@@ -52,12 +52,6 @@ class CostModelInterface {
   virtual Cost_t UnscheduledAggToSinkCost(JobID_t job_id) = 0;
 
   /**
-   * Get the cost of an arc from a task node to the cluster
-   * aggregator node.
-   */
-  virtual Cost_t TaskToClusterAggCost(TaskID_t task_id) = 0;
-
-  /**
    * Get the cost of a preference arc from a task node to a resource node.
    */
   virtual Cost_t TaskToResourceNodeCost(TaskID_t task_id,
