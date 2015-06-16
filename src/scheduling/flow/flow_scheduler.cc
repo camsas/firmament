@@ -92,7 +92,7 @@ FlowScheduler::FlowScheduler(
       VLOG(1) << "Using the Whare-Map cost model";
       break;
     case CostModelType::COST_MODEL_OCTOPUS:
-      cost_model_ = new OctopusCostModel(resource_map);
+      cost_model_ = new OctopusCostModel(resource_map, task_map);
       VLOG(1) << "Using the octopus cost model";
       break;
     default:
