@@ -33,7 +33,9 @@ using boost::posix_time::seconds;
 #endif
 
 Worker::Worker(PlatformID platform_id)
-  : Node(platform_id, GenerateResourceID(FLAGS_listen_uri)),
+  : Node(platform_id,
+      GenerateResourceID(
+        boost::asio::ip::host_name() + "/" + FLAGS_listen_uri)),
     chan_(new StreamSocketsChannel<BaseMessage>(
           StreamSocketsChannel<BaseMessage>::SS_TCP)),
     coordinator_uri_(FLAGS_coordinator_uri) {

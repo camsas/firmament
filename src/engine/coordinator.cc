@@ -57,7 +57,9 @@ DEFINE_bool(populate_knowledge_base_from_file, false,
 namespace firmament {
 
 Coordinator::Coordinator(PlatformID platform_id)
-  : Node(platform_id, GenerateResourceID(FLAGS_listen_uri)),
+  : Node(platform_id,
+      GenerateResourceID(
+        boost::asio::ip::host_name() + "/" + FLAGS_listen_uri)),
     associated_resources_(new ResourceMap_t),
     local_resource_topology_(new ResourceTopologyNodeDescriptor),
     job_table_(new JobMap_t),
