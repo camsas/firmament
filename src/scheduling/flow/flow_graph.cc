@@ -143,9 +143,6 @@ void FlowGraph::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
   pair<vector<EquivClass_t>*,
        vector<EquivClass_t>*> equiv_class_to_connect =
     cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
-  if (!equiv_class_to_connect.first && !equiv_class_to_connect.second)
-    // Nothing to do, no source or destination equivalence classes
-    return;
   // Add incoming arcs.
   if (equiv_class_to_connect.first) {
     for (vector<EquivClass_t>::iterator
@@ -470,16 +467,11 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
     // Add the incoming arcs to the equivalence class node.
     for (vector<TaskID_t>::iterator it = task_pref_arcs->begin();
          it != task_pref_arcs->end(); ++it) {
-<<<<<<< HEAD
       FlowGraphNode* task_node = NodeForTaskID(*it);
       CHECK_NOTNULL(task_node);
       CHECK(task_node != NULL) << "Task ID requested was " << *it;
       FlowGraphArc* ec_arc =
         AddArcInternal(task_node->id_, ec_node->id_);
-=======
-      FlowGraphArc* ec_arc =
-        AddArcInternal(NodeForTaskID(*it)->id_, ec_node->id_);
->>>>>>> f5b21e90cd806ae46742435f6e28bcf9507bc4d7
       // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
       ec_arc->cap_upper_bound_ = 1;
       ec_arc->cost_ =
