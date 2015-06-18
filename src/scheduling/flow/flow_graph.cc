@@ -143,9 +143,6 @@ void FlowGraph::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
   pair<vector<EquivClass_t>*,
        vector<EquivClass_t>*> equiv_class_to_connect =
     cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
-  if (!equiv_class_to_connect.first && !equiv_class_to_connect.second)
-    // Nothing to do, no source or destination equivalence classes
-    return;
   // Add incoming arcs.
   if (equiv_class_to_connect.first) {
     for (vector<EquivClass_t>::iterator
