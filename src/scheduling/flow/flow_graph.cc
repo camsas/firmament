@@ -133,39 +133,40 @@ void FlowGraph::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
   pair<vector<EquivClass_t>*,
        vector<EquivClass_t>*> equiv_class_to_connect =
     cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
-  if (!equiv_class_to_connect.first || !equiv_class_to_connect.second)
-    // Nothing to do, no source or destination equivalence classes
-    return;
   // Add incoming arcs.
-  for (vector<EquivClass_t>::iterator
-         it = equiv_class_to_connect.first->begin();
-       it != equiv_class_to_connect.first->end(); ++it) {
-    FlowGraphNode* ec_src_ptr = FindPtrOrNull(tec_to_node_, *it);
-    CHECK_NOTNULL(ec_src_ptr);
-    FlowGraphArc* arc = AddArcInternal(ec_src_ptr->id_, ec_node->id_);
-    arc->cost_ = cost_model_->EquivClassToEquivClass(*it, equiv_class);
-    // TODO(ionel): Set the capacity on the arc to a sensible value.
-    arc->cap_upper_bound_ = 1;
-    DIMACSChange *chg = new DIMACSNewArc(*arc);
-    chg->set_comment("AddArcsFromToOtherEquivNodes: incoming");
-    graph_changes_.push_back(chg);
+  if (equiv_class_to_connect.first) {
+    for (vector<EquivClass_t>::iterator
+           it = equiv_class_to_connect.first->begin();
+         it != equiv_class_to_connect.first->end(); ++it) {
+      FlowGraphNode* ec_src_ptr = FindPtrOrNull(tec_to_node_, *it);
+      CHECK_NOTNULL(ec_src_ptr);
+      FlowGraphArc* arc = AddArcInternal(ec_src_ptr->id_, ec_node->id_);
+      arc->cost_ = cost_model_->EquivClassToEquivClass(*it, equiv_class);
+      // TODO(ionel): Set the capacity on the arc to a sensible value.
+      arc->cap_upper_bound_ = 1;
+      DIMACSChange *chg = new DIMACSNewArc(*arc);
+      chg->set_comment("AddArcsFromToOtherEquivNodes: incoming");
+      graph_changes_.push_back(chg);
+    }
+    delete equiv_class_to_connect.first;
   }
   // Add outgoing arcs.
-  for (vector<EquivClass_t>::iterator
-         it = equiv_class_to_connect.second->begin();
-       it != equiv_class_to_connect.second->end(); ++it) {
-    FlowGraphNode* ec_dst_ptr = FindPtrOrNull(tec_to_node_, *it);
-    CHECK_NOTNULL(ec_dst_ptr);
-    FlowGraphArc* arc = AddArcInternal(ec_node->id_, ec_dst_ptr->id_);
-    arc->cost_ = cost_model_->EquivClassToEquivClass(equiv_class, *it);
-    // TODO(ionel): Set the capacity on the arc to a sensible value.
-    arc->cap_upper_bound_ = 1;
-    DIMACSChange *chg = new DIMACSNewArc(*arc);
-    chg->set_comment("AddArcsFromToOtherEquivNodes: outgoing");
-    graph_changes_.push_back(chg);
+  if (equiv_class_to_connect.second) {
+    for (vector<EquivClass_t>::iterator
+           it = equiv_class_to_connect.second->begin();
+         it != equiv_class_to_connect.second->end(); ++it) {
+      FlowGraphNode* ec_dst_ptr = FindPtrOrNull(tec_to_node_, *it);
+      CHECK_NOTNULL(ec_dst_ptr);
+      FlowGraphArc* arc = AddArcInternal(ec_node->id_, ec_dst_ptr->id_);
+      arc->cost_ = cost_model_->EquivClassToEquivClass(equiv_class, *it);
+      // TODO(ionel): Set the capacity on the arc to a sensible value.
+      arc->cap_upper_bound_ = 1;
+      DIMACSChange *chg = new DIMACSNewArc(*arc);
+      chg->set_comment("AddArcsFromToOtherEquivNodes: outgoing");
+      graph_changes_.push_back(chg);
+    }
+    delete equiv_class_to_connect.second;
   }
-  delete equiv_class_to_connect.first;
-  delete equiv_class_to_connect.second;
 }
 
 FlowGraphNode* FlowGraph::GetUnschedAggForJob(JobID_t job_id) {
@@ -479,6 +480,7 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
          it != task_pref_arcs->end(); ++it) {
       FlowGraphNode* task_node = NodeForTaskID(*it);
       CHECK_NOTNULL(task_node);
+      CHECK(task_node != NULL) << "Task ID requested was " << *it;
       FlowGraphArc* ec_arc =
         AddArcInternal(task_node->id_, ec_node->id_);
       // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
