@@ -34,6 +34,24 @@
       "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_f4dad24a",
+        "filename": "src/scheduling/flow/wharemap_cost_model.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-19T14:38:58Z",
+      "side": 0,
+      "message": "Yes, I\u0027m happy with private.",
+      "parentUuid": "facab960_03e53edc",
+      "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
