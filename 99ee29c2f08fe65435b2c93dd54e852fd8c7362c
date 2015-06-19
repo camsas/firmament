@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "facab960_831f8e07",
+        "filename": "src/scheduling/flow/trivial_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-19T04:49:49Z",
+      "side": 1,
+      "message": "Can you please create an issue?",
+      "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_63228a53",
+        "filename": "src/scheduling/flow/trivial_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-19T04:49:49Z",
+      "side": 1,
+      "message": "This change makes the TrivialCostModel to always fail because this method is always called and its output is used.",
+      "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
