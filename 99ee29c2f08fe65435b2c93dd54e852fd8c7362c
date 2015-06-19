@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "facab960_a3c2d231",
+        "filename": "src/scheduling/flow/trivial_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-19T07:35:59Z",
+      "side": 1,
+      "message": "Done: https://github.com/ms705/firmament/issues/24.",
+      "parentUuid": "facab960_831f8e07",
+      "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "facab960_63228a53",
         "filename": "src/scheduling/flow/trivial_cost_model.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2015-06-19T04:49:49Z",
       "side": 1,
       "message": "This change makes the TrivialCostModel to always fail because this method is always called and its output is used.",
+      "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_c3bfd6a8",
+        "filename": "src/scheduling/flow/trivial_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-19T07:35:59Z",
+      "side": 1,
+      "message": "Not sure that\u0027s true -- the place where GetEquivClassToEquivClassesArcs() is called checks for either of the pointers contained being NULL and degrades to a no-op if they both are. See discussion of CL 236568 (https://review.gerrithub.io/#/c/236568/).",
+      "parentUuid": "facab960_63228a53",
       "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
