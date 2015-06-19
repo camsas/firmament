@@ -69,6 +69,24 @@
       "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_1425765b",
+        "filename": "src/scheduling/flow/trivial_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-19T14:38:05Z",
+      "side": 1,
+      "message": "Oh. I haven\u0027t looked over that CL yet. Ok, then it\u0027s fine.",
+      "parentUuid": "facab960_c3bfd6a8",
+      "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
