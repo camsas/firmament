@@ -16,6 +16,24 @@
       "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_03e53edc",
+        "filename": "src/scheduling/flow/wharemap_cost_model.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-19T07:37:18Z",
+      "side": 0,
+      "message": "See comment on other CL: this is used from TaskToEquivClassAggregator().\n\nHowever, you\u0027re right in that it should be made private. Okay with that?",
+      "parentUuid": "facab960_e3d5ba1c",
+      "revId": "99ee29c2f08fe65435b2c93dd54e852fd8c7362c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
