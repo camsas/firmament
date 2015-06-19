@@ -16,6 +16,24 @@
       "revId": "d612d5b6cd01b34509d23de41b29da54cd508f2d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_837b0e27",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 625,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-19T07:21:13Z",
+      "side": 1,
+      "message": "This is a bit of a hack right now -- normally, neither of these will happen, but they do occur in the unit tests. I intend to fix this in a separate commit (changing the unit tests to generate more realistic topologies). That said, the warning/error is not critical to the correct functionality of the system -- it\u0027s merely there to catch odd situations.",
+      "parentUuid": "facab960_a301f2b0",
+      "revId": "d612d5b6cd01b34509d23de41b29da54cd508f2d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
