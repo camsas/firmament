@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "facab960_63d36a04",
+        "filename": "src/scheduling/flow/octopus_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-19T07:39:18Z",
+      "side": 1,
+      "message": "See CL 236568 (https://review.gerrithub.io/#/c/236568/), which makes the required changes to FlowGraph. I think being tolerant of NULL being returned is good defensive programming, and also reduces the length of simple cost model implementations.",
+      "parentUuid": "facab960_43e106fd",
+      "revId": "3213af6717e8e55aeee1d372eaaacabfc1ef0bf2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "facab960_23dc0246",
         "filename": "src/scheduling/flow/octopus_cost_model.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2015-06-19T05:00:12Z",
       "side": 1,
       "message": "As mentioned in a previous review. This will cause a crash in Firmament because the CHECK_NOTNULL from AddArcsFromToOtherEquivNodes will fail.",
+      "revId": "3213af6717e8e55aeee1d372eaaacabfc1ef0bf2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_83d06ef7",
+        "filename": "src/scheduling/flow/octopus_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-19T07:39:18Z",
+      "side": 1,
+      "message": "It won\u0027t any more as of CL 236568 (https://review.gerrithub.io/#/c/236568/), see above.",
+      "parentUuid": "facab960_23dc0246",
       "revId": "3213af6717e8e55aeee1d372eaaacabfc1ef0bf2",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
