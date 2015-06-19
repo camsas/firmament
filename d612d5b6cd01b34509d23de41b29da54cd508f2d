@@ -16,6 +16,24 @@
       "revId": "d612d5b6cd01b34509d23de41b29da54cd508f2d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_c3719645",
+        "filename": "src/scheduling/flow/cost_model_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-19T07:22:45Z",
+      "side": 0,
+      "message": "Yes, that\u0027s the plan -- although it will be kept in some of them as a way of modularising the cost calculations: it becomes private, but is called into from TaskToEquivClassCost() when the cost to the cluster aggregator EC is calculated.",
+      "parentUuid": "facab960_2325e25b",
+      "revId": "d612d5b6cd01b34509d23de41b29da54cd508f2d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
