@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "facab960_2325e25b",
+        "filename": "src/scheduling/flow/cost_model_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-06-19T04:40:52Z",
+      "side": 0,
+      "message": "I assume you\u0027re removing this method from all the cost models in a later cl.",
+      "revId": "d612d5b6cd01b34509d23de41b29da54cd508f2d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
