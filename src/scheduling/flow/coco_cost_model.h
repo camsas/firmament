@@ -50,7 +50,6 @@ class CocoCostModel : public CostModelInterface {
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
   // Per-task costs (into the resource topology)
-  Cost_t TaskToClusterAggCost(TaskID_t task_id);
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                 ResourceID_t resource_id);
   // Costs within the resource topology
@@ -84,7 +83,10 @@ class CocoCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
+  // Helper method to get TD for a task ID
   const TaskDescriptor& GetTask(TaskID_t task_id);
+  // Cost to cluster aggregator EC
+  Cost_t TaskToClusterAggCost(TaskID_t task_id);
   // Fixed value for OMEGA, the normalization ceiling for each dimension's cost
   // value
   const uint64_t omega_ = 1000;

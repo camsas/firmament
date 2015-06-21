@@ -53,7 +53,6 @@ class SimulatedQuincyCostModel : public CostModelInterface {
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
   // Per-task costs (into the resource topology)
-  Cost_t TaskToClusterAggCost(TaskID_t task_id);
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                 ResourceID_t resource_id);
   // Costs within the resource topology
@@ -85,6 +84,7 @@ class SimulatedQuincyCostModel : public CostModelInterface {
  private:
   void BuildTaskFileSet(TaskID_t task_id);
   void ComputeCostsAndPreferredSet(TaskID_t task_id);
+  Cost_t TaskToClusterAggCost(TaskID_t task_id);
 
   // Lookup maps for various resources from the scheduler.
   shared_ptr<ResourceMap_t> resource_map_;
