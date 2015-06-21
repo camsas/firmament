@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "facab960_2797a73c",
+        "filename": "src/scheduling/flow/random_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-21T21:32:19Z",
+      "side": 1,
+      "message": "Yep, you\u0027re right, although that bound didn\u0027t exist before (the cost to the cluster agg could be \u003e cost to unscheduled).",
+      "parentUuid": "facab960_a3ef32e8",
+      "revId": "63fdee36a085e07af466749275d98b944aa8f513",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "facab960_e3bcdade",
         "filename": "src/scheduling/flow/random_cost_model.cc",
         "patchSetId": 1
@@ -65,6 +83,24 @@
       "writtenOn": "2015-06-19T05:04:37Z",
       "side": 1,
       "message": "Remove whitespace.",
+      "revId": "63fdee36a085e07af466749275d98b944aa8f513",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "facab960_679d2f59",
+        "filename": "src/scheduling/flow/random_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-06-21T21:32:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "facab960_c3ec36f6",
       "revId": "63fdee36a085e07af466749275d98b944aa8f513",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
