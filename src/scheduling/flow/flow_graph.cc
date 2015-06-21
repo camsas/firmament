@@ -479,7 +479,6 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
     for (vector<TaskID_t>::iterator it = task_pref_arcs->begin();
          it != task_pref_arcs->end(); ++it) {
       FlowGraphNode* task_node = NodeForTaskID(*it);
-      CHECK_NOTNULL(task_node);
       CHECK(task_node != NULL) << "Task ID requested was " << *it;
       FlowGraphArc* ec_arc =
         AddArcInternal(task_node->id_, ec_node->id_);
