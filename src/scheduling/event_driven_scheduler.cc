@@ -115,6 +115,7 @@ void EventDrivenScheduler::BindTaskToResource(
   exec->RunTask(task_desc, !task_desc->inject_task_lib());
   // Mark task as running and report
   task_desc->set_state(TaskDescriptor::RUNNING);
+  task_desc->set_scheduled_to_resource(res_desc->uuid());
   VLOG(1) << "Task " << task_desc->uid() << " running.";
 }
 
@@ -213,6 +214,8 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
   CHECK_NOTNULL(exec);
   exec->HandleTaskCompletion(td_ptr, report);
+  // Store the final report in the TD for future reference
+  td_ptr->mutable_final_report()->CopyFrom(*report);
 }
 
 void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,

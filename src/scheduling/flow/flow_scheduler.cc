@@ -302,6 +302,7 @@ uint64_t FlowScheduler::RunSchedulingIteration() {
       CostModelType::COST_MODEL_OCTOPUS ||
       FLAGS_flow_scheduling_cost_model ==
       CostModelType::COST_MODEL_WHARE) {
+    LOG(INFO) << "Updating resource statistics in flow graph";
     flow_graph_->ComputeTopologyStatistics(
         flow_graph_->sink_node(),
         boost::bind(&CostModelInterface::GatherStats,

@@ -11,6 +11,7 @@
 
 #include <sys/fcntl.h>
 
+#include "base/task_desc.pb.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
@@ -178,6 +179,20 @@ double KnowledgeBase::GetAvgIPMAForTEC(EquivClass_t id) {
        ++it) {
     accumulator += static_cast<double>(it->instructions()) /
       static_cast<double>(it->llc_refs());
+  }
+  return accumulator / res->size();
+}
+
+double KnowledgeBase::GetAvgPsPIForTEC(EquivClass_t id) {
+  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
+  if (!res || res->size() == 0)
+    return 0;
+  double accumulator = 0;
+  for (deque<TaskFinalReport>::const_iterator it = res->begin();
+       it != res->end();
+       ++it) {
+    accumulator += static_cast<double>(it->runtime() * 10000000000.0) /
+      static_cast<double>(it->instructions());
   }
   return accumulator / res->size();
 }

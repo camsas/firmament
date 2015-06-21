@@ -2,6 +2,7 @@ package firmament;
 
 import "base/reference_desc.proto";
 import "base/resource_request.proto";
+import "base/task_final_report.proto";
 
 message TaskDescriptor {
   enum TaskState {
@@ -38,19 +39,19 @@ message TaskDescriptor {
   /* Children */
   repeated TaskDescriptor spawned = 10;
   /* Runtime meta-data */
-  optional string last_heartbeat_location = 11;
-  optional uint64 last_heartbeat_time = 12;
+  optional string scheduled_to_resource = 11;
+  optional string last_heartbeat_location = 12;
+  optional uint64 last_heartbeat_time = 13;
   /* Delegation info */
-  optional string delegated_to = 13;
-  optional string delegated_from = 14;
+  optional string delegated_to = 14;
+  optional string delegated_from = 15;
   /* Timestamps */
-  optional uint64 submit_time = 15;
-  optional uint64 start_time = 16;
-  optional uint64 finish_time = 17;
+  optional uint64 submit_time = 16;
+  optional uint64 start_time = 17;
+  optional uint64 finish_time = 18;
   /* Deadlines */
-  optional uint64 relative_deadline = 18;
-  optional uint64 absolute_deadline = 19;
-  optional uint64 equivalence_class = 20;
+  optional uint64 relative_deadline = 19;
+  optional uint64 absolute_deadline = 20;
   /* Application-specific fields */
   /* TODO(malte): move these to sub-messages */
   optional uint64 port = 21;
@@ -61,4 +62,6 @@ message TaskDescriptor {
   optional ResourceRequest resource_request = 24;
   optional uint32 priority = 25;
   optional TaskType task_type = 26;
+  /* Final report after successful execution */
+  optional TaskFinalReport final_report = 27;
 }
