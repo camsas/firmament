@@ -63,9 +63,10 @@ Cost_t RandomCostModel::TaskPreemptionCost(TaskID_t task_id) {
 
 Cost_t RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
                                                    EquivClass_t ec) {
-  // The cost of scheduling via the cluster aggregator
+  // The cost of scheduling via the cluster aggregator; always slightly
+  // less than the cost of leaving the task unscheduled
   if (ec == cluster_aggregator_ec_)
-    return TaskToUnscheduledAggCost(task_id);
+    return rand() % TaskToUnscheduledAggCost(task_id) - 1;
   else
     // XXX(malte): Implement other EC's costs!
     return 0;
@@ -201,7 +202,7 @@ void RandomCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   CHECK_NOTNULL(rtnd_ptr);
   // Keep track of the new machine
-  CHECK(rtnd_ptr->resource_desc().type() == 
+  CHECK(rtnd_ptr->resource_desc().type() ==
       ResourceDescriptor::RESOURCE_MACHINE);
   machines_.insert(ResourceIDFromString(rtnd_ptr->resource_desc().uuid()));
 }
