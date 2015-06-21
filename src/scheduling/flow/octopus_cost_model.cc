@@ -151,7 +151,7 @@ void OctopusCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   CHECK_NOTNULL(rtnd_ptr);
   // Keep track of the new machine
-  CHECK(rtnd_ptr->resource_desc().type() == 
+  CHECK(rtnd_ptr->resource_desc().type() ==
       ResourceDescriptor::RESOURCE_MACHINE);
   machines_.insert(ResourceIDFromString(rtnd_ptr->resource_desc().uuid()));
 }
