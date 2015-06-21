@@ -44,13 +44,22 @@ const TaskDescriptor& WhareMapCostModel::GetTask(TaskID_t task_id) {
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
 Cost_t WhareMapCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  // TODO(ionel): Implement!
   const TaskDescriptor& td = GetTask(task_id);
   uint64_t now = GetCurrentTimestamp();
   uint64_t time_since_submit = now - td.submit_time();
   // timestamps are in microseconds, but we scale to tenths of a second here in
   // order to keep the costs small
-  return (time_since_submit / 100000);
+  uint64_t wait_time_centamillis = time_since_submit / 100000;
+  // Cost is the max of the average runtime and the wait time, so that the
+  // average runtime is a lower bound on the cost.
+  vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+  CHECK_GT(equiv_classes->size(), 0);
+  uint64_t avg_pspi =
+    knowledge_base_->GetAvgPsPIForTEC(equiv_classes->front());
+  VLOG(1) << "Avg PsPI for TEC " << equiv_classes->front() << " is "
+          << avg_pspi;
+  delete equiv_classes;
+  return max(WAIT_TIME_MULTIPLIER * wait_time_centamillis, avg_pspi + 1);
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
@@ -58,6 +67,7 @@ Cost_t WhareMapCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
 Cost_t WhareMapCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
+  // No cost in this cost model.
   return 0ULL;
 }
 
@@ -69,10 +79,12 @@ Cost_t WhareMapCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   CHECK_GT(equiv_classes->size(), 0);
   // Avg runtime is in milliseconds, so we convert it to tenths of a second
-  uint64_t avg_runtime =
-    knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
+  uint64_t avg_pspi =
+    knowledge_base_->GetAvgPsPIForTEC(equiv_classes->front());
+  VLOG(1) << "Avg PsPI for TEC " << equiv_classes->front() << " is "
+          << avg_pspi;
   delete equiv_classes;
-  return (avg_runtime * 100);
+  return avg_pspi;
 }
 
 Cost_t WhareMapCostModel::TaskToResourceNodeCost(TaskID_t task_id,
@@ -108,7 +120,7 @@ Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
                                                      EquivClass_t ec) {
   // The cost of scheduling via the cluster aggregator
   if (ec == cluster_aggregator_ec_)
-    return TaskToUnscheduledAggCost(task_id);
+    return TaskToClusterAggCost(task_id);
   else
     // XXX(malte): Implement other EC's costs!
     return 0;
@@ -131,11 +143,10 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
-  // All tasks have an arc to the cluster aggregator.
-  equiv_classes->push_back(cluster_aggregator_ec_);
-  // We have one task agg per job. The id of the aggregator is the hash
-  // of the job id.
-  EquivClass_t task_agg = static_cast<EquivClass_t>(HashJobID(*td_ptr));
+  // We also have one task agg per job. The id of the aggregator is the
+  // hash of the job ID.
+  EquivClass_t task_agg =
+    static_cast<EquivClass_t>(HashString(td_ptr->binary()));
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);
   unordered_map<EquivClass_t, set<TaskID_t> >::iterator task_ec_it =
@@ -147,6 +158,8 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
     task_set.insert(task_id);
     CHECK(InsertIfNotPresent(&task_ec_to_set_task_id_, task_agg, task_set));
   }
+  // All tasks also have an arc to the cluster aggregator.
+  equiv_classes->push_back(cluster_aggregator_ec_);
   return equiv_classes;
 }
 
@@ -233,8 +246,13 @@ vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
       // we should instead maintain a collection of tasks actually eligible for
       // scheduling.
       if (it->second->state() == TaskDescriptor::RUNNABLE ||
-          it->second->state() == TaskDescriptor::RUNNING)
+          it->second->state() == TaskDescriptor::RUNNING) {
+        VLOG(2) << "Adding arc from task " << it->first << " to EC " << tec
+                << "; task in state "
+                << ENUM_TO_STRING(TaskDescriptor::TaskState,
+                                  it->second->state());
         prefered_task->push_back(it->first);
+      }
     }
   } else if (task_aggs_.find(tec) != task_aggs_.end()) {
     // tec is a task aggregator.
@@ -244,9 +262,16 @@ vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
     for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
          ++it) {
       EquivClass_t task_agg =
-        static_cast<EquivClass_t>(HashJobID(*(it->second)));
+        static_cast<EquivClass_t>(HashString(it->second->binary()));
       if (task_agg == tec) {
-        prefered_task->push_back(it->first);
+        // XXX(malte): task_map_ contains ALL tasks ever seen by the system,
+        // including those that have completed, failed or are otherwise no
+        // longer present in the flow graph. We do some crude filtering here,
+        // but clearly we should instead maintain a collection of tasks actually
+        // eligible for scheduling.
+        if (it->second->state() == TaskDescriptor::RUNNABLE ||
+            it->second->state() == TaskDescriptor::RUNNING)
+          prefered_task->push_back(it->first);
       }
     }
   } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
@@ -351,16 +376,75 @@ void WhareMapCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
 void WhareMapCostModel::AddTask(TaskID_t task_id) {
+  // No-op in the WhareMap cost model
+}
+
+ResourceID_t WhareMapCostModel::MachineResIDForResource(ResourceID_t res_id) {
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
+  while (rtnd->resource_desc().type() != ResourceDescriptor::RESOURCE_MACHINE) {
+    CHECK(rtnd->has_parent_id()) << "Non-machine resource "
+      << rtnd->resource_desc().uuid() << " has no parent!";
+    rs = FindPtrOrNull(*resource_map_, ResourceIDFromString(rtnd->parent_id()));
+    rtnd = rs->mutable_topology_node();
+  }
+  return ResourceIDFromString(rtnd->resource_desc().uuid());
+}
+
+void WhareMapCostModel::RecordECtoPsPIMapping(
+    pair<EquivClass_t, EquivClass_t> ec_pair,
+    const TaskFinalReport& task_report) {
+  // Record the <task EC, machine EC> -> psPI mapping
+  vector<uint64_t>* pspi_vec = FindPtrOrNull(psi_map_, ec_pair);
+  VLOG(1) << "Runtime: " << task_report.runtime();
+  VLOG(1) << "Instructions: " << task_report.instructions();
+  uint64_t pspi_value =
+    (static_cast<uint64_t>(task_report.runtime()) * 10000000000) /
+    task_report.instructions();
+  if (!pspi_vec) {
+    pspi_vec = new vector<uint64_t>();
+    InsertIfNotPresent(&psi_map_, ec_pair, pspi_vec);
+  }
+  pspi_vec->push_back(pspi_value);
+  VLOG(1) << "Recording a psPi mapping: <" << ec_pair.first << ", "
+          << ec_pair.second << "> -> " << pspi_value << ", now have "
+          << pspi_vec->size() << " samples.";
 }
 
 void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
+  // Get the TD in order to find the resource
+  TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
+  CHECK_NOTNULL(td);
+  // If the task has just successfully finished, we remember how it did.
+  // If the removal is a consequence of a failure or an abort, we don't
+  // record this, but still clear up the state below.
+  if (td->state() == TaskDescriptor::COMPLETED) {
+    CHECK_GT(equiv_classes->size(), 1);
+    // TODO(malte): We always use the first EC here; consider tracking
+    // data for all task ECs
+    EquivClass_t tec = equiv_classes->at(0);
+    // Get the machine EC that this task was previously running on
+    const TaskDescriptor& td = GetTask(task_id);
+    CHECK(td.has_scheduled_to_resource());
+    ResourceID_t res_id = ResourceIDFromString(td.scheduled_to_resource());
+    ResourceID_t machine_res_id = MachineResIDForResource(res_id);
+    EquivClass_t* mec = FindOrNull(machine_to_ec_, machine_res_id);
+    CHECK_NOTNULL(mec);
+    pair<EquivClass_t, EquivClass_t> ec_pair(tec, *mec);
+    CHECK(td.has_final_report());
+    RecordECtoPsPIMapping(ec_pair, td.final_report());
+  }
+  // Now remove the state we keep for this task
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
     unordered_map<EquivClass_t, set<TaskID_t> >::iterator set_it =
       task_ec_to_set_task_id_.find(*it);
     if (set_it != task_ec_to_set_task_id_.end()) {
+      // Remove the task's ID from the set of tasks in the EC
       set_it->second.erase(task_id);
+      // If the EC is now empty, remove it as well
       if (set_it->second.size() == 0) {
         task_ec_to_set_task_id_.erase(*it);
         task_aggs_.erase(*it);

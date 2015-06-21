@@ -253,6 +253,7 @@ class Coordinator : public Node,
   void HandleTaskDelegationResponse(const TaskDelegationResponseMessage& msg,
                                     const string& endpoint);
   void HandleTaskFinalReport(const TaskFinalReport& report);
+  void HandleTaskFinalReport(const TaskFinalReport& report, TaskDescriptor* td);
   void HandleTaskHeartbeat(const TaskHeartbeatMessage& msg);
   void HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
                              const string& remote_endpoint);

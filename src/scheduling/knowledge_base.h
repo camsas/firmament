@@ -44,6 +44,7 @@ class KnowledgeBase {
       TaskID_t id) const;
   virtual double GetAvgCPIForTEC(EquivClass_t id);
   virtual double GetAvgIPMAForTEC(EquivClass_t id);
+  virtual double GetAvgPsPIForTEC(EquivClass_t id);
   virtual double GetAvgRuntimeForTEC(EquivClass_t id);
   const deque<TaskFinalReport>* GetFinalStatsForTask(TaskID_t task_id) const;
   vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) const;
