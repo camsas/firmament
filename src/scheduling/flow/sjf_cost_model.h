@@ -29,7 +29,6 @@ class SJFCostModel : public CostModelInterface {
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
   // Per-task costs (into the resource topology)
-  Cost_t TaskToClusterAggCost(TaskID_t task_id);
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                 ResourceID_t resource_id);
   // Costs within the resource topology
@@ -59,6 +58,9 @@ class SJFCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
+  // Cost to cluster aggregator EC
+  Cost_t TaskToClusterAggCost(TaskID_t task_id);
+
   const Cost_t WAIT_TIME_MULTIPLIER = 1;
 
   const TaskDescriptor& GetTask(TaskID_t task_id);

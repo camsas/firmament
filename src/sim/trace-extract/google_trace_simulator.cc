@@ -167,7 +167,7 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
     VLOG(1) << "Using the Whare-Map cost model";
     break;
   case CostModelType::COST_MODEL_OCTOPUS:
-    cost_model_ = new OctopusCostModel(resource_map_);
+    cost_model_ = new OctopusCostModel(resource_map_, task_map_);
     VLOG(1) << "Using the octopus cost model";
     break;
   case CostModelType::COST_MODEL_VOID:

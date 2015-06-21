@@ -6,14 +6,20 @@
 #include <utility>
 #include <vector>
 
+#include "misc/utils.h"
 #include "misc/map-util.h"
 #include "scheduling/flow/dimacs_change_arc.h"
 #include "scheduling/flow/flow_graph.h"
 
 namespace firmament {
 
-OctopusCostModel::OctopusCostModel(shared_ptr<ResourceMap_t> resource_map)
-  : resource_map_(resource_map) {
+OctopusCostModel::OctopusCostModel(shared_ptr<ResourceMap_t> resource_map,
+                                   shared_ptr<TaskMap_t> task_map)
+  : resource_map_(resource_map),
+    task_map_(task_map) {
+  // Create the cluster aggregator EC, which all machines are members of.
+  cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
+  VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;
 }
 
 Cost_t OctopusCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
@@ -38,8 +44,10 @@ Cost_t OctopusCostModel::ResourceNodeToResourceNodeCost(
   ResourceStatus* dst_rs_ptr = FindPtrOrNull(*resource_map_, dst);
   CHECK_NOTNULL(dst_rs_ptr);
   ResourceDescriptor* dst_rd_ptr = dst_rs_ptr->mutable_descriptor();
-
-  return dst_rd_ptr->num_running_tasks();
+  // The cost in the Octopus model is the number of already running tasks, i.e.
+  // a crude per-task load balancing algorithm.
+  uint64_t num_tasks = dst_rd_ptr->num_running_tasks();
+  return num_tasks;
 }
 
 Cost_t OctopusCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
@@ -55,71 +63,104 @@ Cost_t OctopusCostModel::TaskPreemptionCost(TaskID_t task_id) {
 }
 
 Cost_t OctopusCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                    EquivClass_t tec) {
+                                                    EquivClass_t ec) {
   return 0ULL;
 }
 
-Cost_t OctopusCostModel::EquivClassToResourceNode(EquivClass_t tec,
+Cost_t OctopusCostModel::EquivClassToResourceNode(EquivClass_t ec,
                                                   ResourceID_t res_id) {
   return 0ULL;
 }
 
-Cost_t OctopusCostModel::EquivClassToEquivClass(EquivClass_t tec1,
-                                                EquivClass_t tec2) {
+Cost_t OctopusCostModel::EquivClassToEquivClass(EquivClass_t ec1,
+                                                EquivClass_t ec2) {
   return 0LL;
 }
 
 vector<EquivClass_t>* OctopusCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
-  // TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
-  // CHECK_NOTNULL(td_ptr);
-  // // A level 0 TEC is the hash of the task binary name.
-  // size_t hash = 0;
-  // boost::hash_combine(hash, td_ptr->binary());
-  // equiv_classes->push_back(static_cast<EquivClass_t>(hash));
+  // All tasks have an arc to the cluster aggregator, i.e. they are
+  // all in the cluster aggregator EC.
+  equiv_classes->push_back(cluster_aggregator_ec_);
   return equiv_classes;
 }
 
 vector<EquivClass_t>* OctopusCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+  // Only the cluster aggregator for the Octopus cost model
+  equiv_classes->push_back(cluster_aggregator_ec_);
   return equiv_classes;
 }
 
 vector<ResourceID_t>* OctopusCostModel::GetOutgoingEquivClassPrefArcs(
-    EquivClass_t tec) {
-  vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
-  return prefered_res;
+    EquivClass_t ec) {
+  vector<ResourceID_t>* arc_destinations = new vector<ResourceID_t>();
+  if (ec == cluster_aggregator_ec_) {
+    // ec is the cluster aggregator, and has arcs to all machines.
+    // XXX(malte): This is inefficient, as it needlessly adds all the
+    // machines every time we call this. To optimize, we can just include
+    // the ones for which arcs are missing.
+    for (auto it = machines_.begin();
+         it != machines_.end();
+         ++it) {
+      arc_destinations->push_back(*it);
+    }
+  }
+  return arc_destinations;
 }
 
 vector<TaskID_t>* OctopusCostModel::GetIncomingEquivClassPrefArcs(
-    EquivClass_t tec) {
-  vector<TaskID_t>* prefered_tasks = new vector<TaskID_t>();
-  return prefered_tasks;
+    EquivClass_t ec) {
+  vector<TaskID_t>* tasks_with_incoming_arcs = new vector<TaskID_t>();
+  if (ec == cluster_aggregator_ec_) {
+    // ec is the cluster aggregator.
+    // We add an arc from each task to the cluster aggregator.
+    // XXX(malte): This is very slow because it iterates over all tasks; we
+    // should instead only return the set of tasks that do not yet have the
+    // appropriate arcs.
+    for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
+         ++it) {
+      // XXX(malte): task_map_ contains ALL tasks ever seen by the system,
+      // including those that have completed, failed or are otherwise no longer
+      // present in the flow graph. We do some crude filtering here, but clearly
+      // we should instead maintain a collection of tasks actually eligible for
+      // scheduling.
+      if (it->second->state() == TaskDescriptor::RUNNABLE ||
+          it->second->state() == TaskDescriptor::RUNNING)
+        tasks_with_incoming_arcs->push_back(it->first);
+    }
+  }
+  return tasks_with_incoming_arcs;
 }
 
 vector<ResourceID_t>* OctopusCostModel::GetTaskPreferenceArcs(
     TaskID_t task_id) {
-  vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
-  return prefered_res;
+  // Not used in Octopus cost model
+  return NULL;
 }
 
 pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    OctopusCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
-  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+    OctopusCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t ec) {
   return pair<vector<EquivClass_t>*,
-              vector<EquivClass_t>*>(equiv_classes, equiv_classes);
+              vector<EquivClass_t>*>(NULL, NULL);
 }
 
 void OctopusCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  CHECK_NOTNULL(rtnd_ptr);
+  // Keep track of the new machine
+  CHECK(rtnd_ptr->resource_desc().type() ==
+      ResourceDescriptor::RESOURCE_MACHINE);
+  machines_.insert(ResourceIDFromString(rtnd_ptr->resource_desc().uuid()));
 }
 
 void OctopusCostModel::AddTask(TaskID_t task_id) {
 }
 
 void OctopusCostModel::RemoveMachine(ResourceID_t res_id) {
+  CHECK_EQ(machines_.erase(res_id), 1);
 }
 
 void OctopusCostModel::RemoveTask(TaskID_t task_id) {

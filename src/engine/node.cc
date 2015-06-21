@@ -38,7 +38,6 @@ Node::Node(PlatformID platform_id, ResourceID_t uuid)
     uuid_(uuid) {
   // Set up the node's resource descriptor
   resource_desc_.set_uuid(to_string(uuid_));
-  resource_desc_.set_type(ResourceDescriptor::RESOURCE_MACHINE);
 
   switch (platform_id) {
     case PL_UNIX: {

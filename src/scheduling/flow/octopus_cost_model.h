@@ -16,12 +16,12 @@ namespace firmament {
 
 class OctopusCostModel : public CostModelInterface {
  public:
-  explicit OctopusCostModel(shared_ptr<ResourceMap_t> resource_map);
+  explicit OctopusCostModel(shared_ptr<ResourceMap_t> resource_map,
+                            shared_ptr<TaskMap_t> task_map);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
   // Per-task costs (into the resource topology)
-  Cost_t TaskToClusterAggCost(TaskID_t task_id);
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                 ResourceID_t resource_id);
   // Costs within the resource topology
@@ -51,7 +51,17 @@ class OctopusCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
+  // Cost to cluster aggregator EC
+  Cost_t TaskToClusterAggCost(TaskID_t task_id);
+
+  // EC corresponding to the CLUSTER_AGG node
+  EquivClass_t cluster_aggregator_ec_;
+  // Set of node IDs corresponding to machines
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>> machines_;
+  // The resource map used in the rest of the system
   shared_ptr<ResourceMap_t> resource_map_;
+  // The task map used in the rest of the system
+  shared_ptr<TaskMap_t> task_map_;
 };
 
 }  // namespace firmament

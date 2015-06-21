@@ -74,11 +74,8 @@ class FlowGraph {
   inline const unordered_set<uint64_t>& unsched_agg_ids() const {
     return unsched_agg_nodes_;
   }
-  inline const FlowGraphNode& cluster_agg_node() const {
-    return *cluster_agg_node_;
-  }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
-  inline uint64_t NumNodes() const { return current_id_ - 1; }
+  inline uint64_t NumNodes() const { return node_map_.size(); }
   inline FlowGraphNode* Node(uint64_t id) {
     FlowGraphNode* const* npp = FindOrNull(node_map_, id);
     return (npp ? *npp : NULL);
@@ -99,6 +96,8 @@ class FlowGraph {
   FRIEND_TEST(FlowGraphTest, DeleteResourceNode);
   FRIEND_TEST(FlowGraphTest, ResetChanges);
   FRIEND_TEST(FlowGraphTest, UnschedAggCapacityAdjustment);
+  FRIEND_TEST(FlowGraphTest, DeleteReAddResourceTopo);
+  FRIEND_TEST(FlowGraphTest, DeleteReAddResourceTopoAndJob);
   void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
                       vector<FlowGraphArc*>* task_arcs);
   FlowGraphArc* AddArcInternal(FlowGraphNode* src, FlowGraphNode* dst);
@@ -113,8 +112,7 @@ class FlowGraph {
   void AddTaskEquivClasses(FlowGraphNode* task_node);
   void AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
       JobID_t job, int64_t delta);
-  void ConfigureResourceRootNode(const ResourceTopologyNodeDescriptor& rtnd,
-                                 FlowGraphNode* new_node);
+  void ConfigureResourceNodeECs(ResourceTopologyNodeDescriptor* rtnd);
   void ConfigureResourceBranchNode(const ResourceTopologyNodeDescriptor& rtnd,
                                    FlowGraphNode* new_node);
   void ConfigureResourceLeafNode(const ResourceTopologyNodeDescriptor& rtnd,
@@ -145,7 +143,6 @@ class FlowGraph {
   uint64_t current_id_;
   unordered_map<uint64_t, FlowGraphNode*> node_map_;
   unordered_set<FlowGraphArc*> arc_set_;
-  FlowGraphNode* cluster_agg_node_;
   FlowGraphNode* sink_node_;
   // Resource and task mappings
   unordered_map<TaskID_t, uint64_t> task_to_nodeid_map_;
