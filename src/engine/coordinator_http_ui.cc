@@ -635,6 +635,8 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
                                        tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // XXX(malte): HACK!
+  system("bash scripts/plot_flow_graph.sh");
   // Get resource information from coordinator
   string iter_id = http_request->get_query("iter");
   if (iter_id.empty()) {

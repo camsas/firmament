@@ -54,6 +54,8 @@ class WhareMapCostModel : public CostModelInterface {
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void AddTask(TaskID_t task_id);
+  void RecordECtoPsPIMapping(pair<EquivClass_t, EquivClass_t> ec_pair,
+                             const TaskFinalReport& task_report);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
   FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
@@ -65,8 +67,11 @@ class WhareMapCostModel : public CostModelInterface {
   const TaskDescriptor& GetTask(TaskID_t task_id);
   void ComputeMachineTypeHash(const ResourceTopologyNodeDescriptor* rtnd_ptr,
                               size_t* hash);
+  ResourceID_t MachineResIDForResource(ResourceID_t res_id);
   // Cost to cluster aggregator EC
   Cost_t TaskToClusterAggCost(TaskID_t task_id);
+
+  const Cost_t WAIT_TIME_MULTIPLIER = 1;
 
   // Map of resources present in the system, initialised externally
   shared_ptr<ResourceMap_t> resource_map_;
@@ -75,7 +80,6 @@ class WhareMapCostModel : public CostModelInterface {
   // A knowledge base instance that we refer to for job runtime statistics,
   // initialised externally
   KnowledgeBase* knowledge_base_;
-
   // EC corresponding to the CLUSTER_AGG node
   EquivClass_t cluster_aggregator_ec_;
   // Mapping between machine equiv classes and machines.
@@ -92,6 +96,10 @@ class WhareMapCostModel : public CostModelInterface {
   unordered_set<EquivClass_t> task_aggs_;
   // Set of machine ECs
   unordered_set<EquivClass_t> machine_aggs_;
+  // Map to track <task EC, machine EC> -> PsPI
+  // (Psi in the cost model description)
+  unordered_map<pair<EquivClass_t, EquivClass_t>, vector<uint64_t>*,
+    boost::hash<pair<EquivClass_t, EquivClass_t>>> psi_map_;
 };
 
 }  // namespace firmament
