@@ -1,0 +1,60 @@
+*** Firmament ***
+
+Firmament is licensed under the Apache License, version 2.0:
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this code except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+
+*** Libraries ***
+
+All libraries that Firmament depends on are under permissive licenses:
+ * Boost: Boost Software License
+   (http://www.boost.org/users/license.html)
+ * bzip2: BSD license
+   (http://www.bzip2.org)
+ * Ctemplate: New BSD license
+   (http://goog-ctemplate.sourceforge.net/COPYING)
+ * Flowlessly solver: New BSD license
+   (http://icgog.github.io/Flowlessly/)
+ * gperftools & tcmalloc: New BSD license
+   (http://code.google.com/p/gperftools)
+ * glog: New BSD license
+   (https://github.com/google/glog/blob/master/COPYING)
+ * gflags: New BSD license
+   (https://github.com/gflags/gflags/blob/master/COPYING.txt)
+ * googletest: New BSD license
+   (https://code.google.com/p/googletest/)
+ * hwloc: New BSD license
+   (http://www.open-mpi.org/projects/hwloc/license.php)
+ * Jansson: MIT license
+   (http://www.digip.org/jansson)
+ * OpenSSL: Apache license
+   (http://www.openssl.org/source/license.html)
+ * pion: Boost Software License
+   (http://www.boost.org/users/license.html)
+ * pb2json: MIT license
+   (https://github.com/shafreeck/pb2json/blob/master/LICENSE)
+ * protobuf: New BSD license
+   (https://github.com/google/protobuf/blob/master/LICENSE)
+
+
+*** Min-cost, max flow solvers ***
+
+Note that the "cs2" min-cost, max-flow solver is under a non-free
+license that does not permit commercial use:
+
+  https://github.com/iveney/cs2/blob/master/COPYRIGHT
+
+If you intend to use Firmament in a commercial production environment, we
+recommend that you use our free, BSD-licensed Flowlessly solver instead
+(https://github.com/ICGog/Flowlessly).
