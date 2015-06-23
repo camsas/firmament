@@ -83,8 +83,22 @@ depends on some protocol buffer data structures that need to be compiled. If
 you have run `make all`, all script dependencies should automatically have been
 built, though.)
 
-If this all works, you should see the job print "Hello world" in the
-coordinator's console.
+If this all works, you should see the new job on the web UI.
+
+## Using the flow scheduler
+
+By default, Firmament starts up with a simple queue-based scheduler. If you want
+to instead use our new scheduler based on flow network optimization, pass
+the `--scheduler flow` flag to the coordinator on startup:
+
+```
+$ build/engine/coordinator --scheduler flow --flow_scheduling_cost_model 6 --listen_uri tcp://<host>:<port> --task_lib_path=$(PWD)/build/engine/
+```
+
+The `--flow_scheduling_cost_model`` option choses the cost model on which the
+scheduler's flow network is based: here, we specify a simple load-balacing model
+that aims to put the same number of tasks on each machine. Several other cost
+models are available and in development.
 
 ## Contributing
 
