@@ -184,8 +184,8 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
   // Scheduler information
   if (FLAGS_scheduler == "simple") {
     dict.SetValue("SCHEDULER_NAME", "queue-based");
-  } else if (FLAGS_scheduler == "quincy") {
-    dict.SetValue("SCHEDULER_NAME", "flow optimization");
+  } else if (FLAGS_scheduler == "flow") {
+    dict.SetValue("SCHEDULER_NAME", "flow network optimization");
     const FlowScheduler* sched =
       dynamic_cast<const FlowScheduler*>(coordinator_->scheduler());
     for (uint64_t i = 0; i < sched->dispatcher().seq_num(); ++i) {

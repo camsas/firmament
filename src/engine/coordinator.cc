@@ -43,7 +43,7 @@ DEFINE_string(parent_uri, "", "The URI of the parent coordinator to register "
 DEFINE_bool(include_local_resources, true, "Add local machine's resources; "
             "will instantiate a resource-less coordinator if false.");
 DEFINE_string(scheduler, "simple", "Scheduler to use: one of 'simple' or "
-              "'quincy'.");
+              "'flow'.");
 #ifdef __HTTP_UI__
 DEFINE_bool(http_ui, true, "Enable HTTP interface");
 DEFINE_int32(http_ui_port, 8080,
@@ -87,7 +87,7 @@ Coordinator::Coordinator(PlatformID platform_id)
         object_store_, task_table_, topology_manager_, m_adapter_,
         uuid_, FLAGS_listen_uri);
     knowledge_base_->SetCostModel(new VoidCostModel());
-  } else if (FLAGS_scheduler == "quincy") {
+  } else if (FLAGS_scheduler == "flow") {
     // Quincy-style flow-based scheduling
     LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
     SchedulingParameters params;
