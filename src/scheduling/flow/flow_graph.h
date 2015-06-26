@@ -23,6 +23,7 @@
 #include "scheduling/flow/flow_graph_node.h"
 
 DECLARE_bool(preemption);
+DECLARE_string(flow_scheduling_solver);
 
 namespace firmament {
 
@@ -75,7 +76,15 @@ class FlowGraph {
     return unsched_agg_nodes_;
   }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
-  inline uint64_t NumNodes() const { return node_map_.size(); }
+  inline uint64_t NumNodes() const {
+    if (FLAGS_flow_scheduling_solver != "cs2") {
+      return node_map_.size();
+    } else {
+      // TODO(malte): This is a work-around as cs2 does not allow sparse node
+      // IDs, and will get tripped up if current_id > graph.NumNodes().
+      return current_id_;
+    }
+  }
   inline FlowGraphNode* Node(uint64_t id) {
     FlowGraphNode* const* npp = FindOrNull(node_map_, id);
     return (npp ? *npp : NULL);
