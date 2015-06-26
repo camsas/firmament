@@ -17,11 +17,7 @@ namespace scheduler {
 
 class SolverDispatcher {
  public:
-  SolverDispatcher(shared_ptr<FlowGraph> flow_graph, bool solver_ran_once)
-    : flow_graph_(flow_graph),
-      solver_ran_once_(solver_ran_once),
-      debug_seq_num_(0) {
-  }
+  SolverDispatcher(shared_ptr<FlowGraph> flow_graph, bool solver_ran_once);
 
   void NodeBindingToSchedulingDelta(
       const TaskDescriptor& task, const ResourceDescriptor& res,

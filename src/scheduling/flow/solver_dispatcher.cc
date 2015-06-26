@@ -40,9 +40,28 @@ DEFINE_string(cs2_binary, "ext/cs2-4.6/cs2.exe", "Path to the cs2 binary.");
 
 namespace firmament {
 namespace scheduler {
-  using boost::lexical_cast;
-  using boost::algorithm::is_any_of;
-  using boost::token_compress_on;
+
+using boost::lexical_cast;
+using boost::algorithm::is_any_of;
+using boost::token_compress_on;
+
+SolverDispatcher::SolverDispatcher(shared_ptr<FlowGraph> flow_graph,
+                                   bool solver_ran_once)
+  : flow_graph_(flow_graph),
+    solver_ran_once_(solver_ran_once),
+    debug_seq_num_(0) {
+  // Set up debug directory if it doesn't exist
+  struct stat st;
+  if (!FLAGS_debug_output_dir.empty() &&
+      stat(FLAGS_debug_output_dir.c_str(), &st) == -1) {
+    mkdir(FLAGS_debug_output_dir.c_str(), 0700);
+  } else if (!FLAGS_debug_output_dir.empty()) {
+    // Delete any existing debug output in the directory
+    string cmd;
+    spf(&cmd, "rm %s/*", FLAGS_debug_output_dir.c_str());
+    system(cmd.c_str());
+  }
+}
 
 void *ExportToSolver(void *x) {
   SolverDispatcher *qd = reinterpret_cast<SolverDispatcher*>(x);
@@ -124,12 +143,6 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     *algorithm_time = nan("");
   }
 
-  // Set up debug directory if it doesn't exist
-  struct stat st;
-  if (!FLAGS_debug_output_dir.empty() &&
-      stat(FLAGS_debug_output_dir.c_str(), &st) == -1) {
-    mkdir(FLAGS_debug_output_dir.c_str(), 0700);
-  }
   // Adjusts the costs on the arcs from tasks to unsched aggs.
   if (solver_ran_once_) {
     flow_graph_->AdjustUnscheduledAggArcCosts();
