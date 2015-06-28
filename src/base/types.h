@@ -105,18 +105,14 @@ typedef boost::uuids::uuid JobID_t;
 /*typedef unordered_map<ResourceID_t, ResourceStatus*,
         boost::hash<boost::uuids::uuid> > ResourceMap_t;
 typedef unordered_map<JobID_t, JobDescriptor,
-        boost::hash<boost::uuids::uuid> > JobMap_t;
-typedef unordered_map<JobID_t, TaskGraph*,
-        boost::hash<boost::uuids::uuid> > TaskGraphMap_t;*/
+        boost::hash<boost::uuids::uuid> > JobMap_t; */
 typedef thread_safe::map<ResourceID_t, ResourceStatus*> ResourceMap_t;
 typedef thread_safe::map<JobID_t, JobDescriptor> JobMap_t;
-typedef thread_safe::map<JobID_t, TaskGraph*> TaskGraphMap_t;
 #else
 typedef uint64_t ResourceID_t;
 typedef uint64_t JobID_t;
 typedef unordered_map<ResourceID_t, ResourceStatus*> ResourceMap_t;
 typedef unordered_map<JobID_t, JobDescriptor> JobMap_t;
-typedef unordered_map<JobID_t, TaskGraph*> TaskGraphMap_t;
 #endif
 // N.B.: the type of the second element here is a pointer, since the
 // TaskDescriptor objects will be part of the JobDescriptor protobuf that is

@@ -945,10 +945,6 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
     root_task->set_absolute_deadline(
         GetCurrentTimestamp() + root_task->relative_deadline() * 1000000);
   }
-  // Create a dynamic task graph for the job
-  TaskGraph* new_dtg = new TaskGraph(root_task);
-  // Store the task graph
-  InsertIfNotPresent(&task_graph_table_, new_job_id, new_dtg);
   // Add itself and its spawned tasks (if any) to the relevant tables:
   // - tasks to the task_table_
   // - inputs/outputs to the object_table_
