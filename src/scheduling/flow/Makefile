@@ -19,12 +19,14 @@ TESTS = dimacs_exporter_test flow_graph_test
 TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a
 TESTS_dimacs_exporter_DEPS = $(BUILD_DIR)/scheduling/common.o \
                              $(BUILD_DIR)/scheduling/knowledge_base.o \
+                             $(BUILD_DIR)/scheduling/scheduling_delta.pb.o \
                              $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                              $(BUILD_DIR)/misc/libfirmament_misc.a \
                              $(BUILD_DIR)/base/libfirmament_base.a
 
 TESTS_flow_graph_DEPS = $(BUILD_DIR)/scheduling/common.o \
                         $(BUILD_DIR)/scheduling/knowledge_base.o \
+                        $(BUILD_DIR)/scheduling/scheduling_delta.pb.o \
                         $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                         $(BUILD_DIR)/misc/libfirmament_misc.a \
                         $(BUILD_DIR)/base/libfirmament_base.a
