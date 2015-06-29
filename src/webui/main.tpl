@@ -34,6 +34,8 @@
 <h2>Scheduler</h2>
 
 <p><b>Active scheduler:</b> {{SCHEDULER_NAME}}
+{{#FLOW_SCHEDULER_DETAILS}}
+<p><b>Cost model:</b> {{FLOW_SCHEDULER_COST_MODEL}}
 
 <ol>
 {{#SCHEDULER_ITER}}
@@ -42,5 +44,6 @@
                                                           <a href="/sched/?iter={{SCHEDULER_ITER_ID}}&a=png">PNG</a>)</li>
 {{/SCHEDULER_ITER}}
 </ol>
+{{/FLOW_SCHEDULER_DETAILS}}
 
 {{>PAGE_FOOTER}}

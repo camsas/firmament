@@ -22,6 +22,7 @@
 #include "misc/uri_tools.h"
 #include "messages/task_kill_message.pb.h"
 #include "scheduling/knowledge_base.h"
+#include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/flow_scheduler.h"
 #include "scheduling/flow/solver_dispatcher.h"
 #include "storage/types.h"
@@ -29,6 +30,8 @@
 DECLARE_string(task_log_dir);
 DECLARE_string(scheduler);
 DECLARE_string(debug_output_dir);
+DECLARE_int32(flow_scheduling_cost_model);
+DECLARE_bool(debug_flow_graph);
 
 namespace firmament {
 namespace webui {
@@ -186,12 +189,19 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
     dict.SetValue("SCHEDULER_NAME", "queue-based");
   } else if (FLAGS_scheduler == "flow") {
     dict.SetValue("SCHEDULER_NAME", "flow network optimization");
+    TemplateDictionary* flow_scheduler_detail_dict =
+        dict.AddSectionDictionary("FLOW_SCHEDULER_DETAILS");
     const FlowScheduler* sched =
       dynamic_cast<const FlowScheduler*>(coordinator_->scheduler());
-    for (uint64_t i = 0; i < sched->dispatcher().seq_num(); ++i) {
-      TemplateDictionary* iteration_dict =
-          dict.AddSectionDictionary("SCHEDULER_ITER");
-      iteration_dict->SetIntValue("SCHEDULER_ITER_ID", i);
+    flow_scheduler_detail_dict->SetIntValue(
+        "FLOW_SCHEDULER_COST_MODEL",
+        FLAGS_flow_scheduling_cost_model);
+    if (FLAGS_debug_flow_graph) {
+      for (uint64_t i = 0; i < sched->dispatcher().seq_num(); ++i) {
+        TemplateDictionary* iteration_dict =
+            flow_scheduler_detail_dict->AddSectionDictionary("SCHEDULER_ITER");
+        iteration_dict->SetIntValue("SCHEDULER_ITER_ID", i);
+      }
     }
   }
   AddFooterToTemplate(&dict);
