@@ -226,7 +226,7 @@ void FlowScheduler::KillRunningTask(TaskID_t task_id,
 
 uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  LOG(INFO) << "START SCHEDULING " << job_desc->uuid();
+  LOG(INFO) << "START SCHEDULING (via " << job_desc->uuid() << ")";
   // Check if we have any runnable tasks in this job
   const set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
   if (runnable_tasks.size() > 0) {
@@ -236,10 +236,10 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
     // If it is, only add the new bits
     // Run a scheduler iteration
     uint64_t newly_scheduled = RunSchedulingIteration();
-    LOG(INFO) << "STOP SCHEDULING " << job_desc->uuid();
+    LOG(INFO) << "STOP SCHEDULING, placed " << newly_scheduled << " tasks";
     return newly_scheduled;
   } else {
-    LOG(INFO) << "STOP SCHEDULING " << job_desc->uuid();
+    LOG(INFO) << "STOP SCHEDULING, nothing to do";
     return 0;
   }
 }
