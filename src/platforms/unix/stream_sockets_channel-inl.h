@@ -382,9 +382,11 @@ void StreamSocketsChannel<T>::RecvASecondStage(
     Envelope<T>* final_envelope,
     typename AsyncRecvHandler<T>::type final_callback) {
   if (error || bytes_read != sizeof(uint64_t)) {
-    LOG(ERROR) << "Error reading from connection: " << error.message()
-               << "; read " << bytes_read << " bytes, expected "
-               << sizeof(uint64_t);
+    if (error != boost::asio::error::eof) {
+      LOG(ERROR) << "Error reading from connection: " << error.message()
+                 << "; read " << bytes_read << " bytes, expected "
+                 << sizeof(uint64_t);
+    }
     async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
     return;
