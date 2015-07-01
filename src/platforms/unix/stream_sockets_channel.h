@@ -57,6 +57,7 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
   virtual ostream& ToString(ostream* stream) const;
 
  protected:
+  void HandleIOError(boost::system::error_code error);
   void RecvASecondStage(const boost::system::error_code& error,
                         const size_t bytes_read,
                         Envelope<T>* final_envelope,
@@ -82,6 +83,10 @@ class StreamSocketsChannel : public MessagingChannelInterface<T>,
   // the channel's feet at any point in time.
   boost::asio::ip::tcp::socket* client_socket_;
   TCPConnection::connection_ptr client_connection_;
+  // A cached copy of the channel's remote endpoint URI. When the underlying
+  // socket/connection have been closed, this cannot be dynamically derived, so
+  // we need a copy here in order to re-establish connectivity.
+  string cached_remote_endpoint_;
   bool channel_ready_;
   StreamSocketType type_;
 };
