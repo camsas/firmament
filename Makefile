@@ -22,6 +22,11 @@ endif
 include include/Makefile.config
 
 all: tests-clean ext platforms misc engine scripts trace_simulator
+ifeq ($(BUILD_TYPE), debug)
+	@echo "================================================="
+	@echo "N.B.: DEBUG BUILD -- DO NOT USE FOR BENCHMARKING!"
+	@echo "================================================="
+endif
 
 help: info
 
@@ -29,7 +34,9 @@ info:
 	@echo "C++ compiler: $(CXX)"
 	@echo "CPPFLAGS: $(CPPFLAGS)"
 	@echo "CXXFLAGS: $(CXXFLAGS)"
+	@echo "OPTFLAGS: $(OPTFLAGS)"
 	@echo "Platform: $(PLATFORM)"
+	@echo "Build type: $(BUILD_TYPE)"
 	@echo "Build output in $(BUILD_DIR)"
 	@echo
 	@echo "Targets:"

@@ -144,8 +144,13 @@ LIBS += -lgflags -lglog -lprotobuf -lrt -lpthread -l:libtcmalloc.so.4
 CXX = clang++
 
 # optimization flags
-OPTFLAGS = -g -O0 -fsanitize=address -fno-omit-frame-pointer  # debug
-#OPTFLAGS = -O3                         # release
+ifeq ($(BUILD_TYPE), debug)
+# debug build
+OPTFLAGS = -g -O0 -fno-omit-frame-pointer
+else
+# release build
+OPTFLAGS = -O3
+endif
 
 # for clang++, uncomment this line
 CPPFLAGS = $(INCLUDES) -std=c++11 -Wall -Wextra -Werror -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-error=language-extension-token -Wno-deprecated -Wno-error=unused-function -Wno-vla -Wno-unused-parameter
