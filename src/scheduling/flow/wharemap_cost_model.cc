@@ -137,9 +137,20 @@ Cost_t WhareMapCostModel::EquivClassToResourceNode(EquivClass_t tec,
   return 0LL;
 }
 
-Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t tec1,
-                                                 EquivClass_t tec2) {
-  // TODO(ionel): Implement!
+Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,
+                                                 EquivClass_t ec2) {
+  pair<EquivClass_t, EquivClass_t> ec_pair(ec1, ec2);
+  vector<uint64_t>* pspi_vec = FindPtrOrNull(psi_map_, ec_pair);
+  if (pspi_vec) {
+    uint64_t acc = 0;
+    for (auto it = pspi_vec->begin();
+         it != pspi_vec->end();
+         ++it) {
+      acc += *it;
+    }
+    // Average PsPI for tasks in ec1 on machine of type ec2
+    return (acc / pspi_vec->size());
+  }
   return 0LL;
 }
 
@@ -196,28 +207,35 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
     }
   } else if (task_aggs_.find(ec) != task_aggs_.end()) {
     // ec is a task aggregator.
-    // Iterate over all the machines.
-    multimap<Cost_t, ResourceID_t> priority_res;
-    for (auto it = machine_to_rtnd_.begin();
-         it != machine_to_rtnd_.end();
-         ++it) {
-      Cost_t cost_to_res = EquivClassToResourceNode(ec, it->first);
-      ResourceID_t res_id =
-        ResourceIDFromString(it->second->resource_desc().uuid());
-      if (priority_res.size() < FLAGS_num_pref_arcs_agg_to_res) {
-        priority_res.insert(pair<Cost_t, ResourceID_t>(cost_to_res, res_id));
-      } else {
-        multimap<Cost_t, ResourceID_t>::reverse_iterator rit =
-          priority_res.rbegin();
-        if (cost_to_res < rit->first) {
-          priority_res.erase(priority_res.find(rit->first));
+    if (FLAGS_num_pref_arcs_agg_to_res > 0) {
+      // This branch implements the Xi(c_t, L_m, c_m) arcs of Whare-MCs.
+      // Iterate over all the machines and choose those to connect from the TEC.
+      multimap<Cost_t, ResourceID_t> priority_res;
+      for (auto it = machine_to_rtnd_.begin();
+           it != machine_to_rtnd_.end();
+           ++it) {
+        Cost_t cost_to_res = EquivClassToResourceNode(ec, it->first);
+        ResourceID_t res_id =
+          ResourceIDFromString(it->second->resource_desc().uuid());
+        if (priority_res.size() < FLAGS_num_pref_arcs_agg_to_res) {
+          // We haven't go enough priority machines yet, so add this one
           priority_res.insert(pair<Cost_t, ResourceID_t>(cost_to_res, res_id));
+        } else {
+          // If this is a better option than one of the high-priority machines
+          // we already have, swap it in.
+          multimap<Cost_t, ResourceID_t>::reverse_iterator rit =
+            priority_res.rbegin();
+          if (cost_to_res < rit->first) {
+            priority_res.erase(priority_res.find(rit->first));
+            priority_res.insert(pair<Cost_t, ResourceID_t>(
+                  cost_to_res, res_id));
+          }
         }
       }
-    }
-    for (multimap<Cost_t, ResourceID_t>::iterator it = priority_res.begin();
-         it != priority_res.end(); ++it) {
-      prefered_res->push_back(it->second);
+      for (multimap<Cost_t, ResourceID_t>::iterator it = priority_res.begin();
+           it != priority_res.end(); ++it) {
+        prefered_res->push_back(it->second);
+      }
     }
   } else if (machine_aggs_.find(ec) != machine_aggs_.end()) {
     // ec is a machine aggregator.
