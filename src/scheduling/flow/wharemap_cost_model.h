@@ -100,6 +100,9 @@ class WhareMapCostModel : public CostModelInterface {
   // (Psi in the cost model description)
   unordered_map<pair<EquivClass_t, EquivClass_t>, vector<uint64_t>*,
     boost::hash<pair<EquivClass_t, EquivClass_t>>> psi_map_;
+  // Map to track task EC -> worst-machine EC PsPI;
+  // max_{c_m}(Psi(c_t, c_m))) in the cost model description
+  unordered_map<EquivClass_t, uint64_t> worst_case_psi_map_;
 };
 
 }  // namespace firmament

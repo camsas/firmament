@@ -75,16 +75,21 @@ Cost_t WhareMapCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 // task to run on any node in the cluster. The cost of the topology's arcs are
 // the same for all the tasks.
 Cost_t WhareMapCostModel::TaskToClusterAggCost(TaskID_t task_id) {
-  // TODO(ionel): Implement!
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   CHECK_GT(equiv_classes->size(), 0);
-  // Avg runtime is in milliseconds, so we convert it to tenths of a second
-  uint64_t avg_pspi =
-    knowledge_base_->GetAvgPsPIForTEC(equiv_classes->front());
-  VLOG(1) << "Avg PsPI for TEC " << equiv_classes->front() << " is "
-          << avg_pspi;
+  uint64_t* worst_avg_pspi =
+    FindOrNull(worst_case_psi_map_, equiv_classes->front());
+  if (!worst_avg_pspi) {
+    // We don't have a current worst-case average PsPI value for this TEC, so
+    // we fall back to using the overall average for the TEC or zero.
+    // TODO(malte): check if this can ever return a non-zero value when we don't
+    // have a value in the worst_case_psi_map_.
+    return knowledge_base_->GetAvgPsPIForTEC(equiv_classes->front());
+  }
+  VLOG(1) << "Worst avg PsPI for TEC " << equiv_classes->front() << " is "
+          << *worst_avg_pspi;
   delete equiv_classes;
-  return avg_pspi;
+  return *worst_avg_pspi;
 }
 
 Cost_t WhareMapCostModel::TaskToResourceNodeCost(TaskID_t task_id,
@@ -407,6 +412,19 @@ void WhareMapCostModel::RecordECtoPsPIMapping(
     InsertIfNotPresent(&psi_map_, ec_pair, pspi_vec);
   }
   pspi_vec->push_back(pspi_value);
+  // Now check if this is a new worst-case; if so, record it
+  uint64_t new_avg_pspi = 0ULL;
+  for (auto it = pspi_vec->begin();
+       it != pspi_vec->end();
+       ++it) {
+    new_avg_pspi += *it;
+  }
+  new_avg_pspi /= pspi_vec->size();
+  uint64_t* cur_worst_avg_pspi =
+    FindOrNull(worst_case_psi_map_, ec_pair.first);
+  if (!cur_worst_avg_pspi || new_avg_pspi > *cur_worst_avg_pspi) {
+    InsertOrUpdate(&worst_case_psi_map_, ec_pair.first, new_avg_pspi);
+  }
   VLOG(1) << "Recording a psPi mapping: <" << ec_pair.first << ", "
           << ec_pair.second << "> -> " << pspi_value << ", now have "
           << pspi_vec->size() << " samples.";
