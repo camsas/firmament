@@ -6,11 +6,17 @@
 
 #include "engine/health_monitor.h"
 
+#include <unistd.h>
 #include <vector>
 
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "scheduling/scheduler_interface.h"
+
+DEFINE_bool(health_monitor_enable, true, "Enabled checks for failed tasks.");
+DEFINE_int32(health_monitor_check_frequency, 10000000ULL,
+             "Frequency at which the task health monitor checks on tasks' "
+             "liveness, in microseconds.");
 
 namespace firmament {
 
@@ -19,8 +25,8 @@ HealthMonitor::HealthMonitor() {
 
 void HealthMonitor::Run(SchedulerInterface* scheduler,
                         shared_ptr<ResourceMap_t> resources) {
-  while (true) {
-    sleep(10);
+  while (FLAGS_health_monitor_enable) {
+    usleep(FLAGS_health_monitor_check_frequency);
     VLOG(1) << "Health monitor checking on things...";
     scheduler->CheckRunningTasksHealth();
   }
