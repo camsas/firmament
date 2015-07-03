@@ -204,8 +204,13 @@ void Coordinator::Run() {
   // Test topology detection
   LOG(INFO) << "Detecting resource topology:";
   topology_manager_->DebugPrintRawTopology();
-  if (FLAGS_include_local_resources)
+  if (FLAGS_include_local_resources) {
+    // Add the local processing resources
     DetectLocalResources();
+  } else {
+    // We still add a node: a "virtual" resource representing this coordinator
+    AddResource(local_resource_topology_, node_uri_, true);
+  }
 
   // Coordinator starting -- set up and wait for workers to connect.
   m_adapter_->ListenURI(FLAGS_listen_uri);
