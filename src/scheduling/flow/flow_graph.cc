@@ -479,7 +479,18 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
     for (vector<TaskID_t>::iterator it = task_pref_arcs->begin();
          it != task_pref_arcs->end(); ++it) {
       FlowGraphNode* task_node = NodeForTaskID(*it);
-      CHECK(task_node != NULL) << "Task ID requested was " << *it;
+      // The equivalence class may contain many tasks, and not all of them
+      // may have corresponding task nodes in the flow graph yet. This is the
+      // case for example when a job with many tasks is added and we process
+      // AddEquivClassNode for the first time. It's fine to simply ignore the
+      // not-yet-existing tasks here, because we know that we will come back
+      // later and call in here again, with the task present, at which point
+      // the correct arc will be added.
+      // TODO(malte): think about whether we can do this more elegantly; the
+      // above implicit assumption may not always hold (even though it does
+      // for now).
+      if (!task_node)
+        continue;
       FlowGraphArc* ec_arc =
         AddArcInternal(task_node->id_, ec_node->id_);
       // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
