@@ -142,8 +142,16 @@ void FlowGraph::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
       CHECK_NOTNULL(ec_src_ptr);
       FlowGraphArc* arc = AddArcInternal(ec_src_ptr->id_, ec_node->id_);
       arc->cost_ = cost_model_->EquivClassToEquivClass(*it, equiv_class);
-      // TODO(ionel): Set the capacity on the arc to a sensible value.
-      arc->cap_upper_bound_ = 1;
+      // We set the capacity to the max of the source EC's incoming capacity and
+      // the destination EC's outgoing capacity. This works, although it's
+      // not optimal: we could use the min, to give tighter bounds to the
+      // solver, but doing so would require us to dynamically update the
+      // capacities at runtime, which we currently don't.
+      // Such dynamic updates may, however, still be required even with the
+      // current model when more than two layers of ECs are connected.
+      // ---
+      // The capacity on the arc is max(sum(src_in_caps), sum(dst_out_caps))
+      arc->cap_upper_bound_ = CapacityBetweenECNodes(*ec_src_ptr, *ec_node);
       DIMACSChange *chg = new DIMACSNewArc(*arc);
       chg->set_comment("AddArcsFromToOtherEquivNodes: incoming");
       graph_changes_.push_back(chg);
@@ -159,8 +167,16 @@ void FlowGraph::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
       CHECK_NOTNULL(ec_dst_ptr);
       FlowGraphArc* arc = AddArcInternal(ec_node->id_, ec_dst_ptr->id_);
       arc->cost_ = cost_model_->EquivClassToEquivClass(equiv_class, *it);
-      // TODO(ionel): Set the capacity on the arc to a sensible value.
-      arc->cap_upper_bound_ = 1;
+      // We set the capacity to the max of the source EC's incoming capacity and
+      // the destination EC's outgoing capacity. This works, although it's
+      // not optimal: we could use the min, to give tighter bounds to the
+      // solver, but doing so would require us to dynamically update the
+      // capacities at runtime, which we currently don't.
+      // Such dynamic updates may, however, still be required even with the
+      // current model when more than two layers of ECs are connected.
+      // ---
+      // The capacity on the arc is max(sum(src_in_caps), sum(dst_out_caps))
+      arc->cap_upper_bound_ = CapacityBetweenECNodes(*ec_node, *ec_dst_ptr);
       DIMACSChange *chg = new DIMACSNewArc(*arc);
       chg->set_comment("AddArcsFromToOtherEquivNodes: outgoing");
       graph_changes_.push_back(chg);
@@ -593,6 +609,23 @@ void FlowGraph::AdjustUnscheduledAggArcCosts() {
       }
     }
   }
+}
+
+uint64_t FlowGraph::CapacityBetweenECNodes(const FlowGraphNode& src,
+                                           const FlowGraphNode& dst) {
+  // Compute sum of incoming capacities at src
+  uint64_t in_sum = 0;
+  for (auto it = src.incoming_arc_map_.begin();
+       it != src.incoming_arc_map_.end(); ++it) {
+    in_sum += it->second->cap_upper_bound_;
+  }
+  // Compute sum of incoming capacities at src
+  uint64_t out_sum = 0;
+  for (auto it = dst.outgoing_arc_map_.begin();
+       it != dst.outgoing_arc_map_.end(); ++it) {
+    out_sum += it->second->cap_upper_bound_;
+  }
+  return max(in_sum, out_sum);
 }
 
 void FlowGraph::ConfigureResourceBranchNode(
