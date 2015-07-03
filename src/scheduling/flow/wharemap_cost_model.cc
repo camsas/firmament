@@ -422,30 +422,36 @@ void WhareMapCostModel::RecordECtoPsPIMapping(
   vector<uint64_t>* pspi_vec = FindPtrOrNull(psi_map_, ec_pair);
   VLOG(1) << "Runtime: " << task_report.runtime();
   VLOG(1) << "Instructions: " << task_report.instructions();
-  uint64_t pspi_value =
-    (static_cast<uint64_t>(task_report.runtime()) * 10000000000) /
-    task_report.instructions();
-  if (!pspi_vec) {
-    pspi_vec = new vector<uint64_t>();
-    InsertIfNotPresent(&psi_map_, ec_pair, pspi_vec);
+  if (task_report.instructions() > 0) {
+    uint64_t pspi_value =
+      (static_cast<uint64_t>(task_report.runtime()) * 10000000000) /
+      task_report.instructions();
+    if (!pspi_vec) {
+      pspi_vec = new vector<uint64_t>();
+      InsertIfNotPresent(&psi_map_, ec_pair, pspi_vec);
+    }
+    pspi_vec->push_back(pspi_value);
+    // Now check if this is a new worst-case; if so, record it
+    uint64_t new_avg_pspi = 0ULL;
+    for (auto it = pspi_vec->begin();
+         it != pspi_vec->end();
+         ++it) {
+      new_avg_pspi += *it;
+    }
+    new_avg_pspi /= pspi_vec->size();
+    uint64_t* cur_worst_avg_pspi =
+      FindOrNull(worst_case_psi_map_, ec_pair.first);
+    if (!cur_worst_avg_pspi || new_avg_pspi > *cur_worst_avg_pspi) {
+      InsertOrUpdate(&worst_case_psi_map_, ec_pair.first, new_avg_pspi);
+    }
+    VLOG(1) << "Recording a psPi mapping: <" << ec_pair.first << ", "
+            << ec_pair.second << "> -> " << pspi_value << ", now have "
+            << pspi_vec->size() << " samples.";
+  } else {
+    LOG(WARNING) << "No instruction count in final report for task "
+                 << task_report.task_id() << ", so did not record any "
+                 << "information for it!";
   }
-  pspi_vec->push_back(pspi_value);
-  // Now check if this is a new worst-case; if so, record it
-  uint64_t new_avg_pspi = 0ULL;
-  for (auto it = pspi_vec->begin();
-       it != pspi_vec->end();
-       ++it) {
-    new_avg_pspi += *it;
-  }
-  new_avg_pspi /= pspi_vec->size();
-  uint64_t* cur_worst_avg_pspi =
-    FindOrNull(worst_case_psi_map_, ec_pair.first);
-  if (!cur_worst_avg_pspi || new_avg_pspi > *cur_worst_avg_pspi) {
-    InsertOrUpdate(&worst_case_psi_map_, ec_pair.first, new_avg_pspi);
-  }
-  VLOG(1) << "Recording a psPi mapping: <" << ec_pair.first << ", "
-          << ec_pair.second << "> -> " << pspi_value << ", now have "
-          << pspi_vec->size() << " samples.";
 }
 
 void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
