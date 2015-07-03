@@ -149,6 +149,11 @@ const deque<TaskFinalReport>* KnowledgeBase::GetFinalReportsForTEC(
   return res;
 }
 
+vector<EquivClass_t>* KnowledgeBase::GetResourceEquivClasses(
+    ResourceID_t resource_id) const {
+  return cost_model_->GetResourceEquivClasses(resource_id);
+}
+
 vector<EquivClass_t>* KnowledgeBase::GetTaskEquivClasses(
     TaskID_t task_id) const {
   return cost_model_->GetTaskEquivClasses(task_id);

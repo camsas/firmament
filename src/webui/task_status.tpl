@@ -187,6 +187,12 @@ $(function() {
     <td><abbr class="timeago" title="{{TASK_LAST_HEARTBEAT}}">{{TASK_LAST_HEARTBEAT}}</abbr></td>
   </tr>
   <tr>
+    <td>Scheduled to</td>
+    <td>
+       <a href="/resource/?id={{TASK_SCHEDULED_TO}}">{{TASK_SCHEDULED_TO}}</a>
+    </td>
+  </tr>
+  <tr>
     <td>Location</td>
     <td>
        <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/task/?id={{TASK_ID}}">{{TASK_LOCATION}}</a>

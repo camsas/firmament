@@ -475,7 +475,17 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
     dict.SetValue("RES_ID", rtnd_ptr->resource_desc().uuid());
     dict.SetValue("RES_FRIENDLY_NAME",
                   rtnd_ptr->resource_desc().friendly_name());
-    dict.SetValue("RES_REC", "Not implemented");
+    // Equivalence classes
+    vector<EquivClass_t>* equiv_classes =
+        coordinator_->knowledge_base()->GetResourceEquivClasses(rid);
+    if (equiv_classes) {
+      for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+           it != equiv_classes->end(); ++it) {
+        TemplateDictionary* tec_dict = dict.AddSectionDictionary("RES_RECS");
+        tec_dict->SetFormattedValue("RES_REC", "%ju", *it);
+      }
+    }
+    delete equiv_classes;
     dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
                                              rtnd_ptr->resource_desc().type()));
     dict.SetValue("RES_STATUS",
@@ -888,6 +898,10 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     dict.SetValue("TASK_ARGS", arg_string);
     dict.SetValue("TASK_STATUS", ENUM_TO_STRING(TaskDescriptor::TaskState,
                                                 td_ptr->state()));
+    // Scheduled to resource
+    if (td_ptr->has_scheduled_to_resource()) {
+      dict.SetValue("TASK_SCHEDULED_TO", td_ptr->scheduled_to_resource());
+    }
     // Location
     if (td_ptr->has_last_heartbeat_location()) {
       dict.SetValue("TASK_LOCATION", td_ptr->last_heartbeat_location());
@@ -941,7 +955,7 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
       for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
            it != equiv_classes->end(); ++it) {
         TemplateDictionary* tec_dict = dict.AddSectionDictionary("TASK_TECS");
-        tec_dict->SetIntValue("TASK_TEC", *it);
+        tec_dict->SetFormattedValue("TASK_TEC", "%ju", *it);
       }
     }
     delete equiv_classes;
