@@ -40,6 +40,8 @@ class FlowGraph {
   void AddResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);
   void AdjustUnscheduledAggArcCosts();
+  uint64_t CapacityBetweenECNodes(const FlowGraphNode& src,
+                                  const FlowGraphNode& dst);
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                  uint64_t cap_upper_bound, uint64_t cost,
                  const char *comment = "ChangeArc");
