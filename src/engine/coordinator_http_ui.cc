@@ -357,6 +357,27 @@ void CoordinatorHTTPUI::HandleJobURI(http::request_ptr& http_request,  // NOLINT
   FinishOkResponse(writer);
 }
 
+void CoordinatorHTTPUI::HandleECDetailsURI(http::request_ptr& http_request,  // NOLINT
+                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  string ec_id = http_request->get_query("id");
+  if (ec_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
+  TemplateDictionary dict("ec_details");
+  dict.SetFormattedValue("EC_ID", "%llu", strtoull(ec_id.c_str(), 0, 10));
+  AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+  AddFooterToTemplate(&dict);
+  string output;
+  ExpandTemplate("src/webui/ec_details.tpl", ctemplate::DO_NOT_STRIP,
+                 &dict, &output);
+  writer->write(output);
+  FinishOkResponse(writer);
+}
+
 void CoordinatorHTTPUI::HandleReferencesListURI(http::request_ptr& http_request,  // NOLINT
                                                 tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -682,8 +703,11 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   // Get resource information from coordinator
   string res_id = http_request->get_query("res");
   string task_id = http_request->get_query("task");
-  if (!(res_id.empty() || task_id.empty()) ||
-      (res_id.empty() && task_id.empty())) {
+  string ec_id = http_request->get_query("ec");
+  if ((res_id.empty() && task_id.empty() && ec_id.empty()) ||
+      !(res_id.empty() || task_id.empty()) ||
+      !(res_id.empty() || ec_id.empty()) ||
+      !(task_id.empty() || ec_id.empty())) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     LOG(WARNING) << "Invalid stats request!";
@@ -741,7 +765,25 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     output += "]";
     output += ", \"reports\": [";
     const deque<TaskFinalReport>* report_result =
-      coordinator_->knowledge_base()->GetFinalStatsForTask(td->uid());
+      coordinator_->knowledge_base()->GetFinalReportForTask(td->uid());
+    if (report_result) {
+      bool first = true;
+      for (deque<TaskFinalReport>::const_iterator it =
+          report_result->begin();
+          it != report_result->end();
+          ++it) {
+        if (!first)
+          output += ", ";
+        output += pb2json(*it);
+        first = false;
+      }
+    }
+    output += "] }";
+  } else if (!ec_id.empty()) {
+    output += "{ \"reports\": [";
+    const deque<TaskFinalReport>* report_result =
+      coordinator_->knowledge_base()->GetFinalReportsForTEC(
+          strtoull(ec_id.c_str(), 0, 10));
     if (report_result) {
       bool first = true;
       for (deque<TaskFinalReport>::const_iterator it =
@@ -756,7 +798,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     }
     output += "] }";
   } else {
-    LOG(FATAL) << "Neither task_id nor res_id set, but they should be!";
+    LOG(FATAL) << "Neither task_id, nor ec_id, nor res_id set, but they should be!";
   }
   writer->write(output);
   FinishOkResponse(writer);
@@ -794,7 +836,6 @@ void CoordinatorHTTPUI::HandleTasksListURI(http::request_ptr& http_request,  // 
   writer->write(output);
   FinishOkResponse(writer);
 }
-
 
 void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLINT
                                       tcp::connection_ptr& tcp_conn) {  // NOLINT
@@ -1087,6 +1128,9 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Collectl raw data hook
     coordinator_http_server_->add_resource("/collectl/raw/", boost::bind(
         &CoordinatorHTTPUI::HandleCollectlRawURI, this, _1, _2));
+    // Equivalence class details
+    coordinator_http_server_->add_resource("/ec/", boost::bind(
+        &CoordinatorHTTPUI::HandleECDetailsURI, this, _1, _2));
     // Job list
     coordinator_http_server_->add_resource("/jobs/", boost::bind(
         &CoordinatorHTTPUI::HandleJobsListURI, this, _1, _2));

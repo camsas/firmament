@@ -136,15 +136,15 @@ const deque<TaskPerfStatisticsSample>* KnowledgeBase::GetStatsForTask(
   return res;
 }
 
-const deque<TaskFinalReport>* KnowledgeBase::GetFinalStatsForTask(
+const deque<TaskFinalReport>* KnowledgeBase::GetFinalReportForTask(
       TaskID_t task_id) const {
-  vector<EquivClass_t>* equiv_classes =
-    cost_model_->GetTaskEquivClasses(task_id);
-  if (equiv_classes->size() == 0)
-    return NULL;
-  // TODO(ionel): This uses the first task equiv class for now.
-  const deque<TaskFinalReport>* res =
-    FindOrNull(task_exec_reports_, equiv_classes->front());
+  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, task_id);
+  return res;
+}
+
+const deque<TaskFinalReport>* KnowledgeBase::GetFinalReportsForTEC(
+      EquivClass_t ec_id) const {
+  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, ec_id);
   return res;
 }
 
