@@ -46,8 +46,8 @@ class KnowledgeBase {
   virtual double GetAvgIPMAForTEC(EquivClass_t id);
   virtual double GetAvgPsPIForTEC(EquivClass_t id);
   virtual double GetAvgRuntimeForTEC(EquivClass_t id);
-  const deque<TaskFinalReport>* GetFinalStatsForTask(TaskID_t task_id) const;
-  virtual double GetMaxPsPIForTEC(EquivClass_t id);
+  const deque<TaskFinalReport>* GetFinalReportForTask(TaskID_t task_id) const;
+  const deque<TaskFinalReport>* GetFinalReportsForTEC(EquivClass_t ec_id) const;
   vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) const;
   void LoadKnowledgeBaseFromFile();
   void ProcessTaskFinalReport(const TaskFinalReport& report,
