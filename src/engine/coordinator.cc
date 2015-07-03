@@ -460,6 +460,11 @@ void Coordinator::HandleTaskFinalReport(const TaskFinalReport& report,
   VLOG(1) << "Handling task final report for " << report.task_id();
   // Process the report using the KB
   knowledge_base_->ProcessTaskFinalReport(report, td_ptr->uid());
+  // Add the report to the TD if the task is not local (otherwise, the
+  // scheduler has already done so)
+  if (td_ptr->has_delegated_to()) {
+    td_ptr->mutable_final_report()->CopyFrom(report);
+  }
 }
 
 void Coordinator::HandleIONotification(const BaseMessage& bm,
@@ -733,7 +738,7 @@ void Coordinator::HandleTaskStateChange(
 
 void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
                                        TaskDescriptor* td_ptr) {
-  TaskFinalReport report;
+  TaskFinalReport report(msg.report());
   // Report will be filled in if the task is local (currently)
   scheduler_->HandleTaskCompletion(td_ptr, &report);
   // First check if this is a delegated task, and forward the message if so
@@ -743,7 +748,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
 
     // Send along completion statistics to the coordinator as well.
     // TODO(malte): Make this all const including handle task completion method
-    TaskFinalReport *sending_rep = bm.mutable_task_final_report();
+    TaskFinalReport *sending_rep = bm.mutable_task_state()->mutable_report();
     sending_rep->CopyFrom(report);
     sending_rep->set_task_id(td_ptr->uid());
 
