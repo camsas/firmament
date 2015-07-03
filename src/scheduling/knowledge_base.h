@@ -49,6 +49,7 @@ class KnowledgeBase {
   const deque<TaskFinalReport>* GetFinalReportForTask(TaskID_t task_id) const;
   const deque<TaskFinalReport>* GetFinalReportsForTEC(EquivClass_t ec_id) const;
   vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) const;
+  vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t resource_id) const;
   void LoadKnowledgeBaseFromFile();
   void ProcessTaskFinalReport(const TaskFinalReport& report,
                               TaskID_t task_id);

@@ -90,8 +90,14 @@ $(function() {
     <td>{{RES_FRIENDLY_NAME}}</td>
   </tr>
   <tr>
-    <td>Equiv class</td>
-    <td>{{RES_REC}}</td>
+    <td>Equivalence class</td>
+    <td>
+      <ul>
+        {{#RES_RECS}}
+        <li><a href="/ec/?id={{RES_REC}}">{{RES_REC}}</a></li>
+        {{/RES_RECS}}
+      </ul>
+    </td>
   </tr>
   <tr>
     <td>Type</td>
