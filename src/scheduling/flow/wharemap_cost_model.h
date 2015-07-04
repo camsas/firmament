@@ -71,7 +71,10 @@ class WhareMapCostModel : public CostModelInterface {
   // Cost to cluster aggregator EC
   Cost_t TaskToClusterAggCost(TaskID_t task_id);
 
-  const Cost_t WAIT_TIME_MULTIPLIER = 1;
+  // Static cost definitions
+  const Cost_t WAIT_TIME_MULTIPLIER = 1LL;
+  // Assumes we don't have more tha 48 cores for the moment ;-)
+  const Cost_t COST_LOWER_BOUND = 48LL;
 
   // Map of resources present in the system, initialised externally
   shared_ptr<ResourceMap_t> resource_map_;
