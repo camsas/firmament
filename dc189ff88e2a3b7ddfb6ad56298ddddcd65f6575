@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_a41decbf",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 741,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-04T07:30:01Z",
+      "side": 1,
+      "message": "I\u0027m failing to see why you\u0027re passing msg.report() to the constructor. Is there a reason?",
+      "revId": "dc189ff88e2a3b7ddfb6ad56298ddddcd65f6575",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
