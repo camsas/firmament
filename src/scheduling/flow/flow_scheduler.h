@@ -74,6 +74,7 @@ class FlowScheduler : public EventDrivenScheduler {
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
   uint64_t RunSchedulingIteration();
+  void UpdateCostModelResourceStats();
   void UpdateResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);
 

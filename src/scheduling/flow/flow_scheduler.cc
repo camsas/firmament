@@ -256,6 +256,12 @@ void FlowScheduler::RegisterResource(ResourceID_t res_id, bool local) {
 }
 
 uint64_t FlowScheduler::RunSchedulingIteration() {
+  // If this is the first iteration ever, we should ensure that the cost
+  // model's notion of statistics is correct.
+  if (solver_dispatcher_->seq_num() == 0)
+    UpdateCostModelResourceStats();
+
+  // Run the flow solver! This is where all the juicy goodness happens :)
   multimap<uint64_t, uint64_t>* task_mappings = solver_dispatcher_->Run();
   // Solver's done, let's post-process the results.
   multimap<uint64_t, uint64_t>::iterator it;
@@ -296,6 +302,25 @@ uint64_t FlowScheduler::RunSchedulingIteration() {
                  << " remain!";
   }
 
+  // The application of deltas may have changed relevant statistics, so
+  // we update them.
+  UpdateCostModelResourceStats();
+
+  return num_scheduled;
+}
+
+void FlowScheduler::PrintGraph(vector< map<uint64_t, uint64_t> > adj_map) {
+  for (vector< map<uint64_t, uint64_t> >::size_type i = 1;
+       i < adj_map.size(); ++i) {
+    map<uint64_t, uint64_t>::iterator it;
+    for (it = adj_map[i].begin();
+         it != adj_map[i].end(); it++) {
+      cout << i << " " << it->first << " " << it->second << endl;
+    }
+  }
+}
+
+void FlowScheduler::UpdateCostModelResourceStats() {
   if (FLAGS_flow_scheduling_cost_model ==
       CostModelType::COST_MODEL_COCO ||
       FLAGS_flow_scheduling_cost_model ==
@@ -313,18 +338,6 @@ uint64_t FlowScheduler::RunSchedulingIteration() {
                     cost_model_, _1, _2));
   } else {
     LOG(INFO) << "No resource stats update required";
-  }
-  return num_scheduled;
-}
-
-void FlowScheduler::PrintGraph(vector< map<uint64_t, uint64_t> > adj_map) {
-  for (vector< map<uint64_t, uint64_t> >::size_type i = 1;
-       i < adj_map.size(); ++i) {
-    map<uint64_t, uint64_t>::iterator it;
-    for (it = adj_map[i].begin();
-         it != adj_map[i].end(); it++) {
-      cout << i << " " << it->first << " " << it->second << endl;
-    }
   }
 }
 
