@@ -59,7 +59,8 @@ Cost_t WhareMapCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   VLOG(1) << "Avg PsPI for TEC " << equiv_classes->front() << " is "
           << avg_pspi;
   delete equiv_classes;
-  return max(WAIT_TIME_MULTIPLIER * wait_time_centamillis, avg_pspi + 1);
+  return COST_LOWER_BOUND + max(WAIT_TIME_MULTIPLIER * wait_time_centamillis,
+                                avg_pspi + 1);
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
@@ -84,12 +85,13 @@ Cost_t WhareMapCostModel::TaskToClusterAggCost(TaskID_t task_id) {
     // we fall back to using the overall average for the TEC or zero.
     // TODO(malte): check if this can ever return a non-zero value when we don't
     // have a value in the worst_case_psi_map_.
-    return knowledge_base_->GetAvgPsPIForTEC(equiv_classes->front());
+    return COST_LOWER_BOUND + 
+      knowledge_base_->GetAvgPsPIForTEC(equiv_classes->front());
   }
   VLOG(1) << "Worst avg PsPI for TEC " << equiv_classes->front() << " is "
           << *worst_avg_pspi;
   delete equiv_classes;
-  return *worst_avg_pspi;
+  return COST_LOWER_BOUND + *worst_avg_pspi;
 }
 
 Cost_t WhareMapCostModel::TaskToResourceNodeCost(TaskID_t task_id,
@@ -102,7 +104,21 @@ Cost_t WhareMapCostModel::TaskToResourceNodeCost(TaskID_t task_id,
 Cost_t WhareMapCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {
-  // TODO(ionel): Implement!
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, destination);
+  CHECK_NOTNULL(rs);
+  ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
+  // Below is a somewhat hackish way of making sure that tasks spread out
+  // across machines: we assign a baseline cost equal to the core ID for each
+  // core. The core ID is extracted from the description string...
+  if (rtnd->resource_desc().type() ==  ResourceDescriptor::RESOURCE_PU) {
+    string label = rtnd->resource_desc().friendly_name();
+    uint64_t idx = label.find("PU #");
+    if (idx != string::npos) {
+      string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
+      int64_t core_id = strtoll(core_id_substr.c_str(), 0, 10);
+      return core_id;
+    }
+  }
   return 0LL;
 }
 
@@ -149,9 +165,9 @@ Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,
       acc += *it;
     }
     // Average PsPI for tasks in ec1 on machine of type ec2
-    return (acc / pspi_vec->size());
+    return COST_LOWER_BOUND + (acc / pspi_vec->size());
   }
-  return 0LL;
+  return COST_LOWER_BOUND;
 }
 
 vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
