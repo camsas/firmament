@@ -16,6 +16,24 @@
       "revId": "dc189ff88e2a3b7ddfb6ad56298ddddcd65f6575",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_6474c4cf",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 741,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-04T11:46:01Z",
+      "side": 1,
+      "message": "Yes; report gets passed to HandleTaskCompletion, which copies it to the report instance stored in the TD. \n\n1. If we\u0027re handling a local task, msg.report() is empty, so this does no harm, and the details are filled in by the executor (inside the HandleTaskCompletion call). \n\n2. If we\u0027re dealing with a remote task, this line copies the task report included in the completion notification and the executor does not do anything.\n\nThis isn\u0027t totally ideal or the most elegant solution; however, we only have access to the message at this level of abstraction currently, so the copy has to take place here.",
+      "parentUuid": "9ad9bd40_a41decbf",
+      "revId": "dc189ff88e2a3b7ddfb6ad56298ddddcd65f6575",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
