@@ -226,11 +226,11 @@ void Coordinator::Run() {
             StreamSocketsChannel<BaseMessage>::SS_TCP);
     CHECK(ConnectToRemote(FLAGS_parent_uri, parent_chan_))
         << "Failed to connect to parent at " << FLAGS_parent_uri << "!";
-    VLOG(1) << parent_chan_->LocalEndpointString();
-    VLOG(1) << parent_chan_->RemoteEndpointString();
+    VLOG(1) << "Establishing channel with parent coordinator: "
+            << parent_chan_->LocalEndpointString() << " -> "
+            << parent_chan_->RemoteEndpointString();
     RegisterWithCoordinator(parent_chan_);
     parent_uri_ = FLAGS_parent_uri;
-    //InformStorageEngineNewResource(&resource_desc_);
   }
 
   uint64_t cur_time = 0;
@@ -558,11 +558,18 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
   }
 
   // If we have a parent coordinator on whose behalf we are managing this task,
-  // forward the message
+  // forward the message.
+  // TODO(malte): this does not currently perform any aggregation, so we're
+  // likely to DoS the parent coordinator on a large deployment. Instead, we
+  // should only selectively forward heartbeats and aggregate them.
   if (parent_chan_ != NULL) {
     BaseMessage bm;
     bm.mutable_task_heartbeat()->CopyFrom(msg);
-    SendMessageToRemote(parent_chan_, &bm);
+    if (!SendMessageToRemote(parent_chan_, &bm)) {
+      LOG(ERROR) << "Failed to forward heartbeat to parent coordinator!";
+      // Try to re-register
+      RegisterWithCoordinator(parent_chan_);
+    }
   } else {
     knowledge_base_->AddTaskSample(msg.stats());
   }
@@ -910,7 +917,11 @@ void Coordinator::SendHeartbeatToParent(
   // Include resource usage stats
   bm.mutable_heartbeat()->mutable_load()->CopyFrom(stats);
   VLOG(2) << "Sending heartbeat to parent coordinator!";
-  SendMessageToRemote(parent_chan_, &bm);
+  if (!SendMessageToRemote(parent_chan_, &bm)) {
+    LOG(ERROR) << "Failed to send heartbeat to parent coordinator!";
+    // Try to re-register
+    RegisterWithCoordinator(parent_chan_);
+  }
 }
 
 const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
