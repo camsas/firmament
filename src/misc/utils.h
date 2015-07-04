@@ -56,6 +56,7 @@ DataObjectID_t GenerateDataObjectID(TaskID_t producing_task,
 TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task, uint64_t child_num);
+size_t HashCommandLine(const TaskDescriptor& td);
 size_t HashJobID(JobID_t job_id);
 size_t HashJobID(const TaskDescriptor& td);
 size_t HashString(const string& str);

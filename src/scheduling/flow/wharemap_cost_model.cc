@@ -159,14 +159,14 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
-  // We also have one task agg per job. The id of the aggregator is the
-  // hash of the job ID.
+  // We have one task EC per program.
+  // The ID of the aggregator is the hash of the command line.
   // This (first) EC will be used for the Whare-Map costs: the TEC
   // aggregator is the source of the Whare-M cost arcs, and
   // TaskToUnscheduledAggCost (currently) assumes that the first TEC is
   // the one for which the cost model has statistics.
   EquivClass_t task_agg =
-    static_cast<EquivClass_t>(HashString(td_ptr->binary()));
+    static_cast<EquivClass_t>(HashCommandLine(*td_ptr));
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);
   unordered_map<EquivClass_t, set<TaskID_t> >::iterator task_ec_it =
@@ -178,6 +178,11 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
     task_set.insert(task_id);
     CHECK(InsertIfNotPresent(&task_ec_to_set_task_id_, task_agg, task_set));
   }
+  // We also have one EC per job.
+  // The ID of the aggregator is the hash of the job ID.
+  EquivClass_t job_agg =
+    static_cast<EquivClass_t>(HashJobID(*td_ptr));
+  equiv_classes->push_back(job_agg);
   // All tasks also have an arc to the cluster aggregator.
   equiv_classes->push_back(cluster_aggregator_ec_);
   return equiv_classes;
@@ -251,7 +256,8 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
       prefered_res->push_back(it->second);
     }
   } else {
-    LOG(FATAL) << "Unexpected type of task equivalence aggregator";
+    VLOG(1) << "Ignored unexpected type of task equivalence aggregator "
+            << "for EC " << ec;
   }
   return prefered_res;
 }
@@ -306,7 +312,8 @@ vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
     // This is where we can add arcs form tasks to machine aggregators.
     // We do not need to add any arcs in the WhareMap cost model.
   } else {
-    LOG(FATAL) << "Unexpected type of task equivalence aggregator";
+    VLOG(1) << "Ignored unexpected type of task equivalence aggregator "
+            << "for EC " << tec;
   }
   return prefered_task;
 }
@@ -346,7 +353,7 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
       incoming_ec->push_back(*it);
     }
   } else {
-    LOG(FATAL) << "Unexpected type of task equiv class";
+    // Nothing to do, ignore
   }
   return pair<vector<EquivClass_t>*,
               vector<EquivClass_t>*>(incoming_ec, outgoing_ec);
