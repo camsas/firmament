@@ -719,6 +719,10 @@ void FlowGraph::ConfigureResourceLeafNode(
             << arc->cap_upper_bound_ << " -> "
             << arc->cap_upper_bound_ + 1 << ")";
     arc->cap_upper_bound_ += 1;
+    // TODO(malte): we don't set the cost here, but probably should. However,
+    // care needs to be taken, because ConfigureResourceLeafNode is called
+    // before cost model state is set up, so not all information may be
+    // available.
 
     DIMACSChange *chg = new DIMACSChangeArc(*arc);
     chg->set_comment("ConfigureResourceLeafNode");
