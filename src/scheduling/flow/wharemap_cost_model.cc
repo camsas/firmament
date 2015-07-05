@@ -252,17 +252,17 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
       prefered_res->push_back(it->second);
     }
   } else {
-    VLOG(1) << "Ignored unexpected type of task equivalence aggregator "
-            << "for EC " << ec;
+    VLOG(1) << "Ignored unhandled type of equivalence aggregator "
+            << "(EC " << ec << ")";
   }
   return prefered_res;
 }
 
 vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
-    EquivClass_t tec) {
+    EquivClass_t ec) {
   vector<TaskID_t>* prefered_task = new vector<TaskID_t>();
-  if (tec == cluster_aggregator_ec_) {
-    // tec is the cluster aggregator.
+  if (ec == cluster_aggregator_ec_) {
+    // ec is the cluster aggregator.
     // We add an arc from each task to the cluster aggregator.
     // XXX(malte): This is very slow because it iterates over all tasks; we
     // should instead only return the set of tasks that do not yet have the
@@ -276,40 +276,45 @@ vector<TaskID_t>* WhareMapCostModel::GetIncomingEquivClassPrefArcs(
       // scheduling.
       if (it->second->state() == TaskDescriptor::RUNNABLE ||
           it->second->state() == TaskDescriptor::RUNNING) {
-        VLOG(2) << "Adding arc from task " << it->first << " to EC " << tec
+        VLOG(2) << "Adding arc from task " << it->first << " to EC " << ec
                 << "; task in state "
                 << ENUM_TO_STRING(TaskDescriptor::TaskState,
                                   it->second->state());
         prefered_task->push_back(it->first);
       }
     }
-  } else if (task_aggs_.find(tec) != task_aggs_.end()) {
-    // tec is a task aggregator.
+  } else if (task_aggs_.find(ec) != task_aggs_.end()) {
+    // ec is a task aggregator.
     // This is where we add preference arcs from tasks to new equiv class
     // aggregators.
     // XXX(ionel): This is very slow because it iterates over all tasks.
     for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
          ++it) {
-      EquivClass_t task_agg =
-        static_cast<EquivClass_t>(HashString(it->second->binary()));
-      if (task_agg == tec) {
-        // XXX(malte): task_map_ contains ALL tasks ever seen by the system,
-        // including those that have completed, failed or are otherwise no
-        // longer present in the flow graph. We do some crude filtering here,
-        // but clearly we should instead maintain a collection of tasks actually
-        // eligible for scheduling.
-        if (it->second->state() == TaskDescriptor::RUNNABLE ||
-            it->second->state() == TaskDescriptor::RUNNING)
-          prefered_task->push_back(it->first);
+      // TODO(malte): This is a bit inefficient, because it recalculates the TEC
+      // vector for each task, and does dynamic memory allocation...
+      vector<EquivClass_t>* tec_vec = GetTaskEquivClasses(it->first);
+      for (auto tvi = tec_vec->begin(); tvi != tec_vec->end(); ++tvi) {
+        if (*tvi == ec) {
+          // XXX(malte): task_map_ contains ALL tasks ever seen by the system,
+          // including those that have completed, failed or are otherwise no
+          // longer present in the flow graph. We do some crude filtering here,
+          // but clearly we should instead maintain a collection of tasks
+          // actually eligible for scheduling.
+          if (it->second->state() == TaskDescriptor::RUNNABLE ||
+              it->second->state() == TaskDescriptor::RUNNING) {
+            prefered_task->push_back(it->first);
+          }
+        }
       }
+      delete tec_vec;
     }
-  } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
-    // tec is a machine aggregator.
+  } else if (machine_aggs_.find(ec) != machine_aggs_.end()) {
+    // ec is a machine aggregator.
     // This is where we can add arcs form tasks to machine aggregators.
     // We do not need to add any arcs in the WhareMap cost model.
   } else {
-    VLOG(1) << "Ignored unexpected type of task equivalence aggregator "
-            << "for EC " << tec;
+    VLOG(1) << "Ignored unhandled type of equivalence aggregator "
+            << "(EC " << ec << ")";
   }
   return prefered_task;
 }
@@ -620,6 +625,7 @@ FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
   }
   // Case: RESOURCE -> RESOURCE
   FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
+  CHECK_NOTNULL(arc);
   uint64_t new_cost = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
                                                      other->resource_id_);
   if (arc->cost_ != new_cost) {
