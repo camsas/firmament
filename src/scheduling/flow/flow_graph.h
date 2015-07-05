@@ -116,7 +116,7 @@ class FlowGraph {
                                     FlowGraphNode* ec_node);
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
-  void AddEquivClassNode(EquivClass_t ec);
+  FlowGraphNode* AddEquivClassNode(EquivClass_t ec);
   void AddResourceEquivClasses(FlowGraphNode* res_node);
   void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void AddSpecialNodes();
