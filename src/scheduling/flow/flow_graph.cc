@@ -123,7 +123,7 @@ FlowGraphArc* FlowGraph::AddArcInternal(uint64_t src, uint64_t dst) {
 FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
                                         FlowGraphNode* dst) {
   FlowGraphArc* arc = new FlowGraphArc(src->id_, dst->id_, src, dst);
-  arc_set_.insert(arc);
+  CHECK(arc_set_.insert(arc).second);
   src->AddArc(arc);
   return arc;
 }
@@ -334,7 +334,7 @@ void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
     if (ec_node_ptr == NULL) {
       // Node for resource equiv class doesn't yet exist.
       VLOG(2) << "    Adding node EC node for " << *it;
-      AddEquivClassNode(*it);
+      ec_node_ptr = AddEquivClassNode(*it);
     } else {
       // Node for resource equiv class already exists. Add arc from it.
       // XXX(ionel): We don't add arcs from tasks or other equiv classes
@@ -462,7 +462,7 @@ void FlowGraph::ConfigureResourceNodeECs(ResourceTopologyNodeDescriptor* rtnd) {
   }
 }
 
-void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
+FlowGraphNode* FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   VLOG(2) << "Add equiv class " << ec;
   vector<FlowGraphArc*> ec_arcs;
   // Add the equivalence class flow graph node.
@@ -489,8 +489,12 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
       // TODO(malte): think about whether we can do this more elegantly; the
       // above implicit assumption may not always hold (even though it does
       // for now).
-      if (!task_node)
+      if (!task_node) {
+        LOG(INFO) << "Skipping addition of arc from task " << *it << "'s "
+                  << "node to EC " << ec << " as task not yet present.";
         continue;
+      }
+      VLOG(2) << "Adding arc from task " << *it << " to EC " << ec;
       FlowGraphArc* ec_arc =
         AddArcInternal(task_node->id_, ec_node->id_);
       // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
@@ -529,6 +533,8 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   VLOG(1) << "Adding equivalence class node, with change "
           << chg->GenerateChange();
   AddArcsFromToOtherEquivNodes(ec, ec_node);
+  // Return the new EC node
+  return ec_node;
 }
 
 void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
@@ -543,12 +549,15 @@ void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
     FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
     if (ec_node_ptr == NULL) {
       // Node for task equiv class doesn't yet exist.
-      AddEquivClassNode(*it);
-    } else {
-      // Node for task equiv class already exists. Add arc to it.
-      // XXX(ionel): We don't add new arcs from the equivalence class to
-      // resource nodes when we add a new arc from a task to the equiv class.
-      // We may want to do add some in the future.
+      ec_node_ptr = AddEquivClassNode(*it);
+    }
+    // Node for task equiv class now exists for sure. Add arc to it if we
+    // don't already have one: we might, as the act of adding the EC above
+    // mav already have created the arc, if it is returned by
+    // AddEquivClassNode's cost_model_->GetIncomingEquivClassPrefArcs().
+    if (!GetArc(task_node, ec_node_ptr)) {
+      VLOG(2) << "AddTaskEquivClasses adding arc from task " << task_node->id_
+              << " to EC " << ec_node_ptr->id_;
       FlowGraphArc* ec_arc =
         AddArcInternal(task_node->id_, ec_node_ptr->id_);
       ec_arc->cap_upper_bound_ = 1;
@@ -559,6 +568,10 @@ void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
       chg->set_comment("AddTaskEquivClasses");
       graph_changes_.push_back(chg);
     }
+    // TODO(ionel): We don't add new arcs from the equivalence class to
+    // resource nodes or other ECs when we add a new arc from a task to the
+    // equiv class.
+    // We may want to do add some in the future.
   }
   delete equiv_classes;
 }
@@ -915,10 +928,12 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id, const char *comment) {
 }
 
 FlowGraphArc* FlowGraph::GetArc(FlowGraphNode* src, FlowGraphNode* dst) {
+  CHECK_NOTNULL(src);
+  CHECK_NOTNULL(dst);
   unordered_map<uint64_t, FlowGraphArc*>::iterator arc_it =
     src->outgoing_arc_map_.find(dst->id_);
   if (arc_it == src->outgoing_arc_map_.end()) {
-    LOG(FATAL) << "Could not find arc";
+    return NULL;
   }
   return arc_it->second;
 }
