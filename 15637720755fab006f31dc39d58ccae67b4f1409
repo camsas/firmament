@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_8490e3ed",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-05T03:41:36Z",
+      "side": 1,
+      "message": "Haha..this is what I suggested in the other diff:)",
+      "revId": "15637720755fab006f31dc39d58ccae67b4f1409",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
