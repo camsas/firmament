@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_c7bbcdc2",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-05T11:00:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_04ee9388",
+      "revId": "99df994a3cc3aeb2e9bb8b9c6bd21c970b0fd44f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_a495e7e5",
         "filename": "src/scheduling/flow/wharemap_cost_model.cc",
         "patchSetId": 2
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_e7b0d1df",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-05T11:00:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_a495e7e5",
+      "revId": "99df994a3cc3aeb2e9bb8b9c6bd21c970b0fd44f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_4486dbba",
         "filename": "src/scheduling/knowledge_base.cc",
         "patchSetId": 2
@@ -47,6 +83,24 @@
       "writtenOn": "2015-07-05T03:37:36Z",
       "side": 1,
       "message": "Doesn\u0027t this mean we prioritize new tasks over old ones? Maybe we could maintain an approximative average across all tecs and return it?",
+      "revId": "99df994a3cc3aeb2e9bb8b9c6bd21c970b0fd44f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_07b695d9",
+        "filename": "src/scheduling/knowledge_base.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-05T11:00:15Z",
+      "side": 1,
+      "message": "Changed and solved in later change.",
+      "parentUuid": "9ad9bd40_4486dbba",
       "revId": "99df994a3cc3aeb2e9bb8b9c6bd21c970b0fd44f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
