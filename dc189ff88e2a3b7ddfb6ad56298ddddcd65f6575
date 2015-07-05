@@ -34,6 +34,24 @@
       "revId": "dc189ff88e2a3b7ddfb6ad56298ddddcd65f6575",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_a4188785",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 741,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-05T06:55:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_6474c4cf",
+      "revId": "dc189ff88e2a3b7ddfb6ad56298ddddcd65f6575",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
