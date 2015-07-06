@@ -81,6 +81,8 @@ class CoordinatorHTTPUI {
                                tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleSchedURI(http::request_ptr& http_request, // NOLINT
                       tcp::connection_ptr& tcp_conn);  // NOLINT
+  void HandleSchedCostModelURI(http::request_ptr& http_request, // NOLINT
+                               tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleSchedFlowGraphURI(http::request_ptr& http_request, // NOLINT
                                tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleStatisticsURI(http::request_ptr& http_request, // NOLINT

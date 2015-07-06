@@ -719,6 +719,18 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
   FinishOkResponse(writer);
 }
 
+void CoordinatorHTTPUI::HandleSchedCostModelURI(http::request_ptr& http_request,  // NOLINT
+                                                tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  const FlowScheduler* sched =
+    dynamic_cast<const FlowScheduler*>(coordinator_->scheduler());
+  string output = sched->cost_model().DebugInfo();
+  writer->write(output);
+  FinishOkResponse(writer);
+}
+
 void CoordinatorHTTPUI::HandleSchedFlowGraphURI(http::request_ptr& http_request,  // NOLINT
                                                 tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -1232,6 +1244,9 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Scheduler live flow graph JSON
     coordinator_http_server_->add_resource("/sched/flowgraph/", boost::bind(
         &CoordinatorHTTPUI::HandleSchedFlowGraphURI, this, _1, _2));
+    // Scheduler cost model JSON
+    coordinator_http_server_->add_resource("/sched/costmodel/", boost::bind(
+        &CoordinatorHTTPUI::HandleSchedCostModelURI, this, _1, _2));
     // Statistics data serving pages
     coordinator_http_server_->add_resource("/stats/", boost::bind(
         &CoordinatorHTTPUI::HandleStatisticsURI, this, _1, _2));

@@ -35,6 +35,20 @@ WhareMapCostModel::WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
   VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;
 }
 
+const string WhareMapCostModel::DebugInfo() const {
+  string out;
+  out += "psi_map_ contents:\n";
+  for (auto it = psi_map_.begin(); it != psi_map_.end(); ++it) {
+    stringstream ss;
+    ss << "  <" << it->first.first << ", " << it->first.second << "> -> "
+       << "avg: " << AverageFromVec(*it->second) << ", "
+       << "min: " << MinFromVec(*it->second) << ", "
+       << "max: " << MaxFromVec(*it->second) << "." << endl;
+    out += ss.str();
+  }
+  return out;
+}
+
 const TaskDescriptor& WhareMapCostModel::GetTask(TaskID_t task_id) {
   TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td);

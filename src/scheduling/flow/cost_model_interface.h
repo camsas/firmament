@@ -155,6 +155,16 @@ class CostModelInterface {
 
   virtual FlowGraphNode* UpdateStats(FlowGraphNode* accumulator,
                                      FlowGraphNode* other) = 0;
+
+  /**
+   * Handle to pull debug information from cost model; return string.
+   */
+  virtual const string DebugInfo() const {
+    // Default no-op implementation;
+    LOG(INFO) << "Got to interface's DebugInfo";
+    return "";
+  }
+
   inline void SetFlowGraph(shared_ptr<FlowGraph> flow_graph) {
     flow_graph_ = flow_graph;
   }

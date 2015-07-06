@@ -60,6 +60,9 @@ class FlowScheduler : public EventDrivenScheduler {
                    << parameters_.DebugString() << ">";
   }
 
+  const CostModelInterface& cost_model() const {
+    return *cost_model_;
+  }
   const SolverDispatcher& dispatcher() const {
     return *solver_dispatcher_;
   }
