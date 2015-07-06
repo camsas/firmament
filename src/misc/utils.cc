@@ -191,6 +191,15 @@ DataObjectID_t GenerateDataObjectID(
   return doid;
 }
 
+size_t HashCommandLine(const TaskDescriptor& td) {
+  size_t hash = 42;
+  boost::hash_combine(hash, td.binary());
+  for (auto it = td.args().begin(); it != td.args().end(); ++it) {
+    boost::hash_combine(hash, *it);
+  }
+  return hash;
+}
+
 size_t HashJobID(JobID_t job_id) {
   size_t hash = 42;
   boost::hash_combine(hash, job_id);
