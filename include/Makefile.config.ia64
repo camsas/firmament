@@ -129,8 +129,13 @@ CXX = g++
 #CXX = clang++
 
 # optimization flags
-OPTFLAGS = -g -O0  # debug
-#OPTFLAGS = -O3    # release
+ifeq ($(BUILD_TYPE), debug)
+# debug build
+OPTFLAGS = -g -O0 -fno-omit-frame-pointer
+else
+# release build
+OPTFLAGS = -O3
+endif
 
 # for clang++, uncomment this line
 #CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-language-extension-token -Wno-deprecated -Wno-error=unused-function -Wno-vla

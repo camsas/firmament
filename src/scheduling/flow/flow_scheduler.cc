@@ -29,6 +29,8 @@ DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
              "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
+DEFINE_int64(time_dependent_cost_update_frequency, 10000000ULL,
+             "Update frequency for time-dependent costs, in microseconds.");
 
 namespace firmament {
 namespace scheduler {
@@ -56,6 +58,7 @@ FlowScheduler::FlowScheduler(
       topology_manager_(topo_mgr),
       knowledge_base_(kb),
       parameters_(params),
+      last_updated_time_dependent_costs_(0ULL),
       leaf_res_ids_(new unordered_set<ResourceID_t,
                       boost::hash<boost::uuids::uuid>>) {
   // Select the cost model to use
@@ -226,7 +229,7 @@ void FlowScheduler::KillRunningTask(TaskID_t task_id,
 
 uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  LOG(INFO) << "START SCHEDULING " << job_desc->uuid();
+  LOG(INFO) << "START SCHEDULING (via " << job_desc->uuid() << ")";
   // Check if we have any runnable tasks in this job
   const set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
   if (runnable_tasks.size() > 0) {
@@ -236,10 +239,10 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
     // If it is, only add the new bits
     // Run a scheduler iteration
     uint64_t newly_scheduled = RunSchedulingIteration();
-    LOG(INFO) << "STOP SCHEDULING " << job_desc->uuid();
+    LOG(INFO) << "STOP SCHEDULING, placed " << newly_scheduled << " tasks";
     return newly_scheduled;
   } else {
-    LOG(INFO) << "STOP SCHEDULING " << job_desc->uuid();
+    LOG(INFO) << "STOP SCHEDULING, nothing to do";
     return 0;
   }
 }
@@ -261,6 +264,31 @@ uint64_t FlowScheduler::RunSchedulingIteration() {
   if (solver_dispatcher_->seq_num() == 0)
     UpdateCostModelResourceStats();
 
+  // If it's time to revisit time-dependent costs, do so now, just before
+  // we run the solver.
+  uint64_t cur_time = GetCurrentTimestamp();
+  if (last_updated_time_dependent_costs_ <= (cur_time -
+      static_cast<uint64_t>(FLAGS_time_dependent_cost_update_frequency))) {
+    // First collect all non-finished jobs
+    // TODO(malte): this can be removed when we've factored archived tasks
+    // and jobs out of the job_map_ into separate data structures.
+    // (cf. issue #24).
+    vector<JobDescriptor*> job_vec;
+    for (auto it = job_map_->begin();
+         it != job_map_->end();
+         ++it) {
+      // We only need to reconsider this job if it is still active
+      if (it->second.state() != JobDescriptor::COMPLETED &&
+          it->second.state() != JobDescriptor::FAILED &&
+          it->second.state() != JobDescriptor::ABORTED) {
+        job_vec.push_back(&it->second);
+      }
+    }
+    // This will re-visit all jobs and update their time-dependent costs
+    VLOG(1) << "Flow scheduler updating time-dependent costs.";
+    flow_graph_->UpdateTimeDependentCosts(&job_vec);
+    last_updated_time_dependent_costs_ = cur_time;
+  }
   // Run the flow solver! This is where all the juicy goodness happens :)
   multimap<uint64_t, uint64_t>* task_mappings = solver_dispatcher_->Run();
   // Solver's done, let's post-process the results.

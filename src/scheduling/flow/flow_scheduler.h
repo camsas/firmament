@@ -88,7 +88,11 @@ class FlowScheduler : public EventDrivenScheduler {
   SchedulingParameters parameters_;
   // The dispatcher runs different flow solvers.
   SolverDispatcher* solver_dispatcher_;
+  // The scheduler's active cost model, used to construct the flow network and
+  // assign costs to edges
   CostModelInterface* cost_model_;
+  // Timestamp when the time-dependent costs in the graph were last updated
+  uint64_t last_updated_time_dependent_costs_;
   // Set containing the resource ids of the PUs.
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
 };

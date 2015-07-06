@@ -45,8 +45,6 @@ StreamSocketsChannel<T>::StreamSocketsChannel(StreamSocketType type)
     type_(type) {
   switch (type) {
     case SS_TCP: {
-      // Set up two TCP endpoints (?)
-      // TODO(malte): investigate if we can use a scoped pointer here
       VLOG(2) << "Setup for TCP endpoints";
       break; }
     case SS_UNIX:
@@ -60,8 +58,7 @@ StreamSocketsChannel<T>::StreamSocketsChannel(StreamSocketType type)
 template <class T>
 StreamSocketsChannel<T>::StreamSocketsChannel(
     TCPConnection::connection_ptr connection)
-  : //client_io_service_(&(connection->socket()->get_io_service())),
-    async_recv_buffer_(NULL),
+  : async_recv_buffer_(NULL),
     async_recv_buffer_vec_(NULL),
     client_socket_(connection->socket()),
     client_connection_(connection),
@@ -123,7 +120,7 @@ bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
     LOG(WARNING) << "Establishing a new connection on channel " << this
                  << ", despite already having one established. The previous "
                  << "connection will be terminated.";
-    client_connection_->Close();
+    client_socket_->close();
     channel_ready_ = false;
   }
   CHECK(!(client_connection_ && client_io_service_));
@@ -133,6 +130,7 @@ bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
   string port = URITools::GetPortFromURI(endpoint_uri);
 
   // Now make the connection
+  CHECK_NE(endpoint_uri, "");
   VLOG(1) << "Establishing a new channel (TCP connection), "
           << "remote endpoint is " << endpoint_uri;
   tcp::resolver resolver(*client_io_service_);
@@ -161,7 +159,31 @@ bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
         boost::bind(&boost::asio::io_service::run, client_io_service_)));
     VLOG(2) << "Created IO service thread " << thread->get_id();
     channel_ready_ = true;
+    cached_remote_endpoint_ = endpoint_uri;
     return true;
+  }
+}
+
+template <typename T>
+void StreamSocketsChannel<T>::HandleIOError(boost::system::error_code error) {
+  if (error == boost::asio::error::broken_pipe) {
+    // Connection has gone away; attempt to reconnect
+    LOG(ERROR) << "Trying to reconnect broken underlying connection "
+               << "for channel " << *this << "(" << LocalEndpointString()
+               << " -> " << RemoteEndpointString() << ")";
+    if (client_socket_)
+      Establish(RemoteEndpointString());
+    else if (client_connection_)
+      LOG(ERROR) << "Cannot recover server-side connection on channel; "
+                 << "client must reconnect";
+  } else if (error == boost::asio::error::eof) {
+    // EOF
+    VLOG(2) << "Connection to " << RemoteEndpointString() << " was closed "
+            << "by remote end.";
+  } else {
+    // We don't currently handle anything else
+    LOG(ERROR) << "Don't currently know how to handle error of type "
+               << error.message();
   }
 }
 
@@ -212,7 +234,7 @@ const string StreamSocketsChannel<T>::RemoteEndpointString() {
   boost::system::error_code ec;
   tcp::endpoint ept = client_socket_->remote_endpoint(ec);
   if (ec)
-    return "";
+    return cached_remote_endpoint_;
   else
     return EndpointToString(ept);
 }
@@ -238,6 +260,8 @@ bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
   if (error || len != sizeof(uint64_t)) {
     LOG(ERROR) << "Error sending size preamble on connection: "
                << error.message();
+    if (error)
+      HandleIOError(error);
     return false;
   }
   // Send the data
@@ -247,6 +271,8 @@ bool StreamSocketsChannel<T>::SendS(const Envelope<T>& message) {
   if (error || len != msg_size) {
     LOG(ERROR) << "Error sending message on connection: "
                << error.message();
+    if (error)
+      HandleIOError(error);
     return false;
   } else {
     VLOG(2) << "Sent " << len << " bytes of protobuf data: "
@@ -306,6 +332,8 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
     LOG(ERROR) << "Error reading from connection on channel " << *this
                << "(len: " << len << ", expected: " << sizeof(uint64_t) << ")"
                << ": " << error.message();
+    if (error)
+      HandleIOError(error);
     return false;
   }
   // ... we can get away with a simple CHECK here and assume that we have some
@@ -330,6 +358,7 @@ bool StreamSocketsChannel<T>::RecvS(Envelope<T>* message) {
   } else if (error) {
     LOG(ERROR) << "Error reading from connection: "
                << error.message();
+    HandleIOError(error);
     return false;
   } else {
     VLOG(2) << "Read " << len << " bytes of protobuf data...";
@@ -382,9 +411,13 @@ void StreamSocketsChannel<T>::RecvASecondStage(
     Envelope<T>* final_envelope,
     typename AsyncRecvHandler<T>::type final_callback) {
   if (error || bytes_read != sizeof(uint64_t)) {
-    LOG(ERROR) << "Error reading from connection: " << error.message()
-               << "; read " << bytes_read << " bytes, expected "
-               << sizeof(uint64_t);
+    if (error != boost::asio::error::eof) {
+      LOG(ERROR) << "Error reading from connection: " << error.message()
+                 << "; read " << bytes_read << " bytes, expected "
+                 << sizeof(uint64_t);
+    }
+    if (error)
+      HandleIOError(error);
     async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
     return;
@@ -440,6 +473,8 @@ void StreamSocketsChannel<T>::RecvAThirdStage(
     LOG(ERROR) << "Error reading from connection: "
                << error.message() << "; read " << bytes_read
                << " bytes, expected " << message_size;
+    if (error)
+      HandleIOError(error);
     async_recv_lock_.unlock();
     final_callback(error, bytes_read, final_envelope);
     return;

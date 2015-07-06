@@ -1256,6 +1256,15 @@ void FlowGraph::ResetChanges() {
   ids_created_.clear();
 }
 
+void FlowGraph::UpdateTimeDependentCosts(vector<JobDescriptor*>* jobs) {
+  for (auto it = jobs->begin();
+       it != jobs->end();
+       ++it) {
+    VLOG(1) << "Reconsidering time-dependent costs for job " << (*it)->uuid();
+    AddOrUpdateJobNodes(*it);
+  }
+}
+
 void FlowGraph::ComputeTopologyStatistics(
     FlowGraphNode* node,
     boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather) {

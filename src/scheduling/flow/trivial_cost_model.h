@@ -63,6 +63,7 @@ class TrivialCostModel : public CostModelInterface {
   // Mapping betweeen machine res id and resource topology node descriptor.
   unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
     boost::hash<boost::uuids::uuid>> machine_to_rtnd_;
+  // Shared access to the overall set of tasks
   shared_ptr<TaskMap_t> task_map_;
 };
 
