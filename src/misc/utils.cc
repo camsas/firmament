@@ -24,12 +24,6 @@ extern "C" {
 #include <sys/prctl.h>
 #endif
 
-#ifdef OPEN_MAX
-#define OPEN_MAX_GUESS OPEN_MAX
-#else
-#define OPEN_MAX_GUESS 256 // reasonable value
-#endif
-
 #include "misc/utils.h"
 
 namespace firmament {

@@ -6,13 +6,16 @@
 #include "engine/local_executor.h"
 
 extern "C" {
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 }
 #include <boost/regex.hpp>
 
@@ -373,6 +376,13 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
       dup2(stderr_fd, STDERR_FILENO);
       close(stdout_fd);
       close(stderr_fd);
+
+      // kill child process if parent terminates
+      // SOMEDAY(adam): make this portable beyond Linux?
+#ifdef __linux__
+      prctl(PR_SET_PDEATHSIG, SIGHUP);
+#endif
+
       // Run the task binary
       execvpe(argv[0], &argv[0], &envv[0]);
       // execl only returns if there was an error

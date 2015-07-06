@@ -27,6 +27,12 @@ using google::protobuf::EnumDescriptor;
 
 #define ENUM_TO_STRING(t, v) t ## _descriptor()->FindValueByNumber(v)->name()
 
+#ifdef OPEN_MAX
+#define OPEN_MAX_GUESS OPEN_MAX
+#else
+#define OPEN_MAX_GUESS 256 // reasonable value
+#endif
+
 // Returns the current epoch timestamp in µ-seconds as an integer.
 // Uses gettimeofday() under the hood, so does not make any guarantees w.r.t.
 // time zones etc.
