@@ -27,6 +27,8 @@ class WhareMapCostModel : public CostModelInterface {
   WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
                     shared_ptr<TaskMap_t> task_map,
                     KnowledgeBase* kb);
+  // Debug info export
+  virtual const string DebugInfo() const;
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -64,10 +66,13 @@ class WhareMapCostModel : public CostModelInterface {
  private:
   void AccumulateWhareMapStats(WhareMapStats* accumulator,
                                WhareMapStats* other);
+  Cost_t AverageFromVec(const vector<uint64_t>& vec) const;
   const TaskDescriptor& GetTask(TaskID_t task_id);
   void ComputeMachineTypeHash(const ResourceTopologyNodeDescriptor* rtnd_ptr,
                               size_t* hash);
   ResourceID_t MachineResIDForResource(ResourceID_t res_id);
+  Cost_t MaxFromVec(const vector<uint64_t>& vec) const;
+  Cost_t MinFromVec(const vector<uint64_t>& vec) const;
   // Cost to cluster aggregator EC
   Cost_t TaskToClusterAggCost(TaskID_t task_id);
 
