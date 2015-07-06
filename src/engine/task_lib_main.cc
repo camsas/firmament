@@ -59,11 +59,20 @@ __attribute__((constructor)) static void task_lib_main() {
   // Grab the current process's name via procfs
   FILE* comm_fd = fopen("/proc/self/comm", "r");
   fgets(self_comm_, 64, comm_fd);
+  // The read will have a newline at the end, so replace it
+  if (strlen(self_comm_) > 0)
+    self_comm_[strlen(self_comm_) - 1] = '\0';
   fclose(comm_fd);
 
   // Unset LD_PRELOAD to avoid us from starting launching monitors in
   // child processes, unless we're in a wrapper
-  setenv("LD_PRELOAD", "", 1);
+  char* expected_comm = getenv("TASK_COMM");
+  if (self_comm_[0] != '\0' && expected_comm &&
+      strcmp(expected_comm, self_comm_) == 0) {
+    setenv("LD_PRELOAD", "", 1);
+  } else {
+    return;
+  }
 
   // Cleanup task lib before terminating the process.
   atexit(TerminationCleanup);
