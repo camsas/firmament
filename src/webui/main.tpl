@@ -36,8 +36,9 @@
 <p><b>Active scheduler:</b> {{SCHEDULER_NAME}}
 {{#FLOW_SCHEDULER_DETAILS}}
 <p><b>Cost model:</b> {{FLOW_SCHEDULER_COST_MODEL}}
-
+<p><b>Flow graph:</b>
 <ol>
+  <li><a href="/sched/flowgraph/"><b>Current</b></a>
 {{#SCHEDULER_ITER}}
   <li>Iteration {{SCHEDULER_ITER_ID}} &ndash; flow graph (<a href="/sched/?iter={{SCHEDULER_ITER_ID}}&a=dimacs">DIMACS</a>;
                                                           <a href="/sched/?iter={{SCHEDULER_ITER_ID}}&a=gv">GV</a>;

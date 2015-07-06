@@ -698,6 +698,17 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
       graph_filename += "/debug_" + iter_id + ".dm.gv";
     } else if (action == "dimacs") {
       graph_filename += "/debug_" + iter_id + ".dm";
+    } else if (action == "view") {
+      TemplateDictionary dict("flow_graph_view");
+      dict.SetValue("ITER_ID", iter_id);
+      AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+      AddFooterToTemplate(&dict);
+      string output;
+      ExpandTemplate("src/webui/flow_graph.tpl", ctemplate::DO_NOT_STRIP,
+                     &dict, &output);
+      writer->write(output);
+      FinishOkResponse(writer);
+      return;
     } else {
       ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                     tcp_conn);
@@ -705,6 +716,35 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
     }
   }
   ServeFile(graph_filename, tcp_conn, http_request, writer);
+  FinishOkResponse(writer);
+}
+
+void CoordinatorHTTPUI::HandleSchedFlowGraphURI(http::request_ptr& http_request,  // NOLINT
+                                                tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  if (!http_request->get_query("json").empty()) {
+    if (FLAGS_scheduler != "flow") {
+      ErrorResponse(http::types::RESPONSE_CODE_NOT_FOUND, http_request,
+                    tcp_conn);
+      return;
+    }
+    const FlowScheduler* sched =
+      dynamic_cast<const FlowScheduler*>(coordinator_->scheduler());
+    string json_flow_graph;
+    sched->dispatcher().ExportJSON(&json_flow_graph);
+    writer->write(json_flow_graph);
+    FinishOkResponse(writer);
+  } else {
+    TemplateDictionary dict("flow_graph_view");
+    AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+    AddFooterToTemplate(&dict);
+    string output;
+    ExpandTemplate("src/webui/flow_graph.tpl", ctemplate::DO_NOT_STRIP,
+                   &dict, &output);
+    writer->write(output);
+  }
   FinishOkResponse(writer);
 }
 
@@ -1189,6 +1229,9 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Scheduler data
     coordinator_http_server_->add_resource("/sched/", boost::bind(
         &CoordinatorHTTPUI::HandleSchedURI, this, _1, _2));
+    // Scheduler live flow graph JSON
+    coordinator_http_server_->add_resource("/sched/flowgraph/", boost::bind(
+        &CoordinatorHTTPUI::HandleSchedFlowGraphURI, this, _1, _2));
     // Statistics data serving pages
     coordinator_http_server_->add_resource("/stats/", boost::bind(
         &CoordinatorHTTPUI::HandleStatisticsURI, this, _1, _2));
