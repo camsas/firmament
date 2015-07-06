@@ -58,17 +58,21 @@ class SJFCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
+  const TaskDescriptor& GetTask(TaskID_t task_id);
   // Cost to cluster aggregator EC
   Cost_t TaskToClusterAggCost(TaskID_t task_id);
 
   const Cost_t WAIT_TIME_MULTIPLIER = 1;
 
-  const TaskDescriptor& GetTask(TaskID_t task_id);
-
-  shared_ptr<TaskMap_t> task_map_;
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
+  // EC corresponding to the CLUSTER_AGG node
+  EquivClass_t cluster_aggregator_ec_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   KnowledgeBase* knowledge_base_;
+  // Mapping betweeen machine res id and resource topology node descriptor.
+  unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
+    boost::hash<boost::uuids::uuid>> machine_to_rtnd_;
+  // Shared access to the overall set of tasks
+  shared_ptr<TaskMap_t> task_map_;
 };
 
 }  // namespace firmament
