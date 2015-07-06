@@ -61,6 +61,7 @@ class FlowGraph {
     boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
   void UpdateResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);
+  void UpdateTimeDependentCosts(vector<JobDescriptor*>* job_vec);
   // Simple accessor methods
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
   inline const unordered_map<uint64_t, FlowGraphNode*>& Nodes() const {
