@@ -10,6 +10,7 @@
 #include "base/common.h"
 #include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/flow/dimacs_exporter.h"
+#include "scheduling/flow/json_exporter.h"
 #include "scheduling/flow/flow_graph.h"
 
 namespace firmament {
@@ -19,6 +20,7 @@ class SolverDispatcher {
  public:
   SolverDispatcher(shared_ptr<FlowGraph> flow_graph, bool solver_ran_once);
 
+  void ExportJSON(string* output) const;
   void NodeBindingToSchedulingDelta(
       const TaskDescriptor& task, const ResourceDescriptor& res,
       unordered_map<TaskID_t, ResourceID_t>* task_bindings,
@@ -46,7 +48,9 @@ class SolverDispatcher {
 
   shared_ptr<FlowGraph> flow_graph_;
   // DIMACS exporter for interfacing to the solver
-  DIMACSExporter exporter_;
+  DIMACSExporter dimacs_exporter_;
+  // JSON exporter for debug and visualisation
+  JSONExporter json_exporter_;
   // Boolean that indicates if the solver has knowledge of the flow graph (i.e.
   // it is set after the initial from scratch run of the solver).
   bool solver_ran_once_;
