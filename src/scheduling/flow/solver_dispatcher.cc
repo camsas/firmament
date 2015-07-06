@@ -63,10 +63,14 @@ SolverDispatcher::SolverDispatcher(shared_ptr<FlowGraph> flow_graph,
   }
 }
 
+void SolverDispatcher::ExportJSON(string* output) const {
+  return json_exporter_.Export(*flow_graph_, output);
+}
+
 void *ExportToSolver(void *x) {
   SolverDispatcher *qd = reinterpret_cast<SolverDispatcher*>(x);
   // Write to pipe to solver
-  qd->exporter_.Flush(qd->to_solver_);
+  qd->dimacs_exporter_.Flush(qd->to_solver_);
   if (!FLAGS_incremental_flow) {
     // We need to close the stream because that's what cs expects.
     fclose(qd->to_solver_);
@@ -155,12 +159,12 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     // But if we're logging incremental changes, generate deltas even when
     // algorithm is non-incremental.
 
-    exporter_.Reset();
-    exporter_.ExportIncremental(flow_graph_->graph_changes());
+    dimacs_exporter_.Reset();
+    dimacs_exporter_.ExportIncremental(flow_graph_->graph_changes());
     flow_graph_->ResetChanges();
 
     if (graph_output != NULL) {
-      exporter_.Flush(graph_output);
+      dimacs_exporter_.Flush(graph_output);
     }
   }
 
@@ -168,18 +172,19 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     // Always export full flow graph when first time running. If algorithm
     // is non-incremental, must do it for subsequent iterations too.
 
-    exporter_.Reset();
-    exporter_.Export(*flow_graph_);
+    dimacs_exporter_.Reset();
+    dimacs_exporter_.Export(*flow_graph_);
     flow_graph_->ResetChanges();
 
     if (graph_output != NULL && !solver_ran_once_) {
       // only log the initial graph once, even when running non-incrementally
-      exporter_.Flush(graph_output);
+      dimacs_exporter_.Flush(graph_output);
     }
   }
 
-  // Note exporter_ is the full graph iff solver is running for the first
-  // time, or is non-incremental. Otherwise, exporter_ is the incremental delta.
+  // Note dimacs_exporter_ is the full graph iff solver is running for the first
+  // time, or is non-incremental. Otherwise, dimacs_exporter_ is the incremental
+  // delta.
 
   // Write debugging copy, of whatever we send to flow solver
   if (FLAGS_debug_flow_graph) {
@@ -189,7 +194,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     spf(&out_file_name, "%s/debug_%ju.dm", FLAGS_debug_output_dir.c_str(),
         debug_seq_num_);
     LOG(INFO) << "Writing flow graph debug info into " << out_file_name;
-    exporter_.Flush(out_file_name);
+    dimacs_exporter_.Flush(out_file_name);
   }
 
   // Now run the solver

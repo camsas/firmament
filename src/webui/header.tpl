@@ -78,6 +78,13 @@
   <!-- Friendly timestamps -->
   <script src="https://cdn.rawgit.com/rmm5t/jquery-timeago/master/jquery.timeago.js"></script>
 
+  <!-- Flow graph visualisation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.3.0/vis.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.3.0/vis.min.css">
+
+  <!-- d3 for visualisation -->
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+
   <!-- Workaround for JQS + bootstrap issue -->
   <style>
     .jqstooltip {
