@@ -35,6 +35,44 @@ WhareMapCostModel::WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
   VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;
 }
 
+Cost_t WhareMapCostModel::AverageFromVec(const vector<uint64_t>& vec) const {
+  uint64_t acc = 0ULL;
+  for (auto it = vec.begin(); it != vec.end(); ++it) {
+    acc += *it;
+  }
+  return (acc / vec.size());
+}
+
+Cost_t WhareMapCostModel::MaxFromVec(const vector<uint64_t>& vec) const {
+  uint64_t cur_max = 0ULL;
+  for (auto it = vec.begin(); it != vec.end(); ++it) {
+    cur_max = max(cur_max, *it);
+  }
+  return cur_max;
+}
+
+Cost_t WhareMapCostModel::MinFromVec(const vector<uint64_t>& vec) const {
+  uint64_t cur_min = 0ULL;
+  for (auto it = vec.begin(); it != vec.end(); ++it) {
+    cur_min = min(cur_min, *it);
+  }
+  return cur_min;
+}
+
+const string WhareMapCostModel::DebugInfo() const {
+  string out;
+  out += "psi_map_ contents:\n";
+  for (auto it = psi_map_.begin(); it != psi_map_.end(); ++it) {
+    stringstream ss;
+    ss << "  <" << it->first.first << ", " << it->first.second << "> -> "
+       << "avg: " << AverageFromVec(*it->second) << ", "
+       << "min: " << MinFromVec(*it->second) << ", "
+       << "max: " << MaxFromVec(*it->second) << "." << endl;
+    out += ss.str();
+  }
+  return out;
+}
+
 const TaskDescriptor& WhareMapCostModel::GetTask(TaskID_t task_id) {
   TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td);
@@ -157,14 +195,8 @@ Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,
   pair<EquivClass_t, EquivClass_t> ec_pair(ec1, ec2);
   vector<uint64_t>* pspi_vec = FindPtrOrNull(psi_map_, ec_pair);
   if (pspi_vec) {
-    uint64_t acc = 0;
-    for (auto it = pspi_vec->begin();
-         it != pspi_vec->end();
-         ++it) {
-      acc += *it;
-    }
     // Average PsPI for tasks in ec1 on machine of type ec2
-    return (acc / pspi_vec->size());
+    return AverageFromVec(*pspi_vec);
   }
   return 0LL;
 }
