@@ -67,7 +67,11 @@ const string WhareMapCostModel::DebugInfo() const {
     ss << "  <" << it->first.first << ", " << it->first.second << "> -> "
        << "avg: " << AverageFromVec(*it->second) << ", "
        << "min: " << MinFromVec(*it->second) << ", "
-       << "max: " << MaxFromVec(*it->second) << "." << endl;
+       << "max: " << MaxFromVec(*it->second) << "; ";
+    ss << "[";
+    for (auto vit = it->second->begin(); vit != it->second->end(); ++vit)
+      ss << *vit << ", ";
+    ss << "]" << endl;
     out += ss.str();
   }
   return out;
