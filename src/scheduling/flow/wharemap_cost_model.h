@@ -79,7 +79,7 @@ class WhareMapCostModel : public CostModelInterface {
   // Static cost definitions
   const Cost_t WAIT_TIME_MULTIPLIER = 1LL;
   // Assumes we don't have more tha 48 cores for the moment ;-)
-  const Cost_t COST_LOWER_BOUND = 48LL;
+  const Cost_t COST_LOWER_BOUND = 96LL;
 
   // Map of resources present in the system, initialised externally
   shared_ptr<ResourceMap_t> resource_map_;
