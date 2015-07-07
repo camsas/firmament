@@ -502,7 +502,7 @@ void WhareMapCostModel::RecordECtoPsPIMapping(
   VLOG(1) << "Instructions: " << task_report.instructions();
   if (task_report.instructions() > 0) {
     uint64_t pspi_value =
-      (static_cast<uint64_t>(task_report.runtime()) * 10000000000) /
+      (static_cast<uint64_t>(task_report.runtime()) * SECONDS_TO_PICOSECONDS) /
       task_report.instructions();
     if (!pspi_vec) {
       pspi_vec = new vector<uint64_t>();

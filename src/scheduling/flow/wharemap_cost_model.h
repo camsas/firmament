@@ -80,6 +80,8 @@ class WhareMapCostModel : public CostModelInterface {
   const Cost_t WAIT_TIME_MULTIPLIER = 1LL;
   // Assumes we don't have more tha 48 cores for the moment ;-)
   const Cost_t COST_LOWER_BOUND = 48LL;
+  // Handy constant to help with the unit conversion
+  const uint64_t SECONDS_TO_PICOSECONDS = 1000000000000ULL;
 
   // Map of resources present in the system, initialised externally
   shared_ptr<ResourceMap_t> resource_map_;
