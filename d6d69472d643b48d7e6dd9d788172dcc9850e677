@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_b6cef058",
+        "filename": "src/scheduling/flow/wharemap_cost_model.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-07T03:38:29Z",
+      "side": 1,
+      "message": "Can you please add a comment here about the priority inversion? Otherwise, there is a chance we might stumble on this again:)",
+      "revId": "d6d69472d643b48d7e6dd9d788172dcc9850e677",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
