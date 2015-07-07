@@ -1,10 +1,11 @@
 Firmament is a cluster manager and scheduling platform developed CamSaS
 (http://camsas.org) at the University of Cambridge Computer Laboratory.
 
-It is currently in early alpha stage, with much of the high-level functionality
-still missing, and interfaces frequently changing.
-
 [![Build Status](https://travis-ci.org/ms705/firmament.svg)](https://travis-ci.org/ms705/firmament)
+
+Firmament is currently in alpha stage: it runs your jobs and tasks fairly
+reliably, but system components keep changing regularly, and we are actively
+developing system features.
 
 ## System requirements
 
@@ -111,3 +112,8 @@ The easiest way to submit changes for review is to check our
 Firmament from GerritHub, or to add GerritHub as a remote.
 Alternatively, you can submit a pull request on GitHub and it will
 appear for review on GerritHub.
+
+## Contact
+
+If you would like to contact us, please send an email to firmament@camsas.org,
+or create an issue on GitHub.
