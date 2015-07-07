@@ -52,7 +52,7 @@ Cost_t WhareMapCostModel::MaxFromVec(const vector<uint64_t>& vec) const {
 }
 
 Cost_t WhareMapCostModel::MinFromVec(const vector<uint64_t>& vec) const {
-  uint64_t cur_min = 0ULL;
+  uint64_t cur_min = UINT64_MAX;
   for (auto it = vec.begin(); it != vec.end(); ++it) {
     cur_min = min(cur_min, *it);
   }
@@ -94,11 +94,18 @@ Cost_t WhareMapCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   CHECK_GT(equiv_classes->size(), 0);
   uint64_t avg_pspi =
     knowledge_base_->GetAvgPsPIForTEC(equiv_classes->front());
-  VLOG(1) << "Avg PsPI for TEC " << equiv_classes->front() << " is "
-          << avg_pspi;
+  uint64_t* best_avg_pspi =
+    FindOrNull(best_case_psi_map_, equiv_classes->front());
+  uint64_t normalized_avg_pspi = 100ULL;
+  if (best_avg_pspi) {
+    normalized_avg_pspi = ((avg_pspi + 1) * 100) / *best_avg_pspi;
+    VLOG(1) << "Avg PsPI for TEC " << equiv_classes->front() << " is "
+            << avg_pspi << ", "
+            << (static_cast<double>(avg_pspi / *best_avg_pspi)) << "x best";
+  }
   delete equiv_classes;
   return COST_LOWER_BOUND + max(WAIT_TIME_MULTIPLIER * wait_time_centamillis,
-                                avg_pspi + 1);
+                                normalized_avg_pspi);
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
@@ -116,19 +123,22 @@ Cost_t WhareMapCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 Cost_t WhareMapCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   CHECK_GT(equiv_classes->size(), 0);
+  uint64_t* best_avg_pspi =
+    FindOrNull(best_case_psi_map_, equiv_classes->front());
   uint64_t* worst_avg_pspi =
     FindOrNull(worst_case_psi_map_, equiv_classes->front());
-  if (!worst_avg_pspi) {
-    // We don't have a current worst-case average PsPI value for this TEC, so
-    // we fall back to using the overall average for the TEC or zero.
-    // TODO(malte): check if this can ever return a non-zero value when we don't
-    // have a value in the worst_case_psi_map_.
+  if (!worst_avg_pspi || !best_avg_pspi) {
+    // We don't have a current worst-case or best case average PsPI value for
+    // this TEC, so we fall back to using the overall average for the TEC or
+    // zero.
+    // TODO(malte): check if this can ever return a non-zero value when we
+    // don't have a value in the worst_case_psi_map_.
     return knowledge_base_->GetAvgPsPIForTEC(equiv_classes->front());
   }
   VLOG(1) << "Worst avg PsPI for TEC " << equiv_classes->front() << " is "
           << *worst_avg_pspi;
   delete equiv_classes;
-  return *worst_avg_pspi;
+  return (*worst_avg_pspi * 100) / (*best_avg_pspi);
 }
 
 Cost_t WhareMapCostModel::TaskToResourceNodeCost(TaskID_t task_id,
@@ -195,8 +205,13 @@ Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,
   pair<EquivClass_t, EquivClass_t> ec_pair(ec1, ec2);
   vector<uint64_t>* pspi_vec = FindPtrOrNull(psi_map_, ec_pair);
   if (pspi_vec) {
+    // Best case: baseline for normalisation
+    uint64_t* best_avg_pspi =
+      FindOrNull(best_case_psi_map_, ec1);
+    CHECK_NOTNULL(best_avg_pspi);
     // Average PsPI for tasks in ec1 on machine of type ec2
-    return AverageFromVec(*pspi_vec);
+    uint64_t avg_for_ec = AverageFromVec(*pspi_vec);
+    return (avg_for_ec * 100) / *best_avg_pspi;
   }
   return 0LL;
 }
@@ -502,10 +517,17 @@ void WhareMapCostModel::RecordECtoPsPIMapping(
       new_avg_pspi += *it;
     }
     new_avg_pspi /= pspi_vec->size();
+    uint64_t* cur_best_avg_pspi =
+      FindOrNull(best_case_psi_map_, ec_pair.first);
     uint64_t* cur_worst_avg_pspi =
       FindOrNull(worst_case_psi_map_, ec_pair.first);
+    // Is this a new worst case?
     if (!cur_worst_avg_pspi || new_avg_pspi > *cur_worst_avg_pspi) {
       InsertOrUpdate(&worst_case_psi_map_, ec_pair.first, new_avg_pspi);
+    }
+    // Is this a new best case?
+     if (!cur_best_avg_pspi || new_avg_pspi > *cur_best_avg_pspi) {
+      InsertOrUpdate(&best_case_psi_map_, ec_pair.first, new_avg_pspi);
     }
     VLOG(1) << "Recording a psPi mapping: <" << ec_pair.first << ", "
             << ec_pair.second << "> -> " << pspi_value << ", now have "

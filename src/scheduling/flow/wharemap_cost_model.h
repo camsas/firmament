@@ -111,6 +111,8 @@ class WhareMapCostModel : public CostModelInterface {
   // Map to track task EC -> worst-machine EC PsPI;
   // max_{c_m}(Psi(c_t, c_m))) in the cost model description
   unordered_map<EquivClass_t, uint64_t> worst_case_psi_map_;
+  // Map to track task EC -> best-machine EC PsPI
+  unordered_map<EquivClass_t, uint64_t> best_case_psi_map_;
 };
 
 }  // namespace firmament
