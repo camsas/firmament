@@ -35,7 +35,7 @@
 
 <p><b>Active scheduler:</b> {{SCHEDULER_NAME}}
 {{#FLOW_SCHEDULER_DETAILS}}
-<p><b>Cost model:</b> {{FLOW_SCHEDULER_COST_MODEL}}
+<p><b>Cost model:</b> {{FLOW_SCHEDULER_COST_MODEL}} (<a href="/sched/costmodel/">Debug info</a>)
 <p><b>Flow graph:</b>
 <ol>
   <li><a href="/sched/flowgraph/"><b>Current</b></a>
