@@ -43,22 +43,6 @@ Cost_t WhareMapCostModel::AverageFromVec(const vector<uint64_t>& vec) const {
   return (acc / vec.size());
 }
 
-Cost_t WhareMapCostModel::MaxFromVec(const vector<uint64_t>& vec) const {
-  uint64_t cur_max = 0ULL;
-  for (auto it = vec.begin(); it != vec.end(); ++it) {
-    cur_max = max(cur_max, *it);
-  }
-  return cur_max;
-}
-
-Cost_t WhareMapCostModel::MinFromVec(const vector<uint64_t>& vec) const {
-  uint64_t cur_min = UINT64_MAX;
-  for (auto it = vec.begin(); it != vec.end(); ++it) {
-    cur_min = min(cur_min, *it);
-  }
-  return cur_min;
-}
-
 const string WhareMapCostModel::DebugInfo() const {
   string out;
   out += "psi_map_ contents:\n";
@@ -74,13 +58,54 @@ const string WhareMapCostModel::DebugInfo() const {
     ss << "]" << endl;
     out += ss.str();
   }
+  out += "xi_map_ contents:\n";
+  for (auto it = xi_map_.begin(); it != xi_map_.end(); ++it) {
+    stringstream ss;
+    ss << "  < <" << it->first.first.first << ", " << it->first.first.second
+       << ">, " << it->first.second << "> -> "
+       << "avg: " << AverageFromVec(*it->second) << ", "
+       << "min: " << MinFromVec(*it->second) << ", "
+       << "max: " << MaxFromVec(*it->second) << "; ";
+    ss << "[";
+    for (auto vit = it->second->begin(); vit != it->second->end(); ++vit)
+      ss << *vit << ", ";
+    ss << "]" << endl;
+    out += ss.str();
+  }
   return out;
+}
+
+uint64_t WhareMapCostModel::HashWhareMapStats(const WhareMapStats& wms) {
+  size_t hash = 42;
+  boost::hash_combine(hash, wms.num_idle());
+  boost::hash_combine(hash, wms.num_devils());
+  boost::hash_combine(hash, wms.num_rabbits());
+  boost::hash_combine(hash, wms.num_sheep());
+  boost::hash_combine(hash, wms.num_turtles());
+
+  return static_cast<uint64_t>(hash);
 }
 
 const TaskDescriptor& WhareMapCostModel::GetTask(TaskID_t task_id) {
   TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td);
   return *td;
+}
+
+Cost_t WhareMapCostModel::MaxFromVec(const vector<uint64_t>& vec) const {
+  uint64_t cur_max = 0ULL;
+  for (auto it = vec.begin(); it != vec.end(); ++it) {
+    cur_max = max(cur_max, *it);
+  }
+  return cur_max;
+}
+
+Cost_t WhareMapCostModel::MinFromVec(const vector<uint64_t>& vec) const {
+  uint64_t cur_min = UINT64_MAX;
+  for (auto it = vec.begin(); it != vec.end(); ++it) {
+    cur_min = min(cur_min, *it);
+  }
+  return cur_min;
 }
 
 // The cost of leaving a task unscheduled should be higher than the cost of
@@ -108,8 +133,8 @@ Cost_t WhareMapCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
             << (static_cast<double>(avg_pspi / *best_avg_pspi)) << "x best";
   }
   delete equiv_classes;
-  return COST_LOWER_BOUND + max(WAIT_TIME_MULTIPLIER * wait_time_centamillis,
-                                normalized_avg_pspi);
+  return COST_LOWER_BOUND + 1 +
+    max(WAIT_TIME_MULTIPLIER * wait_time_centamillis, normalized_avg_pspi);
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
@@ -198,10 +223,44 @@ Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
     return 0;
 }
 
-Cost_t WhareMapCostModel::EquivClassToResourceNode(EquivClass_t tec,
+Cost_t WhareMapCostModel::EquivClassToResourceNode(EquivClass_t ec,
                                                    ResourceID_t res_id) {
-  // TODO(ionel): Implement!
-  return 0LL;
+  // If ec isn't a task aggregator, we don't need to do anything
+  if (task_aggs_.find(ec) == task_aggs_.end()) {
+    // ec must be a machine agg or the cluster agg; we don't need
+    // any cost here.
+    return 0LL;
+  }
+  // Otherwise, ec must be a TEC, so we extract the Whare-MCs cost
+  // here. Whare-M does not have TEC -> resource arcs, so this won't
+  // ever happen with Whare-M only.
+  // Get machine for res_id
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
+  CHECK_EQ(rtnd->resource_desc().type(),
+           ResourceDescriptor::RESOURCE_MACHINE);
+  EquivClass_t* machine_ec = FindOrNull(machine_to_ec_, res_id);
+  CHECK_NOTNULL(machine_ec);
+  // See if we have a xi_map_ record for this combination
+  pair<pair<EquivClass_t, EquivClass_t>, EquivClass_t> ec_stat_pair;
+  ec_stat_pair.first.first = ec;
+  ec_stat_pair.first.second = HashWhareMapStats(
+      rtnd->resource_desc().whare_map_stats());
+  ec_stat_pair.second = *machine_ec;
+  vector<uint64_t>* xi_vec = FindPtrOrNull(xi_map_, ec_stat_pair);
+  if (xi_vec) {
+    // Return normalized cost for the projected placement
+    // Best case: baseline for normalisation
+    uint64_t* best_avg_pspi =
+      FindOrNull(best_case_xi_map_, ec);
+    CHECK_NOTNULL(best_avg_pspi);
+    // Average PsPI for tasks in ec1 on machine of type ec2
+    uint64_t avg_for_ec = AverageFromVec(*xi_vec);
+    return (avg_for_ec * 100) / *best_avg_pspi;
+  }
+  // No record exists, so we return a high cost
+  return INT64_MAX;
 }
 
 Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,
@@ -282,6 +341,16 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
     }
   } else if (task_aggs_.find(ec) != task_aggs_.end()) {
     // ec is a task aggregator.
+    // Get worst-case cost
+    uint64_t* worst_case_pspi = FindOrNull(worst_case_xi_map_, ec);
+    uint64_t* best_case_pspi = FindOrNull(best_case_xi_map_, ec);
+    // If we don't have a worst-case cost, we use the maximum PsPI value
+    // observed for this TEC as an approximation
+    Cost_t normed_worst_pspi = knowledge_base_->GetAvgPsPIForTEC(ec);
+    // This is the worst-case *average*, so less susceptible to outliers than
+    // the default
+    if (worst_case_pspi && best_case_pspi)
+      normed_worst_pspi = (*worst_case_pspi * 100) / *best_case_pspi;
     if (FLAGS_num_pref_arcs_agg_to_res > 0) {
       // This branch implements the Xi(c_t, L_m, c_m) arcs of Whare-MCs.
       // Iterate over all the machines and choose those to connect from the TEC.
@@ -292,6 +361,12 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
         Cost_t cost_to_res = EquivClassToResourceNode(ec, it->first);
         ResourceID_t res_id =
           ResourceIDFromString(it->second->resource_desc().uuid());
+        if (cost_to_res >= normed_worst_pspi) {
+          // This is a poor choice, as the cost is worse than the worst known
+          // one; this can be the case if EquivClassToResourceNode returns
+          // INT64_MAX, for example. We don't want to add that arc!
+          continue;
+        }
         if (priority_res.size() < FLAGS_num_pref_arcs_agg_to_res) {
           // We haven't go enough priority machines yet, so add this one
           priority_res.insert(pair<Cost_t, ResourceID_t>(cost_to_res, res_id));
@@ -497,7 +572,7 @@ ResourceID_t WhareMapCostModel::MachineResIDForResource(ResourceID_t res_id) {
   return ResourceIDFromString(rtnd->resource_desc().uuid());
 }
 
-void WhareMapCostModel::RecordECtoPsPIMapping(
+void WhareMapCostModel::RecordMECtoPsPIMapping(
     pair<EquivClass_t, EquivClass_t> ec_pair,
     const TaskFinalReport& task_report) {
   // Record the <task EC, machine EC> -> psPI mapping
@@ -514,13 +589,7 @@ void WhareMapCostModel::RecordECtoPsPIMapping(
     }
     pspi_vec->push_back(pspi_value);
     // Now check if this is a new worst-case; if so, record it
-    uint64_t new_avg_pspi = 0ULL;
-    for (auto it = pspi_vec->begin();
-         it != pspi_vec->end();
-         ++it) {
-      new_avg_pspi += *it;
-    }
-    new_avg_pspi /= pspi_vec->size();
+    uint64_t new_avg_pspi = AverageFromVec(*pspi_vec);
     uint64_t* cur_best_avg_pspi =
       FindOrNull(best_case_psi_map_, ec_pair.first);
     uint64_t* cur_worst_avg_pspi =
@@ -532,6 +601,61 @@ void WhareMapCostModel::RecordECtoPsPIMapping(
     // Is this a new best case?
      if (!cur_best_avg_pspi || new_avg_pspi > *cur_best_avg_pspi) {
       InsertOrUpdate(&best_case_psi_map_, ec_pair.first, new_avg_pspi);
+    }
+    VLOG(1) << "Recording a psPi mapping: <" << ec_pair.first << ", "
+            << ec_pair.second << "> -> " << pspi_value << ", now have "
+            << pspi_vec->size() << " samples.";
+  } else {
+    LOG(WARNING) << "No instruction count in final report for task "
+                 << task_report.task_id() << ", so did not record any "
+                 << "information for it!";
+  }
+}
+
+void WhareMapCostModel::RecordMECAndCoRunnerSetToPsPIMapping(
+    pair<EquivClass_t, EquivClass_t> ec_pair,
+    const WhareMapStats& wms,
+    const TaskFinalReport& task_report) {
+  // Record the < <task EC, corunner set>, machine EC> -> psPI mapping
+  pair<pair<EquivClass_t, EquivClass_t>, EquivClass_t> stat_ec_pair;
+  stat_ec_pair.first.first = ec_pair.first;
+  stat_ec_pair.first.second = HashWhareMapStats(wms);
+  stat_ec_pair.second = ec_pair.second;
+  vector<uint64_t>* pspi_vec = FindPtrOrNull(xi_map_, stat_ec_pair);
+  VLOG(1) << "Runtime: " << task_report.runtime();
+  VLOG(1) << "Instructions: " << task_report.instructions();
+  VLOG(1) << "Co-runners: " << wms.num_idle() << " idle, "
+          << wms.num_devils() << " devil, " << wms.num_rabbits()
+          << " rabbit, " << wms.num_sheep() << " sheep, "
+          << wms.num_turtles() << " turtle";
+  if (task_report.instructions() > 0) {
+    uint64_t pspi_value =
+      (static_cast<uint64_t>(task_report.runtime()) * 1000000000000) /
+      task_report.instructions();
+    if (!pspi_vec) {
+      pspi_vec = new vector<uint64_t>();
+      InsertIfNotPresent(&xi_map_, stat_ec_pair, pspi_vec);
+    }
+    pspi_vec->push_back(pspi_value);
+    // Now check if this is a new worst-case; if so, record it
+    uint64_t new_avg_pspi = 0ULL;
+    for (auto it = pspi_vec->begin();
+         it != pspi_vec->end();
+         ++it) {
+      new_avg_pspi += *it;
+    }
+    new_avg_pspi /= pspi_vec->size();
+    uint64_t* cur_best_avg_pspi =
+      FindOrNull(best_case_xi_map_, ec_pair.first);
+    uint64_t* cur_worst_avg_pspi =
+      FindOrNull(worst_case_xi_map_, ec_pair.first);
+    // Is this a new worst case?
+    if (!cur_worst_avg_pspi || new_avg_pspi > *cur_worst_avg_pspi) {
+      InsertOrUpdate(&worst_case_xi_map_, ec_pair.first, new_avg_pspi);
+    }
+    // Is this a new best case?
+     if (!cur_best_avg_pspi || new_avg_pspi > *cur_best_avg_pspi) {
+      InsertOrUpdate(&best_case_xi_map_, ec_pair.first, new_avg_pspi);
     }
     VLOG(1) << "Recording a psPi mapping: <" << ec_pair.first << ", "
             << ec_pair.second << "> -> " << pspi_value << ", now have "
@@ -563,9 +687,17 @@ void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
     ResourceID_t machine_res_id = MachineResIDForResource(res_id);
     EquivClass_t* mec = FindOrNull(machine_to_ec_, machine_res_id);
     CHECK_NOTNULL(mec);
+    // Add the Whare-M information to the psi_map_
     pair<EquivClass_t, EquivClass_t> ec_pair(tec, *mec);
     CHECK(td.has_final_report());
-    RecordECtoPsPIMapping(ec_pair, td.final_report());
+    RecordMECtoPsPIMapping(ec_pair, td.final_report());
+    // Add the Whare-MCs information to the xi_map_
+    ResourceStatus* rs_ptr =
+      FindPtrOrNull(*resource_map_, machine_res_id);
+    CHECK_NOTNULL(rs_ptr);
+    ResourceDescriptor* machine_rd = rs_ptr->mutable_descriptor();
+    RecordMECAndCoRunnerSetToPsPIMapping(
+        ec_pair, machine_rd->whare_map_stats(), td.final_report());
   }
   // Now remove the state we keep for this task
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();

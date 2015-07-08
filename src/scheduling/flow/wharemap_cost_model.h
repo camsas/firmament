@@ -54,10 +54,14 @@ class WhareMapCostModel : public CostModelInterface {
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
+  uint64_t HashWhareMapStats(const WhareMapStats& wms);
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void AddTask(TaskID_t task_id);
-  void RecordECtoPsPIMapping(pair<EquivClass_t, EquivClass_t> ec_pair,
-                             const TaskFinalReport& task_report);
+  void RecordMECtoPsPIMapping(pair<EquivClass_t, EquivClass_t> ec_pair,
+                              const TaskFinalReport& task_report);
+  void RecordMECAndCoRunnerSetToPsPIMapping(
+      pair<EquivClass_t, EquivClass_t> ec_pair,
+      const WhareMapStats& wms, const TaskFinalReport& task_report);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
   FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
@@ -116,11 +120,21 @@ class WhareMapCostModel : public CostModelInterface {
   // (Psi in the cost model description)
   unordered_map<pair<EquivClass_t, EquivClass_t>, vector<uint64_t>*,
     boost::hash<pair<EquivClass_t, EquivClass_t>>> psi_map_;
+  // Map to track < <task EC, co-runner set>, machine EC> -> PsPI
+  // (Xi in the cost model description)
+  unordered_map<pair<pair<EquivClass_t, EquivClass_t>, EquivClass_t>,
+    vector<uint64_t>*,
+    boost::hash<pair<pair<EquivClass_t, EquivClass_t>, EquivClass_t>>> xi_map_;
   // Map to track task EC -> worst-machine EC PsPI;
   // max_{c_m}(Psi(c_t, c_m))) in the cost model description
   unordered_map<EquivClass_t, uint64_t> worst_case_psi_map_;
+  // Map to track task EC -> worst-environment EC PsPI;
+  // max_{c_m, L_m}(Xi(c_t, L_m, c_m))) in the cost model description
+  unordered_map<EquivClass_t, uint64_t> worst_case_xi_map_;
   // Map to track task EC -> best-machine EC PsPI
   unordered_map<EquivClass_t, uint64_t> best_case_psi_map_;
+  // Map to track task EC -> best-environment EC PsPI;
+  unordered_map<EquivClass_t, uint64_t> best_case_xi_map_;
 };
 
 }  // namespace firmament
