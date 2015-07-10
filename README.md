@@ -55,7 +55,7 @@ Binaries are in the build/ subdirectory of the project root, and all accept the
 Start up by running a coordinator:
 
 ```
-$ build/engine/coordinator --listen_uri tcp://<host>:<port> --task_lib_path=$(PWD)/build/engine/
+$ build/engine/coordinator --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/build/engine/
 ```
 
 Once the coordinator is up and running, you can access its HTTP interface at
@@ -93,7 +93,7 @@ to instead use our new scheduler based on flow network optimization, pass
 the `--scheduler flow` flag to the coordinator on startup:
 
 ```
-$ build/engine/coordinator --scheduler flow --flow_scheduling_cost_model 6 --listen_uri tcp://<host>:<port> --task_lib_path=$(PWD)/build/engine/
+$ build/engine/coordinator --scheduler flow --flow_scheduling_cost_model 6 --listen_uri tcp://<host>:<port> --task_lib_dir=$(pwd)/build/engine/
 ```
 
 The `--flow_scheduling_cost_model`` option choses the cost model on which the
