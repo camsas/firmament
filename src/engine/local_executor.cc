@@ -41,6 +41,12 @@ DEFINE_string(task_perf_dir, "/tmp/firmament-perf",
               "Path where tasks' perf logs should be written.");
 DEFINE_string(task_data_dir, "/tmp/firmament-data",
               "Path where tasks' perf logs should be written.");
+DEFINE_string(perf_event_list,
+              "cpu-clock,task-clock,context-switches,cpu-migrations,"
+              "page-faults,cycles,instructions,branches,branch-misses,"
+              "cache-misses,cache-references,stalled-cycles-frontend,"
+              "stalled-cycles-backend,node-loads,node-load-misses",
+              "Comma-separated list of perf events to monitor.");
 
 namespace firmament {
 namespace executor {
@@ -83,7 +89,9 @@ char* LocalExecutor::AddPerfMonitoringToCommandLine(
   const string* perf_fname = FindOrNull(env, "PERF_FNAME");
   CHECK_NOTNULL(perf_fname);
   perf_string += *perf_fname;
-  perf_string += " -e instructions,cycles,cache-misses,cache-references -- ";
+  perf_string += " -e ";
+  perf_string += FLAGS_perf_event_list;
+  perf_string += " -- ";
   return TokenizeIntoArgv(perf_string, argv);
 }
 
