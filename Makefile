@@ -42,6 +42,7 @@ info:
 	@echo "Targets:"
 	@echo "  - all: build all code"
 	@echo "  - clean: remove all temporary build infrastructure"
+	@echo "  - docker-image: make Docker image"
 	@echo "  - examples: build example jobs"
 	@echo "  - ext: set up external dependencies (should only run once "
 	@echo "         and automatically, but can be re-run manually)"
@@ -111,6 +112,9 @@ lint:
 
 lint-verb:
 	python tests/all_lint.py src/ True
+
+docker-image:
+	contrib/build-docker.sh
 
 clean:
 	rm -rf build
