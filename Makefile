@@ -1,6 +1,7 @@
 .PHONY: clean test ext help info
 .DEFAULT: all
 
+#######
 # Symlink correct makefile config if isn't already linked.
 ifeq ("$(wildcard include/Makefile.config)","")
 	# Determine the current architecture.
@@ -20,7 +21,31 @@ endif
 
 # Get common build settings
 include include/Makefile.config
+#######
 
+#######
+# CPU count detection
+NPROCS := 1
+OS := $(shell uname)
+export NPROCS
+
+ifeq ($J,)
+ifeq ($(OS),Linux)
+  NPROCS := $(shell grep -c ^processor /proc/cpuinfo)
+else ifeq ($(OS),Darwin)
+  NPROCS := $(shell system_profiler | awk '/Number of CPUs/ {print $$4}{next;}')
+endif # $(OS)
+
+else
+  NPROCS := $J
+endif # $J
+
+# Set parallelism level
+MAKEFLAGS=-j $(NPROCS)
+######
+
+######
+# TARGETS
 all: tests-clean ext platforms misc engine scripts trace_simulator
 ifeq ($(BUILD_TYPE), debug)
 	@echo "================================================="
