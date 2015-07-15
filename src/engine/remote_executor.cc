@@ -12,8 +12,9 @@
 #include "messages/task_delegation_message.pb.h"
 #include "misc/utils.h"
 
-
-// XXX(malte): hack
+// TODO(malte): this is a bit of a hack; we import the listen_uri flag here
+// in order to have a delegation source identifier. But this really should come in
+// via the constructor.
 DECLARE_string(listen_uri);
 
 namespace firmament {
@@ -33,11 +34,14 @@ RemoteExecutor::RemoteExecutor(
 }
 
 bool RemoteExecutor::CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks) {
+  // TODO(malte): Implement!
   return true;
 }
 
 void RemoteExecutor::HandleTaskCompletion(TaskDescriptor* td,
                                           TaskFinalReport* report) {
+  // All of the actual cleanup is done at the remote coordinator's
+  // executor, so here we only update bookkeeping information.
   uint64_t end_time = GetCurrentTimestamp();
   td->set_finish_time(end_time);
 }
@@ -51,6 +55,7 @@ void RemoteExecutor::HandleTaskFailure(TaskDescriptor* td) {
 }
 
 void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
+  // Get a channel for talking to the remote executor
   MessagingChannelInterface<BaseMessage>* chan = GetChannel();
   CHECK_NOTNULL(chan);
   // We don't get any direct indication of the delegation's success here;
@@ -66,10 +71,10 @@ void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
 }
 
 MessagingChannelInterface<BaseMessage>* RemoteExecutor::GetChannel() {
-  ResourceStatus** rs_ptr = FindOrNull(*res_map_ptr_, remote_resource_id_);
+  ResourceStatus* rs_ptr = FindPtrOrNull(*res_map_ptr_, remote_resource_id_);
   CHECK(rs_ptr) << "Resource " << remote_resource_id_ << " appears to no "
                 << "longer exist in the resource map!";
-  const string remote_endpoint = (*rs_ptr)->location();
+  const string remote_endpoint = rs_ptr->location();
   VLOG(1) << "Remote task spawn on resource " << remote_resource_id_
           << ", endpoint " << remote_endpoint;
   MessagingChannelInterface<BaseMessage>* chan =
