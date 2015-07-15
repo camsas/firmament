@@ -70,7 +70,8 @@ class SchedulerInterface : public PrintableInterface {
   // resource by setting it idle, and kicking off the necessary fault tolerance
   // handling procedures.
   virtual void HandleTaskFailure(TaskDescriptor* td_ptr) = 0;
-  // TODO(malte): comment
+  // Place a task delegated from a superior coordinator to a resource managed by
+  // this scheduler.
   virtual bool PlaceDelegatedTask(TaskDescriptor* td,
                                   ResourceID_t target_resource) = 0;
   // Kills a running task.
