@@ -52,8 +52,16 @@ void RemoteExecutor::HandleTaskFailure(TaskDescriptor* td) {
 
 void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
   MessagingChannelInterface<BaseMessage>* chan = GetChannel();
+  CHECK_NOTNULL(chan);
+  // We don't get any direct indication of the delegation's success here;
+  // instead, we will (at a later point in time) receive a
+  // TaskDelegationResponseMessage from the far end, which is handled
+  // separately. If we were to wait for the response here, we would block
+  // the coordinator for a long time.
   SendTaskExecutionMessage(chan, td, firmament_binary);
-
+  // We already set the start time here, because the real task start time
+  // is some time between now and when we receive the delegation response.
+  // This may be unset again later if the delegation failed.
   td->set_start_time(GetCurrentTimestamp());
 }
 
@@ -69,7 +77,7 @@ MessagingChannelInterface<BaseMessage>* RemoteExecutor::GetChannel() {
   return chan;
 }
 
-bool RemoteExecutor::SendTaskExecutionMessage(
+void RemoteExecutor::SendTaskExecutionMessage(
     MessagingChannelInterface<BaseMessage>* chan,
     TaskDescriptor* td, bool /*firmament_binary*/) {
   CHECK_NOTNULL(chan);
@@ -78,7 +86,7 @@ bool RemoteExecutor::SendTaskExecutionMessage(
   TaskDescriptor* msg_td =
       exec_message.mutable_task_delegation_request()->
           mutable_task_descriptor();
-  // N.B. copies task descriptor
+  // N.B. copies task descriptor for dispatch to remote coordinator
   msg_td->CopyFrom(*td);
   // Prepare delegation message
   msg_td->set_delegated_from(FLAGS_listen_uri);
@@ -89,12 +97,9 @@ bool RemoteExecutor::SendTaskExecutionMessage(
   Envelope<BaseMessage> envelope(&exec_message);
   // Send it to the relevant resource's coordinator
   CHECK(chan->SendS(envelope));
-  // Receive the response
-  //chan->RecvS();
-  // XXX(malte): need to check here if the delegation succeeded
-  // Mark as delegated
-  td->set_state(TaskDescriptor::DELEGATED);
-  return true;
+  // Mark as delegated for now -- may need to re-visit once we get the
+  // delegation response
+  td->set_state(TaskDescriptor::ASSIGNED);
 }
 
 }  // namespace executor
