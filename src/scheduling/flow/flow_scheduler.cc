@@ -195,7 +195,10 @@ void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                            TaskFinalReport* report) {
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
-  {
+  // We don't need to do any flow graph stuff for delegated tasks as
+  // they are not currently represented in the flow graph.
+  // Otherwise, we need to remove nodes, etc.
+  if (!td_ptr->has_delegated_from()) {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     flow_graph_->TaskCompleted(td_ptr->uid());
   }
