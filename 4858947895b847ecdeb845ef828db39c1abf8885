@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_15703ba4",
+        "filename": "src/engine/local_executor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-16T23:19:25Z",
+      "side": 1,
+      "message": "hmm, do we check somewhere in the code that the directory exists? I couldn\u0027t see anywhere on the master branch, but it may be in one of your pending changes.",
+      "revId": "4858947895b847ecdeb845ef828db39c1abf8885",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
