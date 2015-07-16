@@ -385,6 +385,9 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
       close(stdout_fd);
       close(stderr_fd);
 
+      // Change to task's working directory
+      chdir(env["FLAGS_task_data_dir"].c_str());
+
       // kill child process if parent terminates
       // SOMEDAY(adam): make this portable beyond Linux?
 #ifdef __linux__
