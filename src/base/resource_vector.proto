@@ -1,14 +1,15 @@
 // The Firmament project
 // Copyright (c) 2015 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
-// Resource request protobuf.
+// Resource vector protobuf.
 
 package firmament;
 
-message ResourceRequest {
+message ResourceVector {
   optional uint64 cpu_cores = 1;
-  optional uint64 ram_gb = 2;
-  optional uint64 ram_bw = 3;
+  optional uint64 ram_bw = 2;
+  optional uint64 ram_cap = 3;
   optional uint64 disk_bw = 4;
-  optional uint64 net_bw = 5;
+  optional uint64 disk_cap = 5;
+  optional uint64 net_bw = 6;
 }
