@@ -28,7 +28,7 @@ typedef struct CostVector {
   // Data follows
   uint32_t priority_;
   uint32_t cpu_cores_;
-  uint32_t ram_gb_;
+  uint32_t ram_cap_;
   uint32_t network_bw_;
   uint32_t disk_bw_;
   uint32_t machine_type_score_;
@@ -83,15 +83,42 @@ class CocoCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
-  // Helper method to get TD for a task ID
-  const TaskDescriptor& GetTask(TaskID_t task_id);
-  // Cost to cluster aggregator EC
-  Cost_t TaskToClusterAggCost(TaskID_t task_id);
-  // Fixed value for OMEGA, the normalization ceiling for each dimension's cost
+ // Fixed value for OMEGA, the normalization ceiling for each dimension's cost
   // value
   const uint64_t omega_ = 1000;
   const Cost_t WAIT_TIME_MULTIPLIER = 1;
   const uint64_t MAX_PRIORITY_VALUE = 10;
+
+  // Resource vector comparison type and enum
+  typedef enum {
+    RESOURCE_VECTOR_DOES_NOT_FIT = 0,
+    RESOURCE_VECTOR_PARTIALLY_FITS = 1,
+    RESOURCE_VECTOR_WHOLLY_FITS = 2,
+  } ResourceVectorFitIndication_t;
+  // Task fit type and enum
+  typedef enum {
+    TASK_NEVER_FITS = 0,
+    // N.B.: we assumes that unreserved <= available at all times;
+    // in other words, reserved > used. Hence, TASK_SOMETIMES_FITS_IN_UNRESERVED
+    // also *implies* TASK_SOMETIMES_FITS_IN_AVAILABLE, and
+    // TASK_ALWAYS_FITS_IN_UNRESERVED *implies* TASK_ALWAYS_FITS_IN_AVAILABLE.
+    TASK_SOMETIMES_FITS_IN_UNRESERVED = 1,
+    TASK_SOMETIMES_FITS_IN_AVAILABLE = 2,
+    TASK_ALWAYS_FITS_IN_UNRESERVED = 3,
+    TASK_ALWAYS_FITS_IN_AVAILABLE = 4,
+  } TaskFitIndication_t;
+
+  // Check if rv1 fits into rv2 fully, partially or not at all.
+  ResourceVectorFitIndication_t CompareResourceVectors(
+    const ResourceVector& rv1,
+    const ResourceVector& rv2);
+  // Helper method to get TD for a task ID
+  const TaskDescriptor& GetTask(TaskID_t task_id);
+  // Check if a task resource request fits under a resource aggregate
+  TaskFitIndication_t TaskFitsUnderResourceAggregate(
+      const ResourceDescriptor& res);
+  // Cost to cluster aggregator EC
+  Cost_t TaskToClusterAggCost(TaskID_t task_id);
 
   // Lookup maps for various resources from the scheduler.
   shared_ptr<ResourceMap_t> resource_map_;
