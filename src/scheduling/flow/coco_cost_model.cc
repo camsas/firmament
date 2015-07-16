@@ -34,7 +34,7 @@ CocoCostModel::CocoCostModel(
     knowledge_base_(kb) {
   // XXX(malte): dodgy hack for local cluster
   max_capacity_.cpu_cores_ = 12;
-  max_capacity_.ram_gb_ = 64;
+  max_capacity_.ram_cap_ = 64;
   max_capacity_.network_bw_ = 1170;
   max_capacity_.disk_bw_ = 250;
   // Set an initial value for infinity -- this overshoots a bit; would be nice
@@ -50,7 +50,12 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
   // Find resource within topology
   VLOG(1) << "Computing interference scores for resources below " << res_id;
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
-  CHECK_NOTNULL(rs);
+  // TODO(malte): rs can be NULL if the resource is not yet present (this
+  // happens e.g. on startup). It's safe to ignore for now as the cost will
+  // be set correctly on the first update iteration, although we should fix it
+  // later.
+  if (!rs)
+    return 0ULL;
   const ResourceDescriptor& rd = rs->descriptor();
   const ResourceTopologyNodeDescriptor& rtnd = rs->topology_node();
   // XXX(malte): this is a hack that assumes that each leaf runs exactly one
@@ -102,7 +107,7 @@ int64_t CocoCostModel::FlattenCostVector(CostVector_t cv) {
   // Compute the rest of the cost vector
   uint64_t accumulator = 0;
   accumulator += cv.cpu_cores_;
-  accumulator += cv.ram_gb_;
+  accumulator += cv.ram_cap_;
   accumulator += cv.network_bw_;
   accumulator += cv.disk_bw_;
   accumulator += cv.machine_type_score_;
@@ -152,16 +157,66 @@ vector<EquivClass_t>* CocoCostModel::GetResourceEquivClasses(
 }
 
 vector<ResourceID_t>* CocoCostModel::GetOutgoingEquivClassPrefArcs(
-    EquivClass_t tec) {
+    EquivClass_t ec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
-  // TODO(malte): implement!
-  LOG(ERROR) << "Not implemented!";
-  const ResourceTopologyNodeDescriptor& root_rtnd = resource_topology_;
-  if (root_rtnd.children_size() == 0) {
-    return prefered_res;
-  } else {
-    return prefered_res;
+  if (task_aggs_.find(ec) != task_aggs_.end()) {
+    ResourceStatus* root_rs =
+      FindPtrOrNull(*resource_map_,
+                    ResourceIDFromString(
+                      resource_topology_.resource_desc().uuid()));
+    CHECK_NOTNULL(root_rs);
+    ResourceTopologyNodeDescriptor* root_rtnd =
+      root_rs->mutable_topology_node();
+    if (root_rtnd->children_size() == 0) {
+      return prefered_res;
+    } else {
+      // BFS over resource topology.
+      // We hand-roll the BFS here instead of using one of the
+      // implementations in utils, since we do not always need to go
+      // all the way to the leaves.
+      queue<ResourceTopologyNodeDescriptor*> to_visit;
+      to_visit.push(root_rtnd);
+      while (!to_visit.empty()) {
+        ResourceTopologyNodeDescriptor* res_node_desc = to_visit.front();
+        to_visit.pop();
+        // We skip coordinator nodes but keep exploring, since coordinator
+        // notes are not useful for scheduling.
+        // TODO(malte): This is currently required because of restrictions on
+        // the types of node that can have preferences arcs pointing to them;
+        // we might want to revisit it later.
+        if (res_node_desc->resource_desc().type() !=
+            ResourceDescriptor::RESOURCE_COORDINATOR) {
+          TaskFitIndication_t task_fit = TaskFitsUnderResourceAggregate(
+                res_node_desc->resource_desc());
+          if (task_fit == TASK_ALWAYS_FITS_IN_UNRESERVED ||
+              task_fit == TASK_ALWAYS_FITS_IN_AVAILABLE) {
+            // We fit under all subordinate resources, so put an arc here and
+            // stop exploring the subtree.
+            prefered_res->push_back(
+              ResourceIDFromString(res_node_desc->resource_desc().uuid()));
+            continue;
+          } else if (task_fit == TASK_NEVER_FITS) {
+            // We don't fit into *any* subordinate resources, so give up on this
+            // subtree.
+            continue;
+          }
+          // Neither of the two applies, which implies that we must have one of
+          // the TASK_SOMETIMES_FITS_* cases.
+          CHECK(task_fit == TASK_SOMETIMES_FITS_IN_AVAILABLE ||
+                task_fit == TASK_SOMETIMES_FITS_IN_UNRESERVED);
+        }
+        // We may have some suitable resources here, so let's continue exploring
+        // the subtree.
+        for (auto rtnd_iter =
+             res_node_desc->mutable_children()->pointer_begin();
+             rtnd_iter != res_node_desc->mutable_children()->pointer_end();
+             ++rtnd_iter) {
+          to_visit.push(*rtnd_iter);
+        }
+      }
+    }
   }
+  return prefered_res;
 }
 
 vector<TaskID_t>* CocoCostModel::GetIncomingEquivClassPrefArcs(
@@ -187,16 +242,15 @@ vector<TaskID_t>* CocoCostModel::GetIncomingEquivClassPrefArcs(
 }
 
 vector<ResourceID_t>* CocoCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
-  vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
-  return prefered_res;
+  // TODO(malte): implement!
+  return NULL;
 }
 
 pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     CocoCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
-  vector<EquivClass_t>* equiv_classes1 = new vector<EquivClass_t>();
-  vector<EquivClass_t>* equiv_classes2 = new vector<EquivClass_t>();
+  // TODO(malte): implement!
   return pair<vector<EquivClass_t>*,
-              vector<EquivClass_t>*>(equiv_classes1, equiv_classes2);
+              vector<EquivClass_t>*>(NULL, NULL);
 }
 
 
@@ -209,8 +263,8 @@ Cost_t CocoCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   cost_vector.priority_ = td.priority();
   cost_vector.cpu_cores_ = NormalizeCost(td.resource_request().cpu_cores(),
                                          max_capacity_.cpu_cores_);
-  cost_vector.ram_gb_ = NormalizeCost(td.resource_request().ram_gb(),
-                                      max_capacity_.ram_gb_);
+  cost_vector.ram_cap_ = NormalizeCost(td.resource_request().ram_cap(),
+                                       max_capacity_.ram_cap_);
   cost_vector.network_bw_ = NormalizeCost(td.resource_request().net_bw(),
                                           max_capacity_.network_bw_);
   cost_vector.disk_bw_ = NormalizeCost(td.resource_request().disk_bw(),
@@ -266,13 +320,13 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
   // Compute resource request dimensions (normalized by largest machine)
   CostVector_t cost_vector;
   cost_vector.priority_ = 0;
-  cost_vector.cpu_cores_ = NormalizeCost(rd.load().cpu_cores(),
+  cost_vector.cpu_cores_ = NormalizeCost(rd.available_resources().cpu_cores(),
                                          max_capacity_.cpu_cores_);
-  cost_vector.ram_gb_ = NormalizeCost(rd.load().ram_gb(),
-                                      max_capacity_.ram_gb_);
-  cost_vector.network_bw_ = NormalizeCost(rd.load().net_bw(),
+  cost_vector.ram_cap_ = NormalizeCost(rd.available_resources().ram_cap(),
+                                       max_capacity_.ram_cap_);
+  cost_vector.network_bw_ = NormalizeCost(rd.available_resources().net_bw(),
                                           max_capacity_.network_bw_);
-  cost_vector.disk_bw_ = NormalizeCost(rd.load().disk_bw(),
+  cost_vector.disk_bw_ = NormalizeCost(rd.available_resources().disk_bw(),
                                        max_capacity_.disk_bw_);
   // XXX(malte): unimplemented
   cost_vector.machine_type_score_ = 0;
@@ -313,8 +367,8 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   cost_vector.priority_ = td.priority();
   cost_vector.cpu_cores_ = NormalizeCost(td.resource_request().cpu_cores(),
                                          max_capacity_.cpu_cores_);
-  cost_vector.ram_gb_ = NormalizeCost(td.resource_request().ram_gb(),
-                                      max_capacity_.ram_gb_);
+  cost_vector.ram_cap_ = NormalizeCost(td.resource_request().ram_cap(),
+                                       max_capacity_.ram_cap_);
   cost_vector.network_bw_ = NormalizeCost(td.resource_request().net_bw(),
                                           max_capacity_.network_bw_);
   cost_vector.disk_bw_ = NormalizeCost(td.resource_request().disk_bw(),
@@ -346,7 +400,7 @@ uint32_t CocoCostModel::NormalizeCost(uint64_t raw_cost, uint64_t max_cost) {
 void CocoCostModel::PrintCostVector(CostVector_t cv) {
   LOG(INFO) << "[ PRIORITY: " << cv.priority_ << ", ";
   LOG(INFO) << "  CPU: " << cv.cpu_cores_ << ", ";
-  LOG(INFO) << "  RAM: " << cv.ram_gb_ << ", ";
+  LOG(INFO) << "  RAM: " << cv.ram_cap_ << ", ";
   LOG(INFO) << "  NET: " << cv.network_bw_ << ", ";
   LOG(INFO) << "  DISK: " << cv.disk_bw_ << ", ";
   LOG(INFO) << "  MACHINE TYPE: " << cv.machine_type_score_ << ", ";
@@ -390,6 +444,81 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
     // TODO(ionel): Implement.
   }
   return accumulator;
+}
+
+CocoCostModel::ResourceVectorFitIndication_t
+CocoCostModel::CompareResourceVectors(
+    const ResourceVector& rv1,
+    const ResourceVector& rv2) {
+  bool at_least_one_nonfit = false;
+  bool at_least_one_fit = false;
+  // CPU cores
+  if (rv1.cpu_cores() >= rv2.cpu_cores())
+    at_least_one_fit = true;
+  else
+    at_least_one_nonfit = true;
+  // RAM capacity
+  if (rv1.ram_cap() >= rv2.ram_cap())
+    at_least_one_fit = true;
+  else
+    at_least_one_nonfit = true;
+  // Disk bandwidth
+  if (rv1.disk_bw() >= rv2.disk_bw())
+    at_least_one_fit = true;
+  else
+    at_least_one_nonfit = true;
+  // Network bandwidth
+  if (rv1.net_bw() >= rv2.net_bw())
+    at_least_one_fit = true;
+  else
+    at_least_one_nonfit = true;
+  // We must either fit or not fit in at least one dimension!
+  CHECK(at_least_one_nonfit || at_least_one_fit);
+  if (at_least_one_fit && !at_least_one_nonfit) {
+    // rv1 fits into rv2 in ALL dimensions
+    return RESOURCE_VECTOR_WHOLLY_FITS;
+  } else if (at_least_one_fit && at_least_one_nonfit) {
+    // rv1 fits into rv2 in SOME dimensions
+    return RESOURCE_VECTOR_PARTIALLY_FITS;
+  } else {
+    // rv2 fits into rv2 in NO dimension
+    return RESOURCE_VECTOR_DOES_NOT_FIT;
+  }
+}
+
+CocoCostModel::TaskFitIndication_t
+CocoCostModel::TaskFitsUnderResourceAggregate(
+    const ResourceDescriptor& res) {
+  ResourceVector request;
+  request.set_cpu_cores(0);
+  request.set_ram_cap(0);
+  request.set_disk_bw(0);
+  request.set_net_bw(0);
+  if (CompareResourceVectors(request, res.min_unreserved_resources_below()) ==
+      RESOURCE_VECTOR_WHOLLY_FITS) {
+    // We fit into unreserved space on *all* subordinate resources.
+    return TASK_ALWAYS_FITS_IN_UNRESERVED;
+  }
+  if (CompareResourceVectors(request, res.min_available_resources_below()) ==
+      RESOURCE_VECTOR_WHOLLY_FITS) {
+    // We fit in available space (but not unreserved space) on *all* subordinate
+    // resources.
+    return TASK_ALWAYS_FITS_IN_AVAILABLE;
+  }
+  if (CompareResourceVectors(request, res.max_unreserved_resources_below()) ==
+      RESOURCE_VECTOR_WHOLLY_FITS) {
+    // We fit into unreserved space on *some* (at least one) subordinate
+    // resources.
+    return TASK_SOMETIMES_FITS_IN_UNRESERVED;
+  }
+  if (CompareResourceVectors(request, res.max_available_resources_below()) ==
+      RESOURCE_VECTOR_WHOLLY_FITS) {
+    // We fit in available space (but not unreserved space) on *some*
+    // (at least one) subordinate resources.
+    return TASK_SOMETIMES_FITS_IN_AVAILABLE;
+  }
+  // Otherwise, we don't fit in *any* subordinate resources.
+  return TASK_NEVER_FITS;
 }
 
 FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,

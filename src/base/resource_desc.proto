@@ -5,7 +5,7 @@
 
 package firmament;
 
-import "base/resource_request.proto";
+import "base/resource_vector.proto";
 import "base/whare_map_stats.proto";
 
 message ResourceDescriptor {
@@ -47,7 +47,10 @@ message ResourceDescriptor {
   // XXX(malte): both of these are hacks and should be in more appropriate
   // places
   optional WhareMapStats whare_map_stats = 13;
-  optional ResourceRequest load = 14;
-  optional ResourceRequest min_load_below = 15;
-  optional ResourceRequest max_load_below = 16;
+  optional ResourceVector available_resources = 14;
+  optional ResourceVector unreserved_resources = 15;
+  optional ResourceVector min_available_resources_below = 16;
+  optional ResourceVector max_available_resources_below = 17;
+  optional ResourceVector min_unreserved_resources_below = 18;
+  optional ResourceVector max_unreserved_resources_below = 19;
 }
