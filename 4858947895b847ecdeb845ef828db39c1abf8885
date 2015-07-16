@@ -16,6 +16,24 @@
       "revId": "4858947895b847ecdeb845ef828db39c1abf8885",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_b55eaf10",
+        "filename": "src/engine/local_executor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-16T23:25:14Z",
+      "side": 1,
+      "message": "LocalExecutor::CreateDirectories() (line 120) creates the top-level directory for the tasks\u0027 working directories (invoked when the executor is created);\n\nLocalExecutor::SetUpEnvironmentForTask() (line 436) creates the specific working directory for this task and is called before we get here (line 249).",
+      "parentUuid": "9ad9bd40_15703ba4",
+      "revId": "4858947895b847ecdeb845ef828db39c1abf8885",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
