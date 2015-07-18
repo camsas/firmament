@@ -60,6 +60,10 @@ class FlowGraph {
   void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
   void ComputeTopologyStatistics(
     FlowGraphNode* node,
+    boost::function<void(FlowGraphNode*)> prepare,
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
+  void ComputeTopologyStatistics(
+    FlowGraphNode* node,
     boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
   void UpdateResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);

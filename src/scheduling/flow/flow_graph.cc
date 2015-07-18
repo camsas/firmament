@@ -1271,6 +1271,13 @@ void FlowGraph::UpdateTimeDependentCosts(vector<JobDescriptor*>* jobs) {
 void FlowGraph::ComputeTopologyStatistics(
     FlowGraphNode* node,
     boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather) {
+  ComputeTopologyStatistics(node, NULL, gather);
+}
+
+void FlowGraph::ComputeTopologyStatistics(
+    FlowGraphNode* node,
+    boost::function<void(FlowGraphNode*)> prepare,
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather) {
   queue<FlowGraphNode*> to_visit;
   set<FlowGraphNode*> processed;
   to_visit.push(node);
@@ -1281,11 +1288,13 @@ void FlowGraph::ComputeTopologyStatistics(
     for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
            cur_node->incoming_arc_map_.begin();
          it != cur_node->incoming_arc_map_.end(); ++it) {
-      it->second->src_node_ = gather(it->second->src_node_, cur_node);
       if (processed.find(it->second->src_node_) == processed.end()) {
+        if (prepare)
+          prepare(it->second->src_node_);
         to_visit.push(it->second->src_node_);
         processed.insert(it->second->src_node_);
       }
+      it->second->src_node_ = gather(it->second->src_node_, cur_node);
     }
   }
 }
