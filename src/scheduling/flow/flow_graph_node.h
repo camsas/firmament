@@ -22,9 +22,9 @@ enum FlowNodeType {
   ROOT_TASK = 0,
   SCHEDULED_TASK = 1,
   UNSCHEDULED_TASK = 2,
-  GLOBAL_AGGREGATOR = 3,
-  JOB_AGGREGATOR = 4,
-  RACK_AGGREGATOR = 5,  // currently unused
+  JOB_AGGREGATOR = 3,
+  RACK_AGGREGATOR = 4,  // currently unused
+  COORDINATOR = 5,
   MACHINE = 6,
   PU = 7,
   SINK = 8,

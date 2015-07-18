@@ -410,6 +410,9 @@ void FlowGraph::AddResourceNode(
     } else if (rtnd_ptr->resource_desc().type() ==
                ResourceDescriptor::RESOURCE_MACHINE) {
       new_node->type_ = FlowNodeType::MACHINE;
+    } else if (rtnd_ptr->resource_desc().type() ==
+               ResourceDescriptor::RESOURCE_COORDINATOR) {
+      new_node->type_ = FlowNodeType::COORDINATOR;
     } else {
       new_node->type_ = FlowNodeType::UNKNOWN;
     }
@@ -674,7 +677,7 @@ void FlowGraph::ConfigureResourceBranchNode(
     // removal by the DIMACS extended. We add the arc to the graph changes later
     // when we change the capacity.
     // graph_changes_.push_back(new DIMACSChangeArc(*arc));
-  } else if (new_node->type_ != FlowNodeType::GLOBAL_AGGREGATOR &&
+  } else if (new_node->type_ != FlowNodeType::COORDINATOR &&
              rtnd.resource_desc().type() !=
                ResourceDescriptor::RESOURCE_COORDINATOR &&
              rtnd.resource_desc().type() !=
