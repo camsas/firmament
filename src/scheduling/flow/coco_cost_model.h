@@ -80,6 +80,7 @@ class CocoCostModel : public CostModelInterface {
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
   FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
+  void PrepareStats(FlowGraphNode* accumulator);
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
@@ -88,6 +89,7 @@ class CocoCostModel : public CostModelInterface {
   const uint64_t omega_ = 1000;
   const Cost_t WAIT_TIME_MULTIPLIER = 1;
   const uint64_t MAX_PRIORITY_VALUE = 10;
+  const uint64_t BYTES_TO_MB = 1024*1024;
 
   // Resource vector comparison type and enum
   typedef enum {
@@ -108,14 +110,22 @@ class CocoCostModel : public CostModelInterface {
     TASK_ALWAYS_FITS_IN_AVAILABLE = 4,
   } TaskFitIndication_t;
 
+  // Load statistics accumulator helper
+  void AccumulateCoCoResourceStats(ResourceDescriptor* accumulator,
+                                   ResourceDescriptor* other);
   // Check if rv1 fits into rv2 fully, partially or not at all.
   ResourceVectorFitIndication_t CompareResourceVectors(
     const ResourceVector& rv1,
     const ResourceVector& rv2);
+  // Interference score
+  uint64_t ComputeInterferenceScore(ResourceID_t res_id);
   // Helper method to get TD for a task ID
   const TaskDescriptor& GetTask(TaskID_t task_id);
+  // Get machine resource for a lower-level resource
+  ResourceID_t MachineResIDForResource(ResourceID_t res_id);
   // Check if a task resource request fits under a resource aggregate
   TaskFitIndication_t TaskFitsUnderResourceAggregate(
+      EquivClass_t tec,
       const ResourceDescriptor& res);
   // Cost to cluster aggregator EC
   Cost_t TaskToClusterAggCost(TaskID_t task_id);
@@ -130,6 +140,7 @@ class CocoCostModel : public CostModelInterface {
 
   // Mapping between task equiv classes and connected tasks.
   unordered_map<EquivClass_t, set<TaskID_t> > task_ec_to_set_task_id_;
+  unordered_map<EquivClass_t, ResourceVector> task_ec_to_resource_request_;
   // Track equivalence class aggregators present
   unordered_set<EquivClass_t> task_aggs_;
   unordered_set<EquivClass_t> machine_aggs_;
