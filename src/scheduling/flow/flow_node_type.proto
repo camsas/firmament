@@ -12,9 +12,9 @@ message FlowNodeType {
     ROOT_TASK = 0;
     SCHEDULED_TASK = 1;
     UNSCHEDULED_TASK = 2;
-    GLOBAL_AGGREGATOR = 3;
-    JOB_AGGREGATOR = 4;
-    RACK = 5;
+    JOB_AGGREGATOR = 3;
+    RACK_AGGREGATOR = 4;
+    COORDINATOR = 5;
     MACHINE = 6;
     PU = 7;
     SINK = 8;
