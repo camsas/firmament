@@ -233,6 +233,11 @@ void FlowScheduler::KillRunningTask(TaskID_t task_id,
 uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   LOG(INFO) << "START SCHEDULING (via " << job_desc->uuid() << ")";
+  // First, we update the cost model's resource topology statistics (e.g. based
+  // on machine load and prior decisions); these need to be known before
+  // AddOrUpdateJobNodes is invoked below, as it may add arcs depending on these
+  // metrics.
+  UpdateCostModelResourceStats();
   // Check if we have any runnable tasks in this job
   const set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
   if (runnable_tasks.size() > 0) {
@@ -386,6 +391,9 @@ void FlowScheduler::UpdateResourceTopology(
   } else {
     flow_graph_->AddMachine(root);
   }
+  // We also need to update any stats or state in the cost model, as the
+  // resource topology has changed.
+  UpdateCostModelResourceStats();
 }
 
 }  // namespace scheduler

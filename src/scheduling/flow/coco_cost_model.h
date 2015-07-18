@@ -44,6 +44,7 @@ class CocoCostModel : public CostModelInterface {
                 unordered_set<ResourceID_t,
                   boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                 KnowledgeBase* kb);
+  const string DebugInfo() const;
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
