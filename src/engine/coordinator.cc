@@ -183,6 +183,11 @@ void Coordinator::AddResource(ResourceTopologyNodeDescriptor* rtnd,
   CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
           new ResourceStatus(resource_desc, rtnd, endpoint_uri,
                              GetCurrentTimestamp())));
+  // Record the machine UUID if this is the local topology
+  if (resource_desc->type() == ResourceDescriptor::RESOURCE_MACHINE &&
+      local) {
+    machine_uuid_ = ResourceIDFromString(resource_desc->uuid());
+  }
   // Register with scheduler if this resource is schedulable
   if (resource_desc->type() == ResourceDescriptor::RESOURCE_PU) {
     // TODO(malte): We make the assumption here that any local PU resource is
@@ -252,7 +257,7 @@ void Coordinator::Run() {
     if (cur_time - last_heartbeat_time > FLAGS_heartbeat_interval) {
       MachinePerfStatisticsSample stats;
       stats.set_timestamp(GetCurrentTimestamp());
-      stats.set_resource_id(to_string(uuid_));
+      stats.set_resource_id(to_string(machine_uuid_));
       machine_monitor_.CreateStatistics(&stats);
       // Record this sample locally
       knowledge_base_->AddMachineSample(stats);
