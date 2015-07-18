@@ -202,9 +202,8 @@ vector<EquivClass_t>* CocoCostModel::GetTaskEquivClasses(TaskID_t task_id) {
 
 vector<EquivClass_t>* CocoCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
-  LOG(ERROR) << "Not implemented";
-  vector<EquivClass_t>* null_vec = new vector<EquivClass_t>();
-  return null_vec;
+  // Not implemented.
+  return NULL;
 }
 
 vector<ResourceID_t>* CocoCostModel::GetOutgoingEquivClassPrefArcs(
@@ -322,14 +321,14 @@ Cost_t CocoCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   // Baseline value (based on resource request)
   CostVector_t cost_vector;
   cost_vector.priority_ = td.priority();
-  cost_vector.cpu_cores_ = NormalizeCost(td.resource_request().cpu_cores(),
-                                         max_capacity_.cpu_cores_);
-  cost_vector.ram_cap_ = NormalizeCost(td.resource_request().ram_cap(),
-                                       max_capacity_.ram_cap_);
-  cost_vector.network_bw_ = NormalizeCost(td.resource_request().net_bw(),
-                                          max_capacity_.network_bw_);
-  cost_vector.disk_bw_ = NormalizeCost(td.resource_request().disk_bw(),
-                                       max_capacity_.disk_bw_);
+  cost_vector.cpu_cores_ = omega_ +
+    NormalizeCost(td.resource_request().cpu_cores(), max_capacity_.cpu_cores_);
+  cost_vector.ram_cap_ = omega_ +
+    NormalizeCost(td.resource_request().ram_cap(), max_capacity_.ram_cap_);
+  cost_vector.network_bw_ = omega_ +
+    NormalizeCost(td.resource_request().net_bw(), max_capacity_.network_bw_);
+  cost_vector.disk_bw_ = omega_ +
+    NormalizeCost(td.resource_request().disk_bw(), max_capacity_.disk_bw_);
   cost_vector.machine_type_score_ = 1;
   cost_vector.interference_score_ = 1;
   cost_vector.locality_score_ = 0;
@@ -376,26 +375,46 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t destination) {
   // Get RD for this resource
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, destination);
-  CHECK_NOTNULL(rs);
+  if (!rs)
+    return 0LL;
   const ResourceDescriptor& rd = rs->descriptor();
   // Compute resource request dimensions (normalized by largest machine)
   CostVector_t cost_vector;
+  bzero(&cost_vector, sizeof(CostVector_t));
   cost_vector.priority_ = 0;
-  cost_vector.cpu_cores_ = NormalizeCost(rd.available_resources().cpu_cores(),
-                                         max_capacity_.cpu_cores_);
-  cost_vector.ram_cap_ = NormalizeCost(rd.available_resources().ram_cap(),
-                                       max_capacity_.ram_cap_);
-  cost_vector.network_bw_ = NormalizeCost(rd.available_resources().net_bw(),
-                                          max_capacity_.network_bw_);
-  cost_vector.disk_bw_ = NormalizeCost(rd.available_resources().disk_bw(),
-                                       max_capacity_.disk_bw_);
+  if (rd.type() == ResourceDescriptor::RESOURCE_PU) {
+    cost_vector.cpu_cores_ =
+        NormalizeCost(max_capacity_.cpu_cores_ -
+                      rd.available_resources().cpu_cores(),
+                      max_capacity_.cpu_cores_);
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_MACHINE) {
+    cost_vector.ram_cap_ =
+        NormalizeCost(max_capacity_.ram_cap_ -
+                      rd.available_resources().ram_cap(),
+                      max_capacity_.ram_cap_);
+    cost_vector.network_bw_ =
+        NormalizeCost(max_capacity_.network_bw_ -
+                      rd.available_resources().net_bw(),
+                      max_capacity_.network_bw_);
+    cost_vector.disk_bw_ =
+        NormalizeCost(max_capacity_.disk_bw_ -
+                      rd.available_resources().disk_bw(),
+                      max_capacity_.disk_bw_);
+  }
   // XXX(malte): unimplemented
   cost_vector.machine_type_score_ = 0;
   cost_vector.interference_score_ = ComputeInterferenceScore(destination);
   // XXX(malte): unimplemented
   cost_vector.locality_score_ = 0;
-  // Return the combination
-  return FlattenCostVector(cost_vector);
+  Cost_t flat_cost = FlattenCostVector(cost_vector);
+  if (VLOG_IS_ON(1)) {
+    VLOG(1) << "Resource " << source << "'s cost to resource "
+            << destination << ":";
+    PrintCostVector(cost_vector);
+    VLOG(1) << "  Flattened: " << flat_cost;
+  }
+  // Return the flattened vector
+  return flat_cost;
 }
 
 // The cost from the resource leaf to the sink is 0.
@@ -437,7 +456,13 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   cost_vector.machine_type_score_ = 0;
   cost_vector.interference_score_ = 0;
   cost_vector.locality_score_ = 0;
-  // Return the combination
+  if (VLOG_IS_ON(1)) {
+    VLOG(1) << "Task " << task_id << "'s cost to EC "
+            << tec << ":";
+    PrintCostVector(cost_vector);
+    VLOG(1) << "  Flattened: " << FlattenCostVector(cost_vector);
+  }
+  // Return the flattened vector
   return FlattenCostVector(cost_vector);
 }
 
