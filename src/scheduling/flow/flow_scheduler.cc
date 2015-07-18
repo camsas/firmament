@@ -363,6 +363,8 @@ void FlowScheduler::UpdateCostModelResourceStats() {
     LOG(INFO) << "Updating resource statistics in flow graph";
     flow_graph_->ComputeTopologyStatistics(
         flow_graph_->sink_node(),
+        boost::bind(&CostModelInterface::PrepareStats,
+                    cost_model_, _1),
         boost::bind(&CostModelInterface::GatherStats,
                     cost_model_, _1, _2));
     flow_graph_->ComputeTopologyStatistics(
