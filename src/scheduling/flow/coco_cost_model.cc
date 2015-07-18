@@ -145,6 +145,40 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
   return interference_cost;
 }
 
+const string CocoCostModel::DebugInfo() const {
+  string out;
+  out += "Resource load info:\n";
+  ResourceStatus* root_rs =
+    FindPtrOrNull(*resource_map_,
+                  ResourceIDFromString(
+                    resource_topology_.resource_desc().uuid()));
+  CHECK_NOTNULL(root_rs);
+  ResourceTopologyNodeDescriptor* root_rtnd =
+    root_rs->mutable_topology_node();
+  queue<ResourceTopologyNodeDescriptor*> to_visit;
+  to_visit.push(root_rtnd);
+  while (!to_visit.empty()) {
+    ResourceTopologyNodeDescriptor* res_node_desc = to_visit.front();
+    to_visit.pop();
+    out += res_node_desc->resource_desc().uuid() + ": \n";
+    out += " - AVAILABLE: " +
+      res_node_desc->resource_desc().available_resources().DebugString();
+    out += " - MIN_BELOW: " +
+      res_node_desc->resource_desc().
+      min_available_resources_below().DebugString();
+    out += " - MAX_BELOW: " +
+      res_node_desc->resource_desc().
+      max_available_resources_below().DebugString();
+    for (auto rtnd_iter =
+         res_node_desc->mutable_children()->pointer_begin();
+         rtnd_iter != res_node_desc->mutable_children()->pointer_end();
+         ++rtnd_iter) {
+      to_visit.push(*rtnd_iter);
+    }
+  }
+  return out;
+}
+
 int64_t CocoCostModel::FlattenCostVector(CostVector_t cv) {
   // Compute priority dimension and ensure that it always dominates
   uint64_t priority_value = cv.priority_ * omega_;
