@@ -6,8 +6,8 @@
 package firmament;
 
 message WhareMapStats {
-  required uint64 num_devils = 1;
-  required uint64 num_rabbits = 2;
-  required uint64 num_sheep = 3;
-  required uint64 num_turtles = 4;
+  required uint64 num_devils = 1 [default = 0];
+  required uint64 num_rabbits = 2 [default = 0];
+  required uint64 num_sheep = 3 [default = 0];
+  required uint64 num_turtles = 4 [default = 0];
 }

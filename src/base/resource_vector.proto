@@ -6,10 +6,10 @@
 package firmament;
 
 message ResourceVector {
-  optional uint64 cpu_cores = 1;
-  optional uint64 ram_bw = 2;
-  optional uint64 ram_cap = 3;
-  optional uint64 disk_bw = 4;
-  optional uint64 disk_cap = 5;
-  optional uint64 net_bw = 6;
+  optional float cpu_cores = 1 [default = 0.0];
+  optional uint64 ram_bw = 2 [default = 0];
+  optional uint64 ram_cap = 3 [default = 0];
+  optional uint64 disk_bw = 4 [default = 0];
+  optional uint64 disk_cap = 5 [default = 0];
+  optional uint64 net_bw = 6 [default = 0];
 }
