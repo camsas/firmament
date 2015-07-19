@@ -52,6 +52,24 @@
       "revId": "98c45d2581ea87bce3c514f21994e238989e9bea",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_e84e9995",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-19T19:24:17Z",
+      "side": 1,
+      "message": "I\u0027ve changed it to (avg_pspi * 100 / *best_avg_pspi) + 1, which still has the desired effect.\n\nI\u0027d rather do this than convert everything to floating point and back; the multiplication by 100 leads to us effectively having two decimal places.",
+      "parentUuid": "9ad9bd40_88f34d9d",
+      "revId": "98c45d2581ea87bce3c514f21994e238989e9bea",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
