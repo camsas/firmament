@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_48cb0553",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-19T16:38:14Z",
+      "side": 1,
+      "message": "I\u0027m a bit confused by this change. Why is the machine_uuid_ different from uuid_?",
+      "revId": "7fc61ad4ba318adbbcf546eed330fdc0df054c81",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
