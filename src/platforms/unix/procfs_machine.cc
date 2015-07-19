@@ -17,6 +17,8 @@
 
 DEFINE_string(monitor_netif, "eth0",
               "Network interface on which to monitor traffic statistics.");
+DEFINE_string(monitor_blockdev, "sda",
+              "Block device on which to monitor I/O statistics.");
 DECLARE_uint64(heartbeat_interval);
 
 namespace firmament {
@@ -24,6 +26,7 @@ namespace platform_unix {
 
 ProcFSMachine::ProcFSMachine() {
   cpu_stats_ = GetCPUStats();
+  disk_stats_ = GetDisk();
   net_stats_ = GetNetwork();
 }
 
@@ -58,6 +61,12 @@ const MachinePerfStatisticsSample* ProcFSMachine::CreateStatistics(
       ((net_stats.send - net_stats_.send) + (net_stats.recv - net_stats_.recv))
       / (FLAGS_heartbeat_interval / 1000000));
   net_stats_ = net_stats;
+  // Disk I/O stats
+  DiskStatistics_t disk_stats = GetDisk();
+  stats->set_disk_bw((disk_stats.read - disk_stats_.read) +
+                     (disk_stats.write - disk_stats_.write) /
+                     (FLAGS_heartbeat_interval / 1000000));
+  disk_stats_ = disk_stats;
   return stats;
 }
 
@@ -148,6 +157,33 @@ vector<CpuUsage> ProcFSMachine::GetCPUUsage() {
   }
   cpu_stats_ = cpu_new_stats;
   return cpu_usage;
+}
+
+DiskStatistics_t ProcFSMachine::GetDisk() {
+  // TODO(malte): This implementation is currently limited to monitoring only
+  // one block device, specified in FLAGS_monitor_blockdev. We should extend
+  // it with support for multiple interfaces, e.g. as determined from
+  // /sys/block/<dev> or 'mount'.
+  DiskStatistics_t disk_stats;
+  bzero(&disk_stats, sizeof(DiskStatistics_t));
+  string dev_path;
+  spf(&dev_path, "/sys/class/block/%s/",
+      FLAGS_monitor_blockdev.c_str());
+  FILE* blockdev_stat_fd = fopen((dev_path + "/stat").c_str(), "r");
+  if (blockdev_stat_fd) {
+    uint64_t tmp_value;
+    for (uint64_t i = 0; i < 11; i++) {
+      readunsigned(blockdev_stat_fd, &tmp_value);
+      if (i == 2)
+        // read sector count
+        disk_stats.read = tmp_value * 512;
+      if (i == 6)
+        // write sector count
+        disk_stats.write = tmp_value * 512;
+    }
+    fclose(blockdev_stat_fd);
+  }
+  return disk_stats;
 }
 
 MemoryStatistics_t ProcFSMachine::GetMemory() {
