@@ -34,6 +34,24 @@
       "revId": "98c45d2581ea87bce3c514f21994e238989e9bea",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_88f34d9d",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-19T17:15:32Z",
+      "side": 1,
+      "message": "hmm..wouldn\u0027t be better if we just use ceil(avg_pspi * 100.0 / *best_avg_pspi)? At the moment the code does the equivalent to a trunc which according to my current understanding can lead to unscheduled scenarios.",
+      "parentUuid": "9ad9bd40_08b2dde5",
+      "revId": "98c45d2581ea87bce3c514f21994e238989e9bea",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
