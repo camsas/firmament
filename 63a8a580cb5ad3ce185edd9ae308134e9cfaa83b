@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_e87db9e8",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-19T17:43:59Z",
+      "side": 1,
+      "message": "This is fine for now, but I guess in the future we should make it more general:)",
+      "revId": "63a8a580cb5ad3ce185edd9ae308134e9cfaa83b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
