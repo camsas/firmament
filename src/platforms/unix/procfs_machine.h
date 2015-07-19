@@ -30,6 +30,11 @@ typedef struct {
 } CPUStatistics_t;
 
 typedef struct {
+  uint64_t read;
+  uint64_t write;
+} DiskStatistics_t;
+
+typedef struct {
   uint64_t mem_total;
   uint64_t mem_free;
 } MemoryStatistics_t;
@@ -48,6 +53,7 @@ class ProcFSMachine {
  private:
   vector<CPUStatistics_t> GetCPUStats();
   vector<CpuUsage> GetCPUUsage();
+  DiskStatistics_t GetDisk();
   MemoryStatistics_t GetMemory();
   NetworkStatistics_t GetNetwork();
 
@@ -56,6 +62,7 @@ class ProcFSMachine {
   }
 
   vector<CPUStatistics_t> cpu_stats_;
+  DiskStatistics_t disk_stats_;
   NetworkStatistics_t net_stats_;
 };
 
