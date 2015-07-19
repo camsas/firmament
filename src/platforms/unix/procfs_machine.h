@@ -27,12 +27,17 @@ typedef struct {
   uint64_t guest_nice;
   uint64_t total;
   time_t systime;
-} cpu_stats;
+} CPUStatistics_t;
 
 typedef struct {
   uint64_t mem_total;
   uint64_t mem_free;
-} mem_stats;
+} MemoryStatistics_t;
+
+typedef struct {
+  uint64_t send;
+  uint64_t recv;
+} NetworkStatistics_t;
 
 class ProcFSMachine {
  public:
@@ -41,10 +46,17 @@ class ProcFSMachine {
       MachinePerfStatisticsSample* stats);
 
  private:
-  vector<cpu_stats> cpu_stats_;
-  mem_stats GetMemory();
-  vector<cpu_stats> GetCPUStats();
+  vector<CPUStatistics_t> GetCPUStats();
   vector<CpuUsage> GetCPUUsage();
+  MemoryStatistics_t GetMemory();
+  NetworkStatistics_t GetNetwork();
+
+  inline void readunsigned(FILE* input, uint64_t *x) {
+    fscanf(input, "%ju ", x);
+  }
+
+  vector<CPUStatistics_t> cpu_stats_;
+  NetworkStatistics_t net_stats_;
 };
 
 }  // namespace platform_unix

@@ -16,6 +16,9 @@
 
 using firmament::common::InitFirmament;
 
+DEFINE_uint64(heartbeat_interval, 1000000,
+              "Heartbeat interval in microseconds.");
+
 namespace firmament {
 namespace platform_unix {
 
