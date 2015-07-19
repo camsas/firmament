@@ -16,6 +16,24 @@
       "revId": "98c45d2581ea87bce3c514f21994e238989e9bea",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_08b2dde5",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-19T16:35:04Z",
+      "side": 1,
+      "message": "We want the numerator of the fraction to be slightly larger than the denominator, since otherwise we could either end up with rounding errors (e.g., 0.99 normalized PsPI) or 1.0 as a result, which would lead to the task not scheduling (as the unscheduled aggregator is cheaper or the same price as the best option). I do wonder if this should be ((avg_pspi) * 100 + 1), though -- currently, we\u0027re adding 100, which may be a bit excessive.",
+      "parentUuid": "9ad9bd40_689fe950",
+      "revId": "98c45d2581ea87bce3c514f21994e238989e9bea",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
