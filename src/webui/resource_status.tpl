@@ -16,7 +16,7 @@ function getRAM(data) {
   for (i = 0; i < data.length; i++) {
     ts2.push((data[i].total_ram - data[i].free_ram) /
              data[i].total_ram);
-    ts1.push((data[i].total_ram - data[i].free_ram) / 1024.0 / 1024.0)
+    ts1.push((data[i].total_ram - data[i].free_ram) / 1024.0 / 1024.0);
   }
   ramTimeseries = ts1;
   ramPercentTimeseries = ts2;
@@ -27,16 +27,24 @@ function getCPU(data) {
   var ts2 = [];
   for (i = 0; i < data.length; i++) {
     ts1.push(data[i].cpus_usage[0].user);
-    ts2.push(data[i].cpus_usage[0].system)
+    ts2.push(data[i].cpus_usage[0].system);
   }
   cpuAggUsrTimeseries = ts1;
   cpuAggSysTimeseries = ts2;
 }
 
+function getNet(data) {
+  var ts1 = [];
+  for (i = 0; i < data.length; i++) {
+    ts1.push((data[i].net_bw * 8) / 1000.0 / 1000.0);
+  }
+  netBWTimeseries = ts1;
+}
 
 function updateGraphs(data) {
   getRAM(data);
   getCPU(data);
+  getNet(data);
 }
 
 function poll() {
@@ -64,6 +72,7 @@ function step() {
   $('#ram-sparkline').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
   $('#cpu-agg-sys').sparkline(cpuAggSysTimeseries, {lineColor: '#ff0000', fillColor: '#ffaaaa'});
   $('#cpu-agg-usr').sparkline(cpuAggUsrTimeseries, {lineColor: '#00ff00', fillColor: '#aaffaa'});
+  $('#net-bw-sparkline').sparkline(netBWTimeseries, {lineColor: '#ff00ff', fillColor: '#ffaaff', tooltipSuffix: ' MBit/sec'});
   // update timers
   $("abbr.timeago").each(function (index) {
     $(this).text(jQuery.timeago(new Date(this.title)));
@@ -145,6 +154,10 @@ $(function() {
   <tr>
     <td>RAM % in use</td>
     <td><span id="ram-perc-sparkline">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>Network bandwidth in use</td>
+    <td><span id="net-bw-sparkline">Waiting for data...</span></td>
   </tr>
 </table>
 
