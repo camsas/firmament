@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_884a6dc3",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-19T17:37:50Z",
+      "side": 1,
+      "message": "Maybe print a warning here. I guess under normal circumstances we should not hit this case.",
+      "revId": "69004a5b9fb63b3e139cc0982c0fc0b75fceb9ce",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_281161ac",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 633,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-19T17:37:50Z",
+      "side": 1,
+      "message": "Nit: Can you please add a constant for this transformation?",
+      "revId": "69004a5b9fb63b3e139cc0982c0fc0b75fceb9ce",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
