@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_a81c91c2",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-19T17:43:05Z",
+      "side": 1,
+      "message": "We do hit this in normal operation: EquivClassToResourceNode is called for all arcs from EC aggregators to resources (machines, in this case). The cluster aggregator EC has arcs to all machine, and the machine EC aggregators have arcs to ECs, too. For all of these, this method gets invoked, but the EC is not a TEC and therefore the code below does not apply. Returning zero is the right thing to do here, because the cost on the X -\u003e machine and MEC -\u003e machine arcs is zero in the cost model.",
+      "parentUuid": "9ad9bd40_884a6dc3",
+      "revId": "69004a5b9fb63b3e139cc0982c0fc0b75fceb9ce",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_281161ac",
         "filename": "src/scheduling/flow/wharemap_cost_model.cc",
         "patchSetId": 1
