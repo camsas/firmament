@@ -16,6 +16,24 @@
       "revId": "7fc61ad4ba318adbbcf546eed330fdc0df054c81",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_e8e139d1",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-19T16:45:36Z",
+      "side": 1,
+      "message": "We have a \u0027virtual\u0027 resource node for each coordinator (described by uuid_). This allows us to nest coordinators that do not have any local resources themselves (e.g., if run with --include_local_resources\u003dfalse). They must have a node even if they don\u0027t have a topology; hence the virtual node. The topology also always includes a node for the machine, so we hang that node under the virtual coordinator node. However, we store statistics under the machine node\u0027s UUID, so we need to use that one here. \n\nDoing it this way also makes it easier to specific machine-level load in the CoCo model: we can express machine-level properties like RAM used, network BW used, disk BW used, etc. on the arc from the virtual coordinator node to the machine node. Thus, we have it on the path from the TEC to the leaves, but without using the machine -\u003e socket arc.\n\n(Other approaches are for sure possible, and we might look into them in order to compress the topologies in the future. However, this makes it easiest to get things working.)",
+      "parentUuid": "9ad9bd40_48cb0553",
+      "revId": "7fc61ad4ba318adbbcf546eed330fdc0df054c81",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
