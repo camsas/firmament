@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_5973d5e6",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-20T16:15:36Z",
+      "side": 1,
+      "message": "Maybe print a warning here.",
+      "revId": "ccf1f2076e304f43be588d61612abeb3e98899ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_9430c4e9",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-20T16:15:36Z",
+      "side": 1,
+      "message": "Maybe we want to put a bound here on prefered_res.",
+      "revId": "ccf1f2076e304f43be588d61612abeb3e98899ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
