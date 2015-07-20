@@ -38,19 +38,18 @@ message ResourceDescriptor {
   optional uint64 last_heartbeat = 6;
   optional ResourceType type = 7;
   optional bool schedulable = 8 [default = false];
-  optional string storage_engine = 9;
-  optional uint64 num_cores = 10;
-  optional uint64 current_running_task = 11;
+  optional uint64 current_running_task = 9;
   // Stores the number of running tasks on the resources that
-  // are below this node, 
-  optional uint64 num_running_tasks = 12;
+  // are below this node,
+  optional uint64 num_running_tasks_below = 10 [default = 0];
+  optional uint64 num_leaves_below = 11 [default = 0];
   // XXX(malte): both of these are hacks and should be in more appropriate
   // places
-  optional WhareMapStats whare_map_stats = 13;
-  optional ResourceVector available_resources = 14;
-  optional ResourceVector unreserved_resources = 15;
-  optional ResourceVector min_available_resources_below = 16;
-  optional ResourceVector max_available_resources_below = 17;
-  optional ResourceVector min_unreserved_resources_below = 18;
-  optional ResourceVector max_unreserved_resources_below = 19;
+  optional WhareMapStats whare_map_stats = 12;
+  optional ResourceVector available_resources = 13;
+  optional ResourceVector unreserved_resources = 14;
+  optional ResourceVector min_available_resources_below = 15;
+  optional ResourceVector max_available_resources_below = 16;
+  optional ResourceVector min_unreserved_resources_below = 17;
+  optional ResourceVector max_unreserved_resources_below = 18;
 }
