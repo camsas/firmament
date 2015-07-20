@@ -27,6 +27,12 @@ using google::protobuf::EnumDescriptor;
 
 #define ENUM_TO_STRING(t, v) t ## _descriptor()->FindValueByNumber(v)->name()
 
+#ifdef OPEN_MAX
+#define OPEN_MAX_GUESS OPEN_MAX
+#else
+#define OPEN_MAX_GUESS 256 // reasonable value
+#endif
+
 // Returns the current epoch timestamp in µ-seconds as an integer.
 // Uses gettimeofday() under the hood, so does not make any guarantees w.r.t.
 // time zones etc.
@@ -56,6 +62,7 @@ DataObjectID_t GenerateDataObjectID(TaskID_t producing_task,
 TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task, uint64_t child_num);
+size_t HashCommandLine(const TaskDescriptor& td);
 size_t HashJobID(JobID_t job_id);
 size_t HashJobID(const TaskDescriptor& td);
 size_t HashString(const string& str);

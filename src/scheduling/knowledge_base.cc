@@ -11,6 +11,7 @@
 
 #include <sys/fcntl.h>
 
+#include "base/task_desc.pb.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
@@ -136,16 +137,21 @@ const deque<TaskPerfStatisticsSample>* KnowledgeBase::GetStatsForTask(
   return res;
 }
 
-const deque<TaskFinalReport>* KnowledgeBase::GetFinalStatsForTask(
+const deque<TaskFinalReport>* KnowledgeBase::GetFinalReportForTask(
       TaskID_t task_id) const {
-  vector<EquivClass_t>* equiv_classes =
-    cost_model_->GetTaskEquivClasses(task_id);
-  if (equiv_classes->size() == 0)
-    return NULL;
-  // TODO(ionel): This uses the first task equiv class for now.
-  const deque<TaskFinalReport>* res =
-    FindOrNull(task_exec_reports_, equiv_classes->front());
+  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, task_id);
   return res;
+}
+
+const deque<TaskFinalReport>* KnowledgeBase::GetFinalReportsForTEC(
+      EquivClass_t ec_id) const {
+  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, ec_id);
+  return res;
+}
+
+vector<EquivClass_t>* KnowledgeBase::GetResourceEquivClasses(
+    ResourceID_t resource_id) const {
+  return cost_model_->GetResourceEquivClasses(resource_id);
 }
 
 vector<EquivClass_t>* KnowledgeBase::GetTaskEquivClasses(
@@ -178,6 +184,20 @@ double KnowledgeBase::GetAvgIPMAForTEC(EquivClass_t id) {
        ++it) {
     accumulator += static_cast<double>(it->instructions()) /
       static_cast<double>(it->llc_refs());
+  }
+  return accumulator / res->size();
+}
+
+double KnowledgeBase::GetAvgPsPIForTEC(EquivClass_t id) {
+  const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
+  if (!res || res->size() == 0)
+    return 0;
+  double accumulator = 0;
+  for (deque<TaskFinalReport>::const_iterator it = res->begin();
+       it != res->end();
+       ++it) {
+    accumulator += static_cast<double>(it->runtime() * 10000000000.0) /
+      static_cast<double>(it->instructions());
   }
   return accumulator / res->size();
 }

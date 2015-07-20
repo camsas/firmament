@@ -32,26 +32,6 @@ function median(values) {
     return (values[half-1] + values[half]) / 2.0;
 }
 
-function getRAM(data) {
-  rsize_ts = [];
-  for (i = 0; i < data.length; i++) {
-    rsize_ts.push(data[i].rsize / 1024.0 / 1024.0)
-  }
-}
-
-function getSchedStats(data) {
-  prev_run_ts = 0;
-  prev_wait_ts = 0;
-  sched_run_ts = [];
-  sched_wait_runnable_ts = [];
-  for (i = 0; i < data.length; i++) {
-    sched_run_ts.push(data[i].sched_run - prev_run_ts);
-    sched_wait_runnable_ts.push(data[i].sched_wait - prev_wait_ts);
-    prev_run_ts = data[i].sched_run;
-    prev_wait_ts = data[i].sched_wait;
-  }
-}
-
 function getReportStats(data) {
   runtime_series = [];
   cycles_series = [];
@@ -74,13 +54,11 @@ function getReportStats(data) {
 }
 
 function updateGraphs(data) {
-  getRAM(data['samples']);
-  getSchedStats(data['samples']);
   getReportStats(data['reports']);
 }
 
 function poll() {
-  url = "/stats/?task={{TASK_ID}}";
+  url = "/stats/?ec={{EC_ID}}";
   $.ajax({
     url: url,
     async: false,
@@ -101,10 +79,7 @@ function step() {
   $('#mai-box').sparkline(mai_series, {type: 'box', width: '100px'});
   $('#llc-ref-box').sparkline(llc_ref_series, {type: 'box', width: '100px'});
   $('#llc-miss-box').sparkline(llc_miss_series, {type: 'box', width: '100px'});
-  $('#rsize-ts').sparkline(rsize_ts, {tooltipSuffix: ' MB'});
-  $('#rsize-box').sparkline(rsize_ts, {type: 'box', width: '100px'});
   $('#sched_run-ts').sparkline(sched_run_ts, {tooltipSuffix: ' '});
-  $('#sched_wait_runnable-ts').sparkline(sched_wait_runnable_ts, {tooltipSuffix: ' '});
   // labels
   $('#runtime-text').text(" avg: " + mean(runtime_series) + ", median: " + median(runtime_series));
   $('#cycles-text').text(" avg: " + mean(cycles_series) + ", median: " + median(cycles_series));
@@ -134,110 +109,22 @@ $(function() {
 <!-- should be in header, but works here too -->
 <meta http-equiv="refresh" content="60" />
 
-<h1>Task {{TASK_ID}}</h1>
+<h1>Equivalence class {{EC_ID}}</h1>
 
 <table class="table table-bordered">
   <tr>
     <td>ID</td>
-    <td>{{TASK_ID}}</td>
+    <td>{{EC_ID}}</td>
   </tr>
   <tr>
-    <td>Name</td>
-    <td>{{TASK_NAME}}</td>
+    <td>Friendly name</td>
+    <td>{{EC_NAME}}</td>
   </tr>
-  <tr>
-    <td>Job</td>
-    <td><a href="/job/?id={{TASK_JOB_ID}}">{{TASK_JOB_ID}}</a> ({{TASK_JOB_NAME}})</td>
-  </tr>
-  <tr>
-    <td>Actions</td>
-    <td>
-      <a href="/task/?id={{TASK_ID}}&a=kill"><span class="glyphicon glyphicon-trash" aria-hidden="true" title="Terminate"></span></a>
-      <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/collectl/graphs/?from={{TASK_START_TIME_HR}}-{{TASK_FINISH_TIME_HR}}"><span class="glyphicon glyphicon-stats" title="Stats"></span></a>
-    </td>
-  </tr>
-  <tr>
-    <td>Command</td>
-    <td><pre class="pre-x-scroll" style="width: 60%;">{{TASK_BINARY}} {{TASK_ARGS}}</pre></td>
-  </tr>
-  <tr>
-    <td>Equivalence classes</td>
-    <td>
-      <ul>
-        {{#TASK_TECS}}
-        <li><a href="/ec/?id={{TASK_TEC}}">{{TASK_TEC}}</a></li>
-        {{/TASK_TECS}}
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td>Status</td>
-    <td>{{TASK_STATUS}}</td>
-  </tr>
-  <tr>
-    <td>Timestamps</td>
-    <td>
-       Submitted: <abbr class="timeago" title="{{TASK_SUBMIT_TIME}}">{{TASK_SUBMIT_TIME}}</abbr><br />
-       Scheduled: <abbr class="timeago" title="{{TASK_START_TIME}}">{{TASK_START_TIME}}</abbr><br />
-       Finished: <abbr class="timeago" title="{{TASK_FINISH_TIME}}">{{TASK_FINISH_TIME}}</abbr><br />
-    </td>
-  </tr>
-  <tr>
-    <td>Last heartbeat</td>
-    <td><abbr class="timeago" title="{{TASK_LAST_HEARTBEAT}}">{{TASK_LAST_HEARTBEAT}}</abbr></td>
-  </tr>
-  <tr>
-    <td>Scheduled to</td>
-    <td>
-       <a href="/resource/?id={{TASK_SCHEDULED_TO}}">{{TASK_SCHEDULED_TO}}</a>
-    </td>
-  </tr>
-  <tr>
-    <td>Location</td>
-    <td>
-       <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/task/?id={{TASK_ID}}">{{TASK_LOCATION}}</a>
-       {{#TASK_DELEGATION}}
-       (delegated from <a href="http://{{TASK_DELEGATED_FROM_HOST}}:{{WEBUI_PORT}}/task/?id={{TASK_ID}}">{{TASK_DELEGATED_FROM_HOST}}</a>)
-       {{/TASK_DELEGATION}}
-    </td>
-  </tr>
-  <tr>
-    <td>Dependencies</td>
-    <td>
-      <ol>
-        {{#TASK_DEPS}}
-        <li><a href="/ref/?id={{TASK_DEP_ID}}">{{TASK_DEP_ID}}</a></li>
-        {{/TASK_DEPS}}
-      </ol>
-    </td>
-  </tr>
-  <tr>
-    <td>Spawned</td>
-    <td>
-      <ol>
-        {{#TASK_SPAWNED}}
-        <li><a href="/task/?id={{TASK_SPAWNED_ID}}">{{TASK_SPAWNED_ID}}</a></li>
-        {{/TASK_SPAWNED}}
-      </ol>
-    </td>
-  </tr>
-  <tr>
-    <td>Outputs</td>
-    <td>
-      <ol>
-      {{#TASK_OUTPUTS}}
-        <li><a href="/ref/?id={{TASK_OUTPUT_ID}}">{{TASK_OUTPUT_ID}}</a></li>
-      {{/TASK_OUTPUTS}}
-      </ol>
-    </td>
-  </tr>
-  <tr>
-    <td>Logs</td>
-    <td>
-      <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/tasklog/?id={{TASK_ID}}&a=1">stdout</a> &ndash;
-      <a href="http://{{TASK_LOCATION_HOST}}:{{WEBUI_PORT}}/tasklog/?id={{TASK_ID}}&a=2">stderr</a>
-    </td>
-  </tr>
+</table>
+
+<h2>Statistics</h2>
+
+<table class="table table-bordered">
   <tr>
     <td>Runtime</td>
     <td><span id="runtime-box">Waiting for data...</span> <span id="runtime-text" /></td>

@@ -123,7 +123,7 @@ FlowGraphArc* FlowGraph::AddArcInternal(uint64_t src, uint64_t dst) {
 FlowGraphArc* FlowGraph::AddArcInternal(FlowGraphNode* src,
                                         FlowGraphNode* dst) {
   FlowGraphArc* arc = new FlowGraphArc(src->id_, dst->id_, src, dst);
-  arc_set_.insert(arc);
+  CHECK(arc_set_.insert(arc).second);
   src->AddArc(arc);
   return arc;
 }
@@ -142,8 +142,16 @@ void FlowGraph::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
       CHECK_NOTNULL(ec_src_ptr);
       FlowGraphArc* arc = AddArcInternal(ec_src_ptr->id_, ec_node->id_);
       arc->cost_ = cost_model_->EquivClassToEquivClass(*it, equiv_class);
-      // TODO(ionel): Set the capacity on the arc to a sensible value.
-      arc->cap_upper_bound_ = 1;
+      // We set the capacity to the max of the source EC's incoming capacity and
+      // the destination EC's outgoing capacity. This works, although it's
+      // not optimal: we could use the min, to give tighter bounds to the
+      // solver, but doing so would require us to dynamically update the
+      // capacities at runtime, which we currently don't.
+      // Such dynamic updates may, however, still be required even with the
+      // current model when more than two layers of ECs are connected.
+      // ---
+      // The capacity on the arc is max(sum(src_in_caps), sum(dst_out_caps))
+      arc->cap_upper_bound_ = CapacityBetweenECNodes(*ec_src_ptr, *ec_node);
       DIMACSChange *chg = new DIMACSNewArc(*arc);
       chg->set_comment("AddArcsFromToOtherEquivNodes: incoming");
       graph_changes_.push_back(chg);
@@ -159,8 +167,16 @@ void FlowGraph::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
       CHECK_NOTNULL(ec_dst_ptr);
       FlowGraphArc* arc = AddArcInternal(ec_node->id_, ec_dst_ptr->id_);
       arc->cost_ = cost_model_->EquivClassToEquivClass(equiv_class, *it);
-      // TODO(ionel): Set the capacity on the arc to a sensible value.
-      arc->cap_upper_bound_ = 1;
+      // We set the capacity to the max of the source EC's incoming capacity and
+      // the destination EC's outgoing capacity. This works, although it's
+      // not optimal: we could use the min, to give tighter bounds to the
+      // solver, but doing so would require us to dynamically update the
+      // capacities at runtime, which we currently don't.
+      // Such dynamic updates may, however, still be required even with the
+      // current model when more than two layers of ECs are connected.
+      // ---
+      // The capacity on the arc is max(sum(src_in_caps), sum(dst_out_caps))
+      arc->cap_upper_bound_ = CapacityBetweenECNodes(*ec_node, *ec_dst_ptr);
       DIMACSChange *chg = new DIMACSNewArc(*arc);
       chg->set_comment("AddArcsFromToOtherEquivNodes: outgoing");
       graph_changes_.push_back(chg);
@@ -334,7 +350,7 @@ void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
     if (ec_node_ptr == NULL) {
       // Node for resource equiv class doesn't yet exist.
       VLOG(2) << "    Adding node EC node for " << *it;
-      AddEquivClassNode(*it);
+      ec_node_ptr = AddEquivClassNode(*it);
     } else {
       // Node for resource equiv class already exists. Add arc from it.
       // XXX(ionel): We don't add arcs from tasks or other equiv classes
@@ -462,7 +478,7 @@ void FlowGraph::ConfigureResourceNodeECs(ResourceTopologyNodeDescriptor* rtnd) {
   }
 }
 
-void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
+FlowGraphNode* FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   VLOG(2) << "Add equiv class " << ec;
   vector<FlowGraphArc*> ec_arcs;
   // Add the equivalence class flow graph node.
@@ -479,8 +495,22 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
     for (vector<TaskID_t>::iterator it = task_pref_arcs->begin();
          it != task_pref_arcs->end(); ++it) {
       FlowGraphNode* task_node = NodeForTaskID(*it);
-      CHECK_NOTNULL(task_node);
-      CHECK(task_node != NULL) << "Task ID requested was " << *it;
+      // The equivalence class may contain many tasks, and not all of them
+      // may have corresponding task nodes in the flow graph yet. This is the
+      // case for example when a job with many tasks is added and we process
+      // AddEquivClassNode for the first time. It's fine to simply ignore the
+      // not-yet-existing tasks here, because we know that we will come back
+      // later and call in here again, with the task present, at which point
+      // the correct arc will be added.
+      // TODO(malte): think about whether we can do this more elegantly; the
+      // above implicit assumption may not always hold (even though it does
+      // for now).
+      if (!task_node) {
+        LOG(INFO) << "Skipping addition of arc from task " << *it << "'s "
+                  << "node to EC " << ec << " as task not yet present.";
+        continue;
+      }
+      VLOG(2) << "Adding arc from task " << *it << " to EC " << ec;
       FlowGraphArc* ec_arc =
         AddArcInternal(task_node->id_, ec_node->id_);
       // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
@@ -519,6 +549,8 @@ void FlowGraph::AddEquivClassNode(EquivClass_t ec) {
   VLOG(1) << "Adding equivalence class node, with change "
           << chg->GenerateChange();
   AddArcsFromToOtherEquivNodes(ec, ec_node);
+  // Return the new EC node
+  return ec_node;
 }
 
 void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
@@ -533,12 +565,15 @@ void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
     FlowGraphNode* ec_node_ptr = FindPtrOrNull(tec_to_node_, *it);
     if (ec_node_ptr == NULL) {
       // Node for task equiv class doesn't yet exist.
-      AddEquivClassNode(*it);
-    } else {
-      // Node for task equiv class already exists. Add arc to it.
-      // XXX(ionel): We don't add new arcs from the equivalence class to
-      // resource nodes when we add a new arc from a task to the equiv class.
-      // We may want to do add some in the future.
+      ec_node_ptr = AddEquivClassNode(*it);
+    }
+    // Node for task equiv class now exists for sure. Add arc to it if we
+    // don't already have one: we might, as the act of adding the EC above
+    // mav already have created the arc, if it is returned by
+    // AddEquivClassNode's cost_model_->GetIncomingEquivClassPrefArcs().
+    if (!GetArc(task_node, ec_node_ptr)) {
+      VLOG(2) << "AddTaskEquivClasses adding arc from task " << task_node->id_
+              << " to EC " << ec_node_ptr->id_;
       FlowGraphArc* ec_arc =
         AddArcInternal(task_node->id_, ec_node_ptr->id_);
       ec_arc->cap_upper_bound_ = 1;
@@ -549,6 +584,10 @@ void FlowGraph::AddTaskEquivClasses(FlowGraphNode* task_node) {
       chg->set_comment("AddTaskEquivClasses");
       graph_changes_.push_back(chg);
     }
+    // TODO(ionel): We don't add new arcs from the equivalence class to
+    // resource nodes or other ECs when we add a new arc from a task to the
+    // equiv class.
+    // We may want to do add some in the future.
   }
   delete equiv_classes;
 }
@@ -594,6 +633,23 @@ void FlowGraph::AdjustUnscheduledAggArcCosts() {
       }
     }
   }
+}
+
+uint64_t FlowGraph::CapacityBetweenECNodes(const FlowGraphNode& src,
+                                           const FlowGraphNode& dst) {
+  // Compute sum of incoming capacities at src
+  uint64_t in_sum = 0;
+  for (auto it = src.incoming_arc_map_.begin();
+       it != src.incoming_arc_map_.end(); ++it) {
+    in_sum += it->second->cap_upper_bound_;
+  }
+  // Compute sum of incoming capacities at src
+  uint64_t out_sum = 0;
+  for (auto it = dst.outgoing_arc_map_.begin();
+       it != dst.outgoing_arc_map_.end(); ++it) {
+    out_sum += it->second->cap_upper_bound_;
+  }
+  return max(in_sum, out_sum);
 }
 
 void FlowGraph::ConfigureResourceBranchNode(
@@ -676,6 +732,10 @@ void FlowGraph::ConfigureResourceLeafNode(
             << arc->cap_upper_bound_ << " -> "
             << arc->cap_upper_bound_ + 1 << ")";
     arc->cap_upper_bound_ += 1;
+    // TODO(malte): we don't set the cost here, but probably should. However,
+    // care needs to be taken, because ConfigureResourceLeafNode is called
+    // before cost model state is set up, so not all information may be
+    // available.
 
     DIMACSChange *chg = new DIMACSChangeArc(*arc);
     chg->set_comment("ConfigureResourceLeafNode");
@@ -888,10 +948,12 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id, const char *comment) {
 }
 
 FlowGraphArc* FlowGraph::GetArc(FlowGraphNode* src, FlowGraphNode* dst) {
+  CHECK_NOTNULL(src);
+  CHECK_NOTNULL(dst);
   unordered_map<uint64_t, FlowGraphArc*>::iterator arc_it =
     src->outgoing_arc_map_.find(dst->id_);
   if (arc_it == src->outgoing_arc_map_.end()) {
-    LOG(FATAL) << "Could not find arc";
+    return NULL;
   }
   return arc_it->second;
 }

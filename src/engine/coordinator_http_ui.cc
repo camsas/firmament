@@ -22,6 +22,7 @@
 #include "misc/uri_tools.h"
 #include "messages/task_kill_message.pb.h"
 #include "scheduling/knowledge_base.h"
+#include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/flow_scheduler.h"
 #include "scheduling/flow/solver_dispatcher.h"
 #include "storage/types.h"
@@ -29,6 +30,8 @@
 DECLARE_string(task_log_dir);
 DECLARE_string(scheduler);
 DECLARE_string(debug_output_dir);
+DECLARE_int32(flow_scheduling_cost_model);
+DECLARE_bool(debug_flow_graph);
 
 namespace firmament {
 namespace webui {
@@ -186,12 +189,19 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
     dict.SetValue("SCHEDULER_NAME", "queue-based");
   } else if (FLAGS_scheduler == "flow") {
     dict.SetValue("SCHEDULER_NAME", "flow network optimization");
+    TemplateDictionary* flow_scheduler_detail_dict =
+        dict.AddSectionDictionary("FLOW_SCHEDULER_DETAILS");
     const FlowScheduler* sched =
       dynamic_cast<const FlowScheduler*>(coordinator_->scheduler());
-    for (uint64_t i = 0; i < sched->dispatcher().seq_num(); ++i) {
-      TemplateDictionary* iteration_dict =
-          dict.AddSectionDictionary("SCHEDULER_ITER");
-      iteration_dict->SetIntValue("SCHEDULER_ITER_ID", i);
+    flow_scheduler_detail_dict->SetIntValue(
+        "FLOW_SCHEDULER_COST_MODEL",
+        FLAGS_flow_scheduling_cost_model);
+    if (FLAGS_debug_flow_graph) {
+      for (uint64_t i = 0; i < sched->dispatcher().seq_num(); ++i) {
+        TemplateDictionary* iteration_dict =
+            flow_scheduler_detail_dict->AddSectionDictionary("SCHEDULER_ITER");
+        iteration_dict->SetIntValue("SCHEDULER_ITER_ID", i);
+      }
     }
   }
   AddFooterToTemplate(&dict);
@@ -347,6 +357,27 @@ void CoordinatorHTTPUI::HandleJobURI(http::request_ptr& http_request,  // NOLINT
   FinishOkResponse(writer);
 }
 
+void CoordinatorHTTPUI::HandleECDetailsURI(http::request_ptr& http_request,  // NOLINT
+                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  string ec_id = http_request->get_query("id");
+  if (ec_id.empty()) {
+    ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
+                  tcp_conn);
+    return;
+  }
+  TemplateDictionary dict("ec_details");
+  dict.SetFormattedValue("EC_ID", "%llu", strtoull(ec_id.c_str(), 0, 10));
+  AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+  AddFooterToTemplate(&dict);
+  string output;
+  ExpandTemplate("src/webui/ec_details.tpl", ctemplate::DO_NOT_STRIP,
+                 &dict, &output);
+  writer->write(output);
+  FinishOkResponse(writer);
+}
+
 void CoordinatorHTTPUI::HandleReferencesListURI(http::request_ptr& http_request,  // NOLINT
                                                 tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -444,7 +475,17 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
     dict.SetValue("RES_ID", rtnd_ptr->resource_desc().uuid());
     dict.SetValue("RES_FRIENDLY_NAME",
                   rtnd_ptr->resource_desc().friendly_name());
-    dict.SetValue("RES_REC", "Not implemented");
+    // Equivalence classes
+    vector<EquivClass_t>* equiv_classes =
+        coordinator_->knowledge_base()->GetResourceEquivClasses(rid);
+    if (equiv_classes) {
+      for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+           it != equiv_classes->end(); ++it) {
+        TemplateDictionary* tec_dict = dict.AddSectionDictionary("RES_RECS");
+        tec_dict->SetFormattedValue("RES_REC", "%ju", *it);
+      }
+    }
+    delete equiv_classes;
     dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
                                              rtnd_ptr->resource_desc().type()));
     dict.SetValue("RES_STATUS",
@@ -635,6 +676,8 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
                                        tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // XXX(malte): HACK!
+  system("bash scripts/plot_flow_graph.sh");
   // Get resource information from coordinator
   string iter_id = http_request->get_query("iter");
   if (iter_id.empty()) {
@@ -655,6 +698,17 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
       graph_filename += "/debug_" + iter_id + ".dm.gv";
     } else if (action == "dimacs") {
       graph_filename += "/debug_" + iter_id + ".dm";
+    } else if (action == "view") {
+      TemplateDictionary dict("flow_graph_view");
+      dict.SetValue("ITER_ID", iter_id);
+      AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+      AddFooterToTemplate(&dict);
+      string output;
+      ExpandTemplate("src/webui/flow_graph.tpl", ctemplate::DO_NOT_STRIP,
+                     &dict, &output);
+      writer->write(output);
+      FinishOkResponse(writer);
+      return;
     } else {
       ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                     tcp_conn);
@@ -665,6 +719,47 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
   FinishOkResponse(writer);
 }
 
+void CoordinatorHTTPUI::HandleSchedCostModelURI(http::request_ptr& http_request,  // NOLINT
+                                                tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  const FlowScheduler* sched =
+    dynamic_cast<const FlowScheduler*>(coordinator_->scheduler());
+  string output = sched->cost_model().DebugInfo();
+  writer->write(output);
+  FinishOkResponse(writer);
+}
+
+void CoordinatorHTTPUI::HandleSchedFlowGraphURI(http::request_ptr& http_request,  // NOLINT
+                                                tcp::connection_ptr& tcp_conn) {  // NOLINT
+  LogRequest(http_request);
+  http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
+  // Get resource information from coordinator
+  if (!http_request->get_query("json").empty()) {
+    if (FLAGS_scheduler != "flow") {
+      ErrorResponse(http::types::RESPONSE_CODE_NOT_FOUND, http_request,
+                    tcp_conn);
+      return;
+    }
+    const FlowScheduler* sched =
+      dynamic_cast<const FlowScheduler*>(coordinator_->scheduler());
+    string json_flow_graph;
+    sched->dispatcher().ExportJSON(&json_flow_graph);
+    writer->write(json_flow_graph);
+    FinishOkResponse(writer);
+  } else {
+    TemplateDictionary dict("flow_graph_view");
+    AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+    AddFooterToTemplate(&dict);
+    string output;
+    ExpandTemplate("src/webui/flow_graph.tpl", ctemplate::DO_NOT_STRIP,
+                   &dict, &output);
+    writer->write(output);
+  }
+  FinishOkResponse(writer);
+}
+
 void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  // NOLINT
                                             tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
@@ -672,8 +767,11 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   // Get resource information from coordinator
   string res_id = http_request->get_query("res");
   string task_id = http_request->get_query("task");
-  if (!(res_id.empty() || task_id.empty()) ||
-      (res_id.empty() && task_id.empty())) {
+  string ec_id = http_request->get_query("ec");
+  if ((res_id.empty() && task_id.empty() && ec_id.empty()) ||
+      !(res_id.empty() || task_id.empty()) ||
+      !(res_id.empty() || ec_id.empty()) ||
+      !(task_id.empty() || ec_id.empty())) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     LOG(WARNING) << "Invalid stats request!";
@@ -731,7 +829,25 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     output += "]";
     output += ", \"reports\": [";
     const deque<TaskFinalReport>* report_result =
-      coordinator_->knowledge_base()->GetFinalStatsForTask(td->uid());
+      coordinator_->knowledge_base()->GetFinalReportForTask(td->uid());
+    if (report_result) {
+      bool first = true;
+      for (deque<TaskFinalReport>::const_iterator it =
+          report_result->begin();
+          it != report_result->end();
+          ++it) {
+        if (!first)
+          output += ", ";
+        output += pb2json(*it);
+        first = false;
+      }
+    }
+    output += "] }";
+  } else if (!ec_id.empty()) {
+    output += "{ \"reports\": [";
+    const deque<TaskFinalReport>* report_result =
+      coordinator_->knowledge_base()->GetFinalReportsForTEC(
+          strtoull(ec_id.c_str(), 0, 10));
     if (report_result) {
       bool first = true;
       for (deque<TaskFinalReport>::const_iterator it =
@@ -746,7 +862,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     }
     output += "] }";
   } else {
-    LOG(FATAL) << "Neither task_id nor res_id set, but they should be!";
+    LOG(FATAL) << "Neither task_id, nor ec_id, nor res_id set, but they should be!";
   }
   writer->write(output);
   FinishOkResponse(writer);
@@ -784,7 +900,6 @@ void CoordinatorHTTPUI::HandleTasksListURI(http::request_ptr& http_request,  // 
   writer->write(output);
   FinishOkResponse(writer);
 }
-
 
 void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLINT
                                       tcp::connection_ptr& tcp_conn) {  // NOLINT
@@ -835,6 +950,10 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     dict.SetValue("TASK_ARGS", arg_string);
     dict.SetValue("TASK_STATUS", ENUM_TO_STRING(TaskDescriptor::TaskState,
                                                 td_ptr->state()));
+    // Scheduled to resource
+    if (td_ptr->has_scheduled_to_resource()) {
+      dict.SetValue("TASK_SCHEDULED_TO", td_ptr->scheduled_to_resource());
+    }
     // Location
     if (td_ptr->has_last_heartbeat_location()) {
       dict.SetValue("TASK_LOCATION", td_ptr->last_heartbeat_location());
@@ -888,7 +1007,7 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
       for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
            it != equiv_classes->end(); ++it) {
         TemplateDictionary* tec_dict = dict.AddSectionDictionary("TASK_TECS");
-        tec_dict->SetIntValue("TASK_TEC", *it);
+        tec_dict->SetFormattedValue("TASK_TEC", "%ju", *it);
       }
     }
     delete equiv_classes;
@@ -1077,6 +1196,9 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Collectl raw data hook
     coordinator_http_server_->add_resource("/collectl/raw/", boost::bind(
         &CoordinatorHTTPUI::HandleCollectlRawURI, this, _1, _2));
+    // Equivalence class details
+    coordinator_http_server_->add_resource("/ec/", boost::bind(
+        &CoordinatorHTTPUI::HandleECDetailsURI, this, _1, _2));
     // Job list
     coordinator_http_server_->add_resource("/jobs/", boost::bind(
         &CoordinatorHTTPUI::HandleJobsListURI, this, _1, _2));
@@ -1119,6 +1241,12 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
     // Scheduler data
     coordinator_http_server_->add_resource("/sched/", boost::bind(
         &CoordinatorHTTPUI::HandleSchedURI, this, _1, _2));
+    // Scheduler live flow graph JSON
+    coordinator_http_server_->add_resource("/sched/flowgraph/", boost::bind(
+        &CoordinatorHTTPUI::HandleSchedFlowGraphURI, this, _1, _2));
+    // Scheduler cost model JSON
+    coordinator_http_server_->add_resource("/sched/costmodel/", boost::bind(
+        &CoordinatorHTTPUI::HandleSchedCostModelURI, this, _1, _2));
     // Statistics data serving pages
     coordinator_http_server_->add_resource("/stats/", boost::bind(
         &CoordinatorHTTPUI::HandleStatisticsURI, this, _1, _2));

@@ -204,8 +204,13 @@ void Coordinator::Run() {
   // Test topology detection
   LOG(INFO) << "Detecting resource topology:";
   topology_manager_->DebugPrintRawTopology();
-  if (FLAGS_include_local_resources)
+  if (FLAGS_include_local_resources) {
+    // Add the local processing resources
     DetectLocalResources();
+  } else {
+    // We still add a node: a "virtual" resource representing this coordinator
+    AddResource(local_resource_topology_, node_uri_, true);
+  }
 
   // Coordinator starting -- set up and wait for workers to connect.
   m_adapter_->ListenURI(FLAGS_listen_uri);
@@ -446,8 +451,20 @@ void Coordinator::HandleTaskFinalReport(const TaskFinalReport& report) {
   VLOG(1) << "Handling task final report for " << report.task_id();
   TaskDescriptor *td_ptr = FindPtrOrNull(*task_table_, report.task_id());
   CHECK_NOTNULL(td_ptr);
+  HandleTaskFinalReport(report, td_ptr);
+}
+
+void Coordinator::HandleTaskFinalReport(const TaskFinalReport& report,
+                                        TaskDescriptor* td_ptr) {
+  CHECK_NOTNULL(td_ptr);
+  VLOG(1) << "Handling task final report for " << report.task_id();
   // Process the report using the KB
   knowledge_base_->ProcessTaskFinalReport(report, td_ptr->uid());
+  // Add the report to the TD if the task is not local (otherwise, the
+  // scheduler has already done so)
+  if (td_ptr->has_delegated_to()) {
+    td_ptr->mutable_final_report()->CopyFrom(report);
+  }
 }
 
 void Coordinator::HandleIONotification(const BaseMessage& bm,
@@ -737,7 +754,7 @@ void Coordinator::HandleTaskStateChange(
 
 void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
                                        TaskDescriptor* td_ptr) {
-  TaskFinalReport report;
+  TaskFinalReport report(msg.report());
   // Report will be filled in if the task is local (currently)
   scheduler_->HandleTaskCompletion(td_ptr, &report);
   // First check if this is a delegated task, and forward the message if so
@@ -747,7 +764,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
 
     // Send along completion statistics to the coordinator as well.
     // TODO(malte): Make this all const including handle task completion method
-    TaskFinalReport *sending_rep = bm.mutable_task_final_report();
+    TaskFinalReport *sending_rep = bm.mutable_task_state()->mutable_report();
     sending_rep->CopyFrom(report);
     sending_rep->set_task_id(td_ptr->uid());
 
@@ -766,7 +783,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
   }
   if (report.has_task_id()) {
     // Process the final report locally
-    knowledge_base_->ProcessTaskFinalReport(report, td_ptr->uid());
+    HandleTaskFinalReport(report, td_ptr);
   }
 }
 
@@ -958,10 +975,6 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
     root_task->set_absolute_deadline(
         GetCurrentTimestamp() + root_task->relative_deadline() * 1000000);
   }
-  // Create a dynamic task graph for the job
-  TaskGraph* new_dtg = new TaskGraph(root_task);
-  // Store the task graph
-  InsertIfNotPresent(&task_graph_table_, new_job_id, new_dtg);
   // Add itself and its spawned tasks (if any) to the relevant tables:
   // - tasks to the task_table_
   // - inputs/outputs to the object_table_

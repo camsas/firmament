@@ -61,6 +61,8 @@ class CoordinatorHTTPUI {
                           tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleJobDTGURI(http::request_ptr& http_request, // NOLINT
                        tcp::connection_ptr& tcp_conn);  // NOLINT
+  void HandleECDetailsURI(http::request_ptr& http_request, // NOLINT
+                          tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleLogURI(http::request_ptr& http_request, // NOLINT
                     tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleRootURI(http::request_ptr& http_request, // NOLINT
@@ -79,6 +81,10 @@ class CoordinatorHTTPUI {
                                tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleSchedURI(http::request_ptr& http_request, // NOLINT
                       tcp::connection_ptr& tcp_conn);  // NOLINT
+  void HandleSchedCostModelURI(http::request_ptr& http_request, // NOLINT
+                               tcp::connection_ptr& tcp_conn);  // NOLINT
+  void HandleSchedFlowGraphURI(http::request_ptr& http_request, // NOLINT
+                               tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleStatisticsURI(http::request_ptr& http_request, // NOLINT
                            tcp::connection_ptr& tcp_conn);  // NOLINT
   void HandleTasksListURI(http::request_ptr& http_request, // NOLINT

@@ -6,13 +6,16 @@
 #include "engine/local_executor.h"
 
 extern "C" {
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 }
 #include <boost/regex.hpp>
 
@@ -38,6 +41,12 @@ DEFINE_string(task_perf_dir, "/tmp/firmament-perf",
               "Path where tasks' perf logs should be written.");
 DEFINE_string(task_data_dir, "/tmp/firmament-data",
               "Path where tasks' perf logs should be written.");
+DEFINE_string(perf_event_list,
+              "cpu-clock,task-clock,context-switches,cpu-migrations,"
+              "page-faults,cycles,instructions,branches,branch-misses,"
+              "cache-misses,cache-references,stalled-cycles-frontend,"
+              "stalled-cycles-backend,node-loads,node-load-misses",
+              "Comma-separated list of perf events to monitor.");
 
 namespace firmament {
 namespace executor {
@@ -80,7 +89,9 @@ char* LocalExecutor::AddPerfMonitoringToCommandLine(
   const string* perf_fname = FindOrNull(env, "PERF_FNAME");
   CHECK_NOTNULL(perf_fname);
   perf_string += *perf_fname;
-  perf_string += " -e instructions,cycles,cache-misses,cache-references -- ";
+  perf_string += " -e ";
+  perf_string += FLAGS_perf_event_list;
+  perf_string += " -- ";
   return TokenizeIntoArgv(perf_string, argv);
 }
 
@@ -373,6 +384,16 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
       dup2(stderr_fd, STDERR_FILENO);
       close(stdout_fd);
       close(stderr_fd);
+
+      // Change to task's working directory
+      chdir(env["FLAGS_task_data_dir"].c_str());
+
+      // kill child process if parent terminates
+      // SOMEDAY(adam): make this portable beyond Linux?
+#ifdef __linux__
+      prctl(PR_SET_PDEATHSIG, SIGHUP);
+#endif
+
       // Run the task binary
       execvpe(argv[0], &argv[0], &envv[0]);
       // execl only returns if there was an error
@@ -446,6 +467,13 @@ void LocalExecutor::SetUpEnvironmentForTask(
   if (td.inject_task_lib()) {
     InsertIfNotPresent(env, "LD_LIBRARY_PATH", FLAGS_task_lib_dir);
     InsertIfNotPresent(env, "LD_PRELOAD", "task_lib_inject.so");
+    // This effectively does a "basename" on the executable; the TASK_COMM
+    // environment variable is used to match the executable for against
+    // /proc/self/comm when deciding whether to inject a monitor thread.
+    string expected_comm =
+      td.binary().substr(td.binary().rfind("/") + 1,
+                         td.binary().size() - td.binary().rfind("/") - 1);
+    InsertIfNotPresent(env, "TASK_COMM", expected_comm);
   }
   VLOG(1) << "Task's environment variables:";
   for (unordered_map<string, string>::const_iterator env_iter = env->begin();

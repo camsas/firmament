@@ -24,12 +24,6 @@ extern "C" {
 #include <sys/prctl.h>
 #endif
 
-#ifdef OPEN_MAX
-#define OPEN_MAX_GUESS OPEN_MAX
-#else
-#define OPEN_MAX_GUESS 256 // reasonable value
-#endif
-
 #include "misc/utils.h"
 
 namespace firmament {
@@ -189,6 +183,15 @@ DataObjectID_t GenerateDataObjectID(
   SHA256_Final(hash, &ctx);
   DataObjectID_t doid(hash);
   return doid;
+}
+
+size_t HashCommandLine(const TaskDescriptor& td) {
+  size_t hash = 42;
+  boost::hash_combine(hash, td.binary());
+  for (auto it = td.args().begin(); it != td.args().end(); ++it) {
+    boost::hash_combine(hash, *it);
+  }
+  return hash;
 }
 
 size_t HashJobID(JobID_t job_id) {

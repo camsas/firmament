@@ -60,6 +60,9 @@ class FlowScheduler : public EventDrivenScheduler {
                    << parameters_.DebugString() << ">";
   }
 
+  const CostModelInterface& cost_model() const {
+    return *cost_model_;
+  }
   const SolverDispatcher& dispatcher() const {
     return *solver_dispatcher_;
   }
@@ -74,6 +77,7 @@ class FlowScheduler : public EventDrivenScheduler {
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
   uint64_t RunSchedulingIteration();
+  void UpdateCostModelResourceStats();
   void UpdateResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);
 
