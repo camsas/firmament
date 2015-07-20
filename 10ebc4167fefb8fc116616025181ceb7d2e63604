@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_94b52433",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-20T16:39:53Z",
+      "side": 1,
+      "message": "It would be helpful to have the units here in comments. Similarly for network and disk.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_948c4481",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-20T16:39:53Z",
+      "side": 1,
+      "message": "Maybe capture \u003c\u003d 0 here. Otherwise if we have a mistake or a time sync happens we might end up not setting acc_min at all.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_9468c488",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 526,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-20T16:39:53Z",
+      "side": 1,
+      "message": "Please print warning. Presumably this happens when the local coordinator hasn\u0027t finished initializing itself.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_1414b4f3",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 533,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-20T16:39:53Z",
+      "side": 1,
+      "message": "Can you move this into a separate method?",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_d4308ca0",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 569,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-20T16:39:53Z",
+      "side": 1,
+      "message": "Similarly, please move this into a separate method.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
