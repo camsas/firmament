@@ -102,28 +102,27 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
     return 0ULL;
   const ResourceDescriptor& rd = rs->descriptor();
   const ResourceTopologyNodeDescriptor& rtnd = rs->topology_node();
-  // XXX(malte): this is a hack that assumes that each leaf runs exactly one
-  // task
-  uint64_t num_total_children = rtnd.children_size();
-  uint64_t num_idle_children = num_total_children - rd.num_running_tasks();
+  // TODO(malte): note that the below implicitly assumes that each leaf runs
+  // exactly one task; we may need to revisit this assumption in the future.
+  uint64_t num_total_leaves_below = rd.num_leaves_below();
+  uint64_t num_idle_leaves_below = num_total_leaves_below;
   double scale_factor = 1;
-  if (num_total_children > 0) {
-     scale_factor = exp(static_cast<double>(num_idle_children) /
-                        static_cast<double>(num_total_children));
-  }
-  // Need number of siblings here, so we look up the parent and count its
-  // children
-  double num_siblings = 1;
-  if (rtnd.has_parent_id()) {
-    ResourceStatus* parent_rs = FindPtrOrNull(*resource_map_,
-        ResourceIDFromString(rtnd.parent_id()));
-    CHECK_NOTNULL(parent_rs);
-    const ResourceTopologyNodeDescriptor& parent_rtnd =
-      parent_rs->topology_node();
-    num_siblings = static_cast<double>(parent_rtnd.children_size() - 1);
+  if (rd.has_num_running_tasks_below() && num_total_leaves_below > 0) {
+    num_idle_leaves_below = num_total_leaves_below -
+      rd.num_running_tasks_below();
+    VLOG(1) << num_idle_leaves_below << " of " << num_total_leaves_below
+            << " leaves are idle.";
+    scale_factor =
+      exp(static_cast<double>(num_total_leaves_below - num_idle_leaves_below) /
+          static_cast<double>(num_total_leaves_below));
+    VLOG(1) << "Scale factor: " << scale_factor;
   }
   uint64_t summed_interference_costs = 0;
-  if (num_total_children == 0) {
+  if (num_total_leaves_below == 0) {
+    // Leaves haven't been initialised yet
+    return 0;
+  } else if (num_total_leaves_below == 1 &&
+             rd.type() == ResourceDescriptor::RESOURCE_PU) {
     // Base case, we're at a PU
     if (rd.has_current_running_task()) {
       return GetInterferenceScoreForTask(rd.current_running_task());
@@ -132,16 +131,24 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
     }
   } else {
     // Recursively compute the score
+    double num_siblings = 1.0;
+    if (rtnd.children().size() > 1)
+      num_siblings = rtnd.children().size() - 1;
     for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator it =
          rtnd.children().begin();
          it != rtnd.children().end();
          ++it) {
-      summed_interference_costs += ComputeInterferenceScore(
-          ResourceIDFromString(it->resource_desc().uuid()));
+      uint64_t child_interference_cost = (ComputeInterferenceScore(
+            ResourceIDFromString(it->resource_desc().uuid())) / num_siblings);
+      VLOG(1) << "Interference cost for " << it->resource_desc().uuid()
+              << " is " << child_interference_cost;
+      summed_interference_costs += child_interference_cost;
     }
   }
-  uint64_t interference_cost = scale_factor *
-                               (summed_interference_costs / num_siblings);
+  VLOG(1) << "Total aggregate cost: " << summed_interference_costs;
+  uint64_t interference_cost =
+    (scale_factor * summed_interference_costs) - summed_interference_costs;
+  VLOG(1) << "After scaling: " << interference_cost;
   return interference_cost;
 }
 
@@ -203,7 +210,7 @@ const TaskDescriptor& CocoCostModel::GetTask(TaskID_t task_id) {
 }
 
 uint64_t CocoCostModel::GetInterferenceScoreForTask(TaskID_t task_id) {
-  return 1ULL;
+  return omega_;
 }
 
 vector<EquivClass_t>* CocoCostModel::GetTaskEquivClasses(TaskID_t task_id) {
@@ -608,6 +615,12 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
           rd_ptr->mutable_min_available_resources_below()->set_cpu_cores(
               latest_stats.cpus_usage(core_id).idle() / 100.0);
         }
+        if (rd_ptr->has_current_running_task()) {
+          rd_ptr->set_num_running_tasks_below(1);
+        } else {
+          rd_ptr->set_num_running_tasks_below(0);
+        }
+        rd_ptr->set_num_leaves_below(1);
       }
     }
     return accumulator;
@@ -666,6 +679,11 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
     ResourceDescriptor* acc_rd_ptr =  acc_rs_ptr->mutable_descriptor();
     ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
     AccumulateCoCoResourceStats(acc_rd_ptr, other_rd_ptr);
+    acc_rd_ptr->set_num_running_tasks_below(
+        acc_rd_ptr->num_running_tasks_below() +
+        other_rd_ptr->num_running_tasks_below());
+    acc_rd_ptr->set_num_leaves_below(acc_rd_ptr->num_leaves_below() +
+                                    other_rd_ptr->num_leaves_below());
   }
   return accumulator;
 }
@@ -741,6 +759,8 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
   rd_ptr->mutable_available_resources()->clear_ram_cap();
   rd_ptr->mutable_available_resources()->clear_net_bw();
   rd_ptr->mutable_available_resources()->clear_disk_bw();
+  rd_ptr->clear_num_running_tasks_below();
+  rd_ptr->clear_num_leaves_below();
 }
 
 CocoCostModel::TaskFitIndication_t
