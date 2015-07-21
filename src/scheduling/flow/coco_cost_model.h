@@ -88,7 +88,6 @@ class CocoCostModel : public CostModelInterface {
   const uint64_t omega_ = 1000;
   const Cost_t WAIT_TIME_MULTIPLIER = 1;
   const uint64_t MAX_PRIORITY_VALUE = 10;
-  const uint64_t BYTES_TO_MB = 1024*1024;
 
   // Resource vector comparison type and enum
   typedef enum {

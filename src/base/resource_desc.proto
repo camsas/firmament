@@ -52,4 +52,5 @@ message ResourceDescriptor {
   optional ResourceVector max_available_resources_below = 16;
   optional ResourceVector min_unreserved_resources_below = 17;
   optional ResourceVector max_unreserved_resources_below = 18;
+  optional ResourceVector resource_capacity = 19;
 }
