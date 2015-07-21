@@ -133,7 +133,8 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
              rd.type() == ResourceDescriptor::RESOURCE_PU) {
     // Base case, we're at a PU
     if (rd.has_current_running_task()) {
-      return GetInterferenceScoreForTask(rd.current_running_task());
+      return FlattenInterferenceScore(
+          GetInterferenceScoreForTask(rd.current_running_task()));
     } else {
       return 0;
     }
@@ -194,7 +195,7 @@ const string CocoCostModel::DebugInfo() const {
   return out;
 }
 
-int64_t CocoCostModel::FlattenCostVector(CostVector_t cv) {
+Cost_t CocoCostModel::FlattenCostVector(CostVector_t cv) {
   // Compute priority dimension and ensure that it always dominates
   uint64_t priority_value = cv.priority_ * omega_;
   // Compute the rest of the cost vector
@@ -211,23 +212,50 @@ int64_t CocoCostModel::FlattenCostVector(CostVector_t cv) {
   return accumulator + priority_value;
 }
 
+Cost_t CocoCostModel::FlattenInterferenceScore(const vector<uint64_t>& iv) {
+  Cost_t acc = 0;
+  for (auto it = iv.begin(); it != iv.end(); ++it) {
+    acc += *it;
+  }
+  return acc;
+}
+
 const TaskDescriptor& CocoCostModel::GetTask(TaskID_t task_id) {
   TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td);
   return *td;
 }
 
-uint64_t CocoCostModel::GetInterferenceScoreForTask(TaskID_t task_id) {
-  return omega_;
+vector<uint64_t> CocoCostModel::GetInterferenceScoreForTask(TaskID_t task_id) {
+  vector<uint64_t> interference_vector(4);
+  const TaskDescriptor& td = GetTask(task_id);
+  if (td.task_type() == TaskDescriptor::TURTLE) {
+    // Turtles don't care about devils, or indeed anything else
+    // TOTAL: 20
+    interference_vector = { 5ULL, 5ULL, 5ULL, 5ULL };
+  } else if (td.task_type() == TaskDescriptor::SHEEP) {
+    // Sheep love turtles and rabbits, but dislike devils
+    // TOTAL: 36
+    interference_vector = { 1ULL, 5ULL, 10ULL, 20ULL };
+  } else if (td.task_type() == TaskDescriptor::RABBIT) {
+    // Rabbits love turtles and sheep, but hate devils and dislike other
+    // rabbits
+    // TOTAL: 126
+    interference_vector = { 1ULL, 5ULL, 20ULL, 100ULL };
+  } else if (td.task_type() == TaskDescriptor::DEVIL) {
+    // Devils like turtles, hate rabbits, dislike sheep and other devils
+    // TOTAL: 140
+    interference_vector = { 1ULL, 20ULL, 100ULL, 20ULL };
+  }
+  return interference_vector;
 }
 
 vector<EquivClass_t>* CocoCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
-  TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
-  CHECK_NOTNULL(td_ptr);
+  const TaskDescriptor& td = GetTask(task_id);
   // We have one task agg per job. The id of the aggregator is the hash
   // of the job id.
-  EquivClass_t task_agg = static_cast<EquivClass_t>(HashJobID(*td_ptr));
+  EquivClass_t task_agg = static_cast<EquivClass_t>(HashJobID(td));
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);
   unordered_map<EquivClass_t, set<TaskID_t> >::iterator task_ec_it =

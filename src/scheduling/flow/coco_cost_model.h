@@ -62,13 +62,11 @@ class CocoCostModel : public CostModelInterface {
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
   Cost_t EquivClassToResourceNode(EquivClass_t tec, ResourceID_t res_id);
   Cost_t EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
-  int64_t FlattenCostVector(CostVector_t cv);
   // Get the type of equiv class.
   vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
   vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
   vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(EquivClass_t tec);
   vector<TaskID_t>* GetIncomingEquivClassPrefArcs(EquivClass_t tec);
-  uint64_t GetInterferenceScoreForTask(TaskID_t task_id);
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
@@ -119,6 +117,9 @@ class CocoCostModel : public CostModelInterface {
   uint64_t ComputeInterferenceScore(ResourceID_t res_id);
   // Helper method to get TD for a task ID
   const TaskDescriptor& GetTask(TaskID_t task_id);
+  vector<uint64_t> GetInterferenceScoreForTask(TaskID_t task_id);
+  Cost_t FlattenCostVector(CostVector_t cv);
+  Cost_t FlattenInterferenceScore(const vector<uint64_t>& iv);
   // Get machine resource for a lower-level resource
   ResourceID_t MachineResIDForResource(ResourceID_t res_id);
   // Check if a task resource request fits under a resource aggregate
