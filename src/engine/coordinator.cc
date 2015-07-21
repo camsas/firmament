@@ -185,7 +185,12 @@ void Coordinator::AddResource(ResourceTopologyNodeDescriptor* rtnd,
   // Record the machine UUID if this is the local topology
   if (resource_desc->type() == ResourceDescriptor::RESOURCE_MACHINE &&
       local) {
+    // Store the machine UUID (different from the coordinator resource UUID,
+    // which is stored in uuid_).
     machine_uuid_ = ResourceIDFromString(resource_desc->uuid());
+    // Figure out the machine's resource capacity.
+    ResourceVector* cap = resource_desc->mutable_resource_capacity();
+    machine_monitor_.GetMachineCapacity(cap);
   }
   // Register with scheduler if this resource is schedulable
   if (resource_desc->type() == ResourceDescriptor::RESOURCE_PU) {

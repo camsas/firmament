@@ -13,6 +13,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "base/units.h"
 #include "misc/utils.h"
 #include "misc/map-util.h"
 #include "scheduling/knowledge_base.h"
@@ -646,23 +647,29 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
         // The CPU utilization gets added up automaticaly, so we only set the
         // per-machine properties here
         rd_ptr->mutable_available_resources()->set_ram_cap(
-            (latest_stats.total_ram() - latest_stats.free_ram()) / BYTES_TO_MB);
+            (latest_stats.free_ram() / BYTES_TO_MB));
         rd_ptr->mutable_max_available_resources_below()->set_ram_cap(
-            (latest_stats.total_ram() - latest_stats.free_ram()) / BYTES_TO_MB);
+            (latest_stats.free_ram() / BYTES_TO_MB));
         rd_ptr->mutable_min_available_resources_below()->set_ram_cap(
-            (latest_stats.total_ram() - latest_stats.free_ram()) / BYTES_TO_MB);
+            (latest_stats.free_ram() / BYTES_TO_MB));
         rd_ptr->mutable_available_resources()->set_disk_bw(
-            max_capacity_.disk_bw_ - (latest_stats.disk_bw() / BYTES_TO_MB));
+            rd_ptr->resource_capacity().disk_bw() -
+            (latest_stats.disk_bw() / BYTES_TO_MB));
         rd_ptr->mutable_max_available_resources_below()->set_disk_bw(
-            max_capacity_.disk_bw_ - (latest_stats.disk_bw() / BYTES_TO_MB));
+            rd_ptr->resource_capacity().disk_bw() -
+            (latest_stats.disk_bw() / BYTES_TO_MB));
         rd_ptr->mutable_min_available_resources_below()->set_disk_bw(
-            max_capacity_.disk_bw_ - (latest_stats.disk_bw() / BYTES_TO_MB));
+            rd_ptr->resource_capacity().disk_bw() -
+            (latest_stats.disk_bw() / BYTES_TO_MB));
         rd_ptr->mutable_available_resources()->set_net_bw(
-            max_capacity_.network_bw_ - (latest_stats.net_bw() / BYTES_TO_MB));
+            rd_ptr->resource_capacity().net_bw() -
+            (latest_stats.net_bw() / BYTES_TO_MB));
         rd_ptr->mutable_max_available_resources_below()->set_net_bw(
-            max_capacity_.network_bw_ - (latest_stats.net_bw() / BYTES_TO_MB));
+            rd_ptr->resource_capacity().net_bw() -
+            (latest_stats.net_bw() / BYTES_TO_MB));
         rd_ptr->mutable_min_available_resources_below()->set_net_bw(
-            max_capacity_.network_bw_ - (latest_stats.net_bw() / BYTES_TO_MB));
+            rd_ptr->resource_capacity().net_bw() -
+            (latest_stats.net_bw() / BYTES_TO_MB));
       }
     } else {
       LOG(FATAL) << "Unexpected arc from node " << accumulator->id_

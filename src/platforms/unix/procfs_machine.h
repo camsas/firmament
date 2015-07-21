@@ -49,13 +49,14 @@ class ProcFSMachine {
   ProcFSMachine();
   const MachinePerfStatisticsSample* CreateStatistics(
       MachinePerfStatisticsSample* stats);
+  void GetMachineCapacity(ResourceVector* cap);
 
  private:
   vector<CPUStatistics_t> GetCPUStats();
   vector<CpuUsage> GetCPUUsage();
-  DiskStatistics_t GetDisk();
-  MemoryStatistics_t GetMemory();
-  NetworkStatistics_t GetNetwork();
+  DiskStatistics_t GetDiskStats();
+  MemoryStatistics_t GetMemoryStats();
+  NetworkStatistics_t GetNetworkStats();
 
   inline void readunsigned(FILE* input, uint64_t *x) {
     fscanf(input, "%ju ", x);
