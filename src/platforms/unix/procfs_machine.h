@@ -37,6 +37,8 @@ typedef struct {
 typedef struct {
   uint64_t mem_total;
   uint64_t mem_free;
+  uint64_t mem_buffers;
+  uint64_t mem_pagecache;
 } MemoryStatistics_t;
 
 typedef struct {

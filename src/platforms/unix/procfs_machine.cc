@@ -54,7 +54,8 @@ const MachinePerfStatisticsSample* ProcFSMachine::CreateStatistics(
   // RAM stats
   MemoryStatistics_t mem_stats = GetMemoryStats();
   stats->set_total_ram(mem_stats.mem_total);
-  stats->set_free_ram(mem_stats.mem_free);
+  stats->set_free_ram(mem_stats.mem_free + mem_stats.mem_buffers +
+                      mem_stats.mem_pagecache);
   // Network I/O stats
   NetworkStatistics_t net_stats = GetNetworkStats();
   // We divide by FLAGS_heartbeat_interval / 1000000, since the samples are
@@ -238,11 +239,24 @@ void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
 
 MemoryStatistics_t ProcFSMachine::GetMemoryStats() {
   MemoryStatistics_t mem_stats;
-  struct sysinfo mem_info;
-  sysinfo(&mem_info);
-  mem_stats.mem_total = mem_info.totalram * mem_info.mem_unit;
-  mem_stats.mem_free = mem_info.freeram * mem_info.mem_unit +
-                       mem_info.bufferram * mem_info.mem_unit;
+  FILE* mem_stat_fd = fopen("/proc/meminfo", "r");
+  CHECK_NOTNULL(mem_stat_fd);
+  while (!feof(mem_stat_fd)) {
+    char label[100];
+    uint64_t val = 0;
+    fscanf(mem_stat_fd, "%s", label);
+    fscanf(mem_stat_fd, "%ju", &val);
+    if (strncmp(label, "MemTotal:", 100) == 0) {
+      mem_stats.mem_total = val * 1024;
+    } else if (strncmp(label, "MemFree:", 100) == 0) {
+      mem_stats.mem_free = val * 1024;
+    } else if (strncmp(label, "Buffers:", 100) == 0) {
+      mem_stats.mem_buffers = val * 1024;
+    } else if (strncmp(label, "Cached:", 100) == 0) {
+      mem_stats.mem_pagecache = val * 1024;
+    }
+  }
+  fclose(mem_stat_fd);
   return mem_stats;
 }
 
