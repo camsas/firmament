@@ -55,10 +55,15 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
   // Track the aggregate available resources below the accumulator node
   ResourceVector* acc_avail = accumulator->mutable_available_resources();
   ResourceVector* other_avail = other->mutable_available_resources();
+  // CPU core capacity is additive, while all other properties are machine-level
+  // properties that only get added once we get beyond the machine level.
   acc_avail->set_cpu_cores(acc_avail->cpu_cores() + other_avail->cpu_cores());
-  acc_avail->set_ram_cap(acc_avail->ram_cap() + other_avail->ram_cap());
-  acc_avail->set_net_bw(acc_avail->net_bw() + other_avail->net_bw());
-  acc_avail->set_disk_bw(acc_avail->disk_bw() + other_avail->disk_bw());
+  // XXX(malte): the current version of the CoCo model does not support
+  // aggregators above the machine level (e.g., rack aggregators), so this does
+  // not consider the additive case for RAM/net/disk resources yet.
+  acc_avail->set_ram_cap(max(acc_avail->ram_cap(), other_avail->ram_cap()));
+  acc_avail->set_net_bw(max(acc_avail->net_bw(), other_avail->net_bw()));
+  acc_avail->set_disk_bw(max(acc_avail->disk_bw(), other_avail->disk_bw()));
   // Track the maximum resources available in any dimensions at resources below
   // the accumulator node
   ResourceVector* acc_max =
@@ -91,6 +96,12 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
     acc_min->set_disk_bw(other_min->disk_bw());
   else if (other_min->disk_bw() > 0)
     acc_min->set_disk_bw(min(acc_min->disk_bw(), other_min->disk_bw()));
+  // Running/idle task count
+  accumulator->set_num_running_tasks_below(
+      accumulator->num_running_tasks_below() +
+      other->num_running_tasks_below());
+  accumulator->set_num_leaves_below(accumulator->num_leaves_below() +
+                                    other->num_leaves_below());
 }
 
 uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
@@ -640,6 +651,12 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
       // Use the KB to find load information and compute available resources
       ResourceID_t machine_res_id =
         MachineResIDForResource(accumulator->resource_id_);
+      // Get the RD for the machine
+      ResourceStatus* machine_rs_ptr =
+        FindPtrOrNull(*resource_map_, machine_res_id);
+      CHECK_NOTNULL(machine_rs_ptr);
+      ResourceDescriptor* machine_rd_ptr = machine_rs_ptr->mutable_descriptor();
+      // Grab the latest available resource sample from the machine
       const deque<MachinePerfStatisticsSample>* machine_stats =
         knowledge_base_->GetStatsForMachine(machine_res_id);
       if (machine_stats && machine_stats->size() > 0) {
@@ -661,34 +678,8 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
           rd_ptr->mutable_min_available_resources_below()->set_cpu_cores(
               latest_stats.cpus_usage(core_id).idle() / 100.0);
         }
-        if (rd_ptr->has_current_running_task()) {
-          rd_ptr->set_num_running_tasks_below(1);
-        } else {
-          rd_ptr->set_num_running_tasks_below(0);
-        }
-        rd_ptr->set_num_leaves_below(1);
-      }
-    }
-    return accumulator;
-  }
-  if (accumulator->type_ == FlowNodeType::COORDINATOR) {
-    if (!other->resource_id_.is_nil() &&
-        other->type_ == FlowNodeType::MACHINE) {
-      // Case: (EQUIV -> MACHINE).
-      ResourceStatus* rs_ptr =
-        FindPtrOrNull(*resource_map_, other->resource_id_);
-      if (!rs_ptr)
-        return accumulator;
-      ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
-      // Use the KB to find load information and compute available resources
-      const deque<MachinePerfStatisticsSample>* machine_stats =
-        knowledge_base_->GetStatsForMachine(other->resource_id_);
-      if (machine_stats && machine_stats->size() > 0) {
         VLOG(1) << "Updating machine " << other->resource_id_ << "'s "
                 << "resource stats!";
-        // Take the most recent sample for now
-        const MachinePerfStatisticsSample& latest_stats =
-          machine_stats->back();
         // The CPU utilization gets added up automaticaly, so we only set the
         // per-machine properties here
         rd_ptr->mutable_available_resources()->set_ram_cap(
@@ -698,29 +689,33 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
         rd_ptr->mutable_min_available_resources_below()->set_ram_cap(
             (latest_stats.free_ram() / BYTES_TO_MB));
         rd_ptr->mutable_available_resources()->set_disk_bw(
-            rd_ptr->resource_capacity().disk_bw() -
+            machine_rd_ptr->resource_capacity().disk_bw() -
             (latest_stats.disk_bw() / BYTES_TO_MB));
         rd_ptr->mutable_max_available_resources_below()->set_disk_bw(
-            rd_ptr->resource_capacity().disk_bw() -
+            machine_rd_ptr->resource_capacity().disk_bw() -
             (latest_stats.disk_bw() / BYTES_TO_MB));
         rd_ptr->mutable_min_available_resources_below()->set_disk_bw(
-            rd_ptr->resource_capacity().disk_bw() -
+            machine_rd_ptr->resource_capacity().disk_bw() -
             (latest_stats.disk_bw() / BYTES_TO_MB));
         rd_ptr->mutable_available_resources()->set_net_bw(
-            rd_ptr->resource_capacity().net_bw() -
+            machine_rd_ptr->resource_capacity().net_bw() -
             (latest_stats.net_bw() / BYTES_TO_MB));
         rd_ptr->mutable_max_available_resources_below()->set_net_bw(
-            rd_ptr->resource_capacity().net_bw() -
+            machine_rd_ptr->resource_capacity().net_bw() -
             (latest_stats.net_bw() / BYTES_TO_MB));
         rd_ptr->mutable_min_available_resources_below()->set_net_bw(
-            rd_ptr->resource_capacity().net_bw() -
+            machine_rd_ptr->resource_capacity().net_bw() -
             (latest_stats.net_bw() / BYTES_TO_MB));
+        // Running/idle task count
+        if (rd_ptr->has_current_running_task()) {
+          rd_ptr->set_num_running_tasks_below(1);
+        } else {
+          rd_ptr->set_num_running_tasks_below(0);
+        }
+        rd_ptr->set_num_leaves_below(1);
       }
-    } else {
-      LOG(FATAL) << "Unexpected arc from node " << accumulator->id_
-                 << " of type " << accumulator->type_ << " to " << other->id_
-                 << " of type " << other->type_;
     }
+    return accumulator;
   }
   // Case: (RESOURCE -> RESOURCE)
   ResourceStatus* acc_rs_ptr =
@@ -842,8 +837,10 @@ CocoCostModel::TaskFitsUnderResourceAggregate(
   //  // resources.
   //  return TASK_SOMETIMES_FITS_IN_UNRESERVED;
   //}
-  if (CompareResourceVectors(*request, res.max_available_resources_below()) ==
-      RESOURCE_VECTOR_PARTIALLY_FITS) {
+  ResourceVectorFitIndication_t fit_under_max =
+    CompareResourceVectors(*request, res.max_available_resources_below());
+  if (fit_under_max == RESOURCE_VECTOR_WHOLLY_FITS ||
+      fit_under_max == RESOURCE_VECTOR_PARTIALLY_FITS) {
     // We fit in available space (but not unreserved space) on *some*
     // (at least one) subordinate resources.
     return TASK_SOMETIMES_FITS_IN_AVAILABLE;
