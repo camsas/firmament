@@ -122,12 +122,15 @@ class FlowGraph {
   FlowGraphNode* AddNodeInternal(uint64_t id);
   FlowGraphArc* AddArcInternal(uint64_t src, uint64_t dst);
   FlowGraphNode* AddEquivClassNode(EquivClass_t ec);
+  void AddOrUpdateEquivClassArcs(EquivClass_t ec,
+                                 vector<FlowGraphArc*>* ec_arcs);
   void AddResourceEquivClasses(FlowGraphNode* res_node);
   void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void AddSpecialNodes();
   void AddTaskEquivClasses(FlowGraphNode* task_node);
   void AdjustUnscheduledAggToSinkCapacityGeneratingDelta(
       JobID_t job, int64_t delta);
+  void ChangeArcCost(FlowGraphArc* arc, uint64_t cost, const char *comment);
   void ConfigureResourceNodeECs(ResourceTopologyNodeDescriptor* rtnd);
   void ConfigureResourceBranchNode(const ResourceTopologyNodeDescriptor& rtnd,
                                    FlowGraphNode* new_node);
