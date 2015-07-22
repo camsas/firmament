@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_d9bfbca8",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-22T22:55:33Z",
+      "side": 0,
+      "message": "Note that this method still exists (it\u0027s defined a few lines down). The diff looks like this because most of the method\u0027s body ended up moving to AddOrUpdateEquivClassArcs.",
+      "range": {
+        "startLine": 484,
+        "startChar": 0,
+        "endLine": 484,
+        "endChar": 60
+      },
+      "revId": "ff842da21bcc162aa862bddffb3c7abc69a10adc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
