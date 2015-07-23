@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_746a37b4",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-23T02:19:33Z",
+      "side": 1,
+      "message": "When does this case happen? Why wouldn\u0027t they be initialized?",
+      "revId": "5a228682620d593daefc687a09cbb92d01a713c9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
