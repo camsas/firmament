@@ -99,7 +99,7 @@ void CocoCostModel::AccumulateCoCoResourceStats(ResourceDescriptor* accumulator,
 
 uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
   // Find resource within topology
-  VLOG(1) << "Computing interference scores for resources below " << res_id;
+  VLOG(2) << "Computing interference scores for resources below " << res_id;
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
   // TODO(malte): rs can be NULL if the resource is not yet present (this
   // happens e.g. on startup). It's safe to ignore for now as the cost will
@@ -117,12 +117,12 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
   if (rd.has_num_running_tasks_below() && num_total_leaves_below > 0) {
     num_idle_leaves_below = num_total_leaves_below -
       rd.num_running_tasks_below();
-    VLOG(1) << num_idle_leaves_below << " of " << num_total_leaves_below
+    VLOG(2) << num_idle_leaves_below << " of " << num_total_leaves_below
             << " leaves are idle.";
     scale_factor =
       exp(static_cast<double>(num_total_leaves_below - num_idle_leaves_below) /
           static_cast<double>(num_total_leaves_below));
-    VLOG(1) << "Scale factor: " << scale_factor;
+    VLOG(2) << "Scale factor: " << scale_factor;
   }
   uint64_t summed_interference_costs = 0;
   if (num_total_leaves_below == 0) {
@@ -482,11 +482,11 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
   // XXX(malte): unimplemented
   cost_vector.locality_score_ = 0;
   Cost_t flat_cost = FlattenCostVector(cost_vector);
-  if (VLOG_IS_ON(1)) {
-    VLOG(1) << "Resource " << source << "'s cost to resource "
+  if (VLOG_IS_ON(2)) {
+    VLOG(2) << "Resource " << source << "'s cost to resource "
             << destination << ":";
     PrintCostVector(cost_vector);
-    VLOG(1) << "  Flattened: " << flat_cost;
+    VLOG(2) << "  Flattened: " << flat_cost;
   }
   // Return the flattened vector
   return flat_cost;
@@ -691,7 +691,7 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
       const deque<MachinePerfStatisticsSample>* machine_stats =
         knowledge_base_->GetStatsForMachine(machine_res_id);
       if (machine_stats && machine_stats->size() > 0) {
-        VLOG(1) << "Updating PU " << accumulator->resource_id_ << "'s "
+        VLOG(2) << "Updating PU " << accumulator->resource_id_ << "'s "
                 << "resource stats!";
         // Take the most recent sample for now
         MachinePerfStatisticsSample latest_stats;
@@ -709,7 +709,7 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
           rd_ptr->mutable_min_available_resources_below()->set_cpu_cores(
               latest_stats.cpus_usage(core_id).idle() / 100.0);
         }
-        VLOG(1) << "Updating machine " << other->resource_id_ << "'s "
+        VLOG(2) << "Updating machine " << other->resource_id_ << "'s "
                 << "resource stats!";
         // The CPU utilization gets added up automaticaly, so we only set the
         // per-machine properties here
@@ -807,11 +807,14 @@ CocoCostModel::CompareResourceVectors(
   CHECK(at_least_one_nonfit || at_least_one_fit);
   if (at_least_one_fit && !at_least_one_nonfit) {
     // rv1 fits into rv2 in ALL dimensions
+    VLOG(2) << "Vector WHOLLY FITS";
     return RESOURCE_VECTOR_WHOLLY_FITS;
   } else if (at_least_one_fit && at_least_one_nonfit) {
     // rv1 fits into rv2 in SOME dimensions
+    VLOG(2) << "Vector PARTIALLY FITS";
     return RESOURCE_VECTOR_PARTIALLY_FITS;
   } else {
+    VLOG(2) << "Vector DOES NOT FIT";
     // rv2 fits into rv2 in NO dimension
     return RESOURCE_VECTOR_DOES_NOT_FIT;
   }
