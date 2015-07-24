@@ -35,11 +35,6 @@ CocoCostModel::CocoCostModel(
     task_map_(task_map),
     leaf_res_ids_(leaf_res_ids),
     knowledge_base_(kb) {
-  // XXX(malte): dodgy hack for local cluster
-  max_capacity_.cpu_cores_ = 12;
-  max_capacity_.ram_cap_ = 65536;
-  max_capacity_.network_bw_ = 1170;
-  max_capacity_.disk_bw_ = 250;
   // Set an initial value for infinity -- this overshoots a bit; would be nice
   // to have a tighter bound based on actual costs observed
   infinity_ = omega_ * (CostVector_t::dimensions_ - 1) +
@@ -153,20 +148,26 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
          ++it) {
       uint64_t child_interference_cost = (ComputeInterferenceScore(
             ResourceIDFromString(it->resource_desc().uuid())) / num_siblings);
-      VLOG(1) << "Interference cost for " << it->resource_desc().uuid()
+      VLOG(2) << "Interference cost for " << it->resource_desc().uuid()
               << " is " << child_interference_cost;
       summed_interference_costs += child_interference_cost;
     }
   }
-  VLOG(1) << "Total aggregate cost: " << summed_interference_costs;
+  VLOG(2) << "Total aggregate cost: " << summed_interference_costs;
   uint64_t interference_cost =
     (scale_factor * summed_interference_costs) - summed_interference_costs;
-  VLOG(1) << "After scaling: " << interference_cost;
+  VLOG(2) << "After scaling: " << interference_cost;
   return interference_cost;
 }
 
 const string CocoCostModel::DebugInfo() const {
   string out;
+  out += "Maximum capacity in cluster:\n";
+  out += max_machine_capacity_.DebugString();
+  out += "-------------------------------------\n";
+  out += "Minimum capacity in cluster:\n";
+  out += min_machine_capacity_.DebugString();
+  out += "-------------------------------------\n";
   out += "Resource load info:\n";
   ResourceStatus* root_rs =
     FindPtrOrNull(*resource_map_,
@@ -181,6 +182,8 @@ const string CocoCostModel::DebugInfo() const {
     ResourceTopologyNodeDescriptor* res_node_desc = to_visit.front();
     to_visit.pop();
     out += res_node_desc->resource_desc().uuid() + ": \n";
+    out += " - CAPACITY: " +
+      res_node_desc->resource_desc().resource_capacity().DebugString();
     out += " - AVAILABLE: " +
       res_node_desc->resource_desc().available_resources().DebugString();
     out += " - MIN_BELOW: " +
@@ -386,13 +389,17 @@ Cost_t CocoCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   CostVector_t cost_vector;
   cost_vector.priority_ = td.priority();
   cost_vector.cpu_cores_ = omega_ +
-    NormalizeCost(td.resource_request().cpu_cores(), max_capacity_.cpu_cores_);
+    NormalizeCost(td.resource_request().cpu_cores(),
+                  min_machine_capacity_.cpu_cores());
   cost_vector.ram_cap_ = omega_ +
-    NormalizeCost(td.resource_request().ram_cap(), max_capacity_.ram_cap_);
+    NormalizeCost(td.resource_request().ram_cap(),
+                  min_machine_capacity_.ram_cap());
   cost_vector.network_bw_ = omega_ +
-    NormalizeCost(td.resource_request().net_bw(), max_capacity_.network_bw_);
+    NormalizeCost(td.resource_request().net_bw(),
+                  min_machine_capacity_.net_bw());
   cost_vector.disk_bw_ = omega_ +
-    NormalizeCost(td.resource_request().disk_bw(), max_capacity_.disk_bw_);
+    NormalizeCost(td.resource_request().disk_bw(),
+                  min_machine_capacity_.disk_bw());
   cost_vector.machine_type_score_ = 1;
   cost_vector.interference_score_ = 1;
   cost_vector.locality_score_ = 0;
@@ -442,28 +449,32 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
   if (!rs)
     return 0LL;
   const ResourceDescriptor& rd = rs->descriptor();
+  // Get the RD for the machine corresponding to this resource
+  ResourceStatus* machine_rs =
+    FindPtrOrNull(*resource_map_, MachineResIDForResource(destination));
+  if (!machine_rs)
+    return 0LL;
+  const ResourceDescriptor& machine_rd = machine_rs->descriptor();
   // Compute resource request dimensions (normalized by largest machine)
   CostVector_t cost_vector;
   bzero(&cost_vector, sizeof(CostVector_t));
   cost_vector.priority_ = 0;
   if (rd.type() == ResourceDescriptor::RESOURCE_PU) {
     cost_vector.cpu_cores_ =
-        NormalizeCost(max_capacity_.cpu_cores_ -
-                      rd.available_resources().cpu_cores(),
-                      max_capacity_.cpu_cores_);
+        NormalizeCost(1.0 - rd.available_resources().cpu_cores(), 1.0);
   } else if (rd.type() == ResourceDescriptor::RESOURCE_MACHINE) {
     cost_vector.ram_cap_ =
-        NormalizeCost(max_capacity_.ram_cap_ -
+        NormalizeCost(machine_rd.resource_capacity().ram_cap() -
                       rd.available_resources().ram_cap(),
-                      max_capacity_.ram_cap_);
+                      machine_rd.resource_capacity().ram_cap());
     cost_vector.network_bw_ =
-        NormalizeCost(max_capacity_.network_bw_ -
+        NormalizeCost(machine_rd.resource_capacity().net_bw() -
                       rd.available_resources().net_bw(),
-                      max_capacity_.network_bw_);
+                      machine_rd.resource_capacity().net_bw());
     cost_vector.disk_bw_ =
-        NormalizeCost(max_capacity_.disk_bw_ -
+        NormalizeCost(machine_rd.resource_capacity().disk_bw() -
                       rd.available_resources().disk_bw(),
-                      max_capacity_.disk_bw_);
+                      machine_rd.resource_capacity().disk_bw());
   }
   // XXX(malte): unimplemented
   cost_vector.machine_type_score_ = 0;
@@ -510,13 +521,13 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   CostVector_t cost_vector;
   cost_vector.priority_ = td.priority();
   cost_vector.cpu_cores_ = NormalizeCost(td.resource_request().cpu_cores(),
-                                         max_capacity_.cpu_cores_);
+                                         max_machine_capacity_.cpu_cores());
   cost_vector.ram_cap_ = NormalizeCost(td.resource_request().ram_cap(),
-                                       max_capacity_.ram_cap_);
+                                       max_machine_capacity_.ram_cap());
   cost_vector.network_bw_ = NormalizeCost(td.resource_request().net_bw(),
-                                          max_capacity_.network_bw_);
+                                          max_machine_capacity_.net_bw());
   cost_vector.disk_bw_ = NormalizeCost(td.resource_request().disk_bw(),
-                                       max_capacity_.disk_bw_);
+                                       max_machine_capacity_.disk_bw());
   cost_vector.machine_type_score_ = 0;
   cost_vector.interference_score_ = 0;
   cost_vector.locality_score_ = 0;
@@ -545,12 +556,21 @@ ResourceID_t CocoCostModel::MachineResIDForResource(ResourceID_t res_id) {
   CHECK_NOTNULL(rs);
   ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
   while (rtnd->resource_desc().type() != ResourceDescriptor::RESOURCE_MACHINE) {
-    CHECK(rtnd->has_parent_id()) << "Non-machine resource "
-      << rtnd->resource_desc().uuid() << " has no parent!";
+    if (!rtnd->has_parent_id()) {
+      LOG(WARNING) << "Non-machine resource " << rtnd->resource_desc().uuid()
+                   << " has no parent!";
+      return ResourceID_t();
+    }
     rs = FindPtrOrNull(*resource_map_, ResourceIDFromString(rtnd->parent_id()));
     rtnd = rs->mutable_topology_node();
   }
   return ResourceIDFromString(rtnd->resource_desc().uuid());
+}
+
+uint32_t CocoCostModel::NormalizeCost(double raw_cost, double max_cost) {
+  if (omega_ == 0 || max_cost == 0.0)
+    return 0;
+  return (raw_cost / max_cost) * omega_;
 }
 
 uint32_t CocoCostModel::NormalizeCost(uint64_t raw_cost, uint64_t max_cost) {
@@ -572,6 +592,34 @@ void CocoCostModel::PrintCostVector(CostVector_t cv) {
 }
 
 void CocoCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  const ResourceDescriptor& rd = rtnd_ptr->resource_desc();
+  const ResourceVector& cap = rd.resource_capacity();
+  // Check if this machine's capacity is the maximum in any dimension
+  if (cap.cpu_cores() > max_machine_capacity_.cpu_cores())
+    max_machine_capacity_.set_cpu_cores(cap.cpu_cores());
+  if (cap.ram_cap() > max_machine_capacity_.ram_cap())
+    max_machine_capacity_.set_ram_cap(cap.ram_cap());
+  if (cap.net_bw() > max_machine_capacity_.net_bw())
+    max_machine_capacity_.set_net_bw(cap.net_bw());
+  if (cap.disk_bw() > max_machine_capacity_.disk_bw())
+    max_machine_capacity_.set_disk_bw(cap.disk_bw());
+  // Check if this machine's capacity is the minimum in any capacity
+  if (min_machine_capacity_.cpu_cores() == 0.0 ||
+      cap.cpu_cores() < min_machine_capacity_.cpu_cores()) {
+    min_machine_capacity_.set_cpu_cores(cap.cpu_cores());
+  }
+  if (min_machine_capacity_.ram_cap() == 0 ||
+      cap.ram_cap() < min_machine_capacity_.ram_cap()) {
+    min_machine_capacity_.set_ram_cap(cap.ram_cap());
+  }
+  if (min_machine_capacity_.net_bw() == 0 ||
+      cap.net_bw() < min_machine_capacity_.net_bw()) {
+    min_machine_capacity_.set_net_bw(cap.net_bw());
+  }
+  if (min_machine_capacity_.disk_bw() == 0 ||
+      cap.disk_bw() < min_machine_capacity_.disk_bw()) {
+    min_machine_capacity_.set_disk_bw(cap.disk_bw());
+  }
 }
 
 void CocoCostModel::AddTask(TaskID_t task_id) {
