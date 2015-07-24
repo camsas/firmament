@@ -70,7 +70,6 @@ class CocoCostModel : public CostModelInterface {
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
-  uint32_t NormalizeCost(uint64_t raw_cost, uint64_t max_cost);
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void AddTask(TaskID_t task_id);
   void PrintCostVector(CostVector_t cv);
@@ -122,6 +121,9 @@ class CocoCostModel : public CostModelInterface {
   Cost_t FlattenInterferenceScore(const vector<uint64_t>& iv);
   // Get machine resource for a lower-level resource
   ResourceID_t MachineResIDForResource(ResourceID_t res_id);
+  // Bring cost into the range (0, omega_)
+  uint32_t NormalizeCost(double raw_cost, double max_cost);
+  uint32_t NormalizeCost(uint64_t raw_cost, uint64_t max_cost);
   // Check if a task resource request fits under a resource aggregate
   TaskFitIndication_t TaskFitsUnderResourceAggregate(
       EquivClass_t tec,
@@ -148,7 +150,8 @@ class CocoCostModel : public CostModelInterface {
   uint64_t infinity_;
   // Vector to track the maximum capacity values in each dimension
   // present in the cluster (N.B.: these can execeed OMEGA).
-  CostVector_t max_capacity_;
+  ResourceVector max_machine_capacity_;
+  ResourceVector min_machine_capacity_;
 };
 
 }  // namespace firmament
