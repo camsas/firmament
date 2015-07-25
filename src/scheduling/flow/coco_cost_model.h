@@ -124,6 +124,10 @@ class CocoCostModel : public CostModelInterface {
   // Bring cost into the range (0, omega_)
   uint32_t NormalizeCost(double raw_cost, double max_cost);
   uint32_t NormalizeCost(uint64_t raw_cost, uint64_t max_cost);
+  // Count how many times a task with resource request req fits into
+  // available resources avail
+  uint64_t TaskFitCount(const ResourceVector& req,
+                        const ResourceVector& avail);
   // Check if a task resource request fits under a resource aggregate
   TaskFitIndication_t TaskFitsUnderResourceAggregate(
       EquivClass_t tec,

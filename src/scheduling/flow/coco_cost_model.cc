@@ -593,12 +593,20 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
 Cost_t CocoCostModel::EquivClassToResourceNode(EquivClass_t ec,
                                                ResourceID_t res_id) {
   if (ContainsKey(task_aggs_, ec)) {
-    // Get the RD for the resource
+    // ec is a TEC, so we have a TEC -> resource aggregate arc
     ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
     CHECK_NOTNULL(rs);
     const ResourceDescriptor& rd = rs->descriptor();
     const ResourceTopologyNodeDescriptor& rtnd = rs->topology_node();
-    // ec is a TEC, so we have a TEC -> resource aggregate arc
+    // Figure out the outgoing capacity by checking the task's resource
+    // requirements
+    ResourceVector* res_request = FindOrNull(task_ec_to_resource_request_, ec);
+    CHECK_NOTNULL(res_request);
+    const ResourceVector& res_avail = rd.available_resources();
+    uint64_t num_tasks_that_fit = TaskFitCount(*res_request, res_avail);
+    VLOG(1) << num_tasks_that_fit << " tasks of TEC " << ec << " fit under "
+            << res_id;
+    // Get the interference score for the task
     set<TaskID_t>* task_set = FindOrNull(task_ec_to_set_task_id_, ec);
     uint32_t score = 0;
     if (task_set) {
@@ -930,6 +938,22 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
   rd_ptr->clear_num_running_tasks_below();
   rd_ptr->clear_num_leaves_below();
   rd_ptr->clear_coco_interference_scores();
+}
+
+uint64_t CocoCostModel::TaskFitCount(const ResourceVector& req,
+                                     const ResourceVector& avail) {
+  uint64_t i = 0;
+  ResourceVectorFitIndication_t fit = CompareResourceVectors(req, avail);
+  while (fit == RESOURCE_VECTOR_WHOLLY_FITS) {
+    ResourceVector tmp;
+    tmp.set_cpu_cores(i * req.cpu_cores());
+    tmp.set_ram_cap(i * req.ram_cap());
+    tmp.set_net_bw(i * req.net_bw());
+    tmp.set_disk_bw(i * req.disk_bw());
+    fit = CompareResourceVectors(tmp, avail);
+    ++i;
+  }
+  return i;
 }
 
 CocoCostModel::TaskFitIndication_t
