@@ -95,6 +95,21 @@ void CocoCostModel::AccumulateCoCoResourceStats(ResourceDescriptor* accumulator,
       other->num_running_tasks_below());
   accumulator->set_num_leaves_below(accumulator->num_leaves_below() +
                                     other->num_leaves_below());
+  // Interference scores
+  CoCoInterferenceScores* aiv = accumulator->mutable_coco_interference_scores();
+  const CoCoInterferenceScores& oiv = other->coco_interference_scores();
+  ResourceStatus* ors =
+    FindPtrOrNull(*resource_map_, ResourceIDFromString(other->uuid()));
+  CHECK_NOTNULL(ors);
+  const ResourceTopologyNodeDescriptor& ortnd = ors->topology_node();
+  aiv->set_turtle_penalty(aiv->turtle_penalty() +
+      (oiv.turtle_penalty() / max(ortnd.children_size(), 1)));
+  aiv->set_sheep_penalty(aiv->sheep_penalty() +
+      (oiv.sheep_penalty() / max(ortnd.children_size(), 1)));
+  aiv->set_rabbit_penalty(aiv->rabbit_penalty() +
+      (oiv.rabbit_penalty() / max(ortnd.children_size(), 1)));
+  aiv->set_devil_penalty(aiv->devil_penalty() +
+      (oiv.devil_penalty() / max(ortnd.children_size(), 1)));
 }
 
 uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
@@ -132,8 +147,10 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
              rd.type() == ResourceDescriptor::RESOURCE_PU) {
     // Base case, we're at a PU
     if (rd.has_current_running_task()) {
-      return FlattenInterferenceScore(
-          GetInterferenceScoreForTask(rd.current_running_task()));
+      CoCoInterferenceScores iv;
+      GetInterferenceScoreForTask(rd.current_running_task(),
+                                  &iv);
+      return FlattenInterferenceScore(iv);
     } else {
       return 0;
     }
@@ -219,11 +236,13 @@ Cost_t CocoCostModel::FlattenCostVector(CostVector_t cv) {
   return accumulator + priority_value;
 }
 
-Cost_t CocoCostModel::FlattenInterferenceScore(const vector<uint64_t>& iv) {
+Cost_t CocoCostModel::FlattenInterferenceScore(
+    const CoCoInterferenceScores& iv) {
   Cost_t acc = 0;
-  for (auto it = iv.begin(); it != iv.end(); ++it) {
-    acc += *it;
-  }
+  acc += iv.turtle_penalty();
+  acc += iv.sheep_penalty();
+  acc += iv.rabbit_penalty();
+  acc += iv.devil_penalty();
   return acc;
 }
 
@@ -233,28 +252,40 @@ const TaskDescriptor& CocoCostModel::GetTask(TaskID_t task_id) {
   return *td;
 }
 
-vector<uint64_t> CocoCostModel::GetInterferenceScoreForTask(TaskID_t task_id) {
-  vector<uint64_t> interference_vector(4);
+void CocoCostModel::GetInterferenceScoreForTask(
+    TaskID_t task_id,
+    CoCoInterferenceScores* interference_vector) {
   const TaskDescriptor& td = GetTask(task_id);
   if (td.task_type() == TaskDescriptor::TURTLE) {
     // Turtles don't care about devils, or indeed anything else
     // TOTAL: 20
-    interference_vector = { 5ULL, 5ULL, 5ULL, 5ULL };
+    interference_vector->set_turtle_penalty(50);
+    interference_vector->set_sheep_penalty(50);
+    interference_vector->set_rabbit_penalty(50);
+    interference_vector->set_devil_penalty(50);
   } else if (td.task_type() == TaskDescriptor::SHEEP) {
     // Sheep love turtles and rabbits, but dislike devils
     // TOTAL: 36
-    interference_vector = { 1ULL, 5ULL, 10ULL, 20ULL };
+    interference_vector->set_turtle_penalty(10);
+    interference_vector->set_sheep_penalty(50);
+    interference_vector->set_rabbit_penalty(100);
+    interference_vector->set_devil_penalty(200);
   } else if (td.task_type() == TaskDescriptor::RABBIT) {
     // Rabbits love turtles and sheep, but hate devils and dislike other
     // rabbits
     // TOTAL: 126
-    interference_vector = { 1ULL, 5ULL, 20ULL, 100ULL };
+    interference_vector->set_turtle_penalty(10);
+    interference_vector->set_sheep_penalty(50);
+    interference_vector->set_rabbit_penalty(200);
+    interference_vector->set_devil_penalty(1000);
   } else if (td.task_type() == TaskDescriptor::DEVIL) {
     // Devils like turtles, hate rabbits, dislike sheep and other devils
     // TOTAL: 140
-    interference_vector = { 1ULL, 20ULL, 100ULL, 20ULL };
+    interference_vector->set_turtle_penalty(10);
+    interference_vector->set_sheep_penalty(200);
+    interference_vector->set_rabbit_penalty(1000);
+    interference_vector->set_devil_penalty(200);
   }
-  return interference_vector;
 }
 
 vector<EquivClass_t>* CocoCostModel::GetTaskEquivClasses(TaskID_t task_id) {
@@ -437,7 +468,8 @@ Cost_t CocoCostModel::TaskToClusterAggCost(TaskID_t task_id) {
 
 Cost_t CocoCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                              ResourceID_t resource_id) {
-  // Main CoCo cost calculation, depending on who the resource node is
+  // Not used in CoCo, as we don't have direct arcs from tasks to resources;
+  // we only connect via TECs
   return 0LL;
 }
 
@@ -455,7 +487,7 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
   if (!machine_rs)
     return 0LL;
   const ResourceDescriptor& machine_rd = machine_rs->descriptor();
-  // Compute resource request dimensions (normalized by largest machine)
+  // Compute resource request dimensions (normalized by machine capacity)
   CostVector_t cost_vector;
   bzero(&cost_vector, sizeof(CostVector_t));
   cost_vector.priority_ = 0;
@@ -541,9 +573,39 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return FlattenCostVector(cost_vector);
 }
 
-Cost_t CocoCostModel::EquivClassToResourceNode(EquivClass_t tec,
+Cost_t CocoCostModel::EquivClassToResourceNode(EquivClass_t ec,
                                                ResourceID_t res_id) {
-  return 0LL;
+  if (ContainsKey(task_aggs_, ec)) {
+    // Get the RD for the resource
+    ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+    CHECK_NOTNULL(rs);
+    const ResourceDescriptor& rd = rs->descriptor();
+    const ResourceTopologyNodeDescriptor& rtnd = rs->topology_node();
+    // ec is a TEC, so we have a TEC -> resource aggregate arc
+    set<TaskID_t>* task_set = FindOrNull(task_ec_to_set_task_id_, ec);
+    uint32_t score = 0;
+    if (task_set) {
+      // N.B.: This assumes that all tasks in an EC are of the same type.
+      TaskID_t sample_task_id = *task_set->begin();
+      const TaskDescriptor& td = GetTask(sample_task_id);
+      if (td.task_type() == TaskDescriptor::TURTLE) {
+        score = rd.coco_interference_scores().turtle_penalty() /
+          max(rtnd.children_size(), 1);
+      } else if (td.task_type() == TaskDescriptor::SHEEP) {
+        score = rd.coco_interference_scores().sheep_penalty() /
+          max(rtnd.children_size(), 1);
+      } else if (td.task_type() == TaskDescriptor::RABBIT) {
+        score = rd.coco_interference_scores().rabbit_penalty() /
+          max(rtnd.children_size(), 1);
+      } else if (td.task_type() == TaskDescriptor::DEVIL) {
+        score = rd.coco_interference_scores().devil_penalty() /
+          max(rtnd.children_size(), 1);
+      }
+    }
+    return score;
+  } else {
+    return 0LL;
+  }
 }
 
 Cost_t CocoCostModel::EquivClassToEquivClass(EquivClass_t tec1,
@@ -744,6 +806,12 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
           rd_ptr->set_num_running_tasks_below(0);
         }
         rd_ptr->set_num_leaves_below(1);
+        // Interference score vectors
+        if (rd_ptr->has_current_running_task()) {
+          GetInterferenceScoreForTask(
+              rd_ptr->current_running_task(),
+              rd_ptr->mutable_coco_interference_scores());
+        }
       }
     }
     return accumulator;
@@ -837,6 +905,7 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
   rd_ptr->mutable_available_resources()->clear_disk_bw();
   rd_ptr->clear_num_running_tasks_below();
   rd_ptr->clear_num_leaves_below();
+  rd_ptr->clear_coco_interference_scores();
 }
 
 CocoCostModel::TaskFitIndication_t
