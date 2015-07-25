@@ -5,6 +5,7 @@
 
 package firmament;
 
+import "base/coco_interference_scores.proto";
 import "base/resource_vector.proto";
 import "base/whare_map_stats.proto";
 
@@ -43,14 +44,15 @@ message ResourceDescriptor {
   // are below this node, 
   optional uint64 num_running_tasks_below = 10 [default = 0];
   optional uint64 num_leaves_below = 11 [default = 0];
-  // XXX(malte): both of these are hacks and should be in more appropriate
-  // places
-  optional WhareMapStats whare_map_stats = 12;
-  optional ResourceVector available_resources = 13;
-  optional ResourceVector unreserved_resources = 14;
-  optional ResourceVector min_available_resources_below = 15;
-  optional ResourceVector max_available_resources_below = 16;
-  optional ResourceVector min_unreserved_resources_below = 17;
-  optional ResourceVector max_unreserved_resources_below = 18;
-  optional ResourceVector resource_capacity = 19;
+  // Resource capacity and load tracking
+  optional ResourceVector available_resources = 12;
+  optional ResourceVector unreserved_resources = 13;
+  optional ResourceVector min_available_resources_below = 14;
+  optional ResourceVector max_available_resources_below = 15;
+  optional ResourceVector min_unreserved_resources_below = 16;
+  optional ResourceVector max_unreserved_resources_below = 17;
+  optional ResourceVector resource_capacity = 18;
+  // Cost-model-specific statistics
+  optional WhareMapStats whare_map_stats = 19;
+  optional CoCoInterferenceScores coco_interference_scores = 20;
 }

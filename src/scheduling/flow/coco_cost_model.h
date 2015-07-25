@@ -116,9 +116,10 @@ class CocoCostModel : public CostModelInterface {
   uint64_t ComputeInterferenceScore(ResourceID_t res_id);
   // Helper method to get TD for a task ID
   const TaskDescriptor& GetTask(TaskID_t task_id);
-  vector<uint64_t> GetInterferenceScoreForTask(TaskID_t task_id);
+  void GetInterferenceScoreForTask(TaskID_t task_id,
+                                   CoCoInterferenceScores* iv);
   int64_t FlattenCostVector(CostVector_t cv);
-  Cost_t FlattenInterferenceScore(const vector<uint64_t>& iv);
+  Cost_t FlattenInterferenceScore(const CoCoInterferenceScores& iv);
   // Get machine resource for a lower-level resource
   ResourceID_t MachineResIDForResource(ResourceID_t res_id);
   // Bring cost into the range (0, omega_)
