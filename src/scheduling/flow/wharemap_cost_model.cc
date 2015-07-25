@@ -184,10 +184,11 @@ Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
     return 0;
 }
 
-Cost_t WhareMapCostModel::EquivClassToResourceNode(EquivClass_t tec,
-                                                   ResourceID_t res_id) {
+pair<Cost_t, int64_t> WhareMapCostModel::EquivClassToResourceNode(
+    EquivClass_t tec,
+    ResourceID_t res_id) {
   // TODO(ionel): Implement!
-  return 0LL;
+  return pair<Cost_t, int64_t>(0LL, -1LL);
 }
 
 Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,
@@ -270,7 +271,9 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
       for (auto it = machine_to_rtnd_.begin();
            it != machine_to_rtnd_.end();
            ++it) {
-        Cost_t cost_to_res = EquivClassToResourceNode(ec, it->first);
+        pair<Cost_t, int64_t> cost_and_cap_to_res =
+          EquivClassToResourceNode(ec, it->first);
+        Cost_t cost_to_res = cost_and_cap_to_res.first;
         ResourceID_t res_id =
           ResourceIDFromString(it->second->resource_desc().uuid());
         if (priority_res.size() < FLAGS_num_pref_arcs_agg_to_res) {
