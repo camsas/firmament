@@ -61,9 +61,10 @@ Cost_t VoidCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return 0LL;
 }
 
-Cost_t VoidCostModel::EquivClassToResourceNode(EquivClass_t tec,
-                                               ResourceID_t res_id) {
-  return 0LL;
+pair<Cost_t, int64_t> VoidCostModel::EquivClassToResourceNode(
+    EquivClass_t tec,
+    ResourceID_t res_id) {
+  return pair<Cost_t, int64_t>(0LL, -1LL);
 }
 
 Cost_t VoidCostModel::EquivClassToEquivClass(EquivClass_t tec1,

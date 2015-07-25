@@ -380,10 +380,17 @@ void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
       // to the resource equiv class when a new resource is connected to it.
       FlowGraphArc* ec_arc =
         AddArcInternal(ec_node_ptr->id_, res_node->id_);
-      // TODO(malte): N.B.: this assumes no PU sharing.
-      ec_arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(res_node);
-      ec_arc->cost_ =
+      pair<Cost_t, int64_t> cost_and_cap =
         cost_model_->EquivClassToResourceNode(*it, res_id);
+      if (cost_and_cap.second >= 0) {
+        // Use capacity specified by cost model
+        ec_arc->cap_upper_bound_ = cost_and_cap.second;
+      } else {
+        // Cost model did not specify a capacity, so use the maximum
+        // TODO(malte): N.B.: this assumes no PU sharing.
+        ec_arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(res_node);
+      }
+      ec_arc->cost_ = cost_and_cap.first;
       VLOG(2) << "    Adding arc from EC node " << ec_node_ptr->id_
               << " to " << res_node->id_ << " at cap "
               << ec_arc->cap_upper_bound_ << ", cost " << ec_arc->cost_ << "!";
@@ -556,20 +563,28 @@ void FlowGraph::AddOrUpdateEquivClassArcs(EquivClass_t ec,
          it != res_pref_arcs->end(); ++it) {
       FlowGraphNode* rn = NodeForResourceID(*it);
       CHECK_NOTNULL(rn);
-      uint64_t arc_cost = cost_model_->EquivClassToResourceNode(ec, *it);
+      pair<Cost_t, int64_t> cost_and_cap =
+        cost_model_->EquivClassToResourceNode(ec, *it);
+      Cost_t arc_cost = cost_and_cap.first;
       FlowGraphArc* arc = FindPtrOrNull(ec_node->outgoing_arc_map_,
                                         rn->id_);
       if (!arc) {
         // We don't have the arc yet, so add it
         arc = AddArcInternal(ec_node->id_, rn->id_);
-        // TODO(malte): N.B.: this assumes no PU sharing.
-        arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(rn);
-        arc->cost_ = cost_model_->EquivClassToResourceNode(ec, *it);
+        if (cost_and_cap.second >= 0) {
+          // Use the capacity from the cost model
+          arc->cap_upper_bound_ = cost_and_cap.second;
+        } else {
+          // Cost model did not give us a capacity, so we use the maximum
+          // TODO(malte): N.B.: this assumes no PU sharing.
+          arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(rn);
+        }
+        arc->cost_ = arc_cost;
         VLOG(2) << "    adding arc from EC node " << ec_node->id_
                 << " to " << rn->id_ << " at cap "
                 << arc->cap_upper_bound_ << ", cost " << arc->cost_ << "!";
         ec_arcs->push_back(arc);
-      } else if (arc_cost != arc->cost_) {
+      } else if (static_cast<uint64_t>(arc_cost) != arc->cost_) {
         // It already exists, but its cost has changed
         ChangeArcCost(arc, arc_cost, "AddOrUpdateEquivClassArcs/outgoing");
       }

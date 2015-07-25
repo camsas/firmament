@@ -79,8 +79,9 @@ class CostModelInterface {
   /**
    * Get the cost of an arc from an equivalence class node to a resource node.
    */
-  virtual Cost_t EquivClassToResourceNode(EquivClass_t tec,
-                                          ResourceID_t res_id) = 0;
+  virtual pair<Cost_t, int64_t> EquivClassToResourceNode(
+      EquivClass_t tec,
+      ResourceID_t res_id) = 0;
   /**
    * Get the cost of an arc from an equivalence class node to another
    * equivalence class node.

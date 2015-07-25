@@ -590,8 +590,9 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return FlattenCostVector(cost_vector);
 }
 
-Cost_t CocoCostModel::EquivClassToResourceNode(EquivClass_t ec,
-                                               ResourceID_t res_id) {
+pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
+    EquivClass_t ec,
+    ResourceID_t res_id) {
   if (ContainsKey(task_aggs_, ec)) {
     // ec is a TEC, so we have a TEC -> resource aggregate arc
     ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
@@ -604,7 +605,7 @@ Cost_t CocoCostModel::EquivClassToResourceNode(EquivClass_t ec,
     CHECK_NOTNULL(res_request);
     const ResourceVector& res_avail = rd.available_resources();
     uint64_t num_tasks_that_fit = TaskFitCount(*res_request, res_avail);
-    VLOG(1) << num_tasks_that_fit << " tasks of TEC " << ec << " fit under "
+    VLOG(2) << num_tasks_that_fit << " tasks of TEC " << ec << " fit under "
             << res_id;
     // Get the interference score for the task
     set<TaskID_t>* task_set = FindOrNull(task_ec_to_set_task_id_, ec);
@@ -627,7 +628,7 @@ Cost_t CocoCostModel::EquivClassToResourceNode(EquivClass_t ec,
           max(rtnd.children_size(), 1);
       }
     }
-    return score;
+    return pair<Cost_t, int64_t>(score, num_tasks_that_fit);
   } else {
     LOG(WARNING) << "Unknown EC " << ec << " is not a TEC, so returning "
                  << "zero cost!";

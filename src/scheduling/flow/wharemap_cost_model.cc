@@ -360,7 +360,9 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
       for (auto it = machine_to_rtnd_.begin();
            it != machine_to_rtnd_.end();
            ++it) {
-        Cost_t cost_to_res = EquivClassToResourceNode(ec, it->first);
+        pair<Cost_t, int64_t> cost_and_cap_to_res =
+          EquivClassToResourceNode(ec, it->first);
+        Cost_t cost_to_res = cost_and_cap_to_res.first;
         ResourceID_t res_id =
           ResourceIDFromString(it->second->resource_desc().uuid());
         if (cost_to_res >= normed_worst_pspi) {
