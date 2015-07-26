@@ -1285,10 +1285,11 @@ void CoordinatorHTTPUI::ServeFile(const string& filename,
     PLOG(ERROR) << "Failed to open file for reading.";
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
+    return;
   }
-  string output(256, '\0');
+  string output(1024, '\0');
   while (true) {
-    int64_t n = read(fd, &output[0], 256);
+    int64_t n = read(fd, &output[0], 1024);
     if (n < 0) {
       PLOG(ERROR) << "Send data: read from file failed";
       ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
@@ -1299,6 +1300,7 @@ void CoordinatorHTTPUI::ServeFile(const string& filename,
     }
     writer->write(&output[0], n);
   }
+  close(fd);
 }
 
 void CoordinatorHTTPUI::Shutdown(bool block) {
