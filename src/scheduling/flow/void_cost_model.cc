@@ -8,12 +8,14 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "misc/utils.h"
+#include "misc/map-util.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
 
 namespace firmament {
 
-VoidCostModel::VoidCostModel() {
+VoidCostModel::VoidCostModel(shared_ptr<TaskMap_t> task_map)
+    : task_map_(task_map) {
 }
 
 Cost_t VoidCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
@@ -71,6 +73,15 @@ Cost_t VoidCostModel::EquivClassToEquivClass(EquivClass_t tec1,
 
 vector<EquivClass_t>* VoidCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+  TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
+  CHECK_NOTNULL(td_ptr);
+  // We have one task EC per program.
+  // The ID of the aggregator is the hash of the command line.
+  // We need this EC even in the void cost model in order to make the EC
+  // statistics view on the web UI work.
+  EquivClass_t task_agg =
+    static_cast<EquivClass_t>(HashCommandLine(*td_ptr));
+  equiv_classes->push_back(task_agg);
   equiv_classes->push_back(task_id);
   return equiv_classes;
 }
