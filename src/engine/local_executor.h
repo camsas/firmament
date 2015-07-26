@@ -92,6 +92,7 @@ class LocalExecutor : public ExecutorInterface {
   void SetUpEnvironmentForTask(const TaskDescriptor& td,
                                unordered_map<string, string>* env);
   char* TokenizeIntoArgv(const string& str, vector<char*>* argv);
+  bool WaitForPerfFile(const string& file_name);
   void WriteToPipe(int fd, void* data, size_t len);
   // This holds the currently configured URI of the coordinator for this
   // resource (which must be unique, for now).
