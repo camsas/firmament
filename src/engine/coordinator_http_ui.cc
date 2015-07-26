@@ -77,7 +77,8 @@ void CoordinatorHTTPUI::AddHeaderToTemplate(TemplateDictionary* dict,
   pgheader_sub_dict->SetIntValue("NUM_JOBS_RUNNING",
       coordinator_->NumJobsInState(JobDescriptor::RUNNING));
   pgheader_sub_dict->SetIntValue("NUM_TASKS_RUNNING",
-      coordinator_->NumTasksInState(TaskDescriptor::RUNNING));
+      coordinator_->NumTasksInState(TaskDescriptor::RUNNING) +
+      coordinator_->NumTasksInState(TaskDescriptor::DELEGATED));
   pgheader_sub_dict->SetIntValue("NUM_RESOURCES",
       coordinator_->NumResources());
   // Error message, if set
@@ -175,8 +176,9 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
   dict.SetIntValue("NUM_JOBS_RUNNING", coordinator_->NumJobsInState(
       JobDescriptor::RUNNING));
   dict.SetIntValue("NUM_TASKS_KNOWN", coordinator_->NumTasks());
-  dict.SetIntValue("NUM_TASKS_RUNNING", coordinator_->NumTasksInState(
-      TaskDescriptor::RUNNING));
+  dict.SetIntValue("NUM_TASKS_RUNNING",
+      coordinator_->NumTasksInState(TaskDescriptor::RUNNING) +
+      coordinator_->NumTasksInState(TaskDescriptor::DELEGATED));
   // The +1 is because the coordinator itself is a resource, too.
   dict.SetIntValue("NUM_RESOURCES_KNOWN", coordinator_->NumResources() + 1);
   dict.SetIntValue("NUM_RESOURCES_LOCAL", coordinator_->NumResources());
