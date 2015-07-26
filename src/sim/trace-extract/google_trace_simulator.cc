@@ -171,7 +171,7 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
     VLOG(1) << "Using the octopus cost model";
     break;
   case CostModelType::COST_MODEL_VOID:
-    cost_model_ = new VoidCostModel();
+    cost_model_ = new VoidCostModel(task_map_);
     VLOG(1) << "Using the void cost model";
     break;
   case CostModelType::COST_MODEL_SIMULATED_QUINCY:

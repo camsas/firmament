@@ -17,7 +17,7 @@ namespace firmament {
 
 class VoidCostModel : public CostModelInterface {
  public:
-  VoidCostModel();
+  VoidCostModel(shared_ptr<TaskMap_t> task_map);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -53,6 +53,8 @@ class VoidCostModel : public CostModelInterface {
 
  private:
   Cost_t TaskToClusterAggCost(TaskID_t task_id);
+  // Map of tasks present in the system, initialised externally
+  shared_ptr<TaskMap_t> task_map_;
 };
 
 }  // namespace firmament
