@@ -25,6 +25,10 @@ extern "C" {
 #include "misc/utils.h"
 #include "misc/map-util.h"
 
+// TODO(malte): replace with the more generic macro from units.h once
+// #240986 is merged into master.
+#define SECONDS_TO_MICROSECONDS 1000000ULL
+
 DEFINE_bool(pin_tasks_to_cores, true,
             "Pin tasks to their allocated CPU core when executing.");
 DEFINE_bool(debug_tasks, false,
@@ -180,36 +184,33 @@ void LocalExecutor::HandleTaskCompletion(TaskDescriptor* td,
   if (FLAGS_perf_monitoring) {
     FILE* fptr;
     char line[1024];
-    // This hack is required to avoid a race between the data file being
-    // written by the perf utility and it being opened for reading.
-    // Perf creates a zero-byte file when the task starts, but only syncs
-    // data to it when it finishes.
-    struct stat st;
-    bzero(&st, sizeof(struct stat));
     string file_name = PerfDataFileName(*td);
-    while (st.st_size == 0) {
-      if (stat(file_name.c_str(), &st) != 0)
-        PLOG(ERROR) << "Failed to stat perf data file " << file_name;
-    }
-    // Once we get here, we have non-zero data in the perf data file
-    if ((fptr = fopen(PerfDataFileName(*td).c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open perf data file " << file_name;
-    }
-    VLOG(1) << "Processing perf output in file " << PerfDataFileName(*td)
-            << "...";
-    while (!feof(fptr)) {
-      char* lptr = fgets(line, 1024, fptr);
-      if (lptr != NULL) {
-        GetPerfDataFromLine(report, line);
+    if (WaitForPerfFile(file_name)) {
+      // Once we get here, we have non-zero data in the perf data file
+      if ((fptr = fopen(file_name.c_str(), "r")) == NULL) {
+        LOG(ERROR) << "Failed to open perf data file " << file_name;
+      } else {
+        VLOG(1) << "Processing perf output in file " << file_name
+                << "...";
+        while (!feof(fptr)) {
+          char* lptr = fgets(line, 1024, fptr);
+          if (lptr != NULL) {
+            GetPerfDataFromLine(report, line);
+          }
+        }
+        fclose(fptr);
       }
+    } else {
+      LOG(ERROR) << "Perf file " << file_name << " does not exists or does not "
+                 << "contain data!";
     }
-    fclose(fptr);
   } else {
     // TODO(malte): this is a bit of a hack -- when we don't have the perf
     // information available, we use the executor's runtime measurements.
     // They should be identical, however, so maybe we should just always do
     // this. Multiplication by 1M converts from microseconds to seconds.
-    report->set_runtime(end_time / 1000000.0 - start_time / 1000000.0);
+    report->set_runtime(end_time / SECONDS_TO_MICROSECONDS -
+                        start_time / SECONDS_TO_MICROSECONDS);
   }
   // Now clean up any remaining state.
   CleanUpCompletedTask(*td);
@@ -499,6 +500,34 @@ char* LocalExecutor::TokenizeIntoArgv(const string& str, vector<char*>* argv) {
   VLOG(1) << "After adding tokenized version of '" << str
           << "', size of argv is " << argv->size();
   return str_c_string;
+}
+
+bool LocalExecutor::WaitForPerfFile(const string& file_name) {
+  // This hack is required to avoid a race between the data file being
+  // written by the perf utility and it being opened for reading.
+  // Perf creates a zero-byte file when the task starts, but only syncs
+  // data to it when it finishes.
+  struct stat st;
+  bzero(&st, sizeof(struct stat));
+  uint64_t timestamp = GetCurrentTimestamp();
+  // Wait at most 10s for perf file to become available
+  // TODO(malte): this is a bit of a hack to avoid us getting stuck here
+  // forever; we will want to move to a saner, locking-based scheme here.
+  if (stat(file_name.c_str(), &st) != 0)
+    return false;
+  while (st.st_size == 0 && GetCurrentTimestamp() <=
+         timestamp + 1 * SECONDS_TO_MICROSECONDS) {
+    if (stat(file_name.c_str(), &st) != 0) {
+      PLOG(ERROR) << "Failed to stat perf data file " << file_name;
+      return false;
+    }
+  }
+  if (st.st_size > 0) {
+    // The perf file exists and contains non-zero data
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void LocalExecutor::WriteToPipe(int fd, void* data, size_t len) {
