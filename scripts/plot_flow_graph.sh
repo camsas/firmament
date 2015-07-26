@@ -3,9 +3,13 @@ OUTDIR="/tmp/firmament-debug"
 TIMESTAMP=$(date '+%s')
 
 mkdir -p ${OUTDIR}
-for f in `ls ${OUTDIR}/debug_*.dm`; do
-  #DOT_FILE="${f}_${TIMESTAMP}.gv"
-  #OUTPUT="${f}_${TIMESTAMP}.png"
+if [[ $# < 1 ]]; then
+  FILES=$(ls ${OUTDIR}/debug_*.dm)
+else
+  FILES="${OUTDIR}/debug_$1.dm"
+fi
+
+for f in ${FILES}; do
   DOT_FILE="${f}.gv"
   OUTPUT="${f}.png"
   echo ${f}

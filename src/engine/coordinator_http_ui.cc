@@ -19,6 +19,7 @@
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
 #include "misc/utils.h"
+#include "misc/string_utils.h"
 #include "misc/uri_tools.h"
 #include "messages/task_kill_message.pb.h"
 #include "scheduling/knowledge_base.h"
@@ -676,8 +677,6 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
                                        tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
-  // XXX(malte): HACK!
-  system("bash scripts/plot_flow_graph.sh");
   // Get resource information from coordinator
   string iter_id = http_request->get_query("iter");
   if (iter_id.empty()) {
@@ -685,6 +684,11 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
                   tcp_conn);
     return;
   }
+  // XXX(malte): HACK to plot flow graph.
+  string cmd;
+  spf(&cmd, "bash scripts/plot_flow_graph.sh %s", iter_id.c_str());
+  system(cmd.c_str());
+  // End plotting hack.
   string action = http_request->get_query("a");
   string graph_filename = FLAGS_debug_output_dir;
   if (action.empty()) {
