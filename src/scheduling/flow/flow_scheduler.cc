@@ -330,7 +330,9 @@ uint64_t FlowScheduler::RunSchedulingIteration() {
   }
   if (deltas.size() > 0) {
     LOG(WARNING) << "Not all deltas were processed, " << deltas.size()
-                 << " remain!";
+                 << " remain: ";
+    for (auto it = deltas.begin(); it != deltas.end(); ++it)
+      LOG(WARNING) << " * " << (*it)->DebugString();
   }
 
   // The application of deltas may have changed relevant statistics, so
