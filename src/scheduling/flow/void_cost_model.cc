@@ -8,12 +8,14 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "misc/utils.h"
+#include "misc/map-util.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
 
 namespace firmament {
 
-VoidCostModel::VoidCostModel() {
+VoidCostModel::VoidCostModel(shared_ptr<TaskMap_t> task_map)
+    : task_map_(task_map) {
 }
 
 Cost_t VoidCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
@@ -71,6 +73,17 @@ Cost_t VoidCostModel::EquivClassToEquivClass(EquivClass_t tec1,
 
 vector<EquivClass_t>* VoidCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
+  TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
+  CHECK_NOTNULL(td_ptr);
+  // We have one task EC per program.
+  // The ID of the aggregator is the hash of the command line.
+  // This (first) EC will be used for the Whare-Map costs: the TEC
+  // aggregator is the source of the Whare-M cost arcs, and
+  // TaskToUnscheduledAggCost (currently) assumes that the first TEC is
+  // the one for which the cost model has statistics.
+  EquivClass_t task_agg =
+    static_cast<EquivClass_t>(HashCommandLine(*td_ptr));
+  equiv_classes->push_back(task_agg);
   equiv_classes->push_back(task_id);
   return equiv_classes;
 }
