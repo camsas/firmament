@@ -11,6 +11,8 @@
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
+DECLARE_bool(preemption);
+
 namespace firmament {
 
 TrivialCostModel::TrivialCostModel(
@@ -129,8 +131,10 @@ vector<TaskID_t>* TrivialCostModel::GetIncomingEquivClassPrefArcs(
       // we should instead maintain a collection of tasks actually eligible for
       // scheduling.
       if (it->second->state() == TaskDescriptor::RUNNABLE ||
-          it->second->state() == TaskDescriptor::RUNNING)
+          (FLAGS_preemption &&
+           it->second->state() == TaskDescriptor::RUNNING)) {
         tasks_with_incoming_arcs->push_back(it->first);
+      }
     }
   }
   return tasks_with_incoming_arcs;
