@@ -909,10 +909,9 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
     LOG(WARNING) << "Queried RD that does not exist yet, for "
                  << accumulator->resource_id_;
   }
-  rd_ptr->mutable_available_resources()->clear_cpu_cores();
-  rd_ptr->mutable_available_resources()->clear_ram_cap();
-  rd_ptr->mutable_available_resources()->clear_net_bw();
-  rd_ptr->mutable_available_resources()->clear_disk_bw();
+  rd_ptr->clear_available_resources();
+  rd_ptr->clear_min_available_resources_below();
+  rd_ptr->clear_max_available_resources_below();
   rd_ptr->clear_num_running_tasks_below();
   rd_ptr->clear_num_leaves_below();
   rd_ptr->clear_coco_interference_scores();
