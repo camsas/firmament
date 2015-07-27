@@ -10,6 +10,8 @@
 #include "misc/map-util.h"
 #include "scheduling/common.h"
 
+DECLARE_bool(preemption);
+
 namespace firmament {
 
 RandomCostModel::RandomCostModel(
@@ -158,8 +160,10 @@ vector<TaskID_t>* RandomCostModel::GetIncomingEquivClassPrefArcs(
       // we should instead maintain a collection of tasks actually eligible for
       // scheduling.
       if (it->second->state() == TaskDescriptor::RUNNABLE ||
-          it->second->state() == TaskDescriptor::RUNNING)
+          (FLAGS_preemption &&
+           it->second->state() == TaskDescriptor::RUNNING)) {
         prefered_task->push_back(it->first);
+      }
     }
   } else if (task_aggs_.find(ec) != task_aggs_.end()) {
     // ec is a task aggregator.
