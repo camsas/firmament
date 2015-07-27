@@ -19,6 +19,9 @@ def parse_arguments():
                       default=8080, help="Scheduler coordinator port")
   parser.add_argument("-d", "--duration", dest="duration", type=int,
                       default=120, help="Experiment runtime in sec.")
+  parser.add_argument("-t", "--target", dest="target",
+                      default="firmament",
+                      help="Target system (firmament, mesos)")
 
   arguments = parser.parse_args()
   return arguments
@@ -30,13 +33,14 @@ arguments = parse_arguments()
 scheduler_hostname = arguments.scheduler_hostname
 scheduler_port = arguments.scheduler_port
 duration = arguments.duration
+target = arguments.target
 
 print time.ctime()
 print "Running experiment for %d seconds." % (duration)
 cur_time = time.time()
 start_time = cur_time
 
-wl = Workload(scheduler_hostname, scheduler_port)
+wl = Workload(scheduler_hostname, scheduler_port, target)
 wl.add("test-sleep", "/bin/sleep", "10", 8)
 
 wl.start()
