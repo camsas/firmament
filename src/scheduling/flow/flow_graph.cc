@@ -991,9 +991,9 @@ void FlowGraph::DeleteTaskNode(TaskID_t task_id, const char *comment) {
   // Then remove node meta-data
   VLOG(2) << "Deleting task node with id " << node->id_ << ", task id "
           << node->task_id_;
-  task_nodes_.erase(node->task_id_);
+  CHECK_EQ(task_nodes_.erase(node->id_), 1);
   unused_ids_.push(node->id_);
-  task_to_nodeid_map_.erase(task_id);
+  CHECK_EQ(task_to_nodeid_map_.erase(task_id), 1);
   // Then remove the node itself. This needs to happen first, so that the arc
   // counts for ECs are correct.
   DeleteNode(node, comment);
@@ -1062,6 +1062,7 @@ uint64_t FlowGraph::NextId() {
       uint64_t new_id = unused_ids_.front();
       unused_ids_.pop();
       ids_created_.push_back(new_id);
+      CHECK_EQ(Node(new_id), static_cast<FlowGraphNode*>(NULL));
       return new_id;
     }
   }
