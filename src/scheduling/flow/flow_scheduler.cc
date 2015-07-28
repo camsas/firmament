@@ -174,60 +174,50 @@ uint64_t FlowScheduler::ApplySchedulingDeltas(
 }
 
 void FlowScheduler::DeregisterResource(ResourceID_t res_id) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::DeregisterResource(res_id);
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->RemoveMachine(res_id);
-  }
+  flow_graph_->RemoveMachine(res_id);
 }
 
 void FlowScheduler::HandleJobCompletion(JobID_t job_id) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Call into superclass handler
   EventDrivenScheduler::HandleJobCompletion(job_id);
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    // Job completed, so remove its nodes
-    flow_graph_->JobCompleted(job_id);
-  }
+  // Job completed, so remove its nodes
+  flow_graph_->JobCompleted(job_id);
 }
 
 void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                            TaskFinalReport* report) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   // We don't need to do any flow graph stuff for delegated tasks as
   // they are not currently represented in the flow graph.
   // Otherwise, we need to remove nodes, etc.
   if (!td_ptr->has_delegated_from()) {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     flow_graph_->TaskCompleted(td_ptr->uid());
   }
 }
 
 void FlowScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
                                          ResourceID_t res_id) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::HandleTaskEviction(td_ptr, res_id);
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->TaskEvicted(td_ptr->uid(), res_id);
-  }
+  flow_graph_->TaskEvicted(td_ptr->uid(), res_id);
 }
 
 void FlowScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::HandleTaskFailure(td_ptr);
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->TaskFailed(td_ptr->uid());
-  }
+  flow_graph_->TaskFailed(td_ptr->uid());
 }
 
 void FlowScheduler::KillRunningTask(TaskID_t task_id,
                                       TaskKillMessage::TaskKillReason reason) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::KillRunningTask(task_id, reason);
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->TaskKilled(task_id);
-  }
+  flow_graph_->TaskKilled(task_id);
 }
 
 uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
@@ -256,11 +246,9 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
 }
 
 void FlowScheduler::RegisterResource(ResourceID_t res_id, bool local) {
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    // Update the flow graph
-    UpdateResourceTopology(resource_topology_);
-  }
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  // Update the flow graph
+  UpdateResourceTopology(resource_topology_);
   // Call into superclass method to do scheduler resource initialisation.
   // This will create the executor for the new resource.
   EventDrivenScheduler::RegisterResource(res_id, local);

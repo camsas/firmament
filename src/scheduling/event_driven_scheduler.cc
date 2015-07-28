@@ -103,7 +103,8 @@ void EventDrivenScheduler::BindTaskToResource(
   if (VLOG_IS_ON(2))
     DebugPrintRunnableTasks();
   // Remove the task from the runnable set
-  CHECK_EQ(runnable_tasks_.erase(task_desc->uid()), 1);
+  CHECK_EQ(runnable_tasks_.erase(task_desc->uid()), 1)
+    << "Failed to remove task " << task_desc->uid() << " from runnable set!";
   if (VLOG_IS_ON(2))
     DebugPrintRunnableTasks();
   // Find an executor for this resource.
