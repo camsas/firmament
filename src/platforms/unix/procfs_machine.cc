@@ -63,13 +63,16 @@ const MachinePerfStatisticsSample* ProcFSMachine::CreateStatistics(
   // want the bandwidth to be in bytes/second.
   stats->set_net_bw(
       ((net_stats.send - net_stats_.send) + (net_stats.recv - net_stats_.recv))
-      / (FLAGS_heartbeat_interval / 1000000));
+      / (static_cast<double>(FLAGS_heartbeat_interval) /
+         static_cast<double>(SECONDS_TO_MICROSECONDS)));
   net_stats_ = net_stats;
   // Disk I/O stats
   DiskStatistics_t disk_stats = GetDiskStats();
-  stats->set_disk_bw((disk_stats.read - disk_stats_.read) +
-                     (disk_stats.write - disk_stats_.write) /
-                     (FLAGS_heartbeat_interval / 1000000));
+  stats->set_disk_bw(
+      (disk_stats.read - disk_stats_.read) +
+      (disk_stats.write - disk_stats_.write) /
+      (static_cast<double>(FLAGS_heartbeat_interval) /
+       static_cast<double>(SECONDS_TO_MICROSECONDS)));
   disk_stats_ = disk_stats;
   return stats;
 }
