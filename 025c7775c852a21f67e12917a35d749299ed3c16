@@ -16,6 +16,24 @@
       "revId": "025c7775c852a21f67e12917a35d749299ed3c16",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_0667e9e9",
+        "filename": "src/platforms/unix/stream_sockets_adapter-inl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-29T11:08:43Z",
+      "side": 1,
+      "message": "Sadly, I don\u0027t really know -- we were hitting this assertion very rarely (less than once in 1000 tasks) in TaskLib within seemingly innocuous tasks (e.g. cpu_spin). The only theory I have is that there may be a race in which the monitor receives from the coordinator before the TCP server is up.\n\nThat said, we will want to re-engineer this logic eventually anyway; there\u0027s no particularly good reason why TaskLib needs to run a TCP server (other than supporting our current uni-directional channel model).",
+      "parentUuid": "9ad9bd40_ec4ca944",
+      "revId": "025c7775c852a21f67e12917a35d749299ed3c16",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
