@@ -16,6 +16,24 @@
       "revId": "a8a1a7ae9264759e07213a192c3ce18c8a7b4547",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_122484c3",
+        "filename": "src/scheduling/flow/void_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-07-29T10:52:41Z",
+      "side": 1,
+      "message": "Copy-and-paste error! This is actually nothing to do with Whare-Map. I\u0027ve updated the comment in the new patch set.\n\nThe reason I brought in this code is that it\u0027s otherwise impossible to view task statistics on a coordinator that\u0027s using the simple scheduler. (Since we collect statistics per EC.)",
+      "parentUuid": "9ad9bd40_acc8e1a8",
+      "revId": "a8a1a7ae9264759e07213a192c3ce18c8a7b4547",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
