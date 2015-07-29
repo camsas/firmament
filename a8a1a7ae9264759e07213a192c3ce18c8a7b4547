@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_acc8e1a8",
+        "filename": "src/scheduling/flow/void_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-29T01:48:01Z",
+      "side": 1,
+      "message": "I think you need to expand a bit this comment. Are you using the void cost model to populate the knowledge base? Otherwise, I don\u0027t see what this code has to do with Whare-M.",
+      "revId": "a8a1a7ae9264759e07213a192c3ce18c8a7b4547",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
