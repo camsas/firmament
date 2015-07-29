@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_ec4ca944",
+        "filename": "src/platforms/unix/stream_sockets_adapter-inl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-29T01:58:00Z",
+      "side": 1,
+      "message": "It would be helpful to have a comment here that explains why the tcp_server can be null.",
+      "revId": "025c7775c852a21f67e12917a35d749299ed3c16",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
