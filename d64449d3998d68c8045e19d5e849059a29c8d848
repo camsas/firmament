@@ -121,6 +121,24 @@
       "revId": "d64449d3998d68c8045e19d5e849059a29c8d848",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_95079917",
+        "filename": "scripts/job/benchmark/workload.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-07-30T02:01:27Z",
+      "side": 1,
+      "message": "We can leave this as it is, but I\u0027m wondering if it wouldn\u0027t be better to use a list to store the jobs. In this way we could start them in the order in which they were added and, even run the workload job by job.",
+      "parentUuid": "9ad9bd40_6c6099a5",
+      "revId": "d64449d3998d68c8045e19d5e849059a29c8d848",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
