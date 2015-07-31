@@ -73,7 +73,7 @@ void *ExportToSolver(void *x) {
   qd->dimacs_exporter_.Flush(qd->to_solver_);
   if (!FLAGS_incremental_flow) {
     // We need to close the stream because that's what cs expects.
-    fclose(qd->to_solver_);
+    CHECK_EQ(fclose(qd->to_solver_), 0);
   }
   return NULL;
 }
@@ -275,12 +275,11 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     // We're done with the solver and can let it terminate here.
     int status = WaitForFinish(solver_pid);
 
-    fclose(from_solver_);
-    fclose(from_solver_stderr_);
-    // close the pipes
-    close(errfd_[0]);
-    close(outfd_[0]);
-    close(infd_[1]);
+    CHECK_EQ(fclose(from_solver_), 0);
+    CHECK_EQ(fclose(from_solver_stderr_), 0);
+    // N.B.: we DON'T close to_solver_ here, as the export thread already does
+    // this (cs2 expects stdin to be closed before it terminates, so we can't do
+    // it here)
 
     if (!FLAGS_flow_scheduling_time_reported) {
       // wait for logger thread
@@ -571,7 +570,7 @@ vector<map< uint64_t, uint64_t> >* SolverDispatcher::ReadFlowGraph(
     }
   }
   if (FLAGS_debug_flow_graph)
-    fclose(dbg_fptr);
+    CHECK_EQ(fclose(dbg_fptr), 0);
   return adj_list;
 }
 

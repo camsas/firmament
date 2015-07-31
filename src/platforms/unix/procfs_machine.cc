@@ -105,7 +105,7 @@ vector<CPUStatistics_t> ProcFSMachine::GetCPUStats() {
     cpu_now.systime = time(NULL);
     cpus_now.push_back(cpu_now);
   }
-  fclose(proc_stat);
+  CHECK_EQ(fclose(proc_stat), 0);
   return cpus_now;
 }
 
@@ -188,7 +188,7 @@ DiskStatistics_t ProcFSMachine::GetDiskStats() {
         // write sector count
         disk_stats.write = tmp_value * 512;
     }
-    fclose(blockdev_stat_fd);
+    CHECK_EQ(fclose(blockdev_stat_fd), 0);
   }
   return disk_stats;
 }
@@ -209,7 +209,7 @@ void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
   uint64_t speed = 0;
   if (nic_speed_fd) {
     readunsigned(nic_speed_fd, &speed);
-    fclose(nic_speed_fd);
+    CHECK_EQ(fclose(nic_speed_fd), 0);
   }
   if (speed == 0)
     LOG(WARNING) << "Failed to determinate network interface speed for "
@@ -226,7 +226,7 @@ void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
     uint64_t disk_is_rotational = 1;  // HDD is the default
     if (disk_type_fd) {
       readunsigned(disk_type_fd, &disk_is_rotational);
-      fclose(disk_type_fd);
+      CHECK_EQ(fclose(disk_type_fd), 0);
     }
     if (disk_is_rotational) {
       // Legacy HDD, so return low bandwidth
@@ -259,7 +259,7 @@ MemoryStatistics_t ProcFSMachine::GetMemoryStats() {
       mem_stats.mem_pagecache = val * 1024;
     }
   }
-  fclose(mem_stat_fd);
+  CHECK_EQ(fclose(mem_stat_fd), 0);
   return mem_stats;
 }
 
@@ -277,13 +277,13 @@ NetworkStatistics_t ProcFSMachine::GetNetworkStats() {
   FILE* tx_stat_fd = fopen((interface_path + "/tx_bytes").c_str(), "r");
   if (tx_stat_fd) {
     readunsigned(tx_stat_fd, &net_stats.send);
-    fclose(tx_stat_fd);
+    CHECK_EQ(fclose(tx_stat_fd), 0);
   }
   // Recv
   FILE* rx_stat_fd = fopen((interface_path + "/rx_bytes").c_str(), "r");
   if (rx_stat_fd) {
     readunsigned(rx_stat_fd, &net_stats.recv);
-    fclose(rx_stat_fd);
+    CHECK_EQ(fclose(rx_stat_fd), 0);
   }
   return net_stats;
 }

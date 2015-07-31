@@ -88,7 +88,7 @@ TaskLib::TaskLib()
   } else {
     int pid = getpid();
     fprintf(pid_file, "%d", pid);
-    fclose(pid_file);
+    CHECK_EQ(fclose(pid_file), 0);
   }
 
   use_procfs_ = true;
@@ -97,7 +97,7 @@ TaskLib::TaskLib()
 TaskLib::~TaskLib() {
   // Close the completion file if open
   if (completion_file_) {
-    fclose(completion_file_.get());
+    CHECK_EQ(fclose(completion_file_.get()), 0);
   }
 }
 
