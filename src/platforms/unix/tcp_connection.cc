@@ -27,7 +27,8 @@ void TCPConnection::Close() {
   VLOG(2) << "Closing TCP connection at " << this;
   ready_ = false;
   boost::system::error_code ec;
-  socket_.shutdown(tcp::socket::shutdown_both, ec);
+  if (socket_.is_open())
+    socket_.shutdown(tcp::socket::shutdown_both, ec);
   if (ec)
     LOG(WARNING) << "Error shutting down connections on socket for "
                  << "connection at " << this << ": " << ec.message();
