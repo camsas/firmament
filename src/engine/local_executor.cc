@@ -390,6 +390,14 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
       // Change to task's working directory
       chdir(env["FLAGS_task_data_dir"].c_str());
 
+      int fd;
+      int fds;
+      if ((fds = getdtablesize()) == -1) fds = OPEN_MAX_GUESS;
+      for (fd = 3; fd < fds; fd++) {
+        if (close(fd) == -EBADF)
+          break;
+      }
+
       // kill child process if parent terminates
       // SOMEDAY(adam): make this portable beyond Linux?
 #ifdef __linux__
