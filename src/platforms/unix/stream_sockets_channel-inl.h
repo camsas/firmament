@@ -143,7 +143,8 @@ bool StreamSocketsChannel<T>::Establish(const string& endpoint_uri) {
   client_socket_ = new tcp::socket(*client_io_service_);
   boost::system::error_code error = boost::asio::error::host_not_found;
   while (error && endpoint_iterator != end) {
-    client_socket_->close();
+    if (client_socket_->is_open())
+      client_socket_->close();
     client_socket_->connect(*endpoint_iterator++, error);
   }
   if (error) {
