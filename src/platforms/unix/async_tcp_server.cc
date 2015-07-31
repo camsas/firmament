@@ -99,7 +99,8 @@ void AsyncTCPServer::Stop() {
   listening_ = false;
   VLOG(2) << "Terminating " << endpoint_connection_map_.size()
           << " active TCP connections.";
-  acceptor_.close();
+  if (acceptor_.is_open())
+    acceptor_.close();
   for (unordered_map<string, TCPConnection::connection_ptr>::iterator
        c_iter = endpoint_connection_map_.begin();
        c_iter != endpoint_connection_map_.end();
