@@ -35,7 +35,7 @@ void ProcFSMonitor::AddSchedStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
   stats->sched_wait_runnable_ticks += tmp;
   readunsigned(input, &tmp);
   stats->sched_run_timeslices += tmp;
-  fclose(input);
+  CHECK_EQ(fclose(input), 0);
 }
 
 void ProcFSMonitor::AddStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
@@ -78,7 +78,7 @@ void ProcFSMonitor::AddStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
   readone(input, &tmp);
   stats->rsslim += tmp;
   skip(input, sizeof(uint64_t) * 16);  // skip remaining 16 fields
-  fclose(input);
+  CHECK_EQ(fclose(input), 0);
 }
 
 void ProcFSMonitor::AggregateStatsForPIDTree(
@@ -105,7 +105,7 @@ void ProcFSMonitor::AggregateStatsForPIDTree(
     VLOG(1) << "Found child " << tmp << " for " << pid;
     children.push_back(tmp);
   }
-  fclose(chld_input);
+  CHECK_EQ(fclose(chld_input), 0);
   for (uint64_t i = 0; i < children.size(); i++)
     AggregateStatsForPIDTree(children[i], false, stats);
 }
@@ -158,7 +158,7 @@ void ProcFSMonitor::GetStatsForPID(pid_t pid, ProcessStatistics_t* stats) {
   readone(input, &stats->cpu);
   readone(input, &stats->rt_priority);
   readone(input, &stats->policy);
-  fclose(input);
+  CHECK_EQ(fclose(input), 0);
 }
 
 vector<string>* ProcFSMonitor::FindMatchingLine(

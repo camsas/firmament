@@ -88,7 +88,7 @@ void DIMACSExporter::Flush(const string& filename) {
   // Write the cached DIMACS graph string out to the file
   FILE* outfd = fopen(filename.c_str(), "w");
   fprintf(outfd, "%s", output_.c_str());
-  fclose(outfd);
+  CHECK_EQ(fclose(outfd), 0);
 }
 
 void DIMACSExporter::Flush(int fd) {
