@@ -395,6 +395,17 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
       // Change to task's working directory
       chdir(env["FLAGS_task_data_dir"].c_str());
 
+      // Close the open FDs in the child before exec-ing, so that the task does
+      // not inherit all of the coordinator's sockets and FDs.
+      // We start from 3 here in order to avoid closing stdin/stdout/stderr.
+      int fd;
+      int fds;
+      if ((fds = getdtablesize()) == -1) fds = OPEN_MAX_GUESS;
+      for (fd = 3; fd < fds; fd++) {
+        if (close(fd) == -EBADF)
+          break;
+      }
+
       // kill child process if parent terminates
       // SOMEDAY(adam): make this portable beyond Linux?
 #ifdef __linux__
