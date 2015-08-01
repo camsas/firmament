@@ -999,18 +999,27 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
 
 uint64_t CocoCostModel::TaskFitCount(const ResourceVector& req,
                                      const ResourceVector& avail) {
-  uint64_t i = 0;
-  ResourceVectorFitIndication_t fit = CompareResourceVectors(req, avail);
-  while (fit == RESOURCE_VECTOR_WHOLLY_FITS) {
+  uint64_t i = 1;
+  ResourceVectorFitIndication_t fit = RESOURCE_VECTOR_DOES_NOT_FIT;
+  do {
     ResourceVector tmp;
     tmp.set_cpu_cores(i * req.cpu_cores());
     tmp.set_ram_cap(i * req.ram_cap());
     tmp.set_net_bw(i * req.net_bw());
     tmp.set_disk_bw(i * req.disk_bw());
+    VLOG(2) << "Fit comparison (" << i << " instances):";
+    VLOG(2) << tmp.DebugString();
+    VLOG(2) << avail.DebugString();
     fit = CompareResourceVectors(tmp, avail);
-    ++i;
-  }
-  return i;
+    VLOG(2) << "Result: " << fit;
+    if (fit != RESOURCE_VECTOR_WHOLLY_FITS)
+      // We no longer fit, so return the previous count
+      return i - 1;
+    else
+      ++i;
+  } while (fit == RESOURCE_VECTOR_WHOLLY_FITS);
+  // If we exit here, the task did not fit at all
+  return 0;
 }
 
 CocoCostModel::TaskFitIndication_t
