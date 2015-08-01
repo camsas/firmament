@@ -524,13 +524,13 @@ Cost_t CocoCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   // timestamps are in microseconds, but we scale to tenths of a second here in
   // order to keep the costs small
   uint64_t wait_time_cost = WAIT_TIME_MULTIPLIER * (time_since_submit / 100000);
-  if (VLOG_IS_ON(1)) {
-    VLOG(1) << "Task " << task_id << "'s cost to unscheduled aggregator:";
-    VLOG(1) << "  Baseline vector: ";
-    VLOG(1) << "  Flattened: " << base_cost;
+  if (VLOG_IS_ON(2)) {
+    VLOG(2) << "Task " << task_id << "'s cost to unscheduled aggregator:";
+    VLOG(2) << "  Baseline vector: ";
+    VLOG(2) << "  Flattened: " << base_cost;
     PrintCostVector(cost_vector);
-    VLOG(1) << "  Wait time component: " << wait_time_cost;
-    VLOG(1) << "  TOTAL: " << (wait_time_cost + base_cost);
+    VLOG(2) << "  Wait time component: " << wait_time_cost;
+    VLOG(2) << "  TOTAL: " << (wait_time_cost + base_cost);
   }
   return (wait_time_cost + base_cost);
 }
@@ -599,7 +599,7 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
   // XXX(malte): unimplemented
   cost_vector.locality_score_ = 0;
   Cost_t flat_cost = FlattenCostVector(cost_vector);
-  if (VLOG_IS_ON(2)) {
+  if (VLOG_IS_ON(2) && flat_cost > 0) {
     VLOG(2) << "Resource " << source << "'s cost to resource "
             << destination << ":";
     PrintCostVector(cost_vector);
@@ -648,7 +648,7 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   cost_vector.machine_type_score_ = 0;
   cost_vector.interference_score_ = 0;
   cost_vector.locality_score_ = 0;
-  if (VLOG_IS_ON(1)) {
+  if (VLOG_IS_ON(2)) {
     VLOG(1) << "Task " << task_id << "'s cost to EC "
             << tec << ":";
     PrintCostVector(cost_vector);
@@ -673,8 +673,6 @@ pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
     CHECK_NOTNULL(res_request);
     const ResourceVector& res_avail = rd.available_resources();
     uint64_t num_tasks_that_fit = TaskFitCount(*res_request, res_avail);
-    VLOG(2) << num_tasks_that_fit << " tasks of TEC " << ec << " fit under "
-            << res_id;
     // Get the interference score for the task
     set<TaskID_t>* task_set = FindOrNull(task_ec_to_set_task_id_, ec);
     uint32_t score = 0;
@@ -696,6 +694,8 @@ pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
           max(rtnd.children_size(), 1);
       }
     }
+    VLOG(2) << num_tasks_that_fit << " tasks of TEC " << ec << " fit under "
+            << res_id << ", at interference score of " << score;
     return pair<Cost_t, int64_t>(score, num_tasks_that_fit);
   } else {
     LOG(WARNING) << "Unknown EC " << ec << " is not a TEC, so returning "
@@ -716,8 +716,8 @@ ResourceID_t CocoCostModel::MachineResIDForResource(ResourceID_t res_id) {
   ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
   while (rtnd->resource_desc().type() != ResourceDescriptor::RESOURCE_MACHINE) {
     if (!rtnd->has_parent_id()) {
-      LOG(WARNING) << "Non-machine resource " << rtnd->resource_desc().uuid()
-                   << " has no parent!";
+      VLOG(2) << "Non-machine resource " << rtnd->resource_desc().uuid()
+              << " has no parent!";
       return ResourceID_t();
     }
     rs = FindPtrOrNull(*resource_map_, ResourceIDFromString(rtnd->parent_id()));
@@ -951,8 +951,11 @@ CocoCostModel::CompareResourceVectors(
   // CPU cores
   if (rv1.cpu_cores() <= rv2.cpu_cores())
     at_least_one_fit = true;
-  else
+  else {
     at_least_one_nonfit = true;
+    VLOG(2) << "non-fit due to CPU: " << rv1.cpu_cores() << "/"
+            << rv2.cpu_cores();
+  }
   VLOG(2) << "CPU cores: " << rv1.cpu_cores()
           << ", " << rv2.cpu_cores()
           << "; " << at_least_one_fit << "/"
@@ -960,8 +963,11 @@ CocoCostModel::CompareResourceVectors(
   // RAM capacity
   if (rv1.ram_cap() <= rv2.ram_cap())
     at_least_one_fit = true;
-  else
+  else {
     at_least_one_nonfit = true;
+    VLOG(2) << "non-fit due to RAM: " << rv1.ram_cap() << "/"
+            << rv2.ram_cap();
+  }
   VLOG(2) << "RAM cap: " << rv1.ram_cap()
           << ", " << rv2.ram_cap()
           << "; " << at_least_one_fit << "/"
@@ -969,8 +975,11 @@ CocoCostModel::CompareResourceVectors(
   // Disk bandwidth
   if (rv1.disk_bw() <= rv2.disk_bw())
     at_least_one_fit = true;
-  else
+  else {
     at_least_one_nonfit = true;
+    VLOG(2) << "non-fit due to disk: " << rv1.disk_bw() << "/"
+            << rv2.disk_bw();
+  }
   VLOG(2) << "Disk BW: " << rv1.disk_bw()
           << ", " << rv2.disk_bw()
           << "; " << at_least_one_fit << "/"
@@ -978,8 +987,11 @@ CocoCostModel::CompareResourceVectors(
   // Network bandwidth
   if (rv1.net_bw() <= rv2.net_bw())
     at_least_one_fit = true;
-  else
+  else {
     at_least_one_nonfit = true;
+    VLOG(2) << "non-fit due to net: " << rv1.net_bw() << "/"
+            << rv2.net_bw();
+  }
   VLOG(2) << "Net BW: " << rv1.net_bw()
           << ", " << rv2.net_bw()
           << "; " << at_least_one_fit << "/"
