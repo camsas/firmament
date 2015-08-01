@@ -26,6 +26,9 @@ extern "C" {
 
 #include "misc/utils.h"
 
+DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
+              "The directory to write debug output to.");
+
 namespace firmament {
 
 boost::mt19937 resource_id_rg_;

@@ -20,6 +20,8 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>
 
+DECLARE_string(debug_output_dir);
+
 namespace firmament {
 
 using namespace std;  // NOLINT

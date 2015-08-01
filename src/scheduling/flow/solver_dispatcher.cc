@@ -10,13 +10,12 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/timer/timer.hpp>
 
+#include "base/common.h"
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 
 DEFINE_bool(debug_flow_graph, false, "Write out a debug copy of the scheduling"
-            " flow graph to /tmp/debug.dm.");
-DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
-              "The directory to write debug output to.");
+            " flow graph to the debug directory.");
 DEFINE_string(flow_scheduling_solver, "cs2",
               "Solver to use for flow network optimization. Possible values:"
               "\"cs2\": Goldberg solver, \"flowlessly\": local Flowlessly "
