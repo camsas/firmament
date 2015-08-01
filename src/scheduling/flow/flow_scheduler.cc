@@ -31,6 +31,8 @@ DEFINE_int32(flow_scheduling_cost_model, 0,
              "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
 DEFINE_int64(time_dependent_cost_update_frequency, 10000000ULL,
              "Update frequency for time-dependent costs, in microseconds.");
+DEFINE_bool(debug_cost_model, false,
+            "Store cost model debug info in CSV files.");
 
 namespace firmament {
 namespace scheduler {
@@ -236,9 +238,24 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
     flow_graph_->AddOrUpdateJobNodes(job_desc);
     // If it is, only add the new bits
     // Run a scheduler iteration
-    uint64_t newly_scheduled = RunSchedulingIteration();
-    LOG(INFO) << "STOP SCHEDULING, placed " << newly_scheduled << " tasks";
-    return newly_scheduled;
+    uint64_t total_scheduled = 0;
+    total_scheduled = RunSchedulingIteration();
+    LOG(INFO) << "STOP SCHEDULING, placed " << total_scheduled << " tasks";
+    // If we have cost model debug logging turned on, write some debugging
+    // information now.
+    if (FLAGS_debug_cost_model) {
+      string csv_log;
+      spf(&csv_log, "%s/cost_model_%d.csv", FLAGS_debug_output_dir.c_str(),
+          solver_dispatcher_->seq_num());
+      FILE* csv_log_file = fopen(csv_log.c_str(), "w");
+      CHECK_NOTNULL(csv_log_file);
+      string debug_info = cost_model_->DebugInfoCSV();
+      fputs(debug_info.c_str(), csv_log_file);
+      CHECK_EQ(fclose(csv_log_file), 0);
+    }
+    // Resource reservations may have changed, so reconsider equivalence classes
+    flow_graph_->AddOrUpdateJobNodes(job_desc);
+    return total_scheduled;
   } else {
     LOG(INFO) << "STOP SCHEDULING, nothing to do";
     return 0;
