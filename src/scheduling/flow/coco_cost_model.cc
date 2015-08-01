@@ -839,14 +839,14 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
       CHECK_NOTNULL(machine_rs_ptr);
       ResourceDescriptor* machine_rd_ptr = machine_rs_ptr->mutable_descriptor();
       // Grab the latest available resource sample from the machine
-      const deque<MachinePerfStatisticsSample>* machine_stats =
+      const deque<MachinePerfStatisticsSample> machine_stats =
         knowledge_base_->GetStatsForMachine(machine_res_id);
-      if (machine_stats && machine_stats->size() > 0) {
+      if (machine_stats.size() > 0) {
         VLOG(2) << "Updating PU " << accumulator->resource_id_ << "'s "
                 << "resource stats!";
         // Take the most recent sample for now
         MachinePerfStatisticsSample latest_stats;
-        latest_stats.CopyFrom(machine_stats->back());
+        latest_stats.CopyFrom(machine_stats.back());
         // Get the CPU stats for this PU
         string label = rd_ptr->friendly_name();
         uint64_t idx = label.find("PU #");
