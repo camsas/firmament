@@ -45,6 +45,7 @@ class CocoCostModel : public CostModelInterface {
                   boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                 KnowledgeBase* kb);
   const string DebugInfo() const;
+  const string DebugInfoCSV() const;
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -127,6 +128,9 @@ class CocoCostModel : public CostModelInterface {
   // Bring cost into the range (0, omega_)
   uint32_t NormalizeCost(double raw_cost, double max_cost);
   uint32_t NormalizeCost(uint64_t raw_cost, uint64_t max_cost);
+  // Get a delimited string representing a resource vector
+  string ResourceVectorToString(const ResourceVector& rv,
+                                const string& delimiter) const;
   // Count how many times a task with resource request req fits into
   // available resources avail
   uint64_t TaskFitCount(const ResourceVector& req,

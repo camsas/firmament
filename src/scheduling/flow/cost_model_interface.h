@@ -175,7 +175,10 @@ class CostModelInterface {
    */
   virtual const string DebugInfo() const {
     // Default no-op implementation;
-    LOG(INFO) << "Got to interface's DebugInfo";
+    return "";
+  }
+  virtual const string DebugInfoCSV() const {
+    // Default no-op implementation;
     return "";
   }
 

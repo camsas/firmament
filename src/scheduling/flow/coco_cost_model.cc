@@ -186,13 +186,19 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
 
 const string CocoCostModel::DebugInfo() const {
   string out;
-  out += "Maximum capacity in cluster:\n";
-  out += max_machine_capacity_.DebugString();
-  out += "-------------------------------------\n";
-  out += "Minimum capacity in cluster:\n";
-  out += min_machine_capacity_.DebugString();
-  out += "-------------------------------------\n";
-  out += "Resource load info:\n";
+  out += "<p><b>Maximum capacity in cluster:</b> ";
+  out += ResourceVectorToString(max_machine_capacity_, " / ");
+  out += "</p>";
+  out += "<p><b>Minimum capacity in cluster:</b> ";
+  out += ResourceVectorToString(min_machine_capacity_, " / ");
+  out += "</p>";
+  out += "<h2>Resource load info</h2>";
+  out += "<table class=\"table table-bordered\"><tr><th>Resource</th>";
+  out += "<th>Tasks below</th>";
+  out += "<th colspan=\"4\">Capacity</th>";
+  out += "<th colspan=\"4\">Available</th>";
+  out += "<th colspan=\"4\">Min below</th>";
+  out += "<th colspan=\"4\">Max below</th>";
   ResourceStatus* root_rs =
     FindPtrOrNull(*resource_map_,
                   ResourceIDFromString(
@@ -204,18 +210,58 @@ const string CocoCostModel::DebugInfo() const {
   to_visit.push(root_rtnd);
   while (!to_visit.empty()) {
     ResourceTopologyNodeDescriptor* res_node_desc = to_visit.front();
+    CHECK_NOTNULL(res_node_desc);
     to_visit.pop();
-    out += res_node_desc->resource_desc().uuid() + ": \n";
-    out += " - CAPACITY: " +
-      res_node_desc->resource_desc().resource_capacity().DebugString();
-    out += " - AVAILABLE: " +
-      res_node_desc->resource_desc().available_resources().DebugString();
-    out += " - MIN_BELOW: " +
-      res_node_desc->resource_desc().
-      min_available_resources_below().DebugString();
-    out += " - MAX_BELOW: " +
-      res_node_desc->resource_desc().
-      max_available_resources_below().DebugString();
+    const ResourceDescriptor rd = res_node_desc->resource_desc();
+    out += "<tr><td>" + rd.uuid() + "</td>";
+    out += "<td>" + to_string(rd.num_running_tasks_below()) + "</td>";
+    out += "<td>" + ResourceVectorToString(rd.resource_capacity(), "</td><td>")
+           + "</td>";
+    out += "<td>" + ResourceVectorToString(rd.available_resources(),
+                                           "</td><td>") + "</td>";
+    out += "<td>" + ResourceVectorToString(rd.min_available_resources_below(),
+                                           "</td><td>") + "</td>";
+    out += "<td>" + ResourceVectorToString(rd.max_available_resources_below(),
+                                           "</td><td>") + "</td>";
+    out += "</tr>";
+    for (auto rtnd_iter =
+         res_node_desc->mutable_children()->pointer_begin();
+         rtnd_iter != res_node_desc->mutable_children()->pointer_end();
+         ++rtnd_iter) {
+      to_visit.push(*rtnd_iter);
+    }
+  }
+  out += "</table>";
+  out += "</body></html>";
+  return out;
+}
+
+const string CocoCostModel::DebugInfoCSV() const {
+  string out;
+  ResourceStatus* root_rs =
+    FindPtrOrNull(*resource_map_,
+                  ResourceIDFromString(
+                    resource_topology_.resource_desc().uuid()));
+  CHECK_NOTNULL(root_rs);
+  ResourceTopologyNodeDescriptor* root_rtnd =
+    root_rs->mutable_topology_node();
+  queue<ResourceTopologyNodeDescriptor*> to_visit;
+  to_visit.push(root_rtnd);
+  while (!to_visit.empty()) {
+    ResourceTopologyNodeDescriptor* res_node_desc = to_visit.front();
+    CHECK_NOTNULL(res_node_desc);
+    to_visit.pop();
+    const ResourceDescriptor rd = res_node_desc->resource_desc();
+    out += rd.uuid() + ",";
+    out += to_string(rd.type()) + ",";
+    out += to_string(rd.num_running_tasks_below()) + ",";
+    out += ResourceVectorToString(rd.resource_capacity(), ",") + ",";
+    out += ResourceVectorToString(rd.available_resources(), ",") + ",";
+    out += ResourceVectorToString(rd.min_available_resources_below(),
+                                  ",") + ",";
+    out += ResourceVectorToString(rd.max_available_resources_below(),
+                                  ",") + ",";
+    out += "\n";
     for (auto rtnd_iter =
          res_node_desc->mutable_children()->pointer_begin();
          rtnd_iter != res_node_desc->mutable_children()->pointer_end();
@@ -680,6 +726,17 @@ void CocoCostModel::PrintCostVector(CostVector_t cv) {
   LOG(INFO) << "  MACHINE TYPE: " << cv.machine_type_score_ << ", ";
   LOG(INFO) << "  INTERFERENCE: " << cv.interference_score_ << ", ";
   LOG(INFO) << "  LOCALITY: " << cv.locality_score_ << " ]";
+}
+
+string CocoCostModel::ResourceVectorToString(
+    const ResourceVector& rv,
+    const string& delimiter) const {
+  stringstream out;
+  out << rv.cpu_cores() << delimiter;
+  out << rv.ram_cap() << delimiter;
+  out << rv.disk_bw() << delimiter;
+  out << rv.net_bw();
+  return out.str();
 }
 
 void CocoCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {

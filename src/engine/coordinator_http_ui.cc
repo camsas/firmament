@@ -732,7 +732,14 @@ void CoordinatorHTTPUI::HandleSchedCostModelURI(http::request_ptr& http_request,
   // Get resource information from coordinator
   const FlowScheduler* sched =
     dynamic_cast<const FlowScheduler*>(coordinator_->scheduler());
-  string output = sched->cost_model().DebugInfo();
+  string debug_info = sched->cost_model().DebugInfo();
+  TemplateDictionary dict("sched_cost_model");
+  dict.SetValue("COST_MODEL_DEBUG_INFO", debug_info);
+  AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+  AddFooterToTemplate(&dict);
+  string output;
+  ExpandTemplate("src/webui/sched_costmodel.tpl", ctemplate::DO_NOT_STRIP,
+                 &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
