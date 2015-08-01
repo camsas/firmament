@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_1319d7d6",
+        "filename": "src/engine/coordinator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-01T14:10:53Z",
+      "side": 1,
+      "message": "The removal of const is required here because taking the lock inside the KB counts as a mutation, so consumers of the pointer must have a mutable pointer in order to be able to use the KB.",
+      "range": {
+        "startLine": 216,
+        "startChar": 2,
+        "endLine": 216,
+        "endChar": 35
+      },
+      "revId": "7af006f36de3ba60a82aa1db36ebdaa016db0c99",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
