@@ -112,6 +112,17 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
       (oiv.rabbit_penalty() / max(ortnd.children_size(), 1)));
   aiv->set_devil_penalty(aiv->devil_penalty() +
       (oiv.devil_penalty() / max(ortnd.children_size(), 1)));
+  // Resource reservations
+  ResourceVector* acc_reservation = accumulator->mutable_reserved_resources();
+  const ResourceVector& other_reservation = other->reserved_resources();
+  acc_reservation->set_cpu_cores(acc_reservation->cpu_cores() +
+                                 other_reservation.cpu_cores());
+  acc_reservation->set_ram_cap(acc_reservation->ram_cap() +
+                               other_reservation.ram_cap());
+  acc_reservation->set_net_bw(acc_reservation->net_bw() +
+                              other_reservation.net_bw());
+  acc_reservation->set_disk_bw(acc_reservation->disk_bw() +
+                               other_reservation.disk_bw());
 }
 
 uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
@@ -257,6 +268,7 @@ const string CocoCostModel::DebugInfoCSV() const {
     out += to_string(rd.num_running_tasks_below()) + ",";
     out += ResourceVectorToString(rd.resource_capacity(), ",") + ",";
     out += ResourceVectorToString(rd.available_resources(), ",") + ",";
+    out += ResourceVectorToString(rd.reserved_resources(), ",") + ",";
     out += ResourceVectorToString(rd.min_available_resources_below(),
                                   ",") + ",";
     out += ResourceVectorToString(rd.max_available_resources_below(),
@@ -407,7 +419,6 @@ vector<ResourceID_t>* CocoCostModel::GetOutgoingEquivClassPrefArcs(
           VLOG(1) << "Tasks in EC " << ec << " definitely do not fit into "
                   << "resources below "
                   << res_node_desc->resource_desc().uuid();
-          continue;
         }
         // Neither of the two applies, which implies that we must have one of
         // the TASK_SOMETIMES_FITS_* cases.
@@ -991,6 +1002,7 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
                  << accumulator->resource_id_;
   }
   rd_ptr->clear_available_resources();
+  rd_ptr->clear_reserved_resources();
   rd_ptr->clear_min_available_resources_below();
   rd_ptr->clear_max_available_resources_below();
   rd_ptr->clear_num_running_tasks_below();
@@ -1020,13 +1032,25 @@ CocoCostModel::TaskFitsUnderResourceAggregate(
     const ResourceDescriptor& res) {
   ResourceVector* request = FindOrNull(task_ec_to_resource_request_, tec);
   CHECK_NOTNULL(request);
-  // TODO(malte): this remains disabled for now, as we don't currently track
-  // resource reservations.
-  //if (CompareResourceVectors(request, res.min_unreserved_resources_below()) ==
-  //    RESOURCE_VECTOR_WHOLLY_FITS) {
-  //  // We fit into unreserved space on *all* subordinate resources.
-  //  return TASK_ALWAYS_FITS_IN_UNRESERVED;
-  //}
+  // TODO(malte): this is a bit of a hack for now; we should move the
+  // reservation check into its own method.
+  ResourceVector unreserved;
+  const ResourceVector& cap = res.resource_capacity();
+  const ResourceVector& reserved = res.reserved_resources();
+  unreserved.set_cpu_cores(max(cap.cpu_cores() - reserved.cpu_cores(), 0.0f));
+  unreserved.set_ram_cap(max(static_cast<int64_t>(cap.ram_cap()) -
+                             static_cast<int64_t>(reserved.ram_cap()), 0L));
+  unreserved.set_net_bw(max(static_cast<int64_t>(cap.net_bw()) -
+                            static_cast<int64_t>(reserved.net_bw()), 0L));
+  unreserved.set_disk_bw(max(static_cast<int64_t>(cap.disk_bw()) -
+                             static_cast<int64_t>(reserved.disk_bw()), 0L));
+  VLOG(1) << "Unreserved resources under " << res.uuid() << ": "
+          << ResourceVectorToString(unreserved, " / ");
+  if (CompareResourceVectors(*request, unreserved) ==
+      RESOURCE_VECTOR_WHOLLY_FITS) {
+    // We fit into unreserved space on *all* subordinate resources.
+    return TASK_ALWAYS_FITS_IN_UNRESERVED;
+  }
   if (CompareResourceVectors(*request, res.min_available_resources_below()) ==
       RESOURCE_VECTOR_WHOLLY_FITS) {
     // We fit in available space (but not unreserved space) on *all* subordinate
