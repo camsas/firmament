@@ -62,7 +62,7 @@ KnowledgeBase::~KnowledgeBase() {
 
 void KnowledgeBase::AddMachineSample(
     const MachinePerfStatisticsSample& sample) {
-  boost::lock_guard<boost::mutex> lock(kb_lock_);
+  boost::lock_guard<boost::upgrade_mutex> lock(kb_lock_);
   ResourceID_t rid = ResourceIDFromString(sample.resource_id());
   // Check if we already have a record for this machine
   deque<MachinePerfStatisticsSample>* q =
@@ -88,7 +88,7 @@ void KnowledgeBase::AddMachineSample(
 
 void KnowledgeBase::AddTaskSample(const TaskPerfStatisticsSample& sample) {
   TaskID_t tid = sample.task_id();
-  boost::lock_guard<boost::mutex> lock(kb_lock_);
+  boost::lock_guard<boost::upgrade_mutex> lock(kb_lock_);
   // Check if we already have a record for this task
   deque<TaskPerfStatisticsSample>* q = FindOrNull(task_map_, tid);
   if (!q) {
@@ -125,10 +125,29 @@ void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
   }
 }
 
-const deque<MachinePerfStatisticsSample>* KnowledgeBase::GetStatsForMachine(
-      ResourceID_t id) const {
+bool KnowledgeBase::GetLatestStatsForMachine(
+    ResourceID_t id,
+    MachinePerfStatisticsSample* sample) {
+  boost::lock_guard<boost::upgrade_mutex> lock_shared(kb_lock_);
   const deque<MachinePerfStatisticsSample>* res = FindOrNull(machine_map_, id);
-  return res;
+  if (!res)
+    return false;
+  // We make a copy here, as we lose the lock when returning
+  sample->CopyFrom(res->back());
+  return true;
+}
+
+const deque<MachinePerfStatisticsSample> KnowledgeBase::GetStatsForMachine(
+      ResourceID_t id) {
+  boost::lock_guard<boost::upgrade_mutex> lock_shared(kb_lock_);
+  const deque<MachinePerfStatisticsSample>* res = FindOrNull(machine_map_, id);
+  if (!res) {
+    const deque<MachinePerfStatisticsSample> empty;
+    return empty;
+  }
+  // We make a copy here, as we lose the lock when returning
+  const deque<MachinePerfStatisticsSample> copy(*res);
+  return copy;
 }
 
 const deque<TaskPerfStatisticsSample>* KnowledgeBase::GetStatsForTask(
@@ -160,6 +179,7 @@ vector<EquivClass_t>* KnowledgeBase::GetTaskEquivClasses(
 }
 
 double KnowledgeBase::GetAvgCPIForTEC(EquivClass_t id) {
+  boost::lock_guard<boost::upgrade_mutex> lock_shared(kb_lock_);
   const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
   CHECK_NOTNULL(res);
   if (!res || res->size() == 0)
@@ -175,6 +195,7 @@ double KnowledgeBase::GetAvgCPIForTEC(EquivClass_t id) {
 }
 
 double KnowledgeBase::GetAvgIPMAForTEC(EquivClass_t id) {
+  boost::lock_guard<boost::upgrade_mutex> lock_shared(kb_lock_);
   const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
   if (!res || res->size() == 0)
     return 0;
@@ -189,6 +210,7 @@ double KnowledgeBase::GetAvgIPMAForTEC(EquivClass_t id) {
 }
 
 double KnowledgeBase::GetAvgPsPIForTEC(EquivClass_t id) {
+  boost::lock_guard<boost::upgrade_mutex> lock_shared(kb_lock_);
   const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
   if (!res || res->size() == 0)
     return 0;
@@ -203,6 +225,7 @@ double KnowledgeBase::GetAvgPsPIForTEC(EquivClass_t id) {
 }
 
 double KnowledgeBase::GetAvgRuntimeForTEC(EquivClass_t id) {
+  boost::lock_guard<boost::upgrade_mutex> lock_shared(kb_lock_);
   const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, id);
   if (!res || res->size() == 0)
     return 0;
@@ -281,7 +304,7 @@ void KnowledgeBase::LoadKnowledgeBaseFromFile() {
 
 void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report,
                                            TaskID_t task_id) {
-  boost::lock_guard<boost::mutex> lock(kb_lock_);
+  boost::lock_guard<boost::upgrade_mutex> lock(kb_lock_);
   vector<EquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(task_id);
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();

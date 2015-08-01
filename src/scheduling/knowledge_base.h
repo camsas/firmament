@@ -38,8 +38,10 @@ class KnowledgeBase {
   void AddMachineSample(const MachinePerfStatisticsSample& sample);
   void AddTaskSample(const TaskPerfStatisticsSample& sample);
   void DumpMachineStats(const ResourceID_t& res_id) const;
-  const deque<MachinePerfStatisticsSample>* GetStatsForMachine(
-      ResourceID_t id) const;
+  bool GetLatestStatsForMachine(ResourceID_t id,
+                                MachinePerfStatisticsSample* sample);
+  const deque<MachinePerfStatisticsSample> GetStatsForMachine(
+      ResourceID_t id);
   const deque<TaskPerfStatisticsSample>* GetStatsForTask(
       TaskID_t id) const;
   virtual double GetAvgCPIForTEC(EquivClass_t id);
@@ -56,12 +58,13 @@ class KnowledgeBase {
   void SetCostModel(CostModelInterface* cost_model);
 
  protected:
-  map<ResourceID_t, deque<MachinePerfStatisticsSample> > machine_map_;
+  unordered_map<ResourceID_t, deque<MachinePerfStatisticsSample>,
+      boost::hash<boost::uuids::uuid> > machine_map_;
   // TODO(malte): note that below sample queue has no awareness of time within a
   // task, i.e. it mixes samples from all phases
   unordered_map<TaskID_t, deque<TaskPerfStatisticsSample> > task_map_;
   unordered_map<TaskID_t, deque<TaskFinalReport> > task_exec_reports_;
-  boost::mutex kb_lock_;
+  boost::upgrade_mutex kb_lock_;
   CostModelInterface* cost_model_;
 
  private:

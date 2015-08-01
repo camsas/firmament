@@ -213,7 +213,7 @@ class Coordinator : public Node,
   const string& hostname() {
     return hostname_;
   }
-  const KnowledgeBase* knowledge_base() {
+  KnowledgeBase* knowledge_base() {
     return knowledge_base_;
   }
   const string& parent_uri() {
