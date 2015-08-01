@@ -586,6 +586,9 @@ void FlowGraph::AddOrUpdateEquivClassArcs(EquivClass_t ec,
         ec_arcs->push_back(arc);
       } else if (static_cast<uint64_t>(arc_cost) != arc->cost_) {
         // It already exists, but its cost has changed
+        VLOG(1) << "Updating cost on EC -> resource arc from " << ec
+                << " to " << arc->dst_node_->resource_id_ << " from "
+                << arc->cost_ << " to " << arc_cost;
         ChangeArcCost(arc, arc_cost, "AddOrUpdateEquivClassArcs/outgoing");
       }
     }
