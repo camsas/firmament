@@ -46,7 +46,7 @@ message ResourceDescriptor {
   optional uint64 num_leaves_below = 11 [default = 0];
   // Resource capacity and load tracking
   optional ResourceVector available_resources = 12;
-  optional ResourceVector unreserved_resources = 13;
+  optional ResourceVector reserved_resources = 13;
   optional ResourceVector min_available_resources_below = 14;
   optional ResourceVector max_available_resources_below = 15;
   optional ResourceVector min_unreserved_resources_below = 16;
