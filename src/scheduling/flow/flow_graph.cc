@@ -589,8 +589,32 @@ void FlowGraph::AddOrUpdateEquivClassArcs(EquivClass_t ec,
         ChangeArcCost(arc, arc_cost, "AddOrUpdateEquivClassArcs/outgoing");
       }
     }
-    delete res_pref_arcs;
   }
+  // Check if we need to remove any arcs that are no longer in the set
+  set<FlowGraphArc*> to_delete;
+  for (auto ait = ec_node->outgoing_arc_map_.begin();
+       ait != ec_node->outgoing_arc_map_.end(); ++ait) {
+    ResourceID_t target_rid = ait->second->dst_node_->resource_id_;
+    bool found = false;
+    // XXX(malte): Yuck, this is inefficient. We should use a set!
+    for (auto pit = res_pref_arcs->begin();
+         pit != res_pref_arcs->end(); ++pit) {
+      if (*pit == target_rid) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      // We need to remove this arc
+      to_delete.insert(ait->second);
+      LOG(INFO) << "Deleting no-longer-current arc from EC " << ec
+                << " to resource " << target_rid;
+    }
+  }
+  for (auto dit = to_delete.begin(); dit != to_delete.end(); ++dit)
+    DeleteArcGeneratingDelta(*dit, "AddOrUpdateEquivClassArcs/outgoing");
+  // Finally, throw the preference arc vector away
+  delete res_pref_arcs;
 }
 
 FlowGraphNode* FlowGraph::AddEquivClassNode(EquivClass_t ec) {
