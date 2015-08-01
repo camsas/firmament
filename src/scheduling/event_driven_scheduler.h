@@ -41,16 +41,17 @@ class EventDrivenScheduler : public SchedulerInterface {
   void CheckRunningTasksHealth();
   virtual void DeregisterResource(ResourceID_t res_id);
   ExecutorInterface* GetExecutorForTask(TaskID_t task_id);
-  void HandleJobCompletion(JobID_t job_id);
-  void HandleReferenceStateChange(const ReferenceInterface& old_ref,
-                                  const ReferenceInterface& new_ref,
-                                  TaskDescriptor* td_ptr);
-  void HandleTaskCompletion(TaskDescriptor* td_ptr, TaskFinalReport* report);
-  void HandleTaskDelegationFailure(TaskDescriptor* td_ptr);
-  void HandleTaskEviction(TaskDescriptor* td_ptr, ResourceID_t res_id);
-  void HandleTaskFailure(TaskDescriptor* td_ptr);
-  void KillRunningTask(TaskID_t task_id,
-                       TaskKillMessage::TaskKillReason reason);
+  virtual void HandleJobCompletion(JobID_t job_id);
+  virtual void HandleReferenceStateChange(const ReferenceInterface& old_ref,
+                                          const ReferenceInterface& new_ref,
+                                          TaskDescriptor* td_ptr);
+  virtual void HandleTaskCompletion(TaskDescriptor* td_ptr,
+                                    TaskFinalReport* report);
+  virtual void HandleTaskDelegationFailure(TaskDescriptor* td_ptr);
+  virtual void HandleTaskEviction(TaskDescriptor* td_ptr, ResourceID_t res_id);
+  virtual void HandleTaskFailure(TaskDescriptor* td_ptr);
+  virtual void KillRunningTask(TaskID_t task_id,
+                               TaskKillMessage::TaskKillReason reason);
   bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);
   virtual void RegisterResource(ResourceID_t res_id, bool local);
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
