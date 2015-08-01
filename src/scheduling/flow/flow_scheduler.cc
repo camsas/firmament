@@ -150,8 +150,8 @@ uint64_t FlowScheduler::ApplySchedulingDeltas(
       ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
       CHECK_NOTNULL(td);
       CHECK_NOTNULL(rs);
-      VLOG(1) << "About to bind task " << td->uid() << " to resource "
-              << rs->mutable_descriptor()->uuid();
+      LOG(INFO) << "Scheduler binding task " << td->uid() << " to resource "
+                << rs->mutable_descriptor()->uuid();
       BindTaskToResource(td, rs->mutable_descriptor());
       // Mark the task as scheduled
       FlowGraphNode* node = flow_graph_->NodeForTaskID(task_id);
