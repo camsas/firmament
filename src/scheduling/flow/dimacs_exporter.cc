@@ -103,15 +103,14 @@ void DIMACSExporter::Flush(int fd) {
       LOG(FATAL) << "Error while flushing";
     }
   }
-  fclose(stream);
+  CHECK_EQ(fclose(stream), 0);
 }
 
 void DIMACSExporter::Flush(FILE* stream) {
-  int bytes_written = fprintf(stream, "%s", output_.c_str());
-  if (bytes_written < 0 ||
-      (string::size_type)bytes_written < output_.length()) {
-    LOG(FATAL) << "Output truncated: wrote only " << bytes_written
-               << " bytes out of " << output_.length();
+  int result = fputs(output_.c_str(), stream);
+  if (result < 0) {
+    PLOG(FATAL) << "Failed to write " << output_.length()
+                << " bytes to solver.";
   }
   if (fflush(stream)) {
     PLOG(FATAL) << "Error while flushing";
