@@ -838,93 +838,109 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
     return accumulator;
   }
 
-  if (other->resource_id_.is_nil()) {
-    if (accumulator->type_ == FlowNodeType::PU) {
-      // Base case: (PU -> SINK). We are at a PU and we gather the statistics.
-      ResourceStatus* rs_ptr =
-        FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-      if (!rs_ptr)
-        return accumulator;
-      ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
-      // Early exit if the resource is not yet there
-      if (!rd_ptr)
-        return accumulator;
-      // Use the KB to find load information and compute available resources
-      ResourceID_t machine_res_id =
-        MachineResIDForResource(accumulator->resource_id_);
-      // Get the RD for the machine
-      ResourceStatus* machine_rs_ptr =
-        FindPtrOrNull(*resource_map_, machine_res_id);
-      CHECK_NOTNULL(machine_rs_ptr);
-      ResourceDescriptor* machine_rd_ptr = machine_rs_ptr->mutable_descriptor();
-      // Grab the latest available resource sample from the machine
-      const deque<MachinePerfStatisticsSample> machine_stats =
-        knowledge_base_->GetStatsForMachine(machine_res_id);
-      if (machine_stats.size() > 0) {
-        VLOG(2) << "Updating PU " << accumulator->resource_id_ << "'s "
-                << "resource stats!";
-        // Take the most recent sample for now
-        MachinePerfStatisticsSample latest_stats;
-        latest_stats.CopyFrom(machine_stats.back());
-        // Get the CPU stats for this PU
-        string label = rd_ptr->friendly_name();
-        uint64_t idx = label.find("PU #");
-        if (idx != string::npos) {
-          string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
-          int64_t core_id = strtoll(core_id_substr.c_str(), 0, 10);
-          rd_ptr->mutable_available_resources()->set_cpu_cores(
-              latest_stats.cpus_usage(core_id).idle() / 100.0);
-          rd_ptr->mutable_max_available_resources_below()->set_cpu_cores(
-              latest_stats.cpus_usage(core_id).idle() / 100.0);
-          rd_ptr->mutable_min_available_resources_below()->set_cpu_cores(
-              latest_stats.cpus_usage(core_id).idle() / 100.0);
-        }
-        VLOG(2) << "Updating machine " << other->resource_id_ << "'s "
-                << "resource stats!";
-        // The CPU utilization gets added up automaticaly, so we only set the
-        // per-machine properties here
-        rd_ptr->mutable_available_resources()->set_ram_cap(
-            (latest_stats.free_ram() / BYTES_TO_MB));
-        rd_ptr->mutable_max_available_resources_below()->set_ram_cap(
-            (latest_stats.free_ram() / BYTES_TO_MB));
-        rd_ptr->mutable_min_available_resources_below()->set_ram_cap(
-            (latest_stats.free_ram() / BYTES_TO_MB));
-        rd_ptr->mutable_available_resources()->set_disk_bw(
-            machine_rd_ptr->resource_capacity().disk_bw() -
-            (latest_stats.disk_bw() / BYTES_TO_MB));
-        rd_ptr->mutable_max_available_resources_below()->set_disk_bw(
-            machine_rd_ptr->resource_capacity().disk_bw() -
-            (latest_stats.disk_bw() / BYTES_TO_MB));
-        rd_ptr->mutable_min_available_resources_below()->set_disk_bw(
-            machine_rd_ptr->resource_capacity().disk_bw() -
-            (latest_stats.disk_bw() / BYTES_TO_MB));
-        rd_ptr->mutable_available_resources()->set_net_bw(
-            machine_rd_ptr->resource_capacity().net_bw() -
-            (latest_stats.net_bw() / BYTES_TO_MB));
-        rd_ptr->mutable_max_available_resources_below()->set_net_bw(
-            machine_rd_ptr->resource_capacity().net_bw() -
-            (latest_stats.net_bw() / BYTES_TO_MB));
-        rd_ptr->mutable_min_available_resources_below()->set_net_bw(
-            machine_rd_ptr->resource_capacity().net_bw() -
-            (latest_stats.net_bw() / BYTES_TO_MB));
-        // Running/idle task count
-        if (rd_ptr->has_current_running_task()) {
-          rd_ptr->set_num_running_tasks_below(1);
-        } else {
-          rd_ptr->set_num_running_tasks_below(0);
-        }
-        rd_ptr->set_num_leaves_below(1);
-        // Interference score vectors
-        if (rd_ptr->has_current_running_task()) {
-          GetInterferenceScoreForTask(
-              rd_ptr->current_running_task(),
-              rd_ptr->mutable_coco_interference_scores());
-        }
+  // Case: (RESOURCE -> RESOURCE)
+  // We're inside the resource topology
+  ResourceStatus* rs_ptr =
+    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
+  if (!rs_ptr)
+    return accumulator;
+  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+  // Early exit if the resource is not yet there
+  if (!rd_ptr)
+    return accumulator;
+  // Use the KB to find load information and compute available resources
+  ResourceID_t machine_res_id =
+    MachineResIDForResource(accumulator->resource_id_);
+  if (accumulator->type_ == FlowNodeType::PU) {
+    // Base case: (PU -> SINK). We are at a PU and we gather the statistics.
+    CHECK(other->resource_id_.is_nil());
+    // Get the RD for the machine
+    /*ResourceStatus* machine_rs_ptr =
+      FindPtrOrNull(*resource_map_, machine_res_id);
+    CHECK_NOTNULL(machine_rs_ptr);
+    ResourceDescriptor* machine_rd_ptr = machine_rs_ptr->mutable_descriptor();*/
+    // Grab the latest available resource sample from the machine
+    MachinePerfStatisticsSample latest_stats;
+    // Take the most recent sample for now
+    bool have_sample =
+      knowledge_base_->GetLatestStatsForMachine(machine_res_id, &latest_stats);
+    if (have_sample) {
+      VLOG(2) << "Updating PU " << accumulator->resource_id_ << "'s "
+              << "resource stats!";
+      // Get the CPU stats for this PU
+      string label = rd_ptr->friendly_name();
+      uint64_t idx = label.find("PU #");
+      if (idx != string::npos) {
+        string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
+        int64_t core_id = strtoll(core_id_substr.c_str(), 0, 10);
+        rd_ptr->mutable_available_resources()->set_cpu_cores(
+            latest_stats.cpus_usage(core_id).idle() / 100.0);
+        rd_ptr->mutable_max_available_resources_below()->set_cpu_cores(
+            latest_stats.cpus_usage(core_id).idle() / 100.0);
+        rd_ptr->mutable_min_available_resources_below()->set_cpu_cores(
+            latest_stats.cpus_usage(core_id).idle() / 100.0);
+      }
+      // The CPU utilization gets added up automaticaly, so we only set the
+      // per-machine properties here
+      rd_ptr->mutable_available_resources()->set_ram_cap(
+          (latest_stats.free_ram() / BYTES_TO_MB));
+      rd_ptr->mutable_max_available_resources_below()->set_ram_cap(
+          (latest_stats.free_ram() / BYTES_TO_MB));
+      rd_ptr->mutable_min_available_resources_below()->set_ram_cap(
+          (latest_stats.free_ram() / BYTES_TO_MB));
+      // Running/idle task count
+      if (rd_ptr->has_current_running_task()) {
+        rd_ptr->set_num_running_tasks_below(1);
+      } else {
+        rd_ptr->set_num_running_tasks_below(0);
+      }
+      rd_ptr->set_num_leaves_below(1);
+      // Interference score vectors and resource reservations are accumulated if
+      // we have a running task here.
+      if (rd_ptr->has_current_running_task()) {
+        GetInterferenceScoreForTask(
+            rd_ptr->current_running_task(),
+            rd_ptr->mutable_coco_interference_scores());
+        // Get TD for running tasks for reservation
+        const TaskDescriptor& td = GetTask(rd_ptr->current_running_task());
+        ResourceVector* reserved = rd_ptr->mutable_reserved_resources();
+        reserved->set_cpu_cores(td.resource_request().cpu_cores());
+        reserved->set_ram_cap(td.resource_request().ram_cap());
+        reserved->set_disk_bw(td.resource_request().disk_bw());
+        reserved->set_net_bw(td.resource_request().net_bw());
       }
     }
     return accumulator;
+  } else if (accumulator->type_ == FlowNodeType::MACHINE) {
+    // Grab the latest available resource sample from the machine
+    MachinePerfStatisticsSample latest_stats;
+    // Take the most recent sample for now
+    bool have_sample =
+      knowledge_base_->GetLatestStatsForMachine(accumulator->resource_id_,
+                                                &latest_stats);
+    if (have_sample) {
+      VLOG(2) << "Updating machine " << accumulator->resource_id_ << "'s "
+              << "resource stats!";
+      rd_ptr->mutable_available_resources()->set_disk_bw(
+          rd_ptr->resource_capacity().disk_bw() -
+          (latest_stats.disk_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_max_available_resources_below()->set_disk_bw(
+          rd_ptr->resource_capacity().disk_bw() -
+          (latest_stats.disk_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_min_available_resources_below()->set_disk_bw(
+          rd_ptr->resource_capacity().disk_bw() -
+          (latest_stats.disk_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_available_resources()->set_net_bw(
+          rd_ptr->resource_capacity().net_bw() -
+          (latest_stats.net_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_max_available_resources_below()->set_net_bw(
+          rd_ptr->resource_capacity().net_bw() -
+          (latest_stats.net_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_min_available_resources_below()->set_net_bw(
+          rd_ptr->resource_capacity().net_bw() -
+          (latest_stats.net_bw() / BYTES_TO_MB));
+    }
   }
-  // Case: (RESOURCE -> RESOURCE)
   ResourceStatus* acc_rs_ptr =
     FindPtrOrNull(*resource_map_, accumulator->resource_id_);
   ResourceStatus* other_rs_ptr =
