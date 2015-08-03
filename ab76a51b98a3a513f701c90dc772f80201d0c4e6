@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_9f24060e",
+        "filename": "src/engine/local_executor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-03T18:39:55Z",
+      "side": 1,
+      "message": "for (int fd \u003d 3...)\n\nPlease add a comment before the for loop to say that the loop it\u0027s starting at 3 because we don\u0027t want to do close of stout..",
+      "revId": "ab76a51b98a3a513f701c90dc772f80201d0c4e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
