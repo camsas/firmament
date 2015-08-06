@@ -16,6 +16,24 @@
       "revId": "046b290cc9c6d9850e174ba7d3db79d4c241251d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_78758e30",
+        "filename": "src/engine/local_executor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 513,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-06T12:51:05Z",
+      "side": 1,
+      "message": "Done using a #define in this file, but we will move to a shared units.h file in a later commit in the coco_eval branch. I\u0027ve left a note to remove the local #define in due course.",
+      "parentUuid": "9ad9bd40_257043db",
+      "revId": "046b290cc9c6d9850e174ba7d3db79d4c241251d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
