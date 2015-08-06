@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_d8d93a58",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 593,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T12:34:10Z",
+      "side": 1,
+      "message": "Wouldn\u0027t be better to change the method signatures of the cost models to return two two vectors: current arcs and the ones to remove? We can postpone this change for another diff.",
+      "revId": "1f8b1090b2f7793c9ad0eb36531c53a6b44a3f92",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_38fce6b7",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 603,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T12:34:10Z",
+      "side": 1,
+      "message": "break.",
+      "revId": "1f8b1090b2f7793c9ad0eb36531c53a6b44a3f92",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
