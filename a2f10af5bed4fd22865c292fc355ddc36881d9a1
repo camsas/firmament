@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_e5665b50",
+        "filename": "src/platforms/unix/async_tcp_server.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T11:16:34Z",
+      "side": 1,
+      "message": "Please add a comment here. Maybe just copy it from the diff\u0027s description. In this way we won\u0027t forget why we\u0027re doing the check.",
+      "revId": "a2f10af5bed4fd22865c292fc355ddc36881d9a1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
