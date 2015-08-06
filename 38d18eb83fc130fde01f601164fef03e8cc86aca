@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_a5a4534b",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 919,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T11:26:18Z",
+      "side": 1,
+      "message": "You\u0027re fixing this in a follow up diff.",
+      "revId": "38d18eb83fc130fde01f601164fef03e8cc86aca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
