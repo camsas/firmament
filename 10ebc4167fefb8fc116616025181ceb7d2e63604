@@ -19,6 +19,40 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_02b6d589",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T09:24:59Z",
+      "side": 1,
+      "message": "Please do a fabsl comparison.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_c266ad29",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T09:24:59Z",
+      "side": 1,
+      "message": "LOG errors for when these values are \u003c 0.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_948c4481",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -30,6 +64,23 @@
       "writtenOn": "2015-07-20T16:39:53Z",
       "side": 1,
       "message": "Maybe capture \u003c\u003d 0 here. Otherwise if we have a mistake or a time sync happens we might end up not setting acc_min at all.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_e269f1f9",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T09:24:59Z",
+      "side": 1,
+      "message": "I woudn\u0027t use upper case for DO FIT. Same for the other log messages.",
       "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -70,6 +121,23 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_82574525",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 538,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T09:24:59Z",
+      "side": 1,
+      "message": "hmm..I\u0027m wondering if we should do an average over the last n entries instead. Here we risk capturing a spike or a quiet sample.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_d4308ca0",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -81,6 +149,57 @@
       "writtenOn": "2015-07-20T16:39:53Z",
       "side": 1,
       "message": "Similarly, please move this into a separate method.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_223e79da",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 581,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T09:24:59Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this just be latest_stats.free_ram() / BYTES_TO_MB?",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_22a2f94a",
+        "filename": "src/scheduling/flow/coco_cost_model.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T09:24:59Z",
+      "side": 1,
+      "message": "I would put this into mist/utils.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_428c5dda",
+        "filename": "src/scheduling/flow/coco_cost_model.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T09:24:59Z",
+      "side": 1,
+      "message": "AccumulateResourceStats. Coco is superfluous.",
       "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
