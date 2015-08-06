@@ -139,6 +139,42 @@
       "revId": "d64449d3998d68c8045e19d5e849059a29c8d848",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_78c3ce37",
+        "filename": "scripts/job/benchmark/workload.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-06T12:55:39Z",
+      "side": 1,
+      "message": "I originally sorted them so that tasks get spread out across machines in the Whare-Map cost model (due to the core-ID-based cost). However, in a later CL, I change this to a randomized order (with a fixed seed), which is actually more realistic and gives better results.",
+      "parentUuid": "9ad9bd40_6c6099a5",
+      "revId": "d64449d3998d68c8045e19d5e849059a29c8d848",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_b8e0f6cd",
+        "filename": "scripts/job/benchmark/workload.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-06T12:55:39Z",
+      "side": 1,
+      "message": "I think that would be a separate driver script (or a variant of this script); this one is designed to be \"I will specify a workload mix that should run continuously, and you should keep all these jobs up and running by re-submitting them when they finish\", without specifying any temporal order.",
+      "parentUuid": "9ad9bd40_95079917",
+      "revId": "d64449d3998d68c8045e19d5e849059a29c8d848",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
