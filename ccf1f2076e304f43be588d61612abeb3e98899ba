@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_250cc33a",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T09:42:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_adc39a87",
+      "revId": "ccf1f2076e304f43be588d61612abeb3e98899ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_9430c4e9",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 3
@@ -66,6 +84,24 @@
       "side": 1,
       "message": "Agreed; this could use similar logic to the WhareMap cost model (pick the best N options). However, one side-effect of doing that is that we lose optimality: there may be an option for the task to schedule that isn\u0027t captured in our N arcs. Since CoCo does not have a cluster aggregator, this will actually lead to the task remaining unscheduled. \n\nHence, I\u0027m in favour of leaving it as-is for now and seeing how many arcs we actually end up with in a realistic setting (e.g. the Google trace). If it\u0027s too many, we can introduce a bound. If it\u0027s not, we\u0027re fine. My hypothesis is that it will be fine, because tasks either have such low resource requirements that large aggregates are appropriate (\u003d few arcs), or they\u0027re so picky that only few places are suitable (\u003d few arcs).",
       "parentUuid": "9ad9bd40_9430c4e9",
+      "revId": "ccf1f2076e304f43be588d61612abeb3e98899ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_4516274d",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T09:42:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_cd6a9e80",
       "revId": "ccf1f2076e304f43be588d61612abeb3e98899ba",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
