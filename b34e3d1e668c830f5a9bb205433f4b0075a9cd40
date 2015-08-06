@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_05a5ff02",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T10:08:23Z",
+      "side": 1,
+      "message": "LOG(WARNING).",
+      "revId": "b34e3d1e668c830f5a9bb205433f4b0075a9cd40",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_25a843da",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 464,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T10:08:23Z",
+      "side": 1,
+      "message": "This is a bit confusing, because it looks like 1.0 - available_resources() can be \u003c 0.",
+      "revId": "b34e3d1e668c830f5a9bb205433f4b0075a9cd40",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_a5b3734b",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 607,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T10:08:23Z",
+      "side": 1,
+      "message": "fabsl",
+      "revId": "b34e3d1e668c830f5a9bb205433f4b0075a9cd40",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
