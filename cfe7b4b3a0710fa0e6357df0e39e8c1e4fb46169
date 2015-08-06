@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_5849aa2f",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-06T12:24:41Z",
+      "side": 1,
+      "message": "Shouldn\u0027t we assume that the cost model always returns a capacity?",
+      "revId": "cfe7b4b3a0710fa0e6357df0e39e8c1e4fb46169",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
