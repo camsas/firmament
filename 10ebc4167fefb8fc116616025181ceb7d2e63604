@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_a559a136",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "Not actioning this as the hard-coded values are removed in a future CL.",
+      "parentUuid": "9ad9bd40_94b52433",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_02b6d589",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2015-08-06T09:24:59Z",
       "side": 1,
       "message": "Please do a fabsl comparison.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_c56a25b2",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_02b6d589",
       "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_657a3989",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "They can\u0027t be, they\u0027re uint64 fields.",
+      "parentUuid": "9ad9bd40_c266ad29",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_948c4481",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -64,6 +118,24 @@
       "writtenOn": "2015-07-20T16:39:53Z",
       "side": 1,
       "message": "Maybe capture \u003c\u003d 0 here. Otherwise if we have a mistake or a time sync happens we might end up not setting acc_min at all.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_a570c1a4",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "Again, can\u0027t be negative, since the fields are uint64. Though that does raise interesting overflow questions...",
+      "parentUuid": "9ad9bd40_948c4481",
       "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_e5ac89ef",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_e269f1f9",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_9468c488",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -98,6 +188,24 @@
       "writtenOn": "2015-07-20T16:39:53Z",
       "side": 1,
       "message": "Please print warning. Presumably this happens when the local coordinator hasn\u0027t finished initializing itself.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_c5cce56c",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 526,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "Yes, this only happens once at the beginning, due to the funny way the topology is built in the flow graph. The warning would be printed on every coordinator startup (but is unnecessary, because we update the resources again once the topology is initialised). Hence, I don\u0027t think it\u0027s necessary.",
+      "parentUuid": "9ad9bd40_9468c488",
       "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -121,6 +229,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_05616dd2",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 533,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "Let\u0027s not do it with this CL, because this code changes a lot in later CLs and we\u0027re setting ourselves up for merge conflicts by changing it. I\u0027ll add a TODO to sort it out in a future CL.",
+      "parentUuid": "9ad9bd40_1414b4f3",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_82574525",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -132,6 +258,24 @@
       "writtenOn": "2015-08-06T09:24:59Z",
       "side": 1,
       "message": "hmm..I\u0027m wondering if we should do an average over the last n entries instead. Here we risk capturing a spike or a quiet sample.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_e56569e1",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 538,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "Agreed; added a TODO. This is best addressed in a fresh CL.",
+      "parentUuid": "9ad9bd40_82574525",
       "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -155,6 +299,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_e56f2990",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 569,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "See above; this code changes a lot in later CLs, so I suggest making a new CL that moves the code.",
+      "parentUuid": "9ad9bd40_d4308ca0",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_223e79da",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -166,6 +328,24 @@
       "writtenOn": "2015-08-06T09:24:59Z",
       "side": 1,
       "message": "Shouldn\u0027t this just be latest_stats.free_ram() / BYTES_TO_MB?",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_a584410b",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 581,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "Correct, this gets fixed in a later CL. Ok to leave here?",
+      "parentUuid": "9ad9bd40_223e79da",
       "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -189,6 +369,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_a5a7e109",
+        "filename": "src/scheduling/flow/coco_cost_model.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "A later CL moves it into units.h, so we don\u0027t need to address this here.",
+      "parentUuid": "9ad9bd40_22a2f94a",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_428c5dda",
         "filename": "src/scheduling/flow/coco_cost_model.h",
         "patchSetId": 1
@@ -200,6 +398,24 @@
       "writtenOn": "2015-08-06T09:24:59Z",
       "side": 1,
       "message": "AccumulateResourceStats. Coco is superfluous.",
+      "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_c5b14548",
+        "filename": "src/scheduling/flow/coco_cost_model.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T17:04:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_428c5dda",
       "revId": "10ebc4167fefb8fc116616025181ceb7d2e63604",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
