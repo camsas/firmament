@@ -18,6 +18,8 @@
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
 
+DECLARE_bool(preemption);
+
 namespace firmament {
 
 CocoCostModel::CocoCostModel(
@@ -174,10 +176,20 @@ vector<TaskID_t>* CocoCostModel::GetIncomingEquivClassPrefArcs(
     // XXX(ionel): This is very slow because it iterates over all tasks.
     for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
          ++it) {
-      EquivClass_t task_agg =
-        static_cast<EquivClass_t>(HashJobID(*(it->second)));
-      if (task_agg == tec) {
-        prefered_task->push_back(it->first);
+      vector<EquivClass_t>* tec_vec = GetTaskEquivClasses(it->first);
+      for (auto tvi = tec_vec->begin(); tvi != tec_vec->end(); ++tvi) {
+        if (*tvi == tec) {
+          // XXX(malte): task_map_ contains ALL tasks ever seen by the system,
+          // including those that have completed, failed or are otherwise no
+          // longer present in the flow graph. We do some crude filtering here,
+          // but clearly we should instead maintain a collection of tasks
+          // actually eligible for scheduling.
+          if (it->second->state() == TaskDescriptor::RUNNABLE ||
+              (FLAGS_preemption &&
+               it->second->state() == TaskDescriptor::RUNNING)) {
+            prefered_task->push_back(it->first);
+          }
+        }
       }
     }
   } else {

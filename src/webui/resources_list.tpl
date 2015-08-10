@@ -2,11 +2,33 @@
 
 {{>PAGE_HEADER}}
 
+<script type="text/javascript">
+$(function(){
+  $("#resources-table").tablesorter({
+    theme : "bootstrap",
+    widthFixed: true,
+    headerTemplate : '{content} {icon}',
+    widgets : [ "uitheme", "filter", "zebra" ],
+    widgetOptions : {
+      zebra : ["even", "odd"],
+      filter_columnFilters : true,
+      filter_filteredRow : 'filtered',
+      filter_hideEmpty : true,
+      filter_hideFilters : true,
+      filter_ignoreCase : true,
+      filter_liveSearch : true,
+      filter_searchDelay : 300,
+      filter_cssFilter: "form-control",
+    }
+  });
+});
+</script>
+
 <h1>Resources</h1>
 
 <h2>Overview</h2>
 
-<table class="table table-bordered">
+<table class="table table-bordered tablesorter" id="resources-table">
   <thead>
     <tr>
       <th>#</th>

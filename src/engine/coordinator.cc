@@ -86,7 +86,7 @@ Coordinator::Coordinator(PlatformID platform_id)
         job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, topology_manager_, m_adapter_,
         uuid_, FLAGS_listen_uri);
-    knowledge_base_->SetCostModel(new VoidCostModel());
+    knowledge_base_->SetCostModel(new VoidCostModel(task_table_));
   } else if (FLAGS_scheduler == "flow") {
     // Quincy-style flow-based scheduling
     LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
@@ -622,11 +622,20 @@ void Coordinator::HandleTaskDelegationRequest(
 void Coordinator::HandleTaskDelegationResponse(
     const TaskDelegationResponseMessage& msg,
     const string& remote_endpoint) {
-  LOG(INFO) << "Task delegation to " << remote_endpoint << " succeeded!";
   TaskDescriptor* td = FindPtrOrNull(*task_table_, msg.task_id());
   CHECK_NOTNULL(td);
-  td->set_delegated_to(remote_endpoint);
-  VLOG(1) << "Task delegation response handler not fully implemented!";
+  if (msg.success()) {
+    LOG(INFO) << "Task delegation for " << msg.task_id() << " to "
+              << remote_endpoint << " succeeded!";
+    // Confirm that we've successfully started the task remotely
+    td->set_state(TaskDescriptor::DELEGATED);
+    td->set_delegated_to(remote_endpoint);
+  } else {
+    LOG(WARNING) << "Task delegation for " << msg.task_id() << " to "
+                 << remote_endpoint << " FAILED. Trying again to schedule.";
+    // Handle the failure by putting the task back into RUNNABLE state
+    scheduler_->HandleTaskDelegationFailure(td);
+  }
 }
 
 void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,

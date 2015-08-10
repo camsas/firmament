@@ -17,6 +17,8 @@
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
 
+DECLARE_bool(preemption);
+
 namespace firmament {
 
 SJFCostModel::SJFCostModel(shared_ptr<TaskMap_t> task_map,
@@ -173,8 +175,10 @@ vector<TaskID_t>* SJFCostModel::GetIncomingEquivClassPrefArcs(
       // we should instead maintain a collection of tasks actually eligible for
       // scheduling.
       if (it->second->state() == TaskDescriptor::RUNNABLE ||
-          it->second->state() == TaskDescriptor::RUNNING)
+          (FLAGS_preemption &&
+           it->second->state() == TaskDescriptor::RUNNING)) {
         tasks_with_incoming_arcs->push_back(it->first);
+      }
     }
   }
   return tasks_with_incoming_arcs;
