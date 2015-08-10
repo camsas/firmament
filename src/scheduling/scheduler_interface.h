@@ -62,11 +62,16 @@ class SchedulerInterface : public PrintableInterface {
   // task completing.
   virtual void HandleTaskCompletion(TaskDescriptor* td_ptr,
                                     TaskFinalReport* report) = 0;
+  // Handle the failure of an attempt to delegate a task to a subordinate
+  // coordinator. This can happen because the resource is no longer there (it
+  // failed) or it is no longer idle (someone else put a task there).
+  virtual void HandleTaskDelegationFailure(TaskDescriptor* td_ptr) = 0;
   // Handle the failure of a task. This usually involves freeing up its
   // resource by setting it idle, and kicking off the necessary fault tolerance
   // handling procedures.
   virtual void HandleTaskFailure(TaskDescriptor* td_ptr) = 0;
-  // TODO(malte): comment
+  // Place a task delegated from a superior coordinator to a resource managed by
+  // this scheduler.
   virtual bool PlaceDelegatedTask(TaskDescriptor* td,
                                   ResourceID_t target_resource) = 0;
   // Kills a running task.

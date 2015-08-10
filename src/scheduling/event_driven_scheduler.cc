@@ -218,6 +218,23 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   td_ptr->mutable_final_report()->CopyFrom(*report);
 }
 
+void EventDrivenScheduler::HandleTaskDelegationFailure(
+    TaskDescriptor* td_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  // Find the resource where the task was supposed to be delegated
+  ResourceID_t* res_id_ptr = BoundResourceForTask(td_ptr->uid());
+  CHECK_NOTNULL(res_id_ptr);
+  UpdateTaskNotRunningOnResource(td_ptr->uid(), *res_id_ptr);
+  // Go back to try scheduling this task again
+  td_ptr->set_state(TaskDescriptor::RUNNABLE);
+  runnable_tasks_.insert(td_ptr->uid());
+  td_ptr->clear_start_time();
+  JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
+  CHECK_NOTNULL(jd);
+  // Try again to schedule...
+  ScheduleJob(jd);
+}
+
 void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
                                               ResourceID_t res_id) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
