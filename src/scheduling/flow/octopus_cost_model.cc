@@ -11,6 +11,8 @@
 #include "scheduling/flow/dimacs_change_arc.h"
 #include "scheduling/flow/flow_graph.h"
 
+DECLARE_bool(preemption);
+
 namespace firmament {
 
 OctopusCostModel::OctopusCostModel(shared_ptr<ResourceMap_t> resource_map,
@@ -128,8 +130,10 @@ vector<TaskID_t>* OctopusCostModel::GetIncomingEquivClassPrefArcs(
       // we should instead maintain a collection of tasks actually eligible for
       // scheduling.
       if (it->second->state() == TaskDescriptor::RUNNABLE ||
-          it->second->state() == TaskDescriptor::RUNNING)
+          (FLAGS_preemption &&
+           it->second->state() == TaskDescriptor::RUNNING)) {
         tasks_with_incoming_arcs->push_back(it->first);
+      }
     }
   }
   return tasks_with_incoming_arcs;
