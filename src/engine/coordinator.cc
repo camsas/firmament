@@ -183,6 +183,11 @@ void Coordinator::AddResource(ResourceTopologyNodeDescriptor* rtnd,
   CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
           new ResourceStatus(resource_desc, rtnd, endpoint_uri,
                              GetCurrentTimestamp())));
+  // Record the machine UUID if this is the local topology
+  if (resource_desc->type() == ResourceDescriptor::RESOURCE_MACHINE &&
+      local) {
+    machine_uuid_ = ResourceIDFromString(resource_desc->uuid());
+  }
   // Register with scheduler if this resource is schedulable
   if (resource_desc->type() == ResourceDescriptor::RESOURCE_PU) {
     // TODO(malte): We make the assumption here that any local PU resource is
@@ -252,7 +257,7 @@ void Coordinator::Run() {
     if (cur_time - last_heartbeat_time > FLAGS_heartbeat_interval) {
       MachinePerfStatisticsSample stats;
       stats.set_timestamp(GetCurrentTimestamp());
-      stats.set_resource_id(to_string(uuid_));
+      stats.set_resource_id(to_string(machine_uuid_));
       machine_monitor_.CreateStatistics(&stats);
       // Record this sample locally
       knowledge_base_->AddMachineSample(stats);
@@ -622,11 +627,20 @@ void Coordinator::HandleTaskDelegationRequest(
 void Coordinator::HandleTaskDelegationResponse(
     const TaskDelegationResponseMessage& msg,
     const string& remote_endpoint) {
-  LOG(INFO) << "Task delegation to " << remote_endpoint << " succeeded!";
   TaskDescriptor* td = FindPtrOrNull(*task_table_, msg.task_id());
   CHECK_NOTNULL(td);
-  td->set_delegated_to(remote_endpoint);
-  VLOG(1) << "Task delegation response handler not fully implemented!";
+  if (msg.success()) {
+    LOG(INFO) << "Task delegation for " << msg.task_id() << " to "
+              << remote_endpoint << " succeeded!";
+    // Confirm that we've successfully started the task remotely
+    td->set_state(TaskDescriptor::DELEGATED);
+    td->set_delegated_to(remote_endpoint);
+  } else {
+    LOG(WARNING) << "Task delegation for " << msg.task_id() << " to "
+                 << remote_endpoint << " FAILED. Trying again to schedule.";
+    // Handle the failure by putting the task back into RUNNABLE state
+    scheduler_->HandleTaskDelegationFailure(td);
+  }
 }
 
 void Coordinator::HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,

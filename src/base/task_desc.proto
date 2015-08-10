@@ -1,7 +1,7 @@
 package firmament;
 
 import "base/reference_desc.proto";
-import "base/resource_request.proto";
+import "base/resource_vector.proto";
 import "base/task_final_report.proto";
 
 message TaskDescriptor {
@@ -59,7 +59,7 @@ message TaskDescriptor {
   /* TaskLib related stuff */
   optional bool inject_task_lib = 23 [default = false];
   /* Task resource request and priority */
-  optional ResourceRequest resource_request = 24;
+  optional ResourceVector resource_request = 24;
   optional uint32 priority = 25;
   optional TaskType task_type = 26;
   /* Final report after successful execution */
