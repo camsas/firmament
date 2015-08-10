@@ -19,6 +19,7 @@
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
 #include "misc/utils.h"
+#include "misc/string_utils.h"
 #include "misc/uri_tools.h"
 #include "messages/task_kill_message.pb.h"
 #include "scheduling/knowledge_base.h"
@@ -76,7 +77,8 @@ void CoordinatorHTTPUI::AddHeaderToTemplate(TemplateDictionary* dict,
   pgheader_sub_dict->SetIntValue("NUM_JOBS_RUNNING",
       coordinator_->NumJobsInState(JobDescriptor::RUNNING));
   pgheader_sub_dict->SetIntValue("NUM_TASKS_RUNNING",
-      coordinator_->NumTasksInState(TaskDescriptor::RUNNING));
+      coordinator_->NumTasksInState(TaskDescriptor::RUNNING) +
+      coordinator_->NumTasksInState(TaskDescriptor::DELEGATED));
   pgheader_sub_dict->SetIntValue("NUM_RESOURCES",
       coordinator_->NumResources());
   // Error message, if set
@@ -174,8 +176,9 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
   dict.SetIntValue("NUM_JOBS_RUNNING", coordinator_->NumJobsInState(
       JobDescriptor::RUNNING));
   dict.SetIntValue("NUM_TASKS_KNOWN", coordinator_->NumTasks());
-  dict.SetIntValue("NUM_TASKS_RUNNING", coordinator_->NumTasksInState(
-      TaskDescriptor::RUNNING));
+  dict.SetIntValue("NUM_TASKS_RUNNING",
+      coordinator_->NumTasksInState(TaskDescriptor::RUNNING) +
+      coordinator_->NumTasksInState(TaskDescriptor::DELEGATED));
   // The +1 is because the coordinator itself is a resource, too.
   dict.SetIntValue("NUM_RESOURCES_KNOWN", coordinator_->NumResources() + 1);
   dict.SetIntValue("NUM_RESOURCES_LOCAL", coordinator_->NumResources());
@@ -676,8 +679,6 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
                                        tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
-  // XXX(malte): HACK!
-  system("bash scripts/plot_flow_graph.sh");
   // Get resource information from coordinator
   string iter_id = http_request->get_query("iter");
   if (iter_id.empty()) {
@@ -685,6 +686,11 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
                   tcp_conn);
     return;
   }
+  // XXX(malte): HACK to plot flow graph.
+  string cmd;
+  spf(&cmd, "bash scripts/plot_flow_graph.sh %s", iter_id.c_str());
+  system(cmd.c_str());
+  // End plotting hack.
   string action = http_request->get_query("a");
   string graph_filename = FLAGS_debug_output_dir;
   if (action.empty()) {
@@ -1281,10 +1287,11 @@ void CoordinatorHTTPUI::ServeFile(const string& filename,
     PLOG(ERROR) << "Failed to open file for reading.";
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
+    return;
   }
-  string output(256, '\0');
+  string output(1024, '\0');
   while (true) {
-    int64_t n = read(fd, &output[0], 256);
+    int64_t n = read(fd, &output[0], 1024);
     if (n < 0) {
       PLOG(ERROR) << "Send data: read from file failed";
       ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
@@ -1295,6 +1302,7 @@ void CoordinatorHTTPUI::ServeFile(const string& filename,
     }
     writer->write(&output[0], n);
   }
+  close(fd);
 }
 
 void CoordinatorHTTPUI::Shutdown(bool block) {

@@ -8,21 +8,27 @@ import time
 import shlex
 from job import *
 from task import *
+from mesos_job import *
 
 class Workload:
-  def __init__(self, host, port):
+  def __init__(self, host, port, target):
     self.jobs = {}
     self.scheduler_host = host
     self.scheduler_port = port
+    self.target = target
 
-  def add(self, name, binary, arg_string, task_count):
-    self.jobs[name] = Job(name)
-    self.jobs[name].prepare(binary, arg_string, task_count)
+  def add(self, name, binary, arg_string, task_count,
+          task_type=task_desc_pb2.TaskDescriptor.TURTLE):
+    if self.target == "firmament":
+      self.jobs[name] = Job(name)
+    elif self.target == "mesos":
+      self.jobs[name] = MesosJob(name)
+    self.jobs[name].prepare(binary, arg_string, task_count, task_type)
 
   def start(self):
     self.start_time = time.time()
     print "Starting workload composed of the following jobs:"
-    for jn, j in self.jobs.items():
+    for jn, j in sorted(self.jobs.items()):
       print "- %s" % (jn),
       (success, job_id) = j.submit(self.scheduler_host, self.scheduler_port)
       if success:
@@ -31,7 +37,7 @@ class Workload:
         print "... ERROR"
 
   def restart_completed(self):
-    for jn, j in self.jobs.items():
+    for jn, j in sorted(self.jobs.items()):
       if j.completed(self.scheduler_host, self.scheduler_port):
         print "- %s" % (jn),
         j.instance += 1

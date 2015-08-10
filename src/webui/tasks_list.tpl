@@ -2,9 +2,31 @@
 
 {{>PAGE_HEADER}}
 
+<script type="text/javascript">
+$(function(){
+  $("#task-table").tablesorter({
+    theme : "bootstrap",
+    widthFixed: true,
+    headerTemplate : '{content} {icon}',
+    widgets : [ "uitheme", "filter", "zebra" ],
+    widgetOptions : {
+      zebra : ["even", "odd"],
+      filter_columnFilters : true,
+      filter_filteredRow : 'filtered',
+      filter_hideEmpty : true,
+      filter_hideFilters : true,
+      filter_ignoreCase : true,
+      filter_liveSearch : true,
+      filter_searchDelay : 300,
+      filter_cssFilter: "form-control",
+    }
+  });
+});
+</script>
+
 <h1>Tasks</h1>
 
-<table class="table table-bordered">
+<table class="table table-bordered tablesorter" id="task-table">
   <thead>
     <tr>
       <th>Task ID</th>

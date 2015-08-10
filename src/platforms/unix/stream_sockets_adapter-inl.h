@@ -170,7 +170,8 @@ void StreamSocketsAdapter<T>::HandleAsyncMessageRecv(
     chan->Close();
     // Finally, we also need to ask the TCP server to remove the connection from
     // its map of connections
-    tcp_server_->DropConnectionForEndpoint(remote_endpoint);
+    if (tcp_server_)
+      tcp_server_->DropConnectionForEndpoint(remote_endpoint);
     // At this point, we unlock and signal to the condition variable, so that we
     // can pick another channel to receive on, or go back to the idle loop (if
     // no other channels are available).
@@ -236,6 +237,7 @@ void StreamSocketsAdapter<T>::Listen(const string& hostname,
       hostname, port, boost::bind(
           &StreamSocketsAdapter::AddChannelForConnection,
           this, _1)));
+  CHECK(tcp_server_);
   VLOG(2) << "TCP server created";
   tcp_server_thread_.reset(
       new boost::thread(boost::bind(&AsyncTCPServer::Run, tcp_server_)));
@@ -245,30 +247,10 @@ void StreamSocketsAdapter<T>::Listen(const string& hostname,
 
 template <typename T>
 string StreamSocketsAdapter<T>::Listen(const string& hostname) {
-  // no-op if we are already listening
-  /*if (ListenReady())
-    return;*/
-  CHECK(!ListenReady());
-  CHECK_EQ(endpoint_channel_map_.size(), 0);
-  CHECK_EQ(channel_recv_envelopes_.size(), 0);
-  message_wait_mutex_.lock();
-  message_wait_ready_ = false;
-  message_wait_mutex_.unlock();
-  // Unknown port, but known hostname
-  VLOG(1) << "Creating an async TCP server with an unspecified port ";
-  tcp_server_.reset(new AsyncTCPServer(
-      hostname, "", boost::bind(
-          &StreamSocketsAdapter::AddChannelForConnection,
-          this, _1)));
-  VLOG(2) << "TCP server created";
-  tcp_server_thread_.reset(
-      new boost::thread(boost::bind(&AsyncTCPServer::Run, tcp_server_)));
-  VLOG(1) << "AsyncTCPServer's main thread running as "
-          << tcp_server_thread_->get_id();
+  // known hostname, but unknown port
+  Listen(hostname, "");
   return tcp_server_->listening_interface();
 }
-
-
 
 template <typename T>
 bool StreamSocketsAdapter<T>::ListenReady() {
@@ -319,6 +301,7 @@ void StreamSocketsAdapter<T>::StopListen() {
     }
     VLOG(2) << "Stopping async TCP server at " << tcp_server_
             << "...";
+    CHECK(tcp_server_);
     tcp_server_->Stop();
     tcp_server_thread_->join();
     VLOG(2) << "TCP server thread joined.";
