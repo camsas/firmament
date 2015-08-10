@@ -1,6 +1,7 @@
 .PHONY: clean test ext help info
 .DEFAULT: all
 
+#######
 # Symlink correct makefile config if isn't already linked.
 ifeq ("$(wildcard include/Makefile.config)","")
 	# Determine the current architecture.
@@ -20,7 +21,31 @@ endif
 
 # Get common build settings
 include include/Makefile.config
+#######
 
+#######
+# CPU count detection
+NPROCS := 1
+OS := $(shell uname)
+export NPROCS
+
+ifeq ($J,)
+ifeq ($(OS),Linux)
+  NPROCS := $(shell grep -c ^processor /proc/cpuinfo)
+else ifeq ($(OS),Darwin)
+  NPROCS := $(shell system_profiler | awk '/Number of CPUs/ {print $$4}{next;}')
+endif # $(OS)
+
+else
+  NPROCS := $J
+endif # $J
+
+# Set parallelism level
+MAKEFLAGS=-j $(NPROCS)
+######
+
+######
+# TARGETS
 all: tests-clean ext platforms misc engine scripts trace_simulator
 ifeq ($(BUILD_TYPE), debug)
 	@echo "================================================="
@@ -42,6 +67,7 @@ info:
 	@echo "Targets:"
 	@echo "  - all: build all code"
 	@echo "  - clean: remove all temporary build infrastructure"
+	@echo "  - docker-image: make Docker image"
 	@echo "  - examples: build example jobs"
 	@echo "  - ext: set up external dependencies (should only run once "
 	@echo "         and automatically, but can be re-run manually)"
@@ -111,6 +137,9 @@ lint:
 
 lint-verb:
 	python tests/all_lint.py src/ True
+
+docker-image:
+	contrib/build-docker.sh
 
 clean:
 	rm -rf build

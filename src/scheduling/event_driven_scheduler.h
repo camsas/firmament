@@ -46,6 +46,7 @@ class EventDrivenScheduler : public SchedulerInterface {
                                   const ReferenceInterface& new_ref,
                                   TaskDescriptor* td_ptr);
   void HandleTaskCompletion(TaskDescriptor* td_ptr, TaskFinalReport* report);
+  void HandleTaskDelegationFailure(TaskDescriptor* td_ptr);
   void HandleTaskEviction(TaskDescriptor* td_ptr, ResourceID_t res_id);
   void HandleTaskFailure(TaskDescriptor* td_ptr);
   void KillRunningTask(TaskID_t task_id,

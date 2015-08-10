@@ -306,6 +306,7 @@ class Coordinator : public Node,
   StreamSocketsChannel<BaseMessage>* parent_chan_;
   // Machine statistics monitor
   ProcFSMachine machine_monitor_;
+  ResourceID_t machine_uuid_;
   // Knowledge base
   KnowledgeBase* knowledge_base_;
   // Local machine's host name

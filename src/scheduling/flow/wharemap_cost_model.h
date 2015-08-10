@@ -54,10 +54,14 @@ class WhareMapCostModel : public CostModelInterface {
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     GetEquivClassToEquivClassesArcs(EquivClass_t tec);
+  uint64_t HashWhareMapStats(const WhareMapStats& wms);
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void AddTask(TaskID_t task_id);
-  void RecordECtoPsPIMapping(pair<EquivClass_t, EquivClass_t> ec_pair,
-                             const TaskFinalReport& task_report);
+  void RecordMECtoPsPIMapping(pair<EquivClass_t, EquivClass_t> ec_pair,
+                              const TaskFinalReport& task_report);
+  void RecordMECAndCoRunnerSetToPsPIMapping(
+      pair<EquivClass_t, EquivClass_t> ec_pair,
+      const WhareMapStats& wms, const TaskFinalReport& task_report);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
   FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
@@ -78,8 +82,16 @@ class WhareMapCostModel : public CostModelInterface {
 
   // Static cost definitions
   const Cost_t WAIT_TIME_MULTIPLIER = 1LL;
-  // Assumes we don't have more tha 48 cores for the moment ;-)
-  const Cost_t COST_LOWER_BOUND = 48LL;
+  // This lower bound is required to compensate for the core-ID-based cost
+  // that we used to balance work across machines on a mostly-idle cluster.
+  // To avoid a priority inversion where a task remains unscheduled because only
+  // high core IDs are available and their cost exceeds the tasks's unscheduled
+  // cost, we add a lower bound of 2*MAX_CORE_ID to the unscheduled cost,
+  // ensuring that no path to the sink ever has less than MAX_CORE_ID cost.
+  // TODO(malte): Assumes we don't have more than 48 cores for the moment ;-)
+  const Cost_t COST_LOWER_BOUND = 96LL;
+  // Handy constant to help with the unit conversion
+  const uint64_t SECONDS_TO_PICOSECONDS = 1000000000000ULL;
 
   // Map of resources present in the system, initialised externally
   shared_ptr<ResourceMap_t> resource_map_;
@@ -108,9 +120,21 @@ class WhareMapCostModel : public CostModelInterface {
   // (Psi in the cost model description)
   unordered_map<pair<EquivClass_t, EquivClass_t>, vector<uint64_t>*,
     boost::hash<pair<EquivClass_t, EquivClass_t>>> psi_map_;
+  // Map to track < <task EC, co-runner set>, machine EC> -> PsPI
+  // (Xi in the cost model description)
+  unordered_map<pair<pair<EquivClass_t, EquivClass_t>, EquivClass_t>,
+    vector<uint64_t>*,
+    boost::hash<pair<pair<EquivClass_t, EquivClass_t>, EquivClass_t>>> xi_map_;
   // Map to track task EC -> worst-machine EC PsPI;
   // max_{c_m}(Psi(c_t, c_m))) in the cost model description
   unordered_map<EquivClass_t, uint64_t> worst_case_psi_map_;
+  // Map to track task EC -> worst-environment EC PsPI;
+  // max_{c_m, L_m}(Xi(c_t, L_m, c_m))) in the cost model description
+  unordered_map<EquivClass_t, uint64_t> worst_case_xi_map_;
+  // Map to track task EC -> best-machine EC PsPI
+  unordered_map<EquivClass_t, uint64_t> best_case_psi_map_;
+  // Map to track task EC -> best-environment EC PsPI;
+  unordered_map<EquivClass_t, uint64_t> best_case_xi_map_;
 };
 
 }  // namespace firmament
