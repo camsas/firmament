@@ -16,6 +16,24 @@
       "revId": "63a8a580cb5ad3ce185edd9ae308134e9cfaa83b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_1b762a06",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-10T23:18:27Z",
+      "side": 1,
+      "message": "Yep; there\u0027s an interesting question as to how we would represent multiple block devices anyway. Do tasks ask for bandwidth on a specific block device? Do we assign their working directories according to current available bandwidth? Do task express a preference for SSD/magnetic disk?",
+      "parentUuid": "9ad9bd40_e87db9e8",
+      "revId": "63a8a580cb5ad3ce185edd9ae308134e9cfaa83b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
