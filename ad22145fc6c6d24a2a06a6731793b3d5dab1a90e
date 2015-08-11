@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_d579ee2f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-11T15:26:25Z",
+      "side": 1,
+      "message": "Please break line at 72 characters, as per git commit message style recommendations (that way, Gerrit displays the commit message without requiring the user to scroll; it\u0027s 72 rather than 80 because the git CLI indents commit messages).",
+      "revId": "ad22145fc6c6d24a2a06a6731793b3d5dab1a90e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_f59d1267",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-11T15:26:25Z",
+      "side": 1,
+      "message": "Would it be preferable to have these declared in the header?\n\nSee https://google-styleguide.googlecode.com/svn/trunk/cppguide.html#Declaration_Order\n\nOn the other hand, we could make these validators a special case. I\u0027m happy either way, but we should decide and be consistent.",
+      "revId": "ad22145fc6c6d24a2a06a6731793b3d5dab1a90e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
