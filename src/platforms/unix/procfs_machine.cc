@@ -13,16 +13,23 @@
 #include <vector>
 
 #include "base/common.h"
+#include "misc/string_utils.h"
+
+DEFINE_string(monitor_netif, "eth0",
+              "Network interface on which to monitor traffic statistics.");
+DECLARE_uint64(heartbeat_interval);
 
 namespace firmament {
 namespace platform_unix {
 
 ProcFSMachine::ProcFSMachine() {
   cpu_stats_ = GetCPUStats();
+  net_stats_ = GetNetwork();
 }
 
 const MachinePerfStatisticsSample* ProcFSMachine::CreateStatistics(
     MachinePerfStatisticsSample* stats) {
+  // CPU stats
   vector<CpuUsage> cpus_usage = GetCPUUsage();
   vector<CpuUsage>::iterator it;
   for (it = cpus_usage.begin(); it != cpus_usage.end(); it++) {
@@ -38,16 +45,26 @@ const MachinePerfStatisticsSample* ProcFSMachine::CreateStatistics(
       cpu_usage->set_guest(it->guest());
       cpu_usage->set_guest_nice(it->guest_nice());
   }
-  mem_stats mem_stats = GetMemory();
+  // RAM stats
+  MemoryStatistics_t mem_stats = GetMemory();
   stats->set_total_ram(mem_stats.mem_total);
   stats->set_free_ram(mem_stats.mem_free);
+  // Network I/O stats
+  NetworkStatistics_t net_stats = GetNetwork();
+  // We divide by FLAGS_heartbeat_interval / 1000000, since the samples are
+  // taken every FLAGS_heartbeat_interval, and they are in microseconds; we
+  // want the bandwidth to be in bytes/second.
+  stats->set_net_bw(
+      ((net_stats.send - net_stats_.send) + (net_stats.recv - net_stats_.recv))
+      / (FLAGS_heartbeat_interval / 1000000));
+  net_stats_ = net_stats;
   return stats;
 }
 
-vector<cpu_stats> ProcFSMachine::GetCPUStats() {
+vector<CPUStatistics_t> ProcFSMachine::GetCPUStats() {
   FILE* proc_stat = fopen("/proc/stat", "r");
-  vector<cpu_stats> cpus_now;
-  cpu_stats cpu_now;
+  vector<CPUStatistics_t> cpus_now;
+  CPUStatistics_t cpu_now;
   int proc_stat_cpu;
   CHECK_NOTNULL(proc_stat);
 
@@ -78,7 +95,7 @@ vector<cpu_stats> ProcFSMachine::GetCPUStats() {
 
 vector<CpuUsage> ProcFSMachine::GetCPUUsage() {
   vector<CpuUsage> cpu_usage;
-  vector<cpu_stats> cpu_new_stats = GetCPUStats();
+  vector<CPUStatistics_t> cpu_new_stats = GetCPUStats();
   for (vector<CpuUsage>::size_type cpu_num = 0; cpu_num < cpu_stats_.size();
        cpu_num++) {
     double user_diff =
@@ -133,14 +150,39 @@ vector<CpuUsage> ProcFSMachine::GetCPUUsage() {
   return cpu_usage;
 }
 
-mem_stats ProcFSMachine::GetMemory() {
-  mem_stats mem_stats;
+MemoryStatistics_t ProcFSMachine::GetMemory() {
+  MemoryStatistics_t mem_stats;
   struct sysinfo mem_info;
   sysinfo(&mem_info);
   mem_stats.mem_total = mem_info.totalram * mem_info.mem_unit;
   mem_stats.mem_free = mem_info.freeram * mem_info.mem_unit +
                        mem_info.bufferram * mem_info.mem_unit;
   return mem_stats;
+}
+
+NetworkStatistics_t ProcFSMachine::GetNetwork() {
+  // TODO(malte): This implementation is currently limited to monitoring only
+  // one network interface, specified in FLAGS_monitor_netif. We should extend
+  // it with support for multiple interfaces, e.g. as determined from
+  // /proc/net/dev.
+  NetworkStatistics_t net_stats;
+  bzero(&net_stats, sizeof(NetworkStatistics_t));
+  string interface_path;
+  spf(&interface_path, "/sys/class/net/%s/statistics/",
+      FLAGS_monitor_netif.c_str());
+  // Send
+  FILE* tx_stat_fd = fopen((interface_path + "/tx_bytes").c_str(), "r");
+  if (tx_stat_fd) {
+    readunsigned(tx_stat_fd, &net_stats.send);
+    fclose(tx_stat_fd);
+  }
+  // Recv
+  FILE* rx_stat_fd = fopen((interface_path + "/rx_bytes").c_str(), "r");
+  if (rx_stat_fd) {
+    readunsigned(rx_stat_fd, &net_stats.recv);
+    fclose(rx_stat_fd);
+  }
+  return net_stats;
 }
 
 }  // namespace platform_unix
