@@ -34,6 +34,24 @@
       "revId": "63a8a580cb5ad3ce185edd9ae308134e9cfaa83b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_31fdcfb1",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-11T10:58:48Z",
+      "side": 1,
+      "message": "We can handle this later, but I think a nice API would be for tasks just to ask for a particular bandwidth. We\u0027ll have to decide if that\u0027s doable or not. If it\u0027s not then we\u0027ll have to notify the owner of the task/job.",
+      "parentUuid": "9ad9bd40_1b762a06",
+      "revId": "63a8a580cb5ad3ce185edd9ae308134e9cfaa83b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
