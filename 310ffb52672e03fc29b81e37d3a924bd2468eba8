@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_318dcfd3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-11T13:22:43Z",
+      "side": 1,
+      "message": "Please put a space in between the text and the smiley.",
+      "range": {
+        "startLine": 7,
+        "startChar": 17,
+        "endLine": 7,
+        "endChar": 22
+      },
+      "revId": "310ffb52672e03fc29b81e37d3a924bd2468eba8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
