@@ -16,6 +16,24 @@
       "revId": "5a228682620d593daefc687a09cbb92d01a713c9",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_b1eabf71",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-11T13:15:30Z",
+      "side": 1,
+      "message": "This is due to an oddity in the way we build up the topology: ResourceNodeToResourceNodeCost(), and hence ComputeInterferenceScores(), gets called just after adding an arc, but before the topology is complete (i.e., the leaves may not exist yet). Once the topology is complete, we propagate the number of leaves below each node upwards.\n\nSo in the beginning, this method gets called while the topology is still incomplete and there are no leaves.",
+      "parentUuid": "9ad9bd40_746a37b4",
+      "revId": "5a228682620d593daefc687a09cbb92d01a713c9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
