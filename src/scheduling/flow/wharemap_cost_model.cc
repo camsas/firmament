@@ -6,6 +6,7 @@
 
 #include "scheduling/flow/wharemap_cost_model.h"
 
+#include <algorithm>
 #include <map>
 #include <set>
 #include <string>
