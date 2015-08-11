@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_18454b42",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-11T17:04:12Z",
+      "side": 1,
+      "message": "Good plan to homogenise flag names.",
+      "revId": "62b2e93da9ef30299d7bb350a6def29998e0130a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_38776fa1",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-11T17:04:12Z",
+      "side": 1,
+      "message": "I wonder if we should factor this out into a helper method (maybe AddTaskStatsToKB() or similar), since the containing method is already rather long.",
+      "revId": "62b2e93da9ef30299d7bb350a6def29998e0130a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
