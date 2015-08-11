@@ -13,8 +13,8 @@
 #include "misc/utils.h"
 
 // TODO(malte): this is a bit of a hack; we import the listen_uri flag here
-// in order to have a delegation source identifier. But this really should come in
-// via the constructor.
+// in order to have a delegation source identifier. But this really should come
+// in via the constructor.
 DECLARE_string(listen_uri);
 
 namespace firmament {
