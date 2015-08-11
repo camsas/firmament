@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_112e0ba5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-11T13:38:48Z",
+      "side": 1,
+      "message": "Please put a concrete summary of what was fixed in the second part of the commit message (first line: up to 50 character high-level summary; blank link; second part: description).\n\nHere, \"Include headers for STL data structures used in files.\" would be a good second part.",
+      "revId": "f95f3a407b9aeaabdb5bb6aa39a438236f4d887e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
