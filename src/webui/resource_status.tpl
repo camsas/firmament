@@ -9,6 +9,8 @@ var ramTimeseries;
 var ramPercentTimeseries;
 var cpuAggUsrTimeseries;
 var cpuAggSysTimeseries;
+var diskBWTimeseries;
+var netBWTimeseries;
 
 function getRAM(data) {
   var ts1 = [];
@@ -33,6 +35,14 @@ function getCPU(data) {
   cpuAggSysTimeseries = ts2;
 }
 
+function getDisk(data) {
+  var ts1 = [];
+  for (i = 0; i < data.length; i++) {
+    ts1.push(data[i].disk_bw / 1024.0 / 1024.0);
+  }
+  diskBWTimeseries = ts1;
+}
+
 function getNet(data) {
   var ts1 = [];
   for (i = 0; i < data.length; i++) {
@@ -44,6 +54,7 @@ function getNet(data) {
 function updateGraphs(data) {
   getRAM(data);
   getCPU(data);
+  getDisk(data);
   getNet(data);
 }
 
@@ -73,6 +84,7 @@ function step() {
   $('#cpu-agg-sys').sparkline(cpuAggSysTimeseries, {lineColor: '#ff0000', fillColor: '#ffaaaa'});
   $('#cpu-agg-usr').sparkline(cpuAggUsrTimeseries, {lineColor: '#00ff00', fillColor: '#aaffaa'});
   $('#net-bw-sparkline').sparkline(netBWTimeseries, {lineColor: '#ff00ff', fillColor: '#ffaaff', tooltipSuffix: ' MBit/sec'});
+  $('#disk-bw-sparkline').sparkline(diskBWTimeseries, {lineColor: '#ffff00', fillColor: '#ffffaa', tooltipSuffix: ' MB/sec'});
   // update timers
   $("abbr.timeago").each(function (index) {
     $(this).text(jQuery.timeago(new Date(this.title)));
@@ -158,6 +170,10 @@ $(function() {
   <tr>
     <td>Network bandwidth in use</td>
     <td><span id="net-bw-sparkline">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>Disk I/O bandwidth in use</td>
+    <td><span id="disk-bw-sparkline">Waiting for data...</span></td>
   </tr>
 </table>
 
