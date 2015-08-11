@@ -163,6 +163,18 @@ class GoogleTraceSimulator {
   JobDescriptor* PopulateJob(uint64_t job_id);
 
   /**
+   * Populate the knowledge base for each equivalence class with statistics.
+   * @param task_identifier the task for which we populate the knowledge base
+   * @param runtime the runtime of the task
+   * @param task_stats struct containg various task statistics (e.g. men_usage)
+   * @param task_equiv_classes vector of equivalence classes for which to
+   * populate the knowledge base
+   */
+  void PopulateKnowledgeBase(const TaskIdentifier& task_identifier,
+                             double runtime, const TaskStats& task_stats,
+                             const vector<EquivClass_t>& task_equiv_classes);
+
+  /**
    * Must be called every time an exogenous event is processed.
    * @param time the time of the exogenous event
    */

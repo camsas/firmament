@@ -152,8 +152,6 @@ const static uint64_t SEED = 0;
 // of how much storage space we have.
 const static uint64_t MACHINES_IN_TRACE_APPROXIMATION = 10000;
 
-#define EPS 0.00001
-
 ofstream *timeout_file;
 void alarm_handler(int sig) {
   signal(SIGALRM, SIG_IGN);
@@ -249,32 +247,31 @@ GoogleTraceSimulator::~GoogleTraceSimulator() {
 
 void GoogleTraceSimulator::Run() {
   FLAGS_add_root_task_to_graph = false;
+  // Terminate if flow solving binary fails.
   FLAGS_flow_scheduling_strict = true;
 
-  const uint64_t MAX_VALUE = UINT64_MAX;
-  proportion_to_retain_ = (FLAGS_percentage / 100.0) * MAX_VALUE;
+  proportion_to_retain_ = (FLAGS_percentage / 100.0) * UINT64_MAX;
   VLOG(2) << "Retaining events with hash < " << proportion_to_retain_;
 
+  FLAGS_flow_scheduling_solver = FLAGS_solver;
   if (!FLAGS_solver.compare("flowlessly")) {
     FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
-    FLAGS_flow_scheduling_solver = "flowlessly";
     FLAGS_only_read_assignment_changes = true;
     FLAGS_flow_scheduling_binary =
         SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
-    FLAGS_flow_scheduling_solver = "cs2";
     FLAGS_only_read_assignment_changes = false;
     FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-4.6/cs2.exe";
   } else if (!FLAGS_solver.compare("custom")) {
-    FLAGS_flow_scheduling_solver = "custom";
     FLAGS_flow_scheduling_time_reported = true;
   }
 
   LOG(INFO) << "Starting Google trace simulator!";
   LOG(INFO) << "Time to simulate for: " << FLAGS_runtime << " microseconds.";
-  LOG(INFO) << "Number of events to process: " << FLAGS_max_events;
-  LOG(INFO) << "Number of scheduling rounds: " << FLAGS_max_scheduling_rounds;
+  LOG(INFO) << "Maximum number of events to process: " << FLAGS_max_events;
+  LOG(INFO) << "Maximum number of scheduling rounds: "
+            << FLAGS_max_scheduling_rounds;
 
   CreateRootResource();
 
@@ -414,8 +411,6 @@ void GoogleTraceSimulator::AddTaskStats(
             << task_identifier.job_id << "/" << task_identifier.task_index;
     return;
   }
-  TaskDescriptor* td_ptr = FindPtrOrNull(task_id_to_td_, task_identifier);
-  CHECK_NOTNULL(td_ptr);
   uint64_t* task_runtime_ptr = FindOrNull(*task_runtime, task_identifier);
   double runtime = 0.0;
   if (task_runtime_ptr != NULL) {
@@ -427,6 +422,8 @@ void GoogleTraceSimulator::AddTaskStats(
     // TODO(adam): or float infinity?
     runtime = numeric_limits<uint64_t>::max();
   }
+  TaskDescriptor* td_ptr = FindPtrOrNull(task_id_to_td_, task_identifier);
+  CHECK_NOTNULL(td_ptr);
   vector<EquivClass_t>* task_equiv_classes =
     cost_model_->GetTaskEquivClasses(td_ptr->uid());
   CHECK_NOTNULL(task_equiv_classes);
@@ -440,48 +437,8 @@ void GoogleTraceSimulator::AddTaskStats(
   // currently supported.
   EquivClass_t bogus_equiv_class = static_cast<EquivClass_t>(td_ptr->uid());
   task_equiv_classes->push_back(bogus_equiv_class);
-  // Add statistics to all relevant ECs
-  for (vector<EquivClass_t>::iterator it = task_equiv_classes->begin();
-       it != task_equiv_classes->end();
-       ++it) {
-    VLOG(2) << "Setting runtime of " << runtime << " for "
-            << task_identifier.job_id << "/" << task_identifier.task_index;
-    knowledge_base_->SetAvgRuntimeForTEC(*it, runtime);
-    if (fabs(task_stats->avg_mean_cpu_usage + 1.0) > EPS) {
-      knowledge_base_->SetAvgMeanCpuUsage(*it, task_stats->avg_mean_cpu_usage);
-    }
-    if (fabs(task_stats->avg_canonical_mem_usage + 1.0) > EPS) {
-      knowledge_base_->SetAvgCanonicalMemUsage(
-          *it, task_stats->avg_canonical_mem_usage);
-    }
-    if (fabs(task_stats->avg_assigned_mem_usage + 1.0) > EPS) {
-      knowledge_base_->SetAvgAssignedMemUsage(
-          *it, task_stats->avg_assigned_mem_usage);
-    }
-    if (fabs(task_stats->avg_unmapped_page_cache + 1.0) > EPS) {
-      knowledge_base_->SetAvgUnmappedPageCache(
-          *it, task_stats->avg_unmapped_page_cache);
-    }
-    if (fabs(task_stats->avg_total_page_cache + 1.0) > EPS) {
-      knowledge_base_->SetAvgTotalPageCache(
-          *it, task_stats->avg_total_page_cache);
-    }
-    if (fabs(task_stats->avg_mean_disk_io_time + 1.0) > EPS) {
-      knowledge_base_->SetAvgMeanDiskIOTime(
-          *it, task_stats->avg_mean_disk_io_time);
-    }
-    if (fabs(task_stats->avg_mean_local_disk_used + 1.0) > EPS) {
-      knowledge_base_->SetAvgMeanLocalDiskUsed(
-          *it, task_stats->avg_mean_local_disk_used);
-    }
-    if (fabs(task_stats->avg_cpi + 1.0) > EPS) {
-      knowledge_base_->SetAvgCPIForTEC(*it, task_stats->avg_cpi);
-    }
-    if (fabs(task_stats->avg_mai + 1.0) > EPS) {
-      knowledge_base_->SetAvgIPMAForTEC(*it, 1.0 / task_stats->avg_mai);
-    }
-    task_id_to_stats_.erase(task_identifier);
-  }
+  PopulateKnowledgeBase(task_identifier, runtime, *task_stats,
+                        *task_equiv_classes);
 }
 
 void GoogleTraceSimulator::RemoveTaskStats(TaskID_t task_id) {
@@ -931,6 +888,54 @@ JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
   rt->set_uid(GenerateRootTaskID(*jd_ptr));
   rt->set_state(TaskDescriptor::RUNNABLE);
   return jd_ptr;
+}
+
+void GoogleTraceSimulator::PopulateKnowledgeBase(
+    const TaskIdentifier& task_identifier, double runtime,
+    const TaskStats& task_stats,
+    const vector<EquivClass_t>& task_equiv_classes) {
+  VLOG(2) << "Setting runtime of " << runtime << " for "
+          << task_identifier.job_id << "/" << task_identifier.task_index;
+  // Add statistics to all relevant ECs
+  for (vector<EquivClass_t>::const_iterator it = task_equiv_classes.begin();
+       it != task_equiv_classes.end();
+       ++it) {
+    knowledge_base_->SetAvgRuntimeForTEC(*it, runtime);
+    if (!IsEqual(task_stats.avg_mean_cpu_usage, -1.0)) {
+      knowledge_base_->SetAvgMeanCpuUsage(*it, task_stats.avg_mean_cpu_usage);
+    }
+    if (!IsEqual(task_stats.avg_canonical_mem_usage, -1.0)) {
+      knowledge_base_->SetAvgCanonicalMemUsage(
+          *it, task_stats.avg_canonical_mem_usage);
+    }
+    if (!IsEqual(task_stats.avg_assigned_mem_usage, -1.0)) {
+      knowledge_base_->SetAvgAssignedMemUsage(
+          *it, task_stats.avg_assigned_mem_usage);
+    }
+    if (!IsEqual(task_stats.avg_unmapped_page_cache, -1.0)) {
+      knowledge_base_->SetAvgUnmappedPageCache(
+          *it, task_stats.avg_unmapped_page_cache);
+    }
+    if (!IsEqual(task_stats.avg_total_page_cache, -1.0)) {
+      knowledge_base_->SetAvgTotalPageCache(
+          *it, task_stats.avg_total_page_cache);
+    }
+    if (!IsEqual(task_stats.avg_mean_disk_io_time, -1.0)) {
+      knowledge_base_->SetAvgMeanDiskIOTime(
+          *it, task_stats.avg_mean_disk_io_time);
+    }
+    if (!IsEqual(task_stats.avg_mean_local_disk_used, -1.0)) {
+      knowledge_base_->SetAvgMeanLocalDiskUsed(
+          *it, task_stats.avg_mean_local_disk_used);
+    }
+    if (!IsEqual(task_stats.avg_cpi, -1.0)) {
+      knowledge_base_->SetAvgCPIForTEC(*it, task_stats.avg_cpi);
+    }
+    if (!IsEqual(task_stats.avg_mai, -1.0)) {
+      knowledge_base_->SetAvgIPMAForTEC(*it, 1.0 / task_stats.avg_mai);
+    }
+    task_id_to_stats_.erase(task_identifier);
+  }
 }
 
 void GoogleTraceSimulator::SeenExogenous(uint64_t time) {
