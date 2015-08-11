@@ -46,7 +46,7 @@ DEFINE_bool(tasks_preemption_bins, false,
             "Compute bins of number of preempted tasks.");
 DEFINE_uint64(bin_time_duration, 10, "Bin size in microseconds.");
 DEFINE_string(task_bins_output, "bins.out",
-              "The file in which the task bins are written.");
+              "The path to the file in which the task bins are written.");
 
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_uint64(runtime, 9223372036854775807,
@@ -70,7 +70,6 @@ DEFINE_double(online_max_time, 100000000.0, "Online mode: cap on time solver "
 DEFINE_string(stats_file, "", "File to write CSV of statistics.");
 DEFINE_string(graph_output_file, "",
               "File to write incremental DIMACS export.");
-DEFINE_string(output_dir, "", "Directory for output flow graphs.");
 DEFINE_bool(graph_output_events, true, "If -graph_output_file specified: "
                                        "export simulator events as comments?");
 
@@ -85,6 +84,50 @@ DEFINE_int32(flow_scheduling_cost_model, 0,
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
              "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, "
              "8 = SIMULATED QUINCY");
+
+static bool ValidateBatchStep(const char* flagname, uint64_t batch_step) {
+  if (batch_step == 0) {
+    if (firmament::IsEqual(FLAGS_online_factor, 0.0)) {
+      LOG(ERROR) << "must specify one of -batch_step or -online_factor";
+      return false;
+    }
+    return true;
+  } else {
+    if (firmament::IsEqual(FLAGS_online_factor, 0.0)) {
+      LOG(ERROR) << "cannot specify both -batch_step and -online_factor";
+      return false;
+    }
+    return true;
+  }
+}
+
+static const bool batch_step_validator =
+  google::RegisterFlagValidator(&FLAGS_batch_step, &ValidateBatchStep);
+
+static bool ValidateSolver(const char* flagname, const string& solver) {
+  if (solver.compare("cs2") && solver.compare("flowlessly") &&
+      solver.compare("custom")) {
+    LOG(ERROR) << "Solver can be one of: cs2, flowlessly or custom";
+    return false;
+  }
+  return true;
+}
+
+static const bool solver_validator =
+  google::RegisterFlagValidator(&FLAGS_solver, &ValidateSolver);
+
+static bool ValidateRunIncremental(const char* flagname, bool run_incremental) {
+  if (run_incremental && FLAGS_solver.compare("flowlessly")) {
+    LOG(ERROR) << "run_incremental_scheduler can only be set with the "
+               << "flowlessly solver";
+    return false;
+  }
+  return true;
+}
+
+static const bool run_incremental_validator =
+  google::RegisterFlagValidator(&FLAGS_run_incremental_scheduler,
+                                &ValidateRunIncremental);
 
 namespace firmament {
 namespace sim {
@@ -212,11 +255,6 @@ void GoogleTraceSimulator::Run() {
   proportion_to_retain_ = (FLAGS_percentage / 100.0) * MAX_VALUE;
   VLOG(2) << "Retaining events with hash < " << proportion_to_retain_;
 
-  CHECK(FLAGS_batch_step != 0 || FLAGS_online_factor != 0.0)
-                        << "must specify one of -batch_step or -online_factor.";
-  CHECK(FLAGS_batch_step == 0 || FLAGS_online_factor == 0.0)
-                       << "cannot specify both -batch_step and -online_factor.";
-
   if (!FLAGS_solver.compare("flowlessly")) {
     FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
     FLAGS_flow_scheduling_solver = "flowlessly";
@@ -231,13 +269,6 @@ void GoogleTraceSimulator::Run() {
   } else if (!FLAGS_solver.compare("custom")) {
     FLAGS_flow_scheduling_solver = "custom";
     FLAGS_flow_scheduling_time_reported = true;
-  } else {
-    LOG(FATAL) << "Unknown solver type: " << FLAGS_solver;
-  }
-
-  // command line argument sanity checking
-  if (trace_path_.empty()) {
-    LOG(FATAL) << "Please specify a path to the Google trace!";
   }
 
   LOG(INFO) << "Starting Google trace simulator!";
@@ -248,7 +279,7 @@ void GoogleTraceSimulator::Run() {
   CreateRootResource();
 
   if (FLAGS_tasks_preemption_bins) {
-    ofstream out_file(FLAGS_output_dir + "/" + FLAGS_task_bins_output);
+    ofstream out_file(FLAGS_task_bins_output);
     if (out_file.is_open()) {
       BinTasksByEventType(EVICT_EVENT, out_file);
       out_file.close();

@@ -25,6 +25,8 @@ namespace firmament {
 
 using google::protobuf::EnumDescriptor;
 
+#define COMPARE_EPS 0.00000000001
+
 #define ENUM_TO_STRING(t, v) t ## _descriptor()->FindValueByNumber(v)->name()
 
 #ifdef OPEN_MAX
@@ -48,6 +50,7 @@ uint64_t GetCurrentTimestamp();
 //              descriptor may carry this information.
 uint64_t MakeEnsembleUID(Ensemble *ens);*/
 
+
 int ExecutableDirectory(char *pBuf, ssize_t len);
 ResourceID_t GenerateResourceID();
 ResourceID_t GenerateResourceID(const string& seed);
@@ -66,6 +69,7 @@ size_t HashCommandLine(const TaskDescriptor& td);
 size_t HashJobID(JobID_t job_id);
 size_t HashJobID(const TaskDescriptor& td);
 size_t HashString(const string& str);
+bool IsEqual(double first, double second);
 // Utility functions to parse various types from strings.
 DataObjectID_t DataObjectIDFromString(const string& str);
 DataObjectID_t DataObjectIDFromProtobuf(const string& str);

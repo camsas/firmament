@@ -220,6 +220,13 @@ DataObjectID_t DataObjectIDFromString(const string& str) {
   return object_id;
 }
 
+bool IsEqual(double first, double second) {
+  if (fabs(first - second) < COMPARE_EPS) {
+    return true;
+  }
+  return false;
+}
+
 DataObjectID_t DataObjectIDFromProtobuf(const string& str) {
   // N.B.: This assumes that the string is a binary representation of the ID.
   DataObjectID_t object_id(str, false);
