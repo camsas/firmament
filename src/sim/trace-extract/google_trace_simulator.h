@@ -10,6 +10,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <vector>
 #include <boost/timer/timer.hpp>
 
 #include "base/common.h"
@@ -97,6 +98,19 @@ class GoogleTraceSimulator {
       TaskIdentifier task_identifier,
       unordered_map<TaskIdentifier, uint64_t,
         TaskIdentifierHasher>* task_runtime);
+
+  /**
+   * Populate the knowledge base for each equivalence class with statistics.
+   * @param task_identifier the task for which we populate the knowledge base
+   * @param runtime the runtime of the task
+   * @param task_stats struct containg various task statistics (e.g. men_usage)
+   * @param task_equiv_classes vector of equivalence classes for which to
+   * populate the knowledge base
+   */
+  void AddTaskStatsToKnowledgeBase(
+      const TaskIdentifier& task_identifier, double runtime,
+      const TaskStats& task_stats,
+      const vector<EquivClass_t>& task_equiv_classes);
 
   void RemoveTaskStats(TaskID_t task_id);
 
