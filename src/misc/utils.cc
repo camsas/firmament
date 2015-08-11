@@ -16,6 +16,7 @@ extern "C" {
 #include <time.h>
 #include <unistd.h>
 }
+#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>

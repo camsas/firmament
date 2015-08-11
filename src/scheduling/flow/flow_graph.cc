@@ -6,6 +6,7 @@
 
 #include "scheduling/flow/flow_graph.h"
 
+#include <algorithm>
 #include <queue>
 #include <set>
 #include <string>
