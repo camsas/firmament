@@ -52,6 +52,24 @@
       "revId": "63a8a580cb5ad3ce185edd9ae308134e9cfaa83b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_71e3d7d8",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-11T12:20:14Z",
+      "side": 1,
+      "message": "Yep, but the problem with just having a bandwidth request is that if you have two disks, with each having 10 MB/s capacity available, you can satisfy a 20 MB/s request, but it won\u0027t actually work in practice (since the task will use one specific disk).",
+      "parentUuid": "9ad9bd40_31fdcfb1",
+      "revId": "63a8a580cb5ad3ce185edd9ae308134e9cfaa83b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
