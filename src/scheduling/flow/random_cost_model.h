@@ -4,6 +4,7 @@
 #ifndef FIRMAMENT_SCHEDULING_RANDOM_COST_MODEL_H
 #define FIRMAMENT_SCHEDULING_RANDOM_COST_MODEL_H
 
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
