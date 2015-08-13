@@ -162,7 +162,6 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     dimacs_exporter_.Reset();
     dimacs_exporter_.ExportIncremental(flow_graph_->graph_changes());
     flow_graph_->ResetChanges();
-
     if (graph_output != NULL) {
       dimacs_exporter_.Flush(graph_output);
     }

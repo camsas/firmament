@@ -152,16 +152,16 @@ const static uint64_t SEED = 0;
 // of how much storage space we have.
 const static uint64_t MACHINES_IN_TRACE_APPROXIMATION = 10000;
 
-ofstream *timeout_file;
+FILE *timeout_file;
 void alarm_handler(int sig) {
   signal(SIGALRM, SIG_IGN);
   if (timeout_file) {
-    *timeout_file << "0,Timeout,Timeout,Timeout,Timeout";
+    fprintf(timeout_file, "0,Timeout,Timeout,Timeout,Timeout");
     if (FLAGS_batch_step == 0) {
       // online
-      *timeout_file << ",Timeout";
+      fprintf(timeout_file, ",Timeout");
     }
-    *timeout_file << ",,,,," << std::endl;
+    fprintf(timeout_file, ",,,,,\n");
   }
   // N.B. Don't use LOG(FATAL) since we want a successful return code
   LOG(ERROR) << "Timeout after waiting for solver for "
@@ -184,8 +184,15 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
       graph_output_ = fopen(FLAGS_graph_output_file.c_str(), "w");
       if (!graph_output_) {
         LOG(FATAL) << "Could not open for writing graph file "
-                   << FLAGS_graph_output_file
-                   << ", error: " << strerror(errno);
+                   << FLAGS_graph_output_file << ", error: " << strerror(errno);
+      }
+    }
+    stats_file_ = NULL;
+    if (!FLAGS_stats_file.empty()) {
+      stats_file_ = fopen(FLAGS_stats_file.c_str(), "w");
+      if (!stats_file_) {
+        LOG(FATAL) << "Could not open for writing stats file "
+                   << FLAGS_stats_file << ", error: " << strerror(errno);
       }
     }
   }
@@ -194,6 +201,9 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
 GoogleTraceSimulator::~GoogleTraceSimulator() {
   if (graph_output_) {
     fclose(graph_output_);
+  }
+  if (stats_file_) {
+    fclose(stats_file_);
   }
   for (ResourceMap_t::iterator it = resource_map_->begin();
        it != resource_map_->end(); ) {
@@ -244,20 +254,7 @@ void GoogleTraceSimulator::Run() {
       LOG(ERROR) << "Could not open bin output file.";
     }
   } else {
-    ofstream *stats_file = NULL;
-    if (!FLAGS_stats_file.empty()) {
-      stats_file = new ofstream(FLAGS_stats_file);
-      if (stats_file->fail()) {
-        LOG(FATAL) << "Could not open for writing stats file "
-                   << FLAGS_stats_file;
-      }
-    }
-
-    ReplayTrace(stats_file);
-
-    if (stats_file) {
-      delete stats_file;
-    }
+    ReplayTrace();
   }
 }
 
@@ -848,22 +845,20 @@ void GoogleTraceSimulator::LogStartOfSolverRun(uint64_t time_interval_bound) {
   LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
   LOG(INFO) << "Nodes: " << flow_graph_->NumNodes()
             << ", arcs: " << flow_graph_->NumArcs();
-  fprintf(graph_output_, "c SOI %lu\n", time_interval_bound);
+  fprintf(graph_output_, "c SOI %jd\n", time_interval_bound);
   fflush(graph_output_);
 }
 
 void GoogleTraceSimulator::LogSolverRunStats(
-    const boost::timer::cpu_timer timer,
-    uint64_t time_interval_bound,
-    double algorithm_time,
-    double flowsolver_time,
-    const DIMACSChangeStats& change_stats,
-    ofstream* stats_file) {
-  if (stats_file) {
-    boost::timer::cpu_times total_runtime = timer.elapsed();
+    const boost::timer::cpu_timer timer, uint64_t time_interval_bound,
+    double algorithm_time, double flow_solver_time,
+    const DIMACSChangeStats& change_stats) {
+  if (stats_file_) {
+    boost::timer::cpu_times total_runtime_cpu_times = timer.elapsed();
+    // TODO(ionel): Use misc/units.h
     boost::timer::nanosecond_type second = 1000*1000*1000;
-    double total_runtime_float = total_runtime.wall;
-    total_runtime_float /= second;
+    double total_runtime = total_runtime_cpu_times.wall;
+    total_runtime /= second;
     if (FLAGS_batch_step == 0) {
       // online mode
       double scheduling_latency = time_interval_bound;
@@ -874,20 +869,16 @@ void GoogleTraceSimulator::LogSolverRunStats(
       // will be negative if we have not seen any exogeneous event
       scheduling_latency = max(0.0, scheduling_latency);
 
-      *stats_file << time_interval_bound << ","
-                  << scheduling_latency << ","
-                  << algorithm_time << ","
-                  << flowsolver_time << ","
-                  << total_runtime_float << ",";
+      fprintf(stats_file_, "%jd,%lf,%lf,%lf,%lf,", time_interval_bound,
+              scheduling_latency, algorithm_time, flow_solver_time,
+              total_runtime);
     } else {
       // batch mode
-      *stats_file << time_interval_bound << ","
-                  << algorithm_time << ","
-                  << flowsolver_time << ","
-                  << total_runtime_float << ",";
+      fprintf(stats_file_, "%jd,%lf%lf%lf,", time_interval_bound,
+              algorithm_time, flow_solver_time, total_runtime);
     }
-    OutputChangeStats(change_stats, stats_file);
-    stats_file->flush();
+    OutputChangeStats(change_stats);
+    fflush(stats_file_);
   }
 }
 
@@ -1161,38 +1152,35 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
                                               GetCurrentTimestamp())));
 }
 
-void GoogleTraceSimulator::OutputStatsHeader(ofstream* stats_file) {
-  const string change_stats_header =
-    "total_changes,new_node,remove_node,new_arc,change_arc,remove_arc";
-  if (stats_file) {
+void GoogleTraceSimulator::OutputStatsHeader() {
+  if (stats_file_) {
     if (FLAGS_batch_step == 0) {
       // online
-      *stats_file << "cluster_timestamp,scheduling_latency,algorithm_time,"
-                  << "flowsolver_time,total_time,";
+      fprintf(stats_file_, "cluster_timestamp,scheduling_latency,"
+              "algorithm_time,flow_solver_time,total_time,");
     } else {
       // batch
-      *stats_file << "cluster_timestamp,algorithm_time,flowsolver_time,"
-                  << "total_time,";
+      fprintf(stats_file_, "cluster_timestamp,algorithm_time,flow_solver_time,"
+              "total_time,");
     }
-    *stats_file << change_stats_header << std::endl;
+    fprintf(stats_file_, "total_changes,new_node,remove_node,new_arc,"
+            "change_arc,remove_arc\n");
   }
 }
 
-void GoogleTraceSimulator::OutputChangeStats(const DIMACSChangeStats& stats,
-                                             ofstream* stats_file) {
-  *stats_file << stats.total_ << "," << stats.nodes_added_ << ","
-              << stats.nodes_removed_ << "," << stats.arcs_added_ << ","
-              << stats.arcs_changed_ << "," << stats.arcs_removed_
-              << endl;
+void GoogleTraceSimulator::OutputChangeStats(const DIMACSChangeStats& stats) {
+  fprintf(stats_file_, "%jd,%jd,%jd,%jd,%jd,%jd\n", stats.total_,
+          stats.nodes_added_, stats.nodes_removed_, stats.arcs_added_,
+          stats.arcs_changed_, stats.arcs_removed_);
 }
 
-void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
+void GoogleTraceSimulator::ReplayTrace() {
   // Output CSV header
-  OutputStatsHeader(stats_file);
+  OutputStatsHeader();
 
   // Timing facilities
   boost::timer::cpu_timer timer;
-  timeout_file = stats_file;
+  timeout_file = stats_file_;
   signal(SIGALRM, alarm_handler);
 
   // Load the trace ingredients
@@ -1261,7 +1249,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               // (Sometimes, all the events we received in a time interval
               // have been ignored, e.g. task submit events with duplicate IDs.)
               double algorithm_time;
-              double flowsolver_time;
+              double flow_solver_time;
               // Do some logging
               LogStartOfSolverRun(time_interval_bound);
 
@@ -1269,7 +1257,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
               // Set a timeout on the solver's run
               alarm(FLAGS_solver_timeout);
               multimap<uint64_t, uint64_t>* task_mappings =
-                solver_dispatcher_->Run(&algorithm_time, &flowsolver_time,
+                solver_dispatcher_->Run(&algorithm_time, &flow_solver_time,
                                         graph_output_);
               alarm(0);
 
@@ -1282,7 +1270,7 @@ void GoogleTraceSimulator::ReplayTrace(ofstream *stats_file) {
 
               // Log stats to CSV file
               LogSolverRunStats(timer, time_interval_bound, algorithm_time,
-                                flowsolver_time, change_stats, stats_file);
+                                flow_solver_time, change_stats);
 
               // restart timer; elapsed() returns time from this point
               timer.stop();
