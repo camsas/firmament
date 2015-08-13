@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_aacc016b",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-13T09:46:52Z",
+      "side": 1,
+      "message": "Comment unrelated to the rest of the CL: I\u0027m not sure what this flag does; do we need it to be part of the main simulator? Sounds like it writes a file with the count of pre-empted tasks over time (I think we used this to answer some question at some point?), and that functionality might be better off in the trace extractor.\n\nProbably best addressed in a separate CL, though.",
+      "revId": "53af36bf6f1fe849602bcdab50cda66414b749f0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
