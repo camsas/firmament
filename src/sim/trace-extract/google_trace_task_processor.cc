@@ -41,6 +41,8 @@ DECLARE_bool(jobs_runtime);
 DECLARE_bool(jobs_num_tasks);
 DECLARE_int32(num_files_to_process);
 
+DEFINE_uint64(bin_time_duration, 10, "Bin size in microseconds.");
+
 namespace firmament {
 namespace sim {
 
@@ -118,6 +120,57 @@ namespace sim {
       fclose(events_file);
     }
     return *scheduling_events;
+  }
+
+  void GoogleTraceTaskProcessor::BinTasksByEventType(int32_t event,
+                                                     FILE* out_file) {
+    char line[200];
+    vector<string> vals;
+    FILE* fptr = NULL;
+    uint64_t time_interval_bound = FLAGS_bin_time_duration;
+    uint64_t num_tasks = 0;
+    for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
+         file_num++) {
+      string fname;
+      spf(&fname, "%s/task_events/part-%05d-of-00500.csv",
+          trace_path_.c_str(), file_num);
+      if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
+        LOG(ERROR) << "Failed to open trace for reading of task events.";
+      }
+      while (!feof(fptr)) {
+        if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
+          boost::split(vals, line, is_any_of(","), token_compress_off);
+          if (vals.size() != 13) {
+            LOG(ERROR) << "Unexpected structure of task event row: found "
+                       << vals.size() << " columns.";
+          } else {
+            uint64_t task_time = lexical_cast<uint64_t>(vals[0]);
+            int32_t event_type = lexical_cast<int32_t>(vals[5]);
+            if (event_type == event) {
+              if (task_time <= time_interval_bound) {
+                num_tasks++;
+              } else {
+                fprintf(out_file, "(%jd, %jd]: %jd\n",
+                        time_interval_bound - FLAGS_bin_time_duration,
+                        time_interval_bound, num_tasks);
+                time_interval_bound += FLAGS_bin_time_duration;
+                while (time_interval_bound < task_time) {
+                  fprintf(out_file, "(%jd, %jd]: 0\n",
+                          time_interval_bound - FLAGS_bin_time_duration,
+                          time_interval_bound);
+                  time_interval_bound += FLAGS_bin_time_duration;
+                }
+                num_tasks = 1;
+              }
+            }
+          }
+        }
+      }
+      fclose(fptr);
+    }
+    fprintf(out_file, "(%jd, %jd]: %jd\n",
+            time_interval_bound - FLAGS_bin_time_duration,
+            time_interval_bound, num_tasks);
   }
 
   TaskResourceUsage GoogleTraceTaskProcessor::BuildTaskResourceUsage(

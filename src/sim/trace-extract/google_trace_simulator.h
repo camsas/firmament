@@ -122,11 +122,6 @@ class GoogleTraceSimulator {
   TaskDescriptor* AddTaskToJob(JobDescriptor* jd_ptr);
 
   /**
-   * Compute the number of events of a particular type withing each time interval.
-   */
-  void BinTasksByEventType(uint64_t event_type, ofstream& out_file); // NOLINT
-
-  /**
    * Populate and add the root node of the topology.
    */
   void CreateRootResource();
