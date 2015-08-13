@@ -7,6 +7,7 @@
 #ifndef FIRMAMENT_SCHEDULING_FLOW_DIMACS_EXPORTER_H
 #define FIRMAMENT_SCHEDULING_FLOW_DIMACS_EXPORTER_H
 
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -26,9 +27,12 @@ class DIMACSExporter {
   DIMACSExporter();
   void Export(const FlowGraph& graph);
   void ExportIncremental(const vector<DIMACSChange*>& changes);
+  // TODO(ionel): Uniformize Flush. Some of the methods close the received
+  // stream while others don't.
   void Flush(const string& filename);
   void Flush(int fd);
   void Flush(FILE* stream);
+  void Flush(ofstream* stream);
   void Reset() { output_ = ""; }
 
  private:

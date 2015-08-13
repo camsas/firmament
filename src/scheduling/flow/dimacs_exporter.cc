@@ -118,6 +118,11 @@ void DIMACSExporter::Flush(FILE* stream) {
   }
 }
 
+void DIMACSExporter::Flush(ofstream* stream) {
+  *stream << output_;
+  stream->flush();
+}
+
 const string DIMACSExporter::GenerateArc(const FlowGraphArc& arc) {
   stringstream ss;
   ss << "a " << arc.src_ << " " << arc.dst_ << " " << arc.cap_lower_bound_

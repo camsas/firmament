@@ -156,17 +156,15 @@ class GoogleTraceSimulator {
   inline void LogEvent(const string& msg) {
     VLOG(1) << msg;
     if (graph_output_ && FLAGS_graph_output_events) {
-      fprintf(graph_output_, "c %s\n", msg.c_str());
+      *graph_output_ << "c " << msg << endl;
     }
   }
 
   void LogStartOfSolverRun(uint64_t time_interval_bound);
   void LogSolverRunStats(const boost::timer::cpu_timer timer,
-                         uint64_t time_interval_bound,
-                         double algorithm_time,
+                         uint64_t time_interval_bound, double algorithm_time,
                          double flowsolver_time,
-                         const DIMACSChangeStats& change_stats,
-                         ofstream* stats_file);
+                         const DIMACSChangeStats& change_stats);
 
   uint64_t NextTimeIntervalBound(uint64_t cur_time_interval_bound,
                                  double algorithm_time);
@@ -188,9 +186,8 @@ class GoogleTraceSimulator {
    */
   uint64_t NextSimulatorEvent();
 
-  void OutputStatsHeader(ofstream* stats_file);
-  void OutputChangeStats(const DIMACSChangeStats& stats,
-                         ofstream* stats_file);
+  void OutputStatsHeader();
+  void OutputChangeStats(const DIMACSChangeStats& stats);
 
   /**
    * Processes all the simulator events that happen at a given time.
@@ -223,7 +220,7 @@ class GoogleTraceSimulator {
   void ResetUuidAndAddResource(ResourceTopologyNodeDescriptor* rtnd,
                                const string& hostname, const string& root_uuid);
 
-  void ReplayTrace(ofstream *stats_file);
+  void ReplayTrace();
 
   void TaskCompleted(const TaskIdentifier& task_identifier);
   void TaskEvicted(TaskID_t task_id, const ResourceID_t& res_id);
@@ -325,7 +322,9 @@ class GoogleTraceSimulator {
   uint64_t proportion_to_retain_;
 
   // File to output graph to. (Optional; NULL if unspecified.)
-  FILE *graph_output_;
+  ofstream *graph_output_;
+  // File to output stats to. (Optional; NULL if unspecified.)
+  ofstream *stats_file_;
 };
 
 }  // namespace sim

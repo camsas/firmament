@@ -27,7 +27,7 @@ class SolverDispatcher {
       vector<SchedulingDelta*>* deltas);
   multimap<uint64_t, uint64_t>* Run(double *algorithm_time = NULL,
                                     double *flowsolver_time = NULL,
-                                    FILE *graph_output = NULL);
+                                    ofstream *graph_output = NULL);
   uint64_t seq_num() const {
     return debug_seq_num_;
   }

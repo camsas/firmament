@@ -140,7 +140,7 @@ void *ProcessStderrJustlog(void *x) {
 }
 
 multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
-    double *algorithm_time, double *flowsolver_time, FILE *graph_output) {
+    double *algorithm_time, double *flowsolver_time, ofstream *graph_output) {
   if (algorithm_time && !FLAGS_flow_scheduling_time_reported) {
     LOG(ERROR) << "Error: cannot record algorithm time with solver "
                << "which does not report this time.";
@@ -162,10 +162,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     dimacs_exporter_.Reset();
     dimacs_exporter_.ExportIncremental(flow_graph_->graph_changes());
     flow_graph_->ResetChanges();
-
-    if (graph_output != NULL) {
-      dimacs_exporter_.Flush(graph_output);
-    }
+    dimacs_exporter_.Flush(graph_output);
   }
 
   if (!solver_ran_once_ || !FLAGS_incremental_flow) {
