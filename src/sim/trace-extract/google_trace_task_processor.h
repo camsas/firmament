@@ -69,6 +69,12 @@ class GoogleTraceTaskProcessor {
   void AggregateTaskUsage();
 
   /**
+   * Compute the number of events of a particular type withing each time
+   * interval.
+   */
+  void BinTasksByEventType(int32_t event_type, FILE* out_file); // NOLINT
+
+  /**
    * Generate task events with runtime information.
    * NOTE: Events will only be generated for tasks that successfully complete.
    */

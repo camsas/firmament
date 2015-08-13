@@ -8,6 +8,12 @@ DEFINE_bool(aggregate_task_usage, false, "Generate aggregated task usage.");
 DEFINE_bool(jobs_runtime, false, "Generate task events with runtime.");
 DEFINE_bool(jobs_num_tasks, false, "Generate num tasks for each jobs.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
+DEFINE_bool(tasks_preemption_bins, false,
+            "Compute bins of number of preempted tasks.");
+DEFINE_string(task_bins_output, "bins.out",
+              "The path to the file in which the task bins are written.");
+DEFINE_int32(bin_by_event, 2,
+             "Type of Google trace event to bin by."); // 2 == EVICT EVENT
 
 inline void init(int argc, char *argv[]) {
   // Set up usage message.
@@ -30,5 +36,15 @@ int main(int argc, char *argv[]) {
   FLAGS_stderrthreshold = 0;
   firmament::sim::GoogleTraceTaskProcessor task_processor(FLAGS_trace_path);
   task_processor.Run();
+  if (FLAGS_tasks_preemption_bins) {
+    FILE* out_file = fopen(FLAGS_task_bins_output.c_str(), "w");
+    if (out_file) {
+      task_processor.BinTasksByEventType(FLAGS_bin_by_event, out_file);
+      fclose(out_file);
+    } else {
+      LOG(FATAL) << "Could not open for writing bin output file "
+                 << FLAGS_task_bins_output << ", error: " << strerror(errno);
+    }
+  }
   return 0;
 }
