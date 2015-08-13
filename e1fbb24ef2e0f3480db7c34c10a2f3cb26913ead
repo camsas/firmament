@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_5eafb67c",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-13T14:15:44Z",
+      "side": 1,
+      "message": "I suspect Adam\u0027s automated test running scripts depend on the non-fatal exit, so that the experiment continues. It depends on whether we want to maintain compatibility with that.",
+      "parentUuid": "9ad9bd40_5e6df6ca",
+      "revId": "e1fbb24ef2e0f3480db7c34c10a2f3cb26913ead",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_eae369a1",
         "filename": "src/sim/trace-extract/google_trace_simulator.cc",
         "patchSetId": 2
@@ -66,6 +84,24 @@
       "side": 1,
       "message": "Oh, I wasn\u0027t aware of this. Let\u0027s stick with the style guide.",
       "parentUuid": "9ad9bd40_eae369a1",
+      "revId": "e1fbb24ef2e0f3480db7c34c10a2f3cb26913ead",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_9eccde6b",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 853,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-13T14:15:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_aa7961c9",
       "revId": "e1fbb24ef2e0f3480db7c34c10a2f3cb26913ead",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
