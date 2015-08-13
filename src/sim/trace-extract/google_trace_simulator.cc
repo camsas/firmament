@@ -173,68 +173,28 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
   resource_map_(new ResourceMap_t), trace_path_(trace_path),
   knowledge_base_(new KnowledgeBaseSimulator) {
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
-    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>();
-  uint64_t num_machines =
-    std::round(MACHINES_IN_TRACE_APPROXIMATION * FLAGS_percentage / 100.0);
-  switch (FLAGS_flow_scheduling_cost_model) {
-  case CostModelType::COST_MODEL_TRIVIAL:
-    cost_model_ = new TrivialCostModel(task_map_, leaf_res_ids);
-    VLOG(1) << "Using the trivial cost model";
-    break;
-  case CostModelType::COST_MODEL_RANDOM:
-    cost_model_ = new RandomCostModel(task_map_, leaf_res_ids);
-    VLOG(1) << "Using the random cost model";
-    break;
-  case CostModelType::COST_MODEL_COCO:
-    cost_model_ = new CocoCostModel(resource_map_, rtn_root_, task_map_,
-                                    leaf_res_ids, knowledge_base_);
-    VLOG(1) << "Using the coco cost model";
-    break;
-  case CostModelType::COST_MODEL_SJF:
-    cost_model_ = new SJFCostModel(task_map_, leaf_res_ids, knowledge_base_);
-    VLOG(1) << "Using the SJF cost model";
-    break;
-  case CostModelType::COST_MODEL_QUINCY:
-    cost_model_ =
-      new QuincyCostModel(resource_map_, job_map_, task_map_,
-                          &task_bindings_, leaf_res_ids,
-                          knowledge_base_);
-    VLOG(1) << "Using the Quincy cost model";
-    break;
-  case CostModelType::COST_MODEL_WHARE:
-    cost_model_ = new WhareMapCostModel(resource_map_, task_map_,
-                                        knowledge_base_);
-    VLOG(1) << "Using the Whare-Map cost model";
-    break;
-  case CostModelType::COST_MODEL_OCTOPUS:
-    cost_model_ = new OctopusCostModel(resource_map_, task_map_);
-    VLOG(1) << "Using the octopus cost model";
-    break;
-  case CostModelType::COST_MODEL_VOID:
-    cost_model_ = new VoidCostModel(task_map_);
-    VLOG(1) << "Using the void cost model";
-    break;
-  case CostModelType::COST_MODEL_SIMULATED_QUINCY:
-    cost_model_ =
-      SetupSimulatedQuincyCostModel(resource_map_, job_map_, task_map_,
-                                    task_bindings_, knowledge_base_,
-                                    num_machines, leaf_res_ids);
-    VLOG(1) << "Using the simulated Quincy cost model";
-    break;
-  default:
-  LOG(FATAL) << "Unknown flow scheduling cost model specificed "
-             << "(" << FLAGS_flow_scheduling_cost_model << ")";
-  }
-  flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids));
-  cost_model_->SetFlowGraph(flow_graph_);
+  InitializeCostModel();
   knowledge_base_->SetCostModel(cost_model_);
   solver_dispatcher_ =
     new scheduler::SolverDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
+
+  if (!FLAGS_tasks_preemption_bins) {
+    graph_output_ = NULL;
+    if (!FLAGS_graph_output_file.empty()) {
+      graph_output_ = fopen(FLAGS_graph_output_file.c_str(), "w");
+      if (!graph_output_) {
+        LOG(FATAL) << "Could not open for writing graph file "
+                   << FLAGS_graph_output_file
+                   << ", error: " << strerror(errno);
+      }
+    }
+  }
 }
 
-
 GoogleTraceSimulator::~GoogleTraceSimulator() {
+  if (graph_output_) {
+    fclose(graph_output_);
+  }
   for (ResourceMap_t::iterator it = resource_map_->begin();
        it != resource_map_->end(); ) {
     ResourceMap_t::iterator it_tmp = it;
@@ -293,21 +253,8 @@ void GoogleTraceSimulator::Run() {
       }
     }
 
-    graph_output_ = NULL;
-    if (!FLAGS_graph_output_file.empty()) {
-      graph_output_ = fopen(FLAGS_graph_output_file.c_str(), "w");
-      if (!graph_output_) {
-        LOG(FATAL) << "Could not open for writing graph file "
-                   << FLAGS_graph_output_file
-                   << ", error: " << strerror(errno);
-      }
-    }
-
     ReplayTrace(stats_file);
 
-    if (graph_output_) {
-      fclose(graph_output_);
-    }
     if (stats_file) {
       delete stats_file;
     }
@@ -585,6 +532,65 @@ void GoogleTraceSimulator::CreateRootResource() {
                                               GetCurrentTimestamp())));
 }
 
+void GoogleTraceSimulator::InitializeCostModel() {
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
+    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>();
+  switch (FLAGS_flow_scheduling_cost_model) {
+  case CostModelType::COST_MODEL_TRIVIAL:
+    cost_model_ = new TrivialCostModel(task_map_, leaf_res_ids);
+    VLOG(1) << "Using the trivial cost model";
+    break;
+  case CostModelType::COST_MODEL_RANDOM:
+    cost_model_ = new RandomCostModel(task_map_, leaf_res_ids);
+    VLOG(1) << "Using the random cost model";
+    break;
+  case CostModelType::COST_MODEL_COCO:
+    cost_model_ = new CocoCostModel(resource_map_, rtn_root_, task_map_,
+                                    leaf_res_ids, knowledge_base_);
+    VLOG(1) << "Using the coco cost model";
+    break;
+  case CostModelType::COST_MODEL_SJF:
+    cost_model_ = new SJFCostModel(task_map_, leaf_res_ids, knowledge_base_);
+    VLOG(1) << "Using the SJF cost model";
+    break;
+  case CostModelType::COST_MODEL_QUINCY:
+    cost_model_ =
+      new QuincyCostModel(resource_map_, job_map_, task_map_,
+                          &task_bindings_, leaf_res_ids,
+                          knowledge_base_);
+    VLOG(1) << "Using the Quincy cost model";
+    break;
+  case CostModelType::COST_MODEL_WHARE:
+    cost_model_ = new WhareMapCostModel(resource_map_, task_map_,
+                                        knowledge_base_);
+    VLOG(1) << "Using the Whare-Map cost model";
+    break;
+  case CostModelType::COST_MODEL_OCTOPUS:
+    cost_model_ = new OctopusCostModel(resource_map_, task_map_);
+    VLOG(1) << "Using the octopus cost model";
+    break;
+  case CostModelType::COST_MODEL_VOID:
+    cost_model_ = new VoidCostModel(task_map_);
+    VLOG(1) << "Using the void cost model";
+    break;
+  case CostModelType::COST_MODEL_SIMULATED_QUINCY: {
+    uint64_t num_machines =
+      std::round(MACHINES_IN_TRACE_APPROXIMATION * FLAGS_percentage / 100.0);
+    cost_model_ =
+      SetupSimulatedQuincyCostModel(resource_map_, job_map_, task_map_,
+                                    task_bindings_, knowledge_base_,
+                                    num_machines, leaf_res_ids);
+    VLOG(1) << "Using the simulated Quincy cost model";
+    break;
+  }
+  default:
+  LOG(FATAL) << "Unknown flow scheduling cost model specified "
+             << "(" << FLAGS_flow_scheduling_cost_model << ")";
+  }
+  flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids));
+  cost_model_->SetFlowGraph(flow_graph_);
+}
+
 void GoogleTraceSimulator::JobCompleted(uint64_t simulator_job_id,
                                         JobID_t job_id) {
   flow_graph_->JobCompleted(job_id);
@@ -842,11 +848,8 @@ void GoogleTraceSimulator::LogStartOfSolverRun(uint64_t time_interval_bound) {
   LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
   LOG(INFO) << "Nodes: " << flow_graph_->NumNodes()
             << ", arcs: " << flow_graph_->NumArcs();
-
-  if (graph_output_) {
-    fprintf(graph_output_, "c SOI %lu\n", time_interval_bound);
-    fflush(graph_output_);
-  }
+  fprintf(graph_output_, "c SOI %lu\n", time_interval_bound);
+  fflush(graph_output_);
 }
 
 void GoogleTraceSimulator::LogSolverRunStats(

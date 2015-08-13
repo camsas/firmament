@@ -131,6 +131,8 @@ class GoogleTraceSimulator {
    */
   void CreateRootResource();
 
+  void InitializeCostModel();
+
   void JobCompleted(uint64_t simulator_job_id, JobID_t job_id);
 
   /**
