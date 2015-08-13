@@ -111,7 +111,7 @@ There are currently seven cost models in the Firmament code base:
 | RANDOM (1)  | Random costs, for fuzz tests. Not useful in practice!     | Complete |
 | SJF (2)     | Shortest job first policy based on avg. past runtimes.    | Complete |
 | QUINCY (3)  | Original Quincy cost model, with data locality.           | Broken!  |
-| WHARE (4)   | Implementation of Whare-Map's M and MCs policies.         | In dev   |
+| WHARE (4)   | Implementation of Whare-Map's M and MCs policies.         | Complete |
 | COCO (5)    | Coordinated co-location model (in development).           | In dev   |
 | OCTOPUS (6) | Simple load balancing based on task counts.               | Complete |
 | ----------- | --------------------------------------------------------- | -------- |
@@ -153,6 +153,13 @@ If you would like to contribute a **pull request**, that's also most welcome!
 The easiest way to submit changes for review is to check out Firmament from
 GerritHub, or to add GerritHub as a remote. Alternatively, you can submit a pull
 request on GitHub and we will import it for review on GerritHub.
+
+### Code style
+
+We follow the [Google C++ style guide](https://google-styleguide.googlecode.com/svn/trunk/cppguide.html)
+in the Firmament code base. A subset of the style guide's rules can be verified
+using the `make lint` target, which runs the C++ linting script on your
+checkout.
 
 ## Contact
 
