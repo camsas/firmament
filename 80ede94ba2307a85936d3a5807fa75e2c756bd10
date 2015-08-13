@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_1ee0cecb",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 1174,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-13T14:15:44Z",
+      "side": 1,
+      "message": "Does this compile? I vaguely remember there was a reason that signal handlers need to be standalone functions. I could be wrong, though.",
+      "revId": "80ede94ba2307a85936d3a5807fa75e2c756bd10",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
