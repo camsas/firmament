@@ -26,6 +26,8 @@ class DIMACSExporter {
   DIMACSExporter();
   void Export(const FlowGraph& graph);
   void ExportIncremental(const vector<DIMACSChange*>& changes);
+  // TODO(ionel): Uniformize Flush. Some of the methods close the received
+  // stream while others don't.
   void Flush(const string& filename);
   void Flush(int fd);
   void Flush(FILE* stream);

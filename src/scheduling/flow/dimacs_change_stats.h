@@ -15,12 +15,12 @@ namespace firmament {
 class DIMACSChange;
 
 struct DIMACSChangeStats {
-  unsigned int total_;
-  unsigned int nodes_added_;
-  unsigned int nodes_removed_;
-  unsigned int arcs_added_;
-  unsigned int arcs_changed_;
-  unsigned int arcs_removed_;
+  uint64_t total_;
+  uint64_t nodes_added_;
+  uint64_t nodes_removed_;
+  uint64_t arcs_added_;
+  uint64_t arcs_changed_;
+  uint64_t arcs_removed_;
 
   DIMACSChangeStats() : total_(0), nodes_added_(0), nodes_removed_(0),
       arcs_added_(0), arcs_changed_(0), arcs_removed_(0)
