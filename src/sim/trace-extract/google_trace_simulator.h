@@ -126,6 +126,9 @@ class GoogleTraceSimulator {
    */
   void CreateRootResource();
 
+  bool HasSimulationCompleted(uint64_t task_time, uint64_t num_events,
+                              uint64_t num_scheduling_rounds);
+
   void InitializeCostModel();
 
   void JobCompleted(uint64_t simulator_job_id, JobID_t job_id);
@@ -155,14 +158,13 @@ class GoogleTraceSimulator {
     }
   }
 
-  void LogStartOfSolverRun(uint64_t time_interval_bound);
+  void LogStartOfSolverRun(uint64_t run_solver_at);
   void LogSolverRunStats(const boost::timer::cpu_timer timer,
-                         uint64_t time_interval_bound, double algorithm_time,
-                         double flowsolver_time,
+                         uint64_t solver_executed_at, double algorithm_time,
+                         double flow_solver_time,
                          const DIMACSChangeStats& change_stats);
 
-  uint64_t NextTimeIntervalBound(uint64_t cur_time_interval_bound,
-                                 double algorithm_time);
+  uint64_t NextRunSolverAt(uint64_t cur_run_solver_at, double algorithm_time);
 
   /**
    * Create and populate a new job.
@@ -216,6 +218,13 @@ class GoogleTraceSimulator {
                                const string& hostname, const string& root_uuid);
 
   void ReplayTrace();
+
+  /**
+   * Runs the solver.
+   * @param the time when the solver should run
+   * @return the time when the solver should run after the run at run_solver_at
+   */
+  uint64_t RunSolver(uint64_t run_solver_at);
 
   void TaskCompleted(const TaskIdentifier& task_identifier);
   void TaskEvicted(TaskID_t task_id, const ResourceID_t& res_id);
