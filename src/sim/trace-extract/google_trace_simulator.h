@@ -71,7 +71,8 @@ class GoogleTraceSimulator {
 
  private:
   /**
-   * Add new machine to the topology. The method updates simulator's mapping state.
+   * Add new machine to the topology. The method updates simulator's mapping
+   * state.
    * @param machine_tmp the topology descriptor of the new machine
    * @param machine_id the google trace machine id
    * @return a pointer to the resource descriptor of the new machine

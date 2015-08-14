@@ -50,8 +50,9 @@ DEFINE_uint64(max_events, UINT64_MAX,
               "Maximum number of task events to process.");
 DEFINE_uint64(max_scheduling_rounds, UINT64_MAX,
               "Maximum number of scheduling rounds to run for.");
-DEFINE_double(percentage, 100.0, "Percentage of events to retain.");
-DEFINE_uint64(batch_step, 0, "Batch mode: time interval to run solver at.");
+DEFINE_double(events_fraction, 1.0, "Fraction of events to retain.");
+DEFINE_uint64(batch_step, 0, "Batch mode: time interval to run solver "
+              "at (in microseconds).");
 DEFINE_double(online_factor, 0.0, "Online mode: speed at which to run at. "
               "Factor of 1 corresponds to real-time. Larger to include"
               " overheads elsewhere in Firmament etc., smaller to simulate"
@@ -87,7 +88,7 @@ static bool ValidateBatchStep(const char* flagname, uint64_t batch_step) {
     }
     return true;
   } else {
-    if (firmament::IsEqual(FLAGS_online_factor, 0.0)) {
+    if (!firmament::IsEqual(FLAGS_online_factor, 0.0)) {
       LOG(ERROR) << "cannot specify both -batch_step and -online_factor";
       return false;
     }
@@ -205,6 +206,17 @@ GoogleTraceSimulator::~GoogleTraceSimulator() {
   }
   delete solver_dispatcher_;
   delete knowledge_base_;
+  // N.B. We don't have to delete the cost_model_ because it is owned by
+  // the flow graph.
+  for (auto& job_id_jd : job_id_to_jd_) {
+    delete job_id_jd.second;
+  }
+  for (auto& task_id_td : task_id_to_td_) {
+    delete task_id_td.second;
+  }
+  for (auto& machine_id_rd : machine_id_to_rd_) {
+    delete machine_id_rd.second;
+  }
 }
 
 void GoogleTraceSimulator::Run() {
@@ -212,8 +224,14 @@ void GoogleTraceSimulator::Run() {
   // Terminate if flow solving binary fails.
   FLAGS_flow_scheduling_strict = true;
 
-  proportion_to_retain_ = (FLAGS_percentage / 100.0) * UINT64_MAX;
-  VLOG(2) << "Retaining events with hash < " << proportion_to_retain_;
+  // We must check if we're retaining all events. If so, we have to manually
+  // set proportion_to_retain_ because otherwise we might end up overflowing.
+  if (IsEqual(FLAGS_events_fraction, 1.0)) {
+    proportion_to_retain_ = UINT64_MAX;
+  } else {
+    proportion_to_retain_ = FLAGS_events_fraction * UINT64_MAX;
+  }
+  LOG(INFO) << "Retaining events with hash < " << proportion_to_retain_;
 
   FLAGS_flow_scheduling_solver = FLAGS_solver;
   if (!FLAGS_solver.compare("flowlessly")) {
@@ -503,8 +521,15 @@ void GoogleTraceSimulator::InitializeCostModel() {
     VLOG(1) << "Using the void cost model";
     break;
   case CostModelType::COST_MODEL_SIMULATED_QUINCY: {
-    uint64_t num_machines =
-      std::round(MACHINES_IN_TRACE_APPROXIMATION * FLAGS_percentage / 100.0);
+    uint64_t num_machines;
+    // We must check if we're retaining all events. If so, we have to manually
+    // set proportion_to_retain_ because otherwise we might end up overflowing.
+    if (IsEqual(FLAGS_events_fraction, 1.0)) {
+      num_machines = MACHINES_IN_TRACE_APPROXIMATION;
+    } else {
+      num_machines =
+        std::round(MACHINES_IN_TRACE_APPROXIMATION * FLAGS_events_fraction);
+    }
     cost_model_ =
       SetupSimulatedQuincyCostModel(resource_map_, job_map_, task_map_,
                                     task_bindings_, knowledge_base_,
