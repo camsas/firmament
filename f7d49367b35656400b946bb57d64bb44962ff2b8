@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_d7a80922",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-14T10:02:19Z",
+      "side": 1,
+      "message": "\"compute\"",
+      "range": {
+        "startLine": 7,
+        "startChar": 15,
+        "endLine": 7,
+        "endChar": 24
+      },
+      "revId": "f7d49367b35656400b946bb57d64bb44962ff2b8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_97b20192",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-14T10:02:19Z",
+      "side": 1,
+      "message": "Do you know what the semantics of \"auto\" vs. \"auto\u0026\" are? https://google-styleguide.googlecode.com/svn/trunk/cppguide.html#auto implies there\u0027s some subtlety, but I\u0027ve never looked into it. We use \"auto\" elsewhere, and I\u0027m wondering if we need to be careful there to avoid copies. We should check.",
+      "revId": "f7d49367b35656400b946bb57d64bb44962ff2b8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_b7ad4533",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 526,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-14T10:02:19Z",
+      "side": 1,
+      "message": "But this code isn\u0027t setting proportion_to_retain_? (Copy-paste snafu, I think.)",
+      "revId": "f7d49367b35656400b946bb57d64bb44962ff2b8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
