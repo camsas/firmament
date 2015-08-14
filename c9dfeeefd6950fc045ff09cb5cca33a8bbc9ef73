@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_57b5d97b",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 964,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-14T09:55:31Z",
+      "side": 1,
+      "message": "Good catch. I think I must have been tired and assumed that job_id is the usual UUID-as-string...",
+      "revId": "c9dfeeefd6950fc045ff09cb5cca33a8bbc9ef73",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
