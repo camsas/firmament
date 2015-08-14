@@ -873,6 +873,38 @@ uint64_t GoogleTraceSimulator::NextRunSolverAt(uint64_t cur_run_solver_at,
   return cur_run_solver_at;
 }
 
+uint64_t GoogleTraceSimulator::NextSimulatorEvent() {
+  multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
+  if (it == events_.end()) {
+    // Empty collection.
+    return UINT64_MAX;
+  } else {
+    return it->first;
+  }
+}
+
+void GoogleTraceSimulator::OutputChangeStats(const DIMACSChangeStats& stats) {
+  fprintf(stats_file_, "%jd,%jd,%jd,%jd,%jd,%jd\n", stats.total_,
+          stats.nodes_added_, stats.nodes_removed_, stats.arcs_added_,
+          stats.arcs_changed_, stats.arcs_removed_);
+}
+
+void GoogleTraceSimulator::OutputStatsHeader() {
+  if (stats_file_) {
+    if (FLAGS_batch_step == 0) {
+      // online
+      fprintf(stats_file_, "cluster_timestamp,scheduling_latency,"
+              "algorithm_time,flow_solver_time,total_time,");
+    } else {
+      // batch
+      fprintf(stats_file_, "cluster_timestamp,algorithm_time,flow_solver_time,"
+              "total_time,");
+    }
+    fprintf(stats_file_, "total_changes,new_node,remove_node,new_arc,"
+            "change_arc,remove_arc\n");
+  }
+}
+
 JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
   JobDescriptor jd;
   // Generate a hash out of the trace job_id.
@@ -893,20 +925,6 @@ JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
   rt->set_uid(GenerateRootTaskID(*jd_ptr));
   rt->set_state(TaskDescriptor::RUNNABLE);
   return jd_ptr;
-}
-
-void GoogleTraceSimulator::SeenExogenous(uint64_t time) {
-  first_exogenous_event_seen_ = std::min(time, first_exogenous_event_seen_);
-}
-
-uint64_t GoogleTraceSimulator::NextSimulatorEvent() {
-  multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
-  if (it == events_.end()) {
-    // Empty collection.
-    return UINT64_MAX;
-  } else {
-    return it->first;
-  }
 }
 
 void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
@@ -950,7 +968,7 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
     } else if (it->second.type() == EventDescriptor::TASK_ASSIGNMENT_CHANGED) {
       // no-op: this event is just used to trigger solver re-run
     } else {
-      LOG(ERROR) << "Unexpected event type " << it->second.type() << " @ "
+      LOG(FATAL) << "Unexpected event type " << it->second.type() << " @ "
                  << it->first;
     }
 
@@ -990,33 +1008,13 @@ void GoogleTraceSimulator::RemoveMachine(uint64_t machine_id) {
   flow_graph_->RemoveMachine(res_id);
   if (rtnd_ptr->has_parent_id()) {
     if (rtnd_ptr->parent_id().compare(rtn_root_.resource_desc().uuid()) == 0) {
-      RepeatedPtrField<ResourceTopologyNodeDescriptor>* parent_children =
-        rtn_root_.mutable_children();
-      int32_t index = 0;
-      for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator it =
-             parent_children->begin(); it != parent_children->end();
-           ++it, ++index) {
-        if (it->resource_desc().uuid()
-              .compare(rtnd_ptr->resource_desc().uuid()) == 0) {
-          break;
-        }
-      }
-      if (index < parent_children->size()) {
-        // Found the node.
-        if (index < parent_children->size() - 1) {
-          // The node is not the last one.
-          parent_children->SwapElements(index, parent_children->size() - 1);
-        }
-        parent_children->RemoveLast();
-      } else {
-        LOG(WARNING) << "Could not found the machine in the parent's list";
-      }
+      RemoveResourceNodeFromParentChildrenList(*rtnd_ptr);
     } else {
       LOG(ERROR) << "Machine " << machine_id
                  << " is not direclty connected to the root";
     }
   } else {
-    LOG(WARNING) << "Machine " << machine_id << " doesn't have a parent";
+    LOG(ERROR) << "Machine " << machine_id << " doesn't have a parent";
   }
   machine_id_to_rtnd_.erase(machine_id);
   // We can't delete the node because we haven't removed it from it's parent
@@ -1038,130 +1036,31 @@ void GoogleTraceSimulator::RemoveResource(
   delete rs_ptr;
 }
 
-uint64_t GoogleTraceSimulator::RunSolver(uint64_t run_solver_at) {
-  double algorithm_time;
-  double flow_solver_time;
-  LogStartOfSolverRun(run_solver_at);
-
-  DIMACSChangeStats change_stats(flow_graph_->graph_changes());
-  // Set a timeout on the solver's run
-  alarm(FLAGS_solver_timeout);
-  boost::timer::cpu_timer timer;
-  multimap<uint64_t, uint64_t>* task_mappings =
-    solver_dispatcher_->Run(&algorithm_time, &flow_solver_time,
-                            graph_output_);
-  alarm(0);
-
-  // We're done, now update the flow graph with the results
-  UpdateFlowGraph(run_solver_at, task_runtime_, task_mappings);
-  delete task_mappings;
-  // Also update any resource statistics, if required
-  UpdateResourceStats();
-
-  // Log stats to CSV file
-  LogSolverRunStats(timer, run_solver_at, algorithm_time,
-                    flow_solver_time, change_stats);
-
-  return NextRunSolverAt(run_solver_at, algorithm_time);
-}
-
-void GoogleTraceSimulator::TaskEvicted(TaskID_t task_id,
-                                       const ResourceID_t& res_id) {
-  VLOG(2) << "Evict task " << task_id << " from resource " << res_id;
-  TaskDescriptor** td_ptr = FindOrNull(*task_map_, task_id);
-  CHECK_NOTNULL(td_ptr);
-  // Change the state of the task from running to runnable.
-  (*td_ptr)->set_state(TaskDescriptor::RUNNABLE);
-  flow_graph_->NodeForTaskID(task_id)->type_ = FlowNodeType::UNSCHEDULED_TASK;
-  // Remove the running arc and add back arcs to EC and UNSCHED.
-  flow_graph_->TaskEvicted(task_id, res_id);
-
-  // Get the Google trace identifier of the task.
-  TaskIdentifier* ti_ptr = FindOrNull(task_id_to_identifier_, task_id);
-  CHECK_NOTNULL(ti_ptr);
-  // Get the end time of the task.
-  uint64_t* task_end_time = FindOrNull(task_id_to_end_time_, task_id);
-  CHECK_NOTNULL(task_end_time);
-  // Remove the task end time event from the simulator events_.
-  pair<multimap<uint64_t, EventDescriptor>::iterator,
-       multimap<uint64_t, EventDescriptor>::iterator> range_it =
-    events_.equal_range(*task_end_time);
-  for (; range_it.first != range_it.second; range_it.first++) {
-    if (range_it.first->second.type() == EventDescriptor::TASK_END_RUNTIME &&
-        range_it.first->second.job_id() == ti_ptr->job_id &&
-        range_it.first->second.task_index() == ti_ptr->task_index) {
+void GoogleTraceSimulator::RemoveResourceNodeFromParentChildrenList(
+    const ResourceTopologyNodeDescriptor& rtnd) {
+  // The parent of the node is the topology root.
+  RepeatedPtrField<ResourceTopologyNodeDescriptor>* parent_children =
+    rtn_root_.mutable_children();
+  int32_t index = 0;
+  // Find the node in the parent's children list.
+  for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator it =
+         parent_children->begin(); it != parent_children->end();
+       ++it, ++index) {
+    if (it->resource_desc().uuid()
+        .compare(rtnd.resource_desc().uuid()) == 0) {
       break;
     }
   }
-  ResourceID_t res_id_tmp = res_id;
-  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id_tmp);
-  CHECK_NOTNULL(rs_ptr);
-  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
-  rd_ptr->clear_current_running_task();
-  task_bindings_.erase(task_id);
-  res_id_to_task_id_.erase(res_id_tmp);
-  // Remove current task end time.
-  task_id_to_end_time_.erase(task_id);
-  // We've found the event.
-  if (range_it.first != range_it.second) {
-    events_.erase(range_it.first);
-  }
-}
-
-void GoogleTraceSimulator::ResetUuidAndAddResource(
-    ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
-    const string& root_uuid) {
-  string new_uuid;
-  if (rtnd->has_parent_id()) {
-    // This is an intermediate node, so translate the parent UUID via the
-    // lookup table
-    const string& old_parent_id = rtnd->parent_id();
-    string* new_parent_id = FindOrNull(uuid_conversion_map_, rtnd->parent_id());
-    CHECK_NOTNULL(new_parent_id);
-    VLOG(2) << "Resetting parent UUID for " << rtnd->resource_desc().uuid()
-            << ", parent was " << old_parent_id
-            << ", is now " << *new_parent_id;
-    rtnd->set_parent_id(*new_parent_id);
-    // Grab a new UUID for the node itself
-    new_uuid = to_string(GenerateResourceID());
-  } else {
-    // This is the top of a machine topology, so generate a first UUID for its
-    // topology based on its hostname and link it into the root
-    rtnd->set_parent_id(root_uuid);
-    new_uuid = to_string(GenerateRootResourceID(hostname));
-  }
-  VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid() << " to "
-          << new_uuid;
-  InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(), new_uuid);
-  ResourceDescriptor* rd = rtnd->mutable_resource_desc();
-  rd->set_uuid(new_uuid);
-  // Add the resource node to the map.
-  CHECK(InsertIfNotPresent(resource_map_.get(),
-                           ResourceIDFromString(rd->uuid()),
-                           new ResourceStatus(rd, rtnd, "endpoint_uri",
-                                              GetCurrentTimestamp())));
-}
-
-void GoogleTraceSimulator::OutputStatsHeader() {
-  if (stats_file_) {
-    if (FLAGS_batch_step == 0) {
-      // online
-      fprintf(stats_file_, "cluster_timestamp,scheduling_latency,"
-              "algorithm_time,flow_solver_time,total_time,");
-    } else {
-      // batch
-      fprintf(stats_file_, "cluster_timestamp,algorithm_time,flow_solver_time,"
-              "total_time,");
+  if (index < parent_children->size()) {
+    // Found the node.
+    if (index < parent_children->size() - 1) {
+      // The node is not the last one.
+      parent_children->SwapElements(index, parent_children->size() - 1);
     }
-    fprintf(stats_file_, "total_changes,new_node,remove_node,new_arc,"
-            "change_arc,remove_arc\n");
+    parent_children->RemoveLast();
+  } else {
+    LOG(FATAL) << "Could not found the machine in the parent's list";
   }
-}
-
-void GoogleTraceSimulator::OutputChangeStats(const DIMACSChangeStats& stats) {
-  fprintf(stats_file_, "%jd,%jd,%jd,%jd,%jd,%jd\n", stats.total_,
-          stats.nodes_added_, stats.nodes_removed_, stats.arcs_added_,
-          stats.arcs_changed_, stats.arcs_removed_);
 }
 
 void GoogleTraceSimulator::ReplayTrace() {
@@ -1260,16 +1159,126 @@ void GoogleTraceSimulator::ReplayTrace() {
   delete task_runtime_;
 }
 
+void GoogleTraceSimulator::ResetUuidAndAddResource(
+    ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
+    const string& root_uuid) {
+  string new_uuid;
+  if (rtnd->has_parent_id()) {
+    // This is an intermediate node, so translate the parent UUID via the
+    // lookup table
+    const string& old_parent_id = rtnd->parent_id();
+    string* new_parent_id = FindOrNull(uuid_conversion_map_, rtnd->parent_id());
+    CHECK_NOTNULL(new_parent_id);
+    VLOG(2) << "Resetting parent UUID for " << rtnd->resource_desc().uuid()
+            << ", parent was " << old_parent_id
+            << ", is now " << *new_parent_id;
+    rtnd->set_parent_id(*new_parent_id);
+    // Grab a new UUID for the node itself
+    new_uuid = to_string(GenerateResourceID());
+  } else {
+    // This is the top of a machine topology, so generate a first UUID for its
+    // topology based on its hostname and link it into the root
+    rtnd->set_parent_id(root_uuid);
+    new_uuid = to_string(GenerateRootResourceID(hostname));
+  }
+  VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid() << " to "
+          << new_uuid;
+  InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(), new_uuid);
+  ResourceDescriptor* rd = rtnd->mutable_resource_desc();
+  rd->set_uuid(new_uuid);
+  // Add the resource node to the map.
+  CHECK(InsertIfNotPresent(resource_map_.get(),
+                           ResourceIDFromString(rd->uuid()),
+                           new ResourceStatus(rd, rtnd, "endpoint_uri",
+                                              GetCurrentTimestamp())));
+}
+
+uint64_t GoogleTraceSimulator::RunSolver(uint64_t run_solver_at) {
+  double algorithm_time;
+  double flow_solver_time;
+  LogStartOfSolverRun(run_solver_at);
+
+  DIMACSChangeStats change_stats(flow_graph_->graph_changes());
+  // Set a timeout on the solver's run
+  alarm(FLAGS_solver_timeout);
+  boost::timer::cpu_timer timer;
+  multimap<uint64_t, uint64_t>* task_mappings =
+    solver_dispatcher_->Run(&algorithm_time, &flow_solver_time,
+                            graph_output_);
+  alarm(0);
+
+  // We're done, now update the flow graph with the results
+  UpdateFlowGraph(run_solver_at, task_runtime_, task_mappings);
+  delete task_mappings;
+  // Also update any resource statistics, if required
+  UpdateResourceStats();
+
+  // Log stats to CSV file
+  LogSolverRunStats(timer, run_solver_at, algorithm_time,
+                    flow_solver_time, change_stats);
+
+  return NextRunSolverAt(run_solver_at, algorithm_time);
+}
+
+void GoogleTraceSimulator::SeenExogenous(uint64_t time) {
+  first_exogenous_event_seen_ = std::min(time, first_exogenous_event_seen_);
+}
+
+void GoogleTraceSimulator::TaskEvicted(TaskID_t task_id,
+                                       const ResourceID_t& res_id) {
+  VLOG(2) << "Evict task " << task_id << " from resource " << res_id;
+  TaskDescriptor** td_ptr = FindOrNull(*task_map_, task_id);
+  CHECK_NOTNULL(td_ptr);
+  // Change the state of the task from running to runnable.
+  (*td_ptr)->set_state(TaskDescriptor::RUNNABLE);
+  flow_graph_->NodeForTaskID(task_id)->type_ = FlowNodeType::UNSCHEDULED_TASK;
+  // Remove the running arc and add back arcs to EC and UNSCHED.
+  flow_graph_->TaskEvicted(task_id, res_id);
+
+  // Get the Google trace identifier of the task.
+  TaskIdentifier* ti_ptr = FindOrNull(task_id_to_identifier_, task_id);
+  CHECK_NOTNULL(ti_ptr);
+  // Get the end time of the task.
+  uint64_t* task_end_time = FindOrNull(task_id_to_end_time_, task_id);
+  CHECK_NOTNULL(task_end_time);
+  TaskEvictedClearSimulatorState(task_id, *task_end_time, res_id, *ti_ptr);
+}
+
+void GoogleTraceSimulator::TaskEvictedClearSimulatorState(
+    TaskID_t task_id,
+    uint64_t task_end_time,
+    const ResourceID_t& res_id,
+    const TaskIdentifier& task_identifier) {
+  // Remove the task end time event from the simulator events_.
+  pair<multimap<uint64_t, EventDescriptor>::iterator,
+       multimap<uint64_t, EventDescriptor>::iterator> range_it =
+    events_.equal_range(task_end_time);
+  for (; range_it.first != range_it.second; range_it.first++) {
+    if (range_it.first->second.type() == EventDescriptor::TASK_END_RUNTIME &&
+        range_it.first->second.job_id() == task_identifier.job_id &&
+        range_it.first->second.task_index() == task_identifier.task_index) {
+      break;
+    }
+  }
+  // We've found the event.
+  if (range_it.first != range_it.second) {
+    events_.erase(range_it.first);
+  }
+  ResourceID_t res_id_tmp = res_id;
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id_tmp);
+  CHECK_NOTNULL(rs_ptr);
+  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+  rd_ptr->clear_current_running_task();
+  task_bindings_.erase(task_id);
+  res_id_to_task_id_.erase(res_id_tmp);
+  // Remove current task end time.
+  task_id_to_end_time_.erase(task_id);
+}
+
 void GoogleTraceSimulator::TaskCompleted(
     const TaskIdentifier& task_identifier) {
   TaskDescriptor** td_ptr = FindOrNull(task_id_to_td_, task_identifier);
-  if (td_ptr == NULL) {
-    LOG(ERROR) << "Could not find TaskDescriptor for: "
-               << task_identifier.job_id
-               << " " << task_identifier.task_index;
-    // TODO(ionel): This may have to update the state.
-    return;
-  }
+  CHECK_NOTNULL(td_ptr);
   TaskID_t task_id = (*td_ptr)->uid();
   JobID_t job_id = JobIDFromString((*td_ptr)->job_id());
   // Remove the task node from the flow graph.

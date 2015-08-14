@@ -113,8 +113,6 @@ class GoogleTraceSimulator {
       const TaskStats& task_stats,
       const vector<EquivClass_t>& task_equiv_classes);
 
-  void RemoveTaskStats(TaskID_t task_id);
-
   /**
    * Creates a new task for a job.
    * @param jd_ptr the job descriptor of the job for which to create a new task
@@ -132,7 +130,15 @@ class GoogleTraceSimulator {
 
   void InitializeCostModel();
 
+  /**
+   * Notifies the flow graph of job completion and updates the simulator's
+   * state.
+   * @param simulator_job_id the simulator's job id
+   * @param job_id flow graph's job id
+   */
   void JobCompleted(uint64_t simulator_job_id, JobID_t job_id);
+
+  void LoadJobsNumTasks();
 
   /**
    * Loads all the machine events and returns a multimap timestamp -> event.
@@ -140,8 +146,6 @@ class GoogleTraceSimulator {
   void LoadMachineEvents();
 
   void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl);
-
-  void LoadJobsNumTasks();
 
   void LoadTaskRuntimeStats();
 
@@ -159,14 +163,23 @@ class GoogleTraceSimulator {
     }
   }
 
-  void LogStartOfSolverRun(uint64_t run_solver_at);
   void LogSolverRunStats(const boost::timer::cpu_timer timer,
                          uint64_t solver_executed_at,
                          double algorithm_time,
                          double flow_solver_time,
                          const DIMACSChangeStats& change_stats);
 
+  void LogStartOfSolverRun(uint64_t run_solver_at);
+
   uint64_t NextRunSolverAt(uint64_t cur_run_solver_at, double algorithm_time);
+
+  /**
+   * Time of the next simulator event. UINT64_MAX if no more simulator events.
+   */
+  uint64_t NextSimulatorEvent();
+
+  void OutputChangeStats(const DIMACSChangeStats& stats);
+  void OutputStatsHeader();
 
   /**
    * Create and populate a new job.
@@ -175,18 +188,11 @@ class GoogleTraceSimulator {
    */
   JobDescriptor* PopulateJob(uint64_t job_id);
 
-  /**
-   * Must be called every time an exogenous event is processed.
-   * @param time the time of the exogenous event
-   */
-  void SeenExogenous(uint64_t time);
-  /**
-   * Time of the next simulator event. UINT64_MAX if no more simulator events.
-   */
-  uint64_t NextSimulatorEvent();
-
-  void OutputStatsHeader();
-  void OutputChangeStats(const DIMACSChangeStats& stats);
+  void PrintResourceStats(uint64_t id, WhareMapStats* wms) {
+    LOG(INFO) << "Node: " << id << " " << wms->num_devils() << " "
+              << wms->num_rabbits() << " " << wms->num_sheep() << " "
+              << wms->num_turtles();
+  }
 
   /**
    * Processes all the simulator events that happen at a given time.
@@ -208,9 +214,31 @@ class GoogleTraceSimulator {
       unordered_map<TaskIdentifier, uint64_t,
         TaskIdentifierHasher>* task_runtime);
 
+  /**
+   * Removes a machine from the topology and all its associated state.
+   * NOTE: The method currently assumes that the machine is directly
+   * connected to the topology root.
+   * @param machine_id the Google id of the machine to be removed
+   */
   void RemoveMachine(uint64_t machine_id);
 
+  /**
+   * Removes the simulator state for a resource and evicts all the tasks
+   * running on it or any of its children nodes.
+   * @param rtnd the resource to be removed
+   */
   void RemoveResource(ResourceTopologyNodeDescriptor* rtnd);
+
+  /**
+   * Removes a resource from its parents children list.
+   * @param rtnd the resource node to remove
+   */
+  void RemoveResourceNodeFromParentChildrenList(
+      const ResourceTopologyNodeDescriptor& rtnd);
+
+  void RemoveTaskStats(TaskID_t task_id);
+
+  void ReplayTrace();
 
   /**
    * The resource topology is build from the same protobuf file. The function
@@ -219,8 +247,6 @@ class GoogleTraceSimulator {
   void ResetUuidAndAddResource(ResourceTopologyNodeDescriptor* rtnd,
                                const string& hostname, const string& root_uuid);
 
-  void ReplayTrace();
-
   /**
    * Runs the solver.
    * @param the time when the solver should run
@@ -228,8 +254,34 @@ class GoogleTraceSimulator {
    */
   uint64_t RunSolver(uint64_t run_solver_at);
 
+  /**
+   * Must be called every time an exogenous event is processed.
+   * @param time the time of the exogenous event
+   */
+  void SeenExogenous(uint64_t time);
+
+  /**
+   * Notifies the flow_graph of a task completion and updates the simulator's
+   * state.
+   * @param task_identifier the simulator identifier of the completed task
+   */
   void TaskCompleted(const TaskIdentifier& task_identifier);
+
+  /**
+   * Evicts a task from a resource and updates the state of the simulator
+   * and of the flow graph.
+   * @param task_id the id of the evited task
+   * @param res_id the id of the resource from which to evict the task
+   */
   void TaskEvicted(TaskID_t task_id, const ResourceID_t& res_id);
+
+  /**
+   * Updates simulator's state upon the eviction of a task.
+   **/
+  void TaskEvictedClearSimulatorState(TaskID_t task_id,
+                                      uint64_t task_end_time,
+                                      const ResourceID_t& res_id,
+                                      const TaskIdentifier& task_identifier);
 
   EventDescriptor_EventType TranslateMachineEvent(int32_t machine_event);
 
@@ -239,12 +291,6 @@ class GoogleTraceSimulator {
       TaskIdentifierHasher>* task_runtime,
     multimap<uint64_t, uint64_t>* task_mappings);
   void UpdateResourceStats();
-
-  void PrintResourceStats(uint64_t id, WhareMapStats* wms) {
-    LOG(INFO) << "Node: " << id << " " << wms->num_devils() << " "
-              << wms->num_rabbits() << " " << wms->num_sheep() << " "
-              << wms->num_turtles();
-  }
 
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.
