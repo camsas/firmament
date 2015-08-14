@@ -230,12 +230,6 @@ class GoogleTraceSimulator {
     multimap<uint64_t, uint64_t>* task_mappings);
   void UpdateResourceStats();
 
-  // XXX(ionel): These methods are copied from quincy_scheduler. We copy them
-  // because we don't have access to the scheduler in the simulator.
-  FlowGraphNode* GatherWhareMCStats(FlowGraphNode* accumulator,
-                                    FlowGraphNode* other);
-  void AccumulateWhareMapStats(WhareMapStats* accumulator,
-                               WhareMapStats* other);
   void PrintResourceStats(uint64_t id, WhareMapStats* wms) {
     LOG(INFO) << "Node: " << id << " " << wms->num_devils() << " "
               << wms->num_rabbits() << " " << wms->num_sheep() << " "
