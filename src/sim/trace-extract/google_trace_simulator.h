@@ -161,8 +161,7 @@ class GoogleTraceSimulator {
                          double flowsolver_time,
                          const DIMACSChangeStats& change_stats);
 
-  uint64_t NextTimeIntervalBound(uint64_t cur_time_interval_bound,
-                                 double algorithm_time);
+  uint64_t NextRunSolverBy(uint64_t cur_run_solver_by, double algorithm_time);
 
   /**
    * Create and populate a new job.
@@ -216,6 +215,16 @@ class GoogleTraceSimulator {
                                const string& hostname, const string& root_uuid);
 
   void ReplayTrace();
+
+  /**
+   * Runs the solver.
+   * @param the time bound by when the solver should run
+   * @return the new time bound by when the solver should run
+   */
+  uint64_t RunSolver(uint64_t run_solver_by);
+
+  bool SimulationCompletionCondition(uint64_t task_time, uint64_t num_events,
+                                     uint64_t num_scheduling_rounds);
 
   void TaskCompleted(const TaskIdentifier& task_identifier);
   void TaskEvicted(TaskID_t task_id, const ResourceID_t& res_id);
