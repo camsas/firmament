@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_12299f89",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-14T10:35:13Z",
+      "side": 1,
+      "message": "Ok, I was just wondering if my use of \"auto\" ended up copying collections around. On further thought, though, this isn\u0027t a problem, because I only use \"auto\" with iterators, and those we want to actually declare and define there (so there\u0027s no need to do things by reference, as iterators are already themselves acting as proxies for items in the collection, rather than copying the items).",
+      "parentUuid": "9ad9bd40_d7048919",
+      "revId": "f7d49367b35656400b946bb57d64bb44962ff2b8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_b7ad4533",
         "filename": "src/sim/trace-extract/google_trace_simulator.cc",
         "patchSetId": 1
@@ -113,6 +131,24 @@
       "side": 1,
       "message": "Actually, I don\u0027t even have to do the handling here. Fixed. I\u0027ve also renamed proportion_to_retain_ to max_event_id_to_retain_. I think the new name is more descriptive.",
       "parentUuid": "9ad9bd40_b7ad4533",
+      "revId": "f7d49367b35656400b946bb57d64bb44962ff2b8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_322ce398",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 526,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-14T10:35:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_77465d7c",
       "revId": "f7d49367b35656400b946bb57d64bb44962ff2b8",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
