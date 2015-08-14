@@ -72,7 +72,8 @@ class GoogleTraceSimulator {
 
  private:
   /**
-   * Add new machine to the topology. The method updates simulator's mapping state.
+   * Add new machine to the topology. The method updates simulator's mapping
+   * state.
    * @param machine_tmp the topology descriptor of the new machine
    * @param machine_id the google trace machine id
    * @return a pointer to the resource descriptor of the new machine
@@ -313,8 +314,8 @@ class GoogleTraceSimulator {
 
   scheduler::SolverDispatcher* solver_dispatcher_;
 
-  // Proportion of events to retain, as a ratio out of UINT64_MAX
-  uint64_t proportion_to_retain_;
+  // Ignore all the events that have an id greater than max_event_id_to_retain_.
+  uint64_t max_event_id_to_retain_;
 
   // File to output graph to. (Optional; NULL if unspecified.)
   FILE *graph_output_;
