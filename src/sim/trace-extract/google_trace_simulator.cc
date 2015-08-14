@@ -242,7 +242,7 @@ void GoogleTraceSimulator::Run() {
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
     FLAGS_only_read_assignment_changes = false;
-    FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-4.6/cs2.exe";
+    FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-git/cs2.exe";
   } else if (!FLAGS_solver.compare("custom")) {
     FLAGS_flow_scheduling_time_reported = true;
   }
@@ -802,8 +802,10 @@ void GoogleTraceSimulator::LogStartOfSolverRun(uint64_t time_interval_bound) {
   LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
   LOG(INFO) << "Nodes: " << flow_graph_->NumNodes()
             << ", arcs: " << flow_graph_->NumArcs();
-  fprintf(graph_output_, "c SOI %jd\n", time_interval_bound);
-  fflush(graph_output_);
+  if (graph_output_) {
+    fprintf(graph_output_, "c SOI %jd\n", time_interval_bound);
+    fflush(graph_output_);
+  }
 }
 
 void GoogleTraceSimulator::LogSolverRunStats(
@@ -932,7 +934,7 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
     } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
       // TODO(ionel): Handle machine update event.
     } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
-      spf(&log_string, "TASK_END_RUNTIME %s:%ju @ %ju\n", it->second.job_id(),
+      spf(&log_string, "TASK_END_RUNTIME %ju:%ju @ %ju\n", it->second.job_id(),
           it->second.task_index(), it->first);
       LogEvent(log_string);
       // Task has finished.
@@ -959,7 +961,7 @@ void GoogleTraceSimulator::ProcessTaskEvent(
       TaskIdentifierHasher>* task_runtime) {
   string log_string;
   if (event_type == SUBMIT_EVENT) {
-    spf(&log_string, "TASK_SUBMIT_EVENT: ID %s:%ju @ %ju\n",
+    spf(&log_string, "TASK_SUBMIT_EVENT: ID %ju:%ju @ %ju\n",
         task_identifier.job_id, task_identifier.task_index,
         cur_time);
     LogEvent(log_string);
