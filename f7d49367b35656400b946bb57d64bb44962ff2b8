@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_f7ffcdff",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-14T10:29:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_d7a80922",
+      "range": {
+        "startLine": 7,
+        "startChar": 15,
+        "endLine": 7,
+        "endChar": 24
+      },
+      "revId": "f7d49367b35656400b946bb57d64bb44962ff2b8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_97b20192",
         "filename": "src/sim/trace-extract/google_trace_simulator.cc",
         "patchSetId": 1
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_d7048919",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-14T10:29:11Z",
+      "side": 1,
+      "message": "I can\u0027t find anything about any subtlety. I\u0027m reading the guide more as: you can use auto\u0026, but pay attention because it\u0027s a reference.",
+      "parentUuid": "9ad9bd40_97b20192",
+      "revId": "f7d49367b35656400b946bb57d64bb44962ff2b8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_b7ad4533",
         "filename": "src/sim/trace-extract/google_trace_simulator.cc",
         "patchSetId": 1
@@ -53,6 +95,24 @@
       "writtenOn": "2015-08-14T10:02:19Z",
       "side": 1,
       "message": "But this code isn\u0027t setting proportion_to_retain_? (Copy-paste snafu, I think.)",
+      "revId": "f7d49367b35656400b946bb57d64bb44962ff2b8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_77465d7c",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 526,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-14T10:29:11Z",
+      "side": 1,
+      "message": "Actually, I don\u0027t even have to do the handling here. Fixed. I\u0027ve also renamed proportion_to_retain_ to max_event_id_to_retain_. I think the new name is more descriptive.",
+      "parentUuid": "9ad9bd40_b7ad4533",
       "revId": "f7d49367b35656400b946bb57d64bb44962ff2b8",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
