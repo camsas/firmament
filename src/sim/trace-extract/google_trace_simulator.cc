@@ -468,6 +468,27 @@ void GoogleTraceSimulator::CreateRootResource() {
                                               GetCurrentTimestamp())));
 }
 
+bool GoogleTraceSimulator::HasSimulationCompleted(
+    uint64_t task_time,
+    uint64_t num_events,
+    uint64_t num_scheduling_rounds) {
+  // We only run for the first FLAGS_runtime microseconds.
+  if (FLAGS_runtime < task_time) {
+    LOG(INFO) << "Terminating at : " << task_time;
+    return true;
+  }
+  if (num_events > FLAGS_max_events) {
+    LOG(INFO) << "Terminating after " << num_events << " events";
+    return true;
+  }
+  if (num_scheduling_rounds >= FLAGS_max_scheduling_rounds) {
+    LOG(INFO) << "Terminating after " << num_scheduling_rounds
+              << " scheduling rounds.";
+    return true;
+  }
+  return false;
+}
+
 void GoogleTraceSimulator::InitializeCostModel() {
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>();
@@ -570,7 +591,7 @@ void GoogleTraceSimulator::LoadMachineEvents() {
   string machines_file_name = trace_path_ +
     "/machine_events/part-00000-of-00001.csv";
   if ((machines_file = fopen(machines_file_name.c_str(), "r")) == NULL) {
-    LOG(ERROR) << "Failed to open trace for reading machine events.";
+    LOG(FATAL) << "Failed to open trace for reading machine events.";
   }
 
   int64_t num_line = 1;
@@ -772,7 +793,7 @@ void GoogleTraceSimulator::LoadTraceData() {
   LoadTaskRuntimeStats();
 }
 
-void GoogleTraceSimulator::LogStartOfSolverRun(uint64_t time_interval_bound) {
+void GoogleTraceSimulator::LogStartOfSolverRun(uint64_t run_solver_at) {
   VLOG(2) << "Job id size: " << job_id_to_jd_.size();
   VLOG(2) << "Task id size: " << task_id_to_identifier_.size();
   VLOG(2) << "Job num tasks size: " << job_num_tasks_.size();
@@ -781,18 +802,18 @@ void GoogleTraceSimulator::LogStartOfSolverRun(uint64_t time_interval_bound) {
   VLOG(2) << "Res id to rd size: " << resource_map_->size();
   VLOG(2) << "Task binding: " << task_bindings_.size();
 
-  LOG(INFO) << "Scheduler run for time: " << time_interval_bound;
+  LOG(INFO) << "Scheduler run for time: " << run_solver_at;
   LOG(INFO) << "Nodes: " << flow_graph_->NumNodes()
             << ", arcs: " << flow_graph_->NumArcs();
   if (graph_output_) {
-    fprintf(graph_output_, "c SOI %jd\n", time_interval_bound);
+    fprintf(graph_output_, "c SOI %jd\n", run_solver_at);
     fflush(graph_output_);
   }
 }
 
 void GoogleTraceSimulator::LogSolverRunStats(
     const boost::timer::cpu_timer timer,
-    uint64_t time_interval_bound,
+    uint64_t solver_executed_at,
     double algorithm_time,
     double flow_solver_time,
     const DIMACSChangeStats& change_stats) {
@@ -804,7 +825,7 @@ void GoogleTraceSimulator::LogSolverRunStats(
     total_runtime /= second;
     if (FLAGS_batch_step == 0) {
       // online mode
-      double scheduling_latency = time_interval_bound;
+      double scheduling_latency = solver_executed_at;
       scheduling_latency += algorithm_time * 1000 * 1000;
       scheduling_latency -= first_exogenous_event_seen_;
       scheduling_latency /= (1000 * 1000);
@@ -812,12 +833,12 @@ void GoogleTraceSimulator::LogSolverRunStats(
       // will be negative if we have not seen any exogeneous event
       scheduling_latency = max(0.0, scheduling_latency);
 
-      fprintf(stats_file_, "%jd,%lf,%lf,%lf,%lf,", time_interval_bound,
+      fprintf(stats_file_, "%jd,%lf,%lf,%lf,%lf,", solver_executed_at,
               scheduling_latency, algorithm_time, flow_solver_time,
               total_runtime);
     } else {
       // batch mode
-      fprintf(stats_file_, "%jd,%lf%lf%lf,", time_interval_bound,
+      fprintf(stats_file_, "%jd,%lf%lf%lf,", solver_executed_at,
               algorithm_time, flow_solver_time, total_runtime);
     }
     OutputChangeStats(change_stats);
@@ -825,9 +846,8 @@ void GoogleTraceSimulator::LogSolverRunStats(
   }
 }
 
-uint64_t GoogleTraceSimulator::NextTimeIntervalBound(
-    uint64_t cur_time_interval_bound,
-    double algorithm_time) {
+uint64_t GoogleTraceSimulator::NextRunSolverAt(uint64_t cur_run_solver_at,
+                                               double algorithm_time) {
   if (FLAGS_batch_step == 0) {
     // we're in online mode
     // 1. when we run the solver next depends on how fast we were
@@ -835,7 +855,7 @@ uint64_t GoogleTraceSimulator::NextTimeIntervalBound(
     time_to_solve *= 1000 * 1000; // to micro
     // adjust for time warp factor
     time_to_solve *= FLAGS_online_factor;
-    cur_time_interval_bound += static_cast<uint64_t>(time_to_solve);
+    cur_run_solver_at += static_cast<uint64_t>(time_to_solve);
     // 2. if task assignments changed, then graph will have been
     // modified, even in the absence of any new events.
     // Incremental solvers will want to rerun here, as it reduces
@@ -844,13 +864,13 @@ uint64_t GoogleTraceSimulator::NextTimeIntervalBound(
     if (FLAGS_incremental_flow) {
       EventDescriptor event;
       event.set_type(EventDescriptor::TASK_ASSIGNMENT_CHANGED);
-      events_.insert(make_pair(cur_time_interval_bound, event));
+      events_.insert(make_pair(cur_run_solver_at, event));
     }
   } else {
     // we're in batch mode
-    cur_time_interval_bound += FLAGS_batch_step;
+    cur_run_solver_at += FLAGS_batch_step;
   }
-  return cur_time_interval_bound;
+  return cur_run_solver_at;
 }
 
 JobDescriptor* GoogleTraceSimulator::PopulateJob(uint64_t job_id) {
@@ -1018,6 +1038,33 @@ void GoogleTraceSimulator::RemoveResource(
   delete rs_ptr;
 }
 
+uint64_t GoogleTraceSimulator::RunSolver(uint64_t run_solver_at) {
+  double algorithm_time;
+  double flow_solver_time;
+  LogStartOfSolverRun(run_solver_at);
+
+  DIMACSChangeStats change_stats(flow_graph_->graph_changes());
+  // Set a timeout on the solver's run
+  alarm(FLAGS_solver_timeout);
+  boost::timer::cpu_timer timer;
+  multimap<uint64_t, uint64_t>* task_mappings =
+    solver_dispatcher_->Run(&algorithm_time, &flow_solver_time,
+                            graph_output_);
+  alarm(0);
+
+  // We're done, now update the flow graph with the results
+  UpdateFlowGraph(run_solver_at, task_runtime_, task_mappings);
+  delete task_mappings;
+  // Also update any resource statistics, if required
+  UpdateResourceStats();
+
+  // Log stats to CSV file
+  LogSolverRunStats(timer, run_solver_at, algorithm_time,
+                    flow_solver_time, change_stats);
+
+  return NextRunSolverAt(run_solver_at, algorithm_time);
+}
+
 void GoogleTraceSimulator::TaskEvicted(TaskID_t task_id,
                                        const ResourceID_t& res_id) {
   VLOG(2) << "Evict task " << task_id << " from resource " << res_id;
@@ -1135,7 +1182,7 @@ void GoogleTraceSimulator::ReplayTrace() {
   char line[200];
   vector<string> vals;
   FILE* f_task_events_ptr = NULL;
-  uint64_t time_interval_bound = 0;
+  uint64_t run_solver_at = 0;
   uint64_t num_events = 0;
   uint64_t num_scheduling_rounds = 0;
   first_exogenous_event_seen_ = UINT64_MAX;
@@ -1146,7 +1193,7 @@ void GoogleTraceSimulator::ReplayTrace() {
     spf(&fname, "%s/task_events/part-%05d-of-00500.csv", trace_path_.c_str(),
         file_num);
     if ((f_task_events_ptr = fopen(fname.c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open trace for reading of task events.";
+      LOG(FATAL) << "Failed to open trace for reading of task events.";
     }
     while (!feof(f_task_events_ptr)) {
       if (fscanf(f_task_events_ptr, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -1168,75 +1215,35 @@ void GoogleTraceSimulator::ReplayTrace() {
           }
 
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
-
-          // We only run for the first FLAGS_runtime microseconds.
-          if (FLAGS_runtime < task_time) {
-            LOG(INFO) << "Terminating at : " << task_time;
-            return;
-          }
-
-          num_events++;
-          if (num_events > FLAGS_max_events) {
-            LOG(INFO) << "Terminating after " << num_events << " events";
-            return;
-          }
-
           VLOG(2) << "TASK EVENT @ " << task_time;
+          num_events++;
+          if (HasSimulationCompleted(task_time, num_events,
+                                     num_scheduling_rounds)) {
+            return;
+          }
 
-          while (task_time > time_interval_bound) {
-            ProcessSimulatorEvents(time_interval_bound, machine_tmpl);
+          while (task_time > run_solver_at) {
+            ProcessSimulatorEvents(run_solver_at, machine_tmpl);
 
             if (!flow_graph_->graph_changes().empty()) {
               // Only run solver if something has actually changed.
               // (Sometimes, all the events we received in a time interval
               // have been ignored, e.g. task submit events with duplicate IDs.)
-              double algorithm_time;
-              double flow_solver_time;
-              // Do some logging
-              LogStartOfSolverRun(time_interval_bound);
-
-              DIMACSChangeStats change_stats(flow_graph_->graph_changes());
-              // Set a timeout on the solver's run
-              alarm(FLAGS_solver_timeout);
-              multimap<uint64_t, uint64_t>* task_mappings =
-                solver_dispatcher_->Run(&algorithm_time, &flow_solver_time,
-                                        graph_output_);
-              alarm(0);
-
-              // We're done, now update the flow graph with the results
-              UpdateFlowGraph(time_interval_bound, task_runtime_,
-                              task_mappings);
-              delete task_mappings;
-              // Also update any resource statistics, if required
-              UpdateResourceStats();
-
-              // Log stats to CSV file
-              LogSolverRunStats(timer, time_interval_bound, algorithm_time,
-                                flow_solver_time, change_stats);
-
-              // restart timer; elapsed() returns time from this point
-              timer.stop();
-              timer.start();
-
-              // Update current time.
-              time_interval_bound = NextTimeIntervalBound(time_interval_bound,
-                                                          algorithm_time);
+              run_solver_at = RunSolver(run_solver_at);
 
               // We've done another round, check if we should keep going
               num_scheduling_rounds++;
-              if (num_scheduling_rounds >= FLAGS_max_scheduling_rounds) {
-                LOG(INFO) << "Terminating after " << num_scheduling_rounds
-                          << " scheduling rounds.";
+              if (HasSimulationCompleted(task_time, num_events,
+                                         num_scheduling_rounds)) {
                 return;
               }
             }
 
-            VLOG(1) << "Updated time interval bound to " << time_interval_bound;
             // skip time until the next event happens
             uint64_t next_event = min(task_time, NextSimulatorEvent());
             VLOG(1) << "Next event at " << next_event;
-            time_interval_bound = max(next_event, time_interval_bound);
-            VLOG(1) << "Time interval bound to " << time_interval_bound;
+            run_solver_at = max(next_event, run_solver_at);
+            VLOG(1) << "Run solver by " << run_solver_at;
 
             first_exogenous_event_seen_ = UINT64_MAX;
           }
@@ -1244,7 +1251,7 @@ void GoogleTraceSimulator::ReplayTrace() {
           ProcessSimulatorEvents(task_time, machine_tmpl);
           ProcessTaskEvent(task_time, task_id, event_type, task_runtime_);
           first_exogenous_event_seen_ =
-                               std::min(first_exogenous_event_seen_, task_time);
+            min(first_exogenous_event_seen_, task_time);
         }
       }
     }
