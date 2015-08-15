@@ -130,11 +130,7 @@ vector<ResourceID_t>* QuincyCostModel::GetOutgoingEquivClassPrefArcs(
   uint32_t rand_seed_ = 0;
   for (uint32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs_task_to_res;
        ++num_arc) {
-    size_t index = rand_r(&rand_seed_) % leaf_res_ids_->size();
-    unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>::iterator it =
-      leaf_res_ids_->begin();
-    advance(it, index);
-    prefered_res->push_back(*it);
+    prefered_res->push_back(PickRandomResourceID(leaf_res_ids_));
   }
   return prefered_res;
 }
