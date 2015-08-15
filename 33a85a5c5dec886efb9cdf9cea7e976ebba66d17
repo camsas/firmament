@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_4843786b",
+        "filename": "src/sim/trace-extract/google_trace_simulator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-15T10:08:50Z",
+      "side": 1,
+      "message": "This will need generalising in the future so that we can support cost models other than WhareMap (e.g. CoCo tracks resources in different ways). Not necessary in this CL, but we should think about the most general way of doing this.",
+      "revId": "33a85a5c5dec886efb9cdf9cea7e976ebba66d17",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
