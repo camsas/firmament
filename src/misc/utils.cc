@@ -439,4 +439,26 @@ string CoarseTimestampToHumanReadble(const time_t rawtime) {
   return string(buffer);
 }
 
+ResourceID_t PickRandomResourceID(
+    const unordered_set<ResourceID_t,
+      boost::hash<boost::uuids::uuid>>& leaf_res_ids) {
+  // An unordered set does not have a random access iterator. Hence,
+  // a solution that simply picks a random index and moves an iterator to that
+  // index has O(N) complexity. In order to get a random element faster the
+  // code first picks a random non-empty bucket. Following, it randomly
+  // selects a value in that bucket. The complexity of this solution is
+  // O(M), where M is the number of collisions in the bucket.
+  uint32_t rand_seed = 0;
+  size_t bucket_index = 0;
+  size_t bucket_size = 0;
+  while (bucket_size == 0) {
+    bucket_index = rand_r(&rand_seed) % leaf_res_ids.bucket_count();
+    bucket_size = leaf_res_ids.bucket_size(bucket_index);
+  }
+  size_t index_within_bucket = rand_r(&rand_seed) % bucket_size;
+  auto it = leaf_res_ids.begin(bucket_index);
+  advance(it, index_within_bucket);
+  return *it;
+}
+
 }  // namespace firmament

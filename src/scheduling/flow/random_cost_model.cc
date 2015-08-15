@@ -130,14 +130,9 @@ vector<ResourceID_t>* RandomCostModel::GetOutgoingEquivClassPrefArcs(
   } else if (task_aggs_.find(ec) != task_aggs_.end()) {
     // Task equivalence class, put some random preference arcs
     CHECK_GE(leaf_res_ids_->size(), FLAGS_num_pref_arcs_task_to_res);
-    uint32_t rand_seed_ = 0;
     for (uint32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs_task_to_res;
          ++num_arc) {
-      size_t index = rand_r(&rand_seed_) % leaf_res_ids_->size();
-      unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>::iterator it =
-        leaf_res_ids_->begin();
-      advance(it, index);
-      arc_destinations->push_back(*it);
+      arc_destinations->push_back(PickRandomResourceID(*leaf_res_ids_));
     }
   }
   return arc_destinations;
