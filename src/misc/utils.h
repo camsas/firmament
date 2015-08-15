@@ -91,6 +91,13 @@ set<DataObjectID_t*> DataObjectIDsFromProtobuf(
 set<DataObjectID_t*> DataObjectIDsFromProtobuf(
     const RepeatedPtrField<ReferenceDescriptor>& pb_field);
 
+/**
+ * Pick a random value from an unordered set of resource ids.
+ * @return the randomly selected resource id
+ */
+ResourceID_t PickRandomResourceID(
+    const unordered_set<ResourceID_t,
+      boost::hash<boost::uuids::uuid>>& leaf_res_ids);
 
 }  // namespace firmament
 
