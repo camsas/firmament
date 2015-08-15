@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_e8a36c40",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 823,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-15T10:04:41Z",
+      "side": 1,
+      "message": "Why is this the starting value? As I understand it, run_solver_by is the limit of when the solver next needs to run, rather than the current time. Is that incorrect?\n\nEdit: actually, on reading the code below, I think this *is* the current simulation time. (?)",
+      "revId": "33dbb372580ce58671d3d2a5a1d755e1bb25fd44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_0866d029",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 824,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-15T10:04:41Z",
+      "side": 1,
+      "message": "Note for future: should use units.h",
+      "revId": "33dbb372580ce58671d3d2a5a1d755e1bb25fd44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_686f5cfc",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1051,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-15T10:04:41Z",
+      "side": 1,
+      "message": "Good, these additions matching flow_scheduler.c\u0027s behaviour will be required in order to work with the new, fully-featured cost models.",
+      "revId": "33dbb372580ce58671d3d2a5a1d755e1bb25fd44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_c87f88a9",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1258,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-15T10:04:41Z",
+      "side": 1,
+      "message": "I\u0027d suggest renaming this to \"HasSimulationCompleted\", which implies what it returns, while \"SimulationCompletionCondition\" does not.",
+      "revId": "33dbb372580ce58671d3d2a5a1d755e1bb25fd44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_e88c4cd9",
+        "filename": "src/sim/trace-extract/google_trace_simulator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-15T10:04:41Z",
+      "side": 1,
+      "message": "See below comment on unclear notion of \"RunBy\".",
+      "revId": "33dbb372580ce58671d3d2a5a1d755e1bb25fd44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_888bc0c1",
+        "filename": "src/sim/trace-extract/google_trace_simulator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-15T10:04:41Z",
+      "side": 1,
+      "message": "I\u0027m a bit confused by this. Does this mean that the solver will run \"at some point before X\" or \"at X\" or \"if possible before X\"?\n\nWhat\u0027s the difference between the parameter and the return value: aren\u0027t they the same, since the parameter is a value to set?",
+      "revId": "33dbb372580ce58671d3d2a5a1d755e1bb25fd44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
