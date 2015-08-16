@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_bf6357dc",
+        "filename": "src/misc/utils.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-16T07:50:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_43119b5b",
+      "range": {
+        "startLine": 446,
+        "startChar": 5,
+        "endLine": 446,
+        "endChar": 33
+      },
+      "revId": "521ab272f483e6871b902165f66cc0bc5165d661",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_830e4339",
         "filename": "src/misc/utils.cc",
         "patchSetId": 1
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_9f6693ed",
+        "filename": "src/misc/utils.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-16T07:50:52Z",
+      "side": 1,
+      "message": "The correct way to write this is O(pick a bucket + M), but pick a bucket is 1. Hence, it\u0027s correct to write O(M).",
+      "parentUuid": "9ad9bd40_830e4339",
+      "revId": "521ab272f483e6871b902165f66cc0bc5165d661",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_6314df4c",
         "filename": "src/misc/utils.cc",
         "patchSetId": 1
@@ -53,6 +95,30 @@
       "writtenOn": "2015-08-15T23:12:40Z",
       "side": 1,
       "message": "Should that be \"bucket size \u003d\u003d 0\" for clarity?\n\n(I think the !var syntax is recommended for pointers only.)",
+      "range": {
+        "startLine": 454,
+        "startChar": 9,
+        "endLine": 454,
+        "endChar": 21
+      },
+      "revId": "521ab272f483e6871b902165f66cc0bc5165d661",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_7f72afae",
+        "filename": "src/misc/utils.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 454,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-16T07:50:52Z",
+      "side": 1,
+      "message": "I\u0027ve changed it to \u003d\u003d 0, but there\u0027s no recommendation for not using ! in the guideline. In fact, they even have an example when they use ! for a non-pointer.",
+      "parentUuid": "9ad9bd40_6314df4c",
       "range": {
         "startLine": 454,
         "startChar": 9,
