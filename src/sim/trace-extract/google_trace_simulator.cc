@@ -42,12 +42,6 @@ using boost::token_compress_off;
 DEFINE_string(machine_tmpl_file, "../../../tests/testdata/machine_topo.pbin",
               "File specifying machine topology.");
 
-DEFINE_bool(tasks_preemption_bins, false,
-            "Compute bins of number of preempted tasks.");
-DEFINE_uint64(bin_time_duration, 10, "Bin size in microseconds.");
-DEFINE_string(task_bins_output, "bins.out",
-              "The path to the file in which the task bins are written.");
-
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_uint64(runtime, 9223372036854775807,
               "Maximum time in microsec to extract data for"
@@ -161,22 +155,20 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   solver_dispatcher_ =
     new scheduler::SolverDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
 
-  if (!FLAGS_tasks_preemption_bins) {
-    graph_output_ = NULL;
-    if (!FLAGS_graph_output_file.empty()) {
-      graph_output_ = fopen(FLAGS_graph_output_file.c_str(), "w");
-      if (!graph_output_) {
-        LOG(FATAL) << "Could not open for writing graph file "
-                   << FLAGS_graph_output_file << ", error: " << strerror(errno);
-      }
+  graph_output_ = NULL;
+  if (!FLAGS_graph_output_file.empty()) {
+    graph_output_ = fopen(FLAGS_graph_output_file.c_str(), "w");
+    if (!graph_output_) {
+      LOG(FATAL) << "Could not open for writing graph file "
+                 << FLAGS_graph_output_file << ", error: " << strerror(errno);
     }
-    stats_file_ = NULL;
-    if (!FLAGS_stats_file.empty()) {
-      stats_file_ = fopen(FLAGS_stats_file.c_str(), "w");
-      if (!stats_file_) {
-        LOG(FATAL) << "Could not open for writing stats file "
-                   << FLAGS_stats_file << ", error: " << strerror(errno);
-      }
+  }
+  stats_file_ = NULL;
+  if (!FLAGS_stats_file.empty()) {
+    stats_file_ = fopen(FLAGS_stats_file.c_str(), "w");
+    if (!stats_file_) {
+      LOG(FATAL) << "Could not open for writing stats file "
+                 << FLAGS_stats_file << ", error: " << strerror(errno);
     }
   }
 }
@@ -227,18 +219,7 @@ void GoogleTraceSimulator::Run() {
             << FLAGS_max_scheduling_rounds;
 
   CreateRootResource();
-
-  if (FLAGS_tasks_preemption_bins) {
-    ofstream out_file(FLAGS_task_bins_output);
-    if (out_file.is_open()) {
-      BinTasksByEventType(EVICT_EVENT, out_file);
-      out_file.close();
-    } else {
-      LOG(ERROR) << "Could not open bin output file.";
-    }
-  } else {
-    ReplayTrace();
-  }
+  ReplayTrace();
 }
 
 void GoogleTraceSimulator::SolverTimeoutHandler(int sig) {
@@ -452,55 +433,6 @@ TaskDescriptor* GoogleTraceSimulator::AddTaskToJob(JobDescriptor* jd_ptr) {
   new_task->set_state(TaskDescriptor::RUNNABLE);
   new_task->set_job_id(jd_ptr->uuid());
   return new_task;
-}
-
-void GoogleTraceSimulator::BinTasksByEventType(uint64_t event,
-                                               ofstream& out_file) {
-  char line[200];
-  vector<string> vals;
-  FILE* fptr = NULL;
-  uint64_t time_interval_bound = FLAGS_bin_time_duration;
-  uint64_t num_tasks = 0;
-  for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
-       file_num++) {
-    string fname;
-    spf(&fname, "%s/task_events/part-%05d-of-00500.csv",
-        trace_path_.c_str(), file_num);
-    if ((fptr = fopen(fname.c_str(), "r")) == NULL) {
-      LOG(ERROR) << "Failed to open trace for reading of task events.";
-    }
-    while (!feof(fptr)) {
-      if (fscanf(fptr, "%[^\n]%*[\n]", &line[0]) > 0) {
-        boost::split(vals, line, is_any_of(","), token_compress_off);
-        if (vals.size() != 13) {
-          LOG(ERROR) << "Unexpected structure of task event row: found "
-                     << vals.size() << " columns.";
-        } else {
-          uint64_t task_time = lexical_cast<uint64_t>(vals[0]);
-          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
-          if (event_type == event) {
-            if (task_time <= time_interval_bound) {
-              num_tasks++;
-            } else {
-              out_file << "(" << time_interval_bound - FLAGS_bin_time_duration
-                       << ", " << time_interval_bound << "]: "
-                       << num_tasks << "\n";
-              time_interval_bound += FLAGS_bin_time_duration;
-              while (time_interval_bound < task_time) {
-                out_file << "(" << time_interval_bound - FLAGS_bin_time_duration
-                         << ", " << time_interval_bound << "]: 0\n";
-                time_interval_bound += FLAGS_bin_time_duration;
-              }
-              num_tasks = 1;
-            }
-          }
-        }
-      }
-    }
-    fclose(fptr);
-  }
-  out_file << "(" << time_interval_bound - FLAGS_bin_time_duration << ", " <<
-    time_interval_bound << "]: " << num_tasks << "\n";
 }
 
 void GoogleTraceSimulator::CreateRootResource() {
