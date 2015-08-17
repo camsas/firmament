@@ -60,7 +60,8 @@ $ build/engine/coordinator --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/
 
 Once the coordinator is up and running, you can access its HTTP interface at
 http://<host>:8080/ (the port can be customized using `--http_ui_port`
-argument).
+argument). Note that you should run the coordinator from the Firmament workspace
+root directory in order for all web templates to be located successfully.
 
 To submit a toy job, first make the examples target and then use the script in
 `scripts/job/job_submit.py`. Note that jobs are submitted to the web UI port,
@@ -142,7 +143,7 @@ familiarise yourself with the Firmament code base, _en passant_.
 We use GerritHub for our code reviews. You can find the Firmament review board
 there:
 
-https://review.gerrithub.io/#/q/project:ms705/firmament
+https://review.gerrithub.io/#/q/project:ms705/firmament+is:open
 
 In order to do code reviews, you will need an account on GerritHub (you can link
 your GitHub account). Once you've created an account, please email us at
