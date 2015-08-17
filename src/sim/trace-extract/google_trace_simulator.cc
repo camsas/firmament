@@ -260,8 +260,6 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
   } else {
     jd_ptr = *jdpp;
   }
-  // Ignore task if it has already been added.
-  // TODO(ionel): We should not ignore it.
   TaskDescriptor* td_ptr = NULL;
   if (FindOrNull(task_id_to_td_, task_identifier) == NULL) {
     td_ptr = AddTaskToJob(jd_ptr);
@@ -284,6 +282,10 @@ TaskDescriptor* GoogleTraceSimulator::AddNewTask(
                    << task_identifier.task_index;
      return NULL;
     }
+  } else {
+    // Ignore task if it has already been added.
+    LOG(WARNING) << "Task already added: " << task_identifier.job_id << " "
+                 << task_identifier.task_index;
   }
   return td_ptr;
 }
@@ -629,13 +631,13 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
           it->first);
       LogEvent(graph_output_, log_string);
       AddMachine(machine_tmpl, it->second.machine_id());
-      SeenExogenous(it->first);
+      UpdateSchedulingLatencyStats(it->first);
     } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
       spf(&log_string, "REMOVE_MACHINE %ju @ %ju\n", it->second.machine_id(),
           it->first);
       LogEvent(graph_output_, log_string);
       RemoveMachine(it->second.machine_id());
-      SeenExogenous(it->first);
+      UpdateSchedulingLatencyStats(it->first);
     } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
       // TODO(ionel): Handle machine update event.
     } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
@@ -647,7 +649,7 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
       task_identifier.task_index = it->second.task_index();
       task_identifier.job_id = it->second.job_id();
       TaskCompleted(task_identifier);
-      SeenExogenous(it->first);
+      UpdateSchedulingLatencyStats(it->first);
     } else if (it->second.type() == EventDescriptor::TASK_ASSIGNMENT_CHANGED) {
       // no-op: this event is just used to trigger solver re-run
     } else {
@@ -671,7 +673,7 @@ void GoogleTraceSimulator::ProcessTaskEvent(
         cur_time);
     LogEvent(graph_output_, log_string);
     if (AddNewTask(task_identifier, task_runtime)) {
-      SeenExogenous(cur_time);
+      UpdateSchedulingLatencyStats(cur_time);
     } else {
       // duplicate task id -- ignore
     }
@@ -764,7 +766,7 @@ void GoogleTraceSimulator::ReplayTrace() {
   uint64_t run_solver_at = 0;
   uint64_t num_events = 0;
   uint64_t num_scheduling_rounds = 0;
-  first_exogenous_event_seen_ = UINT64_MAX;
+  ResetSchedulingLatencyStats();
 
   for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
        file_num++) {
@@ -823,14 +825,11 @@ void GoogleTraceSimulator::ReplayTrace() {
             VLOG(1) << "Next event at " << next_event;
             run_solver_at = max(next_event, run_solver_at);
             VLOG(1) << "Run solver by " << run_solver_at;
-
-            first_exogenous_event_seen_ = UINT64_MAX;
+            ResetSchedulingLatencyStats();
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
           ProcessTaskEvent(task_time, task_id, event_type, task_runtime_);
-          first_exogenous_event_seen_ =
-            min(first_exogenous_event_seen_, task_time);
         }
       }
     }
@@ -872,6 +871,12 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
                                               GetCurrentTimestamp())));
 }
 
+void GoogleTraceSimulator::ResetSchedulingLatencyStats() {
+  first_event_in_scheduling_round_ = UINT64_MAX;
+  num_events_in_scheduling_round_ = 0;
+  sum_timestamps_in_scheduling_round_ = 0;
+}
+
 uint64_t GoogleTraceSimulator::RunSolver(uint64_t run_solver_at) {
   double algorithm_time;
   double flow_solver_time;
@@ -892,16 +897,24 @@ uint64_t GoogleTraceSimulator::RunSolver(uint64_t run_solver_at) {
   // Also update any resource statistics, if required
   UpdateResourceStats();
 
+  double avg_event_timestamp_in_scheduling_round;
+  // Set timestamp to max if we haven't seen any events. This has an
+  // effect on the logic that computes the scheduling latency. It makes sure
+  // that the latency is set to 0 in this case.
+  if (num_events_in_scheduling_round_ == 0) {
+    avg_event_timestamp_in_scheduling_round =
+      numeric_limits<double>::max();
+  } else {
+    avg_event_timestamp_in_scheduling_round =
+      static_cast<double>(sum_timestamps_in_scheduling_round_) /
+      num_events_in_scheduling_round_;
+  }
   // Log stats to CSV file
-  LogSolverRunStats(first_exogenous_event_seen_, stats_file_, timer,
+  LogSolverRunStats(avg_event_timestamp_in_scheduling_round, stats_file_, timer,
                     run_solver_at, algorithm_time, flow_solver_time,
                     change_stats);
 
   return NextRunSolverAt(run_solver_at, algorithm_time);
-}
-
-void GoogleTraceSimulator::SeenExogenous(uint64_t time) {
-  first_exogenous_event_seen_ = std::min(time, first_exogenous_event_seen_);
 }
 
 void GoogleTraceSimulator::TaskEvicted(TaskID_t task_id,
@@ -1116,6 +1129,13 @@ void GoogleTraceSimulator::UpdateResourceStats() {
   } else {
     LOG(INFO) << "No resource stats update required";
   }
+}
+
+void GoogleTraceSimulator::UpdateSchedulingLatencyStats(uint64_t time) {
+  first_event_in_scheduling_round_ =
+    min(time, first_event_in_scheduling_round_);
+  sum_timestamps_in_scheduling_round_ += time;
+  num_events_in_scheduling_round_++;
 }
 
 } // namespace sim

@@ -187,17 +187,17 @@ class GoogleTraceSimulator {
                                const string& hostname, const string& root_uuid);
 
   /**
+   * Reset the fields used to maintain statistics about the current scheduling
+   * latency. This method should be called after every run of the scheduler.
+   */
+  void ResetSchedulingLatencyStats();
+
+  /**
    * Runs the solver.
    * @param the time when the solver should run
    * @return the time when the solver should run after the run at run_solver_at
    */
   uint64_t RunSolver(uint64_t run_solver_at);
-
-  /**
-   * Must be called every time an exogenous event is processed.
-   * @param time the time of the exogenous event
-   */
-  void SeenExogenous(uint64_t time);
 
   /**
    * Notifies the flow_graph of a task completion and updates the simulator's
@@ -228,6 +228,12 @@ class GoogleTraceSimulator {
       TaskIdentifierHasher>* task_runtime,
     multimap<uint64_t, uint64_t>* task_mappings);
   void UpdateResourceStats();
+
+  /**
+   * Update the fields used to maintain statistics about the current scheduling
+   * latency. This method should be called whenever a trace event happens.
+   */
+  void UpdateSchedulingLatencyStats(uint64_t time);
 
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.
@@ -280,13 +286,13 @@ class GoogleTraceSimulator {
   // event.
   multimap<uint64_t, EventDescriptor> events_;
 
-  // Timestamp of the first exogenous event seen this iteration. Any event
-  // present in the original trace is exogeneous, as are those which we have
+  // Timestamp of the first event seen in the current scheduling round. Any
+  // event present in the original trace is record, as are those which we have
   // created to replace events in the trace, e.g. when rerunning task runtime.
-  // Currently, the only endogeneous changes are due to graph updates when a
-  // task is scheduled.
-  // If no exogenous event has been, it is UINT64_MAX.
-  uint64_t first_exogenous_event_seen_;
+  // If no event has been seen then the value of the variable is UINT64_MAX.
+  uint64_t first_event_in_scheduling_round_;
+  uint64_t num_events_in_scheduling_round_;
+  uint64_t sum_timestamps_in_scheduling_round_;
 
   string trace_path_;
 

@@ -71,7 +71,7 @@ inline void LogEvent(FILE* graph_output, const string& msg) {
   }
 }
 
-void LogSolverRunStats(uint64_t first_exogenous_event_seen,
+void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
                        FILE* stats_file,
                        const boost::timer::cpu_timer timer,
                        uint64_t solver_executed_at,
