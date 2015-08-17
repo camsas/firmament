@@ -10,18 +10,17 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <boost/timer/timer.hpp>
 
 #include "base/common.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "misc/utils.h"
-#include "misc/map-util.h"
 #include "scheduling/flow/cost_models.h"
 #include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/flow_graph.h"
 #include "scheduling/flow/solver_dispatcher.h"
 #include "sim/knowledge_base_simulator.h"
 #include "sim/trace-extract/event_desc.pb.h"
+#include "sim/trace-extract/google_trace_utils.h"
 
 DECLARE_string(flow_scheduling_solver);
 DECLARE_string(flow_scheduling_binary);
@@ -35,33 +34,6 @@ DECLARE_bool(graph_output_events);
 
 namespace firmament {
 namespace sim {
-
-struct TaskIdentifier {
-  uint64_t job_id;
-  uint64_t task_index;
-
-  bool operator==(const TaskIdentifier& other) const {
-    return job_id == other.job_id && task_index == other.task_index;
-  }
-};
-
-struct TaskIdentifierHasher {
-  size_t operator()(const TaskIdentifier& key) const {
-    return hash<uint64_t>()(key.job_id) * 17 + hash<uint64_t>()(key.task_index);
-  }
-};
-
-struct TaskStats {
-  double avg_mean_cpu_usage;
-  double avg_canonical_mem_usage;
-  double avg_assigned_mem_usage;
-  double avg_unmapped_page_cache;
-  double avg_total_page_cache;
-  double avg_mean_disk_io_time;
-  double avg_mean_local_disk_used;
-  double avg_cpi;
-  double avg_mai;
-};
 
 class GoogleTraceSimulator {
  public:
@@ -89,6 +61,13 @@ class GoogleTraceSimulator {
   TaskDescriptor* AddNewTask(const TaskIdentifier& task_identifier,
        unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>* runtimes);
 
+  /**
+   * Compute and add task completion event to the simulator's events.
+   * @param cur_timestamp the timestap when the task starts running
+   * @param task_id the Firmament task id
+   * @param task_identifier the simulator task identifier
+   * @param task_runtime the mapping between tasks and runtimes
+   */
   void AddTaskEndEvent(
       uint64_t cur_timestamp, const TaskID_t& task_id,
       TaskIdentifier task_identifier,
@@ -138,38 +117,7 @@ class GoogleTraceSimulator {
    */
   void JobCompleted(uint64_t simulator_job_id, JobID_t job_id);
 
-  void LoadJobsNumTasks();
-
-  /**
-   * Loads all the machine events and returns a multimap timestamp -> event.
-   */
-  void LoadMachineEvents();
-
-  void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl);
-
-  void LoadTaskRuntimeStats();
-
-  /**
-   * Loads all the task runtimes and returns map task_identifier -> runtime.
-   */
-  void LoadTasksRunningTime();
-
-  void LoadTraceData();
-
-  inline void LogEvent(const string& msg) {
-    VLOG(1) << msg;
-    if (graph_output_ && FLAGS_graph_output_events) {
-      fprintf(graph_output_, "c %s\n", msg.c_str());
-    }
-  }
-
-  void LogSolverRunStats(const boost::timer::cpu_timer timer,
-                         uint64_t solver_executed_at,
-                         double algorithm_time,
-                         double flow_solver_time,
-                         const DIMACSChangeStats& change_stats);
-
-  void LogStartOfSolverRun(uint64_t run_solver_at);
+  void LoadTraceData(ResourceTopologyNodeDescriptor* machine_tmpl);
 
   uint64_t NextRunSolverAt(uint64_t cur_run_solver_at, double algorithm_time);
 
@@ -178,21 +126,12 @@ class GoogleTraceSimulator {
    */
   uint64_t NextSimulatorEvent();
 
-  void OutputChangeStats(const DIMACSChangeStats& stats);
-  void OutputStatsHeader();
-
   /**
    * Create and populate a new job.
    * @param job_id the Google trace job id
    * @return a pointer to the job descriptor
    */
   JobDescriptor* PopulateJob(uint64_t job_id);
-
-  void PrintResourceStats(uint64_t id, WhareMapStats* wms) {
-    LOG(INFO) << "Node: " << id << " " << wms->num_devils() << " "
-              << wms->num_rabbits() << " " << wms->num_sheep() << " "
-              << wms->num_turtles();
-  }
 
   /**
    * Processes all the simulator events that happen at a given time.
@@ -282,8 +221,6 @@ class GoogleTraceSimulator {
                                       uint64_t task_end_time,
                                       const ResourceID_t& res_id,
                                       const TaskIdentifier& task_identifier);
-
-  EventDescriptor_EventType TranslateMachineEvent(int32_t machine_event);
 
   void UpdateFlowGraph(
     uint64_t scheduling_timestamp,
