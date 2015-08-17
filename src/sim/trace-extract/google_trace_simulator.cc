@@ -3,44 +3,37 @@
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Google cluster trace simulator tool.
+#include "sim/trace-extract/google_trace_simulator.h"
+
+#include <signal.h>
+#include <SpookyV2.h>
+#include <sys/stat.h>
 
 #include <algorithm>
-#include <cmath>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/timer/timer.hpp>
 #include <cstdio>
 #include <limits>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/timer/timer.hpp>
-#include <SpookyV2.h>
 
-#include <signal.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-#include "scheduling/flow/dimacs_change_stats.h"
-#include "scheduling/flow/dimacs_exporter.h"
-#include "scheduling/flow/flow_graph.h"
-#include "scheduling/flow/flow_graph_arc.h"
-#include "scheduling/flow/flow_graph_node.h"
-#include "scheduling/flow/solver_dispatcher.h"
-#include "sim/dfs/simulated_dfs.h"
-#include "sim/trace-extract/google_trace_simulator.h"
-#include "sim/trace-extract/simulated_quincy_factory.h"
-#include "misc/utils.h"
+#include "misc/map-util.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
+#include "misc/utils.h"
+#include "scheduling/flow/dimacs_change_stats.h"
+#include "scheduling/flow/flow_graph.h"
+#include "scheduling/flow/flow_graph_node.h"
+#include "scheduling/flow/solver_dispatcher.h"
+#include "sim/trace-extract/google_trace_loader.h"
+#include "sim/trace-extract/simulated_quincy_factory.h"
 
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;
 using boost::token_compress_off;
-
-DEFINE_string(machine_tmpl_file, "../../../tests/testdata/machine_topo.pbin",
-              "File specifying machine topology.");
 
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_uint64(runtime, 9223372036854775807,
@@ -127,25 +120,9 @@ static const bool run_incremental_validator =
 namespace firmament {
 namespace sim {
 
-#define SUBMIT_EVENT 0
-#define SCHEDULE_EVENT 1
-#define EVICT_EVENT 2
-#define FAIL_EVENT 3
-#define FINISH_EVENT 4
-#define KILL_EVENT 5
-#define LOST_EVENT 6
-#define UPDATE_PENDING_EVENT 7
-#define UPDATE_RUNNING_EVENT 8
-
-#define MACHINE_ADD 0
-#define MACHINE_REMOVE 1
-#define MACHINE_UPDATE 2
-
-const static uint64_t SEED = 0;
-
 // It varies a little over time, but relatively constant. Used for calculation
 // of how much storage space we have.
-const static uint64_t MACHINES_IN_TRACE_APPROXIMATION = 10000;
+static const uint64_t MACHINES_IN_TRACE_APPROXIMATION = 10000;
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   job_map_(new JobMap_t), task_map_(new TaskMap_t),
@@ -155,6 +132,8 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   knowledge_base_->SetCostModel(cost_model_);
   solver_dispatcher_ =
     new scheduler::SolverDispatcher(shared_ptr<FlowGraph>(flow_graph_), false);
+  task_runtime_ =
+    new unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>();
 
   graph_output_ = NULL;
   if (!FLAGS_graph_output_file.empty()) {
@@ -188,6 +167,7 @@ GoogleTraceSimulator::~GoogleTraceSimulator() {
     delete it_tmp->second;
   }
   delete solver_dispatcher_;
+  delete task_runtime_;
   delete knowledge_base_;
   // N.B. We don't have to delete the cost_model_ because it is owned by
   // the flow graph.
@@ -557,293 +537,19 @@ void GoogleTraceSimulator::JobCompleted(uint64_t simulator_job_id,
   job_num_tasks_.erase(simulator_job_id);
 }
 
-void GoogleTraceSimulator::LoadJobsNumTasks() {
-  char line[200];
-  vector<string> cols;
-  FILE* jobs_tasks_file = NULL;
-  string jobs_tasks_file_name = trace_path_ +
-    "/jobs_num_tasks/jobs_num_tasks.csv";
-  if ((jobs_tasks_file = fopen(jobs_tasks_file_name.c_str(), "r")) == NULL) {
-    LOG(FATAL) << "Failed to open jobs num tasks file.";
-  }
-  int64_t num_line = 1;
-  while (!feof(jobs_tasks_file)) {
-    if (fscanf(jobs_tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-      boost::split(cols, line, is_any_of(" "), token_compress_off);
-      if (cols.size() != 2) {
-        LOG(ERROR) << "Unexpected structure of jobs num tasks row on line: "
-                   << num_line;
-      } else {
-        uint64_t job_id = lexical_cast<uint64_t>(cols[0]);
-        uint64_t num_tasks = lexical_cast<uint64_t>(cols[1]);
-        CHECK(InsertIfNotPresent(&job_num_tasks_, job_id, num_tasks));
-      }
-    }
-    num_line++;
-  }
-  fclose(jobs_tasks_file);
-}
-
-void GoogleTraceSimulator::LoadMachineEvents() {
-  char line[200];
-  vector<string> cols;
-  FILE* machines_file;
-  string machines_file_name = trace_path_ +
-    "/machine_events/part-00000-of-00001.csv";
-  if ((machines_file = fopen(machines_file_name.c_str(), "r")) == NULL) {
-    LOG(FATAL) << "Failed to open trace for reading machine events.";
-  }
-
-  int64_t num_line = 1;
-  while (!feof(machines_file)) {
-    if (fscanf(machines_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-      boost::split(cols, line, is_any_of(","), token_compress_off);
-      if (cols.size() != 6) {
-        LOG(ERROR) << "Unexpected structure of machine events on line "
-                   << num_line << ": found " << cols.size() << " columns.";
-      } else {
-        uint64_t timestamp = lexical_cast<uint64_t>(cols[0]);
-        if (timestamp > FLAGS_runtime) {
-          // only load the events that we need
-          break;
-        }
-
-        // schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
-        uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
-        // Sub-sample the trace if we only retain < 100% of machines.
-        if (SpookyHash::Hash64(&machine_id, sizeof(machine_id), SEED) >
-            max_event_id_to_retain_) {
-          // skip event
-          continue;
-        }
-
-        EventDescriptor event_desc;
-        event_desc.set_machine_id(lexical_cast<uint64_t>(cols[1]));
-        event_desc.set_type(TranslateMachineEvent(
-            lexical_cast<int32_t>(cols[2])));
-        if (event_desc.type() == EventDescriptor::REMOVE_MACHINE ||
-            event_desc.type() == EventDescriptor::ADD_MACHINE) {
-          events_.insert(pair<uint64_t, EventDescriptor>(timestamp,
-                                                         event_desc));
-        } else {
-          // TODO(ionel): Handle machine update events.
-        }
-      }
-    }
-    num_line++;
-  }
-  fclose(machines_file);
-}
-
-void GoogleTraceSimulator::LoadMachineTemplate(
+void GoogleTraceSimulator::LoadTraceData(
     ResourceTopologyNodeDescriptor* machine_tmpl) {
-  boost::filesystem::path machine_tmpl_path(FLAGS_machine_tmpl_file);
-  if (machine_tmpl_path.is_relative()) {
-    // lookup file relative to directory of binary, not CWD
-    char binary_path[1024];
-    size_t bytes = ExecutableDirectory(binary_path, sizeof(binary_path));
-    CHECK(bytes < sizeof(binary_path));
-    boost::filesystem::path binary_path_boost(binary_path);
-    binary_path_boost.remove_filename();
-
-    machine_tmpl_path = binary_path_boost / machine_tmpl_path;
-  }
-
-  std::string machine_tmpl_fname(machine_tmpl_path.string());
-  LOG(INFO) << "Loading machine descriptor from " << machine_tmpl_fname;
-  int fd = open(machine_tmpl_fname.c_str(), O_RDONLY);
-  if (fd < 0) {
-    PLOG(FATAL) << "Could not load " << machine_tmpl_fname;
-  }
-  machine_tmpl->ParseFromFileDescriptor(fd);
-  close(fd);
-}
-
-void GoogleTraceSimulator::LoadTaskRuntimeStats() {
-  char line[1000];
-  vector<string> cols;
-  FILE* usage_file = NULL;
-  string usage_file_name = trace_path_ +
-    "/task_usage_stat/task_usage_stat.csv";
-  if ((usage_file = fopen(usage_file_name.c_str(), "r")) == NULL) {
-    LOG(FATAL) << "Failed to open trace task runtime stats file.";
-  }
-  int64_t num_line = 1;
-  while (!feof(usage_file)) {
-    if (fscanf(usage_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-      boost::split(cols, line, is_any_of(" "), token_compress_off);
-      if (cols.size() != 38) {
-        LOG(WARNING) << "Malformed task usage, " << cols.size()
-                     << " != 38 columns at line " << num_line;
-      } else {
-        TaskIdentifier task_id;
-        task_id.job_id = lexical_cast<uint64_t>(cols[0]);
-        task_id.task_index = lexical_cast<uint64_t>(cols[1]);
-        TaskStats task_stats;
-        task_stats.avg_mean_cpu_usage = lexical_cast<double>(cols[4]);
-        task_stats.avg_canonical_mem_usage = lexical_cast<double>(cols[8]);
-        task_stats.avg_assigned_mem_usage = lexical_cast<double>(cols[12]);
-        task_stats.avg_unmapped_page_cache = lexical_cast<double>(cols[16]);
-        task_stats.avg_total_page_cache = lexical_cast<double>(cols[20]);
-        task_stats.avg_mean_disk_io_time = lexical_cast<double>(cols[24]);
-        task_stats.avg_mean_local_disk_used = lexical_cast<double>(cols[28]);
-        task_stats.avg_cpi = lexical_cast<double>(cols[32]);
-        task_stats.avg_mai = lexical_cast<double>(cols[36]);
-
-        if (!InsertIfNotPresent(&task_id_to_stats_, task_id, task_stats) &&
-            VLOG_IS_ON(1)) {
-          LOG(ERROR) << "LoadTaskRuntimeStats: There should not be more than an"
-                     << " entry for job " << task_id.job_id
-                     << ", task " << task_id.task_index;
-        } else {
-          VLOG(2) << "Loaded stats for "
-                  << task_id.job_id << "/" << task_id.task_index;
-        }
-
-        // double min_mean_cpu_usage = lexical_cast<double>(cols[2]);
-        // double max_mean_cpu_usage = lexical_cast<double>(cols[3]);
-        // double sd_mean_cpu_usage = lexical_cast<double>(cols[5]);
-        // double min_canonical_mem_usage = lexical_cast<double>(cols[6]);
-        // double max_canonical_mem_usage = lexical_cast<double>(cols[7]);
-        // double sd_canonical_mem_usage = lexical_cast<double>(cols[9]);
-        // double min_assigned_mem_usage = lexical_cast<double>(cols[10]);
-        // double max_assigned_mem_usage = lexical_cast<double>(cols[11]);
-        // double sd_assigned_mem_usage = lexical_cast<double>(cols[13]);
-        // double min_unmapped_page_cache = lexical_cast<double>(cols[14]);
-        // double max_unmapped_page_cache = lexical_cast<double>(cols[15]);
-        // double sd_unmapped_page_cache = lexical_cast<double>(cols[17]);
-        // double min_total_page_cache = lexical_cast<double>(cols[18]);
-        // double max_total_page_cache = lexical_cast<double>(cols[19]);
-        // double sd_total_page_cache = lexical_cast<double>(cols[21]);
-        // double min_mean_disk_io_time = lexical_cast<double>(cols[22]);
-        // double max_mean_disk_io_time = lexical_cast<double>(cols[23]);
-        // double sd_mean_disk_io_time = lexical_cast<double>(cols[25]);
-        // double min_mean_local_disk_used = lexical_cast<double>(cols[26]);
-        // double max_mean_local_disk_used = lexical_cast<double>(cols[27]);
-        // double sd_mean_local_disk_used = lexical_cast<double>(cols[29]);
-        // double min_cpi = lexical_cast<double>(cols[30]);
-        // double max_cpi = lexical_cast<double>(cols[31]);
-        // double sd_cpi = lexical_cast<double>(cols[33]);
-        // double min_mai = lexical_cast<double>(cols[34]);
-        // double max_mai = lexical_cast<double>(cols[35]);
-        // double sd_mai = lexical_cast<double>(cols[37]);
-      }
-    }
-    num_line++;
-  }
-  fclose(usage_file);
-}
-
-void GoogleTraceSimulator::LoadTasksRunningTime() {
-  task_runtime_ =
-    new unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>();
-  char line[200];
-  vector<string> cols;
-  FILE* tasks_file = NULL;
-  string tasks_file_name = trace_path_ +
-    "/task_runtime_events/task_runtime_events.csv";
-  if ((tasks_file = fopen(tasks_file_name.c_str(), "r")) == NULL) {
-    LOG(FATAL) << "Failed to open trace runtime events file.";
-  }
-
-  int64_t num_line = 1;
-  while (!feof(tasks_file)) {
-    if (fscanf(tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-      boost::split(cols, line, is_any_of(" "), token_compress_off);
-      if (cols.size() != 13) {
-        LOG(ERROR) << "Unexpected structure of task runtime row on line: "
-                   << num_line;
-      } else {
-        TaskIdentifier task_id;
-        task_id.job_id = lexical_cast<uint64_t>(cols[0]);
-        task_id.task_index = lexical_cast<uint64_t>(cols[1]);
-
-        // Sub-sample the trace if we only retain < 100% of tasks.
-        if (SpookyHash::Hash64(&task_id, sizeof(task_id), SEED) >
-            max_event_id_to_retain_) {
-          // skip event
-          continue;
-        }
-
-        uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
-        if (!InsertIfNotPresent(task_runtime_, task_id, runtime) &&
-            VLOG_IS_ON(1)) {
-          LOG(ERROR) << "LoadTasksRunningTime: There should not be more than "
-                     << "one entry for job " << task_id.job_id
-                     << ", task " << task_id.task_index;
-        } else {
-          VLOG(2) << "Loaded runtime for "
-                  << task_id.job_id << "/" << task_id.task_index;
-        }
-      }
-    }
-    num_line++;
-  }
-  fclose(tasks_file);
-}
-
-void GoogleTraceSimulator::LoadTraceData() {
+  GoogleTraceLoader trace_loader(trace_path_);
+  // Import a fictional machine resource topology
+  trace_loader.LoadMachineTemplate(machine_tmpl);
   // Load all the machine events.
-  LoadMachineEvents();
+  trace_loader.LoadMachineEvents(max_event_id_to_retain_, &events_);
   // Populate the job_id to number of tasks mapping.
-  LoadJobsNumTasks();
+  trace_loader.LoadJobsNumTasks(&job_num_tasks_);
   // Load tasks' runtime.
-  LoadTasksRunningTime();
+  trace_loader.LoadTasksRunningTime(max_event_id_to_retain_, task_runtime_);
   // Populate the knowledge base.
-  LoadTaskRuntimeStats();
-}
-
-void GoogleTraceSimulator::LogStartOfSolverRun(uint64_t run_solver_at) {
-  VLOG(2) << "Job id size: " << job_id_to_jd_.size();
-  VLOG(2) << "Task id size: " << task_id_to_identifier_.size();
-  VLOG(2) << "Job num tasks size: " << job_num_tasks_.size();
-  VLOG(2) << "Job id to jd size: " << job_map_->size();
-  VLOG(2) << "Task id to td size: " << task_map_->size();
-  VLOG(2) << "Res id to rd size: " << resource_map_->size();
-  VLOG(2) << "Task binding: " << task_bindings_.size();
-
-  LOG(INFO) << "Scheduler run for time: " << run_solver_at;
-  LOG(INFO) << "Nodes: " << flow_graph_->NumNodes()
-            << ", arcs: " << flow_graph_->NumArcs();
-  if (graph_output_) {
-    fprintf(graph_output_, "c SOI %jd\n", run_solver_at);
-    fflush(graph_output_);
-  }
-}
-
-void GoogleTraceSimulator::LogSolverRunStats(
-    const boost::timer::cpu_timer timer,
-    uint64_t solver_executed_at,
-    double algorithm_time,
-    double flow_solver_time,
-    const DIMACSChangeStats& change_stats) {
-  if (stats_file_) {
-    boost::timer::cpu_times total_runtime_cpu_times = timer.elapsed();
-    // TODO(ionel): Use misc/units.h
-    boost::timer::nanosecond_type second = 1000*1000*1000;
-    double total_runtime = total_runtime_cpu_times.wall;
-    total_runtime /= second;
-    if (FLAGS_batch_step == 0) {
-      // online mode
-      double scheduling_latency = solver_executed_at;
-      scheduling_latency += algorithm_time * 1000 * 1000;
-      scheduling_latency -= first_exogenous_event_seen_;
-      scheduling_latency /= (1000 * 1000);
-
-      // will be negative if we have not seen any exogeneous event
-      scheduling_latency = max(0.0, scheduling_latency);
-
-      fprintf(stats_file_, "%jd,%lf,%lf,%lf,%lf,", solver_executed_at,
-              scheduling_latency, algorithm_time, flow_solver_time,
-              total_runtime);
-    } else {
-      // batch mode
-      fprintf(stats_file_, "%jd,%lf%lf%lf,", solver_executed_at,
-              algorithm_time, flow_solver_time, total_runtime);
-    }
-    OutputChangeStats(change_stats);
-    fflush(stats_file_);
-  }
+  trace_loader.LoadTaskUtilizationStats(&task_id_to_stats_);
 }
 
 uint64_t GoogleTraceSimulator::NextRunSolverAt(uint64_t cur_run_solver_at,
@@ -880,28 +586,6 @@ uint64_t GoogleTraceSimulator::NextSimulatorEvent() {
     return UINT64_MAX;
   } else {
     return it->first;
-  }
-}
-
-void GoogleTraceSimulator::OutputChangeStats(const DIMACSChangeStats& stats) {
-  fprintf(stats_file_, "%jd,%jd,%jd,%jd,%jd,%jd\n", stats.total_,
-          stats.nodes_added_, stats.nodes_removed_, stats.arcs_added_,
-          stats.arcs_changed_, stats.arcs_removed_);
-}
-
-void GoogleTraceSimulator::OutputStatsHeader() {
-  if (stats_file_) {
-    if (FLAGS_batch_step == 0) {
-      // online
-      fprintf(stats_file_, "cluster_timestamp,scheduling_latency,"
-              "algorithm_time,flow_solver_time,total_time,");
-    } else {
-      // batch
-      fprintf(stats_file_, "cluster_timestamp,algorithm_time,flow_solver_time,"
-              "total_time,");
-    }
-    fprintf(stats_file_, "total_changes,new_node,remove_node,new_arc,"
-            "change_arc,remove_arc\n");
   }
 }
 
@@ -944,13 +628,13 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
     if (it->second.type() == EventDescriptor::ADD_MACHINE) {
       spf(&log_string, "ADD_MACHINE %ju @ %ju\n", it->second.machine_id(),
           it->first);
-      LogEvent(log_string);
+      LogEvent(graph_output_, log_string);
       AddMachine(machine_tmpl, it->second.machine_id());
       SeenExogenous(it->first);
     } else if (it->second.type() == EventDescriptor::REMOVE_MACHINE) {
       spf(&log_string, "REMOVE_MACHINE %ju @ %ju\n", it->second.machine_id(),
           it->first);
-      LogEvent(log_string);
+      LogEvent(graph_output_, log_string);
       RemoveMachine(it->second.machine_id());
       SeenExogenous(it->first);
     } else if (it->second.type() == EventDescriptor::UPDATE_MACHINE) {
@@ -958,7 +642,7 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(uint64_t cur_time,
     } else if (it->second.type() == EventDescriptor::TASK_END_RUNTIME) {
       spf(&log_string, "TASK_END_RUNTIME %ju:%ju @ %ju\n", it->second.job_id(),
           it->second.task_index(), it->first);
-      LogEvent(log_string);
+      LogEvent(graph_output_, log_string);
       // Task has finished.
       TaskIdentifier task_identifier;
       task_identifier.task_index = it->second.task_index();
@@ -986,7 +670,7 @@ void GoogleTraceSimulator::ProcessTaskEvent(
     spf(&log_string, "TASK_SUBMIT_EVENT: ID %ju:%ju @ %ju\n",
         task_identifier.job_id, task_identifier.task_index,
         cur_time);
-    LogEvent(log_string);
+    LogEvent(graph_output_, log_string);
     if (AddNewTask(task_identifier, task_runtime)) {
       SeenExogenous(cur_time);
     } else {
@@ -1065,18 +749,15 @@ void GoogleTraceSimulator::RemoveResourceNodeFromParentChildrenList(
 
 void GoogleTraceSimulator::ReplayTrace() {
   // Output CSV header
-  OutputStatsHeader();
+  OutputStatsHeader(stats_file_);
 
   // Timing facilities
   boost::timer::cpu_timer timer;
   signal(SIGALRM, GoogleTraceSimulator::SolverTimeoutHandler);
 
   // Load the trace ingredients
-  LoadTraceData();
-
-  // Import a fictional machine resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
-  LoadMachineTemplate(&machine_tmpl);
+  LoadTraceData(&machine_tmpl);
 
   char line[200];
   vector<string> vals;
@@ -1107,7 +788,7 @@ void GoogleTraceSimulator::ReplayTrace() {
           task_id.task_index = lexical_cast<uint64_t>(vals[3]);
 
           // Sub-sample the trace if we only retain < 100% of tasks.
-          if (SpookyHash::Hash64(&task_id, sizeof(task_id), SEED) >
+          if (SpookyHash::Hash64(&task_id, sizeof(task_id), kSeed) >
               max_event_id_to_retain_) {
             // skip event
             continue;
@@ -1156,7 +837,6 @@ void GoogleTraceSimulator::ReplayTrace() {
     }
     fclose(f_task_events_ptr);
   }
-  delete task_runtime_;
 }
 
 void GoogleTraceSimulator::ResetUuidAndAddResource(
@@ -1196,7 +876,7 @@ void GoogleTraceSimulator::ResetUuidAndAddResource(
 uint64_t GoogleTraceSimulator::RunSolver(uint64_t run_solver_at) {
   double algorithm_time;
   double flow_solver_time;
-  LogStartOfSolverRun(run_solver_at);
+  LogStartOfSolverRun(graph_output_, flow_graph_, run_solver_at);
 
   DIMACSChangeStats change_stats(flow_graph_->graph_changes());
   // Set a timeout on the solver's run
@@ -1214,8 +894,9 @@ uint64_t GoogleTraceSimulator::RunSolver(uint64_t run_solver_at) {
   UpdateResourceStats();
 
   // Log stats to CSV file
-  LogSolverRunStats(timer, run_solver_at, algorithm_time,
-                    flow_solver_time, change_stats);
+  LogSolverRunStats(first_exogenous_event_seen_, stats_file_, timer,
+                    run_solver_at, algorithm_time, flow_solver_time,
+                    change_stats);
 
   return NextRunSolverAt(run_solver_at, algorithm_time);
 }
@@ -1303,19 +984,6 @@ void GoogleTraceSimulator::TaskCompleted(
   (*num_tasks)--;
   if (*num_tasks == 0) {
     JobCompleted(task_identifier.job_id, job_id);
-  }
-}
-
-EventDescriptor_EventType GoogleTraceSimulator::TranslateMachineEvent(
-    int32_t machine_event) {
-  if (machine_event == MACHINE_ADD) {
-    return EventDescriptor::ADD_MACHINE;
-  } else if (machine_event == MACHINE_REMOVE) {
-    return EventDescriptor::REMOVE_MACHINE;
-  } else if (machine_event == MACHINE_UPDATE) {
-    return EventDescriptor::UPDATE_MACHINE;
-  } else {
-    LOG(FATAL) << "Unexpected machine event type: " << machine_event;
   }
 }
 
