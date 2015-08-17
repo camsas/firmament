@@ -318,8 +318,8 @@ void GoogleTraceSimulator::AddTaskStats(
       TaskIdentifierHasher>* task_runtime) {
   TaskStats* task_stats = FindOrNull(task_id_to_stats_, task_identifier);
   if (task_stats == NULL) {
-    // Already added stats.
-    VLOG(2) << "Skipping setting runtime for "
+    // Already added stats to knowledge base.
+    VLOG(2) << "Already added stats to knowledge base for "
             << task_identifier.job_id << "/" << task_identifier.task_index;
     return;
   }
@@ -331,8 +331,7 @@ void GoogleTraceSimulator::AddTaskStats(
   } else {
     // We don't have information about this task's runtime.
     // Set its runtime to max which means it's a service task.
-    // TODO(adam): or float infinity?
-    runtime = numeric_limits<uint64_t>::max();
+    runtime = numeric_limits<double>::max();
   }
   TaskDescriptor* td_ptr = FindPtrOrNull(task_id_to_td_, task_identifier);
   CHECK_NOTNULL(td_ptr);
@@ -397,8 +396,8 @@ void GoogleTraceSimulator::AddTaskStatsToKnowledgeBase(
     if (!IsEqual(task_stats.avg_mai, -1.0)) {
       knowledge_base_->SetAvgIPMAForTEC(*it, 1.0 / task_stats.avg_mai);
     }
-    task_id_to_stats_.erase(task_identifier);
   }
+  task_id_to_stats_.erase(task_identifier);
 }
 
 void GoogleTraceSimulator::RemoveTaskStats(TaskID_t task_id) {
