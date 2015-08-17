@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_65fdc26e",
+        "filename": "src/sim/trace-extract/google_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-17T11:57:46Z",
+      "side": 1,
+      "message": "Note for future: we should fix this, since it bakes a relative path into the binary, leading to the simulator failing unless you run it from the simulator directory. This isn\u0027t documented anywhere and has caught each of us out before.\n\nEDIT: this is actually fine, as there is code below to map that relative path to an absolute path. However, we should document that the parameter is relative to the directory of the *binary*, rather than to the Firmament root (or make it relative to the Firmament root).",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_a5f6ea8e",
+        "filename": "src/sim/trace-extract/google_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-17T11:57:46Z",
+      "side": 1,
+      "message": "Our convention elsewhere is not to use std::, as we import the namespace. (It\u0027s the only exception to bulk imports permitted by the style guide, IIRC.)",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_2503ba77",
+        "filename": "src/sim/trace-extract/google_trace_loader.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-17T11:57:46Z",
+      "side": 1,
+      "message": "I wonder if we should unify the naming convention between this and LoadTaskRuntimeStats, to something like:\n\n - LoadTaskCounts\n - LoadTaskRuntimes",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_4508be91",
+        "filename": "src/sim/trace-extract/google_trace_loader.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-17T11:57:46Z",
+      "side": 1,
+      "message": "What\u0027s the difference between LoadTaskRuntimeStats and LoadTasksRunningTime? (Might be indicative of better names being needed.)",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_c5f3ee9d",
+        "filename": "src/sim/trace-extract/google_trace_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-17T11:57:46Z",
+      "side": 1,
+      "message": "These are the values from the Google trace, right? I think we should put a comment next to them saying where they\u0027re documented.",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
