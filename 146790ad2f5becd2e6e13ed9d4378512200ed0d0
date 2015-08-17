@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_b30ab025",
+        "filename": "src/sim/trace-extract/google_trace_simulator.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-17T21:00:03Z",
+      "side": 1,
+      "message": "Would it be nicer to make a struct for this (SchedulingRoundStatistics_t, or something), rather than having four fields? (Happy either way, just wondering.)",
+      "revId": "146790ad2f5becd2e6e13ed9d4378512200ed0d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
