@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_c5212efe",
+        "filename": "src/sim/trace-extract/google_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-17T12:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_65fdc26e",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_a5f6ea8e",
         "filename": "src/sim/trace-extract/google_trace_loader.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2015-08-17T11:57:46Z",
       "side": 1,
       "message": "Our convention elsewhere is not to use std::, as we import the namespace. (It\u0027s the only exception to bulk imports permitted by the style guide, IIRC.)",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_252adae7",
+        "filename": "src/sim/trace-extract/google_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-17T12:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_a5f6ea8e",
       "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_0545d6b2",
+        "filename": "src/sim/trace-extract/google_trace_loader.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-17T12:12:00Z",
+      "side": 1,
+      "message": "I don\u0027t think we can unify them. This loads per job statistics while the others load per task statistics. This method reads from a csv the number of tasks each job has. Let me know if I misunderstood your comment.",
+      "parentUuid": "9ad9bd40_2503ba77",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_4508be91",
         "filename": "src/sim/trace-extract/google_trace_loader.h",
         "patchSetId": 1
@@ -70,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_851006aa",
+        "filename": "src/sim/trace-extract/google_trace_loader.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-17T12:12:00Z",
+      "side": 1,
+      "message": "I\u0027ve changed the name from LoadTaskRuntimeStats to LoadTasksUtilizationTime. Using Runtime in that method\u0027s name was unfortunate:).\nOne method loads various task resource utilization statistics, while the other just loads runtime.",
+      "parentUuid": "9ad9bd40_4508be91",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_c5f3ee9d",
         "filename": "src/sim/trace-extract/google_trace_utils.h",
         "patchSetId": 1
@@ -81,6 +153,24 @@
       "writtenOn": "2015-08-17T11:57:46Z",
       "side": 1,
       "message": "These are the values from the Google trace, right? I think we should put a comment next to them saying where they\u0027re documented.",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_6534e24a",
+        "filename": "src/sim/trace-extract/google_trace_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-17T12:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_c5f3ee9d",
       "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
