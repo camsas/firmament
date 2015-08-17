@@ -20,7 +20,7 @@ void LogStartOfSolverRun(FILE* graph_output,
   }
 }
 
-void LogSolverRunStats(uint64_t first_exogenous_event_seen,
+void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
                        FILE* stats_file,
                        const boost::timer::cpu_timer timer,
                        uint64_t solver_executed_at,
@@ -37,10 +37,10 @@ void LogSolverRunStats(uint64_t first_exogenous_event_seen,
       // online mode
       double scheduling_latency = solver_executed_at;
       scheduling_latency += algorithm_time * 1000 * 1000;
-      scheduling_latency -= first_exogenous_event_seen;
+      scheduling_latency -= avg_event_timestamp_in_scheduling_round;
       scheduling_latency /= (1000 * 1000);
 
-      // will be negative if we have not seen any exogeneous event
+      // will be negative if we have not seen any event.
       scheduling_latency = max(0.0, scheduling_latency);
 
       fprintf(stats_file, "%jd,%lf,%lf,%lf,%lf,", solver_executed_at,
