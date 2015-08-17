@@ -107,6 +107,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_e5fab242",
+        "filename": "src/sim/trace-extract/google_trace_loader.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-17T12:40:20Z",
+      "side": 1,
+      "message": "Sorry, by \"unify\", I meant \"make their names consistent\", which you did :)",
+      "parentUuid": "9ad9bd40_0545d6b2",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_4508be91",
         "filename": "src/sim/trace-extract/google_trace_loader.h",
         "patchSetId": 1
@@ -136,6 +154,24 @@
       "side": 1,
       "message": "I\u0027ve changed the name from LoadTaskRuntimeStats to LoadTasksUtilizationTime. Using Runtime in that method\u0027s name was unfortunate:).\nOne method loads various task resource utilization statistics, while the other just loads runtime.",
       "parentUuid": "9ad9bd40_4508be91",
+      "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_05f87648",
+        "filename": "src/sim/trace-extract/google_trace_loader.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-17T12:40:20Z",
+      "side": 1,
+      "message": "Why is it LoadTaskUtilizationTime, rather than LoadTaskUtilizationStats?",
+      "parentUuid": "9ad9bd40_851006aa",
       "revId": "86c360d3f6b426d68efea7d58901183e2ee0a0fa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
