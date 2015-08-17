@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_08c40b5e",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-17T15:08:57Z",
+      "side": 1,
+      "message": "Hah, good catch :)",
+      "revId": "6bbb8e3b27e5edbdfc534ad07ce9637fd8a1902d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
