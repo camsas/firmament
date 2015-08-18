@@ -16,6 +16,24 @@
       "revId": "146790ad2f5becd2e6e13ed9d4378512200ed0d0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_f9b7b738",
+        "filename": "src/sim/trace-extract/google_trace_simulator.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-18T06:13:54Z",
+      "side": 1,
+      "message": "I can make that change once we settle on where/how we print the statistics.",
+      "parentUuid": "9ad9bd40_b30ab025",
+      "revId": "146790ad2f5becd2e6e13ed9d4378512200ed0d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
