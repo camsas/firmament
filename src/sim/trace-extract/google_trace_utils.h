@@ -83,6 +83,7 @@ void LogStartOfSolverRun(FILE* graph_output,
                          shared_ptr<FlowGraph> flow_graph,
                          uint64_t run_solver_at);
 
+uint64_t MaxEventIdToRetain();
 
 void OutputChangeStats(FILE* stats_file, const DIMACSChangeStats& stats);
 

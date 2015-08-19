@@ -30,8 +30,9 @@ DEFINE_string(machine_tmpl_file, "../../../tests/testdata/machine_topo.pbin",
 namespace firmament {
 namespace sim {
 
-GoogleTraceLoader::GoogleTraceLoader(const string& trace_path) :
-  trace_path_(trace_path) {
+GoogleTraceLoader::GoogleTraceLoader(
+    const string& trace_path, GoogleTraceEventManager* event_manager) :
+  trace_path_(trace_path), event_manager_(event_manager) {
 }
 
 void GoogleTraceLoader::LoadJobsNumTasks(
@@ -62,9 +63,7 @@ void GoogleTraceLoader::LoadJobsNumTasks(
   fclose(jobs_tasks_file);
 }
 
-void GoogleTraceLoader::LoadMachineEvents(
-    uint64_t max_event_id_to_retain,
-    multimap<uint64_t, EventDescriptor>* events) {
+void GoogleTraceLoader::LoadMachineEvents(uint64_t max_event_id_to_retain) {
   char line[200];
   vector<string> cols;
   FILE* machines_file;
@@ -103,8 +102,7 @@ void GoogleTraceLoader::LoadMachineEvents(
             lexical_cast<int32_t>(cols[2])));
         if (event_desc.type() == EventDescriptor::REMOVE_MACHINE ||
             event_desc.type() == EventDescriptor::ADD_MACHINE) {
-          events->insert(pair<uint64_t, EventDescriptor>(timestamp,
-                                                         event_desc));
+          event_manager_->AddEvent(timestamp, event_desc);
         } else {
           // TODO(ionel): Handle machine update events.
         }
