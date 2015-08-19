@@ -5,6 +5,11 @@
 
 #include <algorithm>
 
+#include "base/units.h"
+#include "misc/utils.h"
+
+DEFINE_double(events_fraction, 1.0, "Fraction of events to retain.");
+
 namespace firmament {
 namespace sim {
 
@@ -29,16 +34,14 @@ void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
                        const DIMACSChangeStats& change_stats) {
   if (stats_file) {
     boost::timer::cpu_times total_runtime_cpu_times = timer.elapsed();
-    // TODO(ionel): Use misc/units.h
-    boost::timer::nanosecond_type second = 1000*1000*1000;
     double total_runtime = total_runtime_cpu_times.wall;
-    total_runtime /= second;
+    total_runtime /= SECONDS_TO_NANOSECONDS;
     if (FLAGS_batch_step == 0) {
       // online mode
       double scheduling_latency = solver_executed_at;
-      scheduling_latency += algorithm_time * 1000 * 1000;
+      scheduling_latency += algorithm_time * SECONDS_TO_MICROSECONDS;
       scheduling_latency -= avg_event_timestamp_in_scheduling_round;
-      scheduling_latency /= (1000 * 1000);
+      scheduling_latency /= SECONDS_TO_MICROSECONDS;
 
       // will be negative if we have not seen any event.
       scheduling_latency = max(0.0, scheduling_latency);
@@ -53,6 +56,16 @@ void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
     }
     OutputChangeStats(stats_file, change_stats);
     fflush(stats_file);
+  }
+}
+
+uint64_t MaxEventIdToRetain() {
+  // We must check if we're retaining all events. If so, we have to return
+  // UINT64_MAX because otherwise we might end up overflowing.
+  if (IsEqual(FLAGS_events_fraction, 1.0)) {
+    return UINT64_MAX;
+  } else {
+    return FLAGS_events_fraction * UINT64_MAX;
   }
 }
 

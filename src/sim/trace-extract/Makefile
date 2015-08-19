@@ -10,7 +10,8 @@ BINS = google_trace_simulator google_trace_processor google_trace_simulator_test
 #OPTFLAGS += -fsanitize=address -fno-omit-frame-pointer
 
 LIB =
-SIMULATOR_OBJS = google_trace_simulator.o google_trace_loader.o \
+SIMULATOR_OBJS = google_trace_bridge.o google_trace_event_manager.o \
+                 google_trace_loader.o google_trace_simulator.o \
                  google_trace_utils.o
 PROCESSOR_OBJS = google_trace_task_processor.o
 PBS = event_desc.pb.o
@@ -41,6 +42,8 @@ $(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/sim/trace-extract/google_trace_simulator_main.cc \
 		$(OPTFLAGS) $(DEFINES) \
+		$(BUILD_DIR)/sim/trace-extract/google_trace_bridge.o \
+		$(BUILD_DIR)/sim/trace-extract/google_trace_event_manager.o \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_loader.o \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_utils.o \
@@ -86,6 +89,8 @@ $(OBJ_DIR)/google_trace_simulator_test: $(addprefix $(OBJ_DIR)/, google_trace_si
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/sim/trace-extract/google_trace_simulator_test.cc \
 		$(GTEST_LIB) $(OPTFLAGS) $(DEFINES) \
+		$(BUILD_DIR)/sim/trace-extract/google_trace_bridge.o \
+		$(BUILD_DIR)/sim/trace-extract/google_trace_event_manager.o \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_loader.o \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_simulator.o \
 		$(BUILD_DIR)/sim/trace-extract/google_trace_utils.o \
