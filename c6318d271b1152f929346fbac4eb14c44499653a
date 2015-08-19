@@ -1,0 +1,311 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_12926df6",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "Destructor should be virtual",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_32f85149",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "typo (should be \"tmpl\"), and the comment should reflect that this is a *template*, presumably?",
+      "range": {
+        "startLine": 32,
+        "startChar": 20,
+        "endLine": 32,
+        "endChar": 23
+      },
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_328f71ce",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "Nit: we should be consistent in our use of AddFoo vs. AddNewFoo vs. CreateFoo (see below)",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_72c019e1",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "Shouldn\u0027t that be a const ref return type?",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_12a98d24",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "Why is this in the trace bridge, rather than in the main simulator class? It doesn\u0027t seem very trace-related to me, but I may not understand some implications here.",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_52623517",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "Hrm. Here, we use TaskIdentifier, while TaskEvicted below uses TaskID_t. Is there a way we can homogeneise this?",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_926cbd0a",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "Possible ToDo for the future: it\u0027d be nice not to have to pass *both* TaskID_t *and* (trace) TaskIdentifier, but to instead consistently pass one of them and figure out the other. For example, TaskIdentifier could have a task_id field that holds the corresponding Firmament task ID.",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_b271c1e2",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "pass const ref?",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_1280ad8a",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "What\u0027s the difference between AddTaskStats (above) and this?",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_327db1b2",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "Again, there\u0027s a bit of duplication -- maybe we should have a TraceJobIdentifier (or SimulatorJobIdentifier) that holds both of these?",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_724e5998",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "Nit: parent\u0027s",
+      "range": {
+        "startLine": 152,
+        "startChar": 33,
+        "endLine": 152,
+        "endChar": 54
+      },
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_9243dd6b",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "Nit: built",
+      "range": {
+        "startLine": 161,
+        "startChar": 30,
+        "endLine": 161,
+        "endChar": 35
+      },
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_d25c854f",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "For clarity, we should rename this to trace_machine_id_to_rd_",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_b248e188",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "For clarity, we should rename this to trace_machine_id_to_rtnd_",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_f259895c",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "Possible future change: do we need a separate collection for this? The TaskDescriptor has a finish_time field that can hold the information, and with a TaskID_t, we can always look up the TD. Moreover, we keep a map of task runtimes below, and td-\u003estart_time() + runtime gives us the end time, presumably?",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_1257cd27",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "This should be trace_task_id_to_td_, as otherwise the difference between TaskID_t and TaskIdentifier makes things confusing in the lower case short form.",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_72673926",
+        "filename": "src/sim/trace-extract/google_trace_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-19T20:38:19Z",
+      "side": 1,
+      "message": "I wonder if we should rename this to TraceTaskIdentifier in order to make method declarations that take both a TaskID_t and a TaskIdentifier more easily readable.",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
