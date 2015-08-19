@@ -5,6 +5,10 @@
 
 #include <algorithm>
 
+#include "misc/utils.h"
+
+DEFINE_double(events_fraction, 1.0, "Fraction of events to retain.");
+
 namespace firmament {
 namespace sim {
 
@@ -53,6 +57,16 @@ void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
     }
     OutputChangeStats(stats_file, change_stats);
     fflush(stats_file);
+  }
+}
+
+uint64_t MaxEventIdToRetain() {
+  // We must check if we're retaining all events. If so, we have to return
+  // UINT64_MAX because otherwise we might end up overflowing.
+  if (IsEqual(FLAGS_events_fraction, 1.0)) {
+    return UINT64_MAX;
+  } else {
+    return FLAGS_events_fraction * UINT64_MAX;
   }
 }
 
