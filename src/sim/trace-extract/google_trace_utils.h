@@ -37,17 +37,17 @@ namespace sim {
 
 static const uint64_t kSeed = 0;
 
-struct TaskIdentifier {
+struct TraceTaskIdentifier {
   uint64_t job_id;
   uint64_t task_index;
 
-  bool operator==(const TaskIdentifier& other) const {
+  bool operator==(const TraceTaskIdentifier& other) const {
     return job_id == other.job_id && task_index == other.task_index;
   }
 };
 
-struct TaskIdentifierHasher {
-  size_t operator()(const TaskIdentifier& key) const {
+struct TraceTaskIdentifierHasher {
+  size_t operator()(const TraceTaskIdentifier& key) const {
     return hash<uint64_t>()(key.job_id) * 17 + hash<uint64_t>()(key.task_index);
   }
 };
@@ -83,6 +83,7 @@ void LogStartOfSolverRun(FILE* graph_output,
                          shared_ptr<FlowGraph> flow_graph,
                          uint64_t run_solver_at);
 
+uint64_t MaxEventIdToRetain();
 
 void OutputChangeStats(FILE* stats_file, const DIMACSChangeStats& stats);
 

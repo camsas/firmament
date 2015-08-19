@@ -64,7 +64,7 @@ void GoogleTraceLoader::LoadJobsNumTasks(
 
 void GoogleTraceLoader::LoadMachineEvents(
     uint64_t max_event_id_to_retain,
-    multimap<uint64_t, EventDescriptor>* events) {
+    multimap<uint64_t, EventDescriptor>* machine_events) {
   char line[200];
   vector<string> cols;
   FILE* machines_file;
@@ -103,8 +103,8 @@ void GoogleTraceLoader::LoadMachineEvents(
             lexical_cast<int32_t>(cols[2])));
         if (event_desc.type() == EventDescriptor::REMOVE_MACHINE ||
             event_desc.type() == EventDescriptor::ADD_MACHINE) {
-          events->insert(pair<uint64_t, EventDescriptor>(timestamp,
-                                                         event_desc));
+          machine_events->insert(
+              pair<uint64_t, EventDescriptor>(timestamp, event_desc));
         } else {
           // TODO(ionel): Handle machine update events.
         }
@@ -140,8 +140,8 @@ void GoogleTraceLoader::LoadMachineTemplate(
 }
 
 void GoogleTraceLoader::LoadTaskUtilizationStats(
-    unordered_map<TaskIdentifier, TaskStats,
-      TaskIdentifierHasher>* task_id_to_stats) {
+    unordered_map<TraceTaskIdentifier, TaskStats,
+      TraceTaskIdentifierHasher>* task_id_to_stats) {
   char line[1000];
   vector<string> cols;
   FILE* usage_file = NULL;
@@ -158,7 +158,7 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
         LOG(WARNING) << "Malformed task usage, " << cols.size()
                      << " != 38 columns at line " << num_line;
       } else {
-        TaskIdentifier task_id;
+        TraceTaskIdentifier task_id;
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
         TaskStats task_stats;
@@ -218,7 +218,7 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
 
 void GoogleTraceLoader::LoadTasksRunningTime(
     uint64_t max_event_id_to_retain,
-    unordered_map<TaskIdentifier, uint64_t, TaskIdentifierHasher>*
+    unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
       task_runtime) {
   char line[200];
   vector<string> cols;
@@ -237,7 +237,7 @@ void GoogleTraceLoader::LoadTasksRunningTime(
         LOG(ERROR) << "Unexpected structure of task runtime row on line: "
                    << num_line;
       } else {
-        TaskIdentifier task_id;
+        TraceTaskIdentifier task_id;
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
 
