@@ -273,7 +273,7 @@ fi
 print_subhdr "GOOGLE GFLAGS LIBRARY"
 if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) && ${ARCHX} != "ia64" ]];
 then
-  PKG_RES1=$(dpkg-query -l | grep "libgflags0" 2>/dev/null)
+  PKG_RES1=$(dpkg-query -l | grep "libgflags2" 2>/dev/null)
   PKG_RES2=$(dpkg-query -l | grep "libgflags-dev" 2>/dev/null)
   if [[ $PKG_RES1 != "" && $PKG_RES2 != "" ]]; then
     echo -n "Already installed."
@@ -332,7 +332,7 @@ fi
 ## installed, and produce extra options (default flags like --logtostderr).
 print_subhdr "GOOGLE GLOG LIBRARY"
 GLOG_DIR=google-glog-svn
-GLOG_INSTALL_FILE="/usr/lib/pkgconfig/libglog.pc"
+GLOG_INSTALL_FILE="/usr/lib/x86_64-linux-gnu/pkgconfig/libglog.pc"
 #GLOG_BUILD_DIR=${EXT_DIR}/google-glog-build
 #mkdir -p ${GLOG_BUILD_DIR}
 if [[ ${TARGET} == "scc" || ! -f ${GLOG_INSTALL_FILE} ]]; then
