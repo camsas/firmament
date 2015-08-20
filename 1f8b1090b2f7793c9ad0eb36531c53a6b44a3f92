@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_54ba200b",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 593,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-20T10:42:19Z",
+      "side": 1,
+      "message": "Yea, we should think about where the right place is to do this computation (in the cost model or in FlowGraph). Right now, the semantic is that if an arc is no longer in the set, it is deleted. (This avoids having to convey the set of \"current\" arcs to the cost model; if it returned set of new/deleted arcs, it would have to know which ones are currently in existence to make its decisions.)\n\nLet\u0027s leave this for a future CL.",
+      "parentUuid": "9ad9bd40_d8d93a58",
+      "revId": "1f8b1090b2f7793c9ad0eb36531c53a6b44a3f92",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_38fce6b7",
         "filename": "src/scheduling/flow/flow_graph.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2015-08-06T12:34:10Z",
       "side": 1,
       "message": "break.",
+      "revId": "1f8b1090b2f7793c9ad0eb36531c53a6b44a3f92",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_b440cc08",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 603,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-20T10:42:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_38fce6b7",
       "revId": "1f8b1090b2f7793c9ad0eb36531c53a6b44a3f92",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
