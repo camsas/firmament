@@ -204,6 +204,10 @@ void LocalExecutor::HandleTaskCompletion(TaskDescriptor* td,
       LOG(ERROR) << "Perf file " << file_name << " does not exists or does not "
                  << "contain data!";
     }
+    if (fclose(fptr) != 0) {
+      PLOG(ERROR) << "Failed to close perf file " << file_name
+                  << " after reading!";
+    }
   } else {
     // TODO(malte): this is a bit of a hack -- when we don't have the perf
     // information available, we use the executor's runtime measurements.
@@ -383,8 +387,10 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
       int stderr_fd = open(tasklog_stderr.c_str(),
                            O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
       dup2(stderr_fd, STDERR_FILENO);
-      close(stdout_fd);
-      close(stderr_fd);
+      if (close(stdout_fd) != 0)
+        PLOG(FATAL) << "Failed to close stdout FD in child";
+      if (close(stderr_fd) != 0)
+        PLOG(FATAL) << "Failed to close stderr FD in child";
 
       // Change to task's working directory
       chdir(env["FLAGS_task_data_dir"].c_str());
@@ -539,7 +545,7 @@ void LocalExecutor::WriteToPipe(int fd, void* data, size_t len) {
   // Write the data to the pipe
   fwrite(data, len, 1, stream);
   // Finally, close the pipe
-  fclose(stream);
+  CHECK_EQ(fclose(stream), 0);
 }
 
 void LocalExecutor::ReadFromPipe(int fd) {
@@ -553,7 +559,7 @@ void LocalExecutor::ReadFromPipe(int fd) {
     putc(ch, stdout);
   }
   fflush(stdout);
-  fclose(stream);
+  CHECK_EQ(fclose(stream), 0);
 }
 
 }  // namespace executor
