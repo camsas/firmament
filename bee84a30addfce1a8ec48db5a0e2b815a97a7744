@@ -16,6 +16,24 @@
       "revId": "bee84a30addfce1a8ec48db5a0e2b815a97a7744",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_b73a8ee5",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1027,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-20T15:52:25Z",
+      "side": 1,
+      "message": "Good point. I don\u0027t think this will in practice ever go negative in the current code. However, many of the values are uint64s, so letting it go \"negative\" would actually underflow into some huge number. I suspect that\u0027s what I was concerned about here. Maybe we should move to int64 values? (I\u0027d do that in a future CL though.)",
+      "parentUuid": "9ad9bd40_b8a476ba",
+      "revId": "bee84a30addfce1a8ec48db5a0e2b815a97a7744",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
