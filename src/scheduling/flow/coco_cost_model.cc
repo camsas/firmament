@@ -632,7 +632,8 @@ pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
   } else {
     LOG(WARNING) << "Unknown EC " << ec << " is not a TEC, so returning "
                  << "zero cost!";
-    return 0LL;
+    // No cost; no capacity
+    return pair<Cost_t, int64_t>(0LL, -1LL);
   }
 }
 
