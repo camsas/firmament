@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_7462c417",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_12926df6",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_32f85149",
         "filename": "src/sim/trace-extract/google_trace_bridge.h",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2015-08-19T20:38:19Z",
       "side": 1,
       "message": "typo (should be \"tmpl\"), and the comment should reflect that this is a *template*, presumably?",
+      "range": {
+        "startLine": 32,
+        "startChar": 20,
+        "endLine": 32,
+        "endChar": 23
+      },
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_b46c4c0a",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_32f85149",
       "range": {
         "startLine": 32,
         "startChar": 20,
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_147338e8",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_328f71ce",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_72c019e1",
         "filename": "src/sim/trace-extract/google_trace_bridge.h",
         "patchSetId": 1
@@ -70,6 +130,24 @@
       "writtenOn": "2015-08-19T20:38:19Z",
       "side": 1,
       "message": "Shouldn\u0027t that be a const ref return type?",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_342e7ca6",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Actually, the method is not needed any more. I\u0027ve removed it.",
+      "parentUuid": "9ad9bd40_72c019e1",
       "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -93,6 +171,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_f40a5426",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "There\u0027s an equivalent of this method in the main simulator which actually implements the logic. However, there\u0027s also this bridge method because otherwise we would end up with a circular dependence. Without this method, both the simulator and the bridge would have to keep a dispatcher object. The dispatcher object requires a flow_graph when it\u0027s constructed, but the problem is that the flow_graph is created by the bridge, which is created by the simulator. Hence, the simulator can\u0027t create a dispatcher.",
+      "parentUuid": "9ad9bd40_12a98d24",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_52623517",
         "filename": "src/sim/trace-extract/google_trace_bridge.h",
         "patchSetId": 1
@@ -104,6 +200,24 @@
       "writtenOn": "2015-08-19T20:38:19Z",
       "side": 1,
       "message": "Hrm. Here, we use TaskIdentifier, while TaskEvicted below uses TaskID_t. Is there a way we can homogeneise this?",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_37611ed4",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "I\u0027m not sure if we should try to homogenise them. TaskCompleted is a public method. All the public methods should only use TaskIdentifier. They should have no knowledge about TaskID. On the other hand TaskEvicted is a private method (now moved under private). It\u0027s only called by the bridge. If I change TaskEvicted to use TaskIdentifier then I literally have to do a TaskID_t to TaskIdentifier lookup before calling it and then a TaskIdentifier to TaskID_t first thing in the method. Doing these two lookups is just wasteful.",
+      "parentUuid": "9ad9bd40_52623517",
       "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -127,6 +241,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_37b83e2a",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Sounds good, but let\u0027s do that in a future diff because this one is already rather big.",
+      "parentUuid": "9ad9bd40_926cbd0a",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_b271c1e2",
         "filename": "src/sim/trace-extract/google_trace_bridge.h",
         "patchSetId": 1
@@ -138,6 +270,24 @@
       "writtenOn": "2015-08-19T20:38:19Z",
       "side": 1,
       "message": "pass const ref?",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_f45c144f",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_b271c1e2",
       "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -161,6 +311,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_34059c14",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "This is a helper method. It\u0027s actually invoked by AddTaskStats and it only deals with adding stats to the knowledge base. Whereas the other method updates some other data structures.",
+      "parentUuid": "9ad9bd40_1280ad8a",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_327db1b2",
         "filename": "src/sim/trace-extract/google_trace_bridge.h",
         "patchSetId": 1
@@ -178,6 +346,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_57b5c22f",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "As above.",
+      "parentUuid": "9ad9bd40_327db1b2",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_724e5998",
         "filename": "src/sim/trace-extract/google_trace_bridge.h",
         "patchSetId": 1
@@ -189,6 +375,30 @@
       "writtenOn": "2015-08-19T20:38:19Z",
       "side": 1,
       "message": "Nit: parent\u0027s",
+      "range": {
+        "startLine": 152,
+        "startChar": 33,
+        "endLine": 152,
+        "endChar": 54
+      },
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_5454e020",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_724e5998",
       "range": {
         "startLine": 152,
         "startChar": 33,
@@ -224,6 +434,30 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_74300408",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_9243dd6b",
+      "range": {
+        "startLine": 161,
+        "startChar": 30,
+        "endLine": 161,
+        "endChar": 35
+      },
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_d25c854f",
         "filename": "src/sim/trace-extract/google_trace_bridge.h",
         "patchSetId": 1
@@ -235,6 +469,24 @@
       "writtenOn": "2015-08-19T20:38:19Z",
       "side": 1,
       "message": "For clarity, we should rename this to trace_machine_id_to_rd_",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_b43a8ce5",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_d25c854f",
       "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -258,6 +510,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_d43f10d5",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_b248e188",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_f259895c",
         "filename": "src/sim/trace-extract/google_trace_bridge.h",
         "patchSetId": 1
@@ -269,6 +539,24 @@
       "writtenOn": "2015-08-19T20:38:19Z",
       "side": 1,
       "message": "Possible future change: do we need a separate collection for this? The TaskDescriptor has a finish_time field that can hold the information, and with a TaskID_t, we can always look up the TD. Moreover, we keep a map of task runtimes below, and td-\u003estart_time() + runtime gives us the end time, presumably?",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_97866a64",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Good point, I\u0027ll get rid of it in a future diff.",
+      "parentUuid": "9ad9bd40_f259895c",
       "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -292,6 +580,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_f7adf6eb",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_1257cd27",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_72673926",
         "filename": "src/sim/trace-extract/google_trace_utils.h",
         "patchSetId": 1
@@ -303,6 +609,24 @@
       "writtenOn": "2015-08-19T20:38:19Z",
       "side": 1,
       "message": "I wonder if we should rename this to TraceTaskIdentifier in order to make method declarations that take both a TaskID_t and a TaskIdentifier more easily readable.",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_d780f248",
+        "filename": "src/sim/trace-extract/google_trace_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-20T13:26:46Z",
+      "side": 1,
+      "message": "Yes, we can do that, but let\u0027s do it when I\u0027m going to move TraceID_t to TaskIdentifier.",
+      "parentUuid": "9ad9bd40_72673926",
       "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
