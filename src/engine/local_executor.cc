@@ -198,15 +198,14 @@ void LocalExecutor::HandleTaskCompletion(TaskDescriptor* td,
             GetPerfDataFromLine(report, line);
           }
         }
-        fclose(fptr);
+        if (fclose(fptr) != 0) {
+          PLOG(ERROR) << "Failed to close perf file " << file_name
+                      << " after reading!";
+        }
       }
     } else {
       LOG(ERROR) << "Perf file " << file_name << " does not exists or does not "
                  << "contain data!";
-    }
-    if (fclose(fptr) != 0) {
-      PLOG(ERROR) << "Failed to close perf file " << file_name
-                  << " after reading!";
     }
   } else {
     // TODO(malte): this is a bit of a hack -- when we don't have the perf
