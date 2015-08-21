@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_4b68bb87",
+        "filename": "src/sim/trace-extract/google_trace_loader.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-21T11:50:41Z",
+      "side": 1,
+      "message": "We\u0027re being a bit inconsistent with the API here: all other methods on GoogleTraceLoader take pointers to collections which they then populate with data from the trace, while LoadMachineEvents sticks its data into a collection in GoogleTraceEventManager (via AddEvent). Is there a necessary reason for this? \n\nIf not, I would suggest changing the API here, so that we pass a machine_events collection that we populate, and then call AddEvent from elsewhere. One advantage of doing it this way is that we should be able to remove GoogleTraceLoader\u0027s dependency on the GoogleEventManager if we do it this way.",
+      "revId": "f3b0293b2809a4e2758be00152ea55b4be261db1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
