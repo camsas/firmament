@@ -245,12 +245,12 @@ print_hdr "FETCHING & INSTALLING EXTERNAL DEPENDENCIES"
 SCC_CC_SCRIPT="/opt/compilerSetupFiles/crosscompile.sh"
 
 # On older Ubuntu versions, we must add the boost-latest PPA for boost-1.55
-if [[ ${OS_ID} == 'Ubuntu' && ( ${OS_RELEASE} == '12.04' || ${OS_RELEASE} == '13.10' ) ]]; then
+if [[ ${TRAVIS} != "true" && ${OS_ID} == 'Ubuntu' && ( ${OS_RELEASE} == '12.04' || ${OS_RELEASE} == '13.10' ) ]]; then
   echo "Adding boost-latest PPA..."
-   if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+  if [[ ${NONINTERACTIVE} -eq 1 ]]; then
     echo "Installing..."
-    sudo add-apt-repository ppa:boost-latest/ppa
-    sudo apt-get update
+    sudo add-apt-repository -y ppa:boost-latest/ppa
+    sudo apt-get -y update
   else
     echo_failure
     echo "Please add the \"boost-latest\" PPA to your apt respositories:"
