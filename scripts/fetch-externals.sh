@@ -244,6 +244,23 @@ print_hdr "FETCHING & INSTALLING EXTERNAL DEPENDENCIES"
 
 SCC_CC_SCRIPT="/opt/compilerSetupFiles/crosscompile.sh"
 
+# On older Ubuntu versions, we must add the boost-latest PPA for boost-1.55
+if [[ ${OS_ID} == 'Ubuntu' && ( ${OS_RELEASE} == '12.04' || ${OS_RELEASE} == '13.10' ) ]]; then
+  echo "Adding boost-latest PPA..."
+   if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+    echo "Installing..."
+    sudo add-apt-repository ppa:boost-latest/ppa
+    sudo apt-get update
+  else
+    echo_failure
+    echo "Please add the \"boost-latest\" PPA to your apt respositories:"
+    echo
+    echo "$ sudo add-apt-repository ppa:boost-latest/ppa"
+    exit 1
+  fi
+
+fi
+
 # N.B.: We explicitly exclude the SCC here since we need to build on the MCPC
 # in the case of the SCC. The MCPC runs 64-bit Ubuntu, but the SCC cores run
 # some custom stripped-down thing that does not have packages.
