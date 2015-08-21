@@ -9,7 +9,7 @@ ifneq ($(BOOST_VERSION), "1.48")
  LIBS += -lboost_chrono
 endif
 ifdef BUILD_HTTP_UI
-  HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -llog4cpp -ljansson -lctemplate
+  HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -ljansson -lctemplate
 else
   HTTP_UI_LIBS = 
 endif

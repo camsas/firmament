@@ -58,11 +58,12 @@ __attribute__((constructor)) static void task_lib_main() {
 
   // Grab the current process's name via procfs
   FILE* comm_fd = fopen("/proc/self/comm", "r");
+  CHECK_NOTNULL(comm_fd);
   fgets(self_comm_, 64, comm_fd);
   // The read will have a newline at the end, so replace it
   if (strlen(self_comm_) > 0)
     self_comm_[strlen(self_comm_) - 1] = '\0';
-  fclose(comm_fd);
+  CHECK_EQ(fclose(comm_fd), 0);
 
   // Unset LD_PRELOAD to avoid us from starting launching monitors in
   // child processes, unless we're in a wrapper

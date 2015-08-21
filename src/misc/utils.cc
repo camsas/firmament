@@ -27,6 +27,9 @@ extern "C" {
 
 #include "misc/utils.h"
 
+DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
+              "The directory to write debug output to.");
+
 namespace firmament {
 
 boost::mt19937 resource_id_rg_;
@@ -336,7 +339,11 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
 
       // Close all file descriptors other than stdin, stdout and stderr
       if ((fds = getdtablesize()) == -1) fds = OPEN_MAX_GUESS;
-      for (fd = 3; fd < fds; fd++) close(fd);
+      for (fd = 3; fd < fds; fd++) {
+        // Assume we're done once we get a BADFD
+        if (close(fd) == -EBADF)
+          break;
+      }
 
       // kill child process if parent terminates
       // SOMEDAY(adam): make this portable beyond Linux?
@@ -356,9 +363,9 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
       // Parent
       VLOG(1) << "Subprocess with PID " << pid << " created.";
       // close unused pipe ends
-      close(infd[0]);
-      close(outfd[1]);
-      close(errfd[1]);
+      CHECK_EQ(close(infd[0]), 0);
+      CHECK_EQ(close(outfd[1]), 0);
+      CHECK_EQ(close(errfd[1]), 0);
       // TODO(malte): ReadFromPipe is a synchronous call that will only return
       // once the pipe has been closed! Check if this is actually the semantic
       // we want.

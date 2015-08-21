@@ -10,8 +10,10 @@ message MachinePerfStatisticsSample {
   required uint64 timestamp = 2;
   required uint64 total_ram = 3;
   required uint64 free_ram = 4;
-  //The first entry is the cpu usage of cpu0 and so on.
+  // The first entry is the cpu usage of cpu0 and so on.
   repeated CpuUsage cpus_usage = 5;
+  optional uint64 disk_bw = 6 [default = 0];
+  optional uint64 net_bw = 7 [default = 0];
 }
 
 message CpuUsage {

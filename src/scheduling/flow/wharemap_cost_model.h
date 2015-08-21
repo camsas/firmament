@@ -44,7 +44,9 @@ class WhareMapCostModel : public CostModelInterface {
   Cost_t TaskPreemptionCost(TaskID_t task_id);
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
-  Cost_t EquivClassToResourceNode(EquivClass_t tec, ResourceID_t res_id);
+  pair<Cost_t, int64_t> EquivClassToResourceNode(
+      EquivClass_t tec,
+      ResourceID_t res_id);
   Cost_t EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
   // Get the type of equiv class.
   vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);

@@ -48,7 +48,7 @@ Cost_t OctopusCostModel::ResourceNodeToResourceNodeCost(
   ResourceDescriptor* dst_rd_ptr = dst_rs_ptr->mutable_descriptor();
   // The cost in the Octopus model is the number of already running tasks, i.e.
   // a crude per-task load balancing algorithm.
-  uint64_t num_tasks = dst_rd_ptr->num_running_tasks();
+  uint64_t num_tasks = dst_rd_ptr->num_running_tasks_below();
   return num_tasks;
 }
 
@@ -69,9 +69,10 @@ Cost_t OctopusCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return 0ULL;
 }
 
-Cost_t OctopusCostModel::EquivClassToResourceNode(EquivClass_t ec,
-                                                  ResourceID_t res_id) {
-  return 0ULL;
+pair<Cost_t, int64_t> OctopusCostModel::EquivClassToResourceNode(
+    EquivClass_t ec,
+    ResourceID_t res_id) {
+  return pair<Cost_t, int64_t>(0LL, -1LL);
 }
 
 Cost_t OctopusCostModel::EquivClassToEquivClass(EquivClass_t ec1,
@@ -190,9 +191,9 @@ FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
       CHECK_NOTNULL(rs_ptr);
       ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
       if (rd_ptr->has_current_running_task()) {
-        rd_ptr->set_num_running_tasks(1);
+        rd_ptr->set_num_running_tasks_below(1);
       } else {
-        rd_ptr->set_num_running_tasks(0);
+        rd_ptr->set_num_running_tasks_below(0);
       }
     }
     return accumulator;
@@ -207,8 +208,9 @@ FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
     FindPtrOrNull(*resource_map_, other->resource_id_);
   CHECK_NOTNULL(other_rs_ptr);
   ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
-  acc_rd_ptr->set_num_running_tasks(acc_rd_ptr->num_running_tasks() +
-                                    other_rd_ptr->num_running_tasks());
+  acc_rd_ptr->set_num_running_tasks_below(
+      acc_rd_ptr->num_running_tasks_below() +
+      other_rd_ptr->num_running_tasks_below());
   return accumulator;
 }
 
@@ -241,7 +243,7 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
     FindPtrOrNull(*resource_map_, other->resource_id_);
   CHECK_NOTNULL(other_rs_ptr);
   ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
-  other_rd_ptr->set_num_running_tasks(0);
+  other_rd_ptr->set_num_running_tasks_below(0);
   return accumulator;
 }
 

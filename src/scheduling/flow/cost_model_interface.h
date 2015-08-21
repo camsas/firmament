@@ -79,8 +79,9 @@ class CostModelInterface {
   /**
    * Get the cost of an arc from an equivalence class node to a resource node.
    */
-  virtual Cost_t EquivClassToResourceNode(EquivClass_t tec,
-                                          ResourceID_t res_id) = 0;
+  virtual pair<Cost_t, int64_t> EquivClassToResourceNode(
+      EquivClass_t tec,
+      ResourceID_t res_id) = 0;
   /**
    * Get the cost of an arc from an equivalence class node to another
    * equivalence class node.
@@ -150,9 +151,22 @@ class CostModelInterface {
 
   virtual void RemoveTask(TaskID_t task_id) = 0;
 
+  /**
+   * Gathers statistics during reverse traversal of resource topology (from
+   * sink upwards). Called on pairs of connected nodes.
+   */
   virtual FlowGraphNode* GatherStats(FlowGraphNode* accumulator,
                                      FlowGraphNode* other) = 0;
 
+  /**
+   * The default Prepare action is a no-op. Cost models can override this if
+   * they need to perform preparation actions before GatherStats is invoked.
+   */
+  virtual void PrepareStats(FlowGraphNode* accumulator) { }
+
+  /**
+   * Generates updates for arc costs in the resource topology.
+   */
   virtual FlowGraphNode* UpdateStats(FlowGraphNode* accumulator,
                                      FlowGraphNode* other) = 0;
 
@@ -161,7 +175,10 @@ class CostModelInterface {
    */
   virtual const string DebugInfo() const {
     // Default no-op implementation;
-    LOG(INFO) << "Got to interface's DebugInfo";
+    return "";
+  }
+  virtual const string DebugInfoCSV() const {
+    // Default no-op implementation;
     return "";
   }
 

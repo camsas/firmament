@@ -244,6 +244,23 @@ print_hdr "FETCHING & INSTALLING EXTERNAL DEPENDENCIES"
 
 SCC_CC_SCRIPT="/opt/compilerSetupFiles/crosscompile.sh"
 
+# On older Ubuntu versions, we must add the boost-latest PPA for boost-1.55
+if [[ ${TRAVIS} != "true" && ${OS_ID} == 'Ubuntu' && ( ${OS_RELEASE} == '12.04' || ${OS_RELEASE} == '13.10' ) ]]; then
+  echo "Adding boost-latest PPA..."
+  if [[ ${NONINTERACTIVE} -eq 1 ]]; then
+    echo "Installing..."
+    sudo add-apt-repository -y ppa:boost-latest/ppa
+    sudo apt-get -y update
+  else
+    echo_failure
+    echo "Please add the \"boost-latest\" PPA to your apt respositories:"
+    echo
+    echo "$ sudo add-apt-repository ppa:boost-latest/ppa"
+    exit 1
+  fi
+
+fi
+
 # N.B.: We explicitly exclude the SCC here since we need to build on the MCPC
 # in the case of the SCC. The MCPC runs 64-bit Ubuntu, but the SCC cores run
 # some custom stripped-down thing that does not have packages.
@@ -273,7 +290,7 @@ fi
 print_subhdr "GOOGLE GFLAGS LIBRARY"
 if [[ ${TARGET} != "scc" && ( ${OS_ID} == "Ubuntu" || ${OS_ID} == "Debian" ) && ${ARCHX} != "ia64" ]];
 then
-  PKG_RES1=$(dpkg-query -l | grep "libgflags0" 2>/dev/null)
+  PKG_RES1=$(dpkg-query -l | grep "libgflags2" 2>/dev/null)
   PKG_RES2=$(dpkg-query -l | grep "libgflags-dev" 2>/dev/null)
   if [[ $PKG_RES1 != "" && $PKG_RES2 != "" ]]; then
     echo -n "Already installed."
@@ -332,7 +349,7 @@ fi
 ## installed, and produce extra options (default flags like --logtostderr).
 print_subhdr "GOOGLE GLOG LIBRARY"
 GLOG_DIR=google-glog-svn
-GLOG_INSTALL_FILE="/usr/lib/pkgconfig/libglog.pc"
+GLOG_INSTALL_FILE="/usr/lib/x86_64-linux-gnu/pkgconfig/libglog.pc"
 #GLOG_BUILD_DIR=${EXT_DIR}/google-glog-build
 #mkdir -p ${GLOG_BUILD_DIR}
 if [[ ${TARGET} == "scc" || ! -f ${GLOG_INSTALL_FILE} ]]; then

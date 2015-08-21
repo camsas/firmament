@@ -27,24 +27,46 @@ typedef struct {
   uint64_t guest_nice;
   uint64_t total;
   time_t systime;
-} cpu_stats;
+} CPUStatistics_t;
+
+typedef struct {
+  uint64_t read;
+  uint64_t write;
+} DiskStatistics_t;
 
 typedef struct {
   uint64_t mem_total;
   uint64_t mem_free;
-} mem_stats;
+  uint64_t mem_buffers;
+  uint64_t mem_pagecache;
+} MemoryStatistics_t;
+
+typedef struct {
+  uint64_t send;
+  uint64_t recv;
+} NetworkStatistics_t;
 
 class ProcFSMachine {
  public:
   ProcFSMachine();
   const MachinePerfStatisticsSample* CreateStatistics(
       MachinePerfStatisticsSample* stats);
+  void GetMachineCapacity(ResourceVector* cap);
 
  private:
-  vector<cpu_stats> cpu_stats_;
-  mem_stats GetMemory();
-  vector<cpu_stats> GetCPUStats();
+  vector<CPUStatistics_t> GetCPUStats();
   vector<CpuUsage> GetCPUUsage();
+  DiskStatistics_t GetDiskStats();
+  MemoryStatistics_t GetMemoryStats();
+  NetworkStatistics_t GetNetworkStats();
+
+  inline void readunsigned(FILE* input, uint64_t *x) {
+    fscanf(input, "%ju ", x);
+  }
+
+  vector<CPUStatistics_t> cpu_stats_;
+  DiskStatistics_t disk_stats_;
+  NetworkStatistics_t net_stats_;
 };
 
 }  // namespace platform_unix

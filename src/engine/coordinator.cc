@@ -163,7 +163,6 @@ void Coordinator::DetectLocalResources() {
       local_resource_topology_->add_children();
   topology_manager_->AsProtobuf(root_node);
   root_node->set_parent_id(to_string(uuid_));
-  root_node->mutable_resource_desc()->set_num_cores(num_local_pus);
   BFSTraverseResourceProtobufTreeReturnRTND(
       local_resource_topology_,
       boost::bind(&Coordinator::AddResource, this, _1, node_uri_, true));
@@ -183,6 +182,16 @@ void Coordinator::AddResource(ResourceTopologyNodeDescriptor* rtnd,
   CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
           new ResourceStatus(resource_desc, rtnd, endpoint_uri,
                              GetCurrentTimestamp())));
+  // Record the machine UUID if this is the local topology
+  if (resource_desc->type() == ResourceDescriptor::RESOURCE_MACHINE &&
+      local) {
+    // Store the machine UUID (different from the coordinator resource UUID,
+    // which is stored in uuid_).
+    machine_uuid_ = ResourceIDFromString(resource_desc->uuid());
+    // Figure out the machine's resource capacity.
+    ResourceVector* cap = resource_desc->mutable_resource_capacity();
+    machine_monitor_.GetMachineCapacity(cap);
+  }
   // Register with scheduler if this resource is schedulable
   if (resource_desc->type() == ResourceDescriptor::RESOURCE_PU) {
     // TODO(malte): We make the assumption here that any local PU resource is
@@ -252,7 +261,7 @@ void Coordinator::Run() {
     if (cur_time - last_heartbeat_time > FLAGS_heartbeat_interval) {
       MachinePerfStatisticsSample stats;
       stats.set_timestamp(GetCurrentTimestamp());
-      stats.set_resource_id(to_string(uuid_));
+      stats.set_resource_id(to_string(machine_uuid_));
       machine_monitor_.CreateStatistics(&stats);
       // Record this sample locally
       knowledge_base_->AddMachineSample(stats);

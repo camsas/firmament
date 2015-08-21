@@ -74,9 +74,11 @@ Cost_t RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
     return 0;
 }
 
-Cost_t RandomCostModel::EquivClassToResourceNode(EquivClass_t ec,
-                                                 ResourceID_t res_id) {
-  return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
+pair<Cost_t, int64_t> RandomCostModel::EquivClassToResourceNode(
+    EquivClass_t ec,
+    ResourceID_t res_id) {
+  return pair<Cost_t, int64_t>(rand() % (FLAGS_flow_max_arc_cost / 2) + 1,
+                               -1LL);
 }
 
 Cost_t RandomCostModel::EquivClassToEquivClass(EquivClass_t ec1,

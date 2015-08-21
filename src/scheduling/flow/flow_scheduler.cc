@@ -31,6 +31,8 @@ DEFINE_int32(flow_scheduling_cost_model, 0,
              "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
 DEFINE_int64(time_dependent_cost_update_frequency, 10000000ULL,
              "Update frequency for time-dependent costs, in microseconds.");
+DEFINE_bool(debug_cost_model, false,
+            "Store cost model debug info in CSV files.");
 
 namespace firmament {
 namespace scheduler {
@@ -150,8 +152,8 @@ uint64_t FlowScheduler::ApplySchedulingDeltas(
       ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
       CHECK_NOTNULL(td);
       CHECK_NOTNULL(rs);
-      VLOG(1) << "About to bind task " << td->uid() << " to resource "
-              << rs->mutable_descriptor()->uuid();
+      LOG(INFO) << "Scheduler binding task " << td->uid() << " to resource "
+                << rs->mutable_descriptor()->uuid();
       BindTaskToResource(td, rs->mutable_descriptor());
       // Mark the task as scheduled
       FlowGraphNode* node = flow_graph_->NodeForTaskID(task_id);
@@ -174,65 +176,60 @@ uint64_t FlowScheduler::ApplySchedulingDeltas(
 }
 
 void FlowScheduler::DeregisterResource(ResourceID_t res_id) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::DeregisterResource(res_id);
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->RemoveMachine(res_id);
-  }
+  flow_graph_->RemoveMachine(res_id);
 }
 
 void FlowScheduler::HandleJobCompletion(JobID_t job_id) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Call into superclass handler
   EventDrivenScheduler::HandleJobCompletion(job_id);
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    // Job completed, so remove its nodes
-    flow_graph_->JobCompleted(job_id);
-  }
+  // Job completed, so remove its nodes
+  flow_graph_->JobCompleted(job_id);
 }
 
 void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                            TaskFinalReport* report) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   // We don't need to do any flow graph stuff for delegated tasks as
   // they are not currently represented in the flow graph.
   // Otherwise, we need to remove nodes, etc.
   if (!td_ptr->has_delegated_from()) {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     flow_graph_->TaskCompleted(td_ptr->uid());
   }
 }
 
 void FlowScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
                                          ResourceID_t res_id) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::HandleTaskEviction(td_ptr, res_id);
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->TaskEvicted(td_ptr->uid(), res_id);
-  }
+  flow_graph_->TaskEvicted(td_ptr->uid(), res_id);
 }
 
 void FlowScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::HandleTaskFailure(td_ptr);
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->TaskFailed(td_ptr->uid());
-  }
+  flow_graph_->TaskFailed(td_ptr->uid());
 }
 
 void FlowScheduler::KillRunningTask(TaskID_t task_id,
                                       TaskKillMessage::TaskKillReason reason) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::KillRunningTask(task_id, reason);
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    flow_graph_->TaskKilled(task_id);
-  }
+  flow_graph_->TaskKilled(task_id);
 }
 
 uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   LOG(INFO) << "START SCHEDULING (via " << job_desc->uuid() << ")";
+  // First, we update the cost model's resource topology statistics (e.g. based
+  // on machine load and prior decisions); these need to be known before
+  // AddOrUpdateJobNodes is invoked below, as it may add arcs depending on these
+  // metrics.
+  UpdateCostModelResourceStats();
   // Check if we have any runnable tasks in this job
   const set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
   if (runnable_tasks.size() > 0) {
@@ -241,9 +238,24 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
     flow_graph_->AddOrUpdateJobNodes(job_desc);
     // If it is, only add the new bits
     // Run a scheduler iteration
-    uint64_t newly_scheduled = RunSchedulingIteration();
-    LOG(INFO) << "STOP SCHEDULING, placed " << newly_scheduled << " tasks";
-    return newly_scheduled;
+    uint64_t total_scheduled = 0;
+    total_scheduled = RunSchedulingIteration();
+    LOG(INFO) << "STOP SCHEDULING, placed " << total_scheduled << " tasks";
+    // If we have cost model debug logging turned on, write some debugging
+    // information now.
+    if (FLAGS_debug_cost_model) {
+      string csv_log;
+      spf(&csv_log, "%s/cost_model_%d.csv", FLAGS_debug_output_dir.c_str(),
+          solver_dispatcher_->seq_num());
+      FILE* csv_log_file = fopen(csv_log.c_str(), "w");
+      CHECK_NOTNULL(csv_log_file);
+      string debug_info = cost_model_->DebugInfoCSV();
+      fputs(debug_info.c_str(), csv_log_file);
+      CHECK_EQ(fclose(csv_log_file), 0);
+    }
+    // Resource reservations may have changed, so reconsider equivalence classes
+    flow_graph_->AddOrUpdateJobNodes(job_desc);
+    return total_scheduled;
   } else {
     LOG(INFO) << "STOP SCHEDULING, nothing to do";
     return 0;
@@ -251,11 +263,9 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
 }
 
 void FlowScheduler::RegisterResource(ResourceID_t res_id, bool local) {
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-    // Update the flow graph
-    UpdateResourceTopology(resource_topology_);
-  }
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  // Update the flow graph
+  UpdateResourceTopology(resource_topology_);
   // Call into superclass method to do scheduler resource initialisation.
   // This will create the executor for the new resource.
   EventDrivenScheduler::RegisterResource(res_id, local);
@@ -363,6 +373,8 @@ void FlowScheduler::UpdateCostModelResourceStats() {
     LOG(INFO) << "Updating resource statistics in flow graph";
     flow_graph_->ComputeTopologyStatistics(
         flow_graph_->sink_node(),
+        boost::bind(&CostModelInterface::PrepareStats,
+                    cost_model_, _1),
         boost::bind(&CostModelInterface::GatherStats,
                     cost_model_, _1, _2));
     flow_graph_->ComputeTopologyStatistics(
@@ -384,6 +396,9 @@ void FlowScheduler::UpdateResourceTopology(
   } else {
     flow_graph_->AddMachine(root);
   }
+  // We also need to update any stats or state in the cost model, as the
+  // resource topology has changed.
+  UpdateCostModelResourceStats();
 }
 
 }  // namespace scheduler

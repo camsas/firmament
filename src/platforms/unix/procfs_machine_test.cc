@@ -16,6 +16,9 @@
 
 using firmament::common::InitFirmament;
 
+DEFINE_uint64(heartbeat_interval, 1000000,
+              "Heartbeat interval in microseconds.");
+
 namespace firmament {
 namespace platform_unix {
 
@@ -51,11 +54,24 @@ class ProcFSMachineTest : public ::testing::Test {
 TEST_F(ProcFSMachineTest, CreateStatistics) {
   // This is more of a joke, but it does the job for testing.
   // Print stats to manually check.
-  sleep(5);
   MachinePerfStatisticsSample* stats = new MachinePerfStatisticsSample;
+  // We need to wait for a bit to collect some data
+  sleep(1);
   pfsm_.CreateStatistics(stats);
   VLOG(1) << stats->DebugString();
   delete stats;
+  sleep(5);
+}
+
+// Tests retrieval of machine resource capacities.
+TEST_F(ProcFSMachineTest, GetCapacities) {
+  // This is more of a joke, but it does the job for testing.
+  // Print capacities to manually check, since we don't know what machine
+  // this will run on!
+  ResourceVector caps;
+  pfsm_.GetMachineCapacity(&caps);
+  VLOG(1) << caps.DebugString();
+  sleep(5);
 }
 
 }  // namespace platform_unix

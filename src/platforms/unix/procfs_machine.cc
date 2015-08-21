@@ -13,16 +13,29 @@
 #include <vector>
 
 #include "base/common.h"
+#include "base/units.h"
+#include "misc/string_utils.h"
+
+DEFINE_string(monitor_netif, "eth0",
+              "Network interface on which to monitor traffic statistics.");
+DEFINE_string(monitor_blockdev, "sda",
+              "Block device on which to monitor I/O statistics.");
+DEFINE_int64(monitor_blockdev_maxbw, -1,
+             "Maximum read/write bandwidth of monitored block device.");
+DECLARE_uint64(heartbeat_interval);
 
 namespace firmament {
 namespace platform_unix {
 
 ProcFSMachine::ProcFSMachine() {
   cpu_stats_ = GetCPUStats();
+  disk_stats_ = GetDiskStats();
+  net_stats_ = GetNetworkStats();
 }
 
 const MachinePerfStatisticsSample* ProcFSMachine::CreateStatistics(
     MachinePerfStatisticsSample* stats) {
+  // CPU stats
   vector<CpuUsage> cpus_usage = GetCPUUsage();
   vector<CpuUsage>::iterator it;
   for (it = cpus_usage.begin(); it != cpus_usage.end(); it++) {
@@ -38,16 +51,36 @@ const MachinePerfStatisticsSample* ProcFSMachine::CreateStatistics(
       cpu_usage->set_guest(it->guest());
       cpu_usage->set_guest_nice(it->guest_nice());
   }
-  mem_stats mem_stats = GetMemory();
+  // RAM stats
+  MemoryStatistics_t mem_stats = GetMemoryStats();
   stats->set_total_ram(mem_stats.mem_total);
-  stats->set_free_ram(mem_stats.mem_free);
+  stats->set_free_ram(mem_stats.mem_free + mem_stats.mem_buffers +
+                      mem_stats.mem_pagecache);
+  // Network I/O stats
+  NetworkStatistics_t net_stats = GetNetworkStats();
+  // We divide by FLAGS_heartbeat_interval / 1000000, since the samples are
+  // taken every FLAGS_heartbeat_interval, and they are in microseconds; we
+  // want the bandwidth to be in bytes/second.
+  stats->set_net_bw(
+      ((net_stats.send - net_stats_.send) + (net_stats.recv - net_stats_.recv))
+      / (static_cast<double>(FLAGS_heartbeat_interval) /
+         static_cast<double>(SECONDS_TO_MICROSECONDS)));
+  net_stats_ = net_stats;
+  // Disk I/O stats
+  DiskStatistics_t disk_stats = GetDiskStats();
+  stats->set_disk_bw(
+      (disk_stats.read - disk_stats_.read) +
+      (disk_stats.write - disk_stats_.write) /
+      (static_cast<double>(FLAGS_heartbeat_interval) /
+       static_cast<double>(SECONDS_TO_MICROSECONDS)));
+  disk_stats_ = disk_stats;
   return stats;
 }
 
-vector<cpu_stats> ProcFSMachine::GetCPUStats() {
+vector<CPUStatistics_t> ProcFSMachine::GetCPUStats() {
   FILE* proc_stat = fopen("/proc/stat", "r");
-  vector<cpu_stats> cpus_now;
-  cpu_stats cpu_now;
+  vector<CPUStatistics_t> cpus_now;
+  CPUStatistics_t cpu_now;
   int proc_stat_cpu;
   CHECK_NOTNULL(proc_stat);
 
@@ -72,13 +105,13 @@ vector<cpu_stats> ProcFSMachine::GetCPUStats() {
     cpu_now.systime = time(NULL);
     cpus_now.push_back(cpu_now);
   }
-  fclose(proc_stat);
+  CHECK_EQ(fclose(proc_stat), 0);
   return cpus_now;
 }
 
 vector<CpuUsage> ProcFSMachine::GetCPUUsage() {
   vector<CpuUsage> cpu_usage;
-  vector<cpu_stats> cpu_new_stats = GetCPUStats();
+  vector<CPUStatistics_t> cpu_new_stats = GetCPUStats();
   for (vector<CpuUsage>::size_type cpu_num = 0; cpu_num < cpu_stats_.size();
        cpu_num++) {
     double user_diff =
@@ -133,14 +166,126 @@ vector<CpuUsage> ProcFSMachine::GetCPUUsage() {
   return cpu_usage;
 }
 
-mem_stats ProcFSMachine::GetMemory() {
-  mem_stats mem_stats;
-  struct sysinfo mem_info;
-  sysinfo(&mem_info);
-  mem_stats.mem_total = mem_info.totalram * mem_info.mem_unit;
-  mem_stats.mem_free = mem_info.freeram * mem_info.mem_unit +
-                       mem_info.bufferram * mem_info.mem_unit;
+DiskStatistics_t ProcFSMachine::GetDiskStats() {
+  // TODO(malte): This implementation is currently limited to monitoring only
+  // one block device, specified in FLAGS_monitor_blockdev. We should extend
+  // it with support for multiple interfaces, e.g. as determined from
+  // /sys/block/<dev> or 'mount'.
+  DiskStatistics_t disk_stats;
+  bzero(&disk_stats, sizeof(DiskStatistics_t));
+  string dev_path;
+  spf(&dev_path, "/sys/class/block/%s/",
+      FLAGS_monitor_blockdev.c_str());
+  FILE* blockdev_stat_fd = fopen((dev_path + "/stat").c_str(), "r");
+  if (blockdev_stat_fd) {
+    uint64_t tmp_value;
+    for (uint64_t i = 0; i < 11; i++) {
+      readunsigned(blockdev_stat_fd, &tmp_value);
+      if (i == 2)
+        // read sector count
+        disk_stats.read = tmp_value * 512;
+      if (i == 6)
+        // write sector count
+        disk_stats.write = tmp_value * 512;
+    }
+    CHECK_EQ(fclose(blockdev_stat_fd), 0);
+  }
+  return disk_stats;
+}
+
+void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
+  // Extract the total available resource capacities on this machine
+  MemoryStatistics_t mem_stats = GetMemoryStats();
+  cap->set_ram_cap(mem_stats.mem_total / BYTES_TO_MB);
+  vector<CPUStatistics_t> cpu_stats = GetCPUStats();
+  // Subtract one as we have an additional element for the overall CPU load
+  // across all cores
+  cap->set_cpu_cores(cpu_stats.size() - 1);
+  // Get network interface speed from ProcFS
+  string nic_speed_path;
+  spf(&nic_speed_path, "/sys/class/net/%s/speed",
+      FLAGS_monitor_netif.c_str());
+  FILE* nic_speed_fd = fopen(nic_speed_path.c_str(), "r");
+  uint64_t speed = 0;
+  if (nic_speed_fd) {
+    readunsigned(nic_speed_fd, &speed);
+    CHECK_EQ(fclose(nic_speed_fd), 0);
+  }
+  if (speed == 0)
+    LOG(WARNING) << "Failed to determinate network interface speed for "
+                 << FLAGS_monitor_netif;
+  cap->set_net_bw(speed / 8);
+  // Get disk read/write speed
+  if (FLAGS_monitor_blockdev_maxbw == -1) {
+    // XXX(malte): we use a hack here -- if the disk is not rotational, we assume
+    // it's an SSD and return a generic SSD-level throughput limit.
+    string disk_type_path;
+    spf(&disk_type_path, "/sys/class/block/%s/queue/rotational",
+        FLAGS_monitor_blockdev.c_str());
+    FILE* disk_type_fd = fopen(disk_type_path.c_str(), "r");
+    uint64_t disk_is_rotational = 1;  // HDD is the default
+    if (disk_type_fd) {
+      readunsigned(disk_type_fd, &disk_is_rotational);
+      CHECK_EQ(fclose(disk_type_fd), 0);
+    }
+    if (disk_is_rotational) {
+      // Legacy HDD, so return low bandwidth
+      cap->set_disk_bw(50);  // 50 MB/s, a medium estimate
+    } else {
+      // SSD, so go faster
+      cap->set_disk_bw(300); // 300 MB/s, a medium estimate
+    }
+  } else {
+    cap->set_disk_bw(FLAGS_monitor_blockdev_maxbw);
+  }
+}
+
+MemoryStatistics_t ProcFSMachine::GetMemoryStats() {
+  MemoryStatistics_t mem_stats;
+  FILE* mem_stat_fd = fopen("/proc/meminfo", "r");
+  CHECK_NOTNULL(mem_stat_fd);
+  while (!feof(mem_stat_fd)) {
+    char label[100];
+    uint64_t val = 0;
+    fscanf(mem_stat_fd, "%s", label);
+    fscanf(mem_stat_fd, "%ju", &val);
+    if (strncmp(label, "MemTotal:", 100) == 0) {
+      mem_stats.mem_total = val * 1024;
+    } else if (strncmp(label, "MemFree:", 100) == 0) {
+      mem_stats.mem_free = val * 1024;
+    } else if (strncmp(label, "Buffers:", 100) == 0) {
+      mem_stats.mem_buffers = val * 1024;
+    } else if (strncmp(label, "Cached:", 100) == 0) {
+      mem_stats.mem_pagecache = val * 1024;
+    }
+  }
+  CHECK_EQ(fclose(mem_stat_fd), 0);
   return mem_stats;
+}
+
+NetworkStatistics_t ProcFSMachine::GetNetworkStats() {
+  // TODO(malte): This implementation is currently limited to monitoring only
+  // one network interface, specified in FLAGS_monitor_netif. We should extend
+  // it with support for multiple interfaces, e.g. as determined from
+  // /proc/net/dev.
+  NetworkStatistics_t net_stats;
+  bzero(&net_stats, sizeof(NetworkStatistics_t));
+  string interface_path;
+  spf(&interface_path, "/sys/class/net/%s/statistics/",
+      FLAGS_monitor_netif.c_str());
+  // Send
+  FILE* tx_stat_fd = fopen((interface_path + "/tx_bytes").c_str(), "r");
+  if (tx_stat_fd) {
+    readunsigned(tx_stat_fd, &net_stats.send);
+    CHECK_EQ(fclose(tx_stat_fd), 0);
+  }
+  // Recv
+  FILE* rx_stat_fd = fopen((interface_path + "/rx_bytes").c_str(), "r");
+  if (rx_stat_fd) {
+    readunsigned(rx_stat_fd, &net_stats.recv);
+    CHECK_EQ(fclose(rx_stat_fd), 0);
+  }
+  return net_stats;
 }
 
 }  // namespace platform_unix

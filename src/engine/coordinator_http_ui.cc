@@ -732,7 +732,14 @@ void CoordinatorHTTPUI::HandleSchedCostModelURI(http::request_ptr& http_request,
   // Get resource information from coordinator
   const FlowScheduler* sched =
     dynamic_cast<const FlowScheduler*>(coordinator_->scheduler());
-  string output = sched->cost_model().DebugInfo();
+  string debug_info = sched->cost_model().DebugInfo();
+  TemplateDictionary dict("sched_cost_model");
+  dict.SetValue("COST_MODEL_DEBUG_INFO", debug_info);
+  AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
+  AddFooterToTemplate(&dict);
+  string output;
+  ExpandTemplate("src/webui/sched_costmodel.tpl", ctemplate::DO_NOT_STRIP,
+                 &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -771,13 +778,13 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
-  string res_id = http_request->get_query("res");
-  string task_id = http_request->get_query("task");
-  string ec_id = http_request->get_query("ec");
-  if ((res_id.empty() && task_id.empty() && ec_id.empty()) ||
-      !(res_id.empty() || task_id.empty()) ||
-      !(res_id.empty() || ec_id.empty()) ||
-      !(task_id.empty() || ec_id.empty())) {
+  string res_id_str = http_request->get_query("res");
+  string task_id_str = http_request->get_query("task");
+  string ec_id_str = http_request->get_query("ec");
+  if ((res_id_str.empty() && task_id_str.empty() && ec_id_str.empty()) ||
+      !(res_id_str.empty() || task_id_str.empty()) ||
+      !(res_id_str.empty() || ec_id_str.empty()) ||
+      !(task_id_str.empty() || ec_id_str.empty())) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
     LOG(WARNING) << "Invalid stats request!";
@@ -785,16 +792,16 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   }
   string output = "";
   // Check if we have any statistics for this resource
-  if (!res_id.empty()) {
-    const deque<MachinePerfStatisticsSample>* result =
-        coordinator_->knowledge_base()->GetStatsForMachine(
-            ResourceIDFromString(res_id));
-    if (result) {
-      int64_t length = result->size();
+  if (!res_id_str.empty()) {
+    ResourceID_t res_id = ResourceIDFromString(res_id_str);
+    const deque<MachinePerfStatisticsSample> result =
+        coordinator_->knowledge_base()->GetStatsForMachine(res_id);
+    if (coordinator_->GetResourceTreeNode(res_id)) {
+      int64_t length = result.size();
       output += "[";
       for (deque<MachinePerfStatisticsSample>::const_iterator it =
-          result->begin() + max(0LL, length - WEBUI_PERF_QUEUE_LEN);
-          it != result->end();
+          result.begin() + max(0LL, length - WEBUI_PERF_QUEUE_LEN);
+          it != result.end();
           ++it) {
         if (output != "[")
           output += ", ";
@@ -807,18 +814,18 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
       LOG(WARNING) << "Stats request for non-existent resource " << res_id;
       return;
     }
-  } else if (!task_id.empty()) {
-    TaskDescriptor* td = coordinator_->GetTask(TaskIDFromString(task_id));
+  } else if (!task_id_str.empty()) {
+    TaskDescriptor* td = coordinator_->GetTask(TaskIDFromString(task_id_str));
     if (!td) {
       ErrorResponse(http::types::RESPONSE_CODE_NOT_FOUND, http_request,
                     tcp_conn);
-      LOG(WARNING) << "Stats request for non-existent task " << task_id;
+      LOG(WARNING) << "Stats request for non-existent task " << task_id_str;
       return;
     }
     output += "{ \"samples\": [";
     const deque<TaskPerfStatisticsSample>* samples_result =
         coordinator_->knowledge_base()->GetStatsForTask(
-            TaskIDFromString(task_id));
+            TaskIDFromString(task_id_str));
     if (samples_result) {
       bool first = true;
       int64_t length = samples_result->size();
@@ -849,11 +856,11 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
       }
     }
     output += "] }";
-  } else if (!ec_id.empty()) {
+  } else if (!ec_id_str.empty()) {
     output += "{ \"reports\": [";
     const deque<TaskFinalReport>* report_result =
       coordinator_->knowledge_base()->GetFinalReportsForTEC(
-          strtoull(ec_id.c_str(), 0, 10));
+          strtoull(ec_id_str.c_str(), 0, 10));
     if (report_result) {
       bool first = true;
       for (deque<TaskFinalReport>::const_iterator it =

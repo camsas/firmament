@@ -99,7 +99,12 @@ void AsyncTCPServer::Stop() {
   listening_ = false;
   VLOG(2) << "Terminating " << endpoint_connection_map_.size()
           << " active TCP connections.";
-  acceptor_.close();
+  // This check around the close() call is necessary because ASIO does NOT
+  // sanity-check if a socket is actually open before closing the underlying FD.
+  // As a result, nasty races that lead to closing random FDs can occur if we
+  // indiscriminately invoke close() here; see CL #241942.
+  if (acceptor_.is_open())
+    acceptor_.close();
   for (unordered_map<string, TCPConnection::connection_ptr>::iterator
        c_iter = endpoint_connection_map_.begin();
        c_iter != endpoint_connection_map_.end();
