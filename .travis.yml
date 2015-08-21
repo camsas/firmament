@@ -1,51 +1,15 @@
 language: cpp
 
-sudo: false
-
 compiler:
   - clang
+
+before_install:
+  - if [ $TRAVIS_OS_NAME == linux ]; then sudo add-apt-repository ppa:boost-latest/ppa; fi
+  - if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get update; fi
 
 install: make ext
 
 script: make all
-
-addons:
-  apt:
-    sources:
-      - boost-latest
-      - debian-sid
-    packages:
-      - wget
-      - subversion
-      - autoconf
-      - clang-3.4
-      - g++
-      - libprotobuf-dev
-      - protobuf-compiler
-      - python-protobuf
-      - libprotobuf-c0-dev
-      - protobuf-c-compiler
-      - libgflags2
-      - libgflags-dev
-      - libgoogle-glog-dev
-      - libgoogle-glog0
-      - google-perftools
-      - libboost-math1.55-dev
-      - libboost-system1.55-dev
-      - libboost-thread1.55-dev
-      - libboost-regex1.55-dev
-      - libboost1.55-dev
-      - libboost-timer1.55-dev
-      - libboost-filesystem1.55-dev"
-      - libssl-dev
-      - libbz2-dev
-      - libtool
-      - libboost-filesystem1.55.0
-      - hwloc-nox
-      - libhwloc-dev
-      - libjansson-dev
-      - libctemplate-dev
-      - libtcmalloc-minimal4-dbg
 
 branches:
   only:
