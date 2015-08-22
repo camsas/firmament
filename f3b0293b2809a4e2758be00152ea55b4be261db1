@@ -16,6 +16,24 @@
       "revId": "f3b0293b2809a4e2758be00152ea55b4be261db1",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_6603f676",
+        "filename": "src/sim/trace-extract/google_trace_loader.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-22T09:40:05Z",
+      "side": 1,
+      "message": "The main reason was to avoid adding entries to a multimap which we later on just traverse to add them to another multimap. It just seems wasteful.\n\nDone.",
+      "parentUuid": "9ad9bd40_4b68bb87",
+      "revId": "f3b0293b2809a4e2758be00152ea55b4be261db1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
