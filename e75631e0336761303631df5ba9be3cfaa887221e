@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_1d2434c5",
+        "filename": "scripts/fetch-externals.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 483,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T11:05:42Z",
+      "side": 1,
+      "message": "This is within the libhdfs3-git directory and not within the ext/ dir. I just followed the guidelines to install libhdfs. I can change it, but we\u0027ll have to see if they make any assumption on the name of the directory.",
+      "parentUuid": "9ad9bd40_5d579c26",
+      "revId": "e75631e0336761303631df5ba9be3cfaa887221e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_1d5d1449",
         "filename": "scripts/fetch-externals.sh",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_5d2ebca6",
+        "filename": "scripts/fetch-externals.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 486,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T11:05:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_1d5d1449",
+      "revId": "e75631e0336761303631df5ba9be3cfaa887221e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_3d5ad850",
         "filename": "scripts/fetch-externals.sh",
         "patchSetId": 1
@@ -47,6 +83,24 @@
       "writtenOn": "2015-08-23T10:54:49Z",
       "side": 1,
       "message": "This won\u0027t work without sudo, will it? We must either specify a prefix, so that the dependency is built and installed inside our source tree, or we must use the NONINTERACTIVE environment variable to see if we should invoke sudo or prompt the user.\n\n(This is necessary so that Travis does not break, and because it\u0027s our policy not to ever do sudo things without asking the user unless NONINTERACTIVE\u003d1 is specified.)",
+      "revId": "e75631e0336761303631df5ba9be3cfaa887221e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_bd1c2879",
+        "filename": "scripts/fetch-externals.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T11:05:42Z",
+      "side": 1,
+      "message": "As it stands, it does not require sudo. The libraries are created in firmament/ext/libhdfs3-git/dist/lib/ and firmament/ext/libhdfs3-git/dist/include/hdfs/. We probably want to create a ext/libhdfs3-build and move the files there.",
+      "parentUuid": "9ad9bd40_3d5ad850",
       "revId": "e75631e0336761303631df5ba9be3cfaa887221e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
