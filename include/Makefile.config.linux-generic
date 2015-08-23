@@ -62,6 +62,20 @@ GTEST_FLAGS=-DGTEST_HAS_TR1_TUPLE=0
 #GPERFTOOLS_LIB ?= $(EXT_DIR)/google-perftools-build/lib/libtcmalloc_and_profiler.so
 #export GPERFTOOLS_LIB
 
+
+#######################################
+# libhdfs3-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for hdfs
+HDFS_INC_DIR ?= $(EXT_DIR)/libhdfs3-build/include/
+export HDFS_INC_DIR
+
+# Path to the compiled libhfds3 library.
+HDFS_LIB ?= $(EXT_DIR)/libhdfs3-build/lib/libhdfs3.a
+export HDFS_LIB
+
+
 #######################################
 # pb2json-SPECIFIC DEFINITIONS
 #######################################
@@ -105,10 +119,9 @@ export PION_LIB
 
 # Header directory for Spooky hash
 SPOOKY_INC_DIR ?= $(EXT_DIR)/spooky_hash/
-export PION_INC_DIR
+export SPOOKY_INC_DIR
 
-# Path to the compiled pion library (usually under
-# "make" in the pion-git directory in "ext").
+# Path to the compiled Spooky library.
 SPOOKY_OBJ ?= $(EXT_DIR)/spooky_hash/SpookyV2.o
 export SPOOKY_OBJ
 
@@ -118,8 +131,8 @@ export SPOOKY_OBJ
 #######################################
 
 INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(CSRC_GEN_DIR) \
-           -I$(GTEST_INC_DIR) -I$(PB2JSON_INC_DIR) -I$(TSSTLC_INC_DIR) \
-           -I$(PION_INC_DIR) -I$(SPOOKY_INC_DIR)
+           -I$(GTEST_INC_DIR) -I$(HDFS_INC_DIR) -I$(PB2JSON_INC_DIR) \
+           -I$(PION_INC_DIR) -I$(SPOOKY_INC_DIR) -I$(TSSTLC_INC_DIR)
            #-I/usr/lib/llvm-3.2/lib/clang/3.2/include/
            #-I$(GPERFTOOLS_INC_DIR)
 

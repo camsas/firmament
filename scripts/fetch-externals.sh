@@ -48,9 +48,9 @@ fi
 # Flowlessly deployment key
 FLOWLESSLY_DEPLOY_KEY=~/.ssh/flowlessly-deploy_rsa
 
-UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
-DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
-DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
+UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS} ${HDFS_PKGS}"
+DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS} ${HDFS_PKGS}"
+DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS} ${HDFS_PKGS}"
 
 # Super-user? Should I run sudo commands non-interactively?
 USER=$(whoami)
@@ -474,6 +474,21 @@ then
   print_succ_or_fail $RES
   cd ${EXT_DIR}
 fi
+
+
+## libhdfs3 library
+print_subhdr "LIBHDFS3 LIBRARY"
+get_dep_git "libhdfs3" "https://github.com/PivotalRD/libhdfs3"
+mkdir libhdfs3-build/
+cd libhdfs3-git/
+mkdir build
+cd build
+../bootstrap
+make -j
+make install
+cd ../
+cp -R dist/* ${EXT_DIR}/libhdfs3-build/
+cd ${EXT_DIR}
 
 
 ## pb2json library (converts protobufs to JSON)
