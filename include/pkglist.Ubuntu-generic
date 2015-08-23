@@ -9,4 +9,4 @@ PERFTOOLS_PKGS="google-perftools"
 BOOST_PKGS="libboost-filesystem-dev libboost-math-dev libboost-system-dev libboost-thread-dev libboost-regex-dev libboost-timer-dev libboost-filesystem-dev"
 PION_PKGS="libssl-dev libbz2-dev libtool"
 MISC_PKGS="hwloc-nox libhwloc-dev libjansson-dev libctemplate-dev libtcmalloc-minimal4-dbg"
-
+HDFS_PKGS="libgsasl7-dev libkrb5-3 libuuid1 libxml2 uuid-dev"
