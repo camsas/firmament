@@ -1,0 +1,174 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_9d304409",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "From looking at the constructor we for sure need to delete the task_map_ and the resource_map_ in addition to what we have below.",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_bd3508f9",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "Use FindPtrOrNull and avoid the double indirection :)",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_dd3acce6",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "Ideally add a comment here explaining what hack we\u0027re doing (job ID as binary) here -- I know that this didn\u0027t change in this CL, but we may as well fix if while we\u0027re at it.",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_fd3f90d4",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "The Boost pointer documentation discourages the use of .get(); instead, I think you can use *task_map_ here and get the same effect.",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_3d21f8b4",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "Should this be VLOG, or a WARNING?",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_7d2b8094",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "Use MILLISECOND_TO_SECOND (or similar) from units.h.",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_9d176454",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "Indentation buggered",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_300f5f30",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 549,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "FindPtrOrNull to get rid of double pointer",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_501ce36a",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 581,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "Not for this CL, but for the future: earmark this method for breaking up into submethods (per event type).",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_90fe6b04",
+        "filename": "src/sim/trace-extract/google_trace_event_manager.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "Use MICROSECOND_TO_SECOND from units.h (or similar).",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
