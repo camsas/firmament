@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_90cf4bb3",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T13:48:52Z",
+      "side": 1,
+      "message": "I\u0027ve updated the destructor to actually delete what\u0027s required.",
+      "parentUuid": "9ad9bd40_9d304409",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_bd3508f9",
         "filename": "src/sim/trace-extract/google_trace_bridge.cc",
         "patchSetId": 6
@@ -30,6 +48,24 @@
       "writtenOn": "2015-08-23T11:49:27Z",
       "side": 1,
       "message": "Use FindPtrOrNull and avoid the double indirection :)",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_303d9fbc",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T13:48:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_bd3508f9",
       "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_104a5b27",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T13:48:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_dd3acce6",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_fd3f90d4",
         "filename": "src/sim/trace-extract/google_trace_bridge.cc",
         "patchSetId": 6
@@ -64,6 +118,24 @@
       "writtenOn": "2015-08-23T11:49:27Z",
       "side": 1,
       "message": "The Boost pointer documentation discourages the use of .get(); instead, I think you can use *task_map_ here and get the same effect.",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_909aebc3",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T13:48:52Z",
+      "side": 1,
+      "message": "Yes, I\u0027m afraid we would have to change our map-utils in order to make this to work:\nmap-util.h:109:6: note: candidate template ignored: could not match \u0027Collection *\u0027 against \u0027thread_safe::map\u003cunsigned long, firmament::TaskDescriptor *, std::less\u003cunsigned long\u003e,\n      std::allocator\u003cstd::pair\u003cconst unsigned long, firmament::TaskDescriptor *\u003e \u003e \u003e\u0027\n\nI\u0027ve checked the code base and we always use .get() when we insert using a shared_ptr to a collection.",
+      "parentUuid": "9ad9bd40_fd3f90d4",
       "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_10409b34",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T13:48:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_3d21f8b4",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_7d2b8094",
         "filename": "src/sim/trace-extract/google_trace_bridge.cc",
         "patchSetId": 6
@@ -98,6 +188,24 @@
       "writtenOn": "2015-08-23T11:49:27Z",
       "side": 1,
       "message": "Use MILLISECOND_TO_SECOND (or similar) from units.h.",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_f045f717",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T13:48:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_7d2b8094",
       "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -121,6 +229,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_b09fefb3",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T13:48:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_9d176454",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_300f5f30",
         "filename": "src/sim/trace-extract/google_trace_bridge.cc",
         "patchSetId": 6
@@ -132,6 +258,24 @@
       "writtenOn": "2015-08-23T11:49:27Z",
       "side": 1,
       "message": "FindPtrOrNull to get rid of double pointer",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_f0a977e0",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 549,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T13:48:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_300f5f30",
       "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -155,6 +299,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_10aedbe7",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 581,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T13:48:52Z",
+      "side": 1,
+      "message": "Yep, I need to re-factor this method.",
+      "parentUuid": "9ad9bd40_501ce36a",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_90fe6b04",
         "filename": "src/sim/trace-extract/google_trace_event_manager.cc",
         "patchSetId": 6
@@ -166,6 +328,24 @@
       "writtenOn": "2015-08-23T11:49:27Z",
       "side": 1,
       "message": "Use MICROSECOND_TO_SECOND from units.h (or similar).",
+      "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_30475f1f",
+        "filename": "src/sim/trace-extract/google_trace_event_manager.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T13:48:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_90fe6b04",
       "revId": "6f867ec02400fbacc59390f02ed433b26cd6190b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
