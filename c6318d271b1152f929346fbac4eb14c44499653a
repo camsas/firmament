@@ -383,6 +383,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_902bcb32",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-23T14:25:29Z",
+      "side": 1,
+      "message": "Yes, it is private.",
+      "parentUuid": "9ad9bd40_10125b58",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_327db1b2",
         "filename": "src/sim/trace-extract/google_trace_bridge.h",
         "patchSetId": 1
