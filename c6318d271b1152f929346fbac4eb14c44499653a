@@ -189,6 +189,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_d008f32a",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "Ok; though why does the bridge require a FlowGraph? It would seem to me that the \"right\" design is that both the FlowGraph and the Dispatcher are created, held and invoked by the Simulator, while the Bridge serves to obtain workload and event information from the trace.\n\nI\u0027m happy to leave this for this CL, but I think we should spend a little time thinking about the right long-term design.",
+      "parentUuid": "9ad9bd40_f40a5426",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_52623517",
         "filename": "src/sim/trace-extract/google_trace_bridge.h",
         "patchSetId": 1
@@ -218,6 +236,24 @@
       "side": 1,
       "message": "I\u0027m not sure if we should try to homogenise them. TaskCompleted is a public method. All the public methods should only use TaskIdentifier. They should have no knowledge about TaskID. On the other hand TaskEvicted is a private method (now moved under private). It\u0027s only called by the bridge. If I change TaskEvicted to use TaskIdentifier then I literally have to do a TaskID_t to TaskIdentifier lookup before calling it and then a TaskIdentifier to TaskID_t first thing in the method. Doing these two lookups is just wasteful.",
       "parentUuid": "9ad9bd40_52623517",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_f00df738",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "Ok, with TaskEvicted becoming private, this is fine.",
+      "parentUuid": "9ad9bd40_37611ed4",
       "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -323,6 +359,24 @@
       "side": 1,
       "message": "This is a helper method. It\u0027s actually invoked by AddTaskStats and it only deals with adding stats to the knowledge base. Whereas the other method updates some other data structures.",
       "parentUuid": "9ad9bd40_1280ad8a",
+      "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_10125b58",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-23T11:49:27Z",
+      "side": 1,
+      "message": "Makes sense -- presumably AddTaskStatsToKnowledgeBase can be private then?",
+      "parentUuid": "9ad9bd40_34059c14",
       "revId": "c6318d271b1152f929346fbac4eb14c44499653a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
