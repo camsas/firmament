@@ -68,13 +68,13 @@ Cost_t QuincyCostModel::TaskToClusterAggCost(TaskID_t task_id) {
 
 Cost_t QuincyCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                                ResourceID_t resource_id) {
-  return rand() % (FLAGS_flow_max_arc_cost / 3) + 1;
+  return rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 3) + 1;
 }
 
 Cost_t QuincyCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {
-  return rand() % (FLAGS_flow_max_arc_cost / 4) + 1;
+  return rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 4) + 1;
 }
 
 // The cost from the resource leaf to the sink is 0.
@@ -92,14 +92,14 @@ Cost_t QuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {
 
 Cost_t QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
                                                    EquivClass_t tec) {
-  return rand() % (FLAGS_flow_max_arc_cost / 2) + 1;
+  return rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 2) + 1;
 }
 
 pair<Cost_t, int64_t> QuincyCostModel::EquivClassToResourceNode(
     EquivClass_t tec,
     ResourceID_t res_id) {
-  return pair<Cost_t, int64_t>(rand() % (FLAGS_flow_max_arc_cost / 2) + 1,
-                               -1LL);
+  return pair<Cost_t, int64_t>(rand_r(&rand_seed_) %
+                               (FLAGS_flow_max_arc_cost / 2) + 1, -1LL);
 }
 
 Cost_t QuincyCostModel::EquivClassToEquivClass(EquivClass_t tec1,

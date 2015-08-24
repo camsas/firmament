@@ -41,13 +41,13 @@ Cost_t RandomCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 
 Cost_t RandomCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                                ResourceID_t resource_id) {
-  return rand() % (FLAGS_flow_max_arc_cost / 3) + 1;
+  return rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 3) + 1;
 }
 
 Cost_t RandomCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {
-  return rand() % (FLAGS_flow_max_arc_cost / 4) + 1;
+  return rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 4) + 1;
 }
 
 // The cost from the resource leaf to the sink is 0.
@@ -68,7 +68,7 @@ Cost_t RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   // The cost of scheduling via the cluster aggregator; always slightly
   // less than the cost of leaving the task unscheduled
   if (ec == cluster_aggregator_ec_)
-    return rand() % TaskToUnscheduledAggCost(task_id) - 1;
+    return rand_r(&rand_seed_) % TaskToUnscheduledAggCost(task_id) - 1;
   else
     // XXX(malte): Implement other EC's costs!
     return 0;
@@ -77,8 +77,8 @@ Cost_t RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
 pair<Cost_t, int64_t> RandomCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
-  return pair<Cost_t, int64_t>(rand() % (FLAGS_flow_max_arc_cost / 2) + 1,
-                               -1LL);
+  return pair<Cost_t, int64_t>(rand_r(&rand_seed_) %
+                               (FLAGS_flow_max_arc_cost / 2) + 1, -1LL);
 }
 
 Cost_t RandomCostModel::EquivClassToEquivClass(EquivClass_t ec1,

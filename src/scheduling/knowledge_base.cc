@@ -6,6 +6,7 @@
 
 #include "scheduling/knowledge_base.h"
 
+#include <algorithm>
 #include <deque>
 #include <vector>
 

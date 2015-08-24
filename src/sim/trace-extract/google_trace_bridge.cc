@@ -316,7 +316,7 @@ void GoogleTraceBridge::InitializeCostModel() {
       round(MACHINES_IN_TRACE_APPROXIMATION * FLAGS_events_fraction);
     cost_model_ =
       SetupSimulatedQuincyCostModel(resource_map_, job_map_, task_map_,
-                                    task_bindings_, knowledge_base_,
+                                    &task_bindings_, knowledge_base_,
                                     num_machines, leaf_res_ids);
     VLOG(1) << "Using the simulated Quincy cost model";
     break;
