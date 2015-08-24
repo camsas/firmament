@@ -384,10 +384,11 @@ bool StreamSocketsChannel<T>::RecvA(
   // Obtain the lock on the async receive buffer.
   async_recv_lock_.lock();
   CHECK_EQ(async_recv_buffer_vec_, static_cast<char*>(NULL));
-  CHECK_EQ(async_recv_buffer_, static_cast<boost::asio::mutable_buffers_1*>(NULL));
-  async_recv_buffer_vec_ = (char*)malloc(sizeof(uint64_t));
+  CHECK_EQ(async_recv_buffer_,
+           static_cast<boost::asio::mutable_buffers_1*>(NULL));
+  async_recv_buffer_vec_ = reinterpret_cast<char*>(malloc(sizeof(uint64_t)));
   async_recv_buffer_ =
-      new boost::asio::mutable_buffers_1(async_recv_buffer_vec_, 
+      new boost::asio::mutable_buffers_1(async_recv_buffer_vec_,
                                          sizeof(uint64_t));
   // Asynchronously read the incoming protobuf message length and invoke the
   // second stage of the receive call once we have it.
@@ -438,7 +439,7 @@ void StreamSocketsChannel<T>::RecvASecondStage(
           << "is " << msg_size << " bytes.";
   // We still hold the async_recv_lock_ mutex here.
   free(async_recv_buffer_vec_);
-  async_recv_buffer_vec_ = (char*)malloc(msg_size);
+  async_recv_buffer_vec_ = reinterpret_cast<char*>(malloc(msg_size));
   VLOG(2) << "New async recv buffer is at "
           << static_cast<void*>(async_recv_buffer_vec_);
   delete async_recv_buffer_;

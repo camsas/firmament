@@ -61,9 +61,9 @@ uint64_t MakeEnsembleUID(Ensemble *ens) {
 // running executable lives
 int ExecutableDirectory(char *pBuf, ssize_t len) {
   char szTmp[32];
-  sprintf(szTmp, "/proc/%d/exe", getpid());
+  snprintf(szTmp, sizeof(szTmp), "/proc/%d/exe", getpid());
   int bytes = min(readlink(szTmp, pBuf, len), len - 1);
-  if(bytes >= 0)
+  if (bytes >= 0)
     pBuf[bytes] = '\0';
   return bytes;
 }
@@ -439,10 +439,10 @@ set<DataObjectID_t*> DataObjectIDsFromProtobuf(
 // Helper function to convert second-granularity timestamps
 // to strings
 string CoarseTimestampToHumanReadble(const time_t rawtime) {
-  struct tm * dt;
+  struct tm dt;
   char buffer[30];
-  dt = localtime(&rawtime);
-  strftime(buffer, sizeof(buffer), "%Y%m%d:%H:%M", dt);
+  localtime_r(&rawtime, &dt);
+  strftime(buffer, sizeof(buffer), "%Y%m%d:%H:%M", &dt);
   return string(buffer);
 }
 
