@@ -16,6 +16,24 @@
       "revId": "d01e07c1d50cc8987455eef529c881976756ad16",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_3373e9e8",
+        "filename": "src/misc/utils.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-24T10:06:48Z",
+      "side": 1,
+      "message": "Good catch!",
+      "parentUuid": "9ad9bd40_93bbd574",
+      "revId": "d01e07c1d50cc8987455eef529c881976756ad16",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
