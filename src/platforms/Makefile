@@ -19,4 +19,5 @@ protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 # TODO(malte): Hack; see note above.
 #$(OBJ_LIB):
 all: protobufs .setup
+	$(MAKE) $(MAKEFLAGS) -C sim all
 	$(MAKE) $(MAKEFLAGS) -C unix all

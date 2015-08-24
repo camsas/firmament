@@ -14,12 +14,9 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "storage/reference_types.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "misc/string_utils.h"
-#include "engine/local_executor.h"
-#include "engine/remote_executor.h"
 #include "storage/object_store_interface.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_models.h"
@@ -37,8 +34,6 @@ DEFINE_bool(debug_cost_model, false,
 namespace firmament {
 namespace scheduler {
 
-using executor::LocalExecutor;
-using executor::RemoteExecutor;
 using common::pb_to_set;
 using store::ObjectStoreInterface;
 
@@ -262,13 +257,15 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
   }
 }
 
-void FlowScheduler::RegisterResource(ResourceID_t res_id, bool local) {
+void FlowScheduler::RegisterResource(ResourceID_t res_id,
+                                     bool local,
+                                     bool simulated) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Update the flow graph
   UpdateResourceTopology(resource_topology_);
   // Call into superclass method to do scheduler resource initialisation.
   // This will create the executor for the new resource.
-  EventDrivenScheduler::RegisterResource(res_id, local);
+  EventDrivenScheduler::RegisterResource(res_id, local, simulated);
 }
 
 uint64_t FlowScheduler::RunSchedulingIteration() {

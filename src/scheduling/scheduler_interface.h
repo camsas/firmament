@@ -125,7 +125,11 @@ class SchedulerInterface : public PrintableInterface {
    */
   // TODO(malte): Add support for registering a resource with multiple
   // schedulers.
-  virtual void RegisterResource(ResourceID_t res_id, bool local) = 0;
+  // TODO(ionel): Remove default argument value once we refactor the method
+  // to receive the executor.
+  virtual void RegisterResource(ResourceID_t res_id,
+                                bool local,
+                                bool simulated = false) = 0;
 
   /**
    * Finds runnable tasks for the job in the argument and adds them to the

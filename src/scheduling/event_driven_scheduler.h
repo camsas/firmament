@@ -53,7 +53,9 @@ class EventDrivenScheduler : public SchedulerInterface {
   virtual void KillRunningTask(TaskID_t task_id,
                                TaskKillMessage::TaskKillReason reason);
   bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);
-  virtual void RegisterResource(ResourceID_t res_id, bool local);
+  virtual void RegisterResource(ResourceID_t res_id,
+                                bool local,
+                                bool simulated);
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
   // N.B. ScheduleJob must be implemented in scheduler-specific logic
   virtual uint64_t ScheduleJob(JobDescriptor* job_desc) = 0;
@@ -75,6 +77,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   const set<ReferenceInterface*> ReferencesForID(const DataObjectID_t& id);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
+  void RegisterSimulatedResource(ResourceID_t res_id);
 
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction. Note that this set includes tasks from all
