@@ -16,6 +16,24 @@
       "revId": "4dd8c417b994a61a23beeb4f2385beaa45f2ec3f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_73f8114a",
+        "filename": "src/storage/hdfs_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-24T10:01:28Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "9ad9bd40_3350495e",
+      "revId": "4dd8c417b994a61a23beeb4f2385beaa45f2ec3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
