@@ -19,6 +19,7 @@
 #include "misc/utils.h"
 #include "engine/local_executor.h"
 #include "engine/remote_executor.h"
+#include "engine/simulated_executor.h"
 #include "storage/object_store_interface.h"
 
 #define TASK_FAIL_TIMEOUT 60000000ULL
@@ -28,6 +29,7 @@ namespace scheduler {
 
 using executor::LocalExecutor;
 using executor::RemoteExecutor;
+using executor::SimulatedExecutor;
 using common::pb_to_set;
 using store::ObjectStoreInterface;
 
@@ -369,12 +371,17 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
 }
 
 // Simple 2-argument wrapper
-void EventDrivenScheduler::RegisterResource(ResourceID_t res_id, bool local) {
+void EventDrivenScheduler::RegisterResource(ResourceID_t res_id,
+                                            bool local,
+                                            bool simulated) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  if (local)
+  if (local) {
     RegisterLocalResource(res_id);
-  else
+  } else if (simulated) {
+    RegisterSimulatedResource(res_id);
+  } else {
     RegisterRemoteResource(res_id);
+  }
 }
 
 void EventDrivenScheduler::RegisterLocalResource(ResourceID_t res_id) {
@@ -392,6 +399,12 @@ void EventDrivenScheduler::RegisterRemoteResource(ResourceID_t res_id) {
                                             coordinator_uri_,
                                             resource_map_.get(),
                                             m_adapter_ptr_);
+  CHECK(InsertIfNotPresent(&executors_, res_id, exec));
+}
+
+void EventDrivenScheduler::RegisterSimulatedResource(ResourceID_t res_id) {
+  VLOG(1) << "Adding executor for simulated resource " << res_id;
+  SimulatedExecutor* exec = new SimulatedExecutor(res_id, coordinator_uri_);
   CHECK(InsertIfNotPresent(&executors_, res_id, exec));
 }
 
