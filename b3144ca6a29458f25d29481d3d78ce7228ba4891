@@ -1,0 +1,123 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_84038d75",
+        "filename": "src/engine/simulated_executor.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T20:52:52Z",
+      "side": 1,
+      "message": "High-level design thought: if we don\u0027t make the SimulatedExecutor into a mock, it\u0027d be neat if it had access to a simulator instance (passed via constructor, or similar) and if the state updates could be triggered from within here, rather than from the simulator. That way, the simulator would contain even less bespoke logic. However, I realise that this might be difficult to do in practice, as it\u0027s likely to introduce all sorts of exciting circular dependencies.",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_04d05df6",
+        "filename": "src/engine/simulated_executor.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T20:52:52Z",
+      "side": 1,
+      "message": "Add something like \"No-op: ...\" to make it clear that the comment explains why there is no implementation.",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_e4eb79ae",
+        "filename": "src/engine/simulated_executor.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T20:52:52Z",
+      "side": 1,
+      "message": "Should we call this MockExecutor, rather than SimulatedExecutor? It seems like this is almost a mock.",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_c4fd9570",
+        "filename": "src/misc/simulated_messaging_adapter.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T20:52:52Z",
+      "side": 1,
+      "message": "Again, should we call this MockMessagingAdapter?",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_24cd615e",
+        "filename": "src/misc/simulated_messaging_adapter.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T20:52:52Z",
+      "side": 1,
+      "message": "Hmm, putting this is \"misc\" is a bit funny -- did you have a reason for doing so? Otherwise, it should be under \"platforms\" (where we will rename \"unix\" to \"linux\"; you could add a \"sim\" subdirectory in platforms).",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_a4089192",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T20:52:52Z",
+      "side": 1,
+      "message": "This is fine for the moment, but I think we should move to a different design in the medium term: executors should be created external to the scheduler and passed in, so that we don\u0027t need to have this logic in the scheduler, but instead just hand it something that speaks the ExecutorInterface.\n\nTwo reasons why this is desirable:\n1. We will soon have more types of executors (DockerExecutor being a prominent example), and the simple \"local/remote/simulated\" taxonomy will no longer apply. Instead, \"remote\" will become \"delegated\" (or similar), and \"local\" becomes \"ProcessExecutor\".\n2. In effect, these arguments simply decide between control flow paths that create executor objects of different types, and it\u0027s poor design to do this. (I\u0027m fully away that I introduce this poor choice in the first place, so the blame is mine!).",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_44da6518",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T20:52:52Z",
+      "side": 1,
+      "message": "The Google style guide disallows default argument values, so we should reconsider using it here: https://google-styleguide.googlecode.com/svn/trunk/cppguide.html#Default_Arguments",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
