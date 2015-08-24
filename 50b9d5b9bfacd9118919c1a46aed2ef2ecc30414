@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_73e1f199",
+        "filename": "src/storage/hdfs_bridge.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T09:38:15Z",
+      "side": 1,
+      "message": "Do we need a NULL check on fs_ here? (I suppose not, since the constructor would have failed if there was a problem.)",
+      "revId": "50b9d5b9bfacd9118919c1a46aed2ef2ecc30414",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_93ed9591",
+        "filename": "src/storage/hdfs_bridge.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T09:38:15Z",
+      "side": 1,
+      "message": "It might be useful to put some brief comments next to these methods, since it\u0027s not immediately intuitive what the difference between GetBlockLocations(filename, block) and GetFileBlockLocations(filename) is. (One is for a specific block, the other for all blocks in a file, presumably?)",
+      "revId": "50b9d5b9bfacd9118919c1a46aed2ef2ecc30414",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
