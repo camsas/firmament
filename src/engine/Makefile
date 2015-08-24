@@ -11,14 +11,14 @@ endif
 ifdef BUILD_HTTP_UI
   HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -ljansson -lctemplate
 else
-  HTTP_UI_LIBS = 
+  HTTP_UI_LIBS =
 endif
 
 LIB = libfirmament_engine.a
 TASK_LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim
 GENERIC_OBJS = health_monitor.o local_executor.o node.o remote_executor.o \
-               task_health_checker.o topology_manager.o 
+               simulated_executor.o task_health_checker.o topology_manager.o
 COORD_OBJS = $(GENERIC_OBJS) coordinator.o
 ifdef BUILD_HTTP_UI
   COORD_OBJS += coordinator_http_ui.o
@@ -41,7 +41,7 @@ TESTS_DEPS = $(BUILD_DIR)/misc/libfirmament_misc.a \
 TESTS_coordinator_DEPS = $(addprefix $(OBJ_DIR)/, $(GENERIC_OBJS)) \
                          $(BUILD_DIR)/scheduling/knowledge_base.o \
                          $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
-												 $(BUILD_DIR)/scheduling/common.o \
+                         $(BUILD_DIR)/scheduling/common.o \
                          $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                          $(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
                          $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
@@ -59,6 +59,7 @@ endif
 TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/node.o \
                               $(BUILD_DIR)/engine/local_executor.o \
                               $(BUILD_DIR)/engine/remote_executor.o \
+                              $(BUILD_DIR)/engine/simulated_executor.o \
                               $(BUILD_DIR)/engine/task_health_checker.o \
                               $(BUILD_DIR)/engine/topology_manager.o \
                               $(BUILD_DIR)/messages/libfirmament_messages.a \
