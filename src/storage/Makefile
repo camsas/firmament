@@ -3,15 +3,15 @@ SUFFIX=storage
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time
+LIBS += $(HDFS_LIB) -lboost_thread -lboost_system -lboost_regex \
+        -lboost_date_time
 
 LIB = libfirmament_storage.a
 
-OBJS =  simple_object_store.o
+OBJS = hdfs_bridge.o simple_object_store.o
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 
-	
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 
