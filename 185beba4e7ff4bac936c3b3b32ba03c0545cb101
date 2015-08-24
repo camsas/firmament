@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_24f48186",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T20:57:31Z",
+      "side": 1,
+      "message": "\"doing so\" here refers to multiple registrations (a feature planned, but not currently implemented). We should clarify the comment.",
+      "revId": "185beba4e7ff4bac936c3b3b32ba03c0545cb101",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_64ee89b6",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-24T20:57:31Z",
+      "side": 1,
+      "message": "Note that the FlowScheduler does not actually use this at all; I\u0027m not sure if SimpleScheduler or EventDrivenScheduler does. If none of them actually do, we should just drop the method.",
+      "revId": "185beba4e7ff4bac936c3b3b32ba03c0545cb101",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
