@@ -53,7 +53,9 @@ class FlowScheduler : public EventDrivenScheduler {
   virtual void HandleTaskFailure(TaskDescriptor* td_ptr);
   virtual void KillRunningTask(TaskID_t task_id,
                                TaskKillMessage::TaskKillReason reason);
-  virtual void RegisterResource(ResourceID_t res_id, bool local);
+  virtual void RegisterResource(ResourceID_t res_id,
+                                bool local,
+                                bool simualted);
   virtual uint64_t ScheduleJob(JobDescriptor* job_desc);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<FlowScheduler, parameters: "
