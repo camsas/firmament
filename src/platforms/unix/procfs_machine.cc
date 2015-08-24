@@ -217,8 +217,8 @@ void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
   cap->set_net_bw(speed / 8);
   // Get disk read/write speed
   if (FLAGS_monitor_blockdev_maxbw == -1) {
-    // XXX(malte): we use a hack here -- if the disk is not rotational, we assume
-    // it's an SSD and return a generic SSD-level throughput limit.
+    // XXX(malte): we use a hack here -- if the disk is not rotational, we
+    // assume it's an SSD and return a generic SSD-level throughput limit.
     string disk_type_path;
     spf(&disk_type_path, "/sys/class/block/%s/queue/rotational",
         FLAGS_monitor_blockdev.c_str());

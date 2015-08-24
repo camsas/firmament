@@ -15,10 +15,10 @@ class DIMACSChange {
  public:
   virtual ~DIMACSChange() {
   }
-  virtual const string& comment() const final {
+  virtual const string& comment() const {
     return comment_;
   }
-  virtual void set_comment(const char* comment) final {
+  virtual void set_comment(const char* comment) {
     if (comment) {
       comment_ = comment;
     }

@@ -24,7 +24,7 @@ namespace firmament {
 
 typedef struct CostVector {
   // record number of dimensions here
-  const static uint16_t dimensions_ = 8;
+  static const uint16_t dimensions_ = 8;
   // Data follows
   uint32_t priority_;
   uint32_t cpu_cores_;
@@ -83,7 +83,7 @@ class CocoCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
- // Fixed value for OMEGA, the normalization ceiling for each dimension's cost
+  // Fixed value for OMEGA, the normalization ceiling for each dimension's cost
   // value
   const uint64_t omega_ = 1000;
   const Cost_t WAIT_TIME_MULTIPLIER = 1;
