@@ -875,14 +875,16 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     }
     output += "] }";
   } else {
-    LOG(FATAL) << "Neither task_id, nor ec_id, nor res_id set, but they should be!";
+    LOG(FATAL) << "Neither task_id, nor ec_id, nor res_id set, "
+               << "but they should be!";
   }
   writer->write(output);
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleTasksListURI(http::request_ptr& http_request,  // NOLINT
-                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleTasksListURI(
+    http::request_ptr& http_request,  // NOLINT
+    tcp::connection_ptr& tcp_conn) {  // NOLINT
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get task list from coordinator

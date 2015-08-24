@@ -24,7 +24,7 @@ namespace sim {
 
 class GoogleTraceLoader {
  public:
-  GoogleTraceLoader(const string& trace_path);
+  explicit GoogleTraceLoader(const string& trace_path);
 
   void LoadJobsNumTasks(unordered_map<uint64_t, uint64_t>* job_num_tasks);
 

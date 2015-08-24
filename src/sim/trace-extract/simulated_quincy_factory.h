@@ -55,7 +55,7 @@ SimulatedQuincyCostModel* SetupSimulatedQuincyCostModel(
     shared_ptr<ResourceMap_t> resource_map,
     shared_ptr<JobMap_t> job_map,
     shared_ptr<TaskMap_t> task_map,
-    unordered_map<TaskID_t, ResourceID_t>& task_bindings,
+    unordered_map<TaskID_t, ResourceID_t>* task_bindings,
     KnowledgeBaseSimulator* knowledge_base,
     uint64_t num_machines,
     unordered_set<ResourceID_t,
@@ -80,7 +80,7 @@ SimulatedQuincyCostModel* SetupSimulatedQuincyCostModel(
 
 
   return new SimulatedQuincyCostModel(
-      resource_map, job_map, task_map, &task_bindings, leaf_res_ids,
+      resource_map, job_map, task_map, task_bindings, leaf_res_ids,
       knowledge_base, dfs, runtime_distn, input_block_distn,
       FLAGS_simulated_quincy_delta_preferred_machine,
       FLAGS_simulated_quincy_delta_preferred_rack,

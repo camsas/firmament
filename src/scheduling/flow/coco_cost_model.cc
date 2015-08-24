@@ -5,7 +5,9 @@
 
 #include "scheduling/flow/coco_cost_model.h"
 
+#include <algorithm>
 #include <cmath>
+#include <queue>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -965,9 +967,9 @@ CocoCostModel::CompareResourceVectors(
   bool at_least_one_nonfit = false;
   bool at_least_one_fit = false;
   // CPU cores
-  if (rv1.cpu_cores() <= rv2.cpu_cores())
+  if (rv1.cpu_cores() <= rv2.cpu_cores()) {
     at_least_one_fit = true;
-  else {
+  } else {
     at_least_one_nonfit = true;
     VLOG(2) << "non-fit due to CPU: " << rv1.cpu_cores() << "/"
             << rv2.cpu_cores();
@@ -977,9 +979,9 @@ CocoCostModel::CompareResourceVectors(
           << "; " << at_least_one_fit << "/"
           << at_least_one_nonfit;
   // RAM capacity
-  if (rv1.ram_cap() <= rv2.ram_cap())
+  if (rv1.ram_cap() <= rv2.ram_cap()) {
     at_least_one_fit = true;
-  else {
+  } else {
     at_least_one_nonfit = true;
     VLOG(2) << "non-fit due to RAM: " << rv1.ram_cap() << "/"
             << rv2.ram_cap();
@@ -989,9 +991,9 @@ CocoCostModel::CompareResourceVectors(
           << "; " << at_least_one_fit << "/"
           << at_least_one_nonfit;
   // Disk bandwidth
-  if (rv1.disk_bw() <= rv2.disk_bw())
+  if (rv1.disk_bw() <= rv2.disk_bw()) {
     at_least_one_fit = true;
-  else {
+  } else {
     at_least_one_nonfit = true;
     VLOG(2) << "non-fit due to disk: " << rv1.disk_bw() << "/"
             << rv2.disk_bw();
@@ -1001,9 +1003,9 @@ CocoCostModel::CompareResourceVectors(
           << "; " << at_least_one_fit << "/"
           << at_least_one_nonfit;
   // Network bandwidth
-  if (rv1.net_bw() <= rv2.net_bw())
+  if (rv1.net_bw() <= rv2.net_bw()) {
     at_least_one_fit = true;
-  else {
+  } else {
     at_least_one_nonfit = true;
     VLOG(2) << "non-fit due to net: " << rv1.net_bw() << "/"
             << rv2.net_bw();
