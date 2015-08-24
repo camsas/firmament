@@ -21,13 +21,10 @@ extern "C" {
 
 #include "base/common.h"
 #include "base/types.h"
+#include "base/units.h"
 #include "engine/task_health_checker.h"
 #include "misc/utils.h"
 #include "misc/map-util.h"
-
-// TODO(malte): replace with the more generic macro from units.h once
-// #240986 is merged into master.
-#define SECONDS_TO_MICROSECONDS 1000000ULL
 
 DEFINE_bool(pin_tasks_to_cores, true,
             "Pin tasks to their allocated CPU core when executing.");
