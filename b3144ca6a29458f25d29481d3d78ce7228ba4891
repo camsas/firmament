@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_db780f92",
+        "filename": "src/engine/simulated_executor.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-25T08:59:24Z",
+      "side": 1,
+      "message": "I don\u0027t yet have a feeling for how tricky it would be to do it. Let\u0027s commit this diff like this and I\u0027ll try to make progress towards the design you\u0027ve highlighted.",
+      "parentUuid": "9ad9bd40_84038d75",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_04d05df6",
         "filename": "src/engine/simulated_executor.cc",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2015-08-24T20:52:52Z",
       "side": 1,
       "message": "Add something like \"No-op: ...\" to make it clear that the comment explains why there is no implementation.",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_5b0f9f2e",
+        "filename": "src/engine/simulated_executor.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-25T08:59:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_04d05df6",
       "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -87,6 +123,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_3f2e48a6",
+        "filename": "src/misc/simulated_messaging_adapter.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-25T08:59:24Z",
+      "side": 1,
+      "message": "messaging_interface.h is under misc so I assumed that the class implementing it should be in the same dir.",
+      "parentUuid": "9ad9bd40_24cd615e",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_a4089192",
         "filename": "src/scheduling/event_driven_scheduler.cc",
         "patchSetId": 2
@@ -104,6 +158,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_9b47674b",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-25T08:59:24Z",
+      "side": 1,
+      "message": "This sounds like a good plan. However, let\u0027s not do it in this diff.",
+      "parentUuid": "9ad9bd40_a4089192",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_44da6518",
         "filename": "src/scheduling/scheduler_interface.h",
         "patchSetId": 2
@@ -115,6 +187,24 @@
       "writtenOn": "2015-08-24T20:52:52Z",
       "side": 1,
       "message": "The Google style guide disallows default argument values, so we should reconsider using it here: https://google-styleguide.googlecode.com/svn/trunk/cppguide.html#Default_Arguments",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_7b4aa356",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-25T08:59:24Z",
+      "side": 1,
+      "message": "Yes, I know about it, but I chose to ignore it in this change in order not to affect to much code. I think, we can get rid of it once we move to the design in which we pass/inject executors.",
+      "parentUuid": "9ad9bd40_44da6518",
       "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
