@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_8fe64143",
+        "filename": "src/engine/simulated_executor.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-25T23:13:40Z",
+      "side": 1,
+      "message": "Agreed!",
+      "parentUuid": "9ad9bd40_db780f92",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_04d05df6",
         "filename": "src/engine/simulated_executor.cc",
         "patchSetId": 2
@@ -141,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_afe30532",
+        "filename": "src/misc/simulated_messaging_adapter.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-25T23:13:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_3f2e48a6",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_a4089192",
         "filename": "src/scheduling/event_driven_scheduler.cc",
         "patchSetId": 2
@@ -176,6 +212,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_efd42d49",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 374,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-25T23:13:40Z",
+      "side": 1,
+      "message": "Ok",
+      "parentUuid": "9ad9bd40_9b47674b",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_44da6518",
         "filename": "src/scheduling/scheduler_interface.h",
         "patchSetId": 2
@@ -205,6 +259,24 @@
       "side": 1,
       "message": "Yes, I know about it, but I chose to ignore it in this change in order not to affect to much code. I think, we can get rid of it once we move to the design in which we pass/inject executors.",
       "parentUuid": "9ad9bd40_44da6518",
+      "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_0fca31a1",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-25T23:13:40Z",
+      "side": 1,
+      "message": "Ok, fair enough -- we should put a TODO here.",
+      "parentUuid": "9ad9bd40_7b4aa356",
       "revId": "b3144ca6a29458f25d29481d3d78ce7228ba4891",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
