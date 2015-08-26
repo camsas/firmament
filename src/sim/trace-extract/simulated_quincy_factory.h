@@ -3,6 +3,8 @@
 //
 // Simulated quincy cost model setting values.
 
+#include "sim/knowledge_base_simulator.h"
+
 // Racks contain "between 29 and 31 computers" in Quincy test setup
 DEFINE_uint64(simulated_quincy_machines_per_rack, 30,
               "Machines are binned into racks of specified size.");
@@ -48,18 +50,25 @@ DEFINE_double(simulated_quincy_file_max_blocks, 160,
 // Random seed
 DEFINE_uint64(simulated_quincy_random_seed, 42, "Seed for random generators.");
 
+DECLARE_double(events_fraction);
+
 namespace firmament {
 namespace sim {
+
+// It varies a little over time, but relatively constant. Used for calculation
+// of how much storage space we have.
+static const uint64_t MACHINES_IN_TRACE_APPROXIMATION = 10000;
 
 SimulatedQuincyCostModel* SetupSimulatedQuincyCostModel(
     shared_ptr<ResourceMap_t> resource_map,
     shared_ptr<JobMap_t> job_map,
     shared_ptr<TaskMap_t> task_map,
     unordered_map<TaskID_t, ResourceID_t>* task_bindings,
-    KnowledgeBaseSimulator* knowledge_base,
-    uint64_t num_machines,
+    KnowledgeBase* knowledge_base,
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids) {
+  uint64_t num_machines =
+    round(MACHINES_IN_TRACE_APPROXIMATION * FLAGS_events_fraction);
   GoogleBlockDistribution* input_block_distn =
     new GoogleBlockDistribution(FLAGS_simulated_quincy_input_percent_min,
                                 FLAGS_simulated_quincy_input_min_blocks,

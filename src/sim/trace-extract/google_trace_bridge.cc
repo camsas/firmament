@@ -16,6 +16,7 @@
 #include "misc/utils.h"
 #include "scheduling/flow/cost_models.h"
 #include "scheduling/flow/solver_dispatcher.h"
+#include "sim/knowledge_base_simulator.h"
 #include "sim/trace-extract/google_trace_loader.h"
 #include "sim/trace-extract/simulated_quincy_factory.h"
 
@@ -27,14 +28,8 @@ DEFINE_int32(flow_scheduling_cost_model, 0,
              "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, "
              "8 = SIMULATED QUINCY");
 
-DECLARE_double(events_fraction);
-
 namespace firmament {
 namespace sim {
-
-// It varies a little over time, but relatively constant. Used for calculation
-// of how much storage space we have.
-static const uint64_t MACHINES_IN_TRACE_APPROXIMATION = 10000;
 
 GoogleTraceBridge::GoogleTraceBridge(
     const string& trace_path,
@@ -311,16 +306,13 @@ void GoogleTraceBridge::InitializeCostModel() {
     cost_model_ = new VoidCostModel(task_map_);
     VLOG(1) << "Using the void cost model";
     break;
-  case CostModelType::COST_MODEL_SIMULATED_QUINCY: {
-    uint64_t num_machines =
-      round(MACHINES_IN_TRACE_APPROXIMATION * FLAGS_events_fraction);
+  case CostModelType::COST_MODEL_SIMULATED_QUINCY:
     cost_model_ =
       SetupSimulatedQuincyCostModel(resource_map_, job_map_, task_map_,
                                     &task_bindings_, knowledge_base_,
-                                    num_machines, leaf_res_ids);
+                                    leaf_res_ids);
     VLOG(1) << "Using the simulated Quincy cost model";
     break;
-  }
   default:
   LOG(FATAL) << "Unknown flow scheduling cost model specified "
              << "(" << FLAGS_flow_scheduling_cost_model << ")";

@@ -1113,7 +1113,6 @@ FlowGraphNode* FlowGraph::NodeForTaskID(TaskID_t task_id) {
     return NULL;
   VLOG(2) << "Task " << task_id << " is represented by node " << *id;
   FlowGraphNode** node_ptr = FindOrNull(node_map_, *id);
-
   return (node_ptr ? *node_ptr : NULL);
 }
 
@@ -1197,6 +1196,9 @@ void FlowGraph::TaskCompleted(TaskID_t tid) {
 
 void FlowGraph::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
   generate_trace_.TaskEvicted(tid);
+  FlowGraphNode* task_node = NodeForTaskID(tid);
+  CHECK_NOTNULL(task_node);
+  task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
   UpdateArcsForEvictedTask(tid, res_id);
   // We do not have to remove the task from the cost model because
   // the task will still exist in the flow graph at the end of
@@ -1238,6 +1240,7 @@ void FlowGraph::UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id) {
 void FlowGraph::UpdateArcsForEvictedTask(TaskID_t task_id,
                                          ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(task_id);
+  CHECK_NOTNULL(task_node);
   if (!FLAGS_preemption) {
     // Delete outgoing arcs for running task.
     for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =

@@ -37,7 +37,9 @@ class EventDrivenScheduler : public SchedulerInterface {
                        ResourceID_t coordinator_res_id,
                        const string& coordinator_uri);
   ~EventDrivenScheduler();
+  virtual void AddJob(JobDescriptor* jd_ptr);
   ResourceID_t* BoundResourceForTask(TaskID_t task_id);
+  vector<TaskID_t> BoundTasksForResource(ResourceID_t res_id);
   void CheckRunningTasksHealth();
   virtual void DeregisterResource(ResourceID_t res_id);
   ExecutorInterface* GetExecutorForTask(TaskID_t task_id);
@@ -93,6 +95,11 @@ class EventDrivenScheduler : public SchedulerInterface {
   // A map holding pointers to all executors known to this scheduler. This
   // includes both executors for local and for remote resources.
   map<ResourceID_t, ExecutorInterface*> executors_;
+  // A vector holding descriptors of the jobs to be scheduled in the next
+  // scheduling round.
+  vector<JobDescriptor*> jobs_to_schedule_;
+  // The current resource to task bindings managed by this scheduler.
+  multimap<ResourceID_t, TaskID_t> resource_bindings_;
   // The current task bindings managed by this scheduler.
   unordered_map<TaskID_t, ResourceID_t> task_bindings_;
   // Map of reference subscriptions
@@ -105,7 +112,6 @@ class EventDrivenScheduler : public SchedulerInterface {
   // A lock indicating if the scheduler is currently
   // in the process of making scheduling decisions.
   boost::recursive_mutex scheduling_lock_;
-
 
  private:
   void UpdateTaskNotRunningOnResource(TaskID_t task_id, ResourceID_t res_id);

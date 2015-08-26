@@ -35,18 +35,27 @@ class SchedulerInterface : public PrintableInterface {
       : job_map_(job_map),  resource_map_(resource_map), task_map_(task_map),
         object_store_(object_store), resource_topology_(resource_topology) {}
 
-  // Adds a job to the set of active jobs that are considered for scheduling.
-  // TODO(malte): Determine if we actually need this, given the reactive design
-  // of the scheduler.
-  //void AddJob(shared_ptr<JobDescriptor> job_desc);
+  /**
+   * Adds a new job. The job will be scheduled on the next run of the scheduler
+   * if it has any runnable tasks.
+   * @param jd_ptr the job descriptor
+   */
+  virtual void AddJob(JobDescriptor* jd_ptr) = 0;
 
   /**
    * Finds the resource to which a particular task ID is currently bound.
-   * @param task_id the id of the task fow which to do the lookup
+   * @param task_id the id of the task for which to do the lookup
    * @return NULL if the task does not exist or is not currently bound.
    * Otherwise, it returns its resource id
    */
   virtual ResourceID_t* BoundResourceForTask(TaskID_t task_id) = 0;
+
+  /**
+   * Finds the tasks which are bound to a particular resource ID.
+   * @param res_id the id of the resource for which to do the lookup
+   * @return a vector of task ids
+   */
+  virtual vector<TaskID_t> BoundTasksForResource(ResourceID_t res_id) = 0;
 
   /**
    * Checks if all running tasks managed by this scheduler are healthy. It
@@ -91,6 +100,14 @@ class SchedulerInterface : public PrintableInterface {
    * @param td_ptr the descriptor of the task that could not be delegated
    */
   virtual void HandleTaskDelegationFailure(TaskDescriptor* td_ptr) = 0;
+
+  /**
+   * Handles the eviction of a task.
+   * @param td_ptr the task descriptor of the evicted task
+   * @param res_id the id of the resource from which the task was evicted
+   */
+  virtual void HandleTaskEviction(TaskDescriptor* td_ptr,
+                                  ResourceID_t res_id) = 0;
 
   /**
    * Handles the failure of a task. This usually involves freeing up its
@@ -139,16 +156,16 @@ class SchedulerInterface : public PrintableInterface {
   virtual const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* jd_ptr) = 0;
 
   /**
+   * Runs a scheduling iteration for all active jobs.
+   */
+  virtual void ScheduleAllJobs() = 0;
+
+  /**
    * Schedules all runnable tasks in a job.
    * @param jd_ptr the job descriptor for which to schedule tasks
    * @return the number of tasks scheduled.
    */
   virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr) = 0;
-
-  // Runs a scheduling iteration for all active jobs.
-  // TODO(malte): Determine if the need this, given the reactive design of the
-  // scheduler.
-  //void ScheduleAllJobs();
 
  protected:
   /**

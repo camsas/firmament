@@ -25,7 +25,8 @@
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO, 6 = OCTOPUS");
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, "
+             "8 = SIMULATED QUINCY");
 DEFINE_int64(time_dependent_cost_update_frequency, 10000000ULL,
              "Update frequency for time-dependent costs, in microseconds.");
 DEFINE_bool(debug_cost_model, false,
@@ -95,6 +96,7 @@ FlowScheduler::FlowScheduler(
       cost_model_ = new OctopusCostModel(resource_map, task_map);
       VLOG(1) << "Using the octopus cost model";
       break;
+      // TODO(ionel): Add cases for VOID and SIMULATE_QUINCY cost models.
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
@@ -185,7 +187,7 @@ void FlowScheduler::HandleJobCompletion(JobID_t job_id) {
 }
 
 void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
-                                           TaskFinalReport* report) {
+                                         TaskFinalReport* report) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
@@ -198,7 +200,7 @@ void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
 }
 
 void FlowScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
-                                         ResourceID_t res_id) {
+                                       ResourceID_t res_id) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::HandleTaskEviction(td_ptr, res_id);
   flow_graph_->TaskEvicted(td_ptr->uid(), res_id);
@@ -211,26 +213,70 @@ void FlowScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
 }
 
 void FlowScheduler::KillRunningTask(TaskID_t task_id,
-                                      TaskKillMessage::TaskKillReason reason) {
+                                    TaskKillMessage::TaskKillReason reason) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::KillRunningTask(task_id, reason);
   flow_graph_->TaskKilled(task_id);
 }
 
-uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
+void FlowScheduler::LogDebugCostModel() {
+  string csv_log;
+  spf(&csv_log, "%s/cost_model_%d.csv", FLAGS_debug_output_dir.c_str(),
+      solver_dispatcher_->seq_num());
+  FILE* csv_log_file = fopen(csv_log.c_str(), "w");
+  CHECK_NOTNULL(csv_log_file);
+  string debug_info = cost_model_->DebugInfoCSV();
+  fputs(debug_info.c_str(), csv_log_file);
+  CHECK_EQ(fclose(csv_log_file), 0);
+}
+
+void FlowScheduler::ScheduleAllJobs() {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  LOG(INFO) << "START SCHEDULING (via " << job_desc->uuid() << ")";
+  LOG(INFO) << "START SCHEDULING all jobs";
+  // First, we update the cost model's resource topology statistics (e.g. based
+  // on machine load and prior decisions); these need to be known before
+  // AddOrUpdateJobNodes is invoked below, as it may add arcs depending on these
+  // metrics.
+  UpdateCostModelResourceStats();
+  bool run_scheduler = false;
+  for (auto& jd_ptr : jobs_to_schedule_) {
+    // Check if we have any runnable tasks in this job
+    const set<TaskID_t> runnable_tasks = RunnableTasksForJob(jd_ptr);
+    if (runnable_tasks.size() > 0) {
+      run_scheduler = true;
+      flow_graph_->AddOrUpdateJobNodes(jd_ptr);
+    }
+  }
+  if (run_scheduler) {
+    uint64_t total_scheduled = RunSchedulingIteration();
+    LOG(INFO) << "STOP SCHEDULING, placed " << total_scheduled << " tasks";
+    // If we have cost model debug logging turned on, write some debugging
+    // information now.
+    if (FLAGS_debug_cost_model) {
+      LogDebugCostModel();
+    }
+    // Resource reservations may have changed, so reconsider equivalence classes
+    for (auto& jd_ptr : jobs_to_schedule_) {
+      flow_graph_->AddOrUpdateJobNodes(jd_ptr);
+    }
+  }
+  jobs_to_schedule_.clear();
+}
+
+uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  LOG(INFO) << "START SCHEDULING (via " << jd_ptr->uuid() << ")";
   // First, we update the cost model's resource topology statistics (e.g. based
   // on machine load and prior decisions); these need to be known before
   // AddOrUpdateJobNodes is invoked below, as it may add arcs depending on these
   // metrics.
   UpdateCostModelResourceStats();
   // Check if we have any runnable tasks in this job
-  const set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
+  const set<TaskID_t> runnable_tasks = RunnableTasksForJob(jd_ptr);
   if (runnable_tasks.size() > 0) {
     // Check if the job is already in the flow graph
     // If not, simply add the whole job
-    flow_graph_->AddOrUpdateJobNodes(job_desc);
+    flow_graph_->AddOrUpdateJobNodes(jd_ptr);
     // If it is, only add the new bits
     // Run a scheduler iteration
     uint64_t total_scheduled = 0;
@@ -239,17 +285,10 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* job_desc) {
     // If we have cost model debug logging turned on, write some debugging
     // information now.
     if (FLAGS_debug_cost_model) {
-      string csv_log;
-      spf(&csv_log, "%s/cost_model_%d.csv", FLAGS_debug_output_dir.c_str(),
-          solver_dispatcher_->seq_num());
-      FILE* csv_log_file = fopen(csv_log.c_str(), "w");
-      CHECK_NOTNULL(csv_log_file);
-      string debug_info = cost_model_->DebugInfoCSV();
-      fputs(debug_info.c_str(), csv_log_file);
-      CHECK_EQ(fclose(csv_log_file), 0);
+      LogDebugCostModel();
     }
     // Resource reservations may have changed, so reconsider equivalence classes
-    flow_graph_->AddOrUpdateJobNodes(job_desc);
+    flow_graph_->AddOrUpdateJobNodes(jd_ptr);
     return total_scheduled;
   } else {
     LOG(INFO) << "STOP SCHEDULING, nothing to do";
