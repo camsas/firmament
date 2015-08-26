@@ -1197,6 +1197,7 @@ void FlowGraph::TaskCompleted(TaskID_t tid) {
 
 void FlowGraph::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
   generate_trace_.TaskEvicted(tid);
+  NodeForTaskID(tid)->type_ = FlowNodeType::UNSCHEDULED_TASK;
   UpdateArcsForEvictedTask(tid, res_id);
   // We do not have to remove the task from the cost model because
   // the task will still exist in the flow graph at the end of

@@ -61,6 +61,11 @@ EventDrivenScheduler::~EventDrivenScheduler() {
   executors_.clear();
 }
 
+void EventDrivenScheduler::AddJob(JobDescriptor* jd_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  jobs_to_schedule_.push_back(jd_ptr);
+}
+
 void EventDrivenScheduler::KillRunningTask(
     TaskID_t task_id,
     TaskKillMessage::TaskKillReason reason) {
@@ -102,6 +107,8 @@ void EventDrivenScheduler::BindTaskToResource(
   res_desc->set_current_running_task(task_desc->uid());
   CHECK(InsertIfNotPresent(&task_bindings_, task_desc->uid(),
                            ResourceIDFromString(res_desc->uuid())));
+  resource_bindings_.insert(pair<ResourceID_t, TaskID_t>(
+      ResourceIDFromString(res_desc->uuid()), task_desc->uid()));
   if (VLOG_IS_ON(2))
     DebugPrintRunnableTasks();
   // Remove the task from the runnable set
@@ -127,9 +134,31 @@ ResourceID_t* EventDrivenScheduler::BoundResourceForTask(TaskID_t task_id) {
   return rid;
 }
 
+vector<TaskID_t> EventDrivenScheduler::BoundTasksForResource(
+  ResourceID_t res_id) {
+  vector<TaskID_t> tasks;
+  pair<multimap<ResourceID_t, TaskID_t>::iterator,
+       multimap<ResourceID_t, TaskID_t>::iterator> range_it =
+    resource_bindings_.equal_range(res_id);
+  for (; range_it.first != range_it.second; range_it.first++) {
+    tasks.push_back(range_it.first->second);
+  }
+  return tasks;
+}
+
 bool EventDrivenScheduler::UnbindResourceForTask(TaskID_t task_id) {
-  ResourceID_t* rid = FindOrNull(task_bindings_, task_id);
-  if (rid) {
+  ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
+  if (res_id_ptr) {
+    pair<multimap<ResourceID_t, TaskID_t>::iterator,
+         multimap<ResourceID_t, TaskID_t>::iterator> range_it =
+      resource_bindings_.equal_range(*res_id_ptr);
+    for (; range_it.first != range_it.second; range_it.first++) {
+      if (range_it.first->second == task_id) {
+        // We've found the element.
+        resource_bindings_.erase(range_it.first);
+        break;
+      }
+    }
     return task_bindings_.erase(task_id) == 1;
   } else {
     return false;
@@ -178,6 +207,8 @@ void EventDrivenScheduler::DeregisterResource(ResourceID_t res_id) {
   ExecutorInterface* exec = FindPtrOrNull(executors_, res_id);
   CHECK_NOTNULL(exec);
   // Terminate any running tasks on the resource.
+  // TODO(ionel): Terminate the tasks running on res_id or any of
+  // its sub-resources. Make sure the tasks get re-scheduled.
   // exec->TerminateAllTasks();
   // Remove the executor for the resource.
   CHECK(executors_.erase(res_id));

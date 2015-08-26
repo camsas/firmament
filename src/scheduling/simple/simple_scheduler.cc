@@ -61,6 +61,15 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
   return NULL;
 }
 
+void SimpleScheduler::ScheduleAllJobs() {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  // Schedule jobs in FIFO order.
+  for (auto& jd_ptr : jobs_to_schedule_) {
+    ScheduleJob(jd_ptr);
+  }
+  jobs_to_schedule_.clear();
+}
+
 uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
   uint64_t total_scheduled = 0;
   VLOG(2) << "Preparing to schedule job " << job_desc->uuid();

@@ -34,7 +34,8 @@ class SimpleScheduler : public EventDrivenScheduler {
                   ResourceID_t coordinator_res_id,
                   const string& coordinator_uri);
   ~SimpleScheduler();
-  uint64_t ScheduleJob(JobDescriptor* job_desc);
+  void ScheduleAllJobs();
+  uint64_t ScheduleJob(JobDescriptor* jd_ptr);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<SimpleScheduler>";
   }
