@@ -1216,8 +1216,23 @@ void FlowGraph::TaskKilled(TaskID_t tid) {
   cost_model_->RemoveTask(tid);
 }
 
+void FlowGraph::TaskMigrated(TaskID_t tid,
+                             ResourceID_t old_res_id,
+                             ResourceID_t new_res_id) {
+  TaskEvicted(tid, old_res_id);
+  TaskScheduled(tid, new_res_id);
+}
+
 void FlowGraph::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
   generate_trace_.TaskScheduled(tid, res_id);
+  // Mark the task as scheduled
+  FlowGraphNode* node = NodeForTaskID(tid);
+  CHECK_NOTNULL(node);
+  node->type_ = FlowNodeType::SCHEDULED_TASK;
+  // After the task is bound, we now remove all of its edges into the flow
+  // graph apart from the bound resource.
+  // N.B.: This disables preemption and migration, unless FLAGS_preemption
+  // is set!
   UpdateArcsForBoundTask(tid, res_id);
 }
 

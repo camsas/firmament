@@ -47,8 +47,8 @@ EventDrivenScheduler::EventDrivenScheduler(
                          object_store, task_map),
       coordinator_uri_(coordinator_uri),
       coordinator_res_id_(coordinator_res_id),
-      topology_manager_(topo_mgr),
-      m_adapter_ptr_(m_adapter) {
+      m_adapter_ptr_(m_adapter),
+      topology_manager_(topo_mgr) {
   VLOG(1) << "EventDrivenScheduler initiated.";
 }
 
@@ -66,67 +66,15 @@ void EventDrivenScheduler::AddJob(JobDescriptor* jd_ptr) {
   jobs_to_schedule_.push_back(jd_ptr);
 }
 
-void EventDrivenScheduler::KillRunningTask(
-    TaskID_t task_id,
-    TaskKillMessage::TaskKillReason reason) {
-  // Check if this task is managed by this coordinator
-  TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
-  if (!td_ptr) {
-    LOG(ERROR) << "Tried to kill unknown task " << task_id;
-    return;
-  }
-  // Check if we have a bound resource for the task and if it is marked as
-  // running
-  ResourceID_t* rid = BoundResourceForTask(task_id);
-  if (td_ptr->state() != TaskDescriptor::RUNNING || !rid) {
-    LOG(ERROR) << "Task " << task_id << " is not running locally, "
-               << "so cannot kill it!";
-    return;
-  }
-  // Find the current remote endpoint for this task
-  TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
-  // Manufacture the message
-  BaseMessage bm;
-  SUBMSG_WRITE(bm, task_kill, task_id, task_id);
-  SUBMSG_WRITE(bm, task_kill, reason, reason);
-  // Send the message
-  LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
-            << *rid << " (endpoint: " << td->last_heartbeat_location()  << ")";
-  m_adapter_ptr_->SendMessageToEndpoint(td->last_heartbeat_location(), bm);
-}
-
-void EventDrivenScheduler::BindTaskToResource(
-    TaskDescriptor* task_desc,
-    ResourceDescriptor* res_desc) {
-  CHECK_NOTNULL(task_desc);
-  CHECK_NOTNULL(res_desc);
-  VLOG(1) << "Binding task " << task_desc->uid() << " to resource "
-          << res_desc->uuid();
+void EventDrivenScheduler::BindTaskToResource(TaskDescriptor* td_ptr,
+                                              ResourceDescriptor* rd_ptr) {
+  TaskID_t task_id = td_ptr->uid();
+  ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
   // Mark resource as busy and record task binding
-  res_desc->set_state(ResourceDescriptor::RESOURCE_BUSY);
-  res_desc->set_current_running_task(task_desc->uid());
-  CHECK(InsertIfNotPresent(&task_bindings_, task_desc->uid(),
-                           ResourceIDFromString(res_desc->uuid())));
-  resource_bindings_.insert(pair<ResourceID_t, TaskID_t>(
-      ResourceIDFromString(res_desc->uuid()), task_desc->uid()));
-  if (VLOG_IS_ON(2))
-    DebugPrintRunnableTasks();
-  // Remove the task from the runnable set
-  CHECK_EQ(runnable_tasks_.erase(task_desc->uid()), 1)
-    << "Failed to remove task " << task_desc->uid() << " from runnable set!";
-  if (VLOG_IS_ON(2))
-    DebugPrintRunnableTasks();
-  // Find an executor for this resource.
-  ExecutorInterface* exec =
-      FindPtrOrNull(executors_, ResourceIDFromString(res_desc->uuid()));
-  CHECK_NOTNULL(exec);
-  // Actually kick off the task
-  // N.B. This is an asynchronous call, as the executor will spawn a thread.
-  exec->RunTask(task_desc, !task_desc->inject_task_lib());
-  // Mark task as running and report
-  task_desc->set_state(TaskDescriptor::RUNNING);
-  task_desc->set_scheduled_to_resource(res_desc->uuid());
-  VLOG(1) << "Task " << task_desc->uid() << " running.";
+  rd_ptr->set_state(ResourceDescriptor::RESOURCE_BUSY);
+  rd_ptr->set_current_running_task(task_id);
+  CHECK(InsertIfNotPresent(&task_bindings_, task_id, res_id));
+  resource_bindings_.insert(pair<ResourceID_t, TaskID_t>(res_id, task_id));
 }
 
 ResourceID_t* EventDrivenScheduler::BoundResourceForTask(TaskID_t task_id) {
@@ -144,25 +92,6 @@ vector<TaskID_t> EventDrivenScheduler::BoundTasksForResource(
     tasks.push_back(range_it.first->second);
   }
   return tasks;
-}
-
-bool EventDrivenScheduler::UnbindResourceForTask(TaskID_t task_id) {
-  ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
-  if (res_id_ptr) {
-    pair<multimap<ResourceID_t, TaskID_t>::iterator,
-         multimap<ResourceID_t, TaskID_t>::iterator> range_it =
-      resource_bindings_.equal_range(*res_id_ptr);
-    for (; range_it.first != range_it.second; range_it.first++) {
-      if (range_it.first->second == task_id) {
-        // We've found the element.
-        resource_bindings_.erase(range_it.first);
-        break;
-      }
-    }
-    return task_bindings_.erase(task_id) == 1;
-  } else {
-    return false;
-  }
 }
 
 void EventDrivenScheduler::CheckRunningTasksHealth() {
@@ -215,14 +144,25 @@ void EventDrivenScheduler::DeregisterResource(ResourceID_t res_id) {
   delete exec;
 }
 
-ExecutorInterface *EventDrivenScheduler::GetExecutorForTask(TaskID_t task_id) {
-  ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
-  CHECK_NOTNULL(res_id_ptr);
-
-  // Record final report
-  ExecutorInterface** exec = FindOrNull(executors_, *res_id_ptr);
+void EventDrivenScheduler::ExecuteTask(TaskDescriptor* td_ptr,
+                                       ResourceDescriptor* rd_ptr) {
+  TaskID_t task_id = td_ptr->uid();
+  ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
+  // Remove the task from the runnable set
+  CHECK_EQ(runnable_tasks_.erase(task_id), 1)
+    << "Failed to remove task " << task_id << " from runnable set!";
+  if (VLOG_IS_ON(2))
+    DebugPrintRunnableTasks();
+  // Find an executor for this resource.
+  ExecutorInterface* exec = FindPtrOrNull(executors_, res_id);
   CHECK_NOTNULL(exec);
-  return *exec;
+  // Actually kick off the task
+  // N.B. This is an asynchronous call, as the executor will spawn a thread.
+  exec->RunTask(td_ptr, !td_ptr->inject_task_lib());
+  // Mark task as running and report
+  td_ptr->set_state(TaskDescriptor::RUNNING);
+  td_ptr->set_scheduled_to_resource(rd_ptr->uuid());
+  VLOG(1) << "Task " << task_id << " running.";
 }
 
 void EventDrivenScheduler::HandleJobCompletion(JobID_t job_id) {
@@ -230,56 +170,6 @@ void EventDrivenScheduler::HandleJobCompletion(JobID_t job_id) {
   JobDescriptor* jd = FindOrNull(*job_map_, job_id);
   CHECK_NOTNULL(jd);
   jd->set_state(JobDescriptor::COMPLETED);
-}
-
-void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
-                                                TaskFinalReport* report) {
-  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  // Find resource for task
-  ResourceID_t* res_id_ptr = BoundResourceForTask(td_ptr->uid());
-  CHECK_NOTNULL(res_id_ptr);
-  // This copy is necessary because UnbindResourceForTask ends up deleting the
-  // ResourceID_t pointed to by res_id_ptr
-  ResourceID_t res_id_tmp = *res_id_ptr;
-  VLOG(1) << "Handling completion of task " << td_ptr->uid()
-          << ", freeing resource " << res_id_tmp;
-  UpdateTaskNotRunningOnResource(td_ptr->uid(), res_id_tmp);
-  // Record final report
-  ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
-  CHECK_NOTNULL(exec);
-  exec->HandleTaskCompletion(td_ptr, report);
-  // Store the final report in the TD for future reference
-  td_ptr->mutable_final_report()->CopyFrom(*report);
-}
-
-void EventDrivenScheduler::HandleTaskDelegationFailure(
-    TaskDescriptor* td_ptr) {
-  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  // Find the resource where the task was supposed to be delegated
-  ResourceID_t* res_id_ptr = BoundResourceForTask(td_ptr->uid());
-  CHECK_NOTNULL(res_id_ptr);
-  UpdateTaskNotRunningOnResource(td_ptr->uid(), *res_id_ptr);
-  // Go back to try scheduling this task again
-  td_ptr->set_state(TaskDescriptor::RUNNABLE);
-  runnable_tasks_.insert(td_ptr->uid());
-  td_ptr->clear_start_time();
-  JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
-  CHECK_NOTNULL(jd);
-  // Try again to schedule...
-  ScheduleJob(jd);
-}
-
-void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
-                                              ResourceID_t res_id) {
-  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  ResourceID_t res_id_tmp = res_id;
-  VLOG(1) << "Handling completion of task " << td_ptr->uid()
-          << ", freeing resource " << res_id_tmp;
-  UpdateTaskNotRunningOnResource(td_ptr->uid(), res_id_tmp);
-  // Record final report
-  ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
-  CHECK_NOTNULL(exec);
-  exec->HandleTaskEviction(td_ptr);
 }
 
 void EventDrivenScheduler::HandleReferenceStateChange(
@@ -335,28 +225,74 @@ void EventDrivenScheduler::HandleReferenceStateChange(
   }
 }
 
+void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
+                                                TaskFinalReport* report) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  // Find resource for task
+  ResourceID_t* res_id_ptr = BoundResourceForTask(td_ptr->uid());
+  CHECK_NOTNULL(res_id_ptr);
+  // This copy is necessary because UnbindTaskFromResource ends up deleting the
+  // ResourceID_t pointed to by res_id_ptr
+  ResourceID_t res_id_tmp = *res_id_ptr;
+  VLOG(1) << "Handling completion of task " << td_ptr->uid()
+          << ", freeing resource " << res_id_tmp;
+  CHECK(UnbindTaskFromResource(td_ptr, res_id_tmp));
+  // Record final report
+  ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
+  CHECK_NOTNULL(exec);
+  exec->HandleTaskCompletion(td_ptr, report);
+  // Store the final report in the TD for future reference
+  td_ptr->mutable_final_report()->CopyFrom(*report);
+}
+
+void EventDrivenScheduler::HandleTaskDelegationFailure(
+    TaskDescriptor* td_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  // Find the resource where the task was supposed to be delegated
+  ResourceID_t* res_id_ptr = BoundResourceForTask(td_ptr->uid());
+  CHECK_NOTNULL(res_id_ptr);
+  CHECK(UnbindTaskFromResource(td_ptr, *res_id_ptr));
+  // Go back to try scheduling this task again
+  td_ptr->set_state(TaskDescriptor::RUNNABLE);
+  runnable_tasks_.insert(td_ptr->uid());
+  td_ptr->clear_start_time();
+  JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
+  CHECK_NOTNULL(jd);
+  // Try again to schedule...
+  ScheduleJob(jd);
+}
+
+void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
+                                              ResourceDescriptor* rd_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
+  VLOG(1) << "Handling completion of task " << td_ptr->uid()
+          << ", freeing resource " << res_id;
+  CHECK(UnbindTaskFromResource(td_ptr, res_id));
+  // Record final report
+  ExecutorInterface* exec = FindPtrOrNull(executors_, res_id);
+  CHECK_NOTNULL(exec);
+  exec->HandleTaskEviction(td_ptr);
+}
+
 void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Find resource for task
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, td_ptr->uid());
   CHECK_NOTNULL(res_id_ptr);
-  // This copy is necessary because UnbindResourceForTask ends up deleting the
+  // This copy is necessary because UnbindTaskFromResource ends up deleting the
   // ResourceID_t pointed to by res_id_ptr
   ResourceID_t res_id_tmp = *res_id_ptr;
   VLOG(1) << "Handling failure of task " << td_ptr->uid()
           << ", freeing resource " << res_id_tmp;
-  // Set the bound resource idle again.
   // TODO(malte): We should probably check if the resource has failed at this
   // point...
-  ResourceStatus* res = FindPtrOrNull(*resource_map_, res_id_tmp);
-  res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
-  res->mutable_descriptor()->clear_current_running_task();
   // Executor cleanup: drop the task from the health checker's list, etc.
-  ExecutorInterface* executor = GetExecutorForTask(td_ptr->uid());
-  CHECK_NOTNULL(executor);
-  executor->HandleTaskFailure(td_ptr);
+  ExecutorInterface* exec_ptr = FindPtrOrNull(executors_, res_id_tmp);
+  CHECK_NOTNULL(exec_ptr);
+  exec_ptr->HandleTaskFailure(td_ptr);
   // Remove the task's resource binding (as it is no longer currently bound)
-  CHECK(UnbindResourceForTask(td_ptr->uid()));
+  CHECK(UnbindTaskFromResource(td_ptr, res_id_tmp));
   // Set the task to "failed" state and deal with the consequences
   // (The state may already have been changed elsewhere, but since the failure
   // case can arise unexpectedly, we set it again here).
@@ -369,84 +305,65 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   }
 }
 
+void EventDrivenScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
+                                               ResourceDescriptor* rd_ptr) {
+  CHECK_NOTNULL(td_ptr);
+  CHECK_NOTNULL(rd_ptr);
+  VLOG(1) << "Migrating task " << td_ptr->uid() << " to resource "
+          << rd_ptr->uuid();
+  rd_ptr->set_state(ResourceDescriptor::RESOURCE_BUSY);
+  td_ptr->set_state(TaskDescriptor::RUNNING);
+  TaskID_t task_id = td_ptr->uid();
+  ResourceID_t* old_res_id_ptr = FindOrNull(task_bindings_, task_id);
+  CHECK_NOTNULL(old_res_id_ptr);
+  // XXX(ionel): Assumes only one task per resource.
+  ResourceStatus* old_rs = FindPtrOrNull(*resource_map_, *old_res_id_ptr);
+  CHECK_NOTNULL(old_rs);
+  ResourceDescriptor* old_rd = old_rs->mutable_descriptor();
+  old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  rd_ptr->set_current_running_task(task_id);
+  ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
+  InsertOrUpdate(&task_bindings_, task_id, res_id);
+}
 
-bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
-                                              ResourceID_t target_resource) {
-  // Check if the resource is available
-  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, target_resource);
-  // Do we know about this resource?
-  if (!rs_ptr) {
-    // Requested resource unknown or does not exist any more
-    LOG(WARNING) << "Attempted to place delegated task " << td->uid()
-                 << " on resource " << target_resource << ", which is "
-                 << "unknown!";
-    return false;
+void EventDrivenScheduler::HandleTaskPlacement(
+    TaskDescriptor* td_ptr,
+    ResourceDescriptor* rd_ptr) {
+  CHECK_NOTNULL(td_ptr);
+  CHECK_NOTNULL(rd_ptr);
+  TaskID_t task_id = td_ptr->uid();
+  VLOG(1) << "Placing task " << task_id << " on resource " << rd_ptr->uuid();
+  BindTaskToResource(td_ptr, rd_ptr);
+  ExecuteTask(td_ptr, rd_ptr);
+}
+
+void EventDrivenScheduler::KillRunningTask(
+    TaskID_t task_id,
+    TaskKillMessage::TaskKillReason reason) {
+  // Check if this task is managed by this coordinator
+  TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
+  if (!td_ptr) {
+    LOG(ERROR) << "Tried to kill unknown task " << task_id;
+    return;
   }
-  ResourceDescriptor* rd = rs_ptr->mutable_descriptor();
-  CHECK_NOTNULL(rd);
-  // Is the resource still idle?
-  if (rd->state() != ResourceDescriptor::RESOURCE_IDLE) {
-    // Resource is no longer idle
-    LOG(WARNING) << "Attempted to place delegated task " << td->uid()
-                 << " on resource " << target_resource << ", which is "
-                 << "not idle!";
-    return false;
+  // Check if we have a bound resource for the task and if it is marked as
+  // running
+  ResourceID_t* rid = BoundResourceForTask(task_id);
+  if (td_ptr->state() != TaskDescriptor::RUNNING || !rid) {
+    LOG(ERROR) << "Task " << task_id << " is not running locally, "
+               << "so cannot kill it!";
+    return;
   }
-  // Otherwise, bind the task
-  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  runnable_tasks_.insert(td->uid());
-  InsertIfNotPresent(task_map_.get(), td->uid(), td);
-  BindTaskToResource(td, rd);
-  td->set_state(TaskDescriptor::RUNNING);
-  return true;
-}
-
-// Simple 2-argument wrapper
-void EventDrivenScheduler::RegisterResource(ResourceID_t res_id,
-                                            bool local,
-                                            bool simulated) {
-  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  if (local) {
-    RegisterLocalResource(res_id);
-  } else if (simulated) {
-    RegisterSimulatedResource(res_id);
-  } else {
-    RegisterRemoteResource(res_id);
-  }
-}
-
-void EventDrivenScheduler::RegisterLocalResource(ResourceID_t res_id) {
-  // Create an executor for each resource.
-  VLOG(1) << "Adding executor for local resource " << res_id;
-  LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_,
-                                          topology_manager_);
-  CHECK(InsertIfNotPresent(&executors_, res_id, exec));
-}
-
-void EventDrivenScheduler::RegisterRemoteResource(ResourceID_t res_id) {
-  // Create an executor for each resource.
-  VLOG(1) << "Adding executor for remote resource " << res_id;
-  RemoteExecutor* exec = new RemoteExecutor(res_id, coordinator_res_id_,
-                                            coordinator_uri_,
-                                            resource_map_.get(),
-                                            m_adapter_ptr_);
-  CHECK(InsertIfNotPresent(&executors_, res_id, exec));
-}
-
-void EventDrivenScheduler::RegisterSimulatedResource(ResourceID_t res_id) {
-  VLOG(1) << "Adding executor for simulated resource " << res_id;
-  SimulatedExecutor* exec = new SimulatedExecutor(res_id, coordinator_uri_);
-  CHECK(InsertIfNotPresent(&executors_, res_id, exec));
-}
-
-const set<TaskID_t>& EventDrivenScheduler::RunnableTasksForJob(
-    JobDescriptor* job_desc) {
-  // TODO(malte): check if this is broken
-  set<DataObjectID_t*> outputs =
-      DataObjectIDsFromProtobuf(job_desc->output_ids());
-  TaskDescriptor* rtp = job_desc->mutable_root_task();
-  LazyGraphReduction(outputs, rtp, JobIDFromString(job_desc->uuid()));
-  return runnable_tasks_;
+  // Find the current remote endpoint for this task
+  TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
+  // Manufacture the message
+  BaseMessage bm;
+  SUBMSG_WRITE(bm, task_kill, task_id, task_id);
+  SUBMSG_WRITE(bm, task_kill, reason, reason);
+  // Send the message
+  LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
+            << *rid << " (endpoint: " << td->last_heartbeat_location()  << ")";
+  m_adapter_ptr_->SendMessageToEndpoint(td->last_heartbeat_location(), bm);
 }
 
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
@@ -587,22 +504,35 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
   return runnable_tasks_.size();
 }
 
-const set<ReferenceInterface*> EventDrivenScheduler::ReferencesForID(
-    const DataObjectID_t& id) {
-  // Find all locally known references for a specific object
-  VLOG(2) << "Looking up object " << id;
-//  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
-  set<ReferenceInterface*>* ref_set = object_store_->GetReferences(id);
-
-  if (!ref_set) {
-    VLOG(2) << "... NOT FOUND";
-    set<ReferenceInterface*> es;  // empty set
-    return es;
-  } else {
-    VLOG(2) << " ... FOUND, " << ref_set->size() << " references.";
-    // Return the unfiltered set of all known references to this name
-    return *ref_set;
+bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
+                                              ResourceID_t target_resource) {
+  // Check if the resource is available
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, target_resource);
+  // Do we know about this resource?
+  if (!rs_ptr) {
+    // Requested resource unknown or does not exist any more
+    LOG(WARNING) << "Attempted to place delegated task " << td->uid()
+                 << " on resource " << target_resource << ", which is "
+                 << "unknown!";
+    return false;
   }
+  ResourceDescriptor* rd = rs_ptr->mutable_descriptor();
+  CHECK_NOTNULL(rd);
+  // Is the resource still idle?
+  if (rd->state() != ResourceDescriptor::RESOURCE_IDLE) {
+    // Resource is no longer idle
+    LOG(WARNING) << "Attempted to place delegated task " << td->uid()
+                 << " on resource " << target_resource << ", which is "
+                 << "not idle!";
+    return false;
+  }
+  // Otherwise, bind the task
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  runnable_tasks_.insert(td->uid());
+  InsertIfNotPresent(task_map_.get(), td->uid(), td);
+  HandleTaskPlacement(td, rd);
+  td->set_state(TaskDescriptor::RUNNING);
+  return true;
 }
 
 set<TaskDescriptor*> EventDrivenScheduler::ProducingTasksForDataObjectID(
@@ -642,15 +572,97 @@ set<TaskDescriptor*> EventDrivenScheduler::ProducingTasksForDataObjectID(
   return producing_tasks;
 }
 
-void EventDrivenScheduler::UpdateTaskNotRunningOnResource(TaskID_t task_id,
-                                                          ResourceID_t res_id) {
+const set<ReferenceInterface*> EventDrivenScheduler::ReferencesForID(
+    const DataObjectID_t& id) {
+  // Find all locally known references for a specific object
+  VLOG(2) << "Looking up object " << id;
+//  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
+  set<ReferenceInterface*>* ref_set = object_store_->GetReferences(id);
+
+  if (!ref_set) {
+    VLOG(2) << "... NOT FOUND";
+    set<ReferenceInterface*> es;  // empty set
+    return es;
+  } else {
+    VLOG(2) << " ... FOUND, " << ref_set->size() << " references.";
+    // Return the unfiltered set of all known references to this name
+    return *ref_set;
+  }
+}
+
+void EventDrivenScheduler::RegisterLocalResource(ResourceID_t res_id) {
+  // Create an executor for each resource.
+  VLOG(1) << "Adding executor for local resource " << res_id;
+  LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_,
+                                          topology_manager_);
+  CHECK(InsertIfNotPresent(&executors_, res_id, exec));
+}
+
+// Simple 2-argument wrapper
+void EventDrivenScheduler::RegisterResource(ResourceID_t res_id,
+                                            bool local,
+                                            bool simulated) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  if (local) {
+    RegisterLocalResource(res_id);
+  } else if (simulated) {
+    RegisterSimulatedResource(res_id);
+  } else {
+    RegisterRemoteResource(res_id);
+  }
+}
+
+void EventDrivenScheduler::RegisterRemoteResource(ResourceID_t res_id) {
+  // Create an executor for each resource.
+  VLOG(1) << "Adding executor for remote resource " << res_id;
+  RemoteExecutor* exec = new RemoteExecutor(res_id, coordinator_res_id_,
+                                            coordinator_uri_,
+                                            resource_map_.get(),
+                                            m_adapter_ptr_);
+  CHECK(InsertIfNotPresent(&executors_, res_id, exec));
+}
+
+void EventDrivenScheduler::RegisterSimulatedResource(ResourceID_t res_id) {
+  VLOG(1) << "Adding executor for simulated resource " << res_id;
+  SimulatedExecutor* exec = new SimulatedExecutor(res_id, coordinator_uri_);
+  CHECK(InsertIfNotPresent(&executors_, res_id, exec));
+}
+
+const set<TaskID_t>& EventDrivenScheduler::RunnableTasksForJob(
+    JobDescriptor* job_desc) {
+  // TODO(malte): check if this is broken
+  set<DataObjectID_t*> outputs =
+      DataObjectIDsFromProtobuf(job_desc->output_ids());
+  TaskDescriptor* rtp = job_desc->mutable_root_task();
+  LazyGraphReduction(outputs, rtp, JobIDFromString(job_desc->uuid()));
+  return runnable_tasks_;
+}
+
+bool EventDrivenScheduler::UnbindTaskFromResource(TaskDescriptor* td_ptr,
+                                                  ResourceID_t res_id) {
+  TaskID_t task_id = td_ptr->uid();
   // Set the bound resource idle again.
-  ResourceStatus* res = FindPtrOrNull(*resource_map_, res_id);
-  CHECK_NOTNULL(res);
-  res->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
-  res->mutable_descriptor()->clear_current_running_task();
-  // Remove the task's resource binding (as it is no longer currently bound)
-  CHECK(UnbindResourceForTask(task_id));
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs_ptr);
+  // XXX(ionel): Assumes only one task is running per resource.
+  rs_ptr->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  rs_ptr->mutable_descriptor()->clear_current_running_task();
+  ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
+  if (res_id_ptr) {
+    pair<multimap<ResourceID_t, TaskID_t>::iterator,
+         multimap<ResourceID_t, TaskID_t>::iterator> range_it =
+      resource_bindings_.equal_range(*res_id_ptr);
+    for (; range_it.first != range_it.second; range_it.first++) {
+      if (range_it.first->second == task_id) {
+        // We've found the element.
+        resource_bindings_.erase(range_it.first);
+        break;
+      }
+    }
+    return task_bindings_.erase(task_id) == 1;
+  } else {
+    return false;
+  }
 }
 
 }  // namespace scheduler

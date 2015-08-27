@@ -96,9 +96,9 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
       CHECK(rp);
       LOG(INFO) << "Scheduling task " << (*td)->uid() << " on resource "
                 << (*rp)->descriptor().uuid() << " [" << *rp << "]";
-      // BindTaskToResource both binds the task AND removes it from the runnable
-      // set.
-      BindTaskToResource(*td, (*rp)->mutable_descriptor());
+      // HandleTaskPlacement both binds the task AND removes it from the
+      // runnable set.
+      HandleTaskPlacement(*td, (*rp)->mutable_descriptor());
       total_scheduled++;
     }
   }
