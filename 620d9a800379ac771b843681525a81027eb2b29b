@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_ee08a62a",
+        "filename": "src/scheduling/event_driven_scheduler.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-27T14:12:59Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_b317e753",
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_d31c6b7a",
         "filename": "src/scheduling/event_driven_scheduler.h",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2015-08-27T14:10:52Z",
       "side": 0,
       "message": "Where has this moved to? It seems like something that would need to exist in the scheduler.",
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_ce03e20b",
+        "filename": "src/scheduling/event_driven_scheduler.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-27T14:12:59Z",
+      "side": 0,
+      "message": "I\u0027ve renamed it to HandleTaskPlacement to be consistent with our Handle* naming.",
+      "parentUuid": "9ad9bd40_d31c6b7a",
       "revId": "620d9a800379ac771b843681525a81027eb2b29b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
