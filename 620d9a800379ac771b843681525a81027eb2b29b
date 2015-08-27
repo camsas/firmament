@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_adace336",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1200,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-27T23:02:34Z",
+      "side": 1,
+      "message": "Should we have a CHECK_NOTNULL on the result of NodeForTaskID here? This will cause a segfault if the result is NULL, rather than a check failure with backtrace.",
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_ad7303e6",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-27T23:02:34Z",
+      "side": 1,
+      "message": "There\u0027s some code duplication (or near-duplication) between this method and ScheduleAllJobs(). Would it be better to have a generic method that schedules all jobs in a collection passed to it, and then to pass \u0026jobs_to_schedule_ for ScheduleAllJobs and a temporary single-element collection for ScheduleJob?",
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_ed7d0bb3",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-27T23:02:34Z",
+      "side": 1,
+      "message": "Nit: ... if it has any runnable tasks.",
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_cd80478e",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-27T23:02:34Z",
+      "side": 1,
+      "message": "Typo",
+      "range": {
+        "startLine": 53,
+        "startChar": 42,
+        "endLine": 53,
+        "endChar": 51
+      },
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_2d4ff393",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-27T23:02:34Z",
+      "side": 1,
+      "message": "The change in here and in simulated_quincy_factory.cc seems unrelated to the rest of the CL. Maybe either split it out into it own CL or amend the commit message to mention that this change is also being made.",
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
