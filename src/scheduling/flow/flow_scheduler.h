@@ -49,7 +49,8 @@ class FlowScheduler : public EventDrivenScheduler {
   virtual void HandleJobCompletion(JobID_t job_id);
   virtual void HandleTaskCompletion(TaskDescriptor* td_ptr,
                                     TaskFinalReport* report);
-  virtual void HandleTaskEviction(TaskDescriptor* td_ptr, ResourceID_t res_id);
+  virtual void HandleTaskEviction(TaskDescriptor* td_ptr,
+                                  ResourceDescriptor* rd_ptr);
   virtual void HandleTaskFailure(TaskDescriptor* td_ptr);
   virtual void KillRunningTask(TaskID_t task_id,
                                TaskKillMessage::TaskKillReason reason);
@@ -72,6 +73,10 @@ class FlowScheduler : public EventDrivenScheduler {
 
  protected:
   const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
+  virtual void HandleTaskMigration(TaskDescriptor* td_ptr,
+                                   ResourceDescriptor* rd_ptr);
+  virtual void HandleTaskPlacement(TaskDescriptor* td_ptr,
+                                   ResourceDescriptor* rd_ptr);
 
  private:
   uint64_t ApplySchedulingDeltas(const vector<SchedulingDelta*>& deltas);

@@ -7,6 +7,7 @@
 #define FIRMAMENT_SCHEDULING_SCHEDULER_INTERFACE_H
 
 #include <set>
+#include <vector>
 
 #include "base/common.h"
 #include "messages/base_message.pb.h"
@@ -70,8 +71,6 @@ class SchedulerInterface : public PrintableInterface {
    */
   virtual void DeregisterResource(ResourceID_t res_id) = 0;
 
-  virtual executor::ExecutorInterface *GetExecutorForTask(TaskID_t task_id) = 0;
-
   // TODO(malte): comment
   virtual void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                           const ReferenceInterface& new_ref,
@@ -107,7 +106,7 @@ class SchedulerInterface : public PrintableInterface {
    * @param res_id the id of the resource from which the task was evicted
    */
   virtual void HandleTaskEviction(TaskDescriptor* td_ptr,
-                                  ResourceID_t res_id) = 0;
+                                  ResourceDescriptor* rd_ptr) = 0;
 
   /**
    * Handles the failure of a task. This usually involves freeing up its
@@ -124,7 +123,7 @@ class SchedulerInterface : public PrintableInterface {
    * @param targer_resource the resource on which to place the task
    */
   virtual bool PlaceDelegatedTask(TaskDescriptor* td_ptr,
-                                  ResourceID_t target_resource) = 0;
+                                  ResourceID_t target_res_id) = 0;
 
   /**
    * Kills a running task.
@@ -149,13 +148,6 @@ class SchedulerInterface : public PrintableInterface {
                                 bool simulated = false) = 0;
 
   /**
-   * Finds runnable tasks for the job in the argument and adds them to the
-   * global runnable set.
-   * @param jd_ptr the descriptor of the job for which to find tasks
-   */
-  virtual const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* jd_ptr) = 0;
-
-  /**
    * Runs a scheduling iteration for all active jobs.
    */
   virtual void ScheduleAllJobs() = 0;
@@ -169,23 +161,38 @@ class SchedulerInterface : public PrintableInterface {
 
  protected:
   /**
-   * Binds a task to a resource, i.e. effects a scheduling assignment. This will
-   * modify various bits of meta-data tracking assignments. It will then
-   * delegate the actual execution of the task binary to the appropriate local
-   * execution handler.
-   * @param td_ptr the descriptor of the task to bind
-   * @param rd_ptr the descriptor of the resource to bind to
-   */
-  virtual void BindTaskToResource(TaskDescriptor* td_ptr,
-                                  ResourceDescriptor* rd_ptr) = 0;
-
-  /**
    * Finds a resource for a runnable task. This is the core placement logic.
    * @param td_ptr the descriptor of the task for which to find resources
    * @return the resource ID of the resource chosen in the second argument, or
    * NULL if no resource could be found.
    */
   virtual const ResourceID_t* FindResourceForTask(TaskDescriptor* td_ptr) = 0;
+
+  /**
+   * Handles the migration of a task.
+   * @param td_ptr the descriptor of the migrated task
+   * @param rd_ptr the descriptor of the resource to which the task was migrated
+   */
+  virtual void HandleTaskMigration(TaskDescriptor* td_ptr,
+                                   ResourceDescriptor* rd_ptr) = 0;
+
+  /**
+   * Places a task to a resource, i.e. effects a scheduling assignment.
+   * This will modify various bits of meta-data tracking assignments. It will
+   * then delegate the actual execution of the task binary to the appropriate
+   * local execution handler.
+   * @param td_ptr the descriptor of the task to bind
+   * @param rd_ptr the descriptor of the resource to bind to
+   */
+  virtual void HandleTaskPlacement(TaskDescriptor* td_ptr,
+                                   ResourceDescriptor* rd_ptr) = 0;
+
+  /**
+   * Finds runnable tasks for the job in the argument and adds them to the
+   * global runnable set.
+   * @param jd_ptr the descriptor of the job for which to find tasks
+   */
+  virtual const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* jd_ptr) = 0;
 
   // Pointers to the associated coordinator's job, resource and object maps
   shared_ptr<JobMap_t> job_map_;
