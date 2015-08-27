@@ -69,6 +69,24 @@
       "revId": "620d9a800379ac771b843681525a81027eb2b29b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_ae4cde77",
+        "filename": "src/scheduling/event_driven_scheduler.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-27T14:18:24Z",
+      "side": 0,
+      "message": "Ah, ok -- that\u0027s fine, see another comment of mine:\n\"I suggest that if we rename BindTaskToResource in this way, we need to rename UnbindTaskFromResource too; the names are designed to be symmetric.\"\n\nAlso, the design intent originally was that BindTaskToResource and UnbindTaskFromResource would be \"helpers\" that establish and break bindings; renaming BindTaskToResource -\u003e HandleTaskPlacement to me suggests that it is a higher-level method than it previously was. Happy to change this thinking, though, if it makes things easier.",
+      "parentUuid": "9ad9bd40_ce03e20b",
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
