@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "9ad9bd40_2d1d3374",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-27T23:11:40Z",
+      "side": 1,
+      "message": "This is a bit misleading, or at least I don\u0027t think that\u0027s the CL\u0027s primary contribution. I\u0027d suggest something like \"Uniformize scheduler APIs and better delta handling.\"",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 52
+      },
+      "revId": "6ecb275daa568038a5d593c649d6a30ffebb0fcb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_0d186f83",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-27T23:11:40Z",
+      "side": 1,
+      "message": "*deltas",
+      "range": {
+        "startLine": 10,
+        "startChar": 61,
+        "endLine": 10,
+        "endChar": 66
+      },
+      "revId": "6ecb275daa568038a5d593c649d6a30ffebb0fcb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_ed2b4b92",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-08-27T23:11:40Z",
+      "side": 1,
+      "message": "I hope it refactors it and does not refactorize it! ;-)",
+      "range": {
+        "startLine": 10,
+        "startChar": 26,
+        "endLine": 10,
+        "endChar": 38
+      },
+      "revId": "6ecb275daa568038a5d593c649d6a30ffebb0fcb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_4e0fd22e",
         "filename": "src/scheduling/flow/flow_graph.cc",
         "patchSetId": 2
