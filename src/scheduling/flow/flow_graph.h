@@ -52,11 +52,13 @@ class FlowGraph {
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
   void RemoveMachine(ResourceID_t res_id);
   void ResetChanges();
-  // TODO(ionel): Call TaskCompleted from scheduler.
   void TaskCompleted(TaskID_t task_id);
   void TaskEvicted(TaskID_t task_id, ResourceID_t res_id);
   void TaskFailed(TaskID_t task_id);
   void TaskKilled(TaskID_t task_id);
+  void TaskMigrated(TaskID_t task_id,
+                    ResourceID_t old_res_id,
+                    ResourceID_t new_res_id);
   void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
   void ComputeTopologyStatistics(
     FlowGraphNode* node,

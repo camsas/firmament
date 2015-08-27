@@ -9,6 +9,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
@@ -42,7 +43,6 @@ class EventDrivenScheduler : public SchedulerInterface {
   vector<TaskID_t> BoundTasksForResource(ResourceID_t res_id);
   void CheckRunningTasksHealth();
   virtual void DeregisterResource(ResourceID_t res_id);
-  ExecutorInterface* GetExecutorForTask(TaskID_t task_id);
   virtual void HandleJobCompletion(JobID_t job_id);
   virtual void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                           const ReferenceInterface& new_ref,
@@ -50,7 +50,6 @@ class EventDrivenScheduler : public SchedulerInterface {
   virtual void HandleTaskCompletion(TaskDescriptor* td_ptr,
                                     TaskFinalReport* report);
   virtual void HandleTaskDelegationFailure(TaskDescriptor* td_ptr);
-  virtual void HandleTaskEviction(TaskDescriptor* td_ptr, ResourceID_t res_id);
   virtual void HandleTaskFailure(TaskDescriptor* td_ptr);
   virtual void KillRunningTask(TaskID_t task_id,
                                TaskKillMessage::TaskKillReason reason);
@@ -58,19 +57,23 @@ class EventDrivenScheduler : public SchedulerInterface {
   virtual void RegisterResource(ResourceID_t res_id,
                                 bool local,
                                 bool simulated);
-  const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
   // N.B. ScheduleJob must be implemented in scheduler-specific logic
   virtual uint64_t ScheduleJob(JobDescriptor* job_desc) = 0;
-  bool UnbindResourceForTask(TaskID_t task_id);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<EventDrivenScheduler>";
   }
 
-
  protected:
-  void BindTaskToResource(TaskDescriptor* task_desc,
-                          ResourceDescriptor* res_desc);
+  FRIEND_TEST(SimpleSchedulerTest, FindRunnableTasksForJob);
+  FRIEND_TEST(SimpleSchedulerTest, FindRunnableTasksForComplexJob);
+  FRIEND_TEST(SimpleSchedulerTest, FindRunnableTasksForComplexJob2);
   void DebugPrintRunnableTasks();
+  virtual void HandleTaskEviction(TaskDescriptor* td_ptr,
+                                  ResourceDescriptor* rd_ptr);
+  virtual void HandleTaskMigration(TaskDescriptor* td_ptr,
+                                   ResourceDescriptor* rd_ptr);
+  virtual void HandleTaskPlacement(TaskDescriptor* td_ptr,
+                                   ResourceDescriptor* rd_ptr);
   uint64_t LazyGraphReduction(const set<DataObjectID_t*>& output_ids,
                               TaskDescriptor* root_task,
                               const JobID_t& job_id);
@@ -80,6 +83,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
   void RegisterSimulatedResource(ResourceID_t res_id);
+  const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
+  bool UnbindResourceForTask(TaskID_t task_id);
 
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction. Note that this set includes tasks from all
@@ -98,20 +103,20 @@ class EventDrivenScheduler : public SchedulerInterface {
   // A vector holding descriptors of the jobs to be scheduled in the next
   // scheduling round.
   vector<JobDescriptor*> jobs_to_schedule_;
-  // The current resource to task bindings managed by this scheduler.
-  multimap<ResourceID_t, TaskID_t> resource_bindings_;
-  // The current task bindings managed by this scheduler.
-  unordered_map<TaskID_t, ResourceID_t> task_bindings_;
-  // Map of reference subscriptions
-  map<DataObjectID_t, set<TaskDescriptor*> > reference_subscriptions_;
-  // Pointer to the coordinator's topology manager
-  shared_ptr<TopologyManager> topology_manager_;
   // Pointer to messaging adapter to use for communication with remote
   // resources.
   MessagingAdapterInterface<BaseMessage>* m_adapter_ptr_;
   // A lock indicating if the scheduler is currently
   // in the process of making scheduling decisions.
   boost::recursive_mutex scheduling_lock_;
+  // Map of reference subscriptions
+  map<DataObjectID_t, set<TaskDescriptor*> > reference_subscriptions_;
+  // The current resource to task bindings managed by this scheduler.
+  multimap<ResourceID_t, TaskID_t> resource_bindings_;
+  // The current task bindings managed by this scheduler.
+  unordered_map<TaskID_t, ResourceID_t> task_bindings_;
+  // Pointer to the coordinator's topology manager
+  shared_ptr<TopologyManager> topology_manager_;
 
  private:
   void UpdateTaskNotRunningOnResource(TaskID_t task_id, ResourceID_t res_id);
