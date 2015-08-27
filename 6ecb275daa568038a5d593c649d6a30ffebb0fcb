@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_0ee22a03",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 1222,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-27T15:06:03Z",
+      "side": 1,
+      "message": "Yep, we might have to come back to it.",
+      "parentUuid": "9ad9bd40_4e0fd22e",
+      "revId": "6ecb275daa568038a5d593c649d6a30ffebb0fcb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_ce2a027e",
         "filename": "src/scheduling/simple/simple_scheduler.cc",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2015-08-27T14:18:24Z",
       "side": 1,
       "message": "I suggest that if we rename BindTaskToResource in this way, we need to rename UnbindTaskFromResource too; the names are designed to be symmetric.",
+      "revId": "6ecb275daa568038a5d593c649d6a30ffebb0fcb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_6ef016ca",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-27T15:06:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_ce2a027e",
       "revId": "6ecb275daa568038a5d593c649d6a30ffebb0fcb",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
