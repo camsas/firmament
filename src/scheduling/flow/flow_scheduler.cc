@@ -129,8 +129,7 @@ const ResourceID_t* FlowScheduler::FindResourceForTask(
 uint64_t FlowScheduler::ApplySchedulingDeltas(
     const vector<SchedulingDelta*>& deltas) {
   uint64_t num_scheduled = 0;
-  // Perform the necessary actions to apply the scheduling changes passed to the
-  // method
+  // Perform the necessary actions to apply the scheduling changes.
   VLOG(1) << "Applying " << deltas.size() << " scheduling deltas...";
   for (vector<SchedulingDelta*>::const_iterator it = deltas.begin();
        it != deltas.end();
@@ -138,36 +137,24 @@ uint64_t FlowScheduler::ApplySchedulingDeltas(
     VLOG(1) << "Processing delta of type " << (*it)->type();
     TaskID_t task_id = (*it)->task_id();
     ResourceID_t res_id = ResourceIDFromString((*it)->resource_id());
+    TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
+    ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+    CHECK_NOTNULL(td_ptr);
+    CHECK_NOTNULL(rs);
     if ((*it)->type() == SchedulingDelta::NOOP) {
-      // We should not get any NOOP deltas as they get filtered before, but
-      // let's handle it anyway.
+      // We should not get any NOOP deltas as they get filtered before.
       continue;
     } else if ((*it)->type() == SchedulingDelta::PLACE) {
-      VLOG(1) << "Trying to place task " << task_id
-              << " on resource " << (*it)->resource_id();
-      TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
-      ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
-      CHECK_NOTNULL(td);
-      CHECK_NOTNULL(rs);
-      LOG(INFO) << "Scheduler binding task " << td->uid() << " to resource "
-                << rs->mutable_descriptor()->uuid();
-      BindTaskToResource(td, rs->mutable_descriptor());
-      // Mark the task as scheduled
-      FlowGraphNode* node = flow_graph_->NodeForTaskID(task_id);
-      CHECK_NOTNULL(node);
-      node->type_ = FlowNodeType::SCHEDULED_TASK;
-      // After the task is bound, we now remove all of its edges into the flow
-      // graph apart from the bound resource.
-      // N.B.: This disables preemption and migration, unless FLAGS_preemption
-      // is set!
-      flow_graph_->TaskScheduled(task_id, res_id);
-      // Tag the job to which this task belongs as running
-      JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td->job_id()));
-      if (jd->state() != JobDescriptor::RUNNING)
-        jd->set_state(JobDescriptor::RUNNING);
+      HandleTaskPlacement(td_ptr, rs->mutable_descriptor());
       num_scheduled++;
-      (*it)->set_actioned(true);
+    } else if ((*it)->type() == SchedulingDelta::PREEMPT) {
+      HandleTaskEviction(td_ptr, rs->mutable_descriptor());
+    } else if ((*it)->type() == SchedulingDelta::MIGRATE) {
+      HandleTaskMigration(td_ptr, rs->mutable_descriptor());
+    } else {
+      LOG(FATAL) << "Unhandled scheduling delta case";
     }
+    (*it)->set_actioned(true);
   }
   return num_scheduled;
 }
@@ -200,16 +187,38 @@ void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
 }
 
 void FlowScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
-                                       ResourceID_t res_id) {
+                                       ResourceDescriptor* rd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  EventDrivenScheduler::HandleTaskEviction(td_ptr, res_id);
-  flow_graph_->TaskEvicted(td_ptr->uid(), res_id);
+  EventDrivenScheduler::HandleTaskEviction(td_ptr, rd_ptr);
+  flow_graph_->TaskEvicted(td_ptr->uid(), ResourceIDFromString(rd_ptr->uuid()));
 }
 
 void FlowScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::HandleTaskFailure(td_ptr);
   flow_graph_->TaskFailed(td_ptr->uid());
+}
+
+void FlowScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
+                                        ResourceDescriptor* rd_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  TaskID_t task_id = td_ptr->uid();
+  // Get the old resource id before we call EventDrivenScheduler.
+  // Otherwise, we would end up getting the new resource id.
+  ResourceID_t* old_res_id_ptr = FindOrNull(task_bindings_, task_id);
+  CHECK_NOTNULL(old_res_id_ptr);
+  ResourceID_t old_res_id = *old_res_id_ptr;
+  EventDrivenScheduler::HandleTaskMigration(td_ptr, rd_ptr);
+  flow_graph_->TaskMigrated(task_id, old_res_id,
+                            ResourceIDFromString(rd_ptr->uuid()));
+}
+
+void FlowScheduler::HandleTaskPlacement(TaskDescriptor* td_ptr,
+                                        ResourceDescriptor* rd_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  EventDrivenScheduler::HandleTaskPlacement(td_ptr, rd_ptr);
+  flow_graph_->TaskScheduled(td_ptr->uid(),
+                             ResourceIDFromString(rd_ptr->uuid()));
 }
 
 void FlowScheduler::KillRunningTask(TaskID_t task_id,
