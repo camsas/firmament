@@ -57,8 +57,9 @@ class FlowScheduler : public EventDrivenScheduler {
   virtual void RegisterResource(ResourceID_t res_id,
                                 bool local,
                                 bool simulated);
-  virtual void ScheduleAllJobs();
+  virtual uint64_t ScheduleAllJobs();
   virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr);
+  virtual uint64_t ScheduleJobs(vector<JobDescriptor*>& jds_ptr);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<FlowScheduler, parameters: "
                    << parameters_.DebugString() << ">";

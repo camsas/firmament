@@ -60,7 +60,9 @@ class EventDrivenScheduler : public SchedulerInterface {
                                 bool local,
                                 bool simulated);
   // N.B. ScheduleJob must be implemented in scheduler-specific logic
-  virtual uint64_t ScheduleJob(JobDescriptor* job_desc) = 0;
+  virtual uint64_t ScheduleAllJobs() = 0;
+  virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr) = 0;
+  virtual uint64_t ScheduleJobs(vector<JobDescriptor*>& jds_ptr) = 0;
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<EventDrivenScheduler>";
   }
