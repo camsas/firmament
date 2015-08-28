@@ -61,23 +61,21 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
   return NULL;
 }
 
-void SimpleScheduler::ScheduleAllJobs() {
+uint64_t SimpleScheduler::ScheduleAllJobs() {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  // Schedule jobs in FIFO order.
-  for (auto& jd_ptr : jobs_to_schedule_) {
-    ScheduleJob(jd_ptr);
-  }
+  uint64_t num_scheduled_tasks = ScheduleJobs(jobs_to_schedule_);
   jobs_to_schedule_.clear();
+  return num_scheduled_tasks;
 }
 
-uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
-  uint64_t total_scheduled = 0;
-  VLOG(2) << "Preparing to schedule job " << job_desc->uuid();
+uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr) {
+  uint64_t num_scheduled_tasks = 0;
+  VLOG(2) << "Preparing to schedule job " << jd_ptr->uuid();
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  LOG(INFO) << "START SCHEDULING " << job_desc->uuid();
+  LOG(INFO) << "START SCHEDULING " << jd_ptr->uuid();
   // Get the set of runnable tasks for this job
-  set<TaskID_t> runnable_tasks = RunnableTasksForJob(job_desc);
-  VLOG(2) << "Scheduling job " << job_desc->uuid() << ", which has "
+  set<TaskID_t> runnable_tasks = RunnableTasksForJob(jd_ptr);
+  VLOG(2) << "Scheduling job " << jd_ptr->uuid() << ", which has "
           << runnable_tasks.size() << " runnable tasks.";
   for (set<TaskID_t>::const_iterator task_iter =
        runnable_tasks.begin();
@@ -99,13 +97,22 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* job_desc) {
       // HandleTaskPlacement both binds the task AND removes it from the
       // runnable set.
       HandleTaskPlacement(*td, (*rp)->mutable_descriptor());
-      total_scheduled++;
+      num_scheduled_tasks++;
     }
   }
-  if (total_scheduled > 0)
-    job_desc->set_state(JobDescriptor::RUNNING);
-  LOG(INFO) << "STOP SCHEDULING " << job_desc->uuid();
-  return total_scheduled;
+  if (num_scheduled_tasks > 0)
+    jd_ptr->set_state(JobDescriptor::RUNNING);
+  LOG(INFO) << "STOP SCHEDULING " << jd_ptr->uuid();
+  return num_scheduled_tasks;
+}
+
+uint64_t SimpleScheduler::ScheduleJobs(const vector<JobDescriptor*>& jds_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  uint64_t num_scheduled_tasks = 0;
+  for (auto& jd_ptr : jds_ptr) {
+    num_scheduled_tasks += ScheduleJob(jd_ptr);
+  }
+  return num_scheduled_tasks;
 }
 
 }  // namespace scheduler
