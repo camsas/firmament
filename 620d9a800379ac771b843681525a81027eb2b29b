@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_1c941b36",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1200,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-28T07:20:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_adace336",
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_ad7303e6",
         "filename": "src/scheduling/flow/flow_scheduler.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2015-08-27T23:02:34Z",
       "side": 1,
       "message": "There\u0027s some code duplication (or near-duplication) between this method and ScheduleAllJobs(). Would it be better to have a generic method that schedules all jobs in a collection passed to it, and then to pass \u0026jobs_to_schedule_ for ScheduleAllJobs and a temporary single-element collection for ScheduleJob?",
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_9ccd8b60",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-28T07:20:26Z",
+      "side": 1,
+      "message": "Will address in a future diff.",
+      "parentUuid": "9ad9bd40_ad7303e6",
       "revId": "620d9a800379ac771b843681525a81027eb2b29b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_3c82bf00",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-28T07:20:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_ed7d0bb3",
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_cd80478e",
         "filename": "src/scheduling/scheduler_interface.h",
         "patchSetId": 1
@@ -64,6 +118,30 @@
       "writtenOn": "2015-08-27T23:02:34Z",
       "side": 1,
       "message": "Typo",
+      "range": {
+        "startLine": 53,
+        "startChar": 42,
+        "endLine": 53,
+        "endChar": 51
+      },
+      "revId": "620d9a800379ac771b843681525a81027eb2b29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_5c87830f",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-28T07:20:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_cd80478e",
       "range": {
         "startLine": 53,
         "startChar": 42,
