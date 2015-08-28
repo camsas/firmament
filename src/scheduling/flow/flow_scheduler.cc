@@ -239,16 +239,37 @@ void FlowScheduler::LogDebugCostModel() {
   CHECK_EQ(fclose(csv_log_file), 0);
 }
 
-void FlowScheduler::ScheduleAllJobs() {
+uint64_t FlowScheduler::ScheduleAllJobs() {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  LOG(INFO) << "START SCHEDULING all jobs";
+  vector<JobDescriptor*> jobs;
+  for (auto& job_id_jd : jobs_to_schedule_) {
+    jobs.push_back(job_id_jd.second);
+  }
+  uint64_t num_scheduled_tasks = ScheduleJobs(jobs);
+  ClearScheduledJobs();
+  return num_scheduled_tasks;
+}
+
+uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  LOG(INFO) << "START SCHEDULING (via " << jd_ptr->uuid() << ")";
+  LOG(WARNING) << "This way of scheduling a job is slow in the flow scheduler! "
+               << "Consider using ScheduleAllJobs() instead.";
+  vector<JobDescriptor*> jobs_to_schedule {jd_ptr};
+  return ScheduleJobs(jobs_to_schedule);
+}
+
+uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jds_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  LOG(INFO) << "START SCHEDULING jobs";
   // First, we update the cost model's resource topology statistics (e.g. based
   // on machine load and prior decisions); these need to be known before
   // AddOrUpdateJobNodes is invoked below, as it may add arcs depending on these
   // metrics.
   UpdateCostModelResourceStats();
   bool run_scheduler = false;
-  for (auto& jd_ptr : jobs_to_schedule_) {
+  uint64_t num_scheduled_tasks = 0;
+  for (auto& jd_ptr : jds_ptr) {
     // Check if we have any runnable tasks in this job
     const set<TaskID_t> runnable_tasks = RunnableTasksForJob(jd_ptr);
     if (runnable_tasks.size() > 0) {
@@ -257,52 +278,19 @@ void FlowScheduler::ScheduleAllJobs() {
     }
   }
   if (run_scheduler) {
-    uint64_t total_scheduled = RunSchedulingIteration();
-    LOG(INFO) << "STOP SCHEDULING, placed " << total_scheduled << " tasks";
+    num_scheduled_tasks += RunSchedulingIteration();
+    LOG(INFO) << "STOP SCHEDULING, placed " << num_scheduled_tasks << " tasks";
     // If we have cost model debug logging turned on, write some debugging
     // information now.
     if (FLAGS_debug_cost_model) {
       LogDebugCostModel();
     }
     // Resource reservations may have changed, so reconsider equivalence classes
-    for (auto& jd_ptr : jobs_to_schedule_) {
+    for (auto& jd_ptr : jds_ptr) {
       flow_graph_->AddOrUpdateJobNodes(jd_ptr);
     }
   }
-  jobs_to_schedule_.clear();
-}
-
-uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr) {
-  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  LOG(INFO) << "START SCHEDULING (via " << jd_ptr->uuid() << ")";
-  // First, we update the cost model's resource topology statistics (e.g. based
-  // on machine load and prior decisions); these need to be known before
-  // AddOrUpdateJobNodes is invoked below, as it may add arcs depending on these
-  // metrics.
-  UpdateCostModelResourceStats();
-  // Check if we have any runnable tasks in this job
-  const set<TaskID_t> runnable_tasks = RunnableTasksForJob(jd_ptr);
-  if (runnable_tasks.size() > 0) {
-    // Check if the job is already in the flow graph
-    // If not, simply add the whole job
-    flow_graph_->AddOrUpdateJobNodes(jd_ptr);
-    // If it is, only add the new bits
-    // Run a scheduler iteration
-    uint64_t total_scheduled = 0;
-    total_scheduled = RunSchedulingIteration();
-    LOG(INFO) << "STOP SCHEDULING, placed " << total_scheduled << " tasks";
-    // If we have cost model debug logging turned on, write some debugging
-    // information now.
-    if (FLAGS_debug_cost_model) {
-      LogDebugCostModel();
-    }
-    // Resource reservations may have changed, so reconsider equivalence classes
-    flow_graph_->AddOrUpdateJobNodes(jd_ptr);
-    return total_scheduled;
-  } else {
-    LOG(INFO) << "STOP SCHEDULING, nothing to do";
-    return 0;
-  }
+  return num_scheduled_tasks;
 }
 
 void FlowScheduler::RegisterResource(ResourceID_t res_id,

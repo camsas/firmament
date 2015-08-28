@@ -149,15 +149,25 @@ class SchedulerInterface : public PrintableInterface {
 
   /**
    * Runs a scheduling iteration for all active jobs.
+   * @return the number of tasks scheduled
    */
-  virtual void ScheduleAllJobs() = 0;
+  virtual uint64_t ScheduleAllJobs() = 0;
 
   /**
    * Schedules all runnable tasks in a job.
+   * WARNING: Using this method is inefficient because for every
+   * invocation it traverses the entire resource graph.
    * @param jd_ptr the job descriptor for which to schedule tasks
-   * @return the number of tasks scheduled.
+   * @return the number of tasks scheduled
    */
   virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr) = 0;
+
+  /**
+   * Schedules the given jobs.
+   * @param jds_ptr a vector of job descriptors
+   * @return the number of tasks scheduled
+   */
+  virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr) = 0;
 
  protected:
   /**

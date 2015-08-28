@@ -63,7 +63,8 @@ EventDrivenScheduler::~EventDrivenScheduler() {
 
 void EventDrivenScheduler::AddJob(JobDescriptor* jd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  jobs_to_schedule_.push_back(jd_ptr);
+  CHECK(InsertIfNotPresent(&jobs_to_schedule_,
+                           JobIDFromString(jd_ptr->uuid()), jd_ptr));
 }
 
 void EventDrivenScheduler::BindTaskToResource(TaskDescriptor* td_ptr,
@@ -117,6 +118,16 @@ void EventDrivenScheduler::CheckRunningTasksHealth() {
           HandleTaskFailure(td);
         }
       }
+    }
+  }
+}
+
+void EventDrivenScheduler::ClearScheduledJobs() {
+  for (auto it = jobs_to_schedule_.begin(); it != jobs_to_schedule_.end(); ) {
+    if (RunnableTasksForJob(it->second).size() == 0) {
+      it = jobs_to_schedule_.erase(it);
+    } else {
+      it++;
     }
   }
 }

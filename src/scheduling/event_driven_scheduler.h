@@ -60,7 +60,9 @@ class EventDrivenScheduler : public SchedulerInterface {
                                 bool local,
                                 bool simulated);
   // N.B. ScheduleJob must be implemented in scheduler-specific logic
-  virtual uint64_t ScheduleJob(JobDescriptor* job_desc) = 0;
+  virtual uint64_t ScheduleAllJobs() = 0;
+  virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr) = 0;
+  virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr) = 0;
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<EventDrivenScheduler>";
   }
@@ -70,6 +72,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   FRIEND_TEST(SimpleSchedulerTest, FindRunnableTasksForComplexJob);
   FRIEND_TEST(SimpleSchedulerTest, FindRunnableTasksForComplexJob2);
   void BindTaskToResource(TaskDescriptor* td_ptr, ResourceDescriptor* rd_ptr);
+  void ClearScheduledJobs();
   void DebugPrintRunnableTasks();
   void ExecuteTask(TaskDescriptor* td_ptr, ResourceDescriptor* rd_ptr);
   virtual void HandleTaskMigration(TaskDescriptor* td_ptr,
@@ -104,7 +107,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   map<ResourceID_t, ExecutorInterface*> executors_;
   // A vector holding descriptors of the jobs to be scheduled in the next
   // scheduling round.
-  vector<JobDescriptor*> jobs_to_schedule_;
+  unordered_map<JobID_t, JobDescriptor*,
+    boost::hash<boost::uuids::uuid> > jobs_to_schedule_;
   // Pointer to messaging adapter to use for communication with remote
   // resources.
   MessagingAdapterInterface<BaseMessage>* m_adapter_ptr_;
