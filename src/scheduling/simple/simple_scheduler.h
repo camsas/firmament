@@ -9,12 +9,14 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
 #include "scheduling/event_driven_scheduler.h"
+#include "scheduling/event_notifier_interface.h"
 #include "storage/object_store_interface.h"
 
 namespace firmament {
@@ -31,6 +33,7 @@ class SimpleScheduler : public EventDrivenScheduler {
                   shared_ptr<TaskMap_t> task_map,
                   shared_ptr<TopologyManager> topo_mgr,
                   MessagingAdapterInterface<BaseMessage>* m_adapter,
+                  EventNotifierInterface* event_notifier,
                   ResourceID_t coordinator_res_id,
                   const string& coordinator_uri);
   ~SimpleScheduler();

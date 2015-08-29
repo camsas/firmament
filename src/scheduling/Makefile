@@ -6,7 +6,8 @@ include $(ROOT_DIR)/include/Makefile.config
 LIBS += -lboost_system
 
 LIB = libfirmament_scheduling.a
-OBJS = common.o event_driven_scheduler.o knowledge_base.o
+OBJS = common.o event_driven_scheduler.o knowledge_base.o \
+       simulator_event_notifier.o
 
 PBS = scheduling_delta.pb.o
 TESTS =
