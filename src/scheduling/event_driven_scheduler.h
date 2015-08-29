@@ -18,6 +18,7 @@
 #include "base/task_final_report.pb.h"
 #include "engine/executor_interface.h"
 #include "misc/messaging_interface.h"
+#include "scheduling/event_notifier_interface.h"
 #include "scheduling/scheduler_interface.h"
 #include "storage/reference_interface.h"
 
@@ -35,6 +36,7 @@ class EventDrivenScheduler : public SchedulerInterface {
                        shared_ptr<TaskMap_t> task_map,
                        shared_ptr<TopologyManager> topo_mgr,
                        MessagingAdapterInterface<BaseMessage>* m_adapter,
+                       EventNotifierInterface* event_notifier,
                        ResourceID_t coordinator_res_id,
                        const string& coordinator_uri);
   ~EventDrivenScheduler();
@@ -101,6 +103,9 @@ class EventDrivenScheduler : public SchedulerInterface {
   const string coordinator_uri_;
   // We also record the resource ID of the owning coordinator.
   ResourceID_t coordinator_res_id_;
+  // Object that is injected into the scheduler by other modules in order
+  // to be notified when certain events happen.
+  EventNotifierInterface* event_notifier_;
   // A map holding pointers to all executors known to this scheduler. This
   // includes both executors for local and for remote resources.
   map<ResourceID_t, ExecutorInterface*> executors_;

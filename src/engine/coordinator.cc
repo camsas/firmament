@@ -34,7 +34,6 @@
 #include "scheduling/simple/simple_scheduler.h"
 #include "storage/simple_object_store.h"
 
-
 // It is necessary to declare listen_uri here, since "node.o" comes after
 // "coordinator.o" in linking order (I *think*).
 DECLARE_string(listen_uri);
@@ -85,7 +84,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     scheduler_ = new SimpleScheduler(
         job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, topology_manager_, m_adapter_,
-        uuid_, FLAGS_listen_uri);
+        NULL, uuid_, FLAGS_listen_uri);
     knowledge_base_->SetCostModel(new VoidCostModel(task_table_));
   } else if (FLAGS_scheduler == "flow") {
     // Quincy-style flow-based scheduling
@@ -94,7 +93,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     scheduler_ = new FlowScheduler(
         job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, knowledge_base_, topology_manager_,
-        m_adapter_, uuid_, FLAGS_listen_uri, params);
+        m_adapter_, NULL, uuid_, FLAGS_listen_uri, params);
   } else {
     // Unknown scheduler specified, error.
     LOG(FATAL) << "Unknown or unrecognized scheduler '" << FLAGS_scheduler

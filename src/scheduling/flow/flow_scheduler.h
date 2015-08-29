@@ -18,6 +18,7 @@
 #include "base/task_desc.pb.h"
 #include "engine/executor_interface.h"
 #include "scheduling/event_driven_scheduler.h"
+#include "scheduling/event_notifier_interface.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/flow/dimacs_exporter.h"
@@ -41,6 +42,7 @@ class FlowScheduler : public EventDrivenScheduler {
                 KnowledgeBase* kb,
                 shared_ptr<TopologyManager> topo_mgr,
                 MessagingAdapterInterface<BaseMessage>* m_adapter,
+                EventNotifierInterface* event_notifier,
                 ResourceID_t coordinator_res_id,
                 const string& coordinator_uri,
                 const SchedulingParameters& params);
