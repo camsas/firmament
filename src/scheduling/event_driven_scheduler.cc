@@ -41,12 +41,14 @@ EventDrivenScheduler::EventDrivenScheduler(
     shared_ptr<TaskMap_t> task_map,
     shared_ptr<TopologyManager> topo_mgr,
     MessagingAdapterInterface<BaseMessage>* m_adapter,
+    EventNotifierInterface* event_notifier,
     ResourceID_t coordinator_res_id,
     const string& coordinator_uri)
     : SchedulerInterface(job_map, resource_map, resource_topology,
                          object_store, task_map),
       coordinator_uri_(coordinator_uri),
       coordinator_res_id_(coordinator_res_id),
+      event_notifier_(event_notifier),
       m_adapter_ptr_(m_adapter),
       topology_manager_(topo_mgr) {
   VLOG(1) << "EventDrivenScheduler initiated.";
@@ -59,6 +61,7 @@ EventDrivenScheduler::~EventDrivenScheduler() {
        ++exec_iter)
     delete exec_iter->second;
   executors_.clear();
+  delete event_notifier_;
 }
 
 void EventDrivenScheduler::AddJob(JobDescriptor* jd_ptr) {
@@ -181,6 +184,9 @@ void EventDrivenScheduler::HandleJobCompletion(JobID_t job_id) {
   JobDescriptor* jd = FindOrNull(*job_map_, job_id);
   CHECK_NOTNULL(jd);
   jd->set_state(JobDescriptor::COMPLETED);
+  if (event_notifier_) {
+    event_notifier_->OnJobCompletion(job_id);
+  }
 }
 
 void EventDrivenScheduler::HandleReferenceStateChange(
@@ -245,6 +251,8 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   // This copy is necessary because UnbindTaskFromResource ends up deleting the
   // ResourceID_t pointed to by res_id_ptr
   ResourceID_t res_id_tmp = *res_id_ptr;
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id_tmp);
+  CHECK_NOTNULL(rs_ptr);
   VLOG(1) << "Handling completion of task " << td_ptr->uid()
           << ", freeing resource " << res_id_tmp;
   CHECK(UnbindTaskFromResource(td_ptr, res_id_tmp));
@@ -254,6 +262,9 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   exec->HandleTaskCompletion(td_ptr, report);
   // Store the final report in the TD for future reference
   td_ptr->mutable_final_report()->CopyFrom(*report);
+  if (event_notifier_) {
+    event_notifier_->OnTaskCompletion(td_ptr, rs_ptr->mutable_descriptor());
+  }
 }
 
 void EventDrivenScheduler::HandleTaskDelegationFailure(
@@ -284,6 +295,9 @@ void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
   ExecutorInterface* exec = FindPtrOrNull(executors_, res_id);
   CHECK_NOTNULL(exec);
   exec->HandleTaskEviction(td_ptr);
+  if (event_notifier_) {
+    event_notifier_->OnTaskEviction(td_ptr, rd_ptr);
+  }
 }
 
 void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
@@ -294,6 +308,8 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   // This copy is necessary because UnbindTaskFromResource ends up deleting the
   // ResourceID_t pointed to by res_id_ptr
   ResourceID_t res_id_tmp = *res_id_ptr;
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id_tmp);
+  CHECK_NOTNULL(rs_ptr);
   VLOG(1) << "Handling failure of task " << td_ptr->uid()
           << ", freeing resource " << res_id_tmp;
   // TODO(malte): We should probably check if the resource has failed at this
@@ -313,6 +329,9 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   // scheduler if we haven't exceeded the retry limit.
   if (td_ptr->has_delegated_from()) {
     // XXX(malte): Need to forward message about task failure to delegator here!
+  }
+  if (event_notifier_) {
+    event_notifier_->OnTaskFailure(td_ptr, rs_ptr->mutable_descriptor());
   }
 }
 
@@ -335,6 +354,9 @@ void EventDrivenScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
   rd_ptr->set_current_running_task(task_id);
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
   InsertOrUpdate(&task_bindings_, task_id, res_id);
+  if (event_notifier_) {
+    event_notifier_->OnTaskMigration(td_ptr, rd_ptr);
+  }
 }
 
 void EventDrivenScheduler::HandleTaskPlacement(
@@ -351,6 +373,9 @@ void EventDrivenScheduler::HandleTaskPlacement(
   if (jd->state() != JobDescriptor::RUNNING)
     jd->set_state(JobDescriptor::RUNNING);
   ExecuteTask(td_ptr, rd_ptr);
+  if (event_notifier_) {
+    event_notifier_->OnTaskPlacement(td_ptr, rd_ptr);
+  }
 }
 
 void EventDrivenScheduler::KillRunningTask(
