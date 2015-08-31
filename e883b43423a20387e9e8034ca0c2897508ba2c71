@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_bbb5ec32",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-31T13:55:22Z",
+      "side": 1,
+      "message": "Good catch. I\u0027ve fixed it now. The collection is populated in event_driven_scheduler in the AddJob method.",
+      "parentUuid": "9ad9bd40_8c8558af",
+      "revId": "e883b43423a20387e9e8034ca0c2897508ba2c71",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_ac921cf4",
         "filename": "src/scheduling/flow/flow_scheduler.cc",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2015-08-29T12:55:52Z",
       "side": 1,
       "message": "Extend the log message with: \"... in the flow scheduler. Consider using ScheduleAllJobs() instead.\"",
+      "revId": "e883b43423a20387e9e8034ca0c2897508ba2c71",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_20e8cd7b",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-08-31T13:55:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_ac921cf4",
       "revId": "e883b43423a20387e9e8034ca0c2897508ba2c71",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
