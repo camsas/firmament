@@ -43,7 +43,7 @@ class CocoCostModel : public CostModelInterface {
                 shared_ptr<TaskMap_t> task_map,
                 unordered_set<ResourceID_t,
                   boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-                KnowledgeBase* kb);
+                shared_ptr<KnowledgeBase> knowledge_base);
   const string DebugInfo() const;
   const string DebugInfoCSV() const;
   // Costs pertaining to leaving tasks unscheduled
@@ -148,7 +148,7 @@ class CocoCostModel : public CostModelInterface {
   shared_ptr<TaskMap_t> task_map_;
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   // A knowledge base instance that we will refer to for job runtime statistics.
-  KnowledgeBase* knowledge_base_;
+  shared_ptr<KnowledgeBase> knowledge_base_;
 
   // Mapping between task equiv classes and connected tasks.
   unordered_map<EquivClass_t, set<TaskID_t> > task_ec_to_set_task_id_;

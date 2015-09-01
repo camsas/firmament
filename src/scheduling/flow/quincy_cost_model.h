@@ -30,7 +30,7 @@ class QuincyCostModel : public CostModelInterface {
                   unordered_map<TaskID_t, ResourceID_t> *task_bindings,
                   unordered_set<ResourceID_t,
                     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-                  KnowledgeBase* kb);
+                  shared_ptr<KnowledgeBase> knowledge_base);
 
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
@@ -78,7 +78,7 @@ class QuincyCostModel : public CostModelInterface {
   unordered_map<TaskID_t, ResourceID_t>* task_bindings_;
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   // A knowledge base instance that we will refer to for job runtime statistics.
-  KnowledgeBase* knowledge_base_;
+  shared_ptr<KnowledgeBase> knowledge_base_;
   uint32_t rand_seed_ = 0;
 };
 

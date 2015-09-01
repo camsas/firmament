@@ -33,12 +33,12 @@ CocoCostModel::CocoCostModel(
     shared_ptr<TaskMap_t> task_map,
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-    KnowledgeBase* kb)
+    shared_ptr<KnowledgeBase> knowledge_base)
   : resource_map_(resource_map),
     resource_topology_(resource_topology),
     task_map_(task_map),
     leaf_res_ids_(leaf_res_ids),
-    knowledge_base_(kb) {
+    knowledge_base_(knowledge_base) {
   // Set an initial value for infinity -- this overshoots a bit; would be nice
   // to have a tighter bound based on actual costs observed
   infinity_ = omega_ * (CostVector_t::dimensions_ - 1) +

@@ -13,6 +13,7 @@
 #include <sys/fcntl.h>
 
 #include "base/task_desc.pb.h"
+#include "base/units.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
@@ -28,7 +29,6 @@ DEFINE_string(serial_task_samples, "serial_task_samples",
 namespace firmament {
 
 KnowledgeBase::KnowledgeBase() {
-  cost_model_ = NULL;
   if (FLAGS_serialize_knowledge_base) {
     serial_machine_samples_.open(FLAGS_serial_machine_samples.c_str(),
                                  ios::out | ios::trunc | ios::binary);
@@ -75,7 +75,7 @@ void KnowledgeBase::AddMachineSample(
     q = FindOrNull(machine_map_, rid);
     CHECK_NOTNULL(q);
   }
-  if (q->size() * sizeof(sample) >= MAX_SAMPLE_QUEUE_CAPACITY)
+  if (q->size() * sizeof(sample) >= 1 * MB_TO_BYTES)
     q->pop_front();  // drop from the front
   q->push_back(sample);
   if (FLAGS_serialize_knowledge_base) {
@@ -99,7 +99,7 @@ void KnowledgeBase::AddTaskSample(const TaskPerfStatisticsSample& sample) {
     q = FindOrNull(task_map_, tid);
     CHECK_NOTNULL(q);
   }
-  if (q->size() * sizeof(sample) >= MAX_SAMPLE_QUEUE_CAPACITY)
+  if (q->size() * sizeof(sample) >= 1 * MB_TO_BYTES)
     q->pop_front();  // drop from the front
   q->push_back(sample);
   if (FLAGS_serialize_knowledge_base) {
@@ -167,16 +167,6 @@ const deque<TaskFinalReport>* KnowledgeBase::GetFinalReportsForTEC(
       EquivClass_t ec_id) const {
   const deque<TaskFinalReport>* res = FindOrNull(task_exec_reports_, ec_id);
   return res;
-}
-
-vector<EquivClass_t>* KnowledgeBase::GetResourceEquivClasses(
-    ResourceID_t resource_id) const {
-  return cost_model_->GetResourceEquivClasses(resource_id);
-}
-
-vector<EquivClass_t>* KnowledgeBase::GetTaskEquivClasses(
-    TaskID_t task_id) const {
-  return cost_model_->GetTaskEquivClasses(task_id);
 }
 
 double KnowledgeBase::GetAvgCPIForTEC(EquivClass_t id) {
@@ -303,32 +293,26 @@ void KnowledgeBase::LoadKnowledgeBaseFromFile() {
   task_samples.close();
 }
 
-void KnowledgeBase::ProcessTaskFinalReport(const TaskFinalReport& report,
-                                           TaskID_t task_id) {
+void KnowledgeBase::ProcessTaskFinalReport(
+    const vector<EquivClass_t>& equiv_classes,
+    const TaskFinalReport& report) {
   boost::lock_guard<boost::upgrade_mutex> lock(kb_lock_);
-  vector<EquivClass_t>* equiv_classes =
-    cost_model_->GetTaskEquivClasses(task_id);
-  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
-       it != equiv_classes->end(); ++it) {
-    EquivClass_t tec = *it;
+  for (auto& tec : equiv_classes) {
     // Check if we already have a record for this equiv class
-    deque<TaskFinalReport>* q = FindOrNull(task_exec_reports_, tec);
-    if (!q) {
+    deque<TaskFinalReport>* reports = FindOrNull(task_exec_reports_, tec);
+    if (!reports) {
       // Add a blank queue for this task
       CHECK(InsertOrUpdate(&task_exec_reports_, tec,
                            deque<TaskFinalReport>()));
-      q = FindOrNull(task_exec_reports_, tec);
-      CHECK_NOTNULL(q);
+      reports = FindOrNull(task_exec_reports_, tec);
+      CHECK_NOTNULL(reports);
     }
-    if (q->size() * sizeof(report) >= MAX_SAMPLE_QUEUE_CAPACITY)
-      q->pop_front();  // drop from the front
-    q->push_back(report);
+    if (reports->size() * sizeof(report) >= 1 * MB_TO_BYTES) {
+      reports->pop_front();
+    }
+    reports->push_back(report);
     VLOG(1) << "Recorded final report for task " << report.task_id();
   }
-}
-
-void KnowledgeBase::SetCostModel(CostModelInterface* cost_model) {
-  cost_model_ = cost_model;
 }
 
 }  // namespace firmament

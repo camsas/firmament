@@ -26,14 +26,15 @@ SimpleScheduler::SimpleScheduler(
     ResourceTopologyNodeDescriptor* resource_topology,
     shared_ptr<ObjectStoreInterface> object_store,
     shared_ptr<TaskMap_t> task_map,
+    shared_ptr<KnowledgeBase> knowledge_base,
     shared_ptr<TopologyManager> topo_mgr,
     MessagingAdapterInterface<BaseMessage>* m_adapter,
     EventNotifierInterface* event_notifier,
     ResourceID_t coordinator_res_id,
     const string& coordinator_uri)
     : EventDrivenScheduler(job_map, resource_map, resource_topology,
-                           object_store, task_map, topo_mgr, m_adapter,
-                           event_notifier, coordinator_res_id,
+                           object_store, task_map, knowledge_base, topo_mgr,
+                           m_adapter, event_notifier, coordinator_res_id,
                            coordinator_uri) {
   VLOG(1) << "SimpleScheduler initiated.";
 }
@@ -62,6 +63,37 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
   // point, we should start looking beyond the machine boundary and towards
   // remote resources.
   return NULL;
+}
+
+void SimpleScheduler::HandleTaskFinalReport(const TaskFinalReport& report,
+                                            TaskDescriptor* td_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  EventDrivenScheduler::HandleTaskFinalReport(report, td_ptr);
+  TaskID_t task_id = td_ptr->uid();
+  vector<EquivClass_t> equiv_classes;
+  // We create two equivalence class IDs:
+  // 1) an equivalence class ID per task_id
+  // 2) an equivalence class ID per program
+  // We create these equivalence class IDs in order to make the EC
+  // statistics view on the web UI work.
+  EquivClass_t task_agg =
+    static_cast<EquivClass_t>(HashCommandLine(*td_ptr));
+  equiv_classes.push_back(task_agg);
+  equiv_classes.push_back(task_id);
+  knowledge_base_->ProcessTaskFinalReport(equiv_classes, report);
+}
+
+void SimpleScheduler::PopulateSchedulerResourceUI(
+    ResourceID_t res_id,
+    TemplateDictionary* dict) const {
+  // At the moment to we do not show any resource-specific information
+  // for the simple scheduler.
+}
+
+void SimpleScheduler::PopulateSchedulerTaskUI(TaskID_t task_id,
+                                              TemplateDictionary* dict) const {
+  // At the moment to we do not show any task-specific information
+  // for the simple scheduler.
 }
 
 uint64_t SimpleScheduler::ScheduleAllJobs() {

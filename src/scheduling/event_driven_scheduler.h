@@ -19,6 +19,7 @@
 #include "engine/executor_interface.h"
 #include "misc/messaging_interface.h"
 #include "scheduling/event_notifier_interface.h"
+#include "scheduling/knowledge_base.h"
 #include "scheduling/scheduler_interface.h"
 #include "storage/reference_interface.h"
 
@@ -34,6 +35,7 @@ class EventDrivenScheduler : public SchedulerInterface {
                        ResourceTopologyNodeDescriptor* resource_topology,
                        shared_ptr<store::ObjectStoreInterface> object_store,
                        shared_ptr<TaskMap_t> task_map,
+                       shared_ptr<KnowledgeBase> knowledge_base,
                        shared_ptr<TopologyManager> topo_mgr,
                        MessagingAdapterInterface<BaseMessage>* m_adapter,
                        EventNotifierInterface* event_notifier,
@@ -55,6 +57,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   virtual void HandleTaskEviction(TaskDescriptor* td_ptr,
                                   ResourceDescriptor* rd_ptr);
   virtual void HandleTaskFailure(TaskDescriptor* td_ptr);
+  virtual void HandleTaskFinalReport(const TaskFinalReport& report,
+                                     TaskDescriptor* td_ptr);
   virtual void KillRunningTask(TaskID_t task_id,
                                TaskKillMessage::TaskKillReason reason);
   bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);

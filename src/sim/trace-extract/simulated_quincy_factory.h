@@ -64,7 +64,7 @@ SimulatedQuincyCostModel* SetupSimulatedQuincyCostModel(
     shared_ptr<JobMap_t> job_map,
     shared_ptr<TaskMap_t> task_map,
     unordered_map<TaskID_t, ResourceID_t>* task_bindings,
-    KnowledgeBase* knowledge_base,
+    shared_ptr<KnowledgeBase> knowledge_base,
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids) {
   uint64_t num_machines =

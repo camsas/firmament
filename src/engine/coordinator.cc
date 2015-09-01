@@ -30,7 +30,7 @@
 #include "misc/utils.h"
 #include "scheduling/flow/flow_scheduler.h"
 #include "scheduling/flow/scheduling_parameters.pb.h"
-#include "scheduling/flow/void_cost_model.h"
+#include "scheduling/knowledge_base.h"
 #include "scheduling/simple/simple_scheduler.h"
 #include "storage/simple_object_store.h"
 
@@ -66,7 +66,6 @@ Coordinator::Coordinator(PlatformID platform_id)
     topology_manager_(new TopologyManager()),
     object_store_(new store::SimpleObjectStore(uuid_)),
     parent_chan_(NULL),
-    knowledge_base_(new KnowledgeBase()),
     hostname_(boost::asio::ip::host_name()) {
   // Start up a coordinator according to the platform parameter
   string desc_name = "Coordinator on " + hostname_;
@@ -77,22 +76,22 @@ Coordinator::Coordinator(PlatformID platform_id)
   local_resource_topology_->mutable_resource_desc()->CopyFrom(
       resource_desc_);
 
+  shared_ptr<KnowledgeBase> knowledge_base(new KnowledgeBase());
   // Set up the scheduler
   if (FLAGS_scheduler == "simple") {
     // Simple random first-available scheduler
     LOG(INFO) << "Using simple random scheduler.";
     scheduler_ = new SimpleScheduler(
         job_table_, associated_resources_, local_resource_topology_,
-        object_store_, task_table_, topology_manager_, m_adapter_,
-        NULL, uuid_, FLAGS_listen_uri);
-    knowledge_base_->SetCostModel(new VoidCostModel(task_table_));
+        object_store_, task_table_, knowledge_base, topology_manager_,
+        m_adapter_, NULL, uuid_, FLAGS_listen_uri);
   } else if (FLAGS_scheduler == "flow") {
     // Quincy-style flow-based scheduling
     LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
     SchedulingParameters params;
     scheduler_ = new FlowScheduler(
         job_table_, associated_resources_, local_resource_topology_,
-        object_store_, task_table_, knowledge_base_, topology_manager_,
+        object_store_, task_table_, knowledge_base, topology_manager_,
         m_adapter_, NULL, uuid_, FLAGS_listen_uri, params);
   } else {
     // Unknown scheduler specified, error.
@@ -120,7 +119,7 @@ Coordinator::Coordinator(PlatformID platform_id)
                                   scheduler_, associated_resources_));
 
   if (FLAGS_populate_knowledge_base_from_file) {
-    knowledge_base_->LoadKnowledgeBaseFromFile();
+    scheduler_->knowledge_base()->LoadKnowledgeBaseFromFile();
   }
 }
 
@@ -263,7 +262,7 @@ void Coordinator::Run() {
       stats.set_resource_id(to_string(machine_uuid_));
       machine_monitor_.CreateStatistics(&stats);
       // Record this sample locally
-      knowledge_base_->AddMachineSample(stats);
+      scheduler_->knowledge_base()->AddMachineSample(stats);
       if (parent_chan_ != NULL) {
         SendHeartbeatToParent(stats);
       }
@@ -375,7 +374,9 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
   // instead of messages). Move over.
   if (bm->has_task_final_report()) {
     const TaskFinalReport& msg = bm->task_final_report();
-    HandleTaskFinalReport(msg);
+    TaskDescriptor *td_ptr = FindPtrOrNull(*task_table_, msg.task_id());
+    CHECK_NOTNULL(td_ptr);
+    scheduler_->HandleTaskFinalReport(msg, td_ptr);
     handled_extensions++;
   }
   // DIOS syscall: create message
@@ -451,27 +452,7 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       // Update timestamp
       rsp->set_last_heartbeat(GetCurrentTimestamp());
       // Record resource statistics sample
-      knowledge_base_->AddMachineSample(msg.load());
-  }
-}
-
-void Coordinator::HandleTaskFinalReport(const TaskFinalReport& report) {
-  VLOG(1) << "Handling task final report for " << report.task_id();
-  TaskDescriptor *td_ptr = FindPtrOrNull(*task_table_, report.task_id());
-  CHECK_NOTNULL(td_ptr);
-  HandleTaskFinalReport(report, td_ptr);
-}
-
-void Coordinator::HandleTaskFinalReport(const TaskFinalReport& report,
-                                        TaskDescriptor* td_ptr) {
-  CHECK_NOTNULL(td_ptr);
-  VLOG(1) << "Handling task final report for " << report.task_id();
-  // Process the report using the KB
-  knowledge_base_->ProcessTaskFinalReport(report, td_ptr->uid());
-  // Add the report to the TD if the task is not local (otherwise, the
-  // scheduler has already done so)
-  if (td_ptr->has_delegated_to()) {
-    td_ptr->mutable_final_report()->CopyFrom(report);
+      scheduler_->knowledge_base()->AddMachineSample(msg.load());
   }
 }
 
@@ -579,7 +560,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
     tdp->set_last_heartbeat_time(GetCurrentTimestamp());
     // Process the profiling information submitted by the task, add it to
     // the knowledge base
-    knowledge_base_->AddTaskSample(msg.stats());
+    scheduler_->knowledge_base()->AddTaskSample(msg.stats());
   }
 
   // If we have a parent coordinator on whose behalf we are managing this task,
@@ -596,7 +577,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
       RegisterWithCoordinator(parent_chan_);
     }
   } else {
-    knowledge_base_->AddTaskSample(msg.stats());
+    scheduler_->knowledge_base()->AddTaskSample(msg.stats());
   }
 }
 
@@ -791,7 +772,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
   }
   if (report.has_task_id()) {
     // Process the final report locally
-    HandleTaskFinalReport(report, td_ptr);
+    scheduler_->HandleTaskFinalReport(report, td_ptr);
   }
 }
 
@@ -1020,9 +1001,6 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
 
 void Coordinator::Shutdown(const string& reason) {
   LOG(INFO) << "Coordinator shutting down; reason: " << reason;
-  // TODO(ionel): Move this into the destructor. We can't do it now
-  // because the destructor is not called.
-  delete knowledge_base_;
 #ifdef __HTTP_UI__
   if (FLAGS_http_ui && c_http_ui_ && c_http_ui_->active())
       c_http_ui_->Shutdown(false);

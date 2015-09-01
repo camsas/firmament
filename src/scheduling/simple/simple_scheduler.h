@@ -17,6 +17,7 @@
 #include "base/task_desc.pb.h"
 #include "scheduling/event_driven_scheduler.h"
 #include "scheduling/event_notifier_interface.h"
+#include "scheduling/knowledge_base.h"
 #include "storage/object_store_interface.h"
 
 namespace firmament {
@@ -31,12 +32,19 @@ class SimpleScheduler : public EventDrivenScheduler {
                   ResourceTopologyNodeDescriptor* resource_topology,
                   shared_ptr<ObjectStoreInterface> object_store,
                   shared_ptr<TaskMap_t> task_map,
+                  shared_ptr<KnowledgeBase> knowledge_base,
                   shared_ptr<TopologyManager> topo_mgr,
                   MessagingAdapterInterface<BaseMessage>* m_adapter,
                   EventNotifierInterface* event_notifier,
                   ResourceID_t coordinator_res_id,
                   const string& coordinator_uri);
   ~SimpleScheduler();
+  void HandleTaskFinalReport(const TaskFinalReport& report,
+                             TaskDescriptor* td_ptr);
+  void PopulateSchedulerResourceUI(ResourceID_t res_id,
+                                   TemplateDictionary* dict) const;
+  void PopulateSchedulerTaskUI(TaskID_t task_id,
+                               TemplateDictionary* dict) const;
   uint64_t ScheduleAllJobs();
   uint64_t ScheduleJob(JobDescriptor* jd_ptr);
   uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr);

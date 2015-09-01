@@ -50,7 +50,6 @@
 #ifdef __HTTP_UI__
 #include "engine/coordinator_http_ui.h"
 #endif
-#include "scheduling/knowledge_base.h"
 #include "scheduling/flow/flow_scheduler.h"
 #include "scheduling/simple/simple_scheduler.h"
 #include "storage/object_store_interface.h"
@@ -213,9 +212,6 @@ class Coordinator : public Node,
   const string& hostname() {
     return hostname_;
   }
-  KnowledgeBase* knowledge_base() {
-    return knowledge_base_;
-  }
   const string& parent_uri() {
     return parent_uri_;
   }
@@ -252,8 +248,6 @@ class Coordinator : public Node,
                                    const string& endpoint);
   void HandleTaskDelegationResponse(const TaskDelegationResponseMessage& msg,
                                     const string& endpoint);
-  void HandleTaskFinalReport(const TaskFinalReport& report);
-  void HandleTaskFinalReport(const TaskFinalReport& report, TaskDescriptor* td);
   void HandleTaskHeartbeat(const TaskHeartbeatMessage& msg);
   void HandleTaskInfoRequest(const TaskInfoRequestMessage& msg,
                              const string& remote_endpoint);
@@ -307,8 +301,6 @@ class Coordinator : public Node,
   // Machine statistics monitor
   ProcFSMachine machine_monitor_;
   ResourceID_t machine_uuid_;
-  // Knowledge base
-  KnowledgeBase* knowledge_base_;
   // Local machine's host name
   const string hostname_;
 

@@ -20,6 +20,7 @@
 #include "engine/local_executor.h"
 #include "engine/remote_executor.h"
 #include "engine/simulated_executor.h"
+#include "scheduling/knowledge_base.h"
 #include "storage/object_store_interface.h"
 
 #define TASK_FAIL_TIMEOUT 60000000ULL
@@ -39,13 +40,14 @@ EventDrivenScheduler::EventDrivenScheduler(
     ResourceTopologyNodeDescriptor* resource_topology,
     shared_ptr<ObjectStoreInterface> object_store,
     shared_ptr<TaskMap_t> task_map,
+    shared_ptr<KnowledgeBase> knowledge_base,
     shared_ptr<TopologyManager> topo_mgr,
     MessagingAdapterInterface<BaseMessage>* m_adapter,
     EventNotifierInterface* event_notifier,
     ResourceID_t coordinator_res_id,
     const string& coordinator_uri)
-    : SchedulerInterface(job_map, resource_map, resource_topology,
-                         object_store, task_map),
+  : SchedulerInterface(job_map, knowledge_base, resource_map, resource_topology,
+                       object_store, task_map),
       coordinator_uri_(coordinator_uri),
       coordinator_res_id_(coordinator_res_id),
       event_notifier_(event_notifier),
@@ -332,6 +334,17 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   }
   if (event_notifier_) {
     event_notifier_->OnTaskFailure(td_ptr, rs_ptr->mutable_descriptor());
+  }
+}
+
+void EventDrivenScheduler::HandleTaskFinalReport(const TaskFinalReport& report,
+                                                 TaskDescriptor* td_ptr) {
+  CHECK_NOTNULL(td_ptr);
+  VLOG(1) << "Handling task final report for " << report.task_id();
+  // Add the report to the TD if the task is not local (otherwise, the
+  // scheduler has already done so)
+  if (td_ptr->has_delegated_to()) {
+    td_ptr->mutable_final_report()->CopyFrom(report);
   }
 }
 
