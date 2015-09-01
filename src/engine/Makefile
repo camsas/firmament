@@ -3,13 +3,15 @@ SUFFIX=engine
 
 include $(ROOT_DIR)/include/Makefile.config
 
-TASK_LIB_LIBS := $(LIBS) -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lhwloc -lssl -lcrypto
-LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time -lboost_timer -lhwloc -lssl -lcrypto
+TASK_LIB_LIBS := $(LIBS) -lboost_thread -lboost_system -lboost_regex \
+                 -lboost_date_time -lhwloc -lssl -lcrypto
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time \
+        -lboost_timer -lhwloc -lssl -lcrypto -lctemplate
 ifneq ($(BOOST_VERSION), "1.48")
  LIBS += -lboost_chrono
 endif
 ifdef BUILD_HTTP_UI
-  HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -ljansson -lctemplate
+  HTTP_UI_LIBS += $(PION_LIB) $(PB2JSON_LIB) -ljansson
 else
   HTTP_UI_LIBS =
 endif

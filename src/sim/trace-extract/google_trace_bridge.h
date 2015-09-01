@@ -186,7 +186,7 @@ class GoogleTraceBridge {
   // Map holding the number of tasks for each job.
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
 
-  KnowledgeBaseSimulator* knowledge_base_;
+  shared_ptr<KnowledgeBaseSimulator> knowledge_base_;
 
   // Map from the Google machine id to the Firmament rtnd.
   unordered_map<uint64_t,

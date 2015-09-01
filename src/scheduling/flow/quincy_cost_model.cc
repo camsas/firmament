@@ -26,13 +26,13 @@ QuincyCostModel::QuincyCostModel(
     unordered_map<TaskID_t, ResourceID_t> *task_bindings,
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-    KnowledgeBase* kb)
+    shared_ptr<KnowledgeBase> knowledge_base)
   : resource_map_(resource_map),
     job_map_(job_map),
     task_map_(task_map),
     task_bindings_(task_bindings),
     leaf_res_ids_(leaf_res_ids),
-    knowledge_base_(kb) {
+    knowledge_base_(knowledge_base) {
   //application_stats_ = knowledge_base_->AppStats();
   CHECK_NOTNULL(task_bindings_);
 }

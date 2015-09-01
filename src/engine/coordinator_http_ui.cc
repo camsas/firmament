@@ -478,17 +478,7 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
     dict.SetValue("RES_ID", rtnd_ptr->resource_desc().uuid());
     dict.SetValue("RES_FRIENDLY_NAME",
                   rtnd_ptr->resource_desc().friendly_name());
-    // Equivalence classes
-    vector<EquivClass_t>* equiv_classes =
-        coordinator_->knowledge_base()->GetResourceEquivClasses(rid);
-    if (equiv_classes) {
-      for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
-           it != equiv_classes->end(); ++it) {
-        TemplateDictionary* tec_dict = dict.AddSectionDictionary("RES_RECS");
-        tec_dict->SetFormattedValue("RES_REC", "%ju", *it);
-      }
-    }
-    delete equiv_classes;
+    coordinator_->scheduler()->PopulateSchedulerResourceUI(rid, &dict);
     dict.SetValue("RES_TYPE", ENUM_TO_STRING(ResourceDescriptor::ResourceType,
                                              rtnd_ptr->resource_desc().type()));
     dict.SetValue("RES_STATUS",
@@ -795,7 +785,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   if (!res_id_str.empty()) {
     ResourceID_t res_id = ResourceIDFromString(res_id_str);
     const deque<MachinePerfStatisticsSample> result =
-        coordinator_->knowledge_base()->GetStatsForMachine(res_id);
+      coordinator_->scheduler()->knowledge_base()->GetStatsForMachine(res_id);
     if (coordinator_->GetResourceTreeNode(res_id)) {
       int64_t length = result.size();
       output += "[";
@@ -824,7 +814,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     }
     output += "{ \"samples\": [";
     const deque<TaskPerfStatisticsSample>* samples_result =
-        coordinator_->knowledge_base()->GetStatsForTask(
+      coordinator_->scheduler()->knowledge_base()->GetStatsForTask(
             TaskIDFromString(task_id_str));
     if (samples_result) {
       bool first = true;
@@ -842,7 +832,8 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
     output += "]";
     output += ", \"reports\": [";
     const deque<TaskFinalReport>* report_result =
-      coordinator_->knowledge_base()->GetFinalReportForTask(td->uid());
+      coordinator_->scheduler()->knowledge_base()->GetFinalReportForTask(
+          td->uid());
     if (report_result) {
       bool first = true;
       for (deque<TaskFinalReport>::const_iterator it =
@@ -859,7 +850,7 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
   } else if (!ec_id_str.empty()) {
     output += "{ \"reports\": [";
     const deque<TaskFinalReport>* report_result =
-      coordinator_->knowledge_base()->GetFinalReportsForTEC(
+      coordinator_->scheduler()->knowledge_base()->GetFinalReportsForTEC(
           strtoull(ec_id_str.c_str(), 0, 10));
     if (report_result) {
       bool first = true;
@@ -1015,17 +1006,7 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
     // JS expects millisecond values
     dict.SetIntValue("TASK_LAST_HEARTBEAT",
                      td_ptr->last_heartbeat_time() / 1000);
-    // Equivalence classes
-    vector<EquivClass_t>* equiv_classes =
-        coordinator_->knowledge_base()->GetTaskEquivClasses(td_ptr->uid());
-    if (equiv_classes) {
-      for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
-           it != equiv_classes->end(); ++it) {
-        TemplateDictionary* tec_dict = dict.AddSectionDictionary("TASK_TECS");
-        tec_dict->SetFormattedValue("TASK_TEC", "%ju", *it);
-      }
-    }
-    delete equiv_classes;
+    coordinator_->scheduler()->PopulateSchedulerTaskUI(td_ptr->uid(), &dict);
     // Dependencies
     if (td_ptr->dependencies_size() > 0)
       dict.SetIntValue("TASK_NUM_DEPS", td_ptr->dependencies_size());

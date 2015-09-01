@@ -9,6 +9,8 @@
 #include <set>
 #include <vector>
 
+#include <ctemplate/template.h>
+
 #include "base/common.h"
 #include "messages/base_message.pb.h"
 #include "base/job_desc.pb.h"
@@ -17,11 +19,13 @@
 #include "misc/printable_interface.h"
 #include "engine/executor_interface.h"
 #include "engine/topology_manager.h"
+#include "scheduling/knowledge_base.h"
 #include "storage/object_store_interface.h"
 
 namespace firmament {
 namespace scheduler {
 
+using ctemplate::TemplateDictionary;
 using machine::topology::TopologyManager;
 using store::DataObjectMap_t;
 using store::ObjectStoreInterface;
@@ -29,12 +33,14 @@ using store::ObjectStoreInterface;
 class SchedulerInterface : public PrintableInterface {
  public:
   SchedulerInterface(shared_ptr<JobMap_t> job_map,
+                     shared_ptr<KnowledgeBase> knowledge_base,
                      shared_ptr<ResourceMap_t> resource_map,
                      ResourceTopologyNodeDescriptor* resource_topology,
                      shared_ptr<ObjectStoreInterface> object_store,
                      shared_ptr<TaskMap_t> task_map)
-      : job_map_(job_map),  resource_map_(resource_map), task_map_(task_map),
-        object_store_(object_store), resource_topology_(resource_topology) {}
+    : job_map_(job_map), knowledge_base_(knowledge_base),
+    resource_map_(resource_map), task_map_(task_map),
+    object_store_(object_store), resource_topology_(resource_topology) {}
 
   /**
    * Adds a new job. The job will be scheduled on the next run of the scheduler
@@ -116,6 +122,26 @@ class SchedulerInterface : public PrintableInterface {
    */
   virtual void HandleTaskFailure(TaskDescriptor* td_ptr) = 0;
 
+  shared_ptr<KnowledgeBase> knowledge_base() const {
+    return knowledge_base_;
+  }
+
+  /**
+   * Updates the state using the task's report.
+   * @param report the report to use
+   * @param td_ptr the descriptor of the task for which to update the state.
+   */
+  virtual void HandleTaskFinalReport(const TaskFinalReport& report,
+                                     TaskDescriptor* td_ptr) = 0;
+
+  /**
+   * Kills a running task.
+   * @param task_id the id of the task to kill
+   * @param reason the reason to kill the task
+   */
+  virtual void KillRunningTask(TaskID_t task_id,
+                               TaskKillMessage::TaskKillReason reason) = 0;
+
   /**
    * Places a task delegated from a superior coordinator to a resource managed
    * by this scheduler.
@@ -126,12 +152,20 @@ class SchedulerInterface : public PrintableInterface {
                                   ResourceID_t target_res_id) = 0;
 
   /**
-   * Kills a running task.
-   * @param task_id the id of the task to kill
-   * @param reason the reason to kill the task
+   * Populates the scheduler resource specific UI template fields.
+   * @param res_id the id of the resource for which to populate fields
+   * @param dict the template dictionary to populate
    */
-  virtual void KillRunningTask(TaskID_t task_id,
-                               TaskKillMessage::TaskKillReason reason) = 0;
+  virtual void PopulateSchedulerResourceUI(ResourceID_t res_id,
+                                           TemplateDictionary* dict) const = 0;
+
+  /**
+   * Populates the scheduler task specific UI template fields.
+   * @param task_id the id of the task for which to populate fields
+   * @param dict the template dictionary to populate
+   */
+  virtual void PopulateSchedulerTaskUI(TaskID_t task_id,
+                                       TemplateDictionary* dict) const = 0;
 
   /**
    * Registers a resource ID with the scheduler, who may subsequently assign
@@ -206,6 +240,7 @@ class SchedulerInterface : public PrintableInterface {
 
   // Pointers to the associated coordinator's job, resource and object maps
   shared_ptr<JobMap_t> job_map_;
+  shared_ptr<KnowledgeBase> knowledge_base_;
   shared_ptr<ResourceMap_t> resource_map_;
   shared_ptr<TaskMap_t> task_map_;
   shared_ptr<store::ObjectStoreInterface> object_store_;

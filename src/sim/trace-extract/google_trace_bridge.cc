@@ -43,7 +43,6 @@ GoogleTraceBridge::GoogleTraceBridge(
                       TraceTaskIdentifierHasher>();
   InitializeCostModel();
   solver_dispatcher_ = new scheduler::SolverDispatcher(flow_graph_, false);
-  knowledge_base_->SetCostModel(cost_model_);
 }
 
 GoogleTraceBridge::~GoogleTraceBridge() {
@@ -68,7 +67,6 @@ GoogleTraceBridge::~GoogleTraceBridge() {
   // N.B. We don't have to delete:
   // 1) cost_model_ because it is owned by the flow graph.
   // 2) event_manager_ because it is owned by google_trace_simulator.
-  delete knowledge_base_;
   delete solver_dispatcher_;
   delete task_runtime_;
 }

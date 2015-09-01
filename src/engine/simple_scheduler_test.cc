@@ -12,6 +12,7 @@
 #include "base/task_desc.pb.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
+#include "scheduling/knowledge_base.h"
 #include "scheduling/simple/simple_scheduler.h"
 #include "storage/simple_object_store.h"
 
@@ -52,6 +53,7 @@ class SimpleSchedulerTest : public ::testing::Test {
     obj_store_->Flush();
     sched_.reset(new SimpleScheduler(job_map_, res_map_, &res_topo_,
                                      obj_store_, task_map_,
+                                     shared_ptr<KnowledgeBase>(),
                                      shared_ptr<TopologyManager>(), NULL, NULL,
                                      GenerateResourceID(), "test"));
   }

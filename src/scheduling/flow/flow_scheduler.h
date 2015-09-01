@@ -39,7 +39,7 @@ class FlowScheduler : public EventDrivenScheduler {
                 ResourceTopologyNodeDescriptor* resource_topology,
                 shared_ptr<ObjectStoreInterface> object_store,
                 shared_ptr<TaskMap_t> task_map,
-                KnowledgeBase* kb,
+                shared_ptr<KnowledgeBase> knowledge_base,
                 shared_ptr<TopologyManager> topo_mgr,
                 MessagingAdapterInterface<BaseMessage>* m_adapter,
                 EventNotifierInterface* event_notifier,
@@ -54,8 +54,14 @@ class FlowScheduler : public EventDrivenScheduler {
   virtual void HandleTaskEviction(TaskDescriptor* td_ptr,
                                   ResourceDescriptor* rd_ptr);
   virtual void HandleTaskFailure(TaskDescriptor* td_ptr);
+  virtual void HandleTaskFinalReport(const TaskFinalReport& report,
+                                     TaskDescriptor* td_ptr);
   virtual void KillRunningTask(TaskID_t task_id,
                                TaskKillMessage::TaskKillReason reason);
+  virtual void PopulateSchedulerResourceUI(ResourceID_t res_id,
+                                           TemplateDictionary* dict) const;
+  virtual void PopulateSchedulerTaskUI(TaskID_t task_id,
+                                       TemplateDictionary* dict) const;
   virtual void RegisterResource(ResourceID_t res_id,
                                 bool local,
                                 bool simulated);
@@ -95,8 +101,6 @@ class FlowScheduler : public EventDrivenScheduler {
 
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
-  // Store a pointer to an external knowledge base.
-  KnowledgeBase* knowledge_base_;
   // Local storage of the current flow graph
   shared_ptr<FlowGraph> flow_graph_;
   // Flow scheduler parameters (passed in as protobuf to constructor)

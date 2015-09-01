@@ -24,7 +24,7 @@ class SJFCostModel : public CostModelInterface {
   SJFCostModel(shared_ptr<TaskMap_t> task_map,
                unordered_set<ResourceID_t,
                  boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-               KnowledgeBase* kb);
+               shared_ptr<KnowledgeBase> knowledge_base);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -69,7 +69,7 @@ class SJFCostModel : public CostModelInterface {
   // EC corresponding to the CLUSTER_AGG node
   EquivClass_t cluster_aggregator_ec_;
   // A knowledge base instance that we will refer to for job runtime statistics.
-  KnowledgeBase* knowledge_base_;
+  shared_ptr<KnowledgeBase> knowledge_base_;
   // Mapping betweeen machine res id and resource topology node descriptor.
   unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
     boost::hash<boost::uuids::uuid>> machine_to_rtnd_;

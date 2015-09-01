@@ -26,7 +26,7 @@ class WhareMapCostModel : public CostModelInterface {
  public:
   WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
                     shared_ptr<TaskMap_t> task_map,
-                    KnowledgeBase* kb);
+                    shared_ptr<KnowledgeBase> knowledge_base);
   // Debug info export
   virtual const string DebugInfo() const;
   // Costs pertaining to leaving tasks unscheduled
@@ -101,7 +101,7 @@ class WhareMapCostModel : public CostModelInterface {
   shared_ptr<TaskMap_t> task_map_;
   // A knowledge base instance that we refer to for job runtime statistics,
   // initialised externally
-  KnowledgeBase* knowledge_base_;
+  shared_ptr<KnowledgeBase> knowledge_base_;
   // EC corresponding to the CLUSTER_AGG node
   EquivClass_t cluster_aggregator_ec_;
   // Mapping between machine equiv classes and machines.

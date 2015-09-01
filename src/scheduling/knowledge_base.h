@@ -24,12 +24,8 @@
 #include "base/machine_perf_statistics_sample.pb.h"
 #include "base/task_perf_statistics_sample.pb.h"
 #include "base/task_final_report.pb.h"
-#include "scheduling/flow/cost_model_interface.h"
 
 namespace firmament {
-
-// Limit stats queues to 1MB each
-#define MAX_SAMPLE_QUEUE_CAPACITY 1024*1024
 
 class KnowledgeBase {
  public:
@@ -50,12 +46,9 @@ class KnowledgeBase {
   virtual double GetAvgRuntimeForTEC(EquivClass_t id);
   const deque<TaskFinalReport>* GetFinalReportForTask(TaskID_t task_id) const;
   const deque<TaskFinalReport>* GetFinalReportsForTEC(EquivClass_t ec_id) const;
-  vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) const;
-  vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t resource_id) const;
   void LoadKnowledgeBaseFromFile();
-  void ProcessTaskFinalReport(const TaskFinalReport& report,
-                              TaskID_t task_id);
-  void SetCostModel(CostModelInterface* cost_model);
+  void ProcessTaskFinalReport(const vector<EquivClass_t>& equiv_classes,
+                              const TaskFinalReport& report);
 
  protected:
   unordered_map<ResourceID_t, deque<MachinePerfStatisticsSample>,
@@ -65,7 +58,6 @@ class KnowledgeBase {
   unordered_map<TaskID_t, deque<TaskPerfStatisticsSample> > task_map_;
   unordered_map<TaskID_t, deque<TaskFinalReport> > task_exec_reports_;
   boost::upgrade_mutex kb_lock_;
-  CostModelInterface* cost_model_;
 
  private:
   fstream serial_machine_samples_;

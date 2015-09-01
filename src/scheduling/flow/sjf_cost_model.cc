@@ -24,8 +24,8 @@ namespace firmament {
 SJFCostModel::SJFCostModel(shared_ptr<TaskMap_t> task_map,
                            unordered_set<ResourceID_t,
                              boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-                           KnowledgeBase* kb)
-  : knowledge_base_(kb),
+                           shared_ptr<KnowledgeBase> knowledge_base)
+  : knowledge_base_(knowledge_base),
     task_map_(task_map) {
   // Create the cluster aggregator EC, which all machines are members of.
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");

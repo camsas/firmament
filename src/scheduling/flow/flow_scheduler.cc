@@ -44,7 +44,7 @@ FlowScheduler::FlowScheduler(
     ResourceTopologyNodeDescriptor* resource_topology,
     shared_ptr<ObjectStoreInterface> object_store,
     shared_ptr<TaskMap_t> task_map,
-    KnowledgeBase* kb,
+    shared_ptr<KnowledgeBase> knowledge_base,
     shared_ptr<TopologyManager> topo_mgr,
     MessagingAdapterInterface<BaseMessage>* m_adapter,
     EventNotifierInterface* event_notifier,
@@ -52,10 +52,10 @@ FlowScheduler::FlowScheduler(
     const string& coordinator_uri,
     const SchedulingParameters& params)
     : EventDrivenScheduler(job_map, resource_map, resource_topology,
-                           object_store, task_map, topo_mgr, m_adapter,
-                           event_notifier, coordinator_res_id, coordinator_uri),
+                           object_store, task_map, knowledge_base, topo_mgr,
+                           m_adapter, event_notifier, coordinator_res_id,
+                           coordinator_uri),
       topology_manager_(topo_mgr),
-      knowledge_base_(kb),
       parameters_(params),
       last_updated_time_dependent_costs_(0ULL),
       leaf_res_ids_(new unordered_set<ResourceID_t,
@@ -105,7 +105,6 @@ FlowScheduler::FlowScheduler(
 
   flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids_));
   cost_model_->SetFlowGraph(flow_graph_);
-  knowledge_base_->SetCostModel(cost_model_);
 
   LOG(INFO) << "FlowScheduler initiated; parameters: "
             << parameters_.ShortDebugString();
@@ -200,6 +199,17 @@ void FlowScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   flow_graph_->TaskFailed(td_ptr->uid());
 }
 
+void FlowScheduler::HandleTaskFinalReport(const TaskFinalReport& report,
+                                          TaskDescriptor* td_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  EventDrivenScheduler::HandleTaskFinalReport(report, td_ptr);
+  TaskID_t task_id = td_ptr->uid();
+  vector<EquivClass_t>* equiv_classes =
+    cost_model_->GetTaskEquivClasses(task_id);
+  knowledge_base_->ProcessTaskFinalReport(*equiv_classes, report);
+  delete equiv_classes;
+}
+
 void FlowScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
                                         ResourceDescriptor* rd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
@@ -238,6 +248,35 @@ void FlowScheduler::LogDebugCostModel() {
   string debug_info = cost_model_->DebugInfoCSV();
   fputs(debug_info.c_str(), csv_log_file);
   CHECK_EQ(fclose(csv_log_file), 0);
+}
+
+void FlowScheduler::PopulateSchedulerResourceUI(
+    ResourceID_t res_id,
+    TemplateDictionary* dict) const {
+  vector<EquivClass_t>* equiv_classes =
+      cost_model_->GetResourceEquivClasses(res_id);
+  if (equiv_classes) {
+    for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+         it != equiv_classes->end(); ++it) {
+      TemplateDictionary* tec_dict = dict->AddSectionDictionary("RES_RECS");
+      tec_dict->SetFormattedValue("RES_REC", "%ju", *it);
+    }
+  }
+  delete equiv_classes;
+}
+
+void FlowScheduler::PopulateSchedulerTaskUI(TaskID_t task_id,
+                                            TemplateDictionary* dict) const {
+  vector<EquivClass_t>* equiv_classes =
+    cost_model_->GetTaskEquivClasses(task_id);
+  if (equiv_classes) {
+    for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
+         it != equiv_classes->end(); ++it) {
+      TemplateDictionary* tec_dict = dict->AddSectionDictionary("TASK_TECS");
+      tec_dict->SetFormattedValue("TASK_TEC", "%ju", *it);
+    }
+  }
+  delete equiv_classes;
 }
 
 uint64_t FlowScheduler::ScheduleAllJobs() {
