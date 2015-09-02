@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_e6e6f815",
+        "filename": "src/engine/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-02T22:29:53Z",
+      "side": 1,
+      "message": "Why is this a general library dependency now? I think we only use it in the HTTP UI?\n\n(edit: I understand now that I have looked at other files -- it\u0027s fine)",
+      "range": {
+        "startLine": 9,
+        "startChar": 45,
+        "endLine": 9,
+        "endChar": 56
+      },
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_14c4dd90",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-02T22:29:53Z",
+      "side": 1,
+      "message": "We should check that knowledge_base() does a NULL check on the KB pointer before returning, so that this invocation is safe (i.e., it will CHECK-fail if the KB is null, rather than segfaulting). We use this invocation a lot, so it\u0027s a good idea to be sure.",
+      "range": {
+        "startLine": 122,
+        "startChar": 4,
+        "endLine": 122,
+        "endChar": 32
+      },
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_54e74540",
+        "filename": "src/scheduling/knowledge_base.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-02T22:29:53Z",
+      "side": 1,
+      "message": "This change doesn\u0027t make the code clearer to me -- why is the queue size being compared to a conversion macro? Maybe put \"1 * MB_TO_BYTES\" instead, or something similar?",
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_74e28930",
+        "filename": "src/scheduling/knowledge_base.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-02T22:29:53Z",
+      "side": 1,
+      "message": "See above.",
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_14ddbd70",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-02T22:29:53Z",
+      "side": 1,
+      "message": "Update the comment to match the fact that we no longer have a void cost model; also, there\u0027s no \"aggregator\" here, so I think we should say \"the ID of the EC\"",
+      "range": {
+        "startLine": 75,
+        "startChar": 5,
+        "endLine": 76,
+        "endChar": 48
+      },
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_34d8017f",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-02T22:29:53Z",
+      "side": 1,
+      "message": "We actually have a second EC (unlike implied by above comment), since we also keep task-specific info.\n\nI wonder if we should move to an approach where task-specific info is always recorded (even without an explicit EC), since we likely want it even in the flow scheduler, but we don\u0027t want the \"indivudal task EC\" in the flow graph.",
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_d4f35508",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-02T22:29:53Z",
+      "side": 1,
+      "message": "resource-specific",
+      "range": {
+        "startLine": 88,
+        "startChar": 49,
+        "endLine": 88,
+        "endChar": 50
+      },
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_f4f699f8",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-02T22:29:53Z",
+      "side": 1,
+      "message": "task-specific",
+      "range": {
+        "startLine": 94,
+        "startChar": 45,
+        "endLine": 94,
+        "endChar": 46
+      },
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
