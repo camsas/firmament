@@ -23,8 +23,6 @@
 namespace firmament {
 namespace scheduler {
 
-using executor::ExecutorInterface;
-
 class SimpleScheduler : public EventDrivenScheduler {
  public:
   SimpleScheduler(shared_ptr<JobMap_t> job_map,
