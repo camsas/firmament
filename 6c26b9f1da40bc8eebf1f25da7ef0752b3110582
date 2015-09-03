@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_0f4be82b",
+        "filename": "src/engine/simulated_executor.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-03T09:39:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_cfcae0a0",
+      "range": {
+        "startLine": 27,
+        "startChar": 12,
+        "endLine": 27,
+        "endChar": 13
+      },
+      "revId": "6c26b9f1da40bc8eebf1f25da7ef0752b3110582",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_2fbfccfd",
         "filename": "src/engine/simulated_executor.cc",
         "patchSetId": 2
@@ -36,6 +60,24 @@
       "writtenOn": "2015-09-03T09:34:32Z",
       "side": 1,
       "message": "Sanity check: where do we set this in the simulated environment and in the real one? This may not straightforwardly equate to the trace time, since the job may have waited to schedule. In other words, start and end time may have to be adapted. Maybe we already do that, though?",
+      "revId": "6c26b9f1da40bc8eebf1f25da7ef0752b3110582",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_2f46ec21",
+        "filename": "src/engine/simulated_executor.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-03T09:39:21Z",
+      "side": 1,
+      "message": "In the real one we set them in the local/remote_executors. Whereas in the simulated environment we set them in the google_trace_bridge (upcoming change). Everything should work fine, but I\u0027ll see once I start testing the new design.",
+      "parentUuid": "9ad9bd40_2fbfccfd",
       "revId": "6c26b9f1da40bc8eebf1f25da7ef0752b3110582",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
