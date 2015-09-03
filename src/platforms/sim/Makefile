@@ -1,5 +1,6 @@
 ROOT_DIR=../../..
 SUFFIX=platforms/sim
+LIBS += -lboost_system -lboost_thread -lboost_regex
 
 include $(ROOT_DIR)/include/Makefile.config
 

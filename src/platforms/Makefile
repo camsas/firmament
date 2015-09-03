@@ -7,7 +7,7 @@ PBS = common.pb.o
 # TODO(malte): This is a temporary hack to force building of the unix platform
 # in all cases. In the long run, we would like to be able to specify the
 # platform, or auto-detect it.
-LIB = libfirmament_unix.a
+LIB = libfirmament_unix.a libfirmament_platforms_sim.a
 OBJ_LIB = $(addprefix $(OBJ_DIR)/unix/, $(LIB))
 
 include $(ROOT_DIR)/include/Makefile.common
