@@ -301,33 +301,37 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr) {
 
 uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jds_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  LOG(INFO) << "START SCHEDULING jobs";
-  // First, we update the cost model's resource topology statistics (e.g. based
-  // on machine load and prior decisions); these need to be known before
-  // AddOrUpdateJobNodes is invoked below, as it may add arcs depending on these
-  // metrics.
-  UpdateCostModelResourceStats();
-  bool run_scheduler = false;
   uint64_t num_scheduled_tasks = 0;
-  for (auto& jd_ptr : jds_ptr) {
-    // Check if we have any runnable tasks in this job
-    const set<TaskID_t> runnable_tasks = RunnableTasksForJob(jd_ptr);
-    if (runnable_tasks.size() > 0) {
-      run_scheduler = true;
-      flow_graph_->AddOrUpdateJobNodes(jd_ptr);
-    }
-  }
-  if (run_scheduler) {
-    num_scheduled_tasks += RunSchedulingIteration();
-    LOG(INFO) << "STOP SCHEDULING, placed " << num_scheduled_tasks << " tasks";
-    // If we have cost model debug logging turned on, write some debugging
-    // information now.
-    if (FLAGS_debug_cost_model) {
-      LogDebugCostModel();
-    }
-    // Resource reservations may have changed, so reconsider equivalence classes
+  if (jds_ptr.size() > 0) {
+    LOG(INFO) << "START SCHEDULING jobs";
+    // First, we update the cost model's resource topology statistics
+    // (e.g. based on machine load and prior decisions); these need to be known
+    // before AddOrUpdateJobNodes is invoked below, as it may add arcs depending
+    // on these metrics.
+    UpdateCostModelResourceStats();
+    bool run_scheduler = false;
     for (auto& jd_ptr : jds_ptr) {
-      flow_graph_->AddOrUpdateJobNodes(jd_ptr);
+      // Check if we have any runnable tasks in this job
+      const set<TaskID_t> runnable_tasks = RunnableTasksForJob(jd_ptr);
+      if (runnable_tasks.size() > 0) {
+        run_scheduler = true;
+        flow_graph_->AddOrUpdateJobNodes(jd_ptr);
+      }
+    }
+    if (run_scheduler) {
+      num_scheduled_tasks += RunSchedulingIteration();
+      LOG(INFO) << "STOP SCHEDULING, placed " << num_scheduled_tasks
+                << " tasks";
+      // If we have cost model debug logging turned on, write some debugging
+      // information now.
+      if (FLAGS_debug_cost_model) {
+        LogDebugCostModel();
+      }
+      // Resource reservations may have changed, so reconsider equivalence
+      // classes
+      for (auto& jd_ptr : jds_ptr) {
+        flow_graph_->AddOrUpdateJobNodes(jd_ptr);
+      }
     }
   }
   return num_scheduled_tasks;
