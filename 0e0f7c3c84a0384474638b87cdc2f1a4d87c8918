@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_6fe2b430",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-03T09:29:43Z",
+      "side": 1,
+      "message": "This shouldn\u0027t be called _ptr, surely, since it\u0027s not a pointer? Below use of jds_ptr.size() illustrates why this seems odd. (Maybe \"jd_ptr_vec\" would be a more descriptive name?)",
+      "range": {
+        "startLine": 302,
+        "startChar": 67,
+        "endLine": 302,
+        "endChar": 74
+      },
+      "revId": "0e0f7c3c84a0384474638b87cdc2f1a4d87c8918",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
