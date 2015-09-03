@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_d46d1506",
+        "filename": "src/engine/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-03T09:13:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_e6e6f815",
+      "range": {
+        "startLine": 9,
+        "startChar": 45,
+        "endLine": 9,
+        "endChar": 56
+      },
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_14c4dd90",
         "filename": "src/engine/coordinator.cc",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2015-09-02T22:29:53Z",
       "side": 1,
       "message": "We should check that knowledge_base() does a NULL check on the KB pointer before returning, so that this invocation is safe (i.e., it will CHECK-fail if the KB is null, rather than segfaulting). We use this invocation a lot, so it\u0027s a good idea to be sure.",
+      "range": {
+        "startLine": 122,
+        "startChar": 4,
+        "endLine": 122,
+        "endChar": 32
+      },
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_af859c5a",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-03T09:13:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_14c4dd90",
       "range": {
         "startLine": 122,
         "startChar": 4,
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_747c49b6",
+        "filename": "src/scheduling/knowledge_base.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-03T09:13:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_54e74540",
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_74e28930",
         "filename": "src/scheduling/knowledge_base.cc",
         "patchSetId": 1
@@ -76,6 +142,24 @@
       "writtenOn": "2015-09-02T22:29:53Z",
       "side": 1,
       "message": "See above.",
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_944aad81",
+        "filename": "src/scheduling/knowledge_base.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-03T09:13:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_74e28930",
       "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_6f5d5415",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-03T09:13:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_14ddbd70",
+      "range": {
+        "startLine": 75,
+        "startChar": 5,
+        "endLine": 76,
+        "endChar": 48
+      },
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_34d8017f",
         "filename": "src/scheduling/simple/simple_scheduler.cc",
         "patchSetId": 1
@@ -116,6 +224,24 @@
       "writtenOn": "2015-09-02T22:29:53Z",
       "side": 1,
       "message": "We actually have a second EC (unlike implied by above comment), since we also keep task-specific info.\n\nI wonder if we should move to an approach where task-specific info is always recorded (even without an explicit EC), since we likely want it even in the flow scheduler, but we don\u0027t want the \"indivudal task EC\" in the flow graph.",
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_0f6848b9",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-03T09:13:05Z",
+      "side": 1,
+      "message": "I agree with this. I\u0027ll make a change after I finish the simulator changes.",
+      "parentUuid": "9ad9bd40_34d8017f",
       "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -145,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "9ad9bd40_145e9d45",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-03T09:13:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_d4f35508",
+      "range": {
+        "startLine": 88,
+        "startChar": 49,
+        "endLine": 88,
+        "endChar": 50
+      },
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad9bd40_f4f699f8",
         "filename": "src/scheduling/simple/simple_scheduler.cc",
         "patchSetId": 1
@@ -156,6 +306,30 @@
       "writtenOn": "2015-09-02T22:29:53Z",
       "side": 1,
       "message": "task-specific",
+      "range": {
+        "startLine": 94,
+        "startChar": 45,
+        "endLine": 94,
+        "endChar": 46
+      },
+      "revId": "6bce133d7d9fa1f4f54d2dd0fd559cfa7832b21c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_d4443576",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-03T09:13:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad9bd40_f4f699f8",
       "range": {
         "startLine": 94,
         "startChar": 45,
