@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad9bd40_cfcae0a0",
+        "filename": "src/engine/simulated_executor.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-03T09:34:32Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 27,
+        "startChar": 12,
+        "endLine": 27,
+        "endChar": 13
+      },
+      "revId": "6c26b9f1da40bc8eebf1f25da7ef0752b3110582",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ad9bd40_2fbfccfd",
+        "filename": "src/engine/simulated_executor.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-03T09:34:32Z",
+      "side": 1,
+      "message": "Sanity check: where do we set this in the simulated environment and in the real one? This may not straightforwardly equate to the trace time, since the job may have waited to schedule. In other words, start and end time may have to be adapted. Maybe we already do that, though?",
+      "revId": "6c26b9f1da40bc8eebf1f25da7ef0752b3110582",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
