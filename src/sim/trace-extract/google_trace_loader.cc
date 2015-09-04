@@ -140,7 +140,7 @@ void GoogleTraceLoader::LoadMachineTemplate(
 }
 
 void GoogleTraceLoader::LoadTaskUtilizationStats(
-    unordered_map<TraceTaskIdentifier, TaskStats,
+    unordered_map<TraceTaskIdentifier, TraceTaskStats,
       TraceTaskIdentifierHasher>* task_id_to_stats) {
   char line[1000];
   vector<string> cols;
@@ -161,7 +161,7 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
         TraceTaskIdentifier task_id;
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
-        TaskStats task_stats;
+        TraceTaskStats task_stats;
         task_stats.avg_mean_cpu_usage = lexical_cast<double>(cols[4]);
         task_stats.avg_canonical_mem_usage = lexical_cast<double>(cols[8]);
         task_stats.avg_assigned_mem_usage = lexical_cast<double>(cols[12]);

@@ -19,8 +19,7 @@ endif
 LIB = libfirmament_engine.a
 TASK_LIB = libfirmament_task_lib.a
 BINS = coordinator worker coordinator_sim
-GENERIC_OBJS = health_monitor.o local_executor.o node.o remote_executor.o \
-               simulated_executor.o task_health_checker.o topology_manager.o
+GENERIC_OBJS = health_monitor.o node.o
 COORD_OBJS = $(GENERIC_OBJS) coordinator.o
 ifdef BUILD_HTTP_UI
   COORD_OBJS += coordinator_http_ui.o
@@ -28,8 +27,7 @@ endif
 WORKER_OBJS = $(GENERIC_OBJS) worker.o
 OBJS = $(GENERIC_OBJS) $(COORD_OBJS) $(WORKER_OBJS)
 PBS =
-TESTS = coordinator_test local_executor_test simple_scheduler_test \
-        topology_manager_test worker_test
+TESTS = coordinator_test simple_scheduler_test worker_test
 TESTS_DEPS = $(BUILD_DIR)/misc/libfirmament_misc.a \
              $(BUILD_DIR)/base/libfirmament_base.a \
              $(BUILD_DIR)/messages/libfirmament_messages.a \
@@ -47,6 +45,7 @@ TESTS_coordinator_DEPS = $(addprefix $(OBJ_DIR)/, $(GENERIC_OBJS)) \
                          $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                          $(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
                          $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+                         $(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
                          $(BUILD_DIR)/misc/libfirmament_misc.a \
                          $(BUILD_DIR)/base/libfirmament_base.a \
                          $(BUILD_DIR)/messages/libfirmament_messages.a \
@@ -59,26 +58,18 @@ endif
 # depends on engine components that are not yet built when the schedulers (which
 # the coordinator depends on) are built.
 TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/node.o \
-                              $(BUILD_DIR)/engine/local_executor.o \
-                              $(BUILD_DIR)/engine/remote_executor.o \
-                              $(BUILD_DIR)/engine/simulated_executor.o \
-                              $(BUILD_DIR)/engine/task_health_checker.o \
-                              $(BUILD_DIR)/engine/topology_manager.o \
                               $(BUILD_DIR)/messages/libfirmament_messages.a \
                               $(BUILD_DIR)/scheduling/common.o \
                               $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                               $(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
                               $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+                              $(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
                               $(BUILD_DIR)/misc/libfirmament_misc.a \
                               $(BUILD_DIR)/base/libfirmament_base.a \
                               $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
                               $(BUILD_DIR)/storage/libfirmament_storage.a
-TESTS_local_executor_DEPS = $(BUILD_DIR)/engine/topology_manager.o \
-                            $(BUILD_DIR)/engine/task_health_checker.o \
-                            $(BUILD_DIR)/misc/libfirmament_misc.a \
-                            $(BUILD_DIR)/base/libfirmament_base.a
 TESTS_worker_DEPS = $(BUILD_DIR)/engine/node.o \
-                    $(BUILD_DIR)/engine/topology_manager.o \
+                    $(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
                     $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
                     $(BUILD_DIR)/messages/libfirmament_messages.a \
                     $(BUILD_DIR)/misc/libfirmament_misc.a \
@@ -105,9 +96,10 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
-	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 	$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
+	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 	$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
+		$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a \
 	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a
 	$(call quiet-command, \
@@ -120,8 +112,9 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
-		$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+		$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
+		$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
@@ -136,9 +129,10 @@ $(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
-	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 	$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
+	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 	$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
+	$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a \
 	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a
 	$(call quiet-command, \
@@ -151,8 +145,9 @@ $(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
-		$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+		$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
+		$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
@@ -183,8 +178,6 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) -o $(BUILD_DIR)/engine/worker, \
 		"  DYNLNK  $(BUILD_DIR)/engine/worker")
-#		$(BUILD_DIR)/engine/local_executor.o \
-
 
 $(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS))
 

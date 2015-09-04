@@ -3,7 +3,7 @@ SUFFIX=scheduling/simple
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_system -lboost_timer
+LIBS += -lboost_system -lboost_timer -lctemplate
 
 LIB = libfirmament_scheduling_simple.a
 

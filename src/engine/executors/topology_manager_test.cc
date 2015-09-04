@@ -8,7 +8,7 @@
 #include <fcntl.h>
 
 #include "base/common.h"
-#include "engine/topology_manager.h"
+#include "engine/executors/topology_manager.h"
 #include "misc/utils.h"
 
 namespace firmament {

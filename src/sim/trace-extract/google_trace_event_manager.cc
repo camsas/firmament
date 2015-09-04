@@ -22,9 +22,9 @@ DEFINE_double(online_max_time, 100000000.0, "Online mode: cap on time solver "
               "takes to run, in seconds. If unspecified, no cap imposed."
               " Only use with incremental solver, in which case it should"
               " be set to the worst case runtime of the full solver.");
-
-DECLARE_bool(incremental_flow);
-DECLARE_uint64(runtime);
+DEFINE_uint64(runtime, 9223372036854775807,
+              "Maximum time in microsec to extract data for"
+              "(from start of trace)");
 
 static bool ValidateBatchStep(const char* flagname, uint64_t batch_step) {
   if (batch_step == 0) {
@@ -49,7 +49,7 @@ namespace firmament {
 namespace sim {
 
 GoogleTraceEventManager::GoogleTraceEventManager() {
-  LOG(INFO) << "Maximum number of events to process: " << FLAGS_max_events;
+  LOG(INFO) << "Maximum number of task events to process: " << FLAGS_max_events;
   LOG(INFO) << "Maximum number of scheduling rounds: "
             << FLAGS_max_scheduling_rounds;
 }
@@ -63,6 +63,7 @@ pair<uint64_t, EventDescriptor> GoogleTraceEventManager::GetNextEvent() {
   multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
   pair<uint64_t, EventDescriptor> time_event = *it;
   events_.erase(it);
+  current_simulation_time_ = max(current_simulation_time_, time_event.first);
   return time_event;
 }
 
@@ -78,25 +79,15 @@ uint64_t GoogleTraceEventManager::GetTimeOfNextEvent() {
 
 uint64_t GoogleTraceEventManager::GetTimeOfNextSolverRun(
     uint64_t cur_run_solver_at,
-    double algorithm_time) {
+    double cur_scheduler_runtime) {
   if (FLAGS_batch_step == 0) {
     // we're in online mode
     // 1. when we run the solver next depends on how fast we were
-    double time_to_solve = min(algorithm_time, FLAGS_online_max_time);
+    double time_to_solve = min(cur_scheduler_runtime, FLAGS_online_max_time);
     time_to_solve *= SECONDS_TO_MICROSECONDS;
     // adjust for time warp factor
     time_to_solve *= FLAGS_online_factor;
     cur_run_solver_at += static_cast<uint64_t>(time_to_solve);
-    // 2. if task assignments changed, then graph will have been
-    // modified, even in the absence of any new events.
-    // Incremental solvers will want to rerun here, as it reduces
-    // latency. But we shouldn't count it as an actual iteration.
-    // Full solvers will not want to rerun: no point.
-    if (FLAGS_incremental_flow) {
-      EventDescriptor event;
-      event.set_type(EventDescriptor::TASK_ASSIGNMENT_CHANGED);
-      events_.insert(make_pair(cur_run_solver_at, event));
-    }
   } else {
     // we're in batch mode
     cur_run_solver_at += FLAGS_batch_step;
@@ -105,12 +96,11 @@ uint64_t GoogleTraceEventManager::GetTimeOfNextSolverRun(
 }
 
 bool GoogleTraceEventManager::HasSimulationCompleted(
-    uint64_t task_time,
     uint64_t num_events,
     uint64_t num_scheduling_rounds) {
   // We only run for the first FLAGS_runtime microseconds.
-  if (FLAGS_runtime < task_time) {
-    LOG(INFO) << "Terminating at : " << task_time;
+  if (FLAGS_runtime < current_simulation_time_) {
+    LOG(INFO) << "Terminating at : " << current_simulation_time_;
     return true;
   }
   if (num_events > FLAGS_max_events) {

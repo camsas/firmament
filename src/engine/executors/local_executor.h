@@ -8,8 +8,10 @@
 // do, in fact, is to send a message to a remote resource, which will then
 // instruct its local executor to actually start a process.
 
-#ifndef FIRMAMENT_ENGINE_LOCAL_EXECUTOR_H
-#define FIRMAMENT_ENGINE_LOCAL_EXECUTOR_H
+#ifndef FIRMAMENT_ENGINE_EXECUTORS_LOCAL_EXECUTOR_H
+#define FIRMAMENT_ENGINE_EXECUTORS_LOCAL_EXECUTOR_H
+
+#include "engine/executors/executor_interface.h"
 
 #include <vector>
 #include <string>
@@ -24,9 +26,8 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/task_final_report.pb.h"
-#include "engine/executor_interface.h"
-#include "engine/task_health_checker.h"
-#include "engine/topology_manager.h"
+#include "engine/executors/task_health_checker.h"
+#include "engine/executors/topology_manager.h"
 
 namespace firmament {
 namespace executor {
@@ -118,4 +119,4 @@ class LocalExecutor : public ExecutorInterface {
 }  // namespace executor
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_LOCAL_EXECUTOR_H
+#endif  // FIRMAMENT_ENGINE_EXECUTORS_LOCAL_EXECUTOR_H

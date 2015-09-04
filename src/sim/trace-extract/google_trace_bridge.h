@@ -11,16 +11,21 @@
 #include <vector>
 
 #include "base/common.h"
-#include "scheduling/flow/flow_graph.h"
-#include "scheduling/flow/solver_dispatcher.h"
-#include "sim/knowledge_base_simulator.h"
+#include "messages/base_message.pb.h"
+#include "platforms/sim/simulated_messaging_adapter.h"
+#include "scheduling/event_notifier_interface.h"
+#include "scheduling/scheduler_interface.h"
 #include "sim/trace-extract/google_trace_event_manager.h"
 #include "sim/trace-extract/google_trace_utils.h"
+#include "sim/trace-extract/knowledge_base_simulator.h"
+#include "storage/object_store_interface.h"
 
 namespace firmament {
 namespace sim {
 
-class GoogleTraceBridge {
+using scheduler::SchedulerStats;
+
+class GoogleTraceBridge : public scheduler::EventNotifierInterface {
  public:
   GoogleTraceBridge(const string& trace_path,
                     GoogleTraceEventManager* event_manager);
@@ -37,22 +42,69 @@ class GoogleTraceBridge {
       const ResourceTopologyNodeDescriptor& machine_tmpl, uint64_t machine_id);
 
   /**
+   * Adds machine perf statistics to the knowledge base for every machine in the
+   * trace.
+   * @param current_time current simulation time
+   */
+  void AddMachineSamples(uint64_t current_time);
+
+  /**
    * Adds a new task to the flow graph. Updates the internal mappings as well.
    * @param task_identifier the google trace identifier of the task
    * @return a pointer to the descriptor of the task
    */
   TaskDescriptor* AddTask(const TraceTaskIdentifier& task_identifier);
 
-  /**
-   * Populate and add the root node of the topology.
-   */
-  void CreateRootResource();
-
-  shared_ptr<FlowGraph> flow_graph() {
-    return flow_graph_;
-  }
-
   void LoadTraceData(ResourceTopologyNodeDescriptor* machine_tmpl);
+
+  /**
+   * Event called by the event driven scheduler upon job completion.
+   * @param job_id the id of the completed job
+   */
+  void OnJobCompletion(JobID_t job_id);
+
+  /**
+   * Event called by the event driven scheduler upon task completion.
+   * @param td_ptr the descriptor of the completed task
+   * @param rd_ptr the descriptor of the resource on which the task was running
+   */
+  void OnTaskCompletion(TaskDescriptor* td_ptr,
+                        ResourceDescriptor* rd_ptr);
+
+  /**
+   * Event called by the event driven scheduler upon task eviction.
+   * @param td_ptr the descriptor of the evicted task
+   * @param rd_ptr the descriptor of the resource on which the task was running
+   */
+  void OnTaskEviction(TaskDescriptor* td_ptr,
+                      ResourceDescriptor* rd_ptr);
+
+  /**
+   * Event called by the event driven scheduler upon task failure.
+   * @param td_ptr the descriptor of the failed task
+   * @param rd_ptr the descriptor of the resource on which the task was running
+   */
+  void OnTaskFailure(TaskDescriptor* td_ptr,
+                     ResourceDescriptor* rd_ptr);
+
+  /**
+   * Event called by the event driven scheduler upon task migration.
+   * @param td_ptr the descriptor of the migrated task
+   * @param rd_ptr the descriptor of the resource to which the task is migrated
+   */
+  void OnTaskMigration(TaskDescriptor* td_ptr,
+                       ResourceDescriptor* rd_ptr);
+
+  /**
+   * Event called by the event driven scheduler upon task placement.
+   * @param td_ptr the descriptor of the placed task
+   * @param rd_ptr the descriptor of the resource on which the task was placed
+   */
+  void OnTaskPlacement(TaskDescriptor* td_ptr,
+                       ResourceDescriptor* rd_ptr);
+
+  void RegisterMachinePUs(ResourceTopologyNodeDescriptor* rtnd_ptr,
+                          ResourceID_t machine_res_id);
 
   /**
    * Removes a machine from the topology and all its associated state.
@@ -62,9 +114,7 @@ class GoogleTraceBridge {
    */
   void RemoveMachine(uint64_t machine_id);
 
-  multimap<uint64_t, uint64_t>* RunSolver(double *algorithm_time,
-                                          double *flow_solver_time,
-                                          FILE *graph_output);
+  void RunSolver(SchedulerStats* scheduler_stats);
 
   /**
    * Notifies the flow_graph of a task completion and updates the simulator's
@@ -73,38 +123,22 @@ class GoogleTraceBridge {
    */
   void TaskCompleted(const TraceTaskIdentifier& task_identifier);
 
-  void UpdateFlowGraph(
-    uint64_t scheduling_timestamp,
-    multimap<uint64_t, uint64_t>* task_mappings);
-  void UpdateResourceStats();
-
  private:
   /**
-   * Compute and add task completion event to the simulator's events.
-   * @param cur_timestamp the timestap when the task starts running
-   * @param task_id the Firmament task id
-   * @param task_identifier the simulator task identifier
-   * @param task_runtime the mapping between tasks and runtimes
+   * Add task end event to the simulator event queue.
+   * @param task_identifier the trace identifier of the task
+   * @param td_ptr the descriptor of the task
    */
-  void AddTaskEndEvent(
-      uint64_t cur_timestamp,
-      const TraceTaskIdentifier& task_identifier);
-
-  void AddTaskStats(const TraceTaskIdentifier& task_identifier);
+  void AddTaskEndEvent(const TraceTaskIdentifier& task_identifier,
+                       TaskDescriptor* td_ptr);
 
   /**
-   * Populate the knowledge base for each equivalence class with statistics.
-   * @param task_identifier the task for which we populate the knowledge base
-   * @param runtime the runtime of the task
-   * @param task_stats struct containg various task statistics (e.g. men_usage)
-   * @param task_equiv_classes vector of equivalence classes for which to
-   * populate the knowledge base
+   * Add task statistics to the knowledge base.
+   * @param trace_task_identifier the trace identifier of the task
+   * @param task_id the Firmament task id
    */
-  void AddTaskStatsToKnowledgeBase(
-      const TraceTaskIdentifier& task_identifier,
-      double runtime,
-      const TaskStats& task_stats,
-      const vector<EquivClass_t>& task_equiv_classes);
+  void AddTaskStats(const TraceTaskIdentifier& trace_task_identifier,
+                    TaskID_t task_id);
 
   /**
    * Creates a new task for a job.
@@ -112,16 +146,6 @@ class GoogleTraceBridge {
    * @return a pointer to the task descriptor of the new task
    */
   TaskDescriptor* AddTaskToJob(JobDescriptor* jd_ptr);
-
-  void InitializeCostModel();
-
-  /**
-   * Notifies the flow graph of job completion and updates the simulator's
-   * state.
-   * @param simulator_job_id the simulator's job id
-   * @param job_id flow graph's job id
-   */
-  void JobCompleted(uint64_t simulator_job_id, JobID_t job_id);
 
   /**
    * Create and populate a new job.
@@ -144,8 +168,6 @@ class GoogleTraceBridge {
   void RemoveResourceNodeFromParentChildrenList(
       const ResourceTopologyNodeDescriptor& rtnd);
 
-  void RemoveTaskStats(TaskID_t task_id);
-
   /**
    * The resource topology is built from the same protobuf file. The function
    * changes the uuids to make sure that there's no two identical uuids.
@@ -153,32 +175,14 @@ class GoogleTraceBridge {
   void ResetUuidAndAddResource(ResourceTopologyNodeDescriptor* rtnd,
                                const string& hostname, const string& root_uuid);
 
-  /**
-   * Evicts a task from a resource and updates the state of the simulator
-   * and of the flow graph.
-   * @param task_id the id of the evited task
-   * @param res_id the id of the resource from which to evict the task
-   */
-  void TaskEvicted(TaskID_t task_id, const ResourceID_t& res_id);
-
-  /**
-   * Updates simulator's state upon the eviction of a task.
-   **/
-  void TaskEvictedClearSimulatorState(
-      TaskID_t task_id,
-      uint64_t task_end_time,
-      const ResourceID_t& res_id,
-      const TraceTaskIdentifier& task_identifier);
-
-  CostModelInterface* cost_model_;
-
   GoogleTraceEventManager* event_manager_;
-
-  shared_ptr<FlowGraph> flow_graph_;
 
   // Map used to convert between the google trace job_ids and the Firmament
   // job descriptors.
-  unordered_map<uint64_t, JobDescriptor*> job_id_to_jd_;
+  unordered_map<uint64_t, JobDescriptor*> trace_job_id_to_jd_;
+  // Map used to convert between the Firmament job id and the trace job id.
+  unordered_map<JobID_t, uint64_t, boost::hash<boost::uuids::uuid> >
+    job_id_to_trace_job_id_;
 
   // Map from JobID_t to JobDescriptor
   shared_ptr<JobMap_t> job_map_;
@@ -188,13 +192,11 @@ class GoogleTraceBridge {
 
   shared_ptr<KnowledgeBaseSimulator> knowledge_base_;
 
-  // Map from the Google machine id to the Firmament rtnd.
-  unordered_map<uint64_t,
-    ResourceTopologyNodeDescriptor*> trace_machine_id_to_rtnd_;
+  // Multimap storing the mapping between machine resource ids and their PU
+  // resource descriptors.
+  multimap<ResourceID_t, ResourceDescriptor*> machine_res_id_pus_;
 
-  // Map holding the task_id of the task running on the resource with res_id.
-  unordered_map<ResourceID_t, TaskID_t,
-      boost::hash<boost::uuids::uuid> > res_id_to_task_id_;
+  platform::sim::SimulatedMessagingAdapter<BaseMessage>* messaging_adapter_;
 
   // Map from ResourceID_t to ResourceStatus*
   shared_ptr<ResourceMap_t> resource_map_;
@@ -202,30 +204,31 @@ class GoogleTraceBridge {
   // The root node of the machine topology.
   ResourceTopologyNodeDescriptor rtn_root_;
 
-  scheduler::SolverDispatcher* solver_dispatcher_;
-
-  // Map holding the ResourceID_t of every scheduled task.
-  unordered_map<TaskID_t, ResourceID_t> task_bindings_;
+  scheduler::SchedulerInterface* scheduler_;
 
   // Map from Firmament TaskID_t to Google trace task identifier.
   unordered_map<TaskID_t, TraceTaskIdentifier> task_id_to_identifier_;
-
-  // Map used to convert between the google trace task_ids and the Firmament
-  // task descriptors.
-  unordered_map<TraceTaskIdentifier, TaskDescriptor*, TraceTaskIdentifierHasher>
-      trace_task_id_to_td_;
-
-  unordered_map<TraceTaskIdentifier, TaskStats, TraceTaskIdentifierHasher>
-      trace_task_id_to_stats_;
 
   // Map from TaskID_t to TaskDescriptor*
   shared_ptr<TaskMap_t> task_map_;
 
   // Map holding the per-task runtime information
   unordered_map<TraceTaskIdentifier, uint64_t,
-    TraceTaskIdentifierHasher>* task_runtime_;
+    TraceTaskIdentifierHasher> task_runtime_;
 
   string trace_path_;
+
+  // Map from the Google machine id to the Firmament rtnd.
+  unordered_map<uint64_t,
+    ResourceTopologyNodeDescriptor*> trace_machine_id_to_rtnd_;
+
+  unordered_map<TraceTaskIdentifier, TraceTaskStats, TraceTaskIdentifierHasher>
+      trace_task_id_to_stats_;
+
+  // Map used to convert between the google trace task_ids and the Firmament
+  // task descriptors.
+  unordered_map<TraceTaskIdentifier, TaskDescriptor*, TraceTaskIdentifierHasher>
+      trace_task_id_to_td_;
 
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.
