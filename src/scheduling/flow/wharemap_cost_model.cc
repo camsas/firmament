@@ -38,6 +38,15 @@ WhareMapCostModel::WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
   VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;
 }
 
+WhareMapCostModel::~WhareMapCostModel() {
+  for (auto& psi : psi_map_) {
+    delete psi.second;
+  }
+  for (auto& xi : xi_map_) {
+    delete xi.second;
+  }
+}
+
 Cost_t WhareMapCostModel::AverageFromVec(const vector<uint64_t>& vec) const {
   uint64_t acc = 0ULL;
   for (auto it = vec.begin(); it != vec.end(); ++it) {

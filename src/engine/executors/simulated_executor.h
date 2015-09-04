@@ -1,15 +1,16 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#ifndef FIRMAMENT_ENGINE_SIMULATED_EXECUTOR_H
-#define FIRMAMENT_ENGINE_SIMULATED_EXECUTOR_H
+#ifndef FIRMAMENT_ENGINE_EXECUTORS_SIMULATED_EXECUTOR_H
+#define FIRMAMENT_ENGINE_EXECUTORS_SIMULATED_EXECUTOR_H
+
+#include "engine/executors/executor_interface.h"
 
 #include <string>
 #include <vector>
 
 #include "base/common.h"
 #include "base/task_final_report.pb.h"
-#include "engine/executor_interface.h"
 
 namespace firmament {
 namespace executor {
@@ -38,4 +39,4 @@ class SimulatedExecutor : public ExecutorInterface {
 }  // namespace executor
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_SIMULATED_EXECUTOR_H
+#endif  // FIRMAMENT_ENGINE_EXECUTORS_SIMULATED_EXECUTOR_H

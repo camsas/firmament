@@ -13,8 +13,6 @@
 
 namespace firmament {
 
-using machine::topology::TopologyManager;
-
 JSONExporter::JSONExporter() {
 }
 

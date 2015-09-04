@@ -19,15 +19,12 @@
 #include "sim/trace-extract/google_trace_event_manager.h"
 #include "sim/trace-extract/google_trace_utils.h"
 
-DECLARE_string(flow_scheduling_solver);
 DECLARE_string(flow_scheduling_binary);
 DECLARE_bool(incremental_flow);
 DECLARE_bool(only_read_assignment_changes);
-DECLARE_bool(debug_flow_graph);
 DECLARE_bool(add_root_task_to_graph);
 DECLARE_bool(flow_scheduling_strict);
 DECLARE_bool(flow_scheduling_time_reported);
-DECLARE_bool(graph_output_events);
 
 namespace firmament {
 namespace sim {
@@ -47,16 +44,6 @@ class GoogleTraceSimulator {
    */
   void ProcessSimulatorEvents(
       uint64_t cur_time, const ResourceTopologyNodeDescriptor& machine_tmpl);
-
-  /**
-   * Process the given task event.
-   * @param cut_time the timestamp of the event
-   * @param task_identifier the Google trace identifier of the task
-   * @param event_type the type of the event
-   */
-  void ProcessTaskEvent(
-      uint64_t cur_time,
-      const TraceTaskIdentifier& task_identifier, uint64_t event_type);
 
   void ReplayTrace();
 

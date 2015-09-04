@@ -47,7 +47,7 @@ FlowScheduler::FlowScheduler(
     shared_ptr<KnowledgeBase> knowledge_base,
     shared_ptr<TopologyManager> topo_mgr,
     MessagingAdapterInterface<BaseMessage>* m_adapter,
-    EventNotifierInterface* event_notifier,
+    SchedulingEventNotifierInterface* event_notifier,
     ResourceID_t coordinator_res_id,
     const string& coordinator_uri,
     const SchedulingParameters& params)
@@ -97,7 +97,11 @@ FlowScheduler::FlowScheduler(
       cost_model_ = new OctopusCostModel(resource_map, task_map);
       VLOG(1) << "Using the octopus cost model";
       break;
-      // TODO(ionel): Add cases for VOID and SIMULATE_QUINCY cost models.
+    case CostModelType::COST_MODEL_VOID:
+      cost_model_ = new VoidCostModel(task_map);
+      VLOG(1) << "Using the void cost model";
+      break;
+    // TODO(ionel): Initialize SimulatedQuincyCostModel.
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
@@ -115,9 +119,9 @@ FlowScheduler::FlowScheduler(
 }
 
 FlowScheduler::~FlowScheduler() {
+  delete cost_model_;
   delete solver_dispatcher_;
   delete leaf_res_ids_;
-  // XXX(ionel): stub
 }
 
 const ResourceID_t* FlowScheduler::FindResourceForTask(
@@ -161,53 +165,60 @@ uint64_t FlowScheduler::ApplySchedulingDeltas(
 
 void FlowScheduler::DeregisterResource(ResourceID_t res_id) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  EventDrivenScheduler::DeregisterResource(res_id);
-  flow_graph_->RemoveMachine(res_id);
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs_ptr);
+  if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_MACHINE) {
+    flow_graph_->RemoveMachine(res_id);
+  }
+  if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_PU) {
+    EventDrivenScheduler::DeregisterResource(res_id);
+  }
+  // We don't have to do anything if the resource is not a PU or a MACHINE.
 }
 
 void FlowScheduler::HandleJobCompletion(JobID_t job_id) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  // Call into superclass handler
-  EventDrivenScheduler::HandleJobCompletion(job_id);
   // Job completed, so remove its nodes
   flow_graph_->JobCompleted(job_id);
+  // Call into superclass handler
+  EventDrivenScheduler::HandleJobCompletion(job_id);
 }
 
 void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                          TaskFinalReport* report) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  // Call into superclass handler
-  EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   // We don't need to do any flow graph stuff for delegated tasks as
   // they are not currently represented in the flow graph.
   // Otherwise, we need to remove nodes, etc.
   if (!td_ptr->has_delegated_from()) {
     flow_graph_->TaskCompleted(td_ptr->uid());
   }
+  // Call into superclass handler
+  EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
 }
 
 void FlowScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
                                        ResourceDescriptor* rd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  EventDrivenScheduler::HandleTaskEviction(td_ptr, rd_ptr);
   flow_graph_->TaskEvicted(td_ptr->uid(), ResourceIDFromString(rd_ptr->uuid()));
+  EventDrivenScheduler::HandleTaskEviction(td_ptr, rd_ptr);
 }
 
 void FlowScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  EventDrivenScheduler::HandleTaskFailure(td_ptr);
   flow_graph_->TaskFailed(td_ptr->uid());
+  EventDrivenScheduler::HandleTaskFailure(td_ptr);
 }
 
 void FlowScheduler::HandleTaskFinalReport(const TaskFinalReport& report,
                                           TaskDescriptor* td_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  EventDrivenScheduler::HandleTaskFinalReport(report, td_ptr);
   TaskID_t task_id = td_ptr->uid();
   vector<EquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(task_id);
   knowledge_base_->ProcessTaskFinalReport(*equiv_classes, report);
   delete equiv_classes;
+  EventDrivenScheduler::HandleTaskFinalReport(report, td_ptr);
 }
 
 void FlowScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
@@ -219,24 +230,24 @@ void FlowScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
   ResourceID_t* old_res_id_ptr = FindOrNull(task_bindings_, task_id);
   CHECK_NOTNULL(old_res_id_ptr);
   ResourceID_t old_res_id = *old_res_id_ptr;
-  EventDrivenScheduler::HandleTaskMigration(td_ptr, rd_ptr);
   flow_graph_->TaskMigrated(task_id, old_res_id,
                             ResourceIDFromString(rd_ptr->uuid()));
+  EventDrivenScheduler::HandleTaskMigration(td_ptr, rd_ptr);
 }
 
 void FlowScheduler::HandleTaskPlacement(TaskDescriptor* td_ptr,
                                         ResourceDescriptor* rd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  EventDrivenScheduler::HandleTaskPlacement(td_ptr, rd_ptr);
   flow_graph_->TaskScheduled(td_ptr->uid(),
                              ResourceIDFromString(rd_ptr->uuid()));
+  EventDrivenScheduler::HandleTaskPlacement(td_ptr, rd_ptr);
 }
 
 void FlowScheduler::KillRunningTask(TaskID_t task_id,
                                     TaskKillMessage::TaskKillReason reason) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  EventDrivenScheduler::KillRunningTask(task_id, reason);
   flow_graph_->TaskKilled(task_id);
+  EventDrivenScheduler::KillRunningTask(task_id, reason);
 }
 
 void FlowScheduler::LogDebugCostModel() {
@@ -279,27 +290,29 @@ void FlowScheduler::PopulateSchedulerTaskUI(TaskID_t task_id,
   delete equiv_classes;
 }
 
-uint64_t FlowScheduler::ScheduleAllJobs() {
+uint64_t FlowScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   vector<JobDescriptor*> jobs;
   for (auto& job_id_jd : jobs_to_schedule_) {
     jobs.push_back(job_id_jd.second);
   }
-  uint64_t num_scheduled_tasks = ScheduleJobs(jobs);
+  uint64_t num_scheduled_tasks = ScheduleJobs(jobs, scheduler_stats);
   ClearScheduledJobs();
   return num_scheduled_tasks;
 }
 
-uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr) {
+uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr,
+                                    SchedulerStats* scheduler_stats) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   LOG(INFO) << "START SCHEDULING (via " << jd_ptr->uuid() << ")";
   LOG(WARNING) << "This way of scheduling a job is slow in the flow scheduler! "
                << "Consider using ScheduleAllJobs() instead.";
   vector<JobDescriptor*> jobs_to_schedule {jd_ptr};
-  return ScheduleJobs(jobs_to_schedule);
+  return ScheduleJobs(jobs_to_schedule, scheduler_stats);
 }
 
-uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect) {
+uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
+                                     SchedulerStats* scheduler_stats) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   uint64_t num_scheduled_tasks = 0;
   if (jd_ptr_vect.size() > 0) {
@@ -319,7 +332,8 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect) 
       }
     }
     if (run_scheduler) {
-      num_scheduled_tasks += RunSchedulingIteration();
+      num_scheduled_tasks +=
+        RunSchedulingIteration(scheduler_stats);
       LOG(INFO) << "STOP SCHEDULING, placed " << num_scheduled_tasks
                 << " tasks";
       // If we have cost model debug logging turned on, write some debugging
@@ -348,7 +362,8 @@ void FlowScheduler::RegisterResource(ResourceID_t res_id,
   EventDrivenScheduler::RegisterResource(res_id, local, simulated);
 }
 
-uint64_t FlowScheduler::RunSchedulingIteration() {
+uint64_t FlowScheduler::RunSchedulingIteration(
+    SchedulerStats* scheduler_stats) {
   // If this is the first iteration ever, we should ensure that the cost
   // model's notion of statistics is correct.
   if (solver_dispatcher_->seq_num() == 0)
@@ -380,7 +395,8 @@ uint64_t FlowScheduler::RunSchedulingIteration() {
     last_updated_time_dependent_costs_ = cur_time;
   }
   // Run the flow solver! This is where all the juicy goodness happens :)
-  multimap<uint64_t, uint64_t>* task_mappings = solver_dispatcher_->Run();
+  multimap<uint64_t, uint64_t>* task_mappings =
+    solver_dispatcher_->Run(scheduler_stats);
   // Solver's done, let's post-process the results.
   multimap<uint64_t, uint64_t>::iterator it;
   vector<SchedulingDelta*> deltas;
