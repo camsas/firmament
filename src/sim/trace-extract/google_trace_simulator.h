@@ -19,15 +19,12 @@
 #include "sim/trace-extract/google_trace_event_manager.h"
 #include "sim/trace-extract/google_trace_utils.h"
 
-DECLARE_string(flow_scheduling_solver);
 DECLARE_string(flow_scheduling_binary);
 DECLARE_bool(incremental_flow);
 DECLARE_bool(only_read_assignment_changes);
-DECLARE_bool(debug_flow_graph);
 DECLARE_bool(add_root_task_to_graph);
 DECLARE_bool(flow_scheduling_strict);
 DECLARE_bool(flow_scheduling_time_reported);
-DECLARE_bool(graph_output_events);
 
 namespace firmament {
 namespace sim {
@@ -46,17 +43,8 @@ class GoogleTraceSimulator {
    * @param machine_tmpl topology to use in case new machines are added
    */
   void ProcessSimulatorEvents(
-      uint64_t cur_time, const ResourceTopologyNodeDescriptor& machine_tmpl);
-
-  /**
-   * Process the given task event.
-   * @param cut_time the timestamp of the event
-   * @param task_identifier the Google trace identifier of the task
-   * @param event_type the type of the event
-   */
-  void ProcessTaskEvent(
-      uint64_t cur_time,
-      const TraceTaskIdentifier& task_identifier, uint64_t event_type);
+      uint64_t events_up_to_time,
+      const ResourceTopologyNodeDescriptor& machine_tmpl);
 
   void ReplayTrace();
 
@@ -71,7 +59,7 @@ class GoogleTraceSimulator {
    * @param the time when the solver should run
    * @return the time when the solver should run after the run at run_solver_at
    */
-  uint64_t RunSolver(uint64_t run_solver_at);
+  uint64_t RunSolverHelper(uint64_t run_solver_at);
 
   /**
    * Update the fields used to maintain statistics about the current scheduling
@@ -90,6 +78,9 @@ class GoogleTraceSimulator {
   uint64_t last_event_in_scheduling_round_;
   uint64_t num_events_in_scheduling_round_;
   uint64_t sum_timestamps_in_scheduling_round_;
+
+  // Counter used to store the number of duplicate task ids seed in the trace.
+  uint64_t num_duplicate_task_ids_;
 
   string trace_path_;
 

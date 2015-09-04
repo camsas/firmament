@@ -5,17 +5,17 @@
 // scheduler then the methods defined in this interfaces are called events
 // happen.
 
-#ifndef FIRMAMENT_SCHEDULING_EVENT_NOTIFIER_INTERFACE_H
-#define FIRMAMENT_SCHEDULING_EVENT_NOTIFIER_INTERFACE_H
+#ifndef FIRMAMENT_SCHEDULING_SCHEDULING_EVENT_NOTIFIER_INTERFACE_H
+#define FIRMAMENT_SCHEDULING_SCHEDULING_EVENT_NOTIFIER_INTERFACE_H
 
 #include "base/types.h"
 
 namespace firmament {
 namespace scheduler {
 
-class EventNotifierInterface {
+class SchedulingEventNotifierInterface {
  public:
-  virtual ~EventNotifierInterface() {}
+  virtual ~SchedulingEventNotifierInterface() {}
   virtual void OnJobCompletion(JobID_t job_id) = 0;
   virtual void OnTaskCompletion(TaskDescriptor* td_ptr,
                                 ResourceDescriptor* rd_ptr) = 0;
@@ -32,4 +32,4 @@ class EventNotifierInterface {
 }  // namespace scheduler
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_EVENT_NOTIFIER_INTERFACE_H
+#endif  // FIRMAMENT_SCHEDULING_SCHEDULING_EVENT_NOTIFIER_INTERFACE_H

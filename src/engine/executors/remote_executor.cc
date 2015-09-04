@@ -3,7 +3,7 @@
 //
 // Remote executor class.
 
-#include "engine/remote_executor.h"
+#include "engine/executors/remote_executor.h"
 
 #include "base/common.h"
 #include "misc/protobuf_envelope.h"

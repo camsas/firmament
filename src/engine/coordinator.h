@@ -52,7 +52,7 @@
 #include "scheduling/flow/flow_scheduler.h"
 #include "scheduling/simple/simple_scheduler.h"
 #include "storage/object_store_interface.h"
-#include "engine/topology_manager.h"
+#include "engine/executors/topology_manager.h"
 #ifdef __SIMULATE_SYNTHETIC_DTG__
 #include "sim/simple_dtg_generator.h"
 #endif

@@ -109,7 +109,7 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   // Export
   DIMACSExporter exp;
   exp.Export(g);
-  exp.Flush("test.dm");
+  exp.FlushAndClose("test.dm");
   delete leaf_res_ids;
 }
 
@@ -177,7 +177,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   exp.Export(g);
   string outname = "/tmp/test.dm";
   VLOG(1) << "Output written to " << outname;
-  exp.Flush(outname);
+  exp.FlushAndClose(outname);
   delete leaf_res_ids;
 }
 
@@ -246,7 +246,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     string outname;
     spf(&outname, "/tmp/test%jd.dm", f);
     VLOG(1) << "Output written to " << outname;
-    exp.Flush(outname);
+    exp.FlushAndClose(outname);
     delete leaf_res_ids;
   }
 }

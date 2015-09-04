@@ -16,11 +16,11 @@
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
-#include "engine/executor_interface.h"
+#include "engine/executors/executor_interface.h"
 #include "scheduling/event_driven_scheduler.h"
-#include "scheduling/event_notifier_interface.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/scheduling_delta.pb.h"
+#include "scheduling/scheduling_event_notifier_interface.h"
 #include "scheduling/flow/dimacs_exporter.h"
 #include "scheduling/flow/flow_graph.h"
 #include "scheduling/flow/solver_dispatcher.h"
@@ -42,7 +42,7 @@ class FlowScheduler : public EventDrivenScheduler {
                 shared_ptr<KnowledgeBase> knowledge_base,
                 shared_ptr<TopologyManager> topo_mgr,
                 MessagingAdapterInterface<BaseMessage>* m_adapter,
-                EventNotifierInterface* event_notifier,
+                SchedulingEventNotifierInterface* event_notifier,
                 ResourceID_t coordinator_res_id,
                 const string& coordinator_uri,
                 const SchedulingParameters& params);
@@ -65,9 +65,11 @@ class FlowScheduler : public EventDrivenScheduler {
   virtual void RegisterResource(ResourceID_t res_id,
                                 bool local,
                                 bool simulated);
-  virtual uint64_t ScheduleAllJobs();
-  virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr);
-  virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr);
+  virtual uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats);
+  virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr,
+                               SchedulerStats* scheduler_stats);
+  virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
+                                SchedulerStats* scheduler_stats);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<FlowScheduler, parameters: "
                    << parameters_.DebugString() << ">";
@@ -92,7 +94,7 @@ class FlowScheduler : public EventDrivenScheduler {
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
-  uint64_t RunSchedulingIteration();
+  uint64_t RunSchedulingIteration(SchedulerStats* scheduler_stats);
   void UpdateCostModelResourceStats();
   void UpdateResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);

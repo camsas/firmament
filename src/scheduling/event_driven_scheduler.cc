@@ -16,9 +16,9 @@
 #include "base/units.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
-#include "engine/local_executor.h"
-#include "engine/remote_executor.h"
-#include "engine/simulated_executor.h"
+#include "engine/executors/local_executor.h"
+#include "engine/executors/remote_executor.h"
+#include "engine/executors/simulated_executor.h"
 #include "scheduling/knowledge_base.h"
 #include "storage/object_store_interface.h"
 #include "storage/reference_types.h"
@@ -44,7 +44,7 @@ EventDrivenScheduler::EventDrivenScheduler(
     shared_ptr<KnowledgeBase> knowledge_base,
     shared_ptr<TopologyManager> topo_mgr,
     MessagingAdapterInterface<BaseMessage>* m_adapter,
-    EventNotifierInterface* event_notifier,
+    SchedulingEventNotifierInterface* event_notifier,
     ResourceID_t coordinator_res_id,
     const string& coordinator_uri)
   : SchedulerInterface(job_map, knowledge_base, resource_map, resource_topology,
@@ -61,16 +61,17 @@ EventDrivenScheduler::~EventDrivenScheduler() {
   for (map<ResourceID_t, ExecutorInterface*>::const_iterator
        exec_iter = executors_.begin();
        exec_iter != executors_.end();
-       ++exec_iter)
+       ++exec_iter) {
     delete exec_iter->second;
+  }
   executors_.clear();
-  delete event_notifier_;
+  // We don't delete event_notifier_ and m_adapter_ptr because they're owned by
+  // the coordinator or the trace_bridge.
 }
 
 void EventDrivenScheduler::AddJob(JobDescriptor* jd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  CHECK(InsertIfNotPresent(&jobs_to_schedule_,
-                           JobIDFromString(jd_ptr->uuid()), jd_ptr));
+  InsertOrUpdate(&jobs_to_schedule_, JobIDFromString(jd_ptr->uuid()), jd_ptr);
 }
 
 void EventDrivenScheduler::BindTaskToResource(TaskDescriptor* td_ptr,
@@ -155,6 +156,7 @@ void EventDrivenScheduler::DeregisterResource(ResourceID_t res_id) {
   // Remove the executor for the resource.
   CHECK(executors_.erase(res_id));
   delete exec;
+  resource_bindings_.erase(res_id);
 }
 
 void EventDrivenScheduler::ExecuteTask(TaskDescriptor* td_ptr,
@@ -223,7 +225,6 @@ void EventDrivenScheduler::HandleReferenceStateChange(
       if (!any_outstanding) {
         task->set_state(TaskDescriptor::RUNNABLE);
         runnable_tasks_.insert(task->uid());
-        blocked_tasks_.erase(task);
       }
     }
   } else if (old_ref.Consumable() && !new_ref.Consumable()) {
@@ -274,7 +275,7 @@ void EventDrivenScheduler::HandleTaskDelegationFailure(
   JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
   CHECK_NOTNULL(jd);
   // Try again to schedule...
-  ScheduleJob(jd);
+  ScheduleJob(jd, NULL);
 }
 
 void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
@@ -286,6 +287,8 @@ void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
   CHECK(UnbindTaskFromResource(td_ptr, res_id));
   // Record final report
   ExecutorInterface* exec = FindPtrOrNull(executors_, res_id);
+  td_ptr->set_state(TaskDescriptor::RUNNABLE);
+  runnable_tasks_.insert(td_ptr->uid());
   CHECK_NOTNULL(exec);
   exec->HandleTaskEviction(td_ptr);
   if (event_notifier_) {

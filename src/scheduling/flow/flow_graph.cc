@@ -51,7 +51,7 @@ FlowGraph::FlowGraph(CostModelInterface *cost_model,
 }
 
 FlowGraph::~FlowGraph() {
-  delete cost_model_;
+  // We don't delete cost_model_ because it's owned by the FlowScheduler.
   for (unordered_map<uint64_t, FlowGraphNode*>::iterator it = node_map_.begin();
        it != node_map_.end(); ) {
     unordered_map<uint64_t, FlowGraphNode*>::iterator it_tmp = it;

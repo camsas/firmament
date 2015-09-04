@@ -3,7 +3,7 @@
 //
 // Simulated quincy cost model setting values.
 
-#include "sim/knowledge_base_simulator.h"
+#include "sim/trace-extract/knowledge_base_simulator.h"
 
 // Racks contain "between 29 and 31 computers" in Quincy test setup
 DEFINE_uint64(simulated_quincy_machines_per_rack, 30,

@@ -3,14 +3,15 @@
 //
 // Stub header for remote executor.
 
-#ifndef FIRMAMENT_ENGINE_REMOTE_EXECUTOR_H
-#define FIRMAMENT_ENGINE_REMOTE_EXECUTOR_H
+#ifndef FIRMAMENT_ENGINE_EXECUTORS_REMOTE_EXECUTOR_H
+#define FIRMAMENT_ENGINE_EXECUTORS_REMOTE_EXECUTOR_H
+
+#include "engine/executors/executor_interface.h"
 
 #include <vector>
 #include <string>
 
 #include "base/common.h"
-#include "engine/executor_interface.h"
 #include "misc/messaging_interface.h"
 #include "messages/base_message.pb.h"
 
@@ -55,4 +56,4 @@ class RemoteExecutor : public ExecutorInterface {
 }  // namespace executor
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_REMOTE_EXECUTOR_H
+#endif  // FIRMAMENT_ENGINE_EXECUTORS_REMOTE_EXECUTOR_H
