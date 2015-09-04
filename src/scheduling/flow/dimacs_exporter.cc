@@ -14,8 +14,6 @@
 
 namespace firmament {
 
-using machine::topology::TopologyManager;
-
 DIMACSExporter::DIMACSExporter()
     : output_("") {
 }
@@ -83,25 +81,23 @@ void DIMACSExporter::ExportIncremental(const vector<DIMACSChange*>& changes) {
   output_ += GenerateComment("EOI");
 }
 
-void DIMACSExporter::Flush(const string& filename) {
-  // TODO(malte): Sanity checks
+void DIMACSExporter::FlushAndClose(const string& filename) {
   // Write the cached DIMACS graph string out to the file
   FILE* outfd = fopen(filename.c_str(), "w");
+  CHECK(outfd != NULL) << "Failed to open file " << filename
+                       << " to communicate with the solver";
   fprintf(outfd, "%s", output_.c_str());
   CHECK_EQ(fclose(outfd), 0);
 }
 
-void DIMACSExporter::Flush(int fd) {
-  // TODO(malte): Sanity checks
+void DIMACSExporter::FlushAndClose(int fd) {
   // Write the cached DIMACS graph string out to the file
-  FILE *stream;
-  if ((stream = fdopen(fd, "w")) == NULL) {
-    LOG(ERROR) << "Failed to open FD to solver for writing. FD: " << fd;
-  } else {
-    fprintf(stream, "%s", output_.c_str());
-    if (fflush(stream)) {
-      LOG(FATAL) << "Error while flushing";
-    }
+  FILE *stream = fdopen(fd, "w");
+  CHECK(stream != NULL) << "Failed to open FD to solver for writing. FD: "
+                        << fd;
+  fprintf(stream, "%s", output_.c_str());
+  if (fflush(stream)) {
+    LOG(FATAL) << "Error while flushing";
   }
   CHECK_EQ(fclose(stream), 0);
 }

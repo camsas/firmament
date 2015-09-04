@@ -9,8 +9,8 @@
 //
 // hwloc is under BSD license, permitting use and redistribution.
 
-#ifndef FIRMAMENT_ENGINE_TOPOLOGY_MANAGER_H
-#define FIRMAMENT_ENGINE_TOPOLOGY_MANAGER_H
+#ifndef FIRMAMENT_ENGINE_EXECUTORS_TOPOLOGY_MANAGER_H
+#define FIRMAMENT_ENGINE_EXECUTORS_TOPOLOGY_MANAGER_H
 
 #include <string>
 #include <map>
@@ -60,4 +60,4 @@ class TopologyManager {
 }  // namespace machine
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_TOPOLOGY_MANAGER_H
+#endif  // FIRMAMENT_ENGINE_EXECUTORS_TOPOLOGY_MANAGER_H

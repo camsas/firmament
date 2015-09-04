@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#include "engine/simulated_executor.h"
+#include "engine/executors/simulated_executor.h"
 
 #include <string>
 #include <vector>
