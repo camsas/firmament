@@ -17,9 +17,9 @@
 #include "storage/reference_utils.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
-#include "engine/local_executor.h"
-#include "engine/remote_executor.h"
-#include "engine/simulated_executor.h"
+#include "engine/executors/local_executor.h"
+#include "engine/executors/remote_executor.h"
+#include "engine/executors/simulated_executor.h"
 #include "scheduling/knowledge_base.h"
 #include "storage/object_store_interface.h"
 
@@ -283,7 +283,7 @@ void EventDrivenScheduler::HandleTaskDelegationFailure(
   JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
   CHECK_NOTNULL(jd);
   // Try again to schedule...
-  ScheduleJob(jd);
+  ScheduleJob(jd, NULL);
 }
 
 void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,

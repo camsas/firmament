@@ -9,8 +9,7 @@
 #include <string>
 
 #include "base/common.h"
-#include "scheduling/flow/dimacs_change_stats.h"
-#include "scheduling/flow/flow_graph.h"
+#include "scheduling/scheduler_interface.h"
 #include "sim/trace-extract/event_desc.pb.h"
 
 DECLARE_uint64(batch_step);
@@ -75,17 +74,12 @@ void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
                        FILE* stats_file,
                        const boost::timer::cpu_timer timer,
                        uint64_t solver_executed_at,
-                       double algorithm_time,
-                       double flow_solver_time,
-                       const DIMACSChangeStats& change_stats);
+                       const scheduler::SchedulerStats& scheduler_stats);
 
 void LogStartOfSolverRun(FILE* graph_output,
-                         shared_ptr<FlowGraph> flow_graph,
                          uint64_t run_solver_at);
 
 uint64_t MaxEventIdToRetain();
-
-void OutputChangeStats(FILE* stats_file, const DIMACSChangeStats& stats);
 
 void OutputStatsHeader(FILE* stats_file);
 

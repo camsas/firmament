@@ -20,6 +20,10 @@ class GoogleTraceEventManager {
 
   void AddEvent(uint64_t timestamp, EventDescriptor event);
 
+  uint64_t current_simulation_time() {
+    return current_simulation_time_;
+  }
+
   pair<uint64_t, EventDescriptor> GetNextEvent();
 
   /**
@@ -28,15 +32,16 @@ class GoogleTraceEventManager {
   uint64_t GetTimeOfNextEvent();
 
   uint64_t GetTimeOfNextSolverRun(uint64_t cur_run_solver_at,
-                                  double algorithm_time);
+                                  double scheduler_runtime);
 
-  bool HasSimulationCompleted(uint64_t task_time, uint64_t num_events,
+  bool HasSimulationCompleted(uint64_t num_events,
                               uint64_t num_scheduling_rounds);
 
   void RemoveTaskEndRuntimeEvent(const TraceTaskIdentifier& task_identifier,
                                  uint64_t task_end_time);
 
  private:
+  uint64_t current_simulation_time_ = 0;
   // The map storing the simulator events. Maps from timestamp to simulator
   // event.
   multimap<uint64_t, EventDescriptor> events_;

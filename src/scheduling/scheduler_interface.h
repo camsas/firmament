@@ -17,8 +17,8 @@
 #include "base/types.h"
 #include "base/task_final_report.pb.h"
 #include "misc/printable_interface.h"
-#include "engine/executor_interface.h"
-#include "engine/topology_manager.h"
+#include "engine/executors/executor_interface.h"
+#include "engine/executors/topology_manager.h"
 #include "scheduling/knowledge_base.h"
 #include "storage/object_store_interface.h"
 
@@ -29,6 +29,13 @@ using ctemplate::TemplateDictionary;
 using machine::topology::TopologyManager;
 using store::DataObjectMap_t;
 using store::ObjectStoreInterface;
+
+struct SchedulerStats {
+  // Accounts only the algorithmic part of the scheduler.
+  double algorithm_runtime;
+  // Accounts the entire scheduling time.
+  double scheduler_runtime;
+};
 
 class SchedulerInterface : public PrintableInterface {
  public:
@@ -186,7 +193,7 @@ class SchedulerInterface : public PrintableInterface {
    * Runs a scheduling iteration for all active jobs.
    * @return the number of tasks scheduled
    */
-  virtual uint64_t ScheduleAllJobs() = 0;
+  virtual uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats = NULL) = 0;
 
   /**
    * Schedules all runnable tasks in a job.
@@ -195,14 +202,16 @@ class SchedulerInterface : public PrintableInterface {
    * @param jd_ptr the job descriptor for which to schedule tasks
    * @return the number of tasks scheduled
    */
-  virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr) = 0;
+  virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr,
+                               SchedulerStats* scheduler_stats = NULL) = 0;
 
   /**
    * Schedules the given jobs.
    * @param jds_ptr a vector of job descriptors
    * @return the number of tasks scheduled
    */
-  virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr) = 0;
+  virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
+                                SchedulerStats* scheduler_stats = NULL) = 0;
 
  protected:
   /**

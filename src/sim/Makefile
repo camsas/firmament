@@ -6,8 +6,7 @@ include $(ROOT_DIR)/include/Makefile.config
 BINS =
 LIB = libfirmament_sim.a
 OBJS = event_queue.o google_runtime_distribution.o \
-       simple_dtg_generator.o simulation_driver.o \
-			 knowledge_base_simulator.o
+       simple_dtg_generator.o simulation_driver.o
 PBS = simulation_event.pb.o
 TESTS =
 TESTS_DEPS =

@@ -14,8 +14,6 @@
 
 namespace firmament {
 
-using machine::topology::TopologyManager;
-
 DIMACSExporter::DIMACSExporter()
     : output_("") {
 }

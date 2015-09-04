@@ -22,8 +22,6 @@
 
 #include "misc/string_utils.h"
 #include "misc/utils.h"
-#include "scheduling/flow/dimacs_change_stats.h"
-#include "scheduling/flow/flow_graph.h"
 #include "sim/trace-extract/google_trace_loader.h"
 
 using boost::lexical_cast;
@@ -47,6 +45,8 @@ DEFINE_uint64(solver_timeout, UINT64_MAX,
               "Timeout: terminate after waiting this number of seconds");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
+
+DECLARE_uint64(heartbeat_interval);
 
 static bool ValidateSolver(const char* flagname, const string& solver) {
   if (solver.compare("cs2") && solver.compare("flowlessly") &&
@@ -131,7 +131,6 @@ void GoogleTraceSimulator::Run() {
   LOG(INFO) << "Starting Google trace simulator!";
   LOG(INFO) << "Time to simulate for: " << FLAGS_runtime << " microseconds.";
 
-  bridge_->CreateRootResource();
   ReplayTrace();
 }
 
@@ -142,11 +141,11 @@ void GoogleTraceSimulator::SolverTimeoutHandler(int sig) {
 }
 
 void GoogleTraceSimulator::ProcessSimulatorEvents(
-    uint64_t cur_time,
+    uint64_t events_up_to,
     const ResourceTopologyNodeDescriptor& machine_tmpl) {
   while (true) {
-    if (event_manager_->GetTimeOfNextEvent() > cur_time) {
-      // Processed all events <= cur_time.
+    if (event_manager_->GetTimeOfNextEvent() > events_up_to) {
+      // Processed all events <= events_up_to.
       break;
     }
     pair<uint64_t, EventDescriptor> event = event_manager_->GetNextEvent();
@@ -175,30 +174,25 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
       task_identifier.job_id = event.second.job_id();
       bridge_->TaskCompleted(task_identifier);
       UpdateSchedulingLatencyStats(event.first);
-    } else if (event.second.type() ==
-               EventDescriptor::TASK_ASSIGNMENT_CHANGED) {
-      // no-op: this event is just used to trigger solver re-run
+    } else if (event.second.type() == EventDescriptor::MACHINE_HEARTBEAT) {
+      spf(&log_string, "MACHINE HEARTBEAT %ju\n", event.first);
+      LogEvent(graph_output_, log_string);
+      bridge_->AddMachineSamples(event.first);
+    } else if (event.second.type() == EventDescriptor::TASK_SUBMIT) {
+      TraceTaskIdentifier task_identifier;
+      task_identifier.task_index = event.second.task_index();
+      task_identifier.job_id = event.second.job_id();
+      spf(&log_string, "TASK_SUBMIT_EVENT: ID %ju:%ju @ %ju\n",
+          task_identifier.job_id, task_identifier.task_index, event.first);
+      LogEvent(graph_output_, log_string);
+      if (bridge_->AddTask(task_identifier)) {
+        UpdateSchedulingLatencyStats(event.first);
+      } else {
+        // duplicate task id -- ignore
+      }
     } else {
       LOG(FATAL) << "Unexpected event type " << event.second.type() << " @ "
                  << event.first;
-    }
-  }
-}
-
-void GoogleTraceSimulator::ProcessTaskEvent(
-    uint64_t cur_time,
-    const TraceTaskIdentifier& task_identifier,
-    uint64_t event_type) {
-  string log_string;
-  if (event_type == SUBMIT_EVENT) {
-    spf(&log_string, "TASK_SUBMIT_EVENT: ID %ju:%ju @ %ju\n",
-        task_identifier.job_id, task_identifier.task_index,
-        cur_time);
-    LogEvent(graph_output_, log_string);
-    if (bridge_->AddTask(task_identifier)) {
-      UpdateSchedulingLatencyStats(cur_time);
-    } else {
-      // duplicate task id -- ignore
     }
   }
 }
@@ -219,6 +213,7 @@ void GoogleTraceSimulator::ReplayTrace() {
   vector<string> vals;
   FILE* f_task_events_ptr = NULL;
   uint64_t run_solver_at = 0;
+  uint64_t current_heartbeat_time = 0;
   uint64_t num_events = 0;
   uint64_t num_scheduling_rounds = 0;
   ResetSchedulingLatencyStats();
@@ -242,6 +237,7 @@ void GoogleTraceSimulator::ReplayTrace() {
           uint64_t task_time = lexical_cast<uint64_t>(vals[0]);
           task_id.job_id = lexical_cast<uint64_t>(vals[2]);
           task_id.task_index = lexical_cast<uint64_t>(vals[3]);
+          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
 
           // Sub-sample the trace if we only retain < 100% of tasks.
           if (SpookyHash::Hash64(&task_id, sizeof(task_id), kSeed) >
@@ -250,42 +246,46 @@ void GoogleTraceSimulator::ReplayTrace() {
             continue;
           }
 
-          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
           VLOG(2) << "TASK EVENT @ " << task_time;
-          num_events++;
-          if (event_manager_->HasSimulationCompleted(task_time, num_events,
+          if (event_manager_->HasSimulationCompleted(num_events,
                                                      num_scheduling_rounds)) {
             return;
+          }
+          num_events++;
+          if (event_type == SUBMIT_EVENT) {
+            EventDescriptor event_desc;
+            event_desc.set_type(EventDescriptor::TASK_SUBMIT);
+            event_desc.set_job_id(task_id.job_id);
+            event_desc.set_task_index(task_id.task_index);
+            event_manager_->AddEvent(task_time, event_desc);
+          }
+
+          for (; task_time > current_heartbeat_time;
+               current_heartbeat_time += FLAGS_heartbeat_interval) {
+            EventDescriptor event_desc;
+            event_desc.set_type(EventDescriptor::MACHINE_HEARTBEAT);
+            event_manager_->AddEvent(current_heartbeat_time, event_desc);
           }
 
           while (task_time > run_solver_at) {
             ProcessSimulatorEvents(run_solver_at, machine_tmpl);
 
-            if (!bridge_->flow_graph()->graph_changes().empty()) {
-              // Only run solver if something has actually changed.
-              // (Sometimes, all the events we received in a time interval
-              // have been ignored, e.g. task submit events with duplicate IDs.)
-              run_solver_at = RunSolver(run_solver_at);
+            run_solver_at = RunSolver(run_solver_at);
 
-              // We've done another round, check if we should keep going
-              num_scheduling_rounds++;
-              if (event_manager_->HasSimulationCompleted(
-                      task_time, num_events, num_scheduling_rounds)) {
-                return;
-              }
+            // We've done another round, check if we should keep going
+            num_scheduling_rounds++;
+            if (event_manager_->HasSimulationCompleted(
+                    num_events, num_scheduling_rounds)) {
+              return;
             }
 
-            // skip time until the next event happens
-            uint64_t next_event =
-              min(task_time, event_manager_->GetTimeOfNextEvent());
-            VLOG(1) << "Next event at " << next_event;
-            run_solver_at = max(next_event, run_solver_at);
+            run_solver_at = max(run_solver_at,
+                                event_manager_->GetTimeOfNextEvent());
             VLOG(1) << "Run solver by " << run_solver_at;
             ResetSchedulingLatencyStats();
           }
 
           ProcessSimulatorEvents(task_time, machine_tmpl);
-          ProcessTaskEvent(task_time, task_id, event_type);
         }
       }
     }
@@ -301,23 +301,14 @@ void GoogleTraceSimulator::ResetSchedulingLatencyStats() {
 }
 
 uint64_t GoogleTraceSimulator::RunSolver(uint64_t run_solver_at) {
-  double algorithm_time;
-  double flow_solver_time;
-  LogStartOfSolverRun(graph_output_, bridge_->flow_graph(), run_solver_at);
+  LogStartOfSolverRun(graph_output_, run_solver_at);
 
-  DIMACSChangeStats change_stats(bridge_->flow_graph()->graph_changes());
   // Set a timeout on the solver's run
   alarm(FLAGS_solver_timeout);
   boost::timer::cpu_timer timer;
-  multimap<uint64_t, uint64_t>* task_mappings =
-    bridge_->RunSolver(&algorithm_time, &flow_solver_time, graph_output_);
+  scheduler::SchedulerStats scheduler_stats;
+  bridge_->RunSolver(&scheduler_stats);
   alarm(0);
-
-  // We're done, now update the flow graph with the results
-  bridge_->UpdateFlowGraph(run_solver_at, task_mappings);
-  delete task_mappings;
-  // Also update any resource statistics, if required
-  bridge_->UpdateResourceStats();
 
   double avg_event_timestamp_in_scheduling_round;
   // Set timestamp to max if we haven't seen any events. This has an
@@ -333,10 +324,10 @@ uint64_t GoogleTraceSimulator::RunSolver(uint64_t run_solver_at) {
   }
   // Log stats to CSV file
   LogSolverRunStats(avg_event_timestamp_in_scheduling_round, stats_file_, timer,
-                    run_solver_at, algorithm_time, flow_solver_time,
-                    change_stats);
+                    run_solver_at, scheduler_stats);
 
-  return event_manager_->GetTimeOfNextSolverRun(run_solver_at, algorithm_time);
+  return event_manager_->GetTimeOfNextSolverRun(
+      run_solver_at, scheduler_stats.scheduler_runtime);
 }
 
 void GoogleTraceSimulator::UpdateSchedulingLatencyStats(uint64_t time) {
