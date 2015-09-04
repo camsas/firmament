@@ -27,6 +27,7 @@ class WhareMapCostModel : public CostModelInterface {
   WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
                     shared_ptr<TaskMap_t> task_map,
                     shared_ptr<KnowledgeBase> knowledge_base);
+  ~WhareMapCostModel();
   // Debug info export
   virtual const string DebugInfo() const;
   // Costs pertaining to leaving tasks unscheduled

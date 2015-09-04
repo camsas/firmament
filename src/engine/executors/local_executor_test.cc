@@ -10,7 +10,7 @@
 #include <gtest/gtest-spi.h>
 
 #include "base/common.h"
-#include "engine/local_executor.h"
+#include "engine/executors/local_executor.h"
 
 namespace firmament {
 namespace executor {

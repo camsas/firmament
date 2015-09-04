@@ -16,7 +16,7 @@
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
 #include "base/task_final_report.pb.h"
-#include "engine/executor_interface.h"
+#include "engine/executors/executor_interface.h"
 #include "misc/messaging_interface.h"
 #include "scheduling/event_notifier_interface.h"
 #include "scheduling/knowledge_base.h"
@@ -66,9 +66,11 @@ class EventDrivenScheduler : public SchedulerInterface {
                                 bool local,
                                 bool simulated);
   // N.B. ScheduleJob must be implemented in scheduler-specific logic
-  virtual uint64_t ScheduleAllJobs() = 0;
-  virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr) = 0;
-  virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr) = 0;
+  virtual uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats) = 0;
+  virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr,
+                               SchedulerStats* scheduler_stats) = 0;
+  virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
+                                SchedulerStats* scheduler_stats) = 0;
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<EventDrivenScheduler>";
   }
@@ -101,7 +103,6 @@ class EventDrivenScheduler : public SchedulerInterface {
   // execution of LazyGraphReduction. Note that this set includes tasks from all
   // jobs.
   set<TaskID_t> runnable_tasks_;
-  set<TaskDescriptor*> blocked_tasks_;
   // Initialized to hold the URI of the (currently unique) coordinator this
   // scheduler is associated with. This is passed down to the executor and to
   // tasks so that they can find the coordinator at runtime.

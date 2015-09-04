@@ -96,18 +96,21 @@ void SimpleScheduler::PopulateSchedulerTaskUI(TaskID_t task_id,
   // for the simple scheduler.
 }
 
-uint64_t SimpleScheduler::ScheduleAllJobs() {
+uint64_t SimpleScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats) {
+  // TODO(ionel): Populate scheduler stats.
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   vector<JobDescriptor*> jobs;
   for (auto& job_id_jd : jobs_to_schedule_) {
     jobs.push_back(job_id_jd.second);
   }
-  uint64_t num_scheduled_tasks = ScheduleJobs(jobs);
+  uint64_t num_scheduled_tasks = ScheduleJobs(jobs, scheduler_stats);
   ClearScheduledJobs();
   return num_scheduled_tasks;
 }
 
-uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr) {
+uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
+                                      SchedulerStats* scheduler_stats) {
+  // TODO(ionel): Populate scheduler stats.
   uint64_t num_scheduled_tasks = 0;
   VLOG(2) << "Preparing to schedule job " << jd_ptr->uuid();
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
@@ -145,11 +148,13 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr) {
   return num_scheduled_tasks;
 }
 
-uint64_t SimpleScheduler::ScheduleJobs(const vector<JobDescriptor*>& jds_ptr) {
+uint64_t SimpleScheduler::ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
+                                       SchedulerStats* scheduler_stats) {
+  // TODO(ionel): Populate scheduler stats.
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   uint64_t num_scheduled_tasks = 0;
   for (auto& jd_ptr : jds_ptr) {
-    num_scheduled_tasks += ScheduleJob(jd_ptr);
+    num_scheduled_tasks += ScheduleJob(jd_ptr, scheduler_stats);
   }
   return num_scheduled_tasks;
 }
