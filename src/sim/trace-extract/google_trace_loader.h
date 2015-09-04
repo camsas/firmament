@@ -38,7 +38,7 @@ class GoogleTraceLoader {
   void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl);
 
   void LoadTaskUtilizationStats(
-      unordered_map<TraceTaskIdentifier, TaskStats,
+      unordered_map<TraceTaskIdentifier, TraceTaskStats,
         TraceTaskIdentifierHasher>* task_id_to_stats);
 
   /**

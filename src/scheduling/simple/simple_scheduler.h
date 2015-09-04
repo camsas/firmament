@@ -43,9 +43,11 @@ class SimpleScheduler : public EventDrivenScheduler {
                                    TemplateDictionary* dict) const;
   void PopulateSchedulerTaskUI(TaskID_t task_id,
                                TemplateDictionary* dict) const;
-  uint64_t ScheduleAllJobs();
-  uint64_t ScheduleJob(JobDescriptor* jd_ptr);
-  uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr);
+  uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats);
+  uint64_t ScheduleJob(JobDescriptor* jd_ptr,
+                       SchedulerStats* scheduler_stats);
+  uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
+                        SchedulerStats* scheduler_stats);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<SimpleScheduler>";
   }

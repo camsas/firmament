@@ -62,17 +62,30 @@ SolverDispatcher::SolverDispatcher(shared_ptr<FlowGraph> flow_graph,
   }
 }
 
+SolverDispatcher::~SolverDispatcher() {
+  if (to_solver_ != NULL) {
+    fclose(to_solver_);
+  }
+  if (from_solver_ != NULL) {
+    fclose(from_solver_);
+  }
+  if (from_solver_stderr_ != NULL) {
+    fclose(from_solver_stderr_);
+  }
+}
+
 void SolverDispatcher::ExportJSON(string* output) const {
   return json_exporter_.Export(*flow_graph_, output);
 }
 
 void *ExportToSolver(void *x) {
-  SolverDispatcher *qd = reinterpret_cast<SolverDispatcher*>(x);
+  SolverDispatcher *solver_dispatcher = reinterpret_cast<SolverDispatcher*>(x);
   // Write to pipe to solver
-  qd->dimacs_exporter_.Flush(qd->to_solver_);
+  solver_dispatcher->dimacs_exporter_.Flush(solver_dispatcher->to_solver_);
   if (!FLAGS_incremental_flow) {
     // We need to close the stream because that's what cs expects.
-    CHECK_EQ(fclose(qd->to_solver_), 0);
+    CHECK_EQ(fclose(solver_dispatcher->to_solver_), 0);
+    solver_dispatcher->to_solver_ = NULL;
   }
   return NULL;
 }
@@ -139,11 +152,11 @@ void *ProcessStderrJustlog(void *x) {
 }
 
 multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
-    double *algorithm_time, double *flowsolver_time, FILE *graph_output) {
-  if (algorithm_time && !FLAGS_flow_scheduling_time_reported) {
+    SchedulerStats* scheduler_stats) {
+  if (scheduler_stats && !FLAGS_flow_scheduling_time_reported) {
     LOG(ERROR) << "Error: cannot record algorithm time with solver "
                << "which does not report this time.";
-    *algorithm_time = nan("");
+    scheduler_stats->algorithm_runtime = nan("");
   }
 
   // Adjusts the costs on the arcs from tasks to unsched aggs.
@@ -151,19 +164,10 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     flow_graph_->AdjustUnscheduledAggArcCosts();
   }
 
-  if (solver_ran_once_ &&
-      (graph_output != NULL || FLAGS_incremental_flow)) {
-    // Only generate incremental delta if not first time running
-    // If we're running an incremental algorithm, have to generate deltas.
-    // But if we're logging incremental changes, generate deltas even when
-    // algorithm is non-incremental.
-
+  if (solver_ran_once_ && FLAGS_incremental_flow) {
     dimacs_exporter_.Reset();
     dimacs_exporter_.ExportIncremental(flow_graph_->graph_changes());
     flow_graph_->ResetChanges();
-    if (graph_output != NULL) {
-      dimacs_exporter_.Flush(graph_output);
-    }
   }
 
   if (!solver_ran_once_ || !FLAGS_incremental_flow) {
@@ -173,11 +177,6 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     dimacs_exporter_.Reset();
     dimacs_exporter_.Export(*flow_graph_);
     flow_graph_->ResetChanges();
-
-    if (graph_output != NULL && !solver_ran_once_) {
-      // only log the initial graph once, even when running non-incrementally
-      dimacs_exporter_.Flush(graph_output);
-    }
   }
 
   // Note dimacs_exporter_ is the full graph iff solver is running for the first
@@ -253,7 +252,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   }
 
   multimap<uint64_t, uint64_t>* task_mappings;
-  task_mappings = ReadOutput(algorithm_time);
+  task_mappings = ReadOutput(&scheduler_stats->algorithm_runtime);
 
   // Wait for exporter to complete. (Should already have happened when we
   // get here, given we've finished reading the output.)
@@ -261,12 +260,10 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     PLOG(FATAL) << "Error joining thread";
   }
 
-  if (flowsolver_time != NULL) {
+  if (scheduler_stats != NULL) {
     boost::timer::nanosecond_type one_second = 1e9;
-    *flowsolver_time = flowsolver_timer.elapsed().wall;
-    *flowsolver_time /= one_second;
-    // restart timer
-    flowsolver_timer.stop(); flowsolver_timer.start();
+    scheduler_stats->scheduler_runtime = flowsolver_timer.elapsed().wall;
+    scheduler_stats->scheduler_runtime /= one_second;
   }
 
   if (!FLAGS_incremental_flow) {
@@ -274,7 +271,9 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     int status = WaitForFinish(solver_pid);
 
     CHECK_EQ(fclose(from_solver_), 0);
+    from_solver_ = NULL;
     CHECK_EQ(fclose(from_solver_stderr_), 0);
+    from_solver_stderr_ = NULL;
     // N.B.: we DON'T close to_solver_ here, as the export thread already does
     // this (cs2 expects stdin to be closed before it terminates, so we can't do
     // it here)
@@ -437,17 +436,17 @@ struct arguments {
 
 void *ProcessStderrAlgoTime(void *x) {
   struct arguments *args = (struct arguments *)x;
-  double *algorithm_time = args->time;
+  double *algorithm_runtime = args->time;
   FILE *stderr = args->fptr;
   char line[1024];
 
-  *algorithm_time = nan("");
+  *algorithm_runtime = nan("");
 
   while (fgets(line, sizeof(line), stderr) != NULL) {
     double time;
     int num_matched = sscanf(line, "ALGOTIME: %lf\n", &time);
     if (num_matched == 1) {
-      *algorithm_time = time;
+      *algorithm_runtime = time;
       break;
     } else {
       LOG(WARNING) << "STDERR from algorithm: " << line;

@@ -2,8 +2,8 @@
 // Copyright (c) 2011-2015 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 //
 
-#ifndef FIRMAMENT_ENGINE_TASK_HEALTH_CHECKER_H
-#define FIRMAMENT_ENGINE_TASK_HEALTH_CHECKER_H
+#ifndef FIRMAMENT_ENGINE_EXECUTORS_TASK_HEALTH_CHECKER_H
+#define FIRMAMENT_ENGINE_EXECUTORS_TASK_HEALTH_CHECKER_H
 
 #include <string>
 #include <map>
@@ -41,4 +41,4 @@ class TaskHealthChecker {
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_TASK_HEALTH_CHECKER_H
+#endif  // FIRMAMENT_ENGINE_EXECUTORS_TASK_HEALTH_CHECKER_H
