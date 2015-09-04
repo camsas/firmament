@@ -14,7 +14,6 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_topology_node_desc.pb.h"
-#include "engine/topology_manager.h"
 #include "misc/generate_trace.h"
 #include "misc/map-util.h"
 #include "scheduling/flow/cost_model_interface.h"

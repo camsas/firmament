@@ -4,7 +4,7 @@
 // Implementation of the topology manager, gathering machine topology
 // information via hwloc, and exposing it using a variety of interfaces.
 
-#include "engine/topology_manager.h"
+#include "engine/executors/topology_manager.h"
 
 #include <vector>
 

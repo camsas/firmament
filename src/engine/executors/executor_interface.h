@@ -3,15 +3,16 @@
 //
 // The executor interface assumed by the engine.
 
-#ifndef FIRMAMENT_ENGINE_EXECUTOR_INTERFACE_H
-#define FIRMAMENT_ENGINE_EXECUTOR_INTERFACE_H
+#ifndef FIRMAMENT_ENGINE_EXECUTORS_EXECUTOR_INTERFACE_H
+#define FIRMAMENT_ENGINE_EXECUTORS_EXECUTOR_INTERFACE_H
+
+#include "misc/printable_interface.h"
 
 #include <vector>
 
 #include "base/common.h"
 #include "base/types.h"
 #include "base/task_final_report.pb.h"
-#include "misc/printable_interface.h"
 
 namespace firmament {
 namespace executor {
@@ -33,4 +34,4 @@ class ExecutorInterface : public PrintableInterface {
 }  // namespace executor
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_EXECUTOR_INTERFACE_H
+#endif  // FIRMAMENT_ENGINE_EXECUTORS_EXECUTOR_INTERFACE_H

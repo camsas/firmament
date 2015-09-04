@@ -13,7 +13,6 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_topology_node_desc.pb.h"
-#include "engine/topology_manager.h"
 #include "scheduling/flow/dimacs_change.h"
 #include "scheduling/flow/flow_graph.h"
 #include "scheduling/flow/flow_graph_arc.h"

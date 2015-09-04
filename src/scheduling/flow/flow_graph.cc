@@ -35,8 +35,6 @@ DEFINE_bool(randomize_flow_graph_node_ids, false,
 
 namespace firmament {
 
-using machine::topology::TopologyManager;
-
 FlowGraph::FlowGraph(CostModelInterface *cost_model,
                      unordered_set<ResourceID_t,
                        boost::hash<boost::uuids::uuid>>* leaf_res_ids)
