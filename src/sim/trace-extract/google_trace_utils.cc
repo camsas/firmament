@@ -14,11 +14,8 @@ namespace firmament {
 namespace sim {
 
 void LogStartOfSolverRun(FILE* graph_output,
-                         shared_ptr<FlowGraph> flow_graph,
                          uint64_t run_solver_at) {
   LOG(INFO) << "Scheduler run for time: " << run_solver_at;
-  LOG(INFO) << "Nodes: " << flow_graph->NumNodes()
-            << ", arcs: " << flow_graph->NumArcs();
   if (graph_output) {
     fprintf(graph_output, "c SOI %jd\n", run_solver_at);
     fflush(graph_output);
@@ -29,9 +26,7 @@ void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
                        FILE* stats_file,
                        const boost::timer::cpu_timer timer,
                        uint64_t solver_executed_at,
-                       double algorithm_time,
-                       double flow_solver_time,
-                       const DIMACSChangeStats& change_stats) {
+                       const scheduler::SchedulerStats& scheduler_stats) {
   if (stats_file) {
     boost::timer::cpu_times total_runtime_cpu_times = timer.elapsed();
     double total_runtime = total_runtime_cpu_times.wall;
@@ -39,7 +34,8 @@ void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
     if (FLAGS_batch_step == 0) {
       // online mode
       double scheduling_latency = solver_executed_at;
-      scheduling_latency += algorithm_time * SECONDS_TO_MICROSECONDS;
+      scheduling_latency += scheduler_stats.algorithm_runtime *
+        SECONDS_TO_MICROSECONDS;
       scheduling_latency -= avg_event_timestamp_in_scheduling_round;
       scheduling_latency /= SECONDS_TO_MICROSECONDS;
 
@@ -47,14 +43,14 @@ void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
       scheduling_latency = max(0.0, scheduling_latency);
 
       fprintf(stats_file, "%jd,%lf,%lf,%lf,%lf,", solver_executed_at,
-              scheduling_latency, algorithm_time, flow_solver_time,
-              total_runtime);
+              scheduling_latency, scheduler_stats.algorithm_runtime,
+              scheduler_stats.scheduler_runtime, total_runtime);
     } else {
       // batch mode
       fprintf(stats_file, "%jd,%lf%lf%lf,", solver_executed_at,
-              algorithm_time, flow_solver_time, total_runtime);
+              scheduler_stats.algorithm_runtime,
+              scheduler_stats.scheduler_runtime, total_runtime);
     }
-    OutputChangeStats(stats_file, change_stats);
     fflush(stats_file);
   }
 }
@@ -69,32 +65,18 @@ uint64_t MaxEventIdToRetain() {
   }
 }
 
-void OutputChangeStats(FILE* stats_file, const DIMACSChangeStats& stats) {
-  fprintf(stats_file, "%jd,%jd,%jd,%jd,%jd,%jd\n", stats.total_,
-          stats.nodes_added_, stats.nodes_removed_, stats.arcs_added_,
-          stats.arcs_changed_, stats.arcs_removed_);
-}
-
 void OutputStatsHeader(FILE* stats_file) {
   if (stats_file) {
     if (FLAGS_batch_step == 0) {
       // online
       fprintf(stats_file, "cluster_timestamp,scheduling_latency,"
-              "algorithm_time,flow_solver_time,total_time,");
+              "algorithm_runtime,scheduler_runtime,total_time\n");
     } else {
       // batch
-      fprintf(stats_file, "cluster_timestamp,algorithm_time,flow_solver_time,"
-              "total_time,");
+      fprintf(stats_file, "cluster_timestamp,algorithm_runtime,"
+              "scheduler_runtime,total_time\n");
     }
-    fprintf(stats_file, "total_changes,new_node,remove_node,new_arc,"
-            "change_arc,remove_arc\n");
   }
-}
-
-void PrintResourceStats(uint64_t id, WhareMapStats* wms) {
-  LOG(INFO) << "Node: " << id << " " << wms->num_devils() << " "
-            << wms->num_rabbits() << " " << wms->num_sheep() << " "
-            << wms->num_turtles();
 }
 
 EventDescriptor_EventType TranslateMachineEvent(

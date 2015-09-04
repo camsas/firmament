@@ -279,27 +279,29 @@ void FlowScheduler::PopulateSchedulerTaskUI(TaskID_t task_id,
   delete equiv_classes;
 }
 
-uint64_t FlowScheduler::ScheduleAllJobs() {
+uint64_t FlowScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   vector<JobDescriptor*> jobs;
   for (auto& job_id_jd : jobs_to_schedule_) {
     jobs.push_back(job_id_jd.second);
   }
-  uint64_t num_scheduled_tasks = ScheduleJobs(jobs);
+  uint64_t num_scheduled_tasks = ScheduleJobs(jobs, scheduler_stats);
   ClearScheduledJobs();
   return num_scheduled_tasks;
 }
 
-uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr) {
+uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr,
+                                    SchedulerStats* scheduler_stats) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   LOG(INFO) << "START SCHEDULING (via " << jd_ptr->uuid() << ")";
   LOG(WARNING) << "This way of scheduling a job is slow in the flow scheduler! "
                << "Consider using ScheduleAllJobs() instead.";
   vector<JobDescriptor*> jobs_to_schedule {jd_ptr};
-  return ScheduleJobs(jobs_to_schedule);
+  return ScheduleJobs(jobs_to_schedule, scheduler_stats);
 }
 
-uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect) {
+uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
+                                     SchedulerStats* scheduler_stats) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   uint64_t num_scheduled_tasks = 0;
   if (jd_ptr_vect.size() > 0) {
@@ -319,7 +321,8 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect) 
       }
     }
     if (run_scheduler) {
-      num_scheduled_tasks += RunSchedulingIteration();
+      num_scheduled_tasks +=
+        RunSchedulingIteration(scheduler_stats);
       LOG(INFO) << "STOP SCHEDULING, placed " << num_scheduled_tasks
                 << " tasks";
       // If we have cost model debug logging turned on, write some debugging
@@ -348,7 +351,8 @@ void FlowScheduler::RegisterResource(ResourceID_t res_id,
   EventDrivenScheduler::RegisterResource(res_id, local, simulated);
 }
 
-uint64_t FlowScheduler::RunSchedulingIteration() {
+uint64_t FlowScheduler::RunSchedulingIteration(
+    SchedulerStats* scheduler_stats) {
   // If this is the first iteration ever, we should ensure that the cost
   // model's notion of statistics is correct.
   if (solver_dispatcher_->seq_num() == 0)
@@ -380,7 +384,8 @@ uint64_t FlowScheduler::RunSchedulingIteration() {
     last_updated_time_dependent_costs_ = cur_time;
   }
   // Run the flow solver! This is where all the juicy goodness happens :)
-  multimap<uint64_t, uint64_t>* task_mappings = solver_dispatcher_->Run();
+  multimap<uint64_t, uint64_t>* task_mappings =
+    solver_dispatcher_->Run(scheduler_stats);
   // Solver's done, let's post-process the results.
   multimap<uint64_t, uint64_t>::iterator it;
   vector<SchedulingDelta*> deltas;

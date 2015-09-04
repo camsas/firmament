@@ -3,7 +3,7 @@
 //
 // Local executor class.
 
-#include "engine/local_executor.h"
+#include "engine/executors/local_executor.h"
 
 extern "C" {
 #include <fcntl.h>
@@ -22,7 +22,7 @@ extern "C" {
 #include "base/common.h"
 #include "base/types.h"
 #include "base/units.h"
-#include "engine/task_health_checker.h"
+#include "engine/executors/task_health_checker.h"
 #include "misc/utils.h"
 #include "misc/map-util.h"
 
