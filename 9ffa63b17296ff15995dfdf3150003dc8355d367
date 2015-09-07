@@ -16,6 +16,24 @@
       "revId": "9ffa63b17296ff15995dfdf3150003dc8355d367",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_47d0c153",
+        "filename": "src/scheduling/flow/dimacs_exporter_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-07T11:49:58Z",
+      "side": 0,
+      "message": "We\u0027re dropping them because in the new code we add preference arcs when we add the jobs.\n\nThe test was failing because we would end up adding preference arcs twice. This was increasing the likelihood of us adding the same preference arc twice:)",
+      "parentUuid": "1ae5cdf2_a7f8a5e6",
+      "revId": "9ffa63b17296ff15995dfdf3150003dc8355d367",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
