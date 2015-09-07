@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_a7f8a5e6",
+        "filename": "src/scheduling/flow/dimacs_exporter_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-07T11:44:55Z",
+      "side": 0,
+      "message": "Just to understand: why are we dropping this from the tests?",
+      "revId": "9ffa63b17296ff15995dfdf3150003dc8355d367",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
