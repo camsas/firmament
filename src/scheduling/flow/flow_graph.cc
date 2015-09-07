@@ -35,8 +35,6 @@ DEFINE_bool(randomize_flow_graph_node_ids, false,
 
 namespace firmament {
 
-using machine::topology::TopologyManager;
-
 FlowGraph::FlowGraph(CostModelInterface *cost_model,
                      unordered_set<ResourceID_t,
                        boost::hash<boost::uuids::uuid>>* leaf_res_ids)
@@ -379,8 +377,13 @@ void FlowGraph::AddResourceEquivClasses(FlowGraphNode* res_node) {
       // Node for resource equiv class already exists. Add arc from it.
       // XXX(ionel): We don't add arcs from tasks or other equiv classes
       // to the resource equiv class when a new resource is connected to it.
-      FlowGraphArc* ec_arc =
-        AddArcInternal(ec_node_ptr->id_, res_node->id_);
+
+      FlowGraphArc* ec_arc = FindPtrOrNull(res_node->incoming_arc_map_,
+                                           ec_node_ptr->id_);
+      if (!ec_arc) {
+        ec_arc =
+          AddArcInternal(ec_node_ptr->id_, res_node->id_);
+      }
       pair<Cost_t, int64_t> cost_and_cap =
         cost_model_->EquivClassToResourceNode(*it, res_id);
       if (cost_and_cap.second >= 0) {
@@ -961,8 +964,8 @@ void FlowGraph::DeleteResourceNode(FlowGraphNode* res_node,
   delete equiv_classes;
 }
 
-void FlowGraph::DeleteOrUpdateIncomingEquivNode
-                            (EquivClass_t task_equiv, const char *comment) {
+void FlowGraph::DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv,
+                                                const char *comment) {
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
   if (equiv_node_ptr == NULL) {
     // Equiv class node can be NULL because all it's task are running

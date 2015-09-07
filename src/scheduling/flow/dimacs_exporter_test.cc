@@ -172,20 +172,6 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   }
   VLOG(1) << "Added " << j*t << " tasks in " << j << " jobs (" << t
           << " tasks each).";
-  // Add preferences for each task
-  const unordered_set<uint64_t>& task_ids = g.task_node_ids();
-  uint64_t p = 20;
-  for (unordered_set<uint64_t>::const_iterator t_iter = task_ids.begin();
-       t_iter != task_ids.end();
-       ++t_iter) {
-    for (uint64_t i = 0; i < p; i++) {
-      uint64_t target = leaf_ids[rand_r(&seed) % leaf_ids.size()];
-      g.AddArcInternal(*t_iter, target);
-      VLOG(3) << "Added random preference arc from task node " << *t_iter
-              << " to PU node " << target;
-    }
-  }
-  VLOG(1) << "Wrote " << (task_ids.size() * p) << " preference arcs.";
   // Export
   DIMACSExporter exp;
   exp.Export(g);
@@ -254,22 +240,6 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
       }
       g.AddOrUpdateJobNodes(&jd);
     }
-    VLOG(1) << "Added " << j*t << " tasks in " << j << " jobs (" << t
-            << " tasks each).";
-    // Add preferences for each task
-    const unordered_set<uint64_t>& task_ids = g.task_node_ids();
-    uint64_t p = 20;
-    for (unordered_set<uint64_t>::const_iterator t_iter = task_ids.begin();
-         t_iter != task_ids.end();
-         ++t_iter) {
-      for (uint64_t i = 0; i < p; i++) {
-        uint64_t target = leaf_ids[rand_r(&seed) % leaf_ids.size()];
-        g.AddArcInternal(*t_iter, target);
-        VLOG(3) << "Added random preference arc from task node " << *t_iter
-                << " to PU node " << target;
-      }
-    }
-    VLOG(1) << "Wrote " << (task_ids.size() * p) << " preference arcs.";
     // Export
     DIMACSExporter exp;
     exp.Export(g);

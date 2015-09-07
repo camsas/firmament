@@ -58,7 +58,7 @@ class StreamSocketsAdapterTest : public ::testing::Test {
 
 // Tests channel establishment.
 TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
-  string uri = "tcp:localhost:7777";
+  string uri = "tcp:127.0.0.1:7777";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
   StreamSocketsAdapter<BaseMessage>* mess_adapter =
@@ -138,7 +138,7 @@ TEST_F(StreamSocketsAdapterTest, TCPChannelEstablishAndSendTestMessage) {
 // Tests backchannel establishment by sending a protobuf through the
 // backchannel.
 TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
-  string uri1 = "tcp:localhost:7779";
+  string uri1 = "tcp:127.0.0.1:7779";
   // We need to hold at least one shared pointer to the messaging adapter before
   // it can use shared_from_this().
   StreamSocketsAdapter<BaseMessage>* mess_adapter1 =
@@ -151,19 +151,27 @@ TEST_F(StreamSocketsAdapterTest, BackchannelEstablishment) {
   mess_adapter1->ListenURI(uri1);
   // Need to block and wait for the socket to become ready, otherwise race
   // ensues.
-  while (!mess_adapter1->ListenReady()) { }
+  while (!mess_adapter1->ListenReady()) {
+    VLOG(3) << "Waiting for adapter to be ready...";
+  }
   // Make a channel MA2 -> MA1
   mess_adapter2->EstablishChannel(uri1, channel);
   // Need to block and wait until the connection is ready, too.
-  while (!channel->Ready()) {  }
+  while (!channel->Ready()) {
+    VLOG(3) << "Waiting for channel to be ready...";
+  }
   VLOG(1) << "channel is ready; getting backchannel...";
   // Send a message through the explicitly established channel.
   //mess_adapter1->SendOnConnection(0);
   // Check if we have a backchannel MA1 -> MA2
-  while (mess_adapter1->NumActiveChannels() == 0) {}
+  while (mess_adapter1->NumActiveChannels() == 0) {
+    VLOG(3) << "Waiting for back-channel to appear...";
+  }
   MessagingChannelInterface<BaseMessage>* backchannel =
       mess_adapter1->GetChannelForEndpoint(channel->LocalEndpointString());
-  while (!backchannel->Ready()) {  }
+  while (!backchannel->Ready()) {
+    VLOG(3) << "Waiting for back-channel to be ready...";
+  }
   // Send a test message through the backchannel (MA2 -> MA1), and check if we
   // have received it.
   BaseMessage s_tm;

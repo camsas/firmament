@@ -48,7 +48,6 @@ class StreamSocketsChannelTest : public ::testing::Test {
 
   // If the constructor and destructor are not enough for setting up
   // and cleaning up each test, you can define the following methods:
-
   virtual void SetUp() {
     // Wait briefly in order for sockets to close down
     boost::this_thread::sleep(boost::posix_time::seconds(1));
@@ -92,23 +91,31 @@ TEST_F(StreamSocketsChannelTest, TCPSyncIntSend) {
   StreamSocketsAdapter<uint64_t>* remote_uint_adapter =
       new StreamSocketsAdapter<uint64_t>();
   remote_uint_adapter->ListenURI("tcp:localhost:7788");
-  while (!remote_uint_adapter->ListenReady()) { }
+  while (!remote_uint_adapter->ListenReady()) {
+    VLOG(3) << "Waiting for adapter to be ready...";
+  }
   StreamSocketsChannel<uint64_t>* uint_channel =
       new StreamSocketsChannel<uint64_t>(
           StreamSocketsChannel<uint64_t>::SS_TCP);
   local_uint_adapter->EstablishChannel("tcp:localhost:7788",
                                        uint_channel);
-  while (!uint_channel->Ready()) {  }
+  while (!uint_channel->Ready()) {
+    VLOG(3) << "Waiting for adapter to be ready...";
+  }
   uint64_t testInteger = 5;
   Envelope<uint64_t> envelope(&testInteger);
   uint_channel->SendS(envelope);
-  while (remote_uint_adapter->NumActiveChannels() == 0) { }
+  while (remote_uint_adapter->NumActiveChannels() == 0) {
+    VLOG(3) << "Waiting for back-channel to appear...";
+  }
   MessagingChannelInterface<uint64_t>* backchannel =
       remote_uint_adapter->GetChannelForEndpoint(
           uint_channel->LocalEndpointString());
   uint64_t recvdInteger = 0;
   Envelope<uint64_t> recv_env(&recvdInteger);
-  while (!backchannel->Ready()) { }
+  while (!backchannel->Ready()) {
+    VLOG(3) << "Waiting for back-channel to be ready...";
+  }
   backchannel->RecvS(&recv_env);
   CHECK_EQ(recvdInteger, testInteger);
   CHECK_EQ(recvdInteger, 5);
@@ -120,15 +127,21 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceive) {
   BaseMessage tm;
   SUBMSG_WRITE(tm, test, test, 5);
   Envelope<BaseMessage> envelope(&tm);
-  while (!channel_->Ready()) {  }
+  while (!channel_->Ready()) {
+    VLOG(3) << "Waiting for adapter to be ready...";
+  }
   channel_->SendS(envelope);
   // Spin-wait for backchannel to become available
-  while (remote_adapter_->NumActiveChannels() == 0) { }
+  while (remote_adapter_->NumActiveChannels() == 0) {
+    VLOG(3) << "Waiting for back-channel to appear...";
+  }
   MessagingChannelInterface<BaseMessage>* backchannel =
       remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);
-  while (!backchannel->Ready()) {  }
+  while (!backchannel->Ready()) {
+    VLOG(3) << "Waiting for back-channel to be ready...";
+  }
   backchannel->RecvS(&recv_env);
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm, test, test));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);
@@ -140,13 +153,19 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   SUBMSG_WRITE(tm1, test, test, 5);
   Envelope<BaseMessage> envelope1(&tm1);
   // Spin-wait for channel to become available
-  while (!channel_->Ready()) {  }
+  while (!channel_->Ready()) {
+    VLOG(3) << "Waiting for adapter to be ready...";
+  }
   // Spin-wait for backchannel to become available
-  while (remote_adapter_->NumActiveChannels() == 0) { }
+  while (remote_adapter_->NumActiveChannels() == 0) {
+    VLOG(3) << "Waiting for back-channel to appear...";
+  }
   MessagingChannelInterface<BaseMessage>* backchannel =
       remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
   CHECK(backchannel);
-  while (!backchannel->Ready()) {  }
+  while (!backchannel->Ready()) {
+    VLOG(3) << "Waiting for back-channel to be ready...";
+  }
   BaseMessage tm2;
   SUBMSG_WRITE(tm2, test, test, 7);
   Envelope<BaseMessage> envelope2(&tm2);
@@ -166,7 +185,6 @@ TEST_F(StreamSocketsChannelTest, TCPSyncProtobufSendReceiveMulti) {
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), 7);
 }
 
-
 // Tests asynchronous send (and synchronous receive) of a protobuf.
 TEST_F(StreamSocketsChannelTest, TCPAsyncProtobufSend) {
   BaseMessage tm;
@@ -174,12 +192,16 @@ TEST_F(StreamSocketsChannelTest, TCPAsyncProtobufSend) {
   Envelope<BaseMessage> envelope(&tm);
   channel_->SendS(envelope);
   //channel_->SendA(envelope, boost::bind(std::plus<int>(), 0, 0));
-  while (remote_adapter_->NumActiveChannels() == 0) { }
+  while (remote_adapter_->NumActiveChannels() == 0) {
+    VLOG(3) << "Waiting for back-channel to appear...";
+  }
   MessagingChannelInterface<BaseMessage>* backchannel =
       remote_adapter_->GetChannelForEndpoint(channel_->LocalEndpointString());
   BaseMessage r_tm;
   Envelope<BaseMessage> recv_env(&r_tm);
-  while (!backchannel->Ready()) {  }
+  while (!backchannel->Ready()) {
+    VLOG(3) << "Waiting for back-channel to be ready...";
+  }
   backchannel->RecvS(&recv_env);
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), SUBMSG_READ(tm, test, test));
   CHECK_EQ(SUBMSG_READ(r_tm, test, test), 5);

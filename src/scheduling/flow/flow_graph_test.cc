@@ -18,6 +18,7 @@
 #include "scheduling/flow/flow_graph.h"
 #include "scheduling/flow/trivial_cost_model.h"
 
+DECLARE_string(flow_scheduling_solver);
 DECLARE_uint64(num_pref_arcs_task_to_res);
 
 namespace firmament {
@@ -106,8 +107,8 @@ TEST_F(FlowGraphTest, AddOrUpdateJobNodes) {
   g.AddOrUpdateJobNodes(&test_job);
   // This should add one new node for the agg, one arc change from agg to
   // sink, one new node for the root task, one new node for the
-  // equivalence class.
-  CHECK_EQ(g.graph_changes_.size(), num_changes + 5);
+  // equivalence class and one new node for the cluster equiv class.
+  CHECK_EQ(g.graph_changes_.size(), num_changes + 6);
   uint64_t sink_graph_id = g.ids_created_[0];
   DIMACSAddNode* unsched_agg =
     static_cast<DIMACSAddNode*>(g.graph_changes_[num_changes]);
@@ -325,6 +326,9 @@ TEST_F(FlowGraphTest, UnschedAggCapacityAdjustment) {
 }
 
 TEST_F(FlowGraphTest, DeleteReAddResourceTopo) {
+  // We have to set the solver not to be cs2 so that we actually adjust
+  // NumNodes when we delete a node.
+  FLAGS_flow_scheduling_solver = "flowlessly";
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
@@ -363,6 +367,9 @@ TEST_F(FlowGraphTest, DeleteReAddResourceTopo) {
 }
 
 TEST_F(FlowGraphTest, DeleteReAddResourceTopoAndJob) {
+  // We have to set the solver not to be cs2 so that we actually adjust
+  // NumNodes when we delete a node.
+  FLAGS_flow_scheduling_solver = "flowlessly";
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
@@ -387,9 +394,9 @@ TEST_F(FlowGraphTest, DeleteReAddResourceTopoAndJob) {
   CHECK_EQ(g.NumNodes(), num_nodes + 7);
   // Two internal to topology, two to sink, one from cluster agg EC to
   // root resource, one from task to cluster agg, one from task to
-  // preferred resource, one from task to unscheduled aggregator, one
-  // from unscheduled aggregator to sink
-  CHECK_EQ(g.NumArcs(), num_arcs + 9);
+  // preferred ec, one from prefered ec to resource, one from task to
+  // unscheduled aggregator, one from unscheduled aggregator to sink
+  CHECK_EQ(g.NumArcs(), num_arcs + 10);
   // Job "finishes"
   rt->set_state(TaskDescriptor::COMPLETED);
   g.JobCompleted(jid);
