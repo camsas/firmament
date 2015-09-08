@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_186294d8",
+        "filename": "src/engine/executors/executor_interface.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-08T08:11:36Z",
+      "side": 1,
+      "message": "Why is this at the top? The style guide\u0027s include order suggests that only .cc files have the corresponding .h as their first include, if I remember correctly. (Could have overlooked something, though.)",
+      "revId": "ba2371ce42eedc6e785606198251384f07542d7b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_b87360b0",
+        "filename": "src/engine/executors/topology_manager.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-08T08:11:36Z",
+      "side": 1,
+      "message": "Why is the topology manager in the executors module? Conceptually, it belongs in the top-level engine module, I\u0027d say. Is there a technical reason why it has to be here? (Linking, most likely?)",
+      "revId": "ba2371ce42eedc6e785606198251384f07542d7b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_b8aa80d2",
+        "filename": "src/scheduling/event_driven_scheduler.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-08T08:11:36Z",
+      "side": 1,
+      "message": "Where is this class/struct defined? We pass NULL for it in the .cc file -- is it a placeholder for a future addition?",
+      "range": {
+        "startLine": 69,
+        "startChar": 35,
+        "endLine": 69,
+        "endChar": 49
+      },
+      "revId": "ba2371ce42eedc6e785606198251384f07542d7b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
