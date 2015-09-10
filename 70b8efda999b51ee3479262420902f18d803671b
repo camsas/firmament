@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_073cec2e",
+        "filename": "src/engine/Makefile",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-10T08:19:05Z",
+      "side": 0,
+      "message": "I had to move topology manager to executors as well because executors depend on it.",
+      "parentUuid": "1ae5cdf2_986ea4c8",
+      "revId": "70b8efda999b51ee3479262420902f18d803671b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_d8ae6ce7",
         "filename": "src/scheduling/flow/dimacs_exporter.h",
         "patchSetId": 3
@@ -30,6 +48,24 @@
       "writtenOn": "2015-09-08T08:11:36Z",
       "side": 0,
       "message": "Ah, I\u0027m glad we got rid of that dependency (or maybe the include was superfluous to begin with).",
+      "revId": "70b8efda999b51ee3479262420902f18d803671b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_e725400b",
+        "filename": "src/scheduling/flow/dimacs_exporter.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-10T08:19:05Z",
+      "side": 0,
+      "message": "It was just superfluous:)",
+      "parentUuid": "1ae5cdf2_d8ae6ce7",
       "revId": "70b8efda999b51ee3479262420902f18d803671b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false

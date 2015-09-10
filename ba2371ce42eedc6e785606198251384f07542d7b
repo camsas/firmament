@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_a70c1896",
+        "filename": "src/engine/executors/executor_interface.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-10T08:19:05Z",
+      "side": 1,
+      "message": "I couldn\u0027t find anything mentioning that only .cc should follow the rule. (https://google-styleguide.googlecode.com/svn/trunk/cppguide.html#Names_and_Order_of_Includes)",
+      "parentUuid": "1ae5cdf2_186294d8",
+      "revId": "ba2371ce42eedc6e785606198251384f07542d7b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_b87360b0",
         "filename": "src/engine/executors/topology_manager.h",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_c71124ae",
+        "filename": "src/engine/executors/topology_manager.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-10T08:19:05Z",
+      "side": 1,
+      "message": "Yep, linking is the reason. This entire change of moving the executors to a subdirectory was driven by the simulator.\nThe executors and the coordinator use the topology manager. Whereas, only the coordinator and the schedulers use the executors. With this change I can link only the coordinators with the schedulers and avoid some nasty linking issue.",
+      "parentUuid": "1ae5cdf2_b87360b0",
+      "revId": "ba2371ce42eedc6e785606198251384f07542d7b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_b8aa80d2",
         "filename": "src/scheduling/event_driven_scheduler.h",
         "patchSetId": 3
@@ -47,6 +83,30 @@
       "writtenOn": "2015-09-08T08:11:36Z",
       "side": 1,
       "message": "Where is this class/struct defined? We pass NULL for it in the .cc file -- is it a placeholder for a future addition?",
+      "range": {
+        "startLine": 69,
+        "startChar": 35,
+        "endLine": 69,
+        "endChar": 49
+      },
+      "revId": "ba2371ce42eedc6e785606198251384f07542d7b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_07230c06",
+        "filename": "src/scheduling/event_driven_scheduler.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-10T08:19:05Z",
+      "side": 1,
+      "message": "It\u0027s defined in scheduler_interface. This is not the ideal solution, but we can come back to it. In our previous design the simulator was directly calling the solver dispatcher. While doing so it would pass on some pointers to be populated with the scheduler\u0027s and algorithm\u0027s runtime. In the new design we only interact via the scheduler_interface so we don\u0027t have any information about the solver\u0027s runtime. Hence, I had to do this trick with the SchedulerStats for now.\n\nI think in the future we could inject a statistics object to the scheduler. However, let\u0027s do that in a different change as this one is rather big already.",
+      "parentUuid": "1ae5cdf2_b8aa80d2",
       "range": {
         "startLine": 69,
         "startChar": 35,
