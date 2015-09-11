@@ -6,8 +6,7 @@ include $(ROOT_DIR)/include/Makefile.config
 LIBS += -lboost_system -lssl -lcrypto
 
 LIB = libfirmament_misc.a
-OBJS = event_logging.o generate_trace.o pb_utils.o \
-       string_utils.o utils.o
+OBJS = generate_trace.o pb_utils.o string_utils.o utils.o
 PBS =
 TESTS = envelope_test utils_test
 TESTS_envelope_DEPS = $(BUILD_DIR)/messages/libfirmament_messages.a \
