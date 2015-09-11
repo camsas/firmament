@@ -46,6 +46,13 @@ class FlowGraph {
                  uint64_t cap_upper_bound, uint64_t cost,
                  const char *comment = "ChangeArc");
   bool CheckNodeType(uint64_t node, FlowNodeType type);
+  void ComputeTopologyStatistics(
+    FlowGraphNode* node,
+    boost::function<void(FlowGraphNode*)> prepare,
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
+  void ComputeTopologyStatistics(
+    FlowGraphNode* node,
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
   static FlowGraphArc* GetArc(FlowGraphNode* src, FlowGraphNode* dst);
   void JobCompleted(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
@@ -60,13 +67,7 @@ class FlowGraph {
                     ResourceID_t old_res_id,
                     ResourceID_t new_res_id);
   void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
-  void ComputeTopologyStatistics(
-    FlowGraphNode* node,
-    boost::function<void(FlowGraphNode*)> prepare,
-    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
-  void ComputeTopologyStatistics(
-    FlowGraphNode* node,
-    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
+  FlowGraphNode* UnscheduledAggregatorForJobID(JobID_t job_id);
   void UpdateResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);
   void UpdateTimeDependentCosts(vector<JobDescriptor*>* job_vec);
@@ -148,7 +149,6 @@ class FlowGraph {
                                        const char *comment = NULL);
   void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
                                        const char *comment = NULL);
-  FlowGraphNode* GetUnschedAggForJob(JobID_t job_id);
   uint64_t NextId();
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
   void PopulateUnusedIds(uint64_t new_current_id);
