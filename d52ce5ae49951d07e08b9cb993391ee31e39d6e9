@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_7bbaa0e2",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1346,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-11T21:01:00Z",
+      "side": 1,
+      "message": "I suppose we should make a general decision as to whether we use *_ptr or not. \n\nI\u0027m happy either way, but I\u0027ve been trying to phase this use out in all situations except those when it is necessary to make it clear that we\u0027re dealing with a pointer to the thing we\u0027re actually interested in. In this particular example, it doesn\u0027t really seem necessary, for instance, because it\u0027s clear that the type is a pointer.",
+      "range": {
+        "startLine": 1346,
+        "startChar": 13,
+        "endLine": 1346,
+        "endChar": 19
+      },
+      "revId": "d52ce5ae49951d07e08b9cb993391ee31e39d6e9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
