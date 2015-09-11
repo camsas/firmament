@@ -50,14 +50,13 @@ class SimpleScheduler : public EventDrivenScheduler {
     return *stream << "<SimpleScheduler>";
   }
 
- protected:
-  const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
-
  private:
   // Unit tests
   FRIEND_TEST(SimpleSchedulerTest, LazyGraphReductionTest);
   FRIEND_TEST(SimpleSchedulerTest, ObjectIDToReferenceDescLookup);
   FRIEND_TEST(SimpleSchedulerTest, ProducingTaskLookup);
+
+  const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
 };
 
 }  // namespace scheduler

@@ -206,14 +206,6 @@ class SchedulerInterface : public PrintableInterface {
 
  protected:
   /**
-   * Finds a resource for a runnable task. This is the core placement logic.
-   * @param td_ptr the descriptor of the task for which to find resources
-   * @return the resource ID of the resource chosen in the second argument, or
-   * NULL if no resource could be found.
-   */
-  virtual const ResourceID_t* FindResourceForTask(TaskDescriptor* td_ptr) = 0;
-
-  /**
    * Handles the migration of a task.
    * @param td_ptr the descriptor of the migrated task
    * @param rd_ptr the descriptor of the resource to which the task was migrated
