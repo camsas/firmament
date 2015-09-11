@@ -9,7 +9,7 @@
 #include <boost/bind.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
-#include "platforms/unix/stream_sockets_channel-inl.h"
+#include "platforms/unix/stream_sockets_channel.h"
 
 using boost::asio::ip::tcp;
 
