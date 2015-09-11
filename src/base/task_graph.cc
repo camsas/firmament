@@ -10,7 +10,7 @@
 
 #include "base/task_graph.h"
 #include "misc/map-util.h"
-#include "misc/pb_utils-inl.h"
+#include "misc/pb_utils.h"
 
 namespace firmament {
 

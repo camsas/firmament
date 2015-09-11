@@ -44,6 +44,19 @@ void BFSTraverseResourceProtobufTreeToHash(
     ResourceTopologyNodeDescriptor* pb, size_t* hash,
     boost::function<void(ResourceTopologyNodeDescriptor*, size_t*)> callback);  // NOLINT
 
+template <typename T>
+bool RepeatedContainsPtr(RepeatedPtrField<T>* pbf, T* item) {
+  // N.B.: using GNU-style RTTI
+  for (__typeof__(pbf->pointer_begin()) iter =
+       pbf->pointer_begin();
+       iter != pbf->pointer_end();
+       ++iter) {
+    if (*iter == item)
+      return true;
+  }
+  return false;
+}
+
 }  // namespace firmament
 
 #endif  // FIRMAMENT_MISC_PB_UTILS_H
