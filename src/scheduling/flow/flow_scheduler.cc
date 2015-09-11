@@ -120,41 +120,32 @@ FlowScheduler::~FlowScheduler() {
   // XXX(ionel): stub
 }
 
-const ResourceID_t* FlowScheduler::FindResourceForTask(
-    TaskDescriptor*) {
-  // XXX(ionel): stub
-  return NULL;
-}
-
 uint64_t FlowScheduler::ApplySchedulingDeltas(
     const vector<SchedulingDelta*>& deltas) {
   uint64_t num_scheduled = 0;
   // Perform the necessary actions to apply the scheduling changes.
   VLOG(1) << "Applying " << deltas.size() << " scheduling deltas...";
-  for (vector<SchedulingDelta*>::const_iterator it = deltas.begin();
-       it != deltas.end();
-       ++it) {
-    VLOG(1) << "Processing delta of type " << (*it)->type();
-    TaskID_t task_id = (*it)->task_id();
-    ResourceID_t res_id = ResourceIDFromString((*it)->resource_id());
-    TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
+  for (auto& delta : deltas) {
+    VLOG(1) << "Processing delta of type " << delta->type();
+    ResourceID_t res_id = ResourceIDFromString(delta->resource_id());
+    TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, delta->task_id());
     ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
     CHECK_NOTNULL(td_ptr);
     CHECK_NOTNULL(rs);
-    if ((*it)->type() == SchedulingDelta::NOOP) {
+    if (delta->type() == SchedulingDelta::NOOP) {
       // We should not get any NOOP deltas as they get filtered before.
       continue;
-    } else if ((*it)->type() == SchedulingDelta::PLACE) {
+    } else if (delta->type() == SchedulingDelta::PLACE) {
       HandleTaskPlacement(td_ptr, rs->mutable_descriptor());
       num_scheduled++;
-    } else if ((*it)->type() == SchedulingDelta::PREEMPT) {
+    } else if (delta->type() == SchedulingDelta::PREEMPT) {
       HandleTaskEviction(td_ptr, rs->mutable_descriptor());
-    } else if ((*it)->type() == SchedulingDelta::MIGRATE) {
+    } else if (delta->type() == SchedulingDelta::MIGRATE) {
       HandleTaskMigration(td_ptr, rs->mutable_descriptor());
     } else {
       LOG(FATAL) << "Unhandled scheduling delta case";
     }
-    (*it)->set_actioned(true);
+    delta->set_actioned(true);
   }
   return num_scheduled;
 }
@@ -427,17 +418,6 @@ uint64_t FlowScheduler::RunSchedulingIteration() {
   UpdateCostModelResourceStats();
 
   return num_scheduled;
-}
-
-void FlowScheduler::PrintGraph(vector< map<uint64_t, uint64_t> > adj_map) {
-  for (vector< map<uint64_t, uint64_t> >::size_type i = 1;
-       i < adj_map.size(); ++i) {
-    map<uint64_t, uint64_t>::iterator it;
-    for (it = adj_map[i].begin();
-         it != adj_map[i].end(); it++) {
-      cout << i << " " << it->first << " " << it->second << endl;
-    }
-  }
 }
 
 void FlowScheduler::UpdateCostModelResourceStats() {
