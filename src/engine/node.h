@@ -26,7 +26,6 @@
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"
 #include "platforms/unix/stream_sockets_adapter.h"
-#include "platforms/unix/stream_sockets_adapter-inl.h"
 
 namespace firmament {
 

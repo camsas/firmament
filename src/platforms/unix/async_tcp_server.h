@@ -20,16 +20,11 @@
 #include "misc/uri_tools.h"
 #include "platforms/common.h"
 #include "platforms/unix/common.h"
-#include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/tcp_connection.h"
 
 namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
-
-// Forward declaration
-template <typename T>
-class StreamSocketsAdapter;
 
 // Asynchronous, multi-threaded TCP server.
 // Design inspired by

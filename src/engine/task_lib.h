@@ -26,8 +26,7 @@
 #include "platforms/common.h"
 #include "platforms/unix/procfs_monitor.h"
 #include "platforms/unix/stream_sockets_adapter.h"
-#include "platforms/unix/stream_sockets_adapter-inl.h"
-#include "platforms/unix/stream_sockets_channel-inl.h"
+#include "platforms/unix/stream_sockets_channel.h"
 #include "storage/types.h"
 
 namespace firmament {
