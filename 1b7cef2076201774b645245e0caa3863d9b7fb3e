@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_4a0354b8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-11T09:43:43Z",
+      "side": 1,
+      "message": "I\u0027d suggest adding a description along the lines of \"Since the StreamSocket* code was written in 2011, the Google C++ style guide\u0027s treatment of templated classes has changed; they are now supposed to be defined in headers, rather than -inl.h files.\"",
+      "revId": "1b7cef2076201774b645245e0caa3863d9b7fb3e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
