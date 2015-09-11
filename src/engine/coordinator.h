@@ -45,7 +45,6 @@
 #include "platforms/common.h"
 #include "platforms/unix/signal_handler.h"
 #include "platforms/unix/stream_sockets_adapter.h"
-#include "platforms/unix/stream_sockets_adapter-inl.h"
 #include "platforms/unix/procfs_machine.h"
 #ifdef __HTTP_UI__
 #include "engine/coordinator_http_ui.h"
