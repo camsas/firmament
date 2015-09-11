@@ -4,7 +4,7 @@ SUFFIX=base
 include $(ROOT_DIR)/include/Makefile.config
 
 LIB = libfirmament_base.a
-OBJS = task.o resource_status.o job.o data_object.o
+OBJS = resource_status.o data_object.o
 # These need to be in a particular order to satisfy dependencies.
 # Do not reorder alphabetically.
 PBS = coco_interference_scores.pb.o whare_map_stats.pb.o \
