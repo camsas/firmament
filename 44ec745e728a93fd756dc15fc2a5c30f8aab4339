@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_ea1420f7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-11T09:40:09Z",
+      "side": 1,
+      "message": "This change also removes PrintGraph() and makes some stylistic fixes; it\u0027d be good if the commit message mentioned those changes, too. (Or split them out into separate CLs, but that\u0027s likely a pain to do post-hoc.)",
+      "revId": "44ec745e728a93fd756dc15fc2a5c30f8aab4339",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
