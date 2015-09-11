@@ -8,7 +8,7 @@ LIBS += $(HDFS_LIB) -lboost_thread -lboost_system -lboost_regex \
 
 LIB = libfirmament_storage.a
 
-OBJS = hdfs_bridge.o simple_object_store.o
+OBJS = hdfs_bridge.o simple_object_store.o stub_object_store.o
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 

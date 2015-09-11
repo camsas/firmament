@@ -3,7 +3,7 @@
 //
 // Stub object store class.
 
-#include "engine/stub_object_store.h"
+#include "storage/stub_object_store.h"
 
 #include "base/common.h"
 #include "base/types.h"
