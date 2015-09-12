@@ -13,8 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include "storage/reference_types.h"
-#include "storage/reference_utils.h"
+#include "base/units.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "engine/local_executor.h"
@@ -22,8 +21,11 @@
 #include "engine/simulated_executor.h"
 #include "scheduling/knowledge_base.h"
 #include "storage/object_store_interface.h"
+#include "storage/reference_types.h"
+#include "storage/reference_utils.h"
 
-#define TASK_FAIL_TIMEOUT 60000000ULL
+DEFINE_int64(task_fail_timeout, 60, "Time (in seconds) after which to declare "
+             "a task as failed if it has not sent heartbeats");
 
 namespace firmament {
 namespace scheduler {
@@ -31,7 +33,6 @@ namespace scheduler {
 using executor::LocalExecutor;
 using executor::RemoteExecutor;
 using executor::SimulatedExecutor;
-using common::pb_to_set;
 using store::ObjectStoreInterface;
 
 EventDrivenScheduler::EventDrivenScheduler(
@@ -102,25 +103,22 @@ vector<TaskID_t> EventDrivenScheduler::BoundTasksForResource(
 
 void EventDrivenScheduler::CheckRunningTasksHealth() {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  for (map<ResourceID_t, ExecutorInterface*>::const_iterator
-       it = executors_.begin();
-       it != executors_.end();
-       ++it) {
+  for (auto& executor : executors_) {
     vector<TaskID_t> failed_tasks;
-    if (!it->second->CheckRunningTasksHealth(&failed_tasks)) {
+    if (!executor.second->CheckRunningTasksHealth(&failed_tasks)) {
       // Handle task failures
-      for (vector<TaskID_t>::const_iterator it = failed_tasks.begin();
-           it != failed_tasks.end();
-           ++it) {
-        TaskDescriptor* td = FindPtrOrNull(*task_map_, *it);
-        CHECK_NOTNULL(td);
-        if (td->state() != TaskDescriptor::COMPLETED &&
-            td->last_heartbeat_time() <=
-            (GetCurrentTimestamp() - TASK_FAIL_TIMEOUT)) {
-          LOG(INFO) << "Task " << td->uid() << " has not reported heartbeats "
-                    << "for " << (TASK_FAIL_TIMEOUT / 1000000) << "s and its "
-                    << "handler thread has exited. Declaring it FAILED!";
-          HandleTaskFailure(td);
+      for (auto& failed_task : failed_tasks) {
+        TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, failed_task);
+        CHECK_NOTNULL(td_ptr);
+        if (td_ptr->state() != TaskDescriptor::COMPLETED &&
+            td_ptr->last_heartbeat_time() <=
+            (GetCurrentTimestamp() - FLAGS_task_fail_timeout *
+             SECONDS_TO_MICROSECONDS)) {
+          LOG(INFO) << "Task " << td_ptr->uid() << " has not reported "
+                    << "heartbeats for " << FLAGS_task_fail_timeout
+                    << "s and its handler thread has exited. "
+                    << "Declaring it FAILED!";
+          HandleTaskFailure(td_ptr);
         }
       }
     }
@@ -140,10 +138,9 @@ void EventDrivenScheduler::ClearScheduledJobs() {
 void EventDrivenScheduler::DebugPrintRunnableTasks() {
   VLOG(1) << "Runnable task queue now contains " << runnable_tasks_.size()
           << " elements:";
-  for (set<TaskID_t>::const_iterator t_iter = runnable_tasks_.begin();
-       t_iter != runnable_tasks_.end();
-       ++t_iter)
-    VLOG(1) << "  " << *t_iter;
+  for (auto& task : runnable_tasks_) {
+    VLOG(1) << "  " << task;
+  }
 }
 
 void EventDrivenScheduler::DeregisterResource(ResourceID_t res_id) {
@@ -209,30 +206,24 @@ void EventDrivenScheduler::HandleReferenceStateChange(
       // Nobody cares about this ref, so we don't do anything
       return;
     }
-    for (set<TaskDescriptor*>::iterator it = tasks->begin();
-         it != tasks->end();
-         ++it) {
-      CHECK_NOTNULL(*it);
+    for (auto& task : *tasks) {
+      CHECK_NOTNULL(task);
       bool any_outstanding = false;
-      if ((*it)->state() == TaskDescriptor::COMPLETED ||
-          (*it)->state() == TaskDescriptor::RUNNING)
+      if (task->state() == TaskDescriptor::COMPLETED ||
+          task->state() == TaskDescriptor::RUNNING)
         continue;
-      for (RepeatedPtrField<ReferenceDescriptor>::const_iterator ref_it =
-           (*it)->dependencies().begin();
-           ref_it != (*it)->dependencies().end();
-           ++ref_it) {
+      for (auto& dependency : task->dependencies()) {
         set<ReferenceInterface*>* deps = object_store_->GetReferences(
-            DataObjectIDFromProtobuf(ref_it->id()));
-        for (set<ReferenceInterface*>::const_iterator dep_it = deps->begin();
-             dep_it != deps->end();
-             ++dep_it)
-          if (!(*dep_it)->Consumable())
+            DataObjectIDFromProtobuf(dependency.id()));
+        for (auto& dep : *deps) {
+          if (!dep->Consumable())
             any_outstanding = true;
+        }
       }
       if (!any_outstanding) {
-        (*it)->set_state(TaskDescriptor::RUNNABLE);
-        runnable_tasks_.insert((*it)->uid());
-        blocked_tasks_.erase(*it);
+        task->set_state(TaskDescriptor::RUNNABLE);
+        runnable_tasks_.insert(task->uid());
+        blocked_tasks_.erase(task);
       }
     }
   } else if (old_ref.Consumable() && !new_ref.Consumable()) {
@@ -433,18 +424,13 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
   // Add expected producer for object_id to queue, if the object reference is
   // not already concrete.
   VLOG(2) << "for a job with " << output_ids.size() << " outputs";
-  for (set<DataObjectID_t*>::const_iterator output_id_iter = output_ids.begin();
-       output_id_iter != output_ids.end();
-       ++output_id_iter) {
-    set<ReferenceInterface*> refs = ReferencesForID(**output_id_iter);
+  for (auto& output_id : output_ids) {
+    set<ReferenceInterface*> refs = ReferencesForID(*output_id);
     if (!refs.empty()) {
-      for (set<ReferenceInterface*>::const_iterator ref_iter = refs.begin();
-           ref_iter != refs.end();
-           ++ref_iter) {
+      for (auto& ref : refs) {
         // TODO(malte): this logic is very simple-minded; sometimes, it may be
         // beneficial to produce locally instead of fetching remotely!
-        if ((*ref_iter)->Consumable() &&
-            !(*ref_iter)->desc().non_deterministic()) {
+        if (ref->Consumable() && !ref->desc().non_deterministic()) {
           // skip this output, as it is already present
           continue;
         }
@@ -455,18 +441,14 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
     // N.B.: by this point, we know that no concrete reference exists in the set
     // of references available.
     set<TaskDescriptor*> tasks =
-        ProducingTasksForDataObjectID(**output_id_iter, job_id);
+        ProducingTasksForDataObjectID(*output_id, job_id);
     CHECK_GT(tasks.size(), 0) << "Could not find task producing output ID "
-                             << **output_id_iter;
-    for (set<TaskDescriptor*>::const_iterator t_iter = tasks.begin();
-         t_iter != tasks.end();
-         ++t_iter) {
-      TaskDescriptor* task = *t_iter;
+                              << *output_id;
+    for (auto& task : tasks) {
       if (task->state() == TaskDescriptor::CREATED ||
           task->state() == TaskDescriptor::FAILED) {
         VLOG(2) << "Setting task " << task->uid() << " active as it produces "
-                << "output " << **output_id_iter << ", which we're interested "
-                << "in.";
+                << "output " << *output_id << ", which we're interested in.";
         task->set_state(TaskDescriptor::BLOCKING);
         newly_active_tasks.push_back(task);
       }
@@ -486,11 +468,8 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
     newly_active_tasks.pop_front();
     // Find any unfulfilled dependencies
     bool will_block = false;
-    for (RepeatedPtrField<ReferenceDescriptor>::const_iterator iter =
-         current_task->dependencies().begin();
-         iter != current_task->dependencies().end();
-         ++iter) {
-      ReferenceInterface* ref = ReferenceFromDescriptor(*iter);
+    for (auto& dependency : current_task->dependencies()) {
+      ReferenceInterface* ref = ReferenceFromDescriptor(dependency);
       // Subscribe the current task to the reference, to enable it to be
       // unblocked if it becomes available.
       // Note that we subscribe even tasks whose dependencies are concrete, as
@@ -524,11 +503,7 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
                      << "; will block until it is produced.";
           continue;
         }
-        for (set<TaskDescriptor*>::const_iterator t_iter =
-             producing_tasks.begin();
-             t_iter != producing_tasks.end();
-             ++t_iter) {
-          TaskDescriptor* task = *t_iter;
+        for (auto& task : producing_tasks) {
           if (task->state() == TaskDescriptor::CREATED ||
               task->state() == TaskDescriptor::COMPLETED) {
             task->set_state(TaskDescriptor::BLOCKING);
@@ -538,12 +513,9 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
       }
     }
     // Process any eager children not related via dependencies
-    for (RepeatedPtrField<TaskDescriptor>::iterator it =
-         current_task->mutable_spawned()->begin();
-         it != current_task->mutable_spawned()->end();
-         ++it) {
-      if (it->outputs_size() == 0)
-        newly_active_tasks.push_back(&(*it));
+    for (auto& child_task : *current_task->mutable_spawned()) {
+      if (child_task.outputs_size() == 0)
+        newly_active_tasks.push_back(&child_task);
     }
     if (!will_block || (current_task->dependencies_size() == 0
                         && current_task->outputs_size() == 0)) {
@@ -598,25 +570,23 @@ set<TaskDescriptor*> EventDrivenScheduler::ProducingTasksForDataObjectID(
   set<ReferenceInterface*>* refs = object_store_->GetReferences(id);
   if (!refs)
     return producing_tasks;
-  for (set<ReferenceInterface*>::const_iterator ref_iter = refs->begin();
-       ref_iter != refs->end();
-       ++ref_iter) {
-    if ((*ref_iter)->desc().has_producing_task()) {
-      TaskDescriptor** td_ptr =
-          FindOrNull(*task_map_, (*ref_iter)->desc().producing_task());
+  for (auto& ref : *refs) {
+    if (ref->desc().has_producing_task()) {
+      TaskDescriptor* td_ptr =
+        FindPtrOrNull(*task_map_, ref->desc().producing_task());
       if (td_ptr) {
-        if (JobIDFromString((*td_ptr)->job_id()) == cur_job) {
-          VLOG(2) << "... is " << (*td_ptr)->uid() << " (in THIS job).";
-          producing_tasks.insert(*td_ptr);
+        if (JobIDFromString(td_ptr->job_id()) == cur_job) {
+          VLOG(2) << "... is " << td_ptr->uid() << " (in THIS job).";
+          producing_tasks.insert(td_ptr);
         } else {
-          VLOG(2) << "... is " << (*td_ptr)->uid() << " (in job "
-                  << (*td_ptr)->job_id() << ").";
+          VLOG(2) << "... is " << td_ptr->uid() << " (in job "
+                  << td_ptr->job_id() << ").";
           // Someone in another job is producing this object. We have a choice
           // of making him runnable, or ignoring him.
           // We do the former if the reference is public, and the latter if it
           // is private.
-          if ((*ref_iter)->desc().scope() == ReferenceDescriptor::PUBLIC)
-            producing_tasks.insert(*td_ptr);
+          if (ref->desc().scope() == ReferenceDescriptor::PUBLIC)
+            producing_tasks.insert(td_ptr);
         }
       } else {
         VLOG(2) << "... NOT FOUND";
@@ -630,9 +600,7 @@ const set<ReferenceInterface*> EventDrivenScheduler::ReferencesForID(
     const DataObjectID_t& id) {
   // Find all locally known references for a specific object
   VLOG(2) << "Looking up object " << id;
-//  ReferenceDescriptor* rd = FindOrNull(*object_map_, id);
   set<ReferenceInterface*>* ref_set = object_store_->GetReferences(id);
-
   if (!ref_set) {
     VLOG(2) << "... NOT FOUND";
     set<ReferenceInterface*> es;  // empty set
