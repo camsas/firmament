@@ -4,8 +4,8 @@
 // Stub header for object store. This currently supports a very simple in-memory
 // key-value store.
 
-#ifndef FIRMAMENT_ENGINE_STUB_OBJECT_STORE_H
-#define FIRMAMENT_ENGINE_STUB_OBJECT_STORE_H
+#ifndef FIRMAMENT_STORAGE_STUB_OBJECT_STORE_H
+#define FIRMAMENT_STORAGE_STUB_OBJECT_STORE_H
 
 #include <string>
 #include <map>
@@ -39,4 +39,4 @@ class StubObjectStore : public ObjectStoreInterface {
 }  // namespace store
 }  // namespace firmament
 
-#endif  // FIRMAMENT_ENGINE_STUB_OBJECT_STORE_H
+#endif  // FIRMAMENT_STORAGE_STUB_OBJECT_STORE_H
