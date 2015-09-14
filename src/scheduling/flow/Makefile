@@ -14,7 +14,7 @@ OBJS = coco_cost_model.o dimacs_add_node.o dimacs_change_arc.o \
        octopus_cost_model.o quincy_cost_model.o simulated_quincy_cost_model.o \
        sjf_cost_model.o solver_dispatcher.o trivial_cost_model.o \
        random_cost_model.o void_cost_model.o wharemap_cost_model.o
-PBS = scheduling_parameters.pb.o
+PBS =
 TESTS = dimacs_exporter_test flow_graph_test
 TESTS_DEPS = $(BUILD_DIR)/base/libfirmament_base.a
 TESTS_dimacs_exporter_DEPS = $(BUILD_DIR)/scheduling/common.o \

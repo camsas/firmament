@@ -24,7 +24,6 @@
 #include "scheduling/flow/dimacs_exporter.h"
 #include "scheduling/flow/flow_graph.h"
 #include "scheduling/flow/solver_dispatcher.h"
-#include "scheduling/flow/scheduling_parameters.pb.h"
 #include "storage/reference_interface.h"
 
 namespace firmament {
@@ -44,8 +43,7 @@ class FlowScheduler : public EventDrivenScheduler {
                 MessagingAdapterInterface<BaseMessage>* m_adapter,
                 EventNotifierInterface* event_notifier,
                 ResourceID_t coordinator_res_id,
-                const string& coordinator_uri,
-                const SchedulingParameters& params);
+                const string& coordinator_uri);
   ~FlowScheduler();
   virtual void DeregisterResource(ResourceID_t res_id);
   virtual void HandleJobCompletion(JobID_t job_id);
@@ -69,8 +67,8 @@ class FlowScheduler : public EventDrivenScheduler {
   virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr);
   virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr);
   virtual ostream& ToString(ostream* stream) const {
-    return *stream << "<FlowScheduler, parameters: "
-                   << parameters_.DebugString() << ">";
+    return *stream << "<FlowScheduler for coordinator " << coordinator_uri_
+                   << ">";
   }
 
   const CostModelInterface& cost_model() const {
@@ -101,8 +99,6 @@ class FlowScheduler : public EventDrivenScheduler {
   shared_ptr<TopologyManager> topology_manager_;
   // Local storage of the current flow graph
   shared_ptr<FlowGraph> flow_graph_;
-  // Flow scheduler parameters (passed in as protobuf to constructor)
-  SchedulingParameters parameters_;
   // The dispatcher runs different flow solvers.
   SolverDispatcher* solver_dispatcher_;
   // The scheduler's active cost model, used to construct the flow network and
