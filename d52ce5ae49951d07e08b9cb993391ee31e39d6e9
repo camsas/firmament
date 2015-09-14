@@ -22,6 +22,30 @@
       "revId": "d52ce5ae49951d07e08b9cb993391ee31e39d6e9",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_8520eaf8",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1346,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-14T07:48:32Z",
+      "side": 1,
+      "message": "I\u0027ve been doing exactly the opposite: enforcing _ptr everywhere. I\u0027d prefer appending _ptr whenever we have a pointer. In this way the code base is more consistent and easier to read.",
+      "parentUuid": "1ae5cdf2_7bbaa0e2",
+      "range": {
+        "startLine": 1346,
+        "startChar": 13,
+        "endLine": 1346,
+        "endChar": 19
+      },
+      "revId": "d52ce5ae49951d07e08b9cb993391ee31e39d6e9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
