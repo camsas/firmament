@@ -1,0 +1,215 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_d9a1f7aa",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "Can we specify by whom? (The coordinator or simulator, presumably.)",
+      "range": {
+        "startLine": 68,
+        "startChar": 5,
+        "endLine": 68,
+        "endChar": 19
+      },
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_39b1fbf8",
+        "filename": "src/scheduling/flow/dimacs_exporter.h",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "Suggestion: rename to FlushAndClose",
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_5995e73e",
+        "filename": "src/scheduling/flow/dimacs_exporter.h",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "Suggestion: rename to FlushAndClose, to contrast with the following version that does not close",
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_999f6f5f",
+        "filename": "src/scheduling/flow/flow_graph.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "Again, can be specific? Presumably it\u0027s owned by the FlowScheduler.",
+      "range": {
+        "startLine": 54,
+        "startChar": 55,
+        "endLine": 54,
+        "endChar": 69
+      },
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_597c0721",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "Should we print an error here if res_id is not of type RESOURCE_MACHINE or RESOURCE_PU?",
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_7979c32e",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "Why are we reordering this -- is there a specific reason? I\u0027m pretty sure that there was a reason why the superclass handlers are always invoked first; maybe it doesn\u0027t affect this case, but it might affect others. (Though there may well be a reason to do it the other way round in the new world order; it seems like you changed it consistently.)\n\nOn reflection, the reason *may* have been that the old (broken) way of acquiring the scheduler lock only worked if the superclass handler was called first (and without the lock held, which was broken).",
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_b9734b4c",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "1) Should we clear psi_map, too?\n2) Does xi_map_.clear() have the same effect here?",
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_7b8f0024",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 6
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "Hrm, do we have to use default arguments here? They\u0027re discouraged, but we used them in some other place before as it made a transition between APIs easier. However, I don\u0027t think that\u0027s the case here?",
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_d98f3722",
+        "filename": "src/sim/trace-extract/event_desc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "Does this file actually survive in the future? I think it was only ever used in the old simulator.",
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_59ca4750",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 386,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "Typo",
+      "range": {
+        "startLine": 386,
+        "startChar": 70,
+        "endLine": 386,
+        "endChar": 72
+      },
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_399f3b54",
+        "filename": "src/sim/trace-extract/google_trace_bridge.h",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 1,
+      "message": "Should this be called SchedulingEventNotifierInterface? It\u0027s a bit duplicated, because it\u0027s already in the \"scheduling\" namespace, but on the other hand the types of events we\u0027re dealing with are all scheduling-related events.",
+      "range": {
+        "startLine": 28,
+        "startChar": 44,
+        "endLine": 28,
+        "endChar": 66
+      },
+      "revId": "404e32f7fcc940ab82a9bb6f1d8edb12d69db247",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

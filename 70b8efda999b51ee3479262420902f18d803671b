@@ -69,6 +69,23 @@
       "revId": "70b8efda999b51ee3479262420902f18d803671b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_99768f3d",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-14T23:39:15Z",
+      "side": 0,
+      "message": "Just to sanity check: why don\u0027t we need do this any more?",
+      "revId": "70b8efda999b51ee3479262420902f18d803671b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
