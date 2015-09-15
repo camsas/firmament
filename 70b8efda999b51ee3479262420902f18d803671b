@@ -86,6 +86,24 @@
       "revId": "70b8efda999b51ee3479262420902f18d803671b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_94b9f630",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-15T06:41:35Z",
+      "side": 0,
+      "message": "I\u0027ve removed it because the implementation was quite hacky. I\u0027ll bring it back in a different diff, once I figure out a decent way to do it.",
+      "parentUuid": "1ae5cdf2_99768f3d",
+      "revId": "70b8efda999b51ee3479262420902f18d803671b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
