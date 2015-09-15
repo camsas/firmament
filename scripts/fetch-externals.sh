@@ -483,7 +483,7 @@ mkdir libhdfs3-build/
 cd libhdfs3-git/
 mkdir build
 cd build
-../bootstrap
+../bootstrap --prefix=${EXT_DIR}/libhdfs3-build/ --enable-boost
 make -j
 make install
 cd ../
