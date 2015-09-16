@@ -1,0 +1,335 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_f7ddd743",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Oh, so we actually populate the KB with dynamically generated machine statistics information? Cool!",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_17e32308",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "This is fine, but it highlights that we need to think a bit about long-term storage of this information. Is that the KB\u0027s job, or not? (Probably not, since we want to keep it separate for things like Kubernetes support; just a reminder to think about it.)",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_57e4cb0c",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Uh-yuck -- is this a shared pointer with the simulator, or something like that?",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_77f1c7cc",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Not sure if relevant here, but we already have something like KillTask() to terminate tasks in the coordinator code.",
+      "range": {
+        "startLine": 386,
+        "startChar": 55,
+        "endLine": 387,
+        "endChar": 38
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_b7d34f37",
+        "filename": "src/sim/trace-extract/google_trace_event_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Is this UINT64_MAX or something similar? If so, we should use the constant. If it\u0027s just the length of the Google trace, we should add a comment explaining this.",
+      "range": {
+        "startLine": 25,
+        "startChar": 23,
+        "endLine": 25,
+        "endChar": 42
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_d7d8db55",
+        "filename": "src/sim/trace-extract/google_trace_event_manager.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Push this accessor to the bottom of the capitalised methods, as (I think?) the style guide suggests.",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_3772df7c",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "This is a timestamp, right? If so, I\u0027d suggest renaming it to \"events_up_to_time\", making this year.",
+      "range": {
+        "startLine": 143,
+        "startChar": 13,
+        "endLine": 143,
+        "endChar": 25
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_9769f38d",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Inconsistent use of spaces vs. underscores here: the other log messages have underscores in the capitalized descriptions. For easier parsing, we should be consistent.",
+      "range": {
+        "startLine": 176,
+        "startChar": 24,
+        "endLine": 176,
+        "endChar": 41
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_1715e3f0",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Hmm, we should (possibly in a future change) think a bit about how we want to use these log entries. If the string we\u0027re passing is supposed to be a type description, we may as well use an enum and handle the string conversion in a LogEvent() method. If it\u0027s supposed to be a free-form message, we need to be careful to keep it machine-parseable.",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_d70a9bd1",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Can we have a counter to keep track of how often this happens, and print that at the end?",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_37f9ffc8",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 248,
+        "startChar": 51,
+        "endLine": 248,
+        "endChar": 55
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_57f68bd8",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Does this mean we only handle task submissions at the moment? No other event (e.g. failures, machine removals etc.) will make it past this condition, or am I mistaken?",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_f726b767",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Let\u0027s add a comment above this loop saying what it does (do outstanding solver runs before processing the task event). I had a bit of a hard time untangling what the responsibilities of this loop vs. the next one at line 282 are.",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_770387b8",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "This isn\u0027t currently compatible with running non-flow schedulers -- that\u0027s okay, but presumably the plan is to later replace this logic with something that calls into a more neutral scheduler entry point?",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_970013ac",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "Funny indentation.",
+      "range": {
+        "startLine": 283,
+        "startChar": 0,
+        "endLine": 283,
+        "endChar": 13
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_172c0347",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "We use bridge_-\u003eRunSolver() here, but just RunSolver() in other places. Deliberate, or bug?",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_771aa718",
+        "filename": "src/sim/trace-extract/knowledge_base_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-16T13:24:03Z",
+      "side": 1,
+      "message": "If I understand correctly, this method adds task-level resource statistics samples from the trace to the KB. How is the current_simulation_time variable used here? Is it relative to the start of the task? (It should be, since we don\u0027t know when the task will schedule in absolute time.)",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 72
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
