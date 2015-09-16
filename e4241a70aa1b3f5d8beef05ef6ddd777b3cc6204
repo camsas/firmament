@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_37d1fffb",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "Yep. I added this feature in this diff:P",
+      "parentUuid": "1ae5cdf2_f7ddd743",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_17e32308",
         "filename": "src/sim/trace-extract/google_trace_bridge.cc",
         "patchSetId": 7
@@ -47,6 +65,24 @@
       "writtenOn": "2015-09-16T13:24:03Z",
       "side": 1,
       "message": "Uh-yuck -- is this a shared pointer with the simulator, or something like that?",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_d7cc5b38",
+        "filename": "src/sim/trace-extract/google_trace_bridge.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "Hehe. This is fine engineering. It\u0027s an unordered_map from job_id to number_of_tasks. Whenever a task finishes we need to decrement the number of tasks so that we know when a job has completed. I\u0027ve chosen this version because it\u0027s more efficient. It only requires a map lookup rather than a lookup and an update:)",
+      "parentUuid": "1ae5cdf2_57e4cb0c",
       "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -99,6 +135,30 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_d7e29bd4",
+        "filename": "src/sim/trace-extract/google_trace_event_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ae5cdf2_b7d34f37",
+      "range": {
+        "startLine": 25,
+        "startChar": 23,
+        "endLine": 25,
+        "endChar": 42
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_d7d8db55",
         "filename": "src/sim/trace-extract/google_trace_event_manager.h",
         "patchSetId": 7
@@ -116,6 +176,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_17ede3c3",
+        "filename": "src/sim/trace-extract/google_trace_event_manager.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "hmm..I\u0027ve checked and I couldn\u0027t find anywhere saying that the accessors should be at the bottom. We should agree on a rule, up to now I\u0027ve just ordered the methods alphabetically.",
+      "parentUuid": "1ae5cdf2_d7d8db55",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_3772df7c",
         "filename": "src/sim/trace-extract/google_trace_simulator.cc",
         "patchSetId": 7
@@ -127,6 +205,30 @@
       "writtenOn": "2015-09-16T13:24:03Z",
       "side": 1,
       "message": "This is a timestamp, right? If so, I\u0027d suggest renaming it to \"events_up_to_time\", making this year.",
+      "range": {
+        "startLine": 143,
+        "startChar": 13,
+        "endLine": 143,
+        "endChar": 25
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_77db871b",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ae5cdf2_3772df7c",
       "range": {
         "startLine": 143,
         "startChar": 13,
@@ -162,6 +264,30 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_97d8131f",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ae5cdf2_9769f38d",
+      "range": {
+        "startLine": 176,
+        "startChar": 24,
+        "endLine": 176,
+        "endChar": 41
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_1715e3f0",
         "filename": "src/sim/trace-extract/google_trace_simulator.cc",
         "patchSetId": 7
@@ -179,6 +305,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_b760af36",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "Yep, we can definitely improve this in the future. This was added by Adam and I don\u0027t know how his scripts use these logs.",
+      "parentUuid": "1ae5cdf2_1715e3f0",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_d70a9bd1",
         "filename": "src/sim/trace-extract/google_trace_simulator.cc",
         "patchSetId": 7
@@ -190,6 +334,24 @@
       "writtenOn": "2015-09-16T13:24:03Z",
       "side": 1,
       "message": "Can we have a counter to keep track of how often this happens, and print that at the end?",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_f75a3782",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ae5cdf2_d70a9bd1",
       "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -219,6 +381,30 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_77f2a79b",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ae5cdf2_37f9ffc8",
+      "range": {
+        "startLine": 248,
+        "startChar": 51,
+        "endLine": 248,
+        "endChar": 55
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_57f68bd8",
         "filename": "src/sim/trace-extract/google_trace_simulator.cc",
         "patchSetId": 7
@@ -230,6 +416,24 @@
       "writtenOn": "2015-09-16T13:24:03Z",
       "side": 1,
       "message": "Does this mean we only handle task submissions at the moment? No other event (e.g. failures, machine removals etc.) will make it past this condition, or am I mistaken?",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_376d7f33",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "We do handle machine additions, machine removals and task submits. However, we don\u0027t currently handle task failures because I\u0027m still unsure how to handle them (i.e. should we fail a task despite us placing it on a different machine at a different time?)",
+      "parentUuid": "1ae5cdf2_57f68bd8",
       "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -253,6 +457,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_57512b61",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ae5cdf2_f726b767",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_770387b8",
         "filename": "src/sim/trace-extract/google_trace_simulator.cc",
         "patchSetId": 7
@@ -264,6 +486,24 @@
       "writtenOn": "2015-09-16T13:24:03Z",
       "side": 1,
       "message": "This isn\u0027t currently compatible with running non-flow schedulers -- that\u0027s okay, but presumably the plan is to later replace this logic with something that calls into a more neutral scheduler entry point?",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_f70cf796",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "I think it\u0027s compatible with non-flow schedulers. In RunSolver we return the time when the scheduler should be called next. This time can be equal to current_time+current_solver_runtime such the solver runs back to back. Alternatively the the solver can be run every x seconds.\n\nThe max you\u0027ve highlighted only pushes the next solver run to the time of the next event if there are no events in the trace until the next scheduled solver run.",
+      "parentUuid": "1ae5cdf2_770387b8",
       "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -293,6 +533,30 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_173b233b",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 283,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ae5cdf2_970013ac",
+      "range": {
+        "startLine": 283,
+        "startChar": 0,
+        "endLine": 283,
+        "endChar": 13
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_172c0347",
         "filename": "src/sim/trace-extract/google_trace_simulator.cc",
         "patchSetId": 7
@@ -310,6 +574,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_b7126fb2",
+        "filename": "src/sim/trace-extract/google_trace_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "I guess the confusion comes from the fact that there\u0027s a RunSolver method in simulator and another one in the bridge. This is the place where the RunSolver from the simulator calls the RunSolver from the bridge.\n\nI\u0027ve renamed the one in the simulator to RunSolverHelper because it\u0027s just a wraparound.",
+      "parentUuid": "1ae5cdf2_172c0347",
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_771aa718",
         "filename": "src/sim/trace-extract/knowledge_base_simulator.cc",
         "patchSetId": 7
@@ -321,6 +603,30 @@
       "writtenOn": "2015-09-16T13:24:03Z",
       "side": 1,
       "message": "If I understand correctly, this method adds task-level resource statistics samples from the trace to the KB. How is the current_simulation_time variable used here? Is it relative to the start of the task? (It should be, since we don\u0027t know when the task will schedule in absolute time.)",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 72
+      },
+      "revId": "e4241a70aa1b3f5d8beef05ef6ddd777b3cc6204",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_57ce8b5b",
+        "filename": "src/sim/trace-extract/knowledge_base_simulator.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-16T15:01:53Z",
+      "side": 1,
+      "message": "This method is called by the simulator every x seconds. Whenever, the simulator calls the method it also passes a snapshot of which tasks are running on the resource. Hence, we can compute reasonable machine load statistics.",
+      "parentUuid": "1ae5cdf2_771aa718",
       "range": {
         "startLine": 23,
         "startChar": 0,
