@@ -1,6 +1,6 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
-#include "sim/trace-extract/google_trace_bridge.h"
+#include "sim/google_trace_bridge.h"
 
 #include <limits>
 #include <map>
@@ -15,8 +15,8 @@
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 #include "scheduling/flow/flow_scheduler.h"
-#include "sim/trace-extract/google_trace_loader.h"
-#include "sim/trace-extract/knowledge_base_simulator.h"
+#include "sim/google_trace_loader.h"
+#include "sim/knowledge_base_simulator.h"
 #include "storage/simple_object_store.h"
 
 using boost::lexical_cast;
@@ -29,7 +29,7 @@ namespace sim {
 
 GoogleTraceBridge::GoogleTraceBridge(
     const string& trace_path,
-    GoogleTraceEventManager* event_manager) :
+    EventManager* event_manager) :
     event_manager_(event_manager), job_map_(new JobMap_t),
     knowledge_base_(new KnowledgeBaseSimulator),
     resource_map_(new ResourceMap_t), task_map_(new TaskMap_t),

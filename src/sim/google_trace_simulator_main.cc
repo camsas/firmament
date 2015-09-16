@@ -3,7 +3,7 @@
 //
 
 #include "base/common.h"
-#include "sim/trace-extract/google_trace_simulator.h"
+#include "sim/google_trace_simulator.h"
 
 using namespace firmament;  // NOLINT
 

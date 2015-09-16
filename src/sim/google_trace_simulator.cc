@@ -3,7 +3,7 @@
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Google cluster trace simulator tool.
-#include "sim/trace-extract/google_trace_simulator.h"
+#include "sim/google_trace_simulator.h"
 
 #include <signal.h>
 #include <SpookyV2.h>
@@ -22,7 +22,7 @@
 
 #include "misc/string_utils.h"
 #include "misc/utils.h"
-#include "sim/trace-extract/google_trace_loader.h"
+#include "sim/google_trace_loader.h"
 
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;
@@ -40,8 +40,8 @@ DEFINE_uint64(solver_timeout, UINT64_MAX,
               "Timeout: terminate after waiting this number of seconds");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
-
-DECLARE_uint64(heartbeat_interval);
+DEFINE_uint64(heartbeat_interval, 1000000,
+              "Heartbeat interval in microseconds.");
 
 static bool ValidateSolver(const char* flagname, const string& solver) {
   if (solver.compare("cs2") && solver.compare("flowlessly") &&
@@ -72,7 +72,7 @@ namespace firmament {
 namespace sim {
 
 GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
-  event_manager_(new GoogleTraceEventManager), num_duplicate_task_ids_(0),
+  event_manager_(new EventManager), num_duplicate_task_ids_(0),
   trace_path_(trace_path) {
   bridge_ = new GoogleTraceBridge(trace_path, event_manager_);
 

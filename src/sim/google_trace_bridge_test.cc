@@ -6,8 +6,8 @@
 #include <gtest/gtest.h>
 
 #include "misc/utils.h"
-#include "sim/trace-extract/google_trace_bridge.h"
-#include "sim/trace-extract/google_trace_loader.h"
+#include "sim/google_trace_bridge.h"
+#include "sim/google_trace_loader.h"
 
 DECLARE_string(machine_tmpl_file);
 
@@ -17,12 +17,12 @@ namespace sim {
 class GoogleTraceBridgeTest : public ::testing::Test {
  protected:
   GoogleTraceBridgeTest()
-    : event_manager_(new GoogleTraceEventManager()),
+    : event_manager_(new EventManager()),
       bridge_(new GoogleTraceBridge("", event_manager_)),
       loader_(new GoogleTraceLoader("")) {
     // You can do set-up work for each test here.
     FLAGS_v = 2;
-    FLAGS_machine_tmpl_file = "../../../../tests/testdata/machine_topo.pbin";
+    FLAGS_machine_tmpl_file = "../../../tests/testdata/machine_topo.pbin";
   }
 
   virtual ~GoogleTraceBridgeTest() {
@@ -41,7 +41,7 @@ class GoogleTraceBridgeTest : public ::testing::Test {
     // before the destructor).
   }
 
-  GoogleTraceEventManager* event_manager_;
+  EventManager* event_manager_;
   GoogleTraceBridge* bridge_;
   GoogleTraceLoader* loader_;
 };

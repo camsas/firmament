@@ -1,6 +1,8 @@
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 // Google resource utilization trace processor.
 
+#include "sim/google_trace_task_processor.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <limits>
@@ -17,8 +19,6 @@
 
 #include "misc/map-util.h"
 #include "misc/string_utils.h"
-#include "misc/utils.h"
-#include "sim/trace-extract/google_trace_task_processor.h"
 
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;

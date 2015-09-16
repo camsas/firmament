@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
-#ifndef SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
-#define SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
+#ifndef FIRMAMENT_SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
+#define FIRMAMENT_SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
 
 namespace firmament {
 
@@ -21,4 +21,4 @@ class GoogleRuntimeDistribution {
 
 } // namespace firmament
 
-#endif /* SIM_GOOGLE_RUNTIME_DISTRIBUTION_H */
+#endif // FIRMAMENT_SIM_GOOGLE_RUNTIME_DISTRIBUTION_H

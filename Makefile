@@ -46,7 +46,7 @@ MAKEFLAGS=-j $(NPROCS)
 
 ######
 # TARGETS
-all: tests-clean ext platforms misc engine scripts trace_simulator
+all: tests-clean ext platforms misc engine scripts sim
 ifeq ($(BUILD_TYPE), debug)
 	@echo "================================================="
 	@echo "N.B.: DEBUG BUILD -- DO NOT USE FOR BENCHMARKING!"
@@ -81,7 +81,7 @@ ext: ext/.ext-ok
 ext/.ext-ok:
 	$(SCRIPTS_DIR)/fetch-externals.sh
 
-engine: base scheduling storage platforms misc sim engine_executors
+engine: base scheduling storage platforms misc engine_executors
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
 engine_executors: base misc messages
@@ -98,17 +98,17 @@ scheduling: scheduling_base flow_scheduler simple_scheduler
 scheduling_base: base misc platforms engine_executors
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling all
 
-flow_scheduler: scheduling_base sim
+flow_scheduler: scheduling_base
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling/flow all
 
 simple_scheduler: scheduling_base
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling/simple all
 
-sim: base misc
+sim: base misc engine scheduling sim_dfs
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim all
 
-trace_simulator: base misc flow_scheduler
-	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim/trace-extract all
+sim_dfs:
+	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim/dfs all
 
 misc: messages ext
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/misc all

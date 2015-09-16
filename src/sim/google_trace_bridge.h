@@ -3,8 +3,8 @@
 //
 // Google trace simulator bridge between the simulator and Firmament.
 
-#ifndef FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_BRIDGE_H
-#define FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_BRIDGE_H
+#ifndef FIRMAMENT_SIM_GOOGLE_TRACE_BRIDGE_H
+#define FIRMAMENT_SIM_GOOGLE_TRACE_BRIDGE_H
 
 #include <map>
 #include <string>
@@ -15,9 +15,9 @@
 #include "platforms/sim/simulated_messaging_adapter.h"
 #include "scheduling/scheduler_interface.h"
 #include "scheduling/scheduling_event_notifier_interface.h"
-#include "sim/trace-extract/google_trace_event_manager.h"
-#include "sim/trace-extract/google_trace_utils.h"
-#include "sim/trace-extract/knowledge_base_simulator.h"
+#include "sim/event_manager.h"
+#include "sim/knowledge_base_simulator.h"
+#include "sim/trace_utils.h"
 #include "storage/object_store_interface.h"
 
 namespace firmament {
@@ -27,8 +27,7 @@ using scheduler::SchedulerStats;
 
 class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
  public:
-  GoogleTraceBridge(const string& trace_path,
-                    GoogleTraceEventManager* event_manager);
+  GoogleTraceBridge(const string& trace_path, EventManager* event_manager);
   virtual ~GoogleTraceBridge();
 
   /**
@@ -182,7 +181,7 @@ class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
   void ResetUuidAndAddResource(ResourceTopologyNodeDescriptor* rtnd,
                                const string& hostname, const string& root_uuid);
 
-  GoogleTraceEventManager* event_manager_;
+  EventManager* event_manager_;
 
   // Map used to convert between the google trace job_ids and the Firmament
   // job descriptors.
@@ -245,4 +244,4 @@ class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
 }  // namespace sim
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_BRIDGE_H
+#endif  // FIRMAMENT_SIM_GOOGLE_TRACE_BRIDGE_H

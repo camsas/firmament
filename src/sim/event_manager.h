@@ -1,22 +1,22 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#ifndef FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_EVENT_MANAGER_H
-#define FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_EVENT_MANAGER_H
+#ifndef FIRMAMENT_SIM_EVENT_MANAGER_H
+#define FIRMAMENT_SIM_EVENT_MANAGER_H
 
 #include <map>
 #include <utility>
 
 #include "base/common.h"
-#include "sim/trace-extract/event_desc.pb.h"
-#include "sim/trace-extract/google_trace_utils.h"
+#include "sim/event_desc.pb.h"
+#include "sim/trace_utils.h"
 
 namespace firmament {
 namespace sim {
 
-class GoogleTraceEventManager {
+class EventManager {
  public:
-  GoogleTraceEventManager();
+  EventManager();
 
   /**
    * Adds a new event to the trace.
@@ -76,4 +76,4 @@ class GoogleTraceEventManager {
 }  // namespace sim
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_EVENT_MANAGER_H
+#endif  // FIRMAMENT_SIM_EVENT_MANAGER_H

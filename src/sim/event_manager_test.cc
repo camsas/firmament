@@ -1,23 +1,23 @@
 // The Firmament project
 // Copyright (c) 2015-2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
-// Tests for the Google trace event manager.
+// Tests for the event manager.
 
 #include <gtest/gtest.h>
 
-#include "sim/trace-extract/google_trace_event_manager.h"
+#include "sim/event_manager.h"
 
 namespace firmament {
 namespace sim {
 
-class GoogleTraceEventManagerTest : public ::testing::Test {
+class EventManagerTest : public ::testing::Test {
  protected:
-  GoogleTraceEventManagerTest() {
+  EventManagerTest() {
     // You can do set-up work for each test here.
     FLAGS_v = 2;
   }
 
-  virtual ~GoogleTraceEventManagerTest() {
+  virtual ~EventManagerTest() {
   }
 
   virtual void SetUp() {
@@ -31,8 +31,8 @@ class GoogleTraceEventManagerTest : public ::testing::Test {
   }
 };
 
-TEST(GoogleTraceEventManagerTest, AddEvent) {
-  GoogleTraceEventManager event_manager;
+TEST(EventManagerTest, AddEvent) {
+  EventManager event_manager;
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_END_RUNTIME);
   event_manager.AddEvent(2, event_desc);
@@ -43,8 +43,8 @@ TEST(GoogleTraceEventManagerTest, AddEvent) {
   CHECK_EQ(event_manager.GetTimeOfNextEvent(), 1);
 }
 
-TEST(GoogleTraceEventManagerTest, GetNextEvent) {
-  GoogleTraceEventManager event_manager;
+TEST(EventManagerTest, GetNextEvent) {
+  EventManager event_manager;
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_END_RUNTIME);
   event_manager.AddEvent(2, event_desc);
@@ -54,9 +54,9 @@ TEST(GoogleTraceEventManagerTest, GetNextEvent) {
   CHECK_EQ(event_manager.GetNextEvent().first, 2);
 }
 
-TEST(GoogleTraceEventManagerTest, RemoveTaskEndRuntimeEvent) {
+TEST(EventManagerTest, RemoveTaskEndRuntimeEvent) {
   EXPECT_EQ(1, 1);
-  GoogleTraceEventManager event_manager;
+  EventManager event_manager;
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_END_RUNTIME);
   event_desc.set_job_id(1);

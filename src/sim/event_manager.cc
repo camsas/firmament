@@ -1,6 +1,6 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
-#include "sim/trace-extract/google_trace_event_manager.h"
+#include "sim/event_manager.h"
 
 #include <algorithm>
 #include <utility>
@@ -48,18 +48,17 @@ static const bool batch_step_validator =
 namespace firmament {
 namespace sim {
 
-GoogleTraceEventManager::GoogleTraceEventManager() {
+EventManager::EventManager() {
   LOG(INFO) << "Maximum number of task events to process: " << FLAGS_max_events;
   LOG(INFO) << "Maximum number of scheduling rounds: "
             << FLAGS_max_scheduling_rounds;
 }
 
-void GoogleTraceEventManager::AddEvent(uint64_t timestamp,
-                                       EventDescriptor event) {
+void EventManager::AddEvent(uint64_t timestamp, EventDescriptor event) {
   events_.insert(pair<uint64_t, EventDescriptor>(timestamp, event));
 }
 
-pair<uint64_t, EventDescriptor> GoogleTraceEventManager::GetNextEvent() {
+pair<uint64_t, EventDescriptor> EventManager::GetNextEvent() {
   multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
   pair<uint64_t, EventDescriptor> time_event = *it;
   events_.erase(it);
@@ -67,7 +66,7 @@ pair<uint64_t, EventDescriptor> GoogleTraceEventManager::GetNextEvent() {
   return time_event;
 }
 
-uint64_t GoogleTraceEventManager::GetTimeOfNextEvent() {
+uint64_t EventManager::GetTimeOfNextEvent() {
   multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
   if (it == events_.end()) {
     // Empty collection.
@@ -77,9 +76,8 @@ uint64_t GoogleTraceEventManager::GetTimeOfNextEvent() {
   }
 }
 
-uint64_t GoogleTraceEventManager::GetTimeOfNextSolverRun(
-    uint64_t cur_run_solver_at,
-    double cur_scheduler_runtime) {
+uint64_t EventManager::GetTimeOfNextSolverRun(uint64_t cur_run_solver_at,
+                                              double cur_scheduler_runtime) {
   if (FLAGS_batch_step == 0) {
     // we're in online mode
     // 1. when we run the solver next depends on how fast we were
@@ -95,9 +93,8 @@ uint64_t GoogleTraceEventManager::GetTimeOfNextSolverRun(
   return cur_run_solver_at;
 }
 
-bool GoogleTraceEventManager::HasSimulationCompleted(
-    uint64_t num_events,
-    uint64_t num_scheduling_rounds) {
+bool EventManager::HasSimulationCompleted(uint64_t num_events,
+                                          uint64_t num_scheduling_rounds) {
   // We only run for the first FLAGS_runtime microseconds.
   if (FLAGS_runtime < current_simulation_time_) {
     LOG(INFO) << "Terminating at : " << current_simulation_time_;
@@ -115,7 +112,7 @@ bool GoogleTraceEventManager::HasSimulationCompleted(
   return events_.begin() == events_.end();
 }
 
-void GoogleTraceEventManager::RemoveTaskEndRuntimeEvent(
+void EventManager::RemoveTaskEndRuntimeEvent(
     const TraceTaskIdentifier& task_identifier,
     uint64_t task_end_time) {
   // Remove the task end time event from the simulator events_.

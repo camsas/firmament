@@ -1,7 +1,7 @@
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#ifndef FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_TASK_PROCESSOR_H
-#define FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_TASK_PROCESSOR_H
+#ifndef FIRMAMENT_SIM_GOOGLE_TRACE_TASK_PROCESSOR_H
+#define FIRMAMENT_SIM_GOOGLE_TRACE_TASK_PROCESSOR_H
 
 #include <map>
 #include <string>
@@ -58,7 +58,8 @@ struct TaskIdentifier {
 
 struct TaskIdentifierHasher {
   size_t operator()(const TaskIdentifier& key) const {
-    return hash<uint64_t>()(key.job_id) * 17 + hash<uint64_t>()(key.task_index);
+    return std::hash<uint64_t>()(key.job_id) * 17 +
+      std::hash<uint64_t>()(key.task_index);
   }
 };
 
@@ -125,4 +126,4 @@ class GoogleTraceTaskProcessor {
 
 } // namespace sim
 } // namespace firmament
-#endif
+#endif // FIRMAMENT_SIM_GOOGLE_TRACE_TASK_PROCESSOR_H

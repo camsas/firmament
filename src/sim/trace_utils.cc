@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#include "sim/trace-extract/google_trace_utils.h"
+#include "sim/trace_utils.h"
 
 #include <algorithm>
 

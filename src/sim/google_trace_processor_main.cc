@@ -1,7 +1,7 @@
 // Copyright (c) 2015 Ionel Gog  <ionel.gog@cl.cam.ac.uk>
 
 #include "base/common.h"
-#include "sim/trace-extract/google_trace_task_processor.h"
+#include "sim/google_trace_task_processor.h"
 
 DEFINE_string(trace_path, "", "Path where the trace files are.");
 DEFINE_bool(aggregate_task_usage, false, "Generate aggregated task usage.");

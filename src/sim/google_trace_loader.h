@@ -3,8 +3,8 @@
 //
 // Google cluster trace loader.
 
-#ifndef FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_LOADER_H
-#define FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_LOADER_H
+#ifndef FIRMAMENT_SIM_GOOGLE_TRACE_LOADER_H
+#define FIRMAMENT_SIM_GOOGLE_TRACE_LOADER_H
 
 #include <map>
 #include <string>
@@ -14,8 +14,8 @@
 #include "base/common.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "misc/map-util.h"
-#include "sim/trace-extract/event_desc.pb.h"
-#include "sim/trace-extract/google_trace_utils.h"
+#include "sim/event_desc.pb.h"
+#include "sim/trace_utils.h"
 
 DECLARE_uint64(runtime);
 
@@ -56,4 +56,4 @@ class GoogleTraceLoader {
 }  // namespace sim
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_LOADER_H
+#endif  // FIRMAMENT_SIM_GOOGLE_TRACE_LOADER_H

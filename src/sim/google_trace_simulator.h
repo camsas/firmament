@@ -4,8 +4,8 @@
 //
 // Google cluster trace simulator tool.
 
-#ifndef FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_SIMULATOR_H
-#define FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_SIMULATOR_H
+#ifndef FIRMAMENT_SIM_GOOGLE_TRACE_SIMULATOR_H
+#define FIRMAMENT_SIM_GOOGLE_TRACE_SIMULATOR_H
 
 #include <map>
 #include <string>
@@ -15,9 +15,9 @@
 #include "base/resource_topology_node_desc.pb.h"
 #include "scheduling/flow/flow_graph.h"
 #include "scheduling/flow/solver_dispatcher.h"
-#include "sim/trace-extract/google_trace_bridge.h"
-#include "sim/trace-extract/google_trace_event_manager.h"
-#include "sim/trace-extract/google_trace_utils.h"
+#include "sim/event_manager.h"
+#include "sim/google_trace_bridge.h"
+#include "sim/trace_utils.h"
 
 DECLARE_string(flow_scheduling_binary);
 DECLARE_bool(incremental_flow);
@@ -68,7 +68,7 @@ class GoogleTraceSimulator {
   void UpdateSchedulingLatencyStats(uint64_t time);
 
   GoogleTraceBridge* bridge_;
-  GoogleTraceEventManager* event_manager_;
+  EventManager* event_manager_;
 
   // Timestamp of the first event seen in the current scheduling round. Any
   // event present in the original trace is record, as are those which we have
@@ -93,4 +93,4 @@ class GoogleTraceSimulator {
 }  // namespace sim
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_SIMULATOR_H
+#endif  // FIRMAMENT_SIM_GOOGLE_TRACE_SIMULATOR_H

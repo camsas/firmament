@@ -1,8 +1,8 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#ifndef FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_UTILS_H
-#define FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_UTILS_H
+#ifndef FIRMAMENT_SIM_TRACE_UTILS_H
+#define FIRMAMENT_SIM_TRACE_UTILS_H
 
 #include <boost/timer/timer.hpp>
 
@@ -10,7 +10,7 @@
 
 #include "base/common.h"
 #include "scheduling/scheduler_interface.h"
-#include "sim/trace-extract/event_desc.pb.h"
+#include "sim/event_desc.pb.h"
 
 DECLARE_uint64(batch_step);
 DECLARE_bool(graph_output_events);
@@ -88,4 +88,4 @@ EventDescriptor_EventType TranslateMachineEvent(int32_t machine_event);
 }  // namespace sim
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SIM_TRACE_EXTRACT_GOOGLE_TRACE_UTILS_H
+#endif  // FIRMAMENT_SIM_TRACE_UTILS_H

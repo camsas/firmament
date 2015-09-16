@@ -2,7 +2,7 @@
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 // Implementation of the simulator's knowledge base.
-#include "sim/trace-extract/knowledge_base_simulator.h"
+#include "sim/knowledge_base_simulator.h"
 
 #include <boost/lexical_cast.hpp>
 

@@ -983,13 +983,6 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
         << "Could not find reference to data object ID " << output_id
         << ", which we just added!";
   }
-#ifdef __SIMULATE_SYNTHETIC_DTG__
-  LOG(INFO) << "SIMULATION MODE -- generating synthetic task graph!";
-  sim_dtg_generator_.reset(new sim::SimpleDTGGenerator(FindOrNull(*job_table_,
-                                                                  new_job_id)));
-  boost::thread t(boost::bind(&sim::SimpleDTGGenerator::Run,
-                              sim_dtg_generator_));
-#endif
   // Kick off the scheduler for this job.
   uint64_t num_scheduled =
     scheduler_->ScheduleJob(FindOrNull(*job_table_, new_job_id), NULL);

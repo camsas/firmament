@@ -3,7 +3,7 @@
 //
 // Google cluster trace simulator tool.
 
-#include "sim/trace-extract/google_trace_loader.h"
+#include "sim/google_trace_loader.h"
 
 #include <fcntl.h>
 #include <SpookyV2.h>
@@ -23,7 +23,7 @@ using boost::lexical_cast;
 using boost::algorithm::is_any_of;
 using boost::token_compress_off;
 
-DEFINE_string(machine_tmpl_file, "../../../tests/testdata/machine_topo.pbin",
+DEFINE_string(machine_tmpl_file, "../../tests/testdata/machine_topo.pbin",
               "File specifying machine topology. (Note: the given path must be "
               "relative to the directory of the binary)");
 

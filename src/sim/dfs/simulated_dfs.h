@@ -1,8 +1,8 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#ifndef SIM_DFS_SIMULATED_DFS_H
-#define SIM_DFS_SIMULATED_DFS_H
+#ifndef FIRMAMENT_SIM_DFS_SIMULATED_DFS_H
+#define FIRMAMENT_SIM_DFS_SIMULATED_DFS_H
 
 #include <list>
 #include <queue>
@@ -18,6 +18,8 @@
 #include "sim/dfs/google_block_distribution.h"
 
 namespace firmament {
+namespace sim {
+namespace dfs {
 
 typedef unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid> >
         ResourceSet_t;
@@ -64,6 +66,8 @@ class SimulatedDFS {
   GoogleBlockDistribution *blocks_in_file_distn_;
 };
 
+} // namespace dfs
+} // namespace sim
 } // namespace firmament
 
-#endif /* SIM_DFS_SIMULATED_DFS_H */
+#endif // FIRMAMENT_SIM_DFS_SIMULATED_DFS_H

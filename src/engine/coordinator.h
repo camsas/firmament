@@ -53,9 +53,6 @@
 #include "scheduling/simple/simple_scheduler.h"
 #include "storage/object_store_interface.h"
 #include "engine/executors/topology_manager.h"
-#ifdef __SIMULATE_SYNTHETIC_DTG__
-#include "sim/simple_dtg_generator.h"
-#endif
 
 namespace firmament {
 
@@ -302,10 +299,6 @@ class Coordinator : public Node,
   ResourceID_t machine_uuid_;
   // Local machine's host name
   const string hostname_;
-
-#ifdef __SIMULATE_SYNTHETIC_DTG__
-  shared_ptr<sim::SimpleDTGGenerator> sim_dtg_generator_;
-#endif
 };
 
 }  // namespace firmament

@@ -33,6 +33,9 @@ typedef unordered_map<ResourceID_t, EquivClass_t,
 typedef unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid> >
         ResourceCostMap_t;
 
+using sim::dfs::GoogleBlockDistribution;
+using sim::dfs::SimulatedDFS;
+
 class SimulatedQuincyCostModel : public CostModelInterface {
  public:
   SimulatedQuincyCostModel(

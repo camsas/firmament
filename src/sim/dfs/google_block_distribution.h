@@ -1,12 +1,14 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#ifndef SIM_DFS_GOOGLE_BLOCK_DISTRIBUTION_H
-#define SIM_DFS_GOOGLE_BLOCK_DISTRIBUTION_H
+#ifndef FIRMAMENT_SIM_DFS_GOOGLE_BLOCK_DISTRIBUTION_H
+#define FIRMAMENT_SIM_DFS_GOOGLE_BLOCK_DISTRIBUTION_H
 
 #include <cstdint>
 
 namespace firmament {
+namespace sim {
+namespace dfs {
 
 class GoogleBlockDistribution {
  public:
@@ -20,6 +22,8 @@ class GoogleBlockDistribution {
   uint64_t min_blocks_;
 };
 
+} // namespace dfs
+} // namespace sim
 } // namespace firmament
 
-#endif /* SIM_DFS_GOOGLE_BLOCK_DISTRIBUTION_H */
+#endif // FIRMAMENT_SIM_DFS_GOOGLE_BLOCK_DISTRIBUTION_H

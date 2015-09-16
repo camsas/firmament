@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include "sim/trace-extract/google_trace_simulator.h"
+#include "sim/google_trace_simulator.h"
 
 namespace firmament {
 namespace sim {

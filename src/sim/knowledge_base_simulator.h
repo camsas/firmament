@@ -1,12 +1,12 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#ifndef FIRMAMENT_SIM_TRACE_EXTRACT_KNOWLEDGE_BASE_SIMULATOR_H
-#define FIRMAMENT_SIM_TRACE_EXTRACT_KNOWLEDGE_BASE_SIMULATOR_H
+#ifndef FIRMAMENT_SIM_KNOWLEDGE_BASE_SIMULATOR_H
+#define FIRMAMENT_SIM_KNOWLEDGE_BASE_SIMULATOR_H
 
 #include "scheduling/knowledge_base.h"
 
-#include "sim/trace-extract/google_trace_utils.h"
+#include "sim/trace_utils.h"
 
 namespace firmament {
 namespace sim {
@@ -29,4 +29,4 @@ class KnowledgeBaseSimulator : public KnowledgeBase {
 } // namespace sim
 } // namespace firmament
 
-#endif  // FIRMAMENT_SIM_TRACE_EXTRACT_KNOWLEDGE_BASE_SIMULATOR_H
+#endif  // FIRMAMENT_SIM_KNOWLEDGE_BASE_SIMULATOR_H

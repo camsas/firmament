@@ -3,23 +3,106 @@ SUFFIX=sim
 
 include $(ROOT_DIR)/include/Makefile.config
 
-BINS =
-LIB = libfirmament_sim.a
-OBJS = event_queue.o google_runtime_distribution.o \
-       simple_dtg_generator.o simulation_driver.o
-PBS = simulation_event.pb.o
-TESTS =
-TESTS_DEPS =
+BINS = google_trace_simulator google_trace_processor
+#OPTFLAGS += -fsanitize=address -fno-omit-frame-pointer
+
+LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_timer \
+        -lboost_filesystem -lboost_chrono -lhwloc -lssl -lcrypto -lctemplate \
+        -ljansson $(PB2JSON_LIB) $(PION_LIB) $(SPOOKY_OBJ)
+LIB =
+SIMULATOR_OBJS = event_manager.o google_runtime_distribution.o \
+                 google_trace_bridge.o google_trace_loader.o \
+                 google_trace_simulator.o knowledge_base_simulator.o \
+                 trace_utils.o
+PROCESSOR_OBJS = google_trace_task_processor.o
+PBS = event_desc.pb.o
+TESTS = event_manager_test google_trace_bridge_test
+TESTS_DEPS = $(BUILD_DIR)/sim/google_trace_loader.o \
+             $(BUILD_DIR)/sim/trace_utils.o \
+             $(BUILD_DIR)/sim/event_desc.pb.o \
+             $(BUILD_DIR)/sim/knowledge_base_simulator.o \
+             $(BUILD_DIR)/scheduling/common.o \
+             $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
+             $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+             $(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
+             $(BUILD_DIR)/engine/libfirmament_engine.a \
+             $(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
+             $(BUILD_DIR)/misc/libfirmament_misc.a \
+             $(BUILD_DIR)/base/libfirmament_base.a \
+             $(BUILD_DIR)/messages/libfirmament_messages.a \
+             $(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
+             $(BUILD_DIR)/platforms/sim/libfirmament_platforms_sim.a \
+             $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
+             $(BUILD_DIR)/storage/libfirmament_storage.a
+
+TESTS_google_trace_bridge_DEPS = $(BUILD_DIR)/sim/event_manager.o
 
 OBJ_LIB = $(addprefix $(OBJ_DIR)/, $(LIB))
 #TESTS_OBJS = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
+BIN = $(addprefix $(OBJ_DIR)/, $(BINS))
 
 include $(ROOT_DIR)/include/Makefile.common
 
-all: protobufs $(OBJ_LIB) $(TESTS_BIN) .setup
-	$(MAKE) -C dfs all
+all: protobufs $(BIN) $(TESTS_BIN) .setup
 
 protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 
-$(OBJ_LIB): $(addprefix $(OBJ_DIR)/, $(OBJS)) $(addprefix $(OBJ_DIR)/, $(PBS))
+SOLVER_DIR = $(shell readlink -f $(ROOT_DIR)/ext)
+DEFINES += -DSOLVER_DIR=\"$(SOLVER_DIR)\"
+
+$(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
+  $(SRC_ROOT_DIR)/sim/google_trace_simulator_main.cc \
+	$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
+	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+	$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
+	$(BUILD_DIR)/engine/libfirmament_engine.a \
+	$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
+	$(BUILD_DIR)/misc/libfirmament_misc.a \
+	$(BUILD_DIR)/base/libfirmament_base.a \
+	$(BUILD_DIR)/messages/libfirmament_messages.a \
+	$(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
+	$(BUILD_DIR)/platforms/sim/libfirmament_platforms_sim.a \
+	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
+	$(BUILD_DIR)/storage/libfirmament_storage.a \
+	$(BUILD_DIR)/sim/event_desc.pb.o
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) \
+		$(SRC_ROOT_DIR)/sim/google_trace_simulator_main.cc \
+		$(OPTFLAGS) $(DEFINES) \
+		$(BUILD_DIR)/sim/google_trace_bridge.o \
+		$(BUILD_DIR)/sim/event_manager.o \
+		$(BUILD_DIR)/sim/google_trace_loader.o \
+		$(BUILD_DIR)/sim//google_trace_simulator.o \
+		$(BUILD_DIR)/sim/trace_utils.o \
+		$(BUILD_DIR)/sim/event_desc.pb.o \
+		$(BUILD_DIR)/sim/knowledge_base_simulator.o \
+		$(BUILD_DIR)/scheduling/common.o \
+		$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
+		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+		$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
+		$(BUILD_DIR)/engine/libfirmament_engine.a \
+		$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
+		$(BUILD_DIR)/misc/libfirmament_misc.a \
+		$(BUILD_DIR)/base/libfirmament_base.a \
+		$(BUILD_DIR)/messages/libfirmament_messages.a \
+		$(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
+		$(BUILD_DIR)/platforms/sim/libfirmament_platforms_sim.a \
+		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
+		$(BUILD_DIR)/storage/libfirmament_storage.a \
+		$(LIBS) \
+		-o $(BUILD_DIR)/sim/google_trace_simulator, \
+		"  DYNLNK  $(BUILD_DIR)/sim/google_trace_simulator")
+
+$(OBJ_DIR)/google_trace_processor: $(addprefix $(OBJ_DIR)/, $(PROCESSOR_OBJS)) \
+  $(SRC_ROOT_DIR)/sim/google_trace_processor_main.cc \
+	$(BUILD_DIR)/misc/libfirmament_misc.a
+	$(call quiet-command, \
+		$(CXX) $(CPPFLAGS) \
+		$(SRC_ROOT_DIR)/sim/google_trace_processor_main.cc \
+		$(OPTFLAGS) $(DEFINES) \
+		$(BUILD_DIR)/sim/google_trace_task_processor.o \
+		$(BUILD_DIR)/misc/libfirmament_misc.a \
+		$(LIBS) \
+		-o $(BUILD_DIR)/sim//google_trace_processor, \
+		"  DYNLNK  $(BUILD_DIR)/sim/google_trace_processor")

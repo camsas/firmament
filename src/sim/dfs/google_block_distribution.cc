@@ -6,6 +6,8 @@
 #include <cmath>
 
 namespace firmament {
+namespace sim {
+namespace dfs {
 
 const static double STEP = 0.01;
 
@@ -46,4 +48,6 @@ double GoogleBlockDistribution::Mean() {
   return mean;
 }
 
+} // namespace dfs
+} // namespace sim
 } // namespace firmament
