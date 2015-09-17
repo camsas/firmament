@@ -44,7 +44,6 @@ GoogleTraceBridge::GoogleTraceBridge(
                                               GetCurrentTimestamp())));
   messaging_adapter_ =
     new platform::sim::SimulatedMessagingAdapter<BaseMessage>();
-  SchedulingParameters params;
   scheduler_ = new scheduler::FlowScheduler(
       job_map_, resource_map_, &rtn_root_,
       shared_ptr<store::ObjectStoreInterface>(
@@ -52,7 +51,7 @@ GoogleTraceBridge::GoogleTraceBridge(
       task_map_, knowledge_base_,
       shared_ptr<machine::topology::TopologyManager>(
           new machine::topology::TopologyManager),
-      messaging_adapter_, this, root_uuid, "http://localhost", params);
+      messaging_adapter_, this, root_uuid, "http://localhost");
 }
 
 GoogleTraceBridge::~GoogleTraceBridge() {

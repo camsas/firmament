@@ -105,13 +105,13 @@ FlowScheduler::FlowScheduler(
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
   }
 
-  flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids_));
-  cost_model_->SetFlowGraph(flow_graph_);
+  flow_graph_bridge_.reset(new FlowGraphBridge(cost_model_, leaf_res_ids_));
+  cost_model_->SetFlowGraphBridge(flow_graph_bridge_);
 
   // Set up the initial flow graph
   UpdateResourceTopology(resource_topology);
   // Set up the dispatcher, which starts the flow solver
-  solver_dispatcher_ = new SolverDispatcher(flow_graph_, false);
+  solver_dispatcher_ = new SolverDispatcher(flow_graph_bridge_, false);
 }
 
 FlowScheduler::~FlowScheduler() {
@@ -155,7 +155,7 @@ void FlowScheduler::DeregisterResource(ResourceID_t res_id) {
   ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs_ptr);
   if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_MACHINE) {
-    flow_graph_->RemoveMachine(res_id);
+    flow_graph_bridge_->RemoveMachine(res_id);
   }
   if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_PU) {
     EventDrivenScheduler::DeregisterResource(res_id);
@@ -166,7 +166,7 @@ void FlowScheduler::DeregisterResource(ResourceID_t res_id) {
 void FlowScheduler::HandleJobCompletion(JobID_t job_id) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Job completed, so remove its nodes
-  flow_graph_->JobCompleted(job_id);
+  flow_graph_bridge_->JobCompleted(job_id);
   // Call into superclass handler
   EventDrivenScheduler::HandleJobCompletion(job_id);
 }
@@ -178,7 +178,7 @@ void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   // they are not currently represented in the flow graph.
   // Otherwise, we need to remove nodes, etc.
   if (!td_ptr->has_delegated_from()) {
-    flow_graph_->TaskCompleted(td_ptr->uid());
+    flow_graph_bridge_->TaskCompleted(td_ptr->uid());
   }
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
@@ -187,13 +187,14 @@ void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
 void FlowScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
                                        ResourceDescriptor* rd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  flow_graph_->TaskEvicted(td_ptr->uid(), ResourceIDFromString(rd_ptr->uuid()));
+  flow_graph_bridge_->TaskEvicted(td_ptr->uid(),
+                                  ResourceIDFromString(rd_ptr->uuid()));
   EventDrivenScheduler::HandleTaskEviction(td_ptr, rd_ptr);
 }
 
 void FlowScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  flow_graph_->TaskFailed(td_ptr->uid());
+  flow_graph_bridge_->TaskFailed(td_ptr->uid());
   EventDrivenScheduler::HandleTaskFailure(td_ptr);
 }
 
@@ -217,23 +218,23 @@ void FlowScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
   ResourceID_t* old_res_id_ptr = FindOrNull(task_bindings_, task_id);
   CHECK_NOTNULL(old_res_id_ptr);
   ResourceID_t old_res_id = *old_res_id_ptr;
-  flow_graph_->TaskMigrated(task_id, old_res_id,
-                            ResourceIDFromString(rd_ptr->uuid()));
+  flow_graph_bridge_->TaskMigrated(task_id, old_res_id,
+                                   ResourceIDFromString(rd_ptr->uuid()));
   EventDrivenScheduler::HandleTaskMigration(td_ptr, rd_ptr);
 }
 
 void FlowScheduler::HandleTaskPlacement(TaskDescriptor* td_ptr,
                                         ResourceDescriptor* rd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  flow_graph_->TaskScheduled(td_ptr->uid(),
-                             ResourceIDFromString(rd_ptr->uuid()));
+  flow_graph_bridge_->TaskScheduled(td_ptr->uid(),
+                                    ResourceIDFromString(rd_ptr->uuid()));
   EventDrivenScheduler::HandleTaskPlacement(td_ptr, rd_ptr);
 }
 
 void FlowScheduler::KillRunningTask(TaskID_t task_id,
                                     TaskKillMessage::TaskKillReason reason) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  flow_graph_->TaskKilled(task_id);
+  flow_graph_bridge_->TaskKilled(task_id);
   EventDrivenScheduler::KillRunningTask(task_id, reason);
 }
 
@@ -315,7 +316,7 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
       const set<TaskID_t> runnable_tasks = RunnableTasksForJob(jd_ptr);
       if (runnable_tasks.size() > 0) {
         run_scheduler = true;
-        flow_graph_->AddOrUpdateJobNodes(jd_ptr);
+        flow_graph_bridge_->AddOrUpdateJobNodes(jd_ptr);
       }
     }
     if (run_scheduler) {
@@ -331,7 +332,7 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
       // Resource reservations may have changed, so reconsider equivalence
       // classes
       for (auto& jd_ptr : jd_ptr_vect) {
-        flow_graph_->AddOrUpdateJobNodes(jd_ptr);
+        flow_graph_bridge_->AddOrUpdateJobNodes(jd_ptr);
       }
     }
   }
@@ -378,7 +379,7 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     }
     // This will re-visit all jobs and update their time-dependent costs
     VLOG(1) << "Flow scheduler updating time-dependent costs.";
-    flow_graph_->UpdateTimeDependentCosts(&job_vec);
+    flow_graph_bridge_->UpdateTimeDependentCosts(&job_vec);
     last_updated_time_dependent_costs_ = cur_time;
   }
   // Run the flow solver! This is where all the juicy goodness happens :)
@@ -390,8 +391,8 @@ uint64_t FlowScheduler::RunSchedulingIteration(
   for (it = task_mappings->begin(); it != task_mappings->end(); it++) {
     VLOG(1) << "Bind " << it->first << " to " << it->second << endl;
     // Some sanity checks
-    FlowGraphNode* src = flow_graph_->Node(it->first);
-    FlowGraphNode* dst = flow_graph_->Node(it->second);
+    FlowGraphNode* src = flow_graph_bridge_->flow_graph()->Node(it->first);
+    FlowGraphNode* dst = flow_graph_bridge_->flow_graph()->Node(it->second);
     // Source must be a task node as this point
     CHECK(src->type_ == FlowNodeType::SCHEDULED_TASK ||
           src->type_ == FlowNodeType::UNSCHEDULED_TASK ||
@@ -440,14 +441,14 @@ void FlowScheduler::UpdateCostModelResourceStats() {
       FLAGS_flow_scheduling_cost_model ==
       CostModelType::COST_MODEL_WHARE) {
     LOG(INFO) << "Updating resource statistics in flow graph";
-    flow_graph_->ComputeTopologyStatistics(
-        flow_graph_->sink_node(),
+    flow_graph_bridge_->ComputeTopologyStatistics(
+        flow_graph_bridge_->sink_node(),
         boost::bind(&CostModelInterface::PrepareStats,
                     cost_model_, _1),
         boost::bind(&CostModelInterface::GatherStats,
                     cost_model_, _1, _2));
-    flow_graph_->ComputeTopologyStatistics(
-        flow_graph_->sink_node(),
+    flow_graph_bridge_->ComputeTopologyStatistics(
+        flow_graph_bridge_->sink_node(),
         boost::bind(&CostModelInterface::UpdateStats,
                     cost_model_, _1, _2));
   } else {
@@ -459,11 +460,10 @@ void FlowScheduler::UpdateResourceTopology(
     ResourceTopologyNodeDescriptor* root) {
   // Run a topology refresh (somewhat expensive!); if only two nodes exist, the
   // flow graph is empty apart from cluster aggregator and sink.
-  VLOG(1) << "Num nodes in flow graph is: " << flow_graph_->NumNodes();
-  if (flow_graph_->NumNodes() == 1) {
-    flow_graph_->AddResourceTopology(root);
+  if (flow_graph_bridge_->flow_graph()->NumNodes() == 1) {
+    flow_graph_bridge_->AddResourceTopology(root);
   } else {
-    flow_graph_->AddMachine(root);
+    flow_graph_bridge_->AddMachine(root);
   }
   // We also need to update any stats or state in the cost model, as the
   // resource topology has changed.
