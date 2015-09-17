@@ -9,7 +9,7 @@
 #include "misc/utils.h"
 #include "misc/map-util.h"
 #include "scheduling/flow/dimacs_change_arc.h"
-#include "scheduling/flow/flow_graph.h"
+#include "scheduling/flow/flow_graph_bridge.h"
 
 DECLARE_bool(preemption);
 
@@ -235,7 +235,7 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
     arc->cost_ = new_cost;
     DIMACSChange *chg = new DIMACSChangeArc(*arc);
     chg->set_comment("Octopus/UpdateStats");
-    flow_graph_->AddGraphChange(chg);
+    flow_graph_bridge_->AddGraphChange(chg);
   }
 
   // Reset the state.

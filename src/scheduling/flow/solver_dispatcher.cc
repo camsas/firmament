@@ -44,9 +44,10 @@ using boost::lexical_cast;
 using boost::algorithm::is_any_of;
 using boost::token_compress_on;
 
-SolverDispatcher::SolverDispatcher(shared_ptr<FlowGraph> flow_graph,
-                                   bool solver_ran_once)
-  : flow_graph_(flow_graph),
+SolverDispatcher::SolverDispatcher(
+    shared_ptr<FlowGraphBridge> flow_graph_bridge,
+    bool solver_ran_once)
+  : flow_graph_bridge_(flow_graph_bridge),
     solver_ran_once_(solver_ran_once),
     debug_seq_num_(0) {
   // Set up debug directory if it doesn't exist
@@ -75,7 +76,7 @@ SolverDispatcher::~SolverDispatcher() {
 }
 
 void SolverDispatcher::ExportJSON(string* output) const {
-  return json_exporter_.Export(*flow_graph_, output);
+  return json_exporter_.Export(*flow_graph_bridge_->flow_graph(), output);
 }
 
 void *ExportToSolver(void *x) {
@@ -161,13 +162,13 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
 
   // Adjusts the costs on the arcs from tasks to unsched aggs.
   if (solver_ran_once_) {
-    flow_graph_->AdjustUnscheduledAggArcCosts();
+    flow_graph_bridge_->UpdateUnscheduledAggArcCosts();
   }
 
   if (solver_ran_once_ && FLAGS_incremental_flow) {
     dimacs_exporter_.Reset();
-    dimacs_exporter_.ExportIncremental(flow_graph_->graph_changes());
-    flow_graph_->ResetChanges();
+    dimacs_exporter_.ExportIncremental(flow_graph_bridge_->graph_changes());
+    flow_graph_bridge_->ResetChanges();
   }
 
   if (!solver_ran_once_ || !FLAGS_incremental_flow) {
@@ -175,8 +176,8 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     // is non-incremental, must do it for subsequent iterations too.
 
     dimacs_exporter_.Reset();
-    dimacs_exporter_.Export(*flow_graph_);
-    flow_graph_->ResetChanges();
+    dimacs_exporter_.Export(*flow_graph_bridge_->flow_graph());
+    flow_graph_bridge_->ResetChanges();
   }
 
   // Note dimacs_exporter_ is the full graph iff solver is running for the first
@@ -355,13 +356,15 @@ uint64_t SolverDispatcher::AssignNode(
   for (map_it = (*extracted_flow)[node].begin();
        map_it != (*extracted_flow)[node].end(); map_it++) {
     VLOG(2) << "Checking direct edge back to " << map_it->first << " (type: "
-            << flow_graph_->Node(map_it->first)->type_ << ")";
+            << flow_graph_bridge_->flow_graph()->Node(map_it->first)->type_
+            << ")";
     // Check if node = root or node = task
-    if (flow_graph_->CheckNodeType(map_it->first, FlowNodeType::ROOT_TASK) ||
-        flow_graph_->CheckNodeType(map_it->first,
-                                   FlowNodeType::UNSCHEDULED_TASK) ||
-        flow_graph_->CheckNodeType(map_it->first,
-                                   FlowNodeType::SCHEDULED_TASK)) {
+    if (flow_graph_bridge_->CheckNodeType(map_it->first,
+                                          FlowNodeType::ROOT_TASK) ||
+        flow_graph_bridge_->CheckNodeType(map_it->first,
+                                          FlowNodeType::UNSCHEDULED_TASK) ||
+        flow_graph_bridge_->CheckNodeType(map_it->first,
+                                          FlowNodeType::SCHEDULED_TASK)) {
       // Shouldn't really modify the collection in the iterator loop.
       // However, we don't use the iterator after modification.
       uint64_t flow = map_it->second;
@@ -480,11 +483,12 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(double *time) {
     task_mappings = ReadTaskMappingChanges(from_solver_);
   } else {
     // Parse and process the result
-    uint64_t num_nodes = flow_graph_->NumNodes();
+    uint64_t num_nodes = flow_graph_bridge_->flow_graph()->NumNodes();
     vector<map<uint64_t, uint64_t> >* extracted_flow =
       ReadFlowGraph(from_solver_, num_nodes);
-    task_mappings = GetMappings(extracted_flow, flow_graph_->leaf_node_ids(),
-                                flow_graph_->sink_node()->id_);
+    task_mappings = GetMappings(extracted_flow,
+                                flow_graph_bridge_->leaf_node_ids(),
+                                flow_graph_bridge_->sink_node()->id_);
     delete extracted_flow;
   }
 

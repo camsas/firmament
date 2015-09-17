@@ -13,7 +13,6 @@
 
 #include "base/common.h"
 #include "base/resource_topology_node_desc.pb.h"
-#include "scheduling/flow/flow_graph.h"
 #include "scheduling/flow/solver_dispatcher.h"
 #include "sim/event_manager.h"
 #include "sim/google_trace_bridge.h"
