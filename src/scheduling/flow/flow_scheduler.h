@@ -22,7 +22,7 @@
 #include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/scheduling_event_notifier_interface.h"
 #include "scheduling/flow/dimacs_exporter.h"
-#include "scheduling/flow/flow_graph.h"
+#include "scheduling/flow/flow_graph_bridge.h"
 #include "scheduling/flow/solver_dispatcher.h"
 #include "scheduling/flow/scheduling_parameters.pb.h"
 #include "storage/reference_interface.h"
@@ -102,7 +102,7 @@ class FlowScheduler : public EventDrivenScheduler {
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
   // Local storage of the current flow graph
-  shared_ptr<FlowGraph> flow_graph_;
+  shared_ptr<FlowGraphBridge> flow_graph_bridge_;
   // Flow scheduler parameters (passed in as protobuf to constructor)
   SchedulingParameters parameters_;
   // The dispatcher runs different flow solvers.
