@@ -1,12 +1,15 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#include "sim/google_runtime_distribution.h"
+#include "scheduling/flow/sim/google_runtime_distribution.h"
 
 #include <algorithm>
 #include <cmath>
 
+#include "base/units.h"
+
 namespace firmament {
+namespace scheduler {
 
 // Assumptions from Reiss, et al paper
 // Figure 2, log-log scale of inverted CDF of job durations
@@ -30,12 +33,13 @@ GoogleRuntimeDistribution::GoogleRuntimeDistribution(double factor,
   factor_(factor), power_(power) {
 }
 
-double GoogleRuntimeDistribution::distribution(double x) {
+double GoogleRuntimeDistribution::Distribution(double runtime) {
   // x is in milliseconds, but distribution was specified in hours
-  x /= 1000.0; // seconds
-  x /= 3600.0; // hours
-  double y = 1 - factor_ * pow(x, power_);
+  runtime /= MILLISECONDS_IN_SECOND;
+  runtime /= SECONDS_IN_HOUR;
+  double y = 1 - factor_ * pow(runtime, power_);
   return std::min(y, 1.0);
 }
 
+} // namespace scheduler
 } // namespace firmament

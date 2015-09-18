@@ -21,6 +21,7 @@
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_models.h"
 #include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/flow/sim/simulated_quincy_factory.h"
 
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
@@ -99,7 +100,12 @@ FlowScheduler::FlowScheduler(
       cost_model_ = new VoidCostModel(task_map);
       VLOG(1) << "Using the void cost model";
       break;
-    // TODO(ionel): Initialize SimulatedQuincyCostModel.
+    case CostModelType::COST_MODEL_SIMULATED_QUINCY:
+      cost_model_ = SetupSimulatedQuincyCostModel(resource_map, job_map,
+                                                  task_map, knowledge_base_,
+                                                  leaf_res_ids_);
+      VLOG(1) << "Using the simulated Quincy cost model";
+      break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";

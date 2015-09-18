@@ -81,7 +81,7 @@ ext: ext/.ext-ok
 ext/.ext-ok:
 	$(SCRIPTS_DIR)/fetch-externals.sh
 
-engine: base scheduling storage platforms misc engine_executors
+engine: base scheduling storage platforms misc engine_executors sim_dfs
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/engine all
 
 engine_executors: base misc messages
@@ -98,7 +98,7 @@ scheduling: scheduling_base flow_scheduler simple_scheduler
 scheduling_base: base misc platforms engine_executors
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling all
 
-flow_scheduler: scheduling_base
+flow_scheduler: scheduling_base sim_dfs
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/scheduling/flow all
 
 simple_scheduler: scheduling_base
