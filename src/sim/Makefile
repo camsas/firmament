@@ -10,8 +10,7 @@ LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_timer \
         -lboost_filesystem -lboost_chrono -lhwloc -lssl -lcrypto -lctemplate \
         -ljansson $(PB2JSON_LIB) $(PION_LIB) $(SPOOKY_OBJ)
 LIB =
-SIMULATOR_OBJS = event_manager.o google_runtime_distribution.o \
-                 google_trace_bridge.o google_trace_loader.o \
+SIMULATOR_OBJS = event_manager.o google_trace_bridge.o google_trace_loader.o \
                  google_trace_simulator.o knowledge_base_simulator.o \
                  trace_utils.o
 PROCESSOR_OBJS = google_trace_task_processor.o
@@ -30,6 +29,7 @@ TESTS_DEPS = $(BUILD_DIR)/sim/google_trace_loader.o \
              $(BUILD_DIR)/misc/libfirmament_misc.a \
              $(BUILD_DIR)/base/libfirmament_base.a \
              $(BUILD_DIR)/messages/libfirmament_messages.a \
+             $(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
              $(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
              $(BUILD_DIR)/platforms/sim/libfirmament_platforms_sim.a \
              $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
@@ -61,6 +61,7 @@ $(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 	$(BUILD_DIR)/misc/libfirmament_misc.a \
 	$(BUILD_DIR)/base/libfirmament_base.a \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
+	$(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
 	$(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
 	$(BUILD_DIR)/platforms/sim/libfirmament_platforms_sim.a \
 	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
@@ -86,6 +87,7 @@ $(OBJ_DIR)/google_trace_simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
+		$(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
 		$(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
 		$(BUILD_DIR)/platforms/sim/libfirmament_platforms_sim.a \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \

@@ -3,8 +3,8 @@
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 
-#ifndef FIRMAMENT_SCHEDULING_SIMULATED_QUINCY_COST_MODEL_H
-#define FIRMAMENT_SCHEDULING_SIMULATED_QUINCY_COST_MODEL_H
+#ifndef FIRMAMENT_SCHEDULING_FLOW_SIM_SIMULATED_QUINCY_COST_MODEL_H
+#define FIRMAMENT_SCHEDULING_FLOW_SIM_SIMULATED_QUINCY_COST_MODEL_H
 
 #include <list>
 #include <map>
@@ -19,10 +19,12 @@
 #include "scheduling/common.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
-#include "sim/google_runtime_distribution.h"
+#include "scheduling/flow/sim/google_runtime_distribution.h"
+#include "sim/dfs/google_block_distribution.h"
 #include "sim/dfs/simulated_dfs.h"
 
 namespace firmament {
+namespace scheduler {
 
 typedef unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid> >
         ResourceSet_t;
@@ -41,7 +43,6 @@ class SimulatedQuincyCostModel : public CostModelInterface {
   SimulatedQuincyCostModel(
       shared_ptr<ResourceMap_t> resource_map, shared_ptr<JobMap_t> job_map,
       shared_ptr<TaskMap_t> task_map,
-      unordered_map<TaskID_t, ResourceID_t> *task_bindings,
       unordered_set<ResourceID_t,
                     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
       shared_ptr<KnowledgeBase> knowledge_base, SimulatedDFS* dfs,
@@ -121,6 +122,7 @@ class SimulatedQuincyCostModel : public CostModelInterface {
   unordered_map<TaskID_t, Cost_t> cluster_aggregator_cost_;
 };
 
+}  // namespace scheduler
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_SIMULATED_QUINCY_COST_MODEL_H
+#endif  // FIRMAMENT_SCHEDULING_FLOW_SIM_SIMULATED_QUINCY_COST_MODEL_H

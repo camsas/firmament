@@ -6,7 +6,7 @@ include $(ROOT_DIR)/include/Makefile.config
 TASK_LIB_LIBS := $(LIBS) -lboost_thread -lboost_system -lboost_regex \
                  -lboost_date_time -lhwloc -lssl -lcrypto
 LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_date_time \
-        -lboost_timer -lhwloc -lssl -lcrypto -lctemplate
+        -lboost_timer -lhwloc -lssl -lcrypto -lctemplate $(SPOOKY_OBJ)
 ifneq ($(BOOST_VERSION), "1.48")
  LIBS += -lboost_chrono
 endif
@@ -45,6 +45,8 @@ TESTS_coordinator_DEPS = $(addprefix $(OBJ_DIR)/, $(GENERIC_OBJS)) \
                          $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                          $(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
                          $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+                         $(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
+                         $(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
                          $(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
                          $(BUILD_DIR)/misc/libfirmament_misc.a \
                          $(BUILD_DIR)/base/libfirmament_base.a \
@@ -63,6 +65,8 @@ TESTS_simple_scheduler_DEPS = $(BUILD_DIR)/engine/node.o \
                               $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
                               $(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
                               $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+                              $(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
+                              $(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
                               $(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
                               $(BUILD_DIR)/misc/libfirmament_misc.a \
                               $(BUILD_DIR)/base/libfirmament_base.a \
@@ -99,7 +103,9 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 	$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 	$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
-		$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
+	$(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
+	$(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
+	$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a \
 	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a
 	$(call quiet-command, \
@@ -114,6 +120,8 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 		$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 		$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
+		$(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
+		$(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
 		$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
@@ -131,6 +139,8 @@ $(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 	$(BUILD_DIR)/messages/libfirmament_messages.a \
 	$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
 	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
+	$(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
+	$(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
 	$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
 	$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
 	$(BUILD_DIR)/storage/libfirmament_storage.a \
@@ -147,6 +157,8 @@ $(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 		$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
 		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
 		$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
+		$(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
+		$(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
 		$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \

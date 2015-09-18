@@ -3,7 +3,7 @@
 //
 // Quincy scheduling cost model, as described in the SOSP 2009 paper.
 
-#include "scheduling/flow/simulated_quincy_cost_model.h"
+#include "scheduling/flow/sim/simulated_quincy_cost_model.h"
 
 #include <set>
 #include <string>
@@ -18,11 +18,11 @@
 #include "scheduling/knowledge_base.h"
 
 namespace firmament {
+namespace scheduler {
 
 SimulatedQuincyCostModel::SimulatedQuincyCostModel(
     shared_ptr<ResourceMap_t> resource_map, shared_ptr<JobMap_t> job_map,
     shared_ptr<TaskMap_t> task_map,
-    unordered_map<TaskID_t, ResourceID_t> *task_bindings,
     unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids,
     shared_ptr<KnowledgeBase> knowledge_base, SimulatedDFS* dfs,
     GoogleRuntimeDistribution *runtime_distribution,
@@ -42,7 +42,6 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
   block_distribution_(block_distribution) {
   // Shut up unused warnings for now
   CHECK_NOTNULL(leaf_res_ids);
-  CHECK_NOTNULL(task_bindings);
 
   // initialise to a single, empty rack
   rack_to_machine_map_.assign(1, list<ResourceID_t>());
@@ -239,7 +238,7 @@ void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
 
   // Estimate how many blocks input the task has
   double cumulative_probability =
-    runtime_distribution_->distribution(avg_runtime);
+    runtime_distribution_->Distribution(avg_runtime);
   VLOG(2) << "Which has probability " << cumulative_probability;
   uint64_t num_blocks = block_distribution_->Inverse(cumulative_probability);
   VLOG(2) << "Giving " << num_blocks << " blocks";
@@ -357,4 +356,5 @@ FlowGraphNode* SimulatedQuincyCostModel::UpdateStats(FlowGraphNode* accumulator,
   return NULL;
 }
 
+} // namespace scheduler
 } // namespace firmament

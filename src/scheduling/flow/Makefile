@@ -11,8 +11,8 @@ OBJS = coco_cost_model.o dimacs_add_node.o dimacs_change_arc.o \
        dimacs_change_stats.o dimacs_exporter.o dimacs_new_arc.o \
        dimacs_remove_node.o flow_graph.o flow_graph_arc.o \
        flow_graph_bridge.o flow_graph_node.o flow_scheduler.o json_exporter.o \
-       octopus_cost_model.o quincy_cost_model.o simulated_quincy_cost_model.o \
-       sjf_cost_model.o solver_dispatcher.o trivial_cost_model.o \
+       octopus_cost_model.o quincy_cost_model.o sjf_cost_model.o \
+       solver_dispatcher.o trivial_cost_model.o \
        random_cost_model.o void_cost_model.o wharemap_cost_model.o
 PBS = scheduling_parameters.pb.o
 TESTS = dimacs_exporter_test flow_graph_test
@@ -37,6 +37,7 @@ TESTS_BIN = $(addprefix $(TEST_OBJ_DIR)/, $(TESTS))
 include $(ROOT_DIR)/include/Makefile.common
 
 all: protobufs $(OBJ_LIB) $(TESTS_BIN) .setup
+	$(MAKE) -C sim all
 
 protobufs: $(addprefix $(OBJ_DIR)/, $(PBS))
 

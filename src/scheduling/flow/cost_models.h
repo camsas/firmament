@@ -13,7 +13,7 @@
 #include "scheduling/flow/octopus_cost_model.h"
 #include "scheduling/flow/quincy_cost_model.h"
 #include "scheduling/flow/random_cost_model.h"
-#include "scheduling/flow/simulated_quincy_cost_model.h"
+#include "scheduling/flow/sim/simulated_quincy_cost_model.h"
 #include "scheduling/flow/sjf_cost_model.h"
 #include "scheduling/flow/trivial_cost_model.h"
 #include "scheduling/flow/void_cost_model.h"

@@ -14,48 +14,33 @@ namespace dfs {
 
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
-SimulatedDFS::SimulatedDFS(uint64_t num_machines,
+SimulatedDFS::SimulatedDFS(GoogleBlockDistribution* blocks_file_distribution,
                            NumBlocks_t blocks_per_machine,
                            uint32_t replication_factor,
-                           GoogleBlockDistribution *block_distribution,
                            uint64_t random_seed) :
-    replication_factor_(replication_factor), generator_(random_seed),
-    uniform_(0.0, 1.0), blocks_in_file_distn_(block_distribution) {
-  NumBlocks_t total_block_capacity = blocks_per_machine * num_machines;
-  total_block_capacity /= replication_factor;
-  LOG(INFO) << "Total capacity of " << total_block_capacity << " blocks.";
-
-  // create files until we hit storage limit
-  while (num_blocks_ < total_block_capacity) {
-    AddFile();
-  }
-  LOG(INFO) << num_blocks_ << " blocks used, across " << files_.size()
-            << " files.";
-}
-
-void SimulatedDFS::AddFile() {
-  uint32_t file_num_blocks = NumBlocksInFile();
-  num_blocks_ += file_num_blocks;
-  files_.push_back(file_num_blocks);
-}
-
-uint32_t SimulatedDFS::NumBlocksInFile() {
-  double r = uniform_(generator_);
-  return blocks_in_file_distn_->Inverse(r);
+  blocks_file_distribution_(blocks_file_distribution),
+  blocks_per_machine_(blocks_per_machine),
+  generator_(random_seed),
+  num_blocks_in_use_(0),
+  replication_factor_(replication_factor),
+  total_block_capacity_(0),
+  uniform_distribution_(0.0, 1.0) {
+  CHECK_NOTNULL(blocks_file_distribution_);
 }
 
 void SimulatedDFS::AddMachine(ResourceID_t machine) {
-  machines_.push_back(machine);
-}
-
-void SimulatedDFS::RemoveMachine(ResourceID_t machine) {
-  for (auto it = machines_.begin(); it != machines_.end(); ++it) {
-    if (*it == machine) {
-      machines_.erase(it);
-      return;
+  total_block_capacity_ += blocks_per_machine_;
+  while (num_blocks_in_use_ < total_block_capacity_) {
+    uint32_t file_num_blocks = NumBlocksInFile();
+    if (num_blocks_in_use_ + file_num_blocks * replication_factor_ <=
+        total_block_capacity_) {
+      num_blocks_in_use_ += file_num_blocks * replication_factor_;
+      files_.push_back(file_num_blocks);
+    } else {
+      break;
     }
   }
-  LOG(FATAL) << "Machine is not in list of machines";
+  machines_.push_back(machine);
 }
 
 const ResourceSet_t SimulatedDFS::GetMachines(FileID_t file) const {
@@ -71,9 +56,30 @@ const ResourceSet_t SimulatedDFS::GetMachines(FileID_t file) const {
   return res;
 }
 
+uint32_t SimulatedDFS::NumBlocksInFile() {
+  double r = uniform_distribution_(generator_);
+  return blocks_file_distribution_->Inverse(r);
+}
+
+void SimulatedDFS::RemoveMachine(ResourceID_t machine) {
+  for (auto it = machines_.begin(); it != machines_.end(); ++it) {
+    if (*it == machine) {
+      machines_.erase(it);
+      total_block_capacity_ -= blocks_per_machine_;
+      // Delete files until we fit within the capacity.
+      while (num_blocks_in_use_ > total_block_capacity_) {
+        num_blocks_in_use_ -= files_.back() * replication_factor_;
+        files_.pop_back();
+      }
+      return;
+    }
+  }
+  LOG(FATAL) << "Machine is not in list of machines";
+}
+
 unordered_set<SimulatedDFS::FileID_t> SimulatedDFS::SampleFiles(
     NumBlocks_t target_blocks, uint32_t tolerance) const {
-  CHECK_LE(target_blocks, num_blocks_);
+  CHECK_LE(target_blocks, num_blocks_in_use_);
   NumBlocks_t min_blocks_to_sample = (target_blocks * (100 - tolerance)) / 100;
   min_blocks_to_sample = max(min_blocks_to_sample, (NumBlocks_t)1);
   NumBlocks_t max_blocks_to_sample = (target_blocks * (100 + tolerance)) / 100;

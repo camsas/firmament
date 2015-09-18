@@ -29,9 +29,9 @@ class SimulatedDFS {
   typedef uint64_t FileID_t;
   typedef uint32_t NumBlocks_t;
 
-  SimulatedDFS(uint64_t num_machines, NumBlocks_t blocks_per_machine,
+  SimulatedDFS(GoogleBlockDistribution* blocks_file_distribution,
+               NumBlocks_t blocks_per_machine,
                uint32_t replication_factor,
-               GoogleBlockDistribution *block_distribution,
                uint64_t random_seed);
 
   void AddMachine(ResourceID_t machine);
@@ -51,19 +51,17 @@ class SimulatedDFS {
                                       uint32_t tolerance) const;
 
  private:
-  void AddFile();
   uint32_t NumBlocksInFile();
 
-  uint64_t num_blocks_ = 0;
-  // pair: start block ID, end block ID (inclusive)
+  GoogleBlockDistribution* blocks_file_distribution_;
+  NumBlocks_t blocks_per_machine_;
   vector<NumBlocks_t> files_;
-  vector<ResourceID_t> machines_;
-
-  uint32_t replication_factor_ = 0;
-
   mutable default_random_engine generator_;
-  uniform_real_distribution<double> uniform_;
-  GoogleBlockDistribution *blocks_in_file_distn_;
+  vector<ResourceID_t> machines_;
+  uint64_t num_blocks_in_use_;
+  uint32_t replication_factor_;
+  NumBlocks_t total_block_capacity_;
+  uniform_real_distribution<double> uniform_distribution_;
 };
 
 } // namespace dfs
