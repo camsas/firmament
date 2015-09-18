@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_f04dd373",
+        "filename": "src/base/units.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-18T18:48:06Z",
+      "side": 1,
+      "message": "Ah, I like this way of naming the constants. Makes me wonder if we should move the other ones to this scheme, and maybe offer helper methods named MicrosecondsToSeconds() which do value / constant and return the result. Obviously, that\u0027s for a different CL.",
+      "revId": "cc1cd6a31739fe1415f9c3d633b6ac4820e78a4d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

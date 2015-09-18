@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_7068e3ba",
+        "filename": "src/sim/dfs/simulated_dfs.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-18T18:48:06Z",
+      "side": 0,
+      "message": "Where did AddFile go in this rejig?",
+      "revId": "953e6c4aaf249f2194e1588f19f5890b1daabf4a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
