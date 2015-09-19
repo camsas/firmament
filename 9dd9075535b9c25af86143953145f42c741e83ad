@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_9351f964",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-19T12:07:58Z",
+      "side": 1,
+      "message": "I think we have std:: always imported by default; is there a problem with using just hash?",
+      "revId": "9dd9075535b9c25af86143953145f42c741e83ad",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_b34ef5bf",
+        "filename": "src/sim/trace_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-19T12:07:58Z",
+      "side": 1,
+      "message": "The other files relating to the Google trace are called \"google_trace_*\". Does it make sense for this just to be \"trace_utils\"? I suppose we use these event codes for generic traces, too, while the other files have functionality required to specifically access the Google trace?",
+      "revId": "9dd9075535b9c25af86143953145f42c741e83ad",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
