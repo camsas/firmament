@@ -66,7 +66,7 @@ EventDrivenScheduler::~EventDrivenScheduler() {
   }
   executors_.clear();
   // We don't delete event_notifier_ and m_adapter_ptr because they're owned by
-  // the coordinator or the trace_bridge.
+  // the coordinator or the simulator_bridge.
 }
 
 void EventDrivenScheduler::AddJob(JobDescriptor* jd_ptr) {

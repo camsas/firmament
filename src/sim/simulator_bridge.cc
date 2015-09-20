@@ -1,6 +1,6 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
-#include "sim/google_trace_bridge.h"
+#include "sim/simulator_bridge.h"
 
 #include <limits>
 #include <map>
@@ -27,14 +27,12 @@ DECLARE_double(events_fraction);
 namespace firmament {
 namespace sim {
 
-GoogleTraceBridge::GoogleTraceBridge(
-    const string& trace_path,
+SimulatorBridge::SimulatorBridge(
     EventManager* event_manager) :
     event_manager_(event_manager), job_map_(new JobMap_t),
     knowledge_base_(new KnowledgeBaseSimulator),
-    resource_map_(new ResourceMap_t), task_map_(new TaskMap_t),
-    trace_path_(trace_path) {
-  ResourceID_t root_uuid = GenerateRootResourceID("XXXgoogleXXX");
+    resource_map_(new ResourceMap_t), task_map_(new TaskMap_t) {
+  ResourceID_t root_uuid = GenerateRootResourceID("XXXsimulatorXXX");
   ResourceDescriptor* rd_ptr = rtn_root_.mutable_resource_desc();
   rd_ptr->set_uuid(to_string(root_uuid));
   rd_ptr->set_type(ResourceDescriptor::RESOURCE_COORDINATOR);
@@ -54,12 +52,12 @@ GoogleTraceBridge::GoogleTraceBridge(
       messaging_adapter_, this, root_uuid, "http://localhost");
 }
 
-GoogleTraceBridge::~GoogleTraceBridge() {
+SimulatorBridge::~SimulatorBridge() {
   while (rtn_root_.children_size() > 0) {
     rtn_root_.mutable_children()->RemoveLast();
   }
   // N.B. We don't have to delete:
-  // 1) event_manager_ because it is owned by google_trace_simulator.
+  // 1) event_manager_ because it is owned by trace_simulator.
   // 2) machine_res_id_pus_ and resource_map because rds are deleted when
   // we remove the machines from rtn_root_.
   // 3) job_map_ and trace_job_id_to_jd_ because the jds are deleted
@@ -70,7 +68,7 @@ GoogleTraceBridge::~GoogleTraceBridge() {
   delete messaging_adapter_;
 }
 
-ResourceDescriptor* GoogleTraceBridge::AddMachine(
+ResourceDescriptor* SimulatorBridge::AddMachine(
     const ResourceTopologyNodeDescriptor& machine_tmpl,
     uint64_t machine_id) {
   // Create a new machine topology descriptor.
@@ -80,7 +78,7 @@ ResourceDescriptor* GoogleTraceBridge::AddMachine(
   char hn[100];
   snprintf(hn, sizeof(hn), "h%ju", machine_id);
   DFSTraverseResourceProtobufTreeReturnRTND(
-      new_machine, boost::bind(&GoogleTraceBridge::ResetUuidAndAddResource,
+      new_machine, boost::bind(&SimulatorBridge::ResetUuidAndAddResource,
                                this, _1, string(hn), root_uuid));
   ResourceDescriptor* rd_ptr = new_machine->mutable_resource_desc();
   rd_ptr->set_friendly_name(hn);
@@ -89,12 +87,12 @@ ResourceDescriptor* GoogleTraceBridge::AddMachine(
   CHECK(InsertIfNotPresent(&trace_machine_id_to_rtnd_, machine_id,
                            new_machine));
   DFSTraverseResourceProtobufTreeReturnRTND(
-      new_machine, boost::bind(&GoogleTraceBridge::RegisterMachinePUs,
+      new_machine, boost::bind(&SimulatorBridge::RegisterMachinePUs,
                                this, _1, res_id));
   return rd_ptr;
 }
 
-void GoogleTraceBridge::AddMachineSamples(uint64_t current_time) {
+void SimulatorBridge::AddMachineSamples(uint64_t current_time) {
   for (auto& machine_id_rtnd : trace_machine_id_to_rtnd_) {
     ResourceDescriptor* machine_rd_ptr =
       machine_id_rtnd.second->mutable_resource_desc();
@@ -119,7 +117,7 @@ void GoogleTraceBridge::AddMachineSamples(uint64_t current_time) {
   }
 }
 
-TaskDescriptor* GoogleTraceBridge::AddTask(
+TaskDescriptor* SimulatorBridge::AddTask(
     const TraceTaskIdentifier& task_identifier) {
   JobDescriptor* jd_ptr = FindPtrOrNull(trace_job_id_to_jd_,
                                         task_identifier.job_id);
@@ -131,7 +129,7 @@ TaskDescriptor* GoogleTraceBridge::AddTask(
   TaskDescriptor* td_ptr = NULL;
   if (FindOrNull(trace_task_id_to_td_, task_identifier) == NULL) {
     td_ptr = AddTaskToJob(jd_ptr);
-    // XXX(ionel): Hack. We're setting the Google trace job id as the binary
+    // XXX(ionel): Hack. We're setting the simulator job id as the binary
     // of the job in order for Firmament to uniquely identify it.
     td_ptr->set_binary(lexical_cast<string>(task_identifier.job_id));
     // TODO(ionel): Populate task with the appropriate type.
@@ -139,7 +137,7 @@ TaskDescriptor* GoogleTraceBridge::AddTask(
     if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
       CHECK(InsertIfNotPresent(&task_id_to_identifier_,
                                td_ptr->uid(), task_identifier));
-      // Add task to the google (job_id, task_index) to TaskDescriptor* map.
+      // Add task to the simulator (job_id, task_index) to TaskDescriptor* map.
       CHECK(InsertIfNotPresent(&trace_task_id_to_td_, task_identifier, td_ptr));
       // Update statistics used by cost models. This must be done prior
       // to adding the job to the scheduler, as costs computed in that step.
@@ -160,7 +158,7 @@ TaskDescriptor* GoogleTraceBridge::AddTask(
   return td_ptr;
 }
 
-void GoogleTraceBridge::AddTaskEndEvent(
+void SimulatorBridge::AddTaskEndEvent(
     const TraceTaskIdentifier& task_identifier,
     TaskDescriptor* td_ptr) {
   uint64_t* runtime_ptr = FindOrNull(task_runtime_, task_identifier);
@@ -182,7 +180,7 @@ void GoogleTraceBridge::AddTaskEndEvent(
   }
 }
 
-void GoogleTraceBridge::AddTaskStats(
+void SimulatorBridge::AddTaskStats(
     const TraceTaskIdentifier& trace_task_identifier,
     TaskID_t task_id) {
   TraceTaskStats* task_stats =
@@ -209,7 +207,7 @@ void GoogleTraceBridge::AddTaskStats(
   trace_task_id_to_stats_.erase(trace_task_identifier);
 }
 
-TaskDescriptor* GoogleTraceBridge::AddTaskToJob(JobDescriptor* jd_ptr) {
+TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr) {
   CHECK_NOTNULL(jd_ptr);
   TaskDescriptor* root_task = jd_ptr->mutable_root_task();
   TaskDescriptor* new_task = root_task->add_spawned();
@@ -219,9 +217,10 @@ TaskDescriptor* GoogleTraceBridge::AddTaskToJob(JobDescriptor* jd_ptr) {
   return new_task;
 }
 
-void GoogleTraceBridge::LoadTraceData(
+void SimulatorBridge::LoadTraceData(
+    const string& trace_path,
     ResourceTopologyNodeDescriptor* machine_tmpl) {
-  GoogleTraceLoader trace_loader(trace_path_);
+  GoogleTraceLoader trace_loader(trace_path);
   // Import a fictional machine resource topology
   trace_loader.LoadMachineTemplate(machine_tmpl);
   // Load all the machine events.
@@ -238,7 +237,7 @@ void GoogleTraceBridge::LoadTraceData(
   trace_loader.LoadTaskUtilizationStats(&trace_task_id_to_stats_);
 }
 
-void GoogleTraceBridge::TaskCompleted(
+void SimulatorBridge::TaskCompleted(
     const TraceTaskIdentifier& task_identifier) {
   TaskDescriptor* td_ptr = FindPtrOrNull(trace_task_id_to_td_, task_identifier);
   CHECK_NOTNULL(td_ptr);
@@ -249,7 +248,7 @@ void GoogleTraceBridge::TaskCompleted(
   knowledge_base_->EraseTraceTaskStats(td_ptr->uid());
 }
 
-void GoogleTraceBridge::OnJobCompletion(JobID_t job_id) {
+void SimulatorBridge::OnJobCompletion(JobID_t job_id) {
   uint64_t* trace_job_id = FindOrNull(job_id_to_trace_job_id_, job_id);
   CHECK_NOTNULL(trace_job_id);
   uint64_t* num_tasks = FindOrNull(job_num_tasks_, *trace_job_id);
@@ -263,8 +262,8 @@ void GoogleTraceBridge::OnJobCompletion(JobID_t job_id) {
   job_id_to_trace_job_id_.erase(job_id);
 }
 
-void GoogleTraceBridge::OnTaskCompletion(TaskDescriptor* td_ptr,
-                                         ResourceDescriptor* rd_ptr) {
+void SimulatorBridge::OnTaskCompletion(TaskDescriptor* td_ptr,
+                                       ResourceDescriptor* rd_ptr) {
   TaskID_t task_id = td_ptr->uid();
   TraceTaskIdentifier* ti_ptr = FindOrNull(task_id_to_identifier_, task_id);
   CHECK_NOTNULL(ti_ptr);
@@ -282,8 +281,8 @@ void GoogleTraceBridge::OnTaskCompletion(TaskDescriptor* td_ptr,
   // because the event is removed by the simulator.
 }
 
-void GoogleTraceBridge::OnTaskEviction(TaskDescriptor* td_ptr,
-                                       ResourceDescriptor* rd_ptr) {
+void SimulatorBridge::OnTaskEviction(TaskDescriptor* td_ptr,
+                                     ResourceDescriptor* rd_ptr) {
   TraceTaskIdentifier* ti_ptr =
     FindOrNull(task_id_to_identifier_, td_ptr->uid());
   CHECK_NOTNULL(ti_ptr);
@@ -292,14 +291,14 @@ void GoogleTraceBridge::OnTaskEviction(TaskDescriptor* td_ptr,
   event_manager_->RemoveTaskEndRuntimeEvent(*ti_ptr, task_end_time);
 }
 
-void GoogleTraceBridge::OnTaskFailure(TaskDescriptor* td_ptr,
-                                      ResourceDescriptor* rd_ptr) {
+void SimulatorBridge::OnTaskFailure(TaskDescriptor* td_ptr,
+                                    ResourceDescriptor* rd_ptr) {
   // We don't have to do anything because simulated tasks do not fail.
   LOG(FATAL) << "Task should not fail in the simulator";
 }
 
-void GoogleTraceBridge::OnTaskMigration(TaskDescriptor* td_ptr,
-                                        ResourceDescriptor* rd_ptr) {
+void SimulatorBridge::OnTaskMigration(TaskDescriptor* td_ptr,
+                                      ResourceDescriptor* rd_ptr) {
   // XXX(ionel): This assumes that the Migration is done via two calls.
   // First, a call to OnTaskEviction and then OnTaskMigration.
   TraceTaskIdentifier* ti_ptr =
@@ -311,8 +310,8 @@ void GoogleTraceBridge::OnTaskMigration(TaskDescriptor* td_ptr,
   AddTaskEndEvent(*ti_ptr, td_ptr);
 }
 
-void GoogleTraceBridge::OnTaskPlacement(TaskDescriptor* td_ptr,
-                                        ResourceDescriptor* rd_ptr) {
+void SimulatorBridge::OnTaskPlacement(TaskDescriptor* td_ptr,
+                                      ResourceDescriptor* rd_ptr) {
   TraceTaskIdentifier* ti_ptr =
     FindOrNull(task_id_to_identifier_, td_ptr->uid());
   CHECK_NOTNULL(ti_ptr);
@@ -320,7 +319,7 @@ void GoogleTraceBridge::OnTaskPlacement(TaskDescriptor* td_ptr,
   AddTaskEndEvent(*ti_ptr, td_ptr);
 }
 
-JobDescriptor* GoogleTraceBridge::PopulateJob(uint64_t trace_job_id) {
+JobDescriptor* SimulatorBridge::PopulateJob(uint64_t trace_job_id) {
   JobDescriptor jd;
   // Generate a hash out of the trace job_id.
   JobID_t new_job_id = GenerateJobID(trace_job_id);
@@ -344,7 +343,7 @@ JobDescriptor* GoogleTraceBridge::PopulateJob(uint64_t trace_job_id) {
   return jd_ptr;
 }
 
-void GoogleTraceBridge::RegisterMachinePUs(
+void SimulatorBridge::RegisterMachinePUs(
     ResourceTopologyNodeDescriptor* rtnd_ptr,
     ResourceID_t machine_res_id) {
   if (rtnd_ptr->resource_desc().type() == ResourceDescriptor::RESOURCE_PU) {
@@ -356,7 +355,7 @@ void GoogleTraceBridge::RegisterMachinePUs(
   }
 }
 
-void GoogleTraceBridge::RemoveMachine(uint64_t machine_id) {
+void SimulatorBridge::RemoveMachine(uint64_t machine_id) {
   ResourceTopologyNodeDescriptor* rtnd_ptr =
     FindPtrOrNull(trace_machine_id_to_rtnd_, machine_id);
   CHECK_NOTNULL(rtnd_ptr);
@@ -365,7 +364,7 @@ void GoogleTraceBridge::RemoveMachine(uint64_t machine_id) {
   // Traverse the resource topology tree in order to evict tasks and
   // remove resources from resource_map.
   DFSTraverseResourceProtobufTreeReturnRTND(
-      rtnd_ptr, boost::bind(&GoogleTraceBridge::RemoveResource, this, _1));
+      rtnd_ptr, boost::bind(&SimulatorBridge::RemoveResource, this, _1));
   if (rtnd_ptr->has_parent_id()) {
     if (rtnd_ptr->parent_id().compare(rtn_root_.resource_desc().uuid()) == 0) {
       RemoveResourceNodeFromParentChildrenList(*rtnd_ptr);
@@ -380,7 +379,7 @@ void GoogleTraceBridge::RemoveMachine(uint64_t machine_id) {
   // We only free the ResourceTopologyNodeDescriptor in the destructor.
 }
 
-void GoogleTraceBridge::RemoveResource(
+void SimulatorBridge::RemoveResource(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   // TODO(ionel): Move logic to event_driven_scheduler once DeregisterResource
   // has support for task termination.
@@ -399,7 +398,7 @@ void GoogleTraceBridge::RemoveResource(
   delete rs_ptr;
 }
 
-void GoogleTraceBridge::RemoveResourceNodeFromParentChildrenList(
+void SimulatorBridge::RemoveResourceNodeFromParentChildrenList(
     const ResourceTopologyNodeDescriptor& rtnd) {
   // The parent of the node is the topology root.
   RepeatedPtrField<ResourceTopologyNodeDescriptor>* parent_children =
@@ -426,8 +425,9 @@ void GoogleTraceBridge::RemoveResourceNodeFromParentChildrenList(
   }
 }
 
-void GoogleTraceBridge::ResetUuidAndAddResource(
-    ResourceTopologyNodeDescriptor* rtnd, const string& hostname,
+void SimulatorBridge::ResetUuidAndAddResource(
+    ResourceTopologyNodeDescriptor* rtnd,
+    const string& hostname,
     const string& root_uuid) {
   string new_uuid;
   if (rtnd->has_parent_id()) {
@@ -460,7 +460,7 @@ void GoogleTraceBridge::ResetUuidAndAddResource(
                                               GetCurrentTimestamp())));
 }
 
-void GoogleTraceBridge::RunSolver(SchedulerStats* scheduler_stats) {
+void SimulatorBridge::ScheduleJobs(SchedulerStats* scheduler_stats) {
   scheduler_->ScheduleAllJobs(scheduler_stats);
 }
 

@@ -6,26 +6,26 @@
 #include <gtest/gtest.h>
 
 #include "misc/utils.h"
-#include "sim/google_trace_bridge.h"
 #include "sim/google_trace_loader.h"
+#include "sim/simulator_bridge.h"
 
 DECLARE_string(machine_tmpl_file);
 
 namespace firmament {
 namespace sim {
 
-class GoogleTraceBridgeTest : public ::testing::Test {
+class SimulatorBridgeTest : public ::testing::Test {
  protected:
-  GoogleTraceBridgeTest()
+  SimulatorBridgeTest()
     : event_manager_(new EventManager()),
-      bridge_(new GoogleTraceBridge("", event_manager_)),
+      bridge_(new SimulatorBridge(event_manager_)),
       loader_(new GoogleTraceLoader("")) {
     // You can do set-up work for each test here.
     FLAGS_v = 2;
     FLAGS_machine_tmpl_file = "../../../tests/testdata/machine_topo.pbin";
   }
 
-  virtual ~GoogleTraceBridgeTest() {
+  virtual ~SimulatorBridgeTest() {
     //    delete bridge_;
     delete event_manager_;
     delete loader_;
@@ -42,11 +42,11 @@ class GoogleTraceBridgeTest : public ::testing::Test {
   }
 
   EventManager* event_manager_;
-  GoogleTraceBridge* bridge_;
+  SimulatorBridge* bridge_;
   GoogleTraceLoader* loader_;
 };
 
-TEST_F(GoogleTraceBridgeTest, AddMachine) {
+TEST_F(SimulatorBridgeTest, AddMachine) {
   ResourceTopologyNodeDescriptor machine_tmpl;
   loader_->LoadMachineTemplate(&machine_tmpl);
   CHECK_EQ(bridge_->resource_map_->size(), 1);
@@ -64,7 +64,7 @@ TEST_F(GoogleTraceBridgeTest, AddMachine) {
   CHECK_EQ(bridge_->machine_res_id_pus_.size(), 16);
 }
 
-TEST_F(GoogleTraceBridgeTest, AddTask) {
+TEST_F(SimulatorBridgeTest, AddTask) {
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
@@ -98,7 +98,7 @@ TEST_F(GoogleTraceBridgeTest, AddTask) {
   CHECK_EQ(bridge_->trace_task_id_to_td_.size(), 2);
 }
 
-TEST_F(GoogleTraceBridgeTest, OnJobCompletion) {
+TEST_F(SimulatorBridgeTest, OnJobCompletion) {
   ResourceTopologyNodeDescriptor machine_tmpl;
   loader_->LoadMachineTemplate(&machine_tmpl);
   TraceTaskIdentifier trace_task_id;
@@ -121,7 +121,7 @@ TEST_F(GoogleTraceBridgeTest, OnJobCompletion) {
   CHECK(FindOrNull(bridge_->job_id_to_trace_job_id_, job_id) == NULL);
 }
 
-TEST_F(GoogleTraceBridgeTest, OnTaskCompletion) {
+TEST_F(SimulatorBridgeTest, OnTaskCompletion) {
   ResourceTopologyNodeDescriptor machine_tmpl;
   loader_->LoadMachineTemplate(&machine_tmpl);
   TraceTaskIdentifier trace_task_id;
@@ -144,7 +144,7 @@ TEST_F(GoogleTraceBridgeTest, OnTaskCompletion) {
   CHECK_EQ(bridge_->task_map_->size(), 2);
 }
 
-TEST_F(GoogleTraceBridgeTest, OnTaskEviction) {
+TEST_F(SimulatorBridgeTest, OnTaskEviction) {
   ResourceTopologyNodeDescriptor machine_tmpl;
   loader_->LoadMachineTemplate(&machine_tmpl);
   TraceTaskIdentifier trace_task_id;
@@ -162,11 +162,11 @@ TEST_F(GoogleTraceBridgeTest, OnTaskEviction) {
   CHECK_EQ(td_ptr->start_time(), 0);
 }
 
-TEST_F(GoogleTraceBridgeTest, OnTaskMigration) {
+TEST_F(SimulatorBridgeTest, OnTaskMigration) {
   // TODO(ionel): Implement!
 }
 
-TEST_F(GoogleTraceBridgeTest, OnTaskPlacement) {
+TEST_F(SimulatorBridgeTest, OnTaskPlacement) {
   ResourceTopologyNodeDescriptor machine_tmpl;
   loader_->LoadMachineTemplate(&machine_tmpl);
   TraceTaskIdentifier trace_task_id;
@@ -181,7 +181,7 @@ TEST_F(GoogleTraceBridgeTest, OnTaskPlacement) {
   CHECK_EQ(td_ptr->start_time(), 0);
 }
 
-TEST_F(GoogleTraceBridgeTest, RemoveMachine) {
+TEST_F(SimulatorBridgeTest, RemoveMachine) {
   ResourceTopologyNodeDescriptor machine_tmpl;
   loader_->LoadMachineTemplate(&machine_tmpl);
   CHECK_EQ(bridge_->resource_map_->size(), 1);

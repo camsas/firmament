@@ -70,14 +70,14 @@ inline void LogEvent(FILE* graph_output, const string& msg) {
   }
 }
 
-void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
-                       FILE* stats_file,
-                       const boost::timer::cpu_timer timer,
-                       uint64_t solver_executed_at,
-                       const scheduler::SchedulerStats& scheduler_stats);
+void LogSchedulerRunStats(double avg_event_timestamp_in_scheduling_round,
+                          FILE* stats_file,
+                          const boost::timer::cpu_timer timer,
+                          uint64_t scheduler_executed_at,
+                          const scheduler::SchedulerStats& scheduler_stats);
 
-void LogStartOfSolverRun(FILE* graph_output,
-                         uint64_t run_solver_at);
+void LogStartOfSchedulerRun(FILE* graph_output,
+                            uint64_t run_scheduler_at);
 
 uint64_t MaxEventIdToRetain();
 
