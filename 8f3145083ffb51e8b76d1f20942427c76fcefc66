@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_7c3b559c",
+        "filename": "src/sim/simulator_bridge_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-20T20:13:47Z",
+      "side": 1,
+      "message": "Unrelated to this CL, but why is this commented out?",
+      "revId": "8f3145083ffb51e8b76d1f20942427c76fcefc66",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
