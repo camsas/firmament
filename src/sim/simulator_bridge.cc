@@ -16,14 +16,15 @@
 #include "misc/utils.h"
 #include "scheduling/flow/flow_scheduler.h"
 #include "scheduling/simple/simple_scheduler.h"
-#include "sim/google_trace_loader.h"
 #include "sim/knowledge_base_simulator.h"
+#include "sim/trace_loader.h"
 #include "storage/simple_object_store.h"
 
 using boost::lexical_cast;
 using boost::hash;
 
 DECLARE_double(events_fraction);
+DECLARE_uint64(runtime);
 DECLARE_string(scheduler);
 
 namespace firmament {
@@ -230,24 +231,19 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr) {
   return new_task;
 }
 
-void SimulatorBridge::LoadTraceData(
-    const string& trace_path,
-    ResourceTopologyNodeDescriptor* machine_tmpl) {
-  GoogleTraceLoader trace_loader(trace_path);
-  // Import a fictional machine resource topology
-  trace_loader.LoadMachineTemplate(machine_tmpl);
+void SimulatorBridge::LoadTraceData(TraceLoader* trace_loader) {
   // Load all the machine events.
   multimap<uint64_t, EventDescriptor> machine_events;
-  trace_loader.LoadMachineEvents(MaxEventIdToRetain(), &machine_events);
+  trace_loader->LoadMachineEvents(MaxEventIdToRetain(), &machine_events);
   for (auto& machine_event : machine_events) {
     event_manager_->AddEvent(machine_event.first, machine_event.second);
   }
   // Populate the job_id to number of tasks mapping.
-  trace_loader.LoadJobsNumTasks(&job_num_tasks_);
+  trace_loader->LoadJobsNumTasks(&job_num_tasks_);
   // Load tasks' runtime.
-  trace_loader.LoadTasksRunningTime(MaxEventIdToRetain(), &task_runtime_);
+  trace_loader->LoadTasksRunningTime(MaxEventIdToRetain(), &task_runtime_);
   // Populate the knowledge base.
-  trace_loader.LoadTaskUtilizationStats(&trace_task_id_to_stats_);
+  trace_loader->LoadTaskUtilizationStats(&trace_task_id_to_stats_);
 }
 
 void SimulatorBridge::TaskCompleted(

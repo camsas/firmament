@@ -5,11 +5,9 @@
 
 #include "sim/google_trace_loader.h"
 
-#include <fcntl.h>
 #include <SpookyV2.h>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <cstdio>
 #include <map>
@@ -17,21 +15,42 @@
 #include <utility>
 #include <vector>
 
+#include "misc/string_utils.h"
 #include "misc/utils.h"
+
+DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
+DEFINE_string(trace_path, "", "Path where the trace files are.");
+
+DECLARE_uint64(runtime);
+
+static bool ValidateTracePath(const char* flagname, const string& trace_path) {
+  if (trace_path.empty()) {
+    LOG(ERROR) << "Please specify a path to the Google trace!";
+    return false;
+  }
+  return true;
+}
+
+static const bool trace_path_validator =
+  google::RegisterFlagValidator(&FLAGS_trace_path, &ValidateTracePath);
 
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;
 using boost::token_compress_off;
 
-DEFINE_string(machine_tmpl_file, "../../tests/testdata/machine_topo.pbin",
-              "File specifying machine topology. (Note: the given path must be "
-              "relative to the directory of the binary)");
-
 namespace firmament {
 namespace sim {
 
-GoogleTraceLoader::GoogleTraceLoader(const string& trace_path) :
-  trace_path_(trace_path) {
+GoogleTraceLoader::GoogleTraceLoader(EventManager* event_manager)
+  : TraceLoader(event_manager),
+    current_task_events_file_id_(0),
+    task_events_file_(NULL) {
+}
+
+GoogleTraceLoader::~GoogleTraceLoader() {
+  if (task_events_file_) {
+    fclose(task_events_file_);
+  }
 }
 
 void GoogleTraceLoader::LoadJobsNumTasks(
@@ -39,7 +58,7 @@ void GoogleTraceLoader::LoadJobsNumTasks(
   char line[200];
   vector<string> cols;
   FILE* jobs_tasks_file = NULL;
-  string jobs_tasks_file_name = trace_path_ +
+  string jobs_tasks_file_name = FLAGS_trace_path +
     "/jobs_num_tasks/jobs_num_tasks.csv";
   if ((jobs_tasks_file = fopen(jobs_tasks_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open jobs num tasks file.";
@@ -68,7 +87,7 @@ void GoogleTraceLoader::LoadMachineEvents(
   char line[200];
   vector<string> cols;
   FILE* machines_file;
-  string machines_file_name = trace_path_ +
+  string machines_file_name = FLAGS_trace_path +
     "/machine_events/part-00000-of-00001.csv";
   if ((machines_file = fopen(machines_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace for reading machine events.";
@@ -115,28 +134,68 @@ void GoogleTraceLoader::LoadMachineEvents(
   fclose(machines_file);
 }
 
-void GoogleTraceLoader::LoadMachineTemplate(
-    ResourceTopologyNodeDescriptor* machine_tmpl) {
-  boost::filesystem::path machine_tmpl_path(FLAGS_machine_tmpl_file);
-  if (machine_tmpl_path.is_relative()) {
-    // lookup file relative to directory of binary, not CWD
-    char binary_path[1024];
-    size_t bytes = ExecutableDirectory(binary_path, sizeof(binary_path));
-    CHECK(bytes < sizeof(binary_path));
-    boost::filesystem::path binary_path_boost(binary_path);
-    binary_path_boost.remove_filename();
+void GoogleTraceLoader::LoadTaskEvents(uint64_t events_up_to_time) {
+  char line[200];
+  vector<string> vals;
+  while (true) {
+    // Check if we're already reading from a file.
+    if (!task_events_file_) {
+      if (current_task_events_file_id_ < FLAGS_num_files_to_process) {
+        // We still have files to open.
+        string fname;
+        spf(&fname, "%s/task_events/part-%05d-of-00500.csv",
+            FLAGS_trace_path.c_str(), current_task_events_file_id_);
+        if ((task_events_file_ = fopen(fname.c_str(), "r")) == NULL) {
+          LOG(FATAL) << "Failed to open trace for reading of task events.";
+        }
+      } else {
+        // There are no task events left to load.
+        return;
+      }
+    }
+    while (!feof(task_events_file_)) {
+      if (fscanf(task_events_file_, "%[^\n]%*[\n]", &line[0]) > 0) {
+        boost::split(vals, line, is_any_of(","), token_compress_off);
+        if (vals.size() != 13) {
+          LOG(ERROR) << "Unexpected structure of task event row: found "
+                     << vals.size() << " columns.";
+        } else {
+          TraceTaskIdentifier task_id;
+          uint64_t task_event_time = lexical_cast<uint64_t>(vals[0]);
+          task_id.job_id = lexical_cast<uint64_t>(vals[2]);
+          task_id.task_index = lexical_cast<uint64_t>(vals[3]);
+          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
 
-    machine_tmpl_path = binary_path_boost / machine_tmpl_path;
-  }
+          // Sub-sample the trace if we only retain < 100% of tasks.
+          if (SpookyHash::Hash64(&task_id, sizeof(task_id), kSeed) >
+              MaxEventIdToRetain()) {
+            // skip event
+            continue;
+          }
 
-  string machine_tmpl_fname(machine_tmpl_path.string());
-  LOG(INFO) << "Loading machine descriptor from " << machine_tmpl_fname;
-  int fd = open(machine_tmpl_fname.c_str(), O_RDONLY);
-  if (fd < 0) {
-    PLOG(FATAL) << "Could not load " << machine_tmpl_fname;
+          if (event_type == SUBMIT_EVENT) {
+            EventDescriptor event_desc;
+            event_desc.set_type(EventDescriptor::TASK_SUBMIT);
+            event_desc.set_job_id(task_id.job_id);
+            event_desc.set_task_index(task_id.task_index);
+            event_manager_->AddEvent(task_event_time, event_desc);
+          } else {
+            // Skip this event and read next event from the trace.
+            continue;
+          }
+          if (task_event_time > events_up_to_time) {
+            // We've loaded all the events up to the given time.
+            // NOTE: we also loaded the current task event.
+            return;
+          }
+        }
+      }
+    }
+    fclose(task_events_file_);
+    current_task_events_file_id_++;
+    // We set the file to NULL to indicate that we should open the next file.
+    task_events_file_ = NULL;
   }
-  machine_tmpl->ParseFromFileDescriptor(fd);
-  close(fd);
 }
 
 void GoogleTraceLoader::LoadTaskUtilizationStats(
@@ -145,7 +204,7 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
   char line[1000];
   vector<string> cols;
   FILE* usage_file = NULL;
-  string usage_file_name = trace_path_ +
+  string usage_file_name = FLAGS_trace_path +
     "/task_usage_stat/task_usage_stat.csv";
   if ((usage_file = fopen(usage_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace task runtime stats file.";
@@ -223,7 +282,7 @@ void GoogleTraceLoader::LoadTasksRunningTime(
   char line[200];
   vector<string> cols;
   FILE* tasks_file = NULL;
-  string tasks_file_name = trace_path_ +
+  string tasks_file_name = FLAGS_trace_path +
     "/task_runtime_events/task_runtime_events.csv";
   if ((tasks_file = fopen(tasks_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace runtime events file.";

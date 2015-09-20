@@ -70,6 +70,8 @@ inline void LogEvent(FILE* graph_output, const string& msg) {
   }
 }
 
+void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl);
+
 void LogSchedulerRunStats(double avg_event_timestamp_in_scheduling_round,
                           FILE* stats_file,
                           const boost::timer::cpu_timer timer,
