@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_9ccbc1a4",
+        "filename": "src/sim/google_trace_simulator_main.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-20T20:12:19Z",
+      "side": 1,
+      "message": "What\u0027s the new name of this file? It shows up as a deletion, not as a rename in the diff.",
+      "revId": "08b8f4f0e82041909067bb046511c3960a0a5078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_dcc46994",
+        "filename": "src/sim/google_trace_simulator_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-20T20:12:19Z",
+      "side": 1,
+      "message": "Likewise, is this file no longer in existence, or did you forget to add a new file to the commit?",
+      "revId": "08b8f4f0e82041909067bb046511c3960a0a5078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_fcbf65fa",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-20T20:12:19Z",
+      "side": 1,
+      "message": "Just because it crosses my mind as I read these lines: we should pay attention to the limit on open files when running the simulator on the full trace. I think we\u0027re fine even with the default limit (1024) as there are only 500 files open at a time, though.",
+      "revId": "08b8f4f0e82041909067bb046511c3960a0a5078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_1cbfb1fc",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-20T20:12:19Z",
+      "side": 1,
+      "message": "Check for success of fclose",
+      "revId": "08b8f4f0e82041909067bb046511c3960a0a5078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
