@@ -39,9 +39,9 @@ DEFINE_uint64(scheduler_timeout, UINT64_MAX,
               "Timeout: terminate after waiting this number of seconds");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
-DEFINE_uint64(heartbeat_interval, 1000000,
-              "Heartbeat interval in microseconds.");
 DEFINE_string(trace_path, "", "Path where the trace files are.");
+
+DECLARE_uint64(heartbeat_interval);
 
 static bool ValidateTracePath(const char* flagname, const string& trace_path) {
   if (trace_path.empty()) {
@@ -260,7 +260,7 @@ void Simulator::LoadTraceTaskEvents(uint64_t events_up_to_time) {
         }
       }
     }
-    fclose(task_events_file_);
+    CHECK_EQ(fclose(task_events_file_), 0);
     current_task_events_file_++;
     // We set the file to NULL to indicate that we should open the next file.
     task_events_file_ = NULL;

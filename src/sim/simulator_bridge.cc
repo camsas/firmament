@@ -15,6 +15,7 @@
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 #include "scheduling/flow/flow_scheduler.h"
+#include "scheduling/simple/simple_scheduler.h"
 #include "sim/google_trace_loader.h"
 #include "sim/knowledge_base_simulator.h"
 #include "storage/simple_object_store.h"
@@ -23,6 +24,7 @@ using boost::lexical_cast;
 using boost::hash;
 
 DECLARE_double(events_fraction);
+DECLARE_string(scheduler);
 
 namespace firmament {
 namespace sim {
@@ -42,14 +44,25 @@ SimulatorBridge::SimulatorBridge(
                                               GetCurrentTimestamp())));
   messaging_adapter_ =
     new platform::sim::SimulatedMessagingAdapter<BaseMessage>();
-  scheduler_ = new scheduler::FlowScheduler(
-      job_map_, resource_map_, &rtn_root_,
-      shared_ptr<store::ObjectStoreInterface>(
-          new store::SimpleObjectStore(root_uuid)),
-      task_map_, knowledge_base_,
-      shared_ptr<machine::topology::TopologyManager>(
-          new machine::topology::TopologyManager),
-      messaging_adapter_, this, root_uuid, "http://localhost");
+  if (FLAGS_scheduler == "flow") {
+    scheduler_ = new scheduler::FlowScheduler(
+        job_map_, resource_map_, &rtn_root_,
+        shared_ptr<store::ObjectStoreInterface>(
+            new store::SimpleObjectStore(root_uuid)),
+        task_map_, knowledge_base_,
+        shared_ptr<machine::topology::TopologyManager>(
+            new machine::topology::TopologyManager),
+        messaging_adapter_, this, root_uuid, "http://localhost");
+  } else {
+    scheduler_ = new scheduler::SimpleScheduler(
+        job_map_, resource_map_, &rtn_root_,
+        shared_ptr<store::ObjectStoreInterface>(
+            new store::SimpleObjectStore(root_uuid)),
+        task_map_, knowledge_base_,
+        shared_ptr<machine::topology::TopologyManager>(
+            new machine::topology::TopologyManager),
+        messaging_adapter_, this, root_uuid, "http://localhost");
+  }
 }
 
 SimulatorBridge::~SimulatorBridge() {
