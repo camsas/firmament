@@ -58,8 +58,8 @@ struct TaskIdentifier {
 
 struct TaskIdentifierHasher {
   size_t operator()(const TaskIdentifier& key) const {
-    return std::hash<uint64_t>()(key.job_id) * 17 +
-      std::hash<uint64_t>()(key.task_index);
+    return hash<uint64_t>()(key.job_id) * 17 +
+      hash<uint64_t>()(key.task_index);
   }
 };
 
