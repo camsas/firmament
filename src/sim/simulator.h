@@ -2,10 +2,10 @@
 // Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
-// Google cluster trace simulator tool.
+// Trace simulator tool.
 
-#ifndef FIRMAMENT_SIM_GOOGLE_TRACE_SIMULATOR_H
-#define FIRMAMENT_SIM_GOOGLE_TRACE_SIMULATOR_H
+#ifndef FIRMAMENT_SIM_SIMULATOR_H
+#define FIRMAMENT_SIM_SIMULATOR_H
 
 #include <map>
 #include <string>
@@ -15,7 +15,7 @@
 #include "base/resource_topology_node_desc.pb.h"
 #include "scheduling/flow/solver_dispatcher.h"
 #include "sim/event_manager.h"
-#include "sim/google_trace_bridge.h"
+#include "sim/simulator_bridge.h"
 #include "sim/trace_utils.h"
 
 DECLARE_string(flow_scheduling_binary);
@@ -28,14 +28,23 @@ DECLARE_bool(flow_scheduling_time_reported);
 namespace firmament {
 namespace sim {
 
-class GoogleTraceSimulator {
+class Simulator {
  public:
-  explicit GoogleTraceSimulator(const string& trace_path);
-  virtual ~GoogleTraceSimulator();
+  explicit Simulator();
+  virtual ~Simulator();
   void Run();
-  static void SolverTimeoutHandler(int sig);
+  static void SchedulerTimeoutHandler(int sig);
 
  private:
+  /**
+   * Loads the trace task events that happened before or at events_up_to_time.
+   * NOTE: this method might end up loading an event that happened after
+   * events_up_to_time. However, this has no effect on the correctness of the
+   * simulator.
+   * @param events_up_to_time the time up to which to load the events
+   */
+  void LoadTraceTaskEvents(uint64_t events_up_to_time);
+
   /**
    * Processes all the simulator events that happen at a given time.
    * @param cur_time the timestamp for which to process the simulator events
@@ -45,7 +54,7 @@ class GoogleTraceSimulator {
       uint64_t events_up_to_time,
       const ResourceTopologyNodeDescriptor& machine_tmpl);
 
-  void ReplayTrace();
+  void ReplaySimulation();
 
   /**
    * Reset the fields used to maintain statistics about the current scheduling
@@ -54,11 +63,12 @@ class GoogleTraceSimulator {
   void ResetSchedulingLatencyStats();
 
   /**
-   * Runs the solver.
-   * @param the time when the solver should run
-   * @return the time when the solver should run after the run at run_solver_at
+   * Runs the scheduler.
+   * @param the time when the scheduler should run
+   * @return the time when the scheduler should run after the run at
+   * run_scheduler_at
    */
-  uint64_t RunSolverHelper(uint64_t run_solver_at);
+  uint64_t ScheduleJobsHelper(uint64_t run_scheduler_at);
 
   /**
    * Update the fields used to maintain statistics about the current scheduling
@@ -66,7 +76,7 @@ class GoogleTraceSimulator {
    */
   void UpdateSchedulingLatencyStats(uint64_t time);
 
-  GoogleTraceBridge* bridge_;
+  SimulatorBridge* bridge_;
   EventManager* event_manager_;
 
   // Timestamp of the first event seen in the current scheduling round. Any
@@ -78,11 +88,13 @@ class GoogleTraceSimulator {
   uint64_t num_events_in_scheduling_round_;
   uint64_t sum_timestamps_in_scheduling_round_;
 
+  // File from which to read the task events.
+  FILE* task_events_file_;
+  // The number of the task events file the simulator is reading from.
+  int32_t current_task_events_file_;
+
   // Counter used to store the number of duplicate task ids seed in the trace.
   uint64_t num_duplicate_task_ids_;
-
-  string trace_path_;
-
   // File to output graph to. (Optional; NULL if unspecified.)
   FILE *graph_output_;
   // File to output stats to. (Optional; NULL if unspecified.)
@@ -92,4 +104,4 @@ class GoogleTraceSimulator {
 }  // namespace sim
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SIM_GOOGLE_TRACE_SIMULATOR_H
+#endif  // FIRMAMENT_SIM_SIMULATOR_H

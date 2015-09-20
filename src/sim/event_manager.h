@@ -41,21 +41,19 @@ class EventManager {
   uint64_t GetTimeOfNextEvent();
 
   /**
-   * Returns the time when the solver should be executed next.
-   * @param cur_run_solver_at the time of the last solver run
-   * @param scheduler_runtime the duration of the last solver run
+   * Returns the time when the scheduler should be executed next.
+   * @param cur_run_scheduler_at the time of the last scheduler run
+   * @param scheduler_runtime the duration of the last scheduler run
    */
-  uint64_t GetTimeOfNextSolverRun(uint64_t cur_run_solver_at,
-                                  double scheduler_runtime);
+  uint64_t GetTimeOfNextSchedulerRun(uint64_t cur_run_scheduler_at,
+                                     double scheduler_runtime);
 
   /**
    * Returns true if the simulation should stop.
-   * @param num_events the number of events played from the task_events table
    * @param num_scheduling the number of scheduler runs
    * @param true if the simulation should stop
    */
-  bool HasSimulationCompleted(uint64_t num_events,
-                              uint64_t num_scheduling_rounds);
+  bool HasSimulationCompleted(uint64_t num_scheduling_rounds);
 
   /**
    * Removes the task's end event from the simulator's event queue.
@@ -67,10 +65,11 @@ class EventManager {
                                  uint64_t task_end_time);
 
  private:
-  uint64_t current_simulation_time_ = 0;
+  uint64_t current_simulation_time_;
   // The map storing the simulator events. Maps from timestamp to simulator
   // event.
   multimap<uint64_t, EventDescriptor> events_;
+  uint64_t num_events_processed_;
 };
 
 }  // namespace sim

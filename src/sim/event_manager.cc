@@ -8,7 +8,7 @@
 #include "base/units.h"
 #include "misc/utils.h"
 
-DEFINE_uint64(batch_step, 0, "Batch mode: time interval to run solver "
+DEFINE_uint64(batch_step, 0, "Batch mode: time interval to run scheduler "
               "at (in microseconds).");
 DEFINE_uint64(max_events, UINT64_MAX,
               "Maximum number of task events to process.");
@@ -48,7 +48,8 @@ static const bool batch_step_validator =
 namespace firmament {
 namespace sim {
 
-EventManager::EventManager() {
+EventManager::EventManager() :
+  current_simulation_time_(0), num_events_processed_(0) {
   LOG(INFO) << "Maximum number of task events to process: " << FLAGS_max_events;
   LOG(INFO) << "Maximum number of scheduling rounds: "
             << FLAGS_max_scheduling_rounds;
@@ -59,6 +60,7 @@ void EventManager::AddEvent(uint64_t timestamp, EventDescriptor event) {
 }
 
 pair<uint64_t, EventDescriptor> EventManager::GetNextEvent() {
+  num_events_processed_++;
   multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
   pair<uint64_t, EventDescriptor> time_event = *it;
   events_.erase(it);
@@ -76,32 +78,31 @@ uint64_t EventManager::GetTimeOfNextEvent() {
   }
 }
 
-uint64_t EventManager::GetTimeOfNextSolverRun(uint64_t cur_run_solver_at,
-                                              double cur_scheduler_runtime) {
+uint64_t EventManager::GetTimeOfNextSchedulerRun(uint64_t cur_run_scheduler_at,
+                                                 double cur_scheduler_runtime) {
   if (FLAGS_batch_step == 0) {
     // we're in online mode
-    // 1. when we run the solver next depends on how fast we were
-    double time_to_solve = min(cur_scheduler_runtime, FLAGS_online_max_time);
-    time_to_solve *= SECONDS_TO_MICROSECONDS;
+    // 1. when we run the scheduler next depends on how fast we were
+    double time_to_schedule = min(cur_scheduler_runtime, FLAGS_online_max_time);
+    time_to_schedule *= SECONDS_TO_MICROSECONDS;
     // adjust for time warp factor
-    time_to_solve *= FLAGS_online_factor;
-    cur_run_solver_at += static_cast<uint64_t>(time_to_solve);
+    time_to_schedule *= FLAGS_online_factor;
+    cur_run_scheduler_at += static_cast<uint64_t>(time_to_schedule);
   } else {
     // we're in batch mode
-    cur_run_solver_at += FLAGS_batch_step;
+    cur_run_scheduler_at += FLAGS_batch_step;
   }
-  return cur_run_solver_at;
+  return cur_run_scheduler_at;
 }
 
-bool EventManager::HasSimulationCompleted(uint64_t num_events,
-                                          uint64_t num_scheduling_rounds) {
+bool EventManager::HasSimulationCompleted(uint64_t num_scheduling_rounds) {
   // We only run for the first FLAGS_runtime microseconds.
   if (FLAGS_runtime < current_simulation_time_) {
     LOG(INFO) << "Terminating at : " << current_simulation_time_;
     return true;
   }
-  if (num_events > FLAGS_max_events) {
-    LOG(INFO) << "Terminating after " << num_events << " events";
+  if (num_events_processed_ > FLAGS_max_events) {
+    LOG(INFO) << "Terminating after " << num_events_processed_ << " events";
     return true;
   }
   if (num_scheduling_rounds >= FLAGS_max_scheduling_rounds) {

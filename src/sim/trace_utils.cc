@@ -13,27 +13,27 @@ DEFINE_double(events_fraction, 1.0, "Fraction of events to retain.");
 namespace firmament {
 namespace sim {
 
-void LogStartOfSolverRun(FILE* graph_output,
-                         uint64_t run_solver_at) {
-  LOG(INFO) << "Scheduler run for time: " << run_solver_at;
+void LogStartOfSchedulerRun(FILE* graph_output,
+                            uint64_t run_scheduler_at) {
+  LOG(INFO) << "Scheduler run for time: " << run_scheduler_at;
   if (graph_output) {
-    fprintf(graph_output, "c SOI %jd\n", run_solver_at);
+    fprintf(graph_output, "c SOI %jd\n", run_scheduler_at);
     fflush(graph_output);
   }
 }
 
-void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
-                       FILE* stats_file,
-                       const boost::timer::cpu_timer timer,
-                       uint64_t solver_executed_at,
-                       const scheduler::SchedulerStats& scheduler_stats) {
+void LogSchedulerRunStats(double avg_event_timestamp_in_scheduling_round,
+                          FILE* stats_file,
+                          const boost::timer::cpu_timer timer,
+                          uint64_t scheduler_executed_at,
+                          const scheduler::SchedulerStats& scheduler_stats) {
   if (stats_file) {
     boost::timer::cpu_times total_runtime_cpu_times = timer.elapsed();
     double total_runtime = total_runtime_cpu_times.wall;
     total_runtime /= SECONDS_TO_NANOSECONDS;
     if (FLAGS_batch_step == 0) {
       // online mode
-      double scheduling_latency = solver_executed_at;
+      double scheduling_latency = scheduler_executed_at;
       scheduling_latency += scheduler_stats.algorithm_runtime *
         SECONDS_TO_MICROSECONDS;
       scheduling_latency -= avg_event_timestamp_in_scheduling_round;
@@ -42,12 +42,12 @@ void LogSolverRunStats(double avg_event_timestamp_in_scheduling_round,
       // will be negative if we have not seen any event.
       scheduling_latency = max(0.0, scheduling_latency);
 
-      fprintf(stats_file, "%jd,%lf,%lf,%lf,%lf,", solver_executed_at,
+      fprintf(stats_file, "%jd,%lf,%lf,%lf,%lf,", scheduler_executed_at,
               scheduling_latency, scheduler_stats.algorithm_runtime,
               scheduler_stats.scheduler_runtime, total_runtime);
     } else {
       // batch mode
-      fprintf(stats_file, "%jd,%lf%lf%lf,", solver_executed_at,
+      fprintf(stats_file, "%jd,%lf%lf%lf,", scheduler_executed_at,
               scheduler_stats.algorithm_runtime,
               scheduler_stats.scheduler_runtime, total_runtime);
     }

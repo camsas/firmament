@@ -1,9 +1,9 @@
 // The Firmament project
-// Copyright (c) 2014 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
-// Google cluster trace simulator tool.
-#include "sim/google_trace_simulator.h"
+// Simulator tool.
+
+#include "sim/simulator.h"
 
 #include <signal.h>
 #include <SpookyV2.h>
@@ -22,7 +22,6 @@
 
 #include "misc/string_utils.h"
 #include "misc/utils.h"
-#include "sim/google_trace_loader.h"
 
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;
@@ -36,12 +35,24 @@ DEFINE_bool(graph_output_events, true, "If -graph_output_file specified: "
                                        "export simulator events as comments?");
 DEFINE_string(solver, "flowlessly",
               "Solver to use: flowlessly | cs2 | custom.");
-DEFINE_uint64(solver_timeout, UINT64_MAX,
+DEFINE_uint64(scheduler_timeout, UINT64_MAX,
               "Timeout: terminate after waiting this number of seconds");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
 DEFINE_uint64(heartbeat_interval, 1000000,
               "Heartbeat interval in microseconds.");
+DEFINE_string(trace_path, "", "Path where the trace files are.");
+
+static bool ValidateTracePath(const char* flagname, const string& trace_path) {
+  if (trace_path.empty()) {
+    LOG(ERROR) << "Please specify a path to the Google trace!";
+    return false;
+  }
+  return true;
+}
+
+static const bool trace_path_validator =
+  google::RegisterFlagValidator(&FLAGS_trace_path, &ValidateTracePath);
 
 static bool ValidateSolver(const char* flagname, const string& solver) {
   if (solver.compare("cs2") && solver.compare("flowlessly") &&
@@ -71,11 +82,9 @@ static const bool run_incremental_validator =
 namespace firmament {
 namespace sim {
 
-GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
-  event_manager_(new EventManager), num_duplicate_task_ids_(0),
-  trace_path_(trace_path) {
-  bridge_ = new GoogleTraceBridge(trace_path, event_manager_);
-
+Simulator::Simulator() :
+  event_manager_(new EventManager), num_duplicate_task_ids_(0) {
+  bridge_ = new SimulatorBridge(event_manager_);
   graph_output_ = NULL;
   if (!FLAGS_graph_output_file.empty()) {
     graph_output_ = fopen(FLAGS_graph_output_file.c_str(), "w");
@@ -95,54 +104,21 @@ GoogleTraceSimulator::GoogleTraceSimulator(const string& trace_path) :
   ResetSchedulingLatencyStats();
 }
 
-GoogleTraceSimulator::~GoogleTraceSimulator() {
+Simulator::~Simulator() {
   if (graph_output_) {
     fclose(graph_output_);
   }
   if (stats_file_) {
     fclose(stats_file_);
   }
+  if (task_events_file_) {
+    fclose(task_events_file_);
+  }
   delete bridge_;
   delete event_manager_;
 }
 
-void GoogleTraceSimulator::Run() {
-  FLAGS_add_root_task_to_graph = false;
-  // Terminate if flow solving binary fails.
-  FLAGS_flow_scheduling_strict = true;
-  FLAGS_flow_scheduling_solver = FLAGS_solver;
-  if (!FLAGS_solver.compare("flowlessly")) {
-    FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
-    FLAGS_only_read_assignment_changes = true;
-    FLAGS_flow_scheduling_binary =
-        SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
-  } else if (!FLAGS_solver.compare("cs2")) {
-    FLAGS_incremental_flow = false;
-    FLAGS_only_read_assignment_changes = false;
-    FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-git/cs2.exe";
-  } else if (!FLAGS_solver.compare("custom")) {
-    FLAGS_flow_scheduling_time_reported = true;
-  }
-
-  LOG(INFO) << "Starting Google trace simulator!";
-
-  // Output CSV header.
-  OutputStatsHeader(stats_file_);
-  // Register timeout handler.
-  signal(SIGALRM, GoogleTraceSimulator::SolverTimeoutHandler);
-
-  ReplayTrace();
-  LOG(INFO) << "Simulator has seen " << num_duplicate_task_ids_
-            << " duplicate task ids";
-}
-
-void GoogleTraceSimulator::SolverTimeoutHandler(int sig) {
-  signal(SIGALRM, SIG_IGN);
-  LOG(FATAL) << "Timeout after waiting for solver for "
-             << FLAGS_solver_timeout << " seconds.";
-}
-
-void GoogleTraceSimulator::ProcessSimulatorEvents(
+void Simulator::ProcessSimulatorEvents(
     uint64_t events_up_to_time,
     const ResourceTopologyNodeDescriptor& machine_tmpl) {
   while (true) {
@@ -199,30 +175,55 @@ void GoogleTraceSimulator::ProcessSimulatorEvents(
   }
 }
 
-void GoogleTraceSimulator::ReplayTrace() {
+void Simulator::ReplaySimulation() {
   // Load the trace ingredients
   ResourceTopologyNodeDescriptor machine_tmpl;
-  bridge_->LoadTraceData(&machine_tmpl);
+  bridge_->LoadTraceData(FLAGS_trace_path, &machine_tmpl);
 
-  char line[200];
-  vector<string> vals;
-  FILE* f_task_events_ptr = NULL;
-  uint64_t run_solver_at = 0;
+  uint64_t run_scheduler_at = 0;
   uint64_t current_heartbeat_time = 0;
-  uint64_t num_events = 0;
   uint64_t num_scheduling_rounds = 0;
   ResetSchedulingLatencyStats();
 
-  for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
-       file_num++) {
-    string fname;
-    spf(&fname, "%s/task_events/part-%05d-of-00500.csv", trace_path_.c_str(),
-        file_num);
-    if ((f_task_events_ptr = fopen(fname.c_str(), "r")) == NULL) {
-      LOG(FATAL) << "Failed to open trace for reading of task events.";
+  while (!event_manager_->HasSimulationCompleted(num_scheduling_rounds)) {
+    // Load the task events up to the next scheduler run.
+    LoadTraceTaskEvents(run_scheduler_at);
+    // Add the machine heartbeat events up to the next scheduler run.
+    for (; run_scheduler_at >= current_heartbeat_time;
+         current_heartbeat_time += FLAGS_heartbeat_interval) {
+      EventDescriptor event_desc;
+      event_desc.set_type(EventDescriptor::MACHINE_HEARTBEAT);
+      event_manager_->AddEvent(current_heartbeat_time, event_desc);
     }
-    while (!feof(f_task_events_ptr)) {
-      if (fscanf(f_task_events_ptr, "%[^\n]%*[\n]", &line[0]) > 0) {
+    ProcessSimulatorEvents(run_scheduler_at, machine_tmpl);
+    // Run the scheduler and update the time to run the scheduler at.
+    run_scheduler_at = ScheduleJobsHelper(run_scheduler_at);
+    num_scheduling_rounds++;
+    ResetSchedulingLatencyStats();
+  }
+}
+
+void Simulator::LoadTraceTaskEvents(uint64_t events_up_to_time) {
+  char line[200];
+  vector<string> vals;
+  while (true) {
+    // Check if we're already reading from a file.
+    if (!task_events_file_) {
+      if (current_task_events_file_ < FLAGS_num_files_to_process) {
+        // We still have files to open.
+        string fname;
+        spf(&fname, "%s/task_events/part-%05d-of-00500.csv",
+            FLAGS_trace_path.c_str(), current_task_events_file_);
+        if ((task_events_file_ = fopen(fname.c_str(), "r")) == NULL) {
+          LOG(FATAL) << "Failed to open trace for reading of task events.";
+        }
+      } else {
+        // There are no task events left to load.
+        return;
+      }
+    }
+    while (!feof(task_events_file_)) {
+      if (fscanf(task_events_file_, "%[^\n]%*[\n]", &line[0]) > 0) {
         boost::split(vals, line, is_any_of(","), token_compress_off);
         if (vals.size() != 13) {
           LOG(ERROR) << "Unexpected structure of task event row: found "
@@ -241,7 +242,6 @@ void GoogleTraceSimulator::ReplayTrace() {
             continue;
           }
 
-          num_events++;
           if (event_type == SUBMIT_EVENT) {
             EventDescriptor event_desc;
             event_desc.set_type(EventDescriptor::TASK_SUBMIT);
@@ -252,70 +252,65 @@ void GoogleTraceSimulator::ReplayTrace() {
             // Skip this event and read next event from the trace.
             continue;
           }
-
-          for (; task_event_time > current_heartbeat_time;
-               current_heartbeat_time += FLAGS_heartbeat_interval) {
-            EventDescriptor event_desc;
-            event_desc.set_type(EventDescriptor::MACHINE_HEARTBEAT);
-            event_manager_->AddEvent(current_heartbeat_time, event_desc);
+          if (task_event_time > events_up_to_time) {
+            // We've loaded all the events up to the given time.
+            // NOTE: we also loaded the current task event.
+            return;
           }
-
-          // In this loop we do all the outstanding scheduling rounds
-          // before processing the task event (i.e. scheduling rounds
-          // that must occur before task_event_time).
-          while (task_event_time > run_solver_at) {
-            ProcessSimulatorEvents(run_solver_at, machine_tmpl);
-            // Run the solver and update the time to run the solver at.
-            run_solver_at = RunSolverHelper(run_solver_at);
-            num_scheduling_rounds++;
-            if (event_manager_->HasSimulationCompleted(
-                    num_events, num_scheduling_rounds)) {
-              fclose(f_task_events_ptr);
-              return;
-            }
-            // Make sure run_solver_at is updated if we don't have any events.
-            run_solver_at = max(run_solver_at,
-                                event_manager_->GetTimeOfNextEvent());
-            VLOG(1) << "Run solver by " << run_solver_at;
-            ResetSchedulingLatencyStats();
-          }
-
-          ProcessSimulatorEvents(task_event_time, machine_tmpl);
         }
       }
     }
-    fclose(f_task_events_ptr);
-  }
-  // We have finished the task events, but there may still be machine
-  // events that can trigger other task events. We need to keep on
-  // processing until we finish all the events.
-  while (event_manager_->HasSimulationCompleted(
-      num_events, num_scheduling_rounds) == false) {
-    ProcessSimulatorEvents(run_solver_at, machine_tmpl);
-    // Run the solver and update the time to run the solver at.
-    run_solver_at = RunSolverHelper(run_solver_at);
-    num_scheduling_rounds++;
-    // Make sure run_solver_at is updated if we don't have any events.
-    run_solver_at = max(run_solver_at,
-                        event_manager_->GetTimeOfNextEvent());
-    ResetSchedulingLatencyStats();
+    fclose(task_events_file_);
+    current_task_events_file_++;
+    // We set the file to NULL to indicate that we should open the next file.
+    task_events_file_ = NULL;
   }
 }
 
-void GoogleTraceSimulator::ResetSchedulingLatencyStats() {
+void Simulator::ResetSchedulingLatencyStats() {
   first_event_in_scheduling_round_ = UINT64_MAX;
   last_event_in_scheduling_round_ = 0;
   num_events_in_scheduling_round_ = 0;
   sum_timestamps_in_scheduling_round_ = 0;
 }
 
-uint64_t GoogleTraceSimulator::RunSolverHelper(uint64_t run_solver_at) {
-  LogStartOfSolverRun(graph_output_, run_solver_at);
-  // Set a timeout on the solver's run
-  alarm(FLAGS_solver_timeout);
+void Simulator::Run() {
+  FLAGS_add_root_task_to_graph = false;
+  // Terminate if flow solving binary fails.
+  FLAGS_flow_scheduling_strict = true;
+  FLAGS_flow_scheduling_solver = FLAGS_solver;
+  if (!FLAGS_solver.compare("flowlessly")) {
+    FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
+    FLAGS_only_read_assignment_changes = true;
+    FLAGS_flow_scheduling_binary =
+        SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
+  } else if (!FLAGS_solver.compare("cs2")) {
+    FLAGS_incremental_flow = false;
+    FLAGS_only_read_assignment_changes = false;
+    FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-git/cs2.exe";
+  } else if (!FLAGS_solver.compare("custom")) {
+    FLAGS_flow_scheduling_time_reported = true;
+  }
+
+  LOG(INFO) << "Starting Google trace simulator!";
+
+  // Output CSV header.
+  OutputStatsHeader(stats_file_);
+  // Register timeout handler.
+  signal(SIGALRM, Simulator::SchedulerTimeoutHandler);
+
+  ReplaySimulation();
+  LOG(INFO) << "Simulator has seen " << num_duplicate_task_ids_
+            << " duplicate task ids";
+}
+
+uint64_t Simulator::ScheduleJobsHelper(uint64_t run_scheduler_at) {
+  LogStartOfSchedulerRun(graph_output_, run_scheduler_at);
+  // Set a timeout on the scheduler's run
+  alarm(FLAGS_scheduler_timeout);
   boost::timer::cpu_timer timer;
   scheduler::SchedulerStats scheduler_stats;
-  bridge_->RunSolver(&scheduler_stats);
+  bridge_->ScheduleJobs(&scheduler_stats);
   alarm(0);
 
   double avg_event_timestamp_in_scheduling_round;
@@ -331,14 +326,20 @@ uint64_t GoogleTraceSimulator::RunSolverHelper(uint64_t run_solver_at) {
       num_events_in_scheduling_round_;
   }
   // Log stats to CSV file
-  LogSolverRunStats(avg_event_timestamp_in_scheduling_round, stats_file_, timer,
-                    run_solver_at, scheduler_stats);
+  LogSchedulerRunStats(avg_event_timestamp_in_scheduling_round, stats_file_,
+                       timer, run_scheduler_at, scheduler_stats);
 
-  return event_manager_->GetTimeOfNextSolverRun(
-      run_solver_at, scheduler_stats.scheduler_runtime);
+  return event_manager_->GetTimeOfNextSchedulerRun(
+      run_scheduler_at, scheduler_stats.scheduler_runtime);
 }
 
-void GoogleTraceSimulator::UpdateSchedulingLatencyStats(uint64_t time) {
+void Simulator::SchedulerTimeoutHandler(int sig) {
+  signal(SIGALRM, SIG_IGN);
+  LOG(FATAL) << "Timeout after waiting for scheduler for "
+             << FLAGS_scheduler_timeout << " seconds.";
+}
+
+void Simulator::UpdateSchedulingLatencyStats(uint64_t time) {
   first_event_in_scheduling_round_ =
     min(time, first_event_in_scheduling_round_);
   last_event_in_scheduling_round_ =
