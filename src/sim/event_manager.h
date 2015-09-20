@@ -25,10 +25,6 @@ class EventManager {
    */
   void AddEvent(uint64_t timestamp, EventDescriptor event);
 
-  uint64_t current_simulation_time() {
-    return current_simulation_time_;
-  }
-
   /**
    * Get the next simulated event.
    * @return a pair consisting of a timestamp and an event descriptor
@@ -63,6 +59,10 @@ class EventManager {
    */
   void RemoveTaskEndRuntimeEvent(const TraceTaskIdentifier& task_identifier,
                                  uint64_t task_end_time);
+
+  uint64_t current_simulation_time() {
+    return current_simulation_time_;
+  }
 
  private:
   uint64_t current_simulation_time_;

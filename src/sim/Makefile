@@ -12,7 +12,7 @@ LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_timer \
 LIB =
 SIMULATOR_OBJS = event_manager.o google_trace_loader.o \
                  knowledge_base_simulator.o simulator.o \
-                 simulator_bridge.o trace_utils.o
+                 simulator_bridge.o synthetic_trace_loader.o trace_utils.o
 PROCESSOR_OBJS = google_trace_task_processor.o
 PBS = event_desc.pb.o
 TESTS = event_manager_test simulator_bridge_test
@@ -74,6 +74,7 @@ $(OBJ_DIR)/simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 		$(BUILD_DIR)/sim/simulator_bridge.o \
 		$(BUILD_DIR)/sim/event_manager.o \
 		$(BUILD_DIR)/sim/google_trace_loader.o \
+		$(BUILD_DIR)/sim/synthetic_trace_loader.o \
 		$(BUILD_DIR)/sim/simulator.o \
 		$(BUILD_DIR)/sim/trace_utils.o \
 		$(BUILD_DIR)/sim/event_desc.pb.o \

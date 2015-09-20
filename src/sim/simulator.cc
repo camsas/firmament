@@ -6,7 +6,6 @@
 #include "sim/simulator.h"
 
 #include <signal.h>
-#include <SpookyV2.h>
 #include <sys/stat.h>
 
 #include <algorithm>
@@ -22,12 +21,13 @@
 
 #include "misc/string_utils.h"
 #include "misc/utils.h"
+#include "sim/google_trace_loader.h"
+#include "sim/synthetic_trace_loader.h"
 
 using boost::lexical_cast;
 using boost::algorithm::is_any_of;
 using boost::token_compress_off;
 
-DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(stats_file, "", "File to write CSV of statistics.");
 DEFINE_string(graph_output_file, "",
               "File to write incremental DIMACS export.");
@@ -39,20 +39,10 @@ DEFINE_uint64(scheduler_timeout, UINT64_MAX,
               "Timeout: terminate after waiting this number of seconds");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
-DEFINE_string(trace_path, "", "Path where the trace files are.");
+DEFINE_string(simulation, "google",
+              "The type of simulation to run: google | synthetic");
 
 DECLARE_uint64(heartbeat_interval);
-
-static bool ValidateTracePath(const char* flagname, const string& trace_path) {
-  if (trace_path.empty()) {
-    LOG(ERROR) << "Please specify a path to the Google trace!";
-    return false;
-  }
-  return true;
-}
-
-static const bool trace_path_validator =
-  google::RegisterFlagValidator(&FLAGS_trace_path, &ValidateTracePath);
 
 static bool ValidateSolver(const char* flagname, const string& solver) {
   if (solver.compare("cs2") && solver.compare("flowlessly") &&
@@ -78,6 +68,17 @@ static bool ValidateRunIncremental(const char* flagname, bool run_incremental) {
 static const bool run_incremental_validator =
   google::RegisterFlagValidator(&FLAGS_run_incremental_scheduler,
                                 &ValidateRunIncremental);
+
+static bool ValidateSimulation(const char* flagname, const string& simulation) {
+  if (simulation.compare("google") && simulation.compare("synthetic")) {
+    LOG(ERROR) << "Simulation can be one of: google or synthetic";
+    return false;
+  }
+  return true;
+}
+
+static const bool simulation_validator =
+  google::RegisterFlagValidator(&FLAGS_simulation, &ValidateSimulation);
 
 namespace firmament {
 namespace sim {
@@ -110,9 +111,6 @@ Simulator::~Simulator() {
   }
   if (stats_file_) {
     fclose(stats_file_);
-  }
-  if (task_events_file_) {
-    fclose(task_events_file_);
   }
   delete bridge_;
   delete event_manager_;
@@ -178,7 +176,16 @@ void Simulator::ProcessSimulatorEvents(
 void Simulator::ReplaySimulation() {
   // Load the trace ingredients
   ResourceTopologyNodeDescriptor machine_tmpl;
-  bridge_->LoadTraceData(FLAGS_trace_path, &machine_tmpl);
+  // Import a fictional machine resource topology
+  LoadMachineTemplate(&machine_tmpl);
+  TraceLoader* trace_loader = NULL;
+  if (!FLAGS_simulation.compare("google")) {
+    trace_loader = new GoogleTraceLoader(event_manager_);
+  } else if (!FLAGS_simulation.compare("synthetic")) {
+    trace_loader = new SyntheticTraceLoader(event_manager_);
+  }
+  CHECK_NOTNULL(trace_loader);
+  bridge_->LoadTraceData(trace_loader);
 
   uint64_t run_scheduler_at = 0;
   uint64_t current_heartbeat_time = 0;
@@ -187,7 +194,7 @@ void Simulator::ReplaySimulation() {
 
   while (!event_manager_->HasSimulationCompleted(num_scheduling_rounds)) {
     // Load the task events up to the next scheduler run.
-    LoadTraceTaskEvents(run_scheduler_at);
+    trace_loader->LoadTaskEvents(run_scheduler_at);
     // Add the machine heartbeat events up to the next scheduler run.
     for (; run_scheduler_at >= current_heartbeat_time;
          current_heartbeat_time += FLAGS_heartbeat_interval) {
@@ -201,70 +208,7 @@ void Simulator::ReplaySimulation() {
     num_scheduling_rounds++;
     ResetSchedulingLatencyStats();
   }
-}
-
-void Simulator::LoadTraceTaskEvents(uint64_t events_up_to_time) {
-  char line[200];
-  vector<string> vals;
-  while (true) {
-    // Check if we're already reading from a file.
-    if (!task_events_file_) {
-      if (current_task_events_file_ < FLAGS_num_files_to_process) {
-        // We still have files to open.
-        string fname;
-        spf(&fname, "%s/task_events/part-%05d-of-00500.csv",
-            FLAGS_trace_path.c_str(), current_task_events_file_);
-        if ((task_events_file_ = fopen(fname.c_str(), "r")) == NULL) {
-          LOG(FATAL) << "Failed to open trace for reading of task events.";
-        }
-      } else {
-        // There are no task events left to load.
-        return;
-      }
-    }
-    while (!feof(task_events_file_)) {
-      if (fscanf(task_events_file_, "%[^\n]%*[\n]", &line[0]) > 0) {
-        boost::split(vals, line, is_any_of(","), token_compress_off);
-        if (vals.size() != 13) {
-          LOG(ERROR) << "Unexpected structure of task event row: found "
-                     << vals.size() << " columns.";
-        } else {
-          TraceTaskIdentifier task_id;
-          uint64_t task_event_time = lexical_cast<uint64_t>(vals[0]);
-          task_id.job_id = lexical_cast<uint64_t>(vals[2]);
-          task_id.task_index = lexical_cast<uint64_t>(vals[3]);
-          uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
-
-          // Sub-sample the trace if we only retain < 100% of tasks.
-          if (SpookyHash::Hash64(&task_id, sizeof(task_id), kSeed) >
-              MaxEventIdToRetain()) {
-            // skip event
-            continue;
-          }
-
-          if (event_type == SUBMIT_EVENT) {
-            EventDescriptor event_desc;
-            event_desc.set_type(EventDescriptor::TASK_SUBMIT);
-            event_desc.set_job_id(task_id.job_id);
-            event_desc.set_task_index(task_id.task_index);
-            event_manager_->AddEvent(task_event_time, event_desc);
-          } else {
-            // Skip this event and read next event from the trace.
-            continue;
-          }
-          if (task_event_time > events_up_to_time) {
-            // We've loaded all the events up to the given time.
-            // NOTE: we also loaded the current task event.
-            return;
-          }
-        }
-      }
-    }
-    fclose(task_events_file_);
-    current_task_events_file_++;
-    // We set the file to NULL to indicate that we should open the next file.
-    task_events_file_ = NULL;
-  }
+  delete trace_loader;
 }
 
 void Simulator::ResetSchedulingLatencyStats() {
