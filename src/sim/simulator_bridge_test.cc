@@ -10,6 +10,7 @@
 #include "sim/simulator_bridge.h"
 
 DECLARE_string(machine_tmpl_file);
+DECLARE_string(scheduler);
 
 namespace firmament {
 namespace sim {
@@ -22,6 +23,7 @@ class SimulatorBridgeTest : public ::testing::Test {
       loader_(new GoogleTraceLoader("")) {
     // You can do set-up work for each test here.
     FLAGS_v = 2;
+    FLAGS_scheduler = "flow";
     FLAGS_machine_tmpl_file = "../../../tests/testdata/machine_topo.pbin";
   }
 
