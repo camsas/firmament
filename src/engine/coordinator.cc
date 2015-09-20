@@ -29,7 +29,6 @@
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "scheduling/flow/flow_scheduler.h"
-#include "scheduling/flow/scheduling_parameters.pb.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/simple/simple_scheduler.h"
 #include "storage/simple_object_store.h"
@@ -88,11 +87,10 @@ Coordinator::Coordinator(PlatformID platform_id)
   } else if (FLAGS_scheduler == "flow") {
     // Quincy-style flow-based scheduling
     LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
-    SchedulingParameters params;
     scheduler_ = new FlowScheduler(
         job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, knowledge_base, topology_manager_,
-        m_adapter_, NULL, uuid_, FLAGS_listen_uri, params);
+        m_adapter_, NULL, uuid_, FLAGS_listen_uri);
   } else {
     // Unknown scheduler specified, error.
     LOG(FATAL) << "Unknown or unrecognized scheduler '" << FLAGS_scheduler

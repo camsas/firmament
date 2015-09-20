@@ -49,14 +49,12 @@ FlowScheduler::FlowScheduler(
     MessagingAdapterInterface<BaseMessage>* m_adapter,
     SchedulingEventNotifierInterface* event_notifier,
     ResourceID_t coordinator_res_id,
-    const string& coordinator_uri,
-    const SchedulingParameters& params)
+    const string& coordinator_uri)
     : EventDrivenScheduler(job_map, resource_map, resource_topology,
                            object_store, task_map, knowledge_base, topo_mgr,
                            m_adapter, event_notifier, coordinator_res_id,
                            coordinator_uri),
       topology_manager_(topo_mgr),
-      parameters_(params),
       last_updated_time_dependent_costs_(0ULL),
       leaf_res_ids_(new unordered_set<ResourceID_t,
                       boost::hash<boost::uuids::uuid>>) {
@@ -110,8 +108,6 @@ FlowScheduler::FlowScheduler(
   flow_graph_.reset(new FlowGraph(cost_model_, leaf_res_ids_));
   cost_model_->SetFlowGraph(flow_graph_);
 
-  LOG(INFO) << "FlowScheduler initiated; parameters: "
-            << parameters_.ShortDebugString();
   // Set up the initial flow graph
   UpdateResourceTopology(resource_topology);
   // Set up the dispatcher, which starts the flow solver
