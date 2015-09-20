@@ -34,6 +34,24 @@
       "revId": "8f3145083ffb51e8b76d1f20942427c76fcefc66",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_fc468520",
+        "filename": "src/sim/simulator_bridge_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-20T20:21:40Z",
+      "side": 1,
+      "message": ":D Alright, I\u0027ll disregard it for this CL :)",
+      "parentUuid": "1ae5cdf2_bc45dd18",
+      "revId": "8f3145083ffb51e8b76d1f20942427c76fcefc66",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
