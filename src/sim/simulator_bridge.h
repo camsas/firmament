@@ -1,10 +1,10 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
-// Google trace simulator bridge between the simulator and Firmament.
+// Bridge between the simulator and Firmament.
 
-#ifndef FIRMAMENT_SIM_GOOGLE_TRACE_BRIDGE_H
-#define FIRMAMENT_SIM_GOOGLE_TRACE_BRIDGE_H
+#ifndef FIRMAMENT_SIM_SIMULATOR_BRIDGE_H
+#define FIRMAMENT_SIM_SIMULATOR_BRIDGE_H
 
 #include <map>
 #include <string>
@@ -25,16 +25,16 @@ namespace sim {
 
 using scheduler::SchedulerStats;
 
-class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
+class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
  public:
-  GoogleTraceBridge(const string& trace_path, EventManager* event_manager);
-  virtual ~GoogleTraceBridge();
+  SimulatorBridge(EventManager* event_manager);
+  virtual ~SimulatorBridge();
 
   /**
    * Add new machine to the topology. The method updates simulator's mapping
    * state.
    * @param machine_tmpl the template topology descriptor of the new machine
-   * @param machine_id the google trace machine id
+   * @param machine_id the simulator machine id
    * @return a pointer to the resource descriptor of the new machine
    */
   ResourceDescriptor* AddMachine(
@@ -49,12 +49,13 @@ class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
 
   /**
    * Adds a new task to the flow graph. Updates the internal mappings as well.
-   * @param task_identifier the google trace identifier of the task
+   * @param task_identifier the simulator task identifier
    * @return a pointer to the descriptor of the task
    */
   TaskDescriptor* AddTask(const TraceTaskIdentifier& task_identifier);
 
-  void LoadTraceData(ResourceTopologyNodeDescriptor* machine_tmpl);
+  void LoadTraceData(const string& trace_path,
+                     ResourceTopologyNodeDescriptor* machine_tmpl);
 
   /**
    * Event called by the event driven scheduler upon job completion.
@@ -109,11 +110,11 @@ class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
    * Removes a machine from the topology and all its associated state.
    * NOTE: The method currently assumes that the machine is directly
    * connected to the topology root.
-   * @param machine_id the Google id of the machine to be removed
+   * @param machine_id the simulator id of the machine to be removed
    */
   void RemoveMachine(uint64_t machine_id);
 
-  void RunSolver(SchedulerStats* scheduler_stats);
+  void ScheduleJobs(SchedulerStats* scheduler_stats);
 
   /**
    * Notifies the flow_graph of a task completion and updates the simulator's
@@ -123,13 +124,13 @@ class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
   void TaskCompleted(const TraceTaskIdentifier& task_identifier);
 
  private:
-  FRIEND_TEST(GoogleTraceBridgeTest, AddMachine);
-  FRIEND_TEST(GoogleTraceBridgeTest, AddTask);
-  FRIEND_TEST(GoogleTraceBridgeTest, OnJobCompletion);
-  FRIEND_TEST(GoogleTraceBridgeTest, OnTaskCompletion);
-  FRIEND_TEST(GoogleTraceBridgeTest, OnTaskEviction);
-  FRIEND_TEST(GoogleTraceBridgeTest, OnTaskPlacement);
-  FRIEND_TEST(GoogleTraceBridgeTest, RemoveMachine);
+  FRIEND_TEST(SimulatorBridgeTest, AddMachine);
+  FRIEND_TEST(SimulatorBridgeTest, AddTask);
+  FRIEND_TEST(SimulatorBridgeTest, OnJobCompletion);
+  FRIEND_TEST(SimulatorBridgeTest, OnTaskCompletion);
+  FRIEND_TEST(SimulatorBridgeTest, OnTaskEviction);
+  FRIEND_TEST(SimulatorBridgeTest, OnTaskPlacement);
+  FRIEND_TEST(SimulatorBridgeTest, RemoveMachine);
   /**
    * Add task end event to the simulator event queue.
    * @param task_identifier the trace identifier of the task
@@ -155,7 +156,7 @@ class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
 
   /**
    * Create and populate a new job.
-   * @param job_id the Google trace job id
+   * @param job_id the simulator job id
    * @return a pointer to the job descriptor
    */
   JobDescriptor* PopulateJob(uint64_t job_id);
@@ -183,7 +184,7 @@ class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
 
   EventManager* event_manager_;
 
-  // Map used to convert between the google trace job_ids and the Firmament
+  // Map used to convert between the simulator job_ids and the Firmament
   // job descriptors.
   unordered_map<uint64_t, JobDescriptor*> trace_job_id_to_jd_;
   // Map used to convert between the Firmament job id and the trace job id.
@@ -212,7 +213,7 @@ class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
 
   scheduler::SchedulerInterface* scheduler_;
 
-  // Map from Firmament TaskID_t to Google trace task identifier.
+  // Map from Firmament TaskID_t to simulator trace task identifier.
   unordered_map<TaskID_t, TraceTaskIdentifier> task_id_to_identifier_;
 
   // Map from TaskID_t to TaskDescriptor*
@@ -222,16 +223,14 @@ class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
   unordered_map<TraceTaskIdentifier, uint64_t,
     TraceTaskIdentifierHasher> task_runtime_;
 
-  string trace_path_;
-
-  // Map from the Google machine id to the Firmament rtnd.
+  // Map from the simulator machine id to the Firmament rtnd.
   unordered_map<uint64_t,
     ResourceTopologyNodeDescriptor*> trace_machine_id_to_rtnd_;
 
   unordered_map<TraceTaskIdentifier, TraceTaskStats, TraceTaskIdentifierHasher>
       trace_task_id_to_stats_;
 
-  // Map used to convert between the google trace task_ids and the Firmament
+  // Map used to convert between the simulator task_ids and the Firmament
   // task descriptors.
   unordered_map<TraceTaskIdentifier, TaskDescriptor*, TraceTaskIdentifierHasher>
       trace_task_id_to_td_;
@@ -244,4 +243,4 @@ class GoogleTraceBridge : public scheduler::SchedulingEventNotifierInterface {
 }  // namespace sim
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SIM_GOOGLE_TRACE_BRIDGE_H
+#endif  // FIRMAMENT_SIM_SIMULATOR_BRIDGE_H
