@@ -29,7 +29,6 @@ class TraceLoader {
    * Loads all the machine events and returns a multimap timestamp -> event.
    */
   virtual void LoadMachineEvents(
-      uint64_t max_event_id_to_retain,
       multimap<uint64_t, EventDescriptor>* machine_events) = 0;
 
   /**
@@ -46,7 +45,6 @@ class TraceLoader {
    * Loads all the task runtimes and returns map task_identifier -> runtime.
    */
   virtual void LoadTasksRunningTime(
-      uint64_t max_event_id_to_retain,
       unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
         task_runtime) = 0;
 

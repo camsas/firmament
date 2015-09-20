@@ -17,7 +17,6 @@ void SyntheticTraceLoader::LoadJobsNumTasks(
 }
 
 void SyntheticTraceLoader::LoadMachineEvents(
-    uint64_t max_event_id_to_retain,
     multimap<uint64_t, EventDescriptor>* machine_events) {
   // TODO(ionel): Implement.
 }
@@ -33,7 +32,6 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
 }
 
 void SyntheticTraceLoader::LoadTasksRunningTime(
-    uint64_t max_event_id_to_retain,
     unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
       task_runtime) {
   // TODO(ionel): Implement.

@@ -23,7 +23,6 @@
 using boost::lexical_cast;
 using boost::hash;
 
-DECLARE_double(events_fraction);
 DECLARE_uint64(runtime);
 DECLARE_string(scheduler);
 
@@ -235,14 +234,14 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr) {
 void SimulatorBridge::LoadTraceData(TraceLoader* trace_loader) {
   // Load all the machine events.
   multimap<uint64_t, EventDescriptor> machine_events;
-  trace_loader->LoadMachineEvents(MaxEventIdToRetain(), &machine_events);
+  trace_loader->LoadMachineEvents(&machine_events);
   for (auto& machine_event : machine_events) {
     event_manager_->AddEvent(machine_event.first, machine_event.second);
   }
   // Populate the job_id to number of tasks mapping.
   trace_loader->LoadJobsNumTasks(&job_num_tasks_);
   // Load tasks' runtime.
-  trace_loader->LoadTasksRunningTime(MaxEventIdToRetain(), &task_runtime_);
+  trace_loader->LoadTasksRunningTime(&task_runtime_);
   // Populate the knowledge base.
   trace_loader->LoadTaskUtilizationStats(&trace_task_id_to_stats_);
 }

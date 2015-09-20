@@ -32,9 +32,7 @@ class GoogleTraceLoader : public TraceLoader {
   /**
    * Loads all the machine events and returns a multimap timestamp -> event.
    */
-  void LoadMachineEvents(
-      uint64_t max_event_id_to_retain,
-      multimap<uint64_t, EventDescriptor>* machine_events);
+  void LoadMachineEvents(multimap<uint64_t, EventDescriptor>* machine_events);
 
   /**
    * Loads the trace task events that happened before or at events_up_to_time.
@@ -53,11 +51,12 @@ class GoogleTraceLoader : public TraceLoader {
    * Loads all the task runtimes and returns map task_identifier -> runtime.
    */
   void LoadTasksRunningTime(
-      uint64_t max_event_id_to_retain,
       unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
         task_runtime);
 
  private:
+  uint64_t MaxEventHashToRetain();
+
   // The number of the task events file the simulator is reading from.
   int32_t current_task_events_file_;
   // File from which to read the task events.

@@ -81,8 +81,6 @@ void LogSchedulerRunStats(double avg_event_timestamp_in_scheduling_round,
 void LogStartOfSchedulerRun(FILE* graph_output,
                             uint64_t run_scheduler_at);
 
-uint64_t MaxEventIdToRetain();
-
 void OutputStatsHeader(FILE* stats_file);
 
 EventDescriptor_EventType TranslateMachineEvent(int32_t machine_event);
