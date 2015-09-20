@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_dcf9c9c9",
+        "filename": "src/sim/google_trace_simulator_main.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-20T20:54:32Z",
+      "side": 1,
+      "message": "Hmm...it shows as a deletion because I\u0027ve first moved it to simulator_main and then I had to make some changes in the file.",
+      "parentUuid": "1ae5cdf2_9ccbc1a4",
+      "revId": "08b8f4f0e82041909067bb046511c3960a0a5078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_dcc46994",
         "filename": "src/sim/google_trace_simulator_test.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2015-09-20T20:12:19Z",
       "side": 1,
       "message": "Likewise, is this file no longer in existence, or did you forget to add a new file to the commit?",
+      "revId": "08b8f4f0e82041909067bb046511c3960a0a5078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_bc131d0c",
+        "filename": "src/sim/google_trace_simulator_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-20T20:54:32Z",
+      "side": 1,
+      "message": "I\u0027ve removed this file because it didn\u0027t have any tests.",
+      "parentUuid": "1ae5cdf2_dcc46994",
       "revId": "08b8f4f0e82041909067bb046511c3960a0a5078",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_fcf4c5d0",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-20T20:54:32Z",
+      "side": 1,
+      "message": "We only keep open a file at a time. We should be fine.",
+      "parentUuid": "1ae5cdf2_fcbf65fa",
+      "revId": "08b8f4f0e82041909067bb046511c3960a0a5078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_1cbfb1fc",
         "filename": "src/sim/simulator.cc",
         "patchSetId": 1
@@ -64,6 +118,24 @@
       "writtenOn": "2015-09-20T20:12:19Z",
       "side": 1,
       "message": "Check for success of fclose",
+      "revId": "08b8f4f0e82041909067bb046511c3960a0a5078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_1c0411bf",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-20T20:54:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ae5cdf2_1cbfb1fc",
       "revId": "08b8f4f0e82041909067bb046511c3960a0a5078",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
