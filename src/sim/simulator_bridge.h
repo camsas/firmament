@@ -17,6 +17,7 @@
 #include "scheduling/scheduling_event_notifier_interface.h"
 #include "sim/event_manager.h"
 #include "sim/knowledge_base_simulator.h"
+#include "sim/trace_loader.h"
 #include "sim/trace_utils.h"
 #include "storage/object_store_interface.h"
 
@@ -54,8 +55,7 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
    */
   TaskDescriptor* AddTask(const TraceTaskIdentifier& task_identifier);
 
-  void LoadTraceData(const string& trace_path,
-                     ResourceTopologyNodeDescriptor* machine_tmpl);
+  void LoadTraceData(TraceLoader* trace_loader);
 
   /**
    * Event called by the event driven scheduler upon job completion.

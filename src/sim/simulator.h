@@ -37,15 +37,6 @@ class Simulator {
 
  private:
   /**
-   * Loads the trace task events that happened before or at events_up_to_time.
-   * NOTE: this method might end up loading an event that happened after
-   * events_up_to_time. However, this has no effect on the correctness of the
-   * simulator.
-   * @param events_up_to_time the time up to which to load the events
-   */
-  void LoadTraceTaskEvents(uint64_t events_up_to_time);
-
-  /**
    * Processes all the simulator events that happen at a given time.
    * @param cur_time the timestamp for which to process the simulator events
    * @param machine_tmpl topology to use in case new machines are added
@@ -87,11 +78,6 @@ class Simulator {
   uint64_t last_event_in_scheduling_round_;
   uint64_t num_events_in_scheduling_round_;
   uint64_t sum_timestamps_in_scheduling_round_;
-
-  // File from which to read the task events.
-  FILE* task_events_file_;
-  // The number of the task events file the simulator is reading from.
-  int32_t current_task_events_file_;
 
   // Counter used to store the number of duplicate task ids seed in the trace.
   uint64_t num_duplicate_task_ids_;

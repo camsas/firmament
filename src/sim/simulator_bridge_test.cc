@@ -1,13 +1,14 @@
 // The Firmament project
 // Copyright (c) 2015-2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
-// Tests for the Google trace bridge.
+// Tests for the simulator bridge.
 
 #include <gtest/gtest.h>
 
 #include "misc/utils.h"
 #include "sim/google_trace_loader.h"
 #include "sim/simulator_bridge.h"
+#include "sim/trace_utils.h"
 
 DECLARE_string(machine_tmpl_file);
 DECLARE_string(scheduler);
@@ -20,7 +21,7 @@ class SimulatorBridgeTest : public ::testing::Test {
   SimulatorBridgeTest()
     : event_manager_(new EventManager()),
       bridge_(new SimulatorBridge(event_manager_)),
-      loader_(new GoogleTraceLoader("")) {
+      loader_(new GoogleTraceLoader(event_manager_)) {
     // You can do set-up work for each test here.
     FLAGS_v = 2;
     FLAGS_scheduler = "flow";
@@ -50,7 +51,7 @@ class SimulatorBridgeTest : public ::testing::Test {
 
 TEST_F(SimulatorBridgeTest, AddMachine) {
   ResourceTopologyNodeDescriptor machine_tmpl;
-  loader_->LoadMachineTemplate(&machine_tmpl);
+  LoadMachineTemplate(&machine_tmpl);
   CHECK_EQ(bridge_->resource_map_->size(), 1);
   CHECK_EQ(bridge_->trace_machine_id_to_rtnd_.size(), 0);
   CHECK_EQ(bridge_->machine_res_id_pus_.size(), 0);
@@ -102,7 +103,7 @@ TEST_F(SimulatorBridgeTest, AddTask) {
 
 TEST_F(SimulatorBridgeTest, OnJobCompletion) {
   ResourceTopologyNodeDescriptor machine_tmpl;
-  loader_->LoadMachineTemplate(&machine_tmpl);
+  LoadMachineTemplate(&machine_tmpl);
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
@@ -125,7 +126,7 @@ TEST_F(SimulatorBridgeTest, OnJobCompletion) {
 
 TEST_F(SimulatorBridgeTest, OnTaskCompletion) {
   ResourceTopologyNodeDescriptor machine_tmpl;
-  loader_->LoadMachineTemplate(&machine_tmpl);
+  LoadMachineTemplate(&machine_tmpl);
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
@@ -148,7 +149,7 @@ TEST_F(SimulatorBridgeTest, OnTaskCompletion) {
 
 TEST_F(SimulatorBridgeTest, OnTaskEviction) {
   ResourceTopologyNodeDescriptor machine_tmpl;
-  loader_->LoadMachineTemplate(&machine_tmpl);
+  LoadMachineTemplate(&machine_tmpl);
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
@@ -170,7 +171,7 @@ TEST_F(SimulatorBridgeTest, OnTaskMigration) {
 
 TEST_F(SimulatorBridgeTest, OnTaskPlacement) {
   ResourceTopologyNodeDescriptor machine_tmpl;
-  loader_->LoadMachineTemplate(&machine_tmpl);
+  LoadMachineTemplate(&machine_tmpl);
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
@@ -185,7 +186,7 @@ TEST_F(SimulatorBridgeTest, OnTaskPlacement) {
 
 TEST_F(SimulatorBridgeTest, RemoveMachine) {
   ResourceTopologyNodeDescriptor machine_tmpl;
-  loader_->LoadMachineTemplate(&machine_tmpl);
+  LoadMachineTemplate(&machine_tmpl);
   CHECK_EQ(bridge_->resource_map_->size(), 1);
   CHECK_EQ(bridge_->trace_machine_id_to_rtnd_.size(), 0);
   CHECK_EQ(bridge_->machine_res_id_pus_.size(), 0);
