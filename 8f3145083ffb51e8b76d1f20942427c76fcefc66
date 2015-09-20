@@ -16,6 +16,24 @@
       "revId": "8f3145083ffb51e8b76d1f20942427c76fcefc66",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_bc45dd18",
+        "filename": "src/sim/simulator_bridge_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-20T20:20:41Z",
+      "side": 1,
+      "message": "Hehe...walk away..walk away! I need to investigate it because at some point I was doing some double-freeing. This is the 2nd item on my todo list.",
+      "parentUuid": "1ae5cdf2_7c3b559c",
+      "revId": "8f3145083ffb51e8b76d1f20942427c76fcefc66",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
