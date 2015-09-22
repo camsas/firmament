@@ -10,7 +10,7 @@ LIB = libfirmament_scheduling_flow.a
 OBJS = coco_cost_model.o dimacs_add_node.o dimacs_change_arc.o \
        dimacs_change_stats.o dimacs_exporter.o dimacs_new_arc.o \
        dimacs_remove_node.o flow_graph.o flow_graph_arc.o \
-       flow_graph_bridge.o flow_graph_node.o flow_scheduler.o json_exporter.o \
+       flow_graph_manager.o flow_graph_node.o flow_scheduler.o json_exporter.o \
        octopus_cost_model.o quincy_cost_model.o sjf_cost_model.o \
        solver_dispatcher.o trivial_cost_model.o \
        random_cost_model.o void_cost_model.o wharemap_cost_model.o

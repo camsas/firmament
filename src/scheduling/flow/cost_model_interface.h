@@ -35,7 +35,7 @@ enum CostModelType {
 };
 
 // Forward declarations to avoid cyclic dependencies
-class FlowGraphBridge;
+class FlowGraphManager;
 
 class CostModelInterface {
  public:
@@ -182,13 +182,13 @@ class CostModelInterface {
     return "";
   }
 
-  inline void SetFlowGraphBridge(
-      shared_ptr<FlowGraphBridge> flow_graph_bridge) {
-    flow_graph_bridge_ = flow_graph_bridge;
+  inline void SetFlowGraphManager(
+      shared_ptr<FlowGraphManager> flow_graph_manager) {
+    flow_graph_manager_ = flow_graph_manager;
   }
 
  protected:
-  shared_ptr<FlowGraphBridge> flow_graph_bridge_;
+  shared_ptr<FlowGraphManager> flow_graph_manager_;
 };
 
 }  // namespace firmament

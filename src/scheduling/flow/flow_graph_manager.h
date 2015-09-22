@@ -2,8 +2,8 @@
 // Copyright (c) 2013 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#ifndef FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_BRIDGE_H
-#define FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_BRIDGE_H
+#ifndef FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_MANAGER_H
+#define FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_MANAGER_H
 
 #include <string>
 #include <vector>
@@ -24,12 +24,12 @@ DECLARE_string(flow_scheduling_solver);
 
 namespace firmament {
 
-class FlowGraphBridge {
+class FlowGraphManager {
  public:
-  explicit FlowGraphBridge(CostModelInterface* cost_model,
-                           unordered_set<ResourceID_t,
-                           boost::hash<boost::uuids::uuid>>* leaf_res_ids);
-  virtual ~FlowGraphBridge();
+  explicit FlowGraphManager(CostModelInterface* cost_model,
+                            unordered_set<ResourceID_t,
+                            boost::hash<boost::uuids::uuid>>* leaf_res_ids);
+  virtual ~FlowGraphManager();
   // Public API
   void AddGraphChange(DIMACSChange* change);
   void AddMachine(ResourceTopologyNodeDescriptor* root);
@@ -85,13 +85,13 @@ class FlowGraphBridge {
  protected:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
   FRIEND_TEST(DIMACSExporterTest, ScalabilityTestGraphs);
-  FRIEND_TEST(FlowGraphBridgeTest, AddOrUpdateJobNodes);
-  FRIEND_TEST(FlowGraphBridgeTest, AddResourceNode);
-  FRIEND_TEST(FlowGraphBridgeTest, DeleteTaskNode);
-  FRIEND_TEST(FlowGraphBridgeTest, DeleteResourceNode);
-  FRIEND_TEST(FlowGraphBridgeTest, UnschedAggCapacityAdjustment);
-  FRIEND_TEST(FlowGraphBridgeTest, DeleteReAddResourceTopo);
-  FRIEND_TEST(FlowGraphBridgeTest, DeleteReAddResourceTopoAndJob);
+  FRIEND_TEST(FlowGraphManagerTest, AddOrUpdateJobNodes);
+  FRIEND_TEST(FlowGraphManagerTest, AddResourceNode);
+  FRIEND_TEST(FlowGraphManagerTest, DeleteTaskNode);
+  FRIEND_TEST(FlowGraphManagerTest, DeleteResourceNode);
+  FRIEND_TEST(FlowGraphManagerTest, UnschedAggCapacityAdjustment);
+  FRIEND_TEST(FlowGraphManagerTest, DeleteReAddResourceTopo);
+  FRIEND_TEST(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob);
   void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
                       vector<FlowGraphArc*>* task_arcs);
   void AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
@@ -156,4 +156,4 @@ class FlowGraphBridge {
 
 }  // namespace firmament
 
-#endif  // FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_BRIDGE_H
+#endif  // FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_MANAGER_H

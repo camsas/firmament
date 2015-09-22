@@ -21,7 +21,7 @@
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/dimacs_change_arc.h"
-#include "scheduling/flow/flow_graph_bridge.h"
+#include "scheduling/flow/flow_graph_manager.h"
 
 DECLARE_bool(preemption);
 
@@ -1155,7 +1155,7 @@ FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
     arc->cost_ = new_cost;
     DIMACSChange *chg = new DIMACSChangeArc(*arc);
     chg->set_comment("CoCo/UpdateStats");
-    flow_graph_bridge_->AddGraphChange(chg);
+    flow_graph_manager_->AddGraphChange(chg);
   }
 
   return accumulator;
