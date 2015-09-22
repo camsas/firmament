@@ -25,6 +25,8 @@ class SyntheticTraceLoader : public TraceLoader {
   void LoadTasksRunningTime(
       unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
         task_runtime);
+ private:
+  uint64_t last_generated_job_id_;
 };
 
 }  // namespace sim

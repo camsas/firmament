@@ -43,6 +43,7 @@ DEFINE_string(simulation, "google",
               "The type of simulation to run: google | synthetic");
 
 DECLARE_uint64(heartbeat_interval);
+DECLARE_uint64(runtime);
 
 static bool ValidateSolver(const char* flagname, const string& solver) {
   if (solver.compare("cs2") && solver.compare("flowlessly") &&
@@ -202,11 +203,15 @@ void Simulator::ReplaySimulation() {
       event_desc.set_type(EventDescriptor::MACHINE_HEARTBEAT);
       event_manager_->AddEvent(current_heartbeat_time, event_desc);
     }
-    ProcessSimulatorEvents(run_scheduler_at, machine_tmpl);
-    // Run the scheduler and update the time to run the scheduler at.
-    run_scheduler_at = ScheduleJobsHelper(run_scheduler_at);
-    num_scheduling_rounds++;
-    ResetSchedulingLatencyStats();
+    if (run_scheduler_at <= FLAGS_runtime) {
+      ProcessSimulatorEvents(run_scheduler_at, machine_tmpl);
+      // Run the scheduler and update the time to run the scheduler at.
+      run_scheduler_at = ScheduleJobsHelper(run_scheduler_at);
+      num_scheduling_rounds++;
+      ResetSchedulingLatencyStats();
+    } else {
+      ProcessSimulatorEvents(FLAGS_runtime, machine_tmpl);
+    }
   }
   delete trace_loader;
 }

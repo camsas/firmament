@@ -33,6 +33,7 @@ void KnowledgeBaseSimulator::AddMachineSample(
   vector<double> cpus_usage(num_cores, 1.0);
   for (auto& task_id_rd : task_id_to_rd) {
     TraceTaskStats* task_stat = FindOrNull(task_stats_, task_id_rd.first);
+    CHECK_NOTNULL(task_stat);
     mem_usage += task_stat->avg_canonical_mem_usage +
       task_stat->avg_unmapped_page_cache -
       task_stat->avg_total_page_cache;
@@ -47,6 +48,7 @@ void KnowledgeBaseSimulator::AddMachineSample(
     // core. Change the code to handle this case as well.
     // TODO(ionel): This assumes that all the machines in the trace are the
     // same. The reported cpu_usage is relative to the machine type. Fix!
+    CHECK_LT(core_id, num_cores);
     cpus_usage[core_id] -= task_stat->avg_mean_cpu_usage;
   }
   // RAM stats
