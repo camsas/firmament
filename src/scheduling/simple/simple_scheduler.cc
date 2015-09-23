@@ -5,12 +5,15 @@
 
 #include "scheduling/simple/simple_scheduler.h"
 
+#include <boost/timer/timer.hpp>
+
 #include <deque>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "base/units.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "storage/object_store_interface.h"
@@ -97,7 +100,6 @@ void SimpleScheduler::PopulateSchedulerTaskUI(TaskID_t task_id,
 }
 
 uint64_t SimpleScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats) {
-  // TODO(ionel): Populate scheduler stats.
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   vector<JobDescriptor*> jobs;
   for (auto& job_id_jd : jobs_to_schedule_) {
@@ -110,11 +112,11 @@ uint64_t SimpleScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats) {
 
 uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
                                       SchedulerStats* scheduler_stats) {
-  // TODO(ionel): Populate scheduler stats.
   uint64_t num_scheduled_tasks = 0;
   VLOG(2) << "Preparing to schedule job " << jd_ptr->uuid();
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   LOG(INFO) << "START SCHEDULING " << jd_ptr->uuid();
+  boost::timer::cpu_timer scheduler_timer;
   // Get the set of runnable tasks for this job
   set<TaskID_t> runnable_tasks = RunnableTasksForJob(jd_ptr);
   VLOG(2) << "Scheduling job " << jd_ptr->uuid() << ", which has "
@@ -144,17 +146,25 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
   }
   if (num_scheduled_tasks > 0)
     jd_ptr->set_state(JobDescriptor::RUNNING);
+  if (scheduler_stats != NULL) {
+    scheduler_stats->scheduler_runtime = scheduler_timer.elapsed().wall;
+    scheduler_stats->scheduler_runtime /= NANOSECONDS_IN_SECOND;
+  }
   LOG(INFO) << "STOP SCHEDULING " << jd_ptr->uuid();
   return num_scheduled_tasks;
 }
 
 uint64_t SimpleScheduler::ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
                                        SchedulerStats* scheduler_stats) {
-  // TODO(ionel): Populate scheduler stats.
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   uint64_t num_scheduled_tasks = 0;
+  boost::timer::cpu_timer scheduler_timer;
   for (auto& jd_ptr : jds_ptr) {
     num_scheduled_tasks += ScheduleJob(jd_ptr, scheduler_stats);
+  }
+  if (scheduler_stats != NULL) {
+    scheduler_stats->scheduler_runtime = scheduler_timer.elapsed().wall;
+    scheduler_stats->scheduler_runtime /= NANOSECONDS_IN_SECOND;
   }
   return num_scheduled_tasks;
 }
