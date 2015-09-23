@@ -18,7 +18,7 @@ endif
 
 LIB = libfirmament_engine.a
 TASK_LIB = libfirmament_task_lib.a
-BINS = coordinator worker coordinator_sim
+BINS = coordinator worker
 GENERIC_OBJS = health_monitor.o node.o
 COORD_OBJS = $(GENERIC_OBJS) coordinator.o
 ifdef BUILD_HTTP_UI
@@ -130,45 +130,6 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 		$(LIBS) $(HTTP_UI_LIBS) \
 		-o $(BUILD_DIR)/engine/coordinator, \
 		"  DYNLNK  $(BUILD_DIR)/engine/coordinator")
-
-# XXX(malte): temporary hack
-$(OBJ_DIR)/coordinator_sim: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
-	$(BUILD_DIR)/sim/libfirmament_sim.a \
-	$(BUILD_DIR)/base/libfirmament_base.a \
-	$(BUILD_DIR)/misc/libfirmament_misc.a \
-	$(BUILD_DIR)/messages/libfirmament_messages.a \
-	$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
-	$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
-	$(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
-	$(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
-	$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
-	$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
-	$(BUILD_DIR)/storage/libfirmament_storage.a \
-	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a
-	$(call quiet-command, \
-		$(CXX) $(CPPFLAGS) \
-		$(SRC_ROOT_DIR)/engine/coordinator_main.cc \
-		$(OPTFLAGS) -fsanitize=address $(DEFINES) \
-		$(BUILD_DIR)/scheduling/knowledge_base.o \
-		$(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
-		$(BUILD_DIR)/platforms/common.pb.o \
-		$(BUILD_DIR)/messages/libfirmament_messages.a \
-		$(BUILD_DIR)/scheduling/common.o \
-		$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
-		$(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
-		$(BUILD_DIR)/scheduling/simple/libfirmament_scheduling_simple.a \
-		$(BUILD_DIR)/scheduling/flow/sim/libfirmament_simulated_quincy.a \
-		$(BUILD_DIR)/sim/dfs/libfirmament_sim_dfs.a \
-		$(BUILD_DIR)/engine/executors/libfirmament_engine_executors.a \
-		$(BUILD_DIR)/base/libfirmament_base.a \
-		$(BUILD_DIR)/misc/libfirmament_misc.a \
-		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
-		$(BUILD_DIR)/storage/libfirmament_storage.a \
-		$(BUILD_DIR)/sim/libfirmament_sim.a \
-		$(LIBS) $(HTTP_UI_LIBS) \
-		-o $(BUILD_DIR)/engine/coordinator_sim \
-		-D__SIMULATE_SYNTHETIC_DTG__, \
-		"  DYNLNK  $(BUILD_DIR)/engine/coordinator_sim")
 
 $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
