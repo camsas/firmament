@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_e5e7c03e",
+        "filename": "src/sim/google_trace_loader.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-23T20:09:53Z",
+      "side": 1,
+      "message": "When would that happen? If the events are out of order in the trace?",
+      "revId": "1681f00871604f2f22a1ea5538d0c95c52ae1280",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_25d1a857",
+        "filename": "src/sim/google_trace_loader.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-23T20:09:53Z",
+      "side": 1,
+      "message": "I\u0027d suggest renaming this to current_task_events_file_id_, to make it clear that it\u0027s an integer identifier, rather than a file handle.",
+      "revId": "1681f00871604f2f22a1ea5538d0c95c52ae1280",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_6542d011",
+        "filename": "src/sim/trace_utils.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-23T20:09:53Z",
+      "side": 1,
+      "message": "Not for this CL, but we should make a mental note that this method is a bit of a hack. Rather than clumsily building the path here, we should have a standard way of specifying paths relative to the coordinator directory (or offload responsibility onto the user to specify valid path arguments).",
+      "revId": "1681f00871604f2f22a1ea5538d0c95c52ae1280",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
