@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1ae5cdf2_a5269814",
+        "filename": "src/sim/google_trace_loader.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-24T02:05:29Z",
+      "side": 1,
+      "message": "This happens all the time we read events from files because we read the events one by one. We only find out that an event timestamp is greater than events_up_to_time after we read the event. One solution would be to buffer it locally in the trace_loader or the solution I\u0027ve adopted (i.e., just add the event as well because it\u0027s going to affect the correctness simulation).",
+      "parentUuid": "1ae5cdf2_e5e7c03e",
+      "revId": "1681f00871604f2f22a1ea5538d0c95c52ae1280",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ae5cdf2_25d1a857",
         "filename": "src/sim/google_trace_loader.h",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2015-09-23T20:09:53Z",
       "side": 1,
       "message": "I\u0027d suggest renaming this to current_task_events_file_id_, to make it clear that it\u0027s an integer identifier, rather than a file handle.",
+      "revId": "1681f00871604f2f22a1ea5538d0c95c52ae1280",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1ae5cdf2_650d7090",
+        "filename": "src/sim/google_trace_loader.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2015-09-24T02:05:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ae5cdf2_25d1a857",
       "revId": "1681f00871604f2f22a1ea5538d0c95c52ae1280",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
