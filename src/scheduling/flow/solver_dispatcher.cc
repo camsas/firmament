@@ -11,6 +11,7 @@
 #include <boost/timer/timer.hpp>
 
 #include "base/common.h"
+#include "base/units.h"
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 
@@ -263,9 +264,8 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   }
 
   if (scheduler_stats != NULL) {
-    boost::timer::nanosecond_type one_second = 1e9;
     scheduler_stats->scheduler_runtime = flowsolver_timer.elapsed().wall;
-    scheduler_stats->scheduler_runtime /= one_second;
+    scheduler_stats->scheduler_runtime /= NANOSECONDS_IN_SECOND;
   }
 
   if (!FLAGS_incremental_flow) {
