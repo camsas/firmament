@@ -48,13 +48,6 @@ uint64_t GetCurrentTimestamp() {
   CHECK_NOTNULL(job);
   boost::hash<string> hasher;
   return hasher(job->name());
-}
-
-uint64_t MakeEnsembleUID(Ensemble *ens) {
-  CHECK_NOTNULL(ens);
-  VLOG(1) << ens->name();
-  boost::hash<string> hasher;
-  return hasher(ens->name());
 }*/
 
 // Helper function to get the directory in which the currently
