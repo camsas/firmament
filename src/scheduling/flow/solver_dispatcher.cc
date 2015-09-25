@@ -49,7 +49,8 @@ SolverDispatcher::SolverDispatcher(
     bool solver_ran_once)
   : flow_graph_bridge_(flow_graph_bridge),
     solver_ran_once_(solver_ran_once),
-    debug_seq_num_(0) {
+    debug_seq_num_(0), to_solver_(NULL), from_solver_(NULL),
+    from_solver_stderr_(NULL) {
   // Set up debug directory if it doesn't exist
   struct stat st;
   if (!FLAGS_debug_output_dir.empty() &&

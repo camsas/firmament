@@ -29,7 +29,7 @@ class SimulatorBridgeTest : public ::testing::Test {
   }
 
   virtual ~SimulatorBridgeTest() {
-    //    delete bridge_;
+    delete bridge_;
     delete event_manager_;
     delete loader_;
   }
