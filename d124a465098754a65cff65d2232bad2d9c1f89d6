@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_318d5432",
+        "filename": "src/sim/google_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-30T15:25:38Z",
+      "side": 1,
+      "message": "Hmm, this changes the functionality, doesn\u0027t it? There\u0027s a possible problem with the approach of filtering jobs: some jobs in the trace are very large, and if you\u0027re simulating a small cluster, they may be larger than the entire cluster resources (and thus never schedule or complete). I believe that\u0027s why Adam filtered the tasks instead.",
+      "revId": "d124a465098754a65cff65d2232bad2d9c1f89d6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
