@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ae5cdf2_71035c73",
+        "filename": "src/sim/synthetic_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-09-30T15:56:35Z",
+      "side": 1,
+      "message": "Am I correct in reading this code as using a Uniform random distribution for generating parameters? (It\u0027s fine, we should just document it -- in practice, job arrivals and job sizes don\u0027t follow uniform distributions.)",
+      "revId": "43c8211bbaab80e134aab56ff0a6b9173d18aa32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
