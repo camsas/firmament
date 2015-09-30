@@ -3,7 +3,7 @@
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 //
 
-#include "scheduling/flow/flow_graph_bridge.h"
+#include "scheduling/flow/flow_graph_manager.h"
 
 #include <algorithm>
 #include <queue>
@@ -33,9 +33,10 @@ DEFINE_bool(add_root_task_to_graph, true, "Add the job root task to the graph");
 
 namespace firmament {
 
-FlowGraphBridge::FlowGraphBridge(CostModelInterface *cost_model,
-                                 unordered_set<ResourceID_t,
-                                 boost::hash<boost::uuids::uuid>>* leaf_res_ids)
+FlowGraphManager::FlowGraphManager(
+    CostModelInterface *cost_model,
+    unordered_set<ResourceID_t,
+    boost::hash<boost::uuids::uuid>>* leaf_res_ids)
     : cost_model_(cost_model),
       flow_graph_(new FlowGraph),
       leaf_res_ids_(leaf_res_ids) {
@@ -43,7 +44,7 @@ FlowGraphBridge::FlowGraphBridge(CostModelInterface *cost_model,
   AddSpecialNodes();
 }
 
-FlowGraphBridge::~FlowGraphBridge() {
+FlowGraphManager::~FlowGraphManager() {
   // We don't delete cost_model_ because it's owned by the FlowScheduler.
   delete flow_graph_;
   ResetChanges();
@@ -51,9 +52,9 @@ FlowGraphBridge::~FlowGraphBridge() {
   // nodes and arcs in the flow graph (which are allocated on the heap)
 }
 
-void FlowGraphBridge::AddArcsForTask(FlowGraphNode* task_node,
-                                     FlowGraphNode* unsched_agg_node,
-                                     vector<FlowGraphArc*>* task_arcs) {
+void FlowGraphManager::AddArcsForTask(FlowGraphNode* task_node,
+                                      FlowGraphNode* unsched_agg_node,
+                                      vector<FlowGraphArc*>* task_arcs) {
   // Cost model may need to do some setup for newly added tasks
   cost_model_->AddTask(task_node->task_id_);
   // We always have an edge to our job's unscheduled node
@@ -84,8 +85,8 @@ void FlowGraphBridge::AddArcsForTask(FlowGraphNode* task_node,
   delete task_pref_arcs;
 }
 
-void FlowGraphBridge::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
-                                                   FlowGraphNode* ec_node) {
+void FlowGraphManager::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
+                                                    FlowGraphNode* ec_node) {
   pair<vector<EquivClass_t>*,
        vector<EquivClass_t>*> equiv_class_to_connect =
     cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
@@ -139,7 +140,7 @@ void FlowGraphBridge::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
   }
 }
 
-FlowGraphNode* FlowGraphBridge::AddEquivClassNode(EquivClass_t ec) {
+FlowGraphNode* FlowGraphManager::AddEquivClassNode(EquivClass_t ec) {
   VLOG(2) << "Add equiv class " << ec;
   vector<FlowGraphArc*> ec_arcs;
   // Add the equivalence class flow graph node.
@@ -162,18 +163,18 @@ FlowGraphNode* FlowGraphBridge::AddEquivClassNode(EquivClass_t ec) {
   return ec_node;
 }
 
-void FlowGraphBridge::AddGraphChange(DIMACSChange* change) {
+void FlowGraphManager::AddGraphChange(DIMACSChange* change) {
   if (change->comment().empty()) {
     change->set_comment("AddGraphChange: anonymous caller");
   }
   graph_changes_.push_back(change);
 }
 
-void FlowGraphBridge::AddMachine(ResourceTopologyNodeDescriptor* root) {
+void FlowGraphManager::AddMachine(ResourceTopologyNodeDescriptor* root) {
   UpdateResourceTopology(root);
 }
 
-void FlowGraphBridge::AddOrUpdateJobNodes(JobDescriptor* jd) {
+void FlowGraphManager::AddOrUpdateJobNodes(JobDescriptor* jd) {
   // First add an unscheduled aggregator node for this job
   // if none exists alread
   FlowGraphArc* unsched_agg_to_sink_arc = NULL;
@@ -313,7 +314,7 @@ void FlowGraphBridge::AddOrUpdateJobNodes(JobDescriptor* jd) {
   unsched_agg_node->excess_ = 0;
 }
 
-void FlowGraphBridge::AddResourceEquivClasses(FlowGraphNode* res_node) {
+void FlowGraphManager::AddResourceEquivClasses(FlowGraphNode* res_node) {
   ResourceID_t res_id = res_node->resource_id_;
   vector<EquivClass_t>* equiv_classes =
     cost_model_->GetResourceEquivClasses(res_id);
@@ -362,17 +363,17 @@ void FlowGraphBridge::AddResourceEquivClasses(FlowGraphNode* res_node) {
   delete equiv_classes;
 }
 
-void FlowGraphBridge::AddResourceTopology(
+void FlowGraphManager::AddResourceTopology(
     ResourceTopologyNodeDescriptor* resource_tree) {
   BFSTraverseResourceProtobufTreeReturnRTND(
       resource_tree,
-      boost::bind(&FlowGraphBridge::AddResourceNode, this, _1));
+      boost::bind(&FlowGraphManager::AddResourceNode, this, _1));
   BFSTraverseResourceProtobufTreeReturnRTND(
       resource_tree,
-      boost::bind(&FlowGraphBridge::ConfigureResourceNodeECs, this, _1));
+      boost::bind(&FlowGraphManager::ConfigureResourceNodeECs, this, _1));
 }
 
-void FlowGraphBridge::AddResourceNode(
+void FlowGraphManager::AddResourceNode(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   FlowGraphNode* new_node;
   CHECK_NOTNULL(rtnd_ptr);
@@ -461,7 +462,7 @@ void FlowGraphBridge::AddResourceNode(
   }
 }
 
-void FlowGraphBridge::AddOrUpdateEquivClassArcs(
+void FlowGraphManager::AddOrUpdateEquivClassArcs(
     EquivClass_t ec,
     vector<FlowGraphArc*>* ec_arcs) {
   FlowGraphNode* ec_node = FindPtrOrNull(tec_to_node_, ec);
@@ -579,7 +580,7 @@ void FlowGraphBridge::AddOrUpdateEquivClassArcs(
   delete res_pref_arcs;
 }
 
-void FlowGraphBridge::AddSpecialNodes() {
+void FlowGraphManager::AddSpecialNodes() {
   // Sink node
   sink_node_ = flow_graph_->AddNode();
   sink_node_->type_ = FlowNodeType::SINK;
@@ -590,7 +591,7 @@ void FlowGraphBridge::AddSpecialNodes() {
   // equivalence class.
 }
 
-void FlowGraphBridge::AddTaskEquivClasses(FlowGraphNode* task_node) {
+void FlowGraphManager::AddTaskEquivClasses(FlowGraphNode* task_node) {
   vector<EquivClass_t>* equiv_classes =
     cost_model_->GetTaskEquivClasses(task_node->task_id_);
   // If there are no equivalence classes, there's nothing to do
@@ -628,8 +629,8 @@ void FlowGraphBridge::AddTaskEquivClasses(FlowGraphNode* task_node) {
   delete equiv_classes;
 }
 
-uint64_t FlowGraphBridge::CapacityBetweenECNodes(const FlowGraphNode& src,
-                                                 const FlowGraphNode& dst) {
+uint64_t FlowGraphManager::CapacityBetweenECNodes(const FlowGraphNode& src,
+                                                  const FlowGraphNode& dst) {
   // Compute sum of incoming capacities at src
   uint64_t in_sum = 0;
   for (auto& incoming_arc : src.incoming_arc_map_) {
@@ -643,18 +644,18 @@ uint64_t FlowGraphBridge::CapacityBetweenECNodes(const FlowGraphNode& src,
   return max(in_sum, out_sum);
 }
 
-bool FlowGraphBridge::CheckNodeType(uint64_t node, FlowNodeType type) {
+bool FlowGraphManager::CheckNodeType(uint64_t node, FlowNodeType type) {
   FlowNodeType node_type = flow_graph_->Node(node)->type_;
   return (node_type == type);
 }
 
-void FlowGraphBridge::ComputeTopologyStatistics(
+void FlowGraphManager::ComputeTopologyStatistics(
     FlowGraphNode* node,
     boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather) {
   ComputeTopologyStatistics(node, NULL, gather);
 }
 
-void FlowGraphBridge::ComputeTopologyStatistics(
+void FlowGraphManager::ComputeTopologyStatistics(
     FlowGraphNode* node,
     boost::function<void(FlowGraphNode*)> prepare,
     boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather) {
@@ -678,7 +679,7 @@ void FlowGraphBridge::ComputeTopologyStatistics(
   }
 }
 
-void FlowGraphBridge::ConfigureResourceBranchNode(
+void FlowGraphManager::ConfigureResourceBranchNode(
     const ResourceTopologyNodeDescriptor& rtnd, FlowGraphNode* new_node) {
   // Add internal arc from parent
   if (rtnd.has_parent_id()) {
@@ -718,7 +719,7 @@ void FlowGraphBridge::ConfigureResourceBranchNode(
   }
 }
 
-void FlowGraphBridge::ConfigureResourceLeafNode(
+void FlowGraphManager::ConfigureResourceLeafNode(
     const ResourceTopologyNodeDescriptor& rtnd, FlowGraphNode* new_node) {
   VLOG(2) << "Considering node " << rtnd.resource_desc().uuid()
           << ", which has parent "
@@ -769,7 +770,7 @@ void FlowGraphBridge::ConfigureResourceLeafNode(
   }
 }
 
-void FlowGraphBridge::ConfigureResourceNodeECs(
+void FlowGraphManager::ConfigureResourceNodeECs(
     ResourceTopologyNodeDescriptor* rtnd) {
   FlowGraphNode* node = NodeForResourceID(
       ResourceIDFromString(rtnd->resource_desc().uuid()));
@@ -780,7 +781,8 @@ void FlowGraphBridge::ConfigureResourceNodeECs(
   }
 }
 
-uint32_t FlowGraphBridge::CountTaskSlotsBelowResourceNode(FlowGraphNode* node) {
+uint32_t FlowGraphManager::CountTaskSlotsBelowResourceNode(
+    FlowGraphNode* node) {
   uint32_t task_slot_count = 0;
   // Iterate over the children of this node to find leaves and aggregate
   // their capacities to the sink.
@@ -805,8 +807,8 @@ uint32_t FlowGraphBridge::CountTaskSlotsBelowResourceNode(FlowGraphNode* node) {
   return task_slot_count;
 }
 
-void FlowGraphBridge::DeleteResourceNode(FlowGraphNode* res_node,
-                                         const char *comment) {
+void FlowGraphManager::DeleteResourceNode(FlowGraphNode* res_node,
+                                          const char *comment) {
   ResourceID_t res_id = res_node->resource_id_;
   ResourceID_t res_id_tmp = res_id;
   resource_to_parent_map_.erase(res_id);
@@ -832,8 +834,8 @@ void FlowGraphBridge::DeleteResourceNode(FlowGraphNode* res_node,
   delete equiv_classes;
 }
 
-void FlowGraphBridge::DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv,
-                                                      const char *comment) {
+void FlowGraphManager::DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv,
+                                                       const char *comment) {
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
   if (equiv_node_ptr == NULL) {
     // Equiv class node can be NULL because all it's task are running
@@ -856,8 +858,8 @@ void FlowGraphBridge::DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv,
   }
 }
 
-void FlowGraphBridge::DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
-                                                      const char *comment) {
+void FlowGraphManager::DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
+                                                       const char *comment) {
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
   if (equiv_node_ptr == NULL) {
     // Equiv class node can be NULL because all it's task are running
@@ -880,7 +882,7 @@ void FlowGraphBridge::DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
   }
 }
 
-void FlowGraphBridge::DeleteTaskNode(TaskID_t task_id, const char *comment) {
+void FlowGraphManager::DeleteTaskNode(TaskID_t task_id, const char *comment) {
   uint64_t* node_id = FindOrNull(task_to_nodeid_map_, task_id);
   CHECK_NOTNULL(node_id);
   FlowGraphNode* node = flow_graph_->Node(*node_id);
@@ -914,7 +916,7 @@ void FlowGraphBridge::DeleteTaskNode(TaskID_t task_id, const char *comment) {
   delete equiv_classes;
 }
 
-void FlowGraphBridge::JobCompleted(JobID_t job_id) {
+void FlowGraphManager::JobCompleted(JobID_t job_id) {
   uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
   CHECK_NOTNULL(unsched_node_id);
   FlowGraphNode* node = flow_graph_->Node(*unsched_node_id);
@@ -941,7 +943,7 @@ void FlowGraphBridge::JobCompleted(JobID_t job_id) {
 }
 
 
-FlowGraphNode* FlowGraphBridge::NodeForResourceID(const ResourceID_t& res_id) {
+FlowGraphNode* FlowGraphManager::NodeForResourceID(const ResourceID_t& res_id) {
   uint64_t* id = FindOrNull(resource_to_nodeid_map_, res_id);
   // Returns NULL if resource unknown
   if (!id)
@@ -950,7 +952,7 @@ FlowGraphNode* FlowGraphBridge::NodeForResourceID(const ResourceID_t& res_id) {
   return flow_graph_->Node(*id);
 }
 
-FlowGraphNode* FlowGraphBridge::NodeForTaskID(TaskID_t task_id) {
+FlowGraphNode* FlowGraphManager::NodeForTaskID(TaskID_t task_id) {
   uint64_t* id = FindOrNull(task_to_nodeid_map_, task_id);
   // Returns NULL if task unknown
   if (!id)
@@ -959,8 +961,8 @@ FlowGraphNode* FlowGraphBridge::NodeForTaskID(TaskID_t task_id) {
   return flow_graph_->Node(*id);
 }
 
-void FlowGraphBridge::PinTaskToNode(FlowGraphNode* task_node,
-                                    FlowGraphNode* res_node) {
+void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
+                                     FlowGraphNode* res_node) {
   // Remove all arcs apart from the task -> resource mapping;
   // note that this effectively disables preemption!
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
@@ -987,7 +989,7 @@ void FlowGraphBridge::PinTaskToNode(FlowGraphNode* task_node,
   AddGraphChange(chg);
 }
 
-void FlowGraphBridge::RemoveMachine(ResourceID_t res_id) {
+void FlowGraphManager::RemoveMachine(ResourceID_t res_id) {
   generate_trace_.RemoveMachine(res_id);
   uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
   CHECK_NOTNULL(node_id);
@@ -995,7 +997,7 @@ void FlowGraphBridge::RemoveMachine(ResourceID_t res_id) {
   cost_model_->RemoveMachine(res_id);
 }
 
-void FlowGraphBridge::RemoveMachineSubTree(FlowGraphNode* res_node) {
+void FlowGraphManager::RemoveMachineSubTree(FlowGraphNode* res_node) {
   while (true) {
     unordered_map<uint64_t, FlowGraphArc*>::iterator
       it = res_node->outgoing_arc_map_.begin();
@@ -1021,13 +1023,13 @@ void FlowGraphBridge::RemoveMachineSubTree(FlowGraphNode* res_node) {
   DeleteResourceNode(res_node, "RemoveMachineSubTree");
 }
 
-void FlowGraphBridge::TaskCompleted(TaskID_t tid) {
+void FlowGraphManager::TaskCompleted(TaskID_t tid) {
   generate_trace_.TaskCompleted(tid);
   DeleteTaskNode(tid, "TaskCompleted");
   cost_model_->RemoveTask(tid);
 }
 
-void FlowGraphBridge::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
+void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
   generate_trace_.TaskEvicted(tid);
   FlowGraphNode* task_node = NodeForTaskID(tid);
   CHECK_NOTNULL(task_node);
@@ -1038,26 +1040,26 @@ void FlowGraphBridge::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
   // UpdateArcsForEvictedTask.
 }
 
-void FlowGraphBridge::TaskFailed(TaskID_t tid) {
+void FlowGraphManager::TaskFailed(TaskID_t tid) {
   generate_trace_.TaskFailed(tid);
   DeleteTaskNode(tid, "TaskFailed");
   cost_model_->RemoveTask(tid);
 }
 
-void FlowGraphBridge::TaskKilled(TaskID_t tid) {
+void FlowGraphManager::TaskKilled(TaskID_t tid) {
   generate_trace_.TaskKilled(tid);
   DeleteTaskNode(tid, "TaskKilled");
   cost_model_->RemoveTask(tid);
 }
 
-void FlowGraphBridge::TaskMigrated(TaskID_t tid,
-                                   ResourceID_t old_res_id,
-                                   ResourceID_t new_res_id) {
+void FlowGraphManager::TaskMigrated(TaskID_t tid,
+                                    ResourceID_t old_res_id,
+                                    ResourceID_t new_res_id) {
   TaskEvicted(tid, old_res_id);
   TaskScheduled(tid, new_res_id);
 }
 
-void FlowGraphBridge::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
+void FlowGraphManager::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
   generate_trace_.TaskScheduled(tid, res_id);
   // Mark the task as scheduled
   FlowGraphNode* node = NodeForTaskID(tid);
@@ -1070,7 +1072,7 @@ void FlowGraphBridge::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
   UpdateArcsForBoundTask(tid, res_id);
 }
 
-FlowGraphNode* FlowGraphBridge::UnscheduledAggregatorForJobID(JobID_t job_id) {
+FlowGraphNode* FlowGraphManager::UnscheduledAggregatorForJobID(JobID_t job_id) {
   uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
   if (unsched_agg_node_id == NULL) {
     LOG(WARNING) << "Job " << job_id << " does not have an unscheduled "
@@ -1080,8 +1082,8 @@ FlowGraphNode* FlowGraphBridge::UnscheduledAggregatorForJobID(JobID_t job_id) {
   return flow_graph_->Node(*unsched_agg_node_id);
 }
 
-void FlowGraphBridge::UpdateArcsForBoundTask(TaskID_t tid,
-                                             ResourceID_t res_id) {
+void FlowGraphManager::UpdateArcsForBoundTask(TaskID_t tid,
+                                              ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(tid);
   FlowGraphNode* assigned_res_node = NodeForResourceID(res_id);
   CHECK_NOTNULL(task_node);
@@ -1096,8 +1098,8 @@ void FlowGraphBridge::UpdateArcsForBoundTask(TaskID_t tid,
   }
 }
 
-void FlowGraphBridge::UpdateArcsForEvictedTask(TaskID_t task_id,
-                                               ResourceID_t res_id) {
+void FlowGraphManager::UpdateArcsForEvictedTask(TaskID_t task_id,
+                                                ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(task_id);
   CHECK_NOTNULL(task_node);
   if (!FLAGS_preemption) {
@@ -1134,7 +1136,7 @@ void FlowGraphBridge::UpdateArcsForEvictedTask(TaskID_t task_id,
   }
 }
 
-void FlowGraphBridge::UpdateResourceNode(
+void FlowGraphManager::UpdateResourceNode(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   CHECK_NOTNULL(rtnd_ptr);
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
@@ -1187,18 +1189,18 @@ void FlowGraphBridge::UpdateResourceNode(
   }
 }
 
-void FlowGraphBridge::UpdateResourceTopology(
+void FlowGraphManager::UpdateResourceTopology(
     ResourceTopologyNodeDescriptor* resource_tree) {
   // N.B.: This only considers ADDITION of resources currently; if resources
   // are removed from the topology (e.g. due to a failure), they won't
   // disappear via this method.
   BFSTraverseResourceProtobufTreeReturnRTND(
       resource_tree,
-      boost::bind(&FlowGraphBridge::UpdateResourceNode, this, _1));
+      boost::bind(&FlowGraphManager::UpdateResourceNode, this, _1));
   VLOG(2) << "Updated resource topology in flow scheduler.";
 }
 
-void FlowGraphBridge::ResetChanges() {
+void FlowGraphManager::ResetChanges() {
   for (vector<DIMACSChange*>::iterator it = graph_changes_.begin();
        it != graph_changes_.end(); ) {
     vector<DIMACSChange*>::iterator it_tmp = it;
@@ -1208,14 +1210,14 @@ void FlowGraphBridge::ResetChanges() {
   graph_changes_.clear();
 }
 
-void FlowGraphBridge::UpdateTimeDependentCosts(vector<JobDescriptor*>* jobs) {
+void FlowGraphManager::UpdateTimeDependentCosts(vector<JobDescriptor*>* jobs) {
   for (auto& jd_ptr : *jobs) {
     VLOG(1) << "Reconsidering time-dependent costs for job " << jd_ptr->uuid();
     AddOrUpdateJobNodes(jd_ptr);
   }
 }
 
-void FlowGraphBridge::UpdateUnscheduledAggArcCosts() {
+void FlowGraphManager::UpdateUnscheduledAggArcCosts() {
   unordered_map<JobID_t, uint64_t,
                 boost::hash<boost::uuids::uuid> >::iterator it =
       job_unsched_to_node_id_.begin();
@@ -1240,7 +1242,7 @@ void FlowGraphBridge::UpdateUnscheduledAggArcCosts() {
   }
 }
 
-void FlowGraphBridge::UpdateUnscheduledAggToSinkCapacity(
+void FlowGraphManager::UpdateUnscheduledAggToSinkCapacity(
     JobID_t job, int64_t delta) {
   uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_, job);
   CHECK_NOTNULL(unsched_agg_node_id);

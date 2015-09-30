@@ -12,14 +12,14 @@
 #include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/flow/dimacs_exporter.h"
 #include "scheduling/flow/json_exporter.h"
-#include "scheduling/flow/flow_graph_bridge.h"
+#include "scheduling/flow/flow_graph_manager.h"
 
 namespace firmament {
 namespace scheduler {
 
 class SolverDispatcher {
  public:
-  SolverDispatcher(shared_ptr<FlowGraphBridge> flow_graph_bridge,
+  SolverDispatcher(shared_ptr<FlowGraphManager> flow_graph_manager,
                    bool solver_ran_once);
   ~SolverDispatcher();
 
@@ -48,7 +48,7 @@ class SolverDispatcher {
                            vector<string> *args);
   friend void *ExportToSolver(void *x);
 
-  shared_ptr<FlowGraphBridge> flow_graph_bridge_;
+  shared_ptr<FlowGraphManager> flow_graph_manager_;
   // DIMACS exporter for interfacing to the solver
   DIMACSExporter dimacs_exporter_;
   // JSON exporter for debug and visualisation

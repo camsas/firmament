@@ -19,7 +19,7 @@
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
 #include "scheduling/flow/dimacs_exporter.h"
-#include "scheduling/flow/flow_graph_bridge.h"
+#include "scheduling/flow/flow_graph_manager.h"
 #include "scheduling/flow/trivial_cost_model.h"
 
 namespace firmament {
@@ -76,8 +76,8 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-  FlowGraphBridge flow_bridge(new TrivialCostModel(task_map, leaf_res_ids),
-                              leaf_res_ids);
+  FlowGraphManager flow_graph_manager(
+      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
   string root_id = to_string(GenerateResourceID("test"));
@@ -108,11 +108,11 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   CHECK(InsertIfNotPresent(task_map.get(), ct1->uid(), ct1));
   CHECK(InsertIfNotPresent(task_map.get(), ct2->uid(), ct2));
   // Add resources and job to flow graph
-  flow_bridge.AddResourceTopology(&rtn_root);
-  flow_bridge.AddOrUpdateJobNodes(&jd);
+  flow_graph_manager.AddResourceTopology(&rtn_root);
+  flow_graph_manager.AddOrUpdateJobNodes(&jd);
   // Export
   DIMACSExporter exp;
-  exp.Export(*flow_bridge.flow_graph());
+  exp.Export(*flow_graph_manager.flow_graph());
   exp.FlushAndClose("test.dm");
   delete leaf_res_ids;
 }
@@ -126,8 +126,8 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-  FlowGraphBridge flow_bridge(new TrivialCostModel(task_map, leaf_res_ids),
-                              leaf_res_ids);
+  FlowGraphManager flow_graph_manager(
+      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
   // Test resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
   int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
@@ -149,12 +149,12 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   }
   VLOG(1) << "Added " << n << " machines.";
   // Add resources and job to flow graph
-  flow_bridge.AddResourceTopology(&rtn_root);
+  flow_graph_manager.AddResourceTopology(&rtn_root);
   // Test job
   uint64_t j = 100;
   uint64_t t = 100;
-  const vector<uint64_t> leaf_ids(flow_bridge.leaf_node_ids().begin(),
-                                  flow_bridge.leaf_node_ids().end());
+  const vector<uint64_t> leaf_ids(flow_graph_manager.leaf_node_ids().begin(),
+                                  flow_graph_manager.leaf_node_ids().end());
   unsigned int seed = time(NULL);
   for (uint64_t i = 0; i < j; ++i) {
     JobDescriptor jd;
@@ -173,13 +173,13 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
       ct->set_job_id(jd.uuid());
       CHECK(InsertIfNotPresent(task_map.get(), ct->uid(), ct));
     }
-    flow_bridge.AddOrUpdateJobNodes(&jd);
+    flow_graph_manager.AddOrUpdateJobNodes(&jd);
   }
   VLOG(1) << "Added " << j*t << " tasks in " << j << " jobs (" << t
           << " tasks each).";
   // Export
   DIMACSExporter exp;
-  exp.Export(*flow_bridge.flow_graph());
+  exp.Export(*flow_graph_manager.flow_graph());
   string outname = "/tmp/test.dm";
   VLOG(1) << "Output written to " << outname;
   exp.FlushAndClose(outname);
@@ -197,8 +197,8 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
     unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
       new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-    FlowGraphBridge flow_bridge(new TrivialCostModel(task_map, leaf_res_ids),
-                                leaf_res_ids);
+    FlowGraphManager flow_graph_manager(
+        new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
     // Test resource topology
     ResourceTopologyNodeDescriptor machine_tmpl;
     int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
@@ -220,12 +220,12 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     }
     VLOG(1) << "Added " << n << " machines.";
     // Add resources and job to flow graph
-    flow_bridge.AddResourceTopology(&rtn_root);
+    flow_graph_manager.AddResourceTopology(&rtn_root);
     // Test job
     uint64_t j = f;
     uint64_t t = 100;
-    const vector<uint64_t> leaf_ids(flow_bridge.leaf_node_ids().begin(),
-                                    flow_bridge.leaf_node_ids().end());
+    const vector<uint64_t> leaf_ids(flow_graph_manager.leaf_node_ids().begin(),
+                                    flow_graph_manager.leaf_node_ids().end());
     unsigned int seed = time(NULL);
     for (uint64_t i = 0; i < j; ++i) {
       JobDescriptor jd;
@@ -244,11 +244,11 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
         ct->set_job_id(jd.uuid());
         CHECK(InsertIfNotPresent(task_map.get(), ct->uid(), ct));
       }
-      flow_bridge.AddOrUpdateJobNodes(&jd);
+      flow_graph_manager.AddOrUpdateJobNodes(&jd);
     }
     // Export
     DIMACSExporter exp;
-    exp.Export(*flow_bridge.flow_graph());
+    exp.Export(*flow_graph_manager.flow_graph());
     string outname;
     spf(&outname, "/tmp/test%jd.dm", f);
     VLOG(1) << "Output written to " << outname;
