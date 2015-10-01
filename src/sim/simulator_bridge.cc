@@ -358,6 +358,17 @@ void SimulatorBridge::RegisterMachinePUs(
   if (rtnd_ptr->resource_desc().type() == ResourceDescriptor::RESOURCE_PU) {
     scheduler_->RegisterResource(
         ResourceIDFromString(rtnd_ptr->resource_desc().uuid()), false, true);
+    ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, machine_res_id);
+    CHECK_NOTNULL(rs_ptr);
+    ResourceDescriptor* machine_rd_ptr = rs_ptr->mutable_descriptor();
+    ResourceVector* machine_res_cap =
+      machine_rd_ptr->mutable_resource_capacity();
+    uint64_t cpu_cores = 1;
+    if (machine_res_cap->has_cpu_cores()) {
+      cpu_cores = machine_res_cap->cpu_cores() + 1;
+    }
+    // NOTE: We set the number of cpu_cores to the number of PUs.
+    machine_res_cap->set_cpu_cores(cpu_cores);
     machine_res_id_pus_.insert(
         pair<ResourceID_t, ResourceDescriptor*>(
             machine_res_id, rtnd_ptr->mutable_resource_desc()));

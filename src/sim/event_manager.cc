@@ -97,7 +97,7 @@ uint64_t EventManager::GetTimeOfNextSchedulerRun(uint64_t cur_run_scheduler_at,
 
 bool EventManager::HasSimulationCompleted(uint64_t num_scheduling_rounds) {
   // We only run for the first FLAGS_runtime microseconds.
-  if (FLAGS_runtime < current_simulation_time_) {
+  if (FLAGS_runtime < GetTimeOfNextEvent()) {
     LOG(INFO) << "Terminating at : " << current_simulation_time_;
     return true;
   }

@@ -27,6 +27,8 @@ class SyntheticTraceLoader : public TraceLoader {
       uint64_t max_event_id_to_retain,
       unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
         task_runtime);
+ private:
+  uint64_t last_generated_job_id_;
 };
 
 }  // namespace sim
