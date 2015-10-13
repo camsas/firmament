@@ -1,0 +1,204 @@
+########################################
+# DIRECTORIES
+########################################
+
+# Define the root directory
+ROOT_DIR ?= $(shell pwd)
+export ROOT_DIR
+
+# Directory for the output binaries
+BUILD_DIR ?= $(ROOT_DIR)/build
+export BUILD_DIR
+
+# Source code root directory
+SRC_ROOT_DIR ?= $(ROOT_DIR)/src
+export SRC_ROOT_DIR
+
+# Generated source code root directory
+SRC_GEN_DIR ?= $(ROOT_DIR)/src/generated-cxx
+export SRC_GEN_DIR
+
+# Generated source code root directory
+CSRC_GEN_DIR ?= $(ROOT_DIR)/src/generated-c
+export CSRC_GEN_DIR
+
+# Helper scripts directory
+SCRIPTS_DIR ?= $(ROOT_DIR)/scripts
+export SCRIPTS_DIR
+
+# Externals (libraries) directory
+EXT_DIR ?= $(ROOT_DIR)/ext
+export EXT_DIR
+
+
+#######################################
+# googletest-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for googletest
+GTEST_INC_DIR ?= $(EXT_DIR)/googletest-svn/include
+export GTEST_INC_DIR
+
+# Path to the compiled googletest library (usually under
+# "make" in the googletest directory in "ext").
+GTEST_LIB ?= $(EXT_DIR)/googletest-svn/make/gtest_main.a
+export GTEST_LIB
+
+# This is necessary to work around a compilation issue with googletest when
+# using clang and (presumably) libstdc++4.4
+GTEST_FLAGS=-DGTEST_HAS_TR1_TUPLE=1
+
+
+#######################################
+# google-perftools-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for googletest
+#GPERFTOOLS_INC_DIR ?= $(EXT_DIR)/google-perftools-build/include
+#export GPERFTOOLS_INC_DIR
+
+# Path to the compiled googletest library (usually under
+# "make" in the googletest directory in "ext").
+#GPERFTOOLS_LIB ?= $(EXT_DIR)/google-perftools-build/lib/libtcmalloc_and_profiler.so
+#export GPERFTOOLS_LIB
+
+
+#######################################
+# libhdfs3-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for hdfs
+HDFS_INC_DIR ?= $(EXT_DIR)/libhdfs3-build/include/
+export HDFS_INC_DIR
+
+# Path to the compiled libhfds3 library.
+HDFS_LIB ?= $(EXT_DIR)/libhdfs3-build/lib/libhdfs3.a
+export HDFS_LIB
+
+
+#######################################
+# pb2json-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for pb2json
+PB2JSON_INC_DIR ?= $(EXT_DIR)/pb2json-git/
+export PB2JSON_INC_DIR
+
+# Path to the compiled googletest library (usually under
+# "make" in the googletest directory in "ext").
+PB2JSON_LIB ?= $(EXT_DIR)/pb2json-git/libpb2json.a
+export PB2JSON_LIB
+
+
+#######################################
+# thread-safe-stl-containers-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for thread-safe STL containers
+TSSTLC_INC_DIR ?= $(EXT_DIR)/thread-safe-stl-containers-svn/
+export TSSTLC_INC_DIR
+
+
+#######################################
+# pion-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for pion
+PION_INC_DIR ?= $(EXT_DIR)/pion-build/include/
+export PION_INC_DIR
+
+# Path to the compiled pion library (usually under
+# "make" in the pion-git directory in "ext").
+PION_LIB ?= $(EXT_DIR)/pion-build/lib/libpion.a
+export PION_LIB
+
+
+#######################################
+# SpookyV2-SPECIFIC DEFINITIONS
+#######################################
+
+# Header directory for Spooky hash
+SPOOKY_INC_DIR ?= $(EXT_DIR)/spooky_hash/
+export SPOOKY_INC_DIR
+
+# Path to the compiled Spooky library.
+SPOOKY_OBJ ?= $(EXT_DIR)/spooky_hash/SpookyV2.o
+export SPOOKY_OBJ
+
+
+#######################################
+# INCLUDES
+#######################################
+
+INCLUDES = -I$(SRC_ROOT_DIR) -I$(SRC_GEN_DIR) -I$(CSRC_GEN_DIR) \
+           -I$(GTEST_INC_DIR) -I$(HDFS_INC_DIR) -I$(PB2JSON_INC_DIR) \
+           -I$(PION_INC_DIR) -I$(SPOOKY_INC_DIR) -I$(TSSTLC_INC_DIR)
+           #-I/usr/lib/llvm-3.2/lib/clang/3.2/include/
+           #-I$(GPERFTOOLS_INC_DIR)
+
+
+#######################################
+# LIBRARIES
+#######################################
+
+# XXX(malte): Factor these out into the individual Makefiles to avoid linking
+# every binary to the whole world.
+#LIBS = -lgflags -lglog -ltcmalloc -lprofiler -lpthread -lprotobuf -lboost_system -lboost_thread -lboost_regex -lboost_date_time -lpion-common -lpion-net -llog4cpp -lhwloc
+#LIBS += $(GPERFTOOLS_LIB) -lgflags -lglog -lpthread -lprotobuf
+LIBS += -lgflags -lglog -lprotobuf -lrt -lpthread -l:libtcmalloc.so.4
+#LIBS += -lgflags -lglog -lpthread -lprotobuf
+
+
+#######################################
+# COMPILER
+#######################################
+
+#CXX = g++
+CXX = clang++
+
+# optimization flags
+ifeq ($(BUILD_TYPE), debug)
+# debug build
+OPTFLAGS = -g -O0 -fno-omit-frame-pointer
+else
+# release build
+OPTFLAGS = -O3
+endif
+
+# for clang++, uncomment this line
+CPPFLAGS = $(INCLUDES) -fPIC -std=c++11 -Wall -Wextra -Werror -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-error=language-extension-token -Wno-deprecated -Wno-error=unused-function -Wno-vla -Wno-unused-parameter
+# for g++, uncomment this line
+#CPPFLAGS = $(INCLUDES) -fPIC -std=c++11 -Wall -Wextra -Werror -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-deprecated -Wno-error=unused-function -Wno-vla -Wno-unused-parameter -Wno-error=unused-but-set-variable
+
+# To build statically linked executables, uncomment the following line AND make
+# sure that tcmalloc is NOT linked.
+#CPPFLAGS += -static -pthread
+
+# for gcc/g++, uncomment this line
+#CPPFLAGS = $(INCLUDES) -Wall -Wextra -Werror -g -O0 -pedantic -Wno-error=unused-parameter -Wno-long-long -Wno-variadic-macros -Wno-deprecated
+
+# XXX(malte): this is a hack to enable support for configuration #defines; we
+# should move this to a proper configuration stage
+DEFINES = -D__FIRMAMENT__ -D__HTTP_UI__ -D__PLATFORM_HAS_BOOST__ -D_GNU_SOURCE
+BUILD_HTTP_UI = 1
+BOOST_VERSION = 1.55
+
+
+#######################################
+# PROTOBUF COMPILER
+#######################################
+
+PBC = protoc
+
+PBCC = protoc-c
+
+PBCFLAGS =
+
+
+#######################################
+# MAKE
+#######################################
+
+MAKE = make
+
+MAKEFLAGS = --no-print-directory
