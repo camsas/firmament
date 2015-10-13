@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baada198_b3038f72",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-10-13T13:15:53Z",
+      "side": 1,
+      "message": "In the future, please write more descriptive commit messages. See other commits for examples: a good commit message consists of a short summary line (at most 50 characters), and a description on subsequent lines (at most 72 characters), and a \"Affected modules:\" line for Firmament.v\n\nSee http://chris.beams.io/posts/git-commit/ for some of the rationale behind this.",
+      "revId": "9dc2243842b66fda4eecd5a6be7f423d184e041f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_d3f7238b",
+        "filename": "include/Makefile.config",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-10-13T13:15:53Z",
+      "side": 1,
+      "message": "Accidential add; this is removed in CL 249670.",
+      "revId": "9dc2243842b66fda4eecd5a6be7f423d184e041f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
