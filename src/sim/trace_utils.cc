@@ -12,7 +12,6 @@
 #include "base/units.h"
 #include "misc/utils.h"
 
-DEFINE_double(events_fraction, 1.0, "Fraction of events to retain.");
 DEFINE_string(machine_tmpl_file, "../../tests/testdata/machine_topo.pbin",
               "File specifying machine topology. (Note: the given path must be "
               "relative to the directory of the binary)");
@@ -82,16 +81,6 @@ void LogSchedulerRunStats(double avg_event_timestamp_in_scheduling_round,
               scheduler_stats.scheduler_runtime, total_runtime);
     }
     fflush(stats_file);
-  }
-}
-
-uint64_t MaxEventIdToRetain() {
-  // We must check if we're retaining all events. If so, we have to return
-  // UINT64_MAX because otherwise we might end up overflowing.
-  if (IsEqual(FLAGS_events_fraction, 1.0)) {
-    return UINT64_MAX;
-  } else {
-    return FLAGS_events_fraction * UINT64_MAX;
   }
 }
 

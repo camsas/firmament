@@ -18,6 +18,7 @@
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 
+DEFINE_double(events_fraction, 1.0, "Fraction of events to retain.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(trace_path, "", "Path where the trace files are.");
 
@@ -82,7 +83,6 @@ void GoogleTraceLoader::LoadJobsNumTasks(
 }
 
 void GoogleTraceLoader::LoadMachineEvents(
-    uint64_t max_event_id_to_retain,
     multimap<uint64_t, EventDescriptor>* machine_events) {
   char line[200];
   vector<string> cols;
@@ -111,7 +111,7 @@ void GoogleTraceLoader::LoadMachineEvents(
         uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
         // Sub-sample the trace if we only retain < 100% of machines.
         if (SpookyHash::Hash64(&machine_id, sizeof(machine_id), kSeed) >
-            max_event_id_to_retain) {
+            MaxEventHashToRetain()) {
           // skip event
           continue;
         }
@@ -134,7 +134,9 @@ void GoogleTraceLoader::LoadMachineEvents(
   fclose(machines_file);
 }
 
-void GoogleTraceLoader::LoadTaskEvents(uint64_t events_up_to_time) {
+void GoogleTraceLoader::LoadTaskEvents(
+    uint64_t events_up_to_time,
+    unordered_map<uint64_t, uint64_t>* job_num_tasks) {
   char line[200];
   vector<string> vals;
   while (true) {
@@ -168,7 +170,15 @@ void GoogleTraceLoader::LoadTaskEvents(uint64_t events_up_to_time) {
 
           // Sub-sample the trace if we only retain < 100% of tasks.
           if (SpookyHash::Hash64(&task_id, sizeof(task_id), kSeed) >
-              MaxEventIdToRetain()) {
+              MaxEventHashToRetain()) {
+            if (filtered_tasks_.find(task_id) == filtered_tasks_.end()) {
+              // The task has been filtered. Decrease the number of tasks the
+              // job has.
+              uint64_t* num_tasks = FindOrNull(*job_num_tasks, task_id.job_id);
+              CHECK_NOTNULL(num_tasks);
+              (*num_tasks)--;
+              filtered_tasks_.insert(task_id);
+            }
             // skip event
             continue;
           }
@@ -276,7 +286,6 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
 }
 
 void GoogleTraceLoader::LoadTasksRunningTime(
-    uint64_t max_event_id_to_retain,
     unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
       task_runtime) {
   char line[200];
@@ -302,7 +311,7 @@ void GoogleTraceLoader::LoadTasksRunningTime(
 
         // Sub-sample the trace if we only retain < 100% of tasks.
         if (SpookyHash::Hash64(&task_id, sizeof(task_id), kSeed) >
-            max_event_id_to_retain) {
+            MaxEventHashToRetain()) {
           // skip event
           continue;
         }
@@ -322,6 +331,16 @@ void GoogleTraceLoader::LoadTasksRunningTime(
     num_line++;
   }
   fclose(tasks_file);
+}
+
+uint64_t GoogleTraceLoader::MaxEventHashToRetain() {
+  // We must check if we're retaining all events. If so, we have to return
+  // UINT64_MAX because otherwise we might end up overflowing.
+  if (IsEqual(FLAGS_events_fraction, 1.0)) {
+    return UINT64_MAX;
+  } else {
+    return FLAGS_events_fraction * UINT64_MAX;
+  }
 }
 
 } // namespace sim
