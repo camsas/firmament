@@ -195,7 +195,7 @@ void Simulator::ReplaySimulation() {
 
   while (!event_manager_->HasSimulationCompleted(num_scheduling_rounds)) {
     // Load the task events up to the next scheduler run.
-    trace_loader->LoadTaskEvents(run_scheduler_at);
+    trace_loader->LoadTaskEvents(run_scheduler_at, bridge_->job_num_tasks());
     // Add the machine heartbeat events up to the next scheduler run.
     for (; run_scheduler_at >= current_heartbeat_time;
          current_heartbeat_time += FLAGS_heartbeat_interval) {

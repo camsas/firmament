@@ -44,7 +44,6 @@ void SyntheticTraceLoader::LoadJobsNumTasks(
 }
 
 void SyntheticTraceLoader::LoadMachineEvents(
-    uint64_t max_event_id_to_retain,
     multimap<uint64_t, EventDescriptor>* machine_events) {
   for (uint64_t machine_id = 1; machine_id <= FLAGS_synthetic_num_machines;
        ++machine_id) {
@@ -88,7 +87,9 @@ void SyntheticTraceLoader::LoadMachineEvents(
   }
 }
 
-void SyntheticTraceLoader::LoadTaskEvents(uint64_t events_up_to_time) {
+void SyntheticTraceLoader::LoadTaskEvents(
+    uint64_t events_up_to_time,
+    unordered_map<uint64_t, uint64_t>* job_num_tasks) {
   uint64_t usec_between_jobs =
     MICROSECONDS_IN_SECOND / FLAGS_synthetic_jobs_per_second;
   uint64_t last_timestamp = last_generated_job_id_ * usec_between_jobs;
@@ -139,7 +140,6 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
 }
 
 void SyntheticTraceLoader::LoadTasksRunningTime(
-    uint64_t max_event_id_to_retain,
     unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
       task_runtime) {
   uint64_t usec_between_jobs =
