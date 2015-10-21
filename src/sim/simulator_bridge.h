@@ -123,6 +123,10 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
    */
   void TaskCompleted(const TraceTaskIdentifier& task_identifier);
 
+  unordered_map<uint64_t, uint64_t>* job_num_tasks() {
+    return &job_num_tasks_;
+  }
+
  private:
   FRIEND_TEST(SimulatorBridgeTest, AddMachine);
   FRIEND_TEST(SimulatorBridgeTest, AddTask);
