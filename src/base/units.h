@@ -19,7 +19,7 @@ const uint64_t MB_TO_BYTES = 1024 * 1024;
 
 // Bandwidth
 const uint64_t BYTES_TO_MBITS = 8 * 1000 * 1000;
-const uint64_t BYTES_TO_GBITS = 8 * 1000 * 1000 * 1000;
+const uint64_t BYTES_TO_GBITS = 8 * 1000 * 1000 * 1000ULL;
 
 // Time
 const uint64_t NANOSECONDS_IN_SECOND = 1000 * 1000 * 1000;
@@ -30,7 +30,7 @@ const uint64_t MILLISECONDS_TO_MICROSECONDS = 1000;
 const uint64_t SECONDS_TO_MILLISECONDS = 1000;
 const uint64_t SECONDS_TO_MICROSECONDS = 1000 * 1000;
 const uint64_t SECONDS_TO_NANOSECONDS = 1000 * 1000 * 1000;
-const uint64_t SECONDS_TO_PICOSECONDS = 1000 * 1000 * 1000 * 1000;
+const uint64_t SECONDS_TO_PICOSECONDS = 1000 * 1000 * 1000 * 1000ULL;
 
 }  // namespace firmament
 
