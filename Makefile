@@ -107,7 +107,7 @@ simple_scheduler: scheduling_base
 sim: base misc engine scheduling sim_dfs
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim all
 
-sim_dfs:
+sim_dfs: base misc
 	$(MAKE) $(MAKEFLAGS) -C $(SRC_ROOT_DIR)/sim/dfs all
 
 misc: messages ext
