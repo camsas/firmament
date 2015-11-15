@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7ac7a964_6e3c9330",
+        "filename": "src/sim/google_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-11-15T18:51:06Z",
+      "side": 1,
+      "message": "Why this space? Typo?",
+      "range": {
+        "startLine": 113,
+        "startChar": 22,
+        "endLine": 113,
+        "endChar": 23
+      },
+      "revId": "b2804c7c9c916f0602c169cc008a388e8f4ce94d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ac7a964_4e3fd725",
+        "filename": "src/sim/google_trace_loader.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-11-15T18:51:06Z",
+      "side": 1,
+      "message": "Just checking -- uint64_t, uint64_t here is Google-trace-format-specific, right? (Job IDs in our world are UUIDs, not uint64_t).",
+      "revId": "b2804c7c9c916f0602c169cc008a388e8f4ce94d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ac7a964_2e3b7b3b",
+        "filename": "src/sim/google_trace_loader.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-11-15T18:51:06Z",
+      "side": 1,
+      "message": "Why do we need to retain this information? (I assume there\u0027s a good reason.)",
+      "revId": "b2804c7c9c916f0602c169cc008a388e8f4ce94d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
