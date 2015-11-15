@@ -139,7 +139,7 @@ lint-verb:
 	python tests/all_lint.py src/ True
 
 docker-image:
-	contrib/build-docker.sh
+	contrib/docker-build.sh
 
 clean:
 	rm -rf build
