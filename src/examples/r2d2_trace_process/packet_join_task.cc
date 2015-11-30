@@ -14,6 +14,9 @@ extern "C" {
 }
 #endif
 #include "examples/r2d2_trace_process/packet_join_task.h"
+#ifdef __FIRMAMENT__
+#include "examples/task_lib_bridge.h"
+#endif
 
 #include <cstdlib>
 #include <vector>
@@ -66,7 +69,7 @@ int main(int argc, char* argv[]) {
 namespace firmament {
 
 #ifdef __FIRMAMENT__
-void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>* args) {
+void task_main(TaskID_t task_id, vector<char*>* args) {
   // Rudimentary command line parsing
   if (args->size() != 5)
     LOG(FATAL) << "usage: packet_join_task <dag0_cap> <dag1_cap> "
@@ -98,7 +101,7 @@ void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>* args) {
     count = head->samples;
 
   // Set up task and run
-  firmament::examples::r2d2::PacketJoinTask t(task_lib, task_id);
+  firmament::examples::r2d2::PacketJoinTask t(task_id);
   t.Invoke(dag0_ptr, dag1_filename, offset, count);
 }
 #endif
