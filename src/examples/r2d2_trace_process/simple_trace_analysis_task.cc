@@ -14,6 +14,9 @@ extern "C" {
 #include "examples/r2d2_trace_process/standalone_io.h"
 }
 #endif
+#ifdef __FIRMAMENT__
+#include "examples/task_lib_bridge.h"
+#endif
 
 #define WINDOW_SIZE 100*1000*1000  // 100ms
 
@@ -63,8 +66,8 @@ int main(int argc, char* argv[]) {
 namespace firmament {
 
 #ifdef __FIRMAMENT__
-void task_main(TaskLib* task_lib, TaskID_t task_id, vector<char*>*) {
-  examples::r2d2::SimpleTraceAnalysisTask t(task_lib, task_id);
+void task_main(TaskID_t task_id, vector<char*>* args) {
+  examples::r2d2::SimpleTraceAnalysisTask t(task_id);
   LOG(INFO) << "Called task_main, starting " << t;
   //t.Invoke();
 }
