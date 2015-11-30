@@ -16,6 +16,24 @@
       "revId": "d675aa0e43202d79756b7fd61fdec11109cbd419",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_88fc8340",
+        "filename": "src/examples/task_lib_bridge.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-11-30T21:48:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ac4a560_28ee0f89",
+      "revId": "d675aa0e43202d79756b7fd61fdec11109cbd419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
