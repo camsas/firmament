@@ -63,12 +63,10 @@ http://<host>:8080/ (the port can be customized using `--http_ui_port`
 argument). Note that you should run the coordinator from the Firmament workspace
 root directory in order for all web templates to be located successfully.
 
-To submit a toy job, first make the examples target and then use the script in
-`scripts/job/job_submit.py`. Note that jobs are submitted to the web UI port,
-and NOT the internal listen port!
+To submit a toy job, use the script in `scripts/job/job_submit.py`. Note that
+jobs are submitted to the web UI port, and NOT the internal listen port!
 
 ```console
-$ make examples
 $ cd scripts/job/
 $ make
 $ python job_submit.py <host> <webUI port (8080)> <binary>
