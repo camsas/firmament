@@ -31,8 +31,8 @@ class SimpleTraceAnalysisTask {
  public:
   void DumpPacketInformation(sample_t* packet);
 #ifdef __FIRMAMENT__
-  explicit SimpleTraceAnalysisTask(TaskLib* task_lib, TaskID_t task_id)
-    : TaskInterface(task_lib, task_id),
+  explicit SimpleTraceAnalysisTask(TaskID_t task_id)
+    : TaskInterface(task_id),
       prev_packet_timestamp_(0L) {}
 #else
   SimpleTraceAnalysisTask()
