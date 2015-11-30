@@ -35,8 +35,8 @@ class PacketJoinTask {
 
  public:
 #ifdef __FIRMAMENT__
-  explicit PacketJoinTask(TaskLib* task_lib, TaskID_t task_id)
-    : TaskInterface(task_lib, task_id),
+  explicit PacketJoinTask(TaskID_t task_id)
+    : TaskInterface(task_id),
       total_backward_steps_(0),
       total_forward_steps_(0) {}
 #else

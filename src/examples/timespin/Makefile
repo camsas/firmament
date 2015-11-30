@@ -22,7 +22,7 @@ $(OBJ_BIN): $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 	$(call quiet-command, \
 		$(CXX) $(CPPFLAGS) \
 		$< \
-		-g -O1 -fsanitize=address -fno-omit-frame-pointer $(DEFINES) \
+		-g -O3 -fno-omit-frame-pointer $(DEFINES) \
 		$(BUILD_DIR)/engine/task_lib.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
