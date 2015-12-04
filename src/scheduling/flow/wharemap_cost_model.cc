@@ -757,8 +757,11 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
       // Base case: (PU -> SINK). We are at a PU and we gather the statistics.
       ResourceStatus* rs_ptr =
         FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-      CHECK_NOTNULL(rs_ptr);
+      if (!rs_ptr)
+        return accumulator;
       ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+      if (!rd_ptr)
+        return accumulator;
       if (rd_ptr->has_current_running_task()) {
         TaskDescriptor* td_ptr =
           FindPtrOrNull(*task_map_, rd_ptr->current_running_task());

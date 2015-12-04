@@ -188,8 +188,11 @@ FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
       // Base case. We are at a PU and we gather the statistics.
       ResourceStatus* rs_ptr =
         FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-      CHECK_NOTNULL(rs_ptr);
+      if (!rs_ptr)
+        return accumulator;
       ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+      if (!rd_ptr)
+        return accumulator;
       if (rd_ptr->has_current_running_task()) {
         rd_ptr->set_num_running_tasks_below(1);
       } else {
