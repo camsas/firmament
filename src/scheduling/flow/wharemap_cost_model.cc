@@ -193,7 +193,8 @@ Cost_t WhareMapCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t source,
     ResourceID_t destination) {
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, destination);
-  CHECK_NOTNULL(rs);
+  if (!rs)
+    return 0LL;
   ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
   // Below is a somewhat hackish way of making sure that tasks spread out
   // across machines: we assign a baseline cost equal to the core ID for each
@@ -757,8 +758,11 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
       // Base case: (PU -> SINK). We are at a PU and we gather the statistics.
       ResourceStatus* rs_ptr =
         FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-      CHECK_NOTNULL(rs_ptr);
+      if (!rs_ptr)
+        return accumulator;
       ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+      if (!rd_ptr)
+        return accumulator;
       if (rd_ptr->has_current_running_task()) {
         TaskDescriptor* td_ptr =
           FindPtrOrNull(*task_map_, rd_ptr->current_running_task());
@@ -807,7 +811,8 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
     acc_rs_ptr->mutable_descriptor()->mutable_whare_map_stats();
   ResourceStatus* other_rs_ptr =
     FindPtrOrNull(*resource_map_, other->resource_id_);
-  CHECK_NOTNULL(other_rs_ptr);
+  if (!other_rs_ptr)
+    return accumulator;
   WhareMapStats* wms_other_ptr =
     other_rs_ptr->mutable_descriptor()->mutable_whare_map_stats();
   if (accumulator->type_ == FlowNodeType::MACHINE) {

@@ -44,7 +44,8 @@ Cost_t OctopusCostModel::TaskToResourceNodeCost(TaskID_t task_id,
 Cost_t OctopusCostModel::ResourceNodeToResourceNodeCost(
     ResourceID_t src, ResourceID_t dst) {
   ResourceStatus* dst_rs_ptr = FindPtrOrNull(*resource_map_, dst);
-  CHECK_NOTNULL(dst_rs_ptr);
+  if (!dst_rs_ptr)
+    return 0LL;
   ResourceDescriptor* dst_rd_ptr = dst_rs_ptr->mutable_descriptor();
   // The cost in the Octopus model is the number of already running tasks, i.e.
   // a crude per-task load balancing algorithm.
@@ -188,8 +189,11 @@ FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
       // Base case. We are at a PU and we gather the statistics.
       ResourceStatus* rs_ptr =
         FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-      CHECK_NOTNULL(rs_ptr);
+      if (!rs_ptr)
+        return accumulator;
       ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+      if (!rd_ptr)
+        return accumulator;
       if (rd_ptr->has_current_running_task()) {
         rd_ptr->set_num_running_tasks_below(1);
       } else {
@@ -206,8 +210,11 @@ FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
 
   ResourceStatus* other_rs_ptr =
     FindPtrOrNull(*resource_map_, other->resource_id_);
-  CHECK_NOTNULL(other_rs_ptr);
+  if (!other_rs_ptr)
+    return accumulator;
   ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
+  if (!other_rd_ptr)
+    return accumulator;
   acc_rd_ptr->set_num_running_tasks_below(
       acc_rd_ptr->num_running_tasks_below() +
       other_rd_ptr->num_running_tasks_below());
@@ -241,8 +248,11 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
   // Reset the state.
   ResourceStatus* other_rs_ptr =
     FindPtrOrNull(*resource_map_, other->resource_id_);
-  CHECK_NOTNULL(other_rs_ptr);
+  if (!other_rs_ptr)
+    return accumulator;
   ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
+  if (!other_rd_ptr)
+    return accumulator;
   other_rd_ptr->set_num_running_tasks_below(0);
   return accumulator;
 }
