@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ac4a560_00bf27d1",
+        "filename": "src/scheduling/flow/dimacs_add_node.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-12-16T12:43:57Z",
+      "side": 1,
+      "message": "Would it be possible to refer to these more generically as \"leaves of the resource topology\" or \"processing units\"/\"PUs\"? We may not always have the full topology down to cores represented; in some situations, users may just want machine nodes.",
+      "range": {
+        "startLine": 11,
+        "startChar": 58,
+        "endLine": 11,
+        "endChar": 63
+      },
+      "revId": "4836aed2c18d48b377fa2863a09ebcb63634dbe8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_40b91fe8",
+        "filename": "src/scheduling/flow/dimacs_add_node.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-12-16T12:43:57Z",
+      "side": 1,
+      "message": "See above.",
+      "range": {
+        "startLine": 15,
+        "startChar": 53,
+        "endLine": 15,
+        "endChar": 69
+      },
+      "revId": "4836aed2c18d48b377fa2863a09ebcb63634dbe8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_80ca576c",
+        "filename": "src/scheduling/flow/dimacs_add_node.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2015-12-16T12:43:57Z",
+      "side": 1,
+      "message": "Make enum name consistent with style guide, if possible (https://google.github.io/styleguide/cppguide.html#Enumerator_Names)",
+      "range": {
+        "startLine": 15,
+        "startChar": 5,
+        "endLine": 15,
+        "endChar": 14
+      },
+      "revId": "4836aed2c18d48b377fa2863a09ebcb63634dbe8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
