@@ -232,7 +232,7 @@ void Simulator::Run() {
     FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
     FLAGS_only_read_assignment_changes = true;
     FLAGS_flow_scheduling_binary =
-        SOLVER_DIR "/flowlessly-git/run_fast_cost_scaling";
+        SOLVER_DIR "/flowlessly-git/build/flow_scheduler";
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
     FLAGS_only_read_assignment_changes = false;

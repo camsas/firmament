@@ -34,8 +34,11 @@ DEFINE_bool(flow_scheduling_strict, false, "Terminate if flow solving binary"
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
-DEFINE_string(flowlessly_binary, "ext/flowlessly-git/run_fast_cost_scaling",
+DEFINE_string(flowlessly_binary, "ext/flowlessly-git/build/flow_scheduler",
               "Path to the flowlessly binary.");
+DEFINE_string(flowlessly_algorithm, "fast_cost_scaling",
+              "Algorithm to be used by flowlessly. Options: cycle_cancelling |"
+              "cost_scaling | fast_cost_scaling | relax");
 DEFINE_string(cs2_binary, "ext/cs2-4.6/cs2.exe", "Path to the cs2 binary.");
 
 namespace firmament {
@@ -335,7 +338,12 @@ void SolverDispatcher::SolverConfiguration(const string& solver,
 
     if (solver == "flowlessly") {
       args->push_back("--graph_has_node_types=true");
-      args->push_back("--global_update=false");
+      args->push_back("--algorithm=" + FLAGS_flowlessly_algorithm);
+      if (FLAGS_only_read_assignment_changes) {
+        args->push_back("--print_assignments=true");
+      } else {
+        args->push_back("--print_assignments=false");
+      }
       if (!FLAGS_incremental_flow) {
         args->push_back("--daemon=false");
       }

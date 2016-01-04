@@ -572,7 +572,7 @@ if [[ ${CONT} == "0" && -f ${FLOWLESSLY_DEPLOY_KEY} ]]; then
   ssh-agent bash -c "ssh-add ${FLOWLESSLY_DEPLOY_KEY}; git clone git@github.com:ICGog/FlowlesslyPrivate.git flowlessly-git"
   cd flowlessly-git
   if [[ ! -f run_fast_cost_scaling ]]; then
-    RES=$(make 2>/dev/null)
+    RES=$(cmake . 2>/dev/null ; make 2>/dev/null)
   else
     RES=0
   fi
