@@ -7,9 +7,12 @@
 
 namespace firmament {
 
-DIMACSChangeArc::DIMACSChangeArc(const FlowGraphArc& arc) : DIMACSChange(),
-  src_(arc.src_), dst_(arc.dst_), cap_lower_bound_(arc.cap_lower_bound_),
-  cap_upper_bound_(arc.cap_upper_bound_), cost_(arc.cost_) {
+DIMACSChangeArc::DIMACSChangeArc(const FlowGraphArc& arc,
+                                 const uint64_t old_cost)
+  : DIMACSChange(), src_(arc.src_), dst_(arc.dst_),
+    cap_lower_bound_(arc.cap_lower_bound_),
+    cap_upper_bound_(arc.cap_upper_bound_), cost_(arc.cost_), type_(arc.type_),
+    old_cost_(old_cost) {
   // An upper bound capacity of 0 indicates arc removal
   if (cap_upper_bound_ == 0)
     stats_.arcs_removed_++;
@@ -20,8 +23,9 @@ DIMACSChangeArc::DIMACSChangeArc(const FlowGraphArc& arc) : DIMACSChange(),
 const string DIMACSChangeArc::GenerateChange() const {
   stringstream ss;
   ss << DIMACSChange::GenerateChangeDescription();
-  ss << "x " << src_ << " " << dst_ << " " << cap_lower_bound_
-     << " " << cap_upper_bound_ << " " << cost_ << "\n";
+  ss << "x " << src_ << " " << dst_ << " " << cap_lower_bound_ << " "
+     << cap_upper_bound_ << " " << cost_ << " " << type_ << " " << old_cost_
+     << "\n";
   return ss.str();
 }
 
