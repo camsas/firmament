@@ -529,7 +529,7 @@ cd ${EXT_DIR}
 
 ## cpplint.py (linter script)
 print_subhdr "CPPLINT HELPER SCRIPT"
-get_dep_wget "cpplint" "http://google-styleguide.googlecode.com/svn/trunk/cpplint/cpplint.py"
+get_dep_wget "cpplint" "http://raw.githubusercontent.com/google/styleguide/gh-pages/cpplint/cpplint.py"
 
 
 ## CS2 solver code for min-cost max-flow scheduler.
