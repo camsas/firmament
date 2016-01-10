@@ -151,7 +151,7 @@ class FlowGraphManager {
 
   // Vector storing the graph changes occured since the last scheduling round.
   vector<DIMACSChange*> graph_changes_;
-  GenerateTrace generate_trace_;
+  GenerateTrace* generate_trace_;
 };
 
 }  // namespace firmament

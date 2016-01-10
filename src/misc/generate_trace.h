@@ -10,7 +10,7 @@
 
 namespace firmament {
 
-typedef struct TaskRuntime_st {
+struct TaskRuntime {
   uint64_t start_time;
   uint64_t num_runs;
   uint64_t last_schedule_time;
@@ -22,7 +22,7 @@ typedef struct TaskRuntime_st {
   double ram_request;
   double disk_request;
   int32_t machine_constraint;
-} TaskRuntime;
+};
 
 class GenerateTrace {
  public:
