@@ -23,6 +23,7 @@ extern "C" {
 
 #ifdef __linux__
 #include <sys/prctl.h>
+#include <sys/stat.h>
 #endif
 
 #include "misc/utils.h"
@@ -207,6 +208,16 @@ size_t HashString(const string& str) {
   size_t hash = 42;
   boost::hash_combine(hash, str);
   return hash;
+}
+
+void MkdirIfNotPresent(const string &directory) {
+  if (mkdir(directory.c_str(), 0777) < 0) {
+    // mkdir error
+    if (errno != EEXIST) {
+      // it's fine if directory already exists, ignore
+      PLOG(FATAL) << "Could not make directory " << directory;
+    }
+  }
 }
 
 DataObjectID_t DataObjectIDFromString(const string& str) {

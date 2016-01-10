@@ -64,6 +64,7 @@ size_t HashJobID(JobID_t job_id);
 size_t HashJobID(const TaskDescriptor& td);
 size_t HashString(const string& str);
 bool IsEqual(double first, double second);
+void MkdirIfNotPresent(const string &directory);
 // Utility functions to parse various types from strings.
 DataObjectID_t DataObjectIDFromString(const string& str);
 DataObjectID_t DataObjectIDFromProtobuf(const string& str);

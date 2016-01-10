@@ -70,13 +70,17 @@ SolverDispatcher::SolverDispatcher(
 
 SolverDispatcher::~SolverDispatcher() {
   if (to_solver_ != NULL) {
-    fclose(to_solver_);
+    // Print EOS to Make sure the solver closes gracefully when running
+    // in daemon mode.
+    fprintf(to_solver_, "c EOS\n");
+    fflush(to_solver_);
+    CHECK_EQ(fclose(to_solver_), 0);
   }
   if (from_solver_ != NULL) {
-    fclose(from_solver_);
+    CHECK_EQ(fclose(from_solver_), 0);
   }
   if (from_solver_stderr_ != NULL) {
-    fclose(from_solver_stderr_);
+    CHECK_EQ(fclose(from_solver_stderr_), 0);
   }
 }
 
@@ -204,6 +208,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   vector<string> args;
   pid_t solver_pid;
   pthread_t logger_thread = -1;
+  // If the solver hasn't executed or if we're not running in incremental mode.
   if (!solver_ran_once_ || !FLAGS_incremental_flow) {
     // Pipe setup
     // errfd[0] == PARENT_READ
