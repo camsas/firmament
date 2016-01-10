@@ -55,6 +55,11 @@ FlowGraphManager::~FlowGraphManager() {
 void FlowGraphManager::AddArcsForTask(FlowGraphNode* task_node,
                                       FlowGraphNode* unsched_agg_node,
                                       vector<FlowGraphArc*>* task_arcs) {
+  // NOTE: We do not create DIMACS changes while adding the arcs because
+  // we can add all the arcs in one go when we create a new node. Otherwise,
+  // if we just update an existing node then the code calling this method
+  // must generate DIMACS changes.
+
   // Cost model may need to do some setup for newly added tasks
   cost_model_->AddTask(task_node->task_id_);
   // We always have an edge to our job's unscheduled node
@@ -356,7 +361,7 @@ void FlowGraphManager::AddResourceEquivClasses(FlowGraphNode* res_node) {
               << ec_arc->cap_upper_bound_ << ", cost " << ec_arc->cost_ << "!";
 
       DIMACSChange *chg = new DIMACSNewArc(*ec_arc);
-      chg->set_comment("AddResourceEquivClasses");
+      chg->set_comment("AddResourceEquivClasses: from EC to RES");
       AddGraphChange(chg);
     }
   }
@@ -465,6 +470,11 @@ void FlowGraphManager::AddResourceNode(
 void FlowGraphManager::AddOrUpdateEquivClassArcs(
     EquivClass_t ec,
     vector<FlowGraphArc*>* ec_arcs) {
+  // NOTE: We do not create DIMACS changes for new arcs because we can add
+  // all the arcs in one go when we create a new node. Otherwise,
+  // if we just update an existing node then the code calling this method
+  // must generate DIMACS changes.
+
   FlowGraphNode* ec_node = FindPtrOrNull(tec_to_node_, ec);
   CHECK_NOTNULL(ec_node);
   vector<TaskID_t>* task_pref_arcs =
@@ -501,10 +511,11 @@ void FlowGraphManager::AddOrUpdateEquivClassArcs(
         ec_arcs->push_back(arc);
       } else if (arc_cost != arc->cost_) {
         // It already exists, but its cost has changed
-        DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
+        Cost_t old_cost = arc->cost_;
+        flow_graph_->ChangeArcCost(arc, arc_cost);
+        DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
         chg->set_comment("AddOrUpdateEquivClassArcs/incoming");
         AddGraphChange(chg);
-        flow_graph_->ChangeArcCost(arc, arc_cost);
       }
     }
     delete task_pref_arcs;
@@ -542,10 +553,11 @@ void FlowGraphManager::AddOrUpdateEquivClassArcs(
         VLOG(1) << "Updating cost on EC -> resource arc from " << ec
                 << " to " << arc->dst_node_->resource_id_ << " from "
                 << arc->cost_ << " to " << arc_cost;
-        DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
+        Cost_t old_cost = arc->cost_;
+        flow_graph_->ChangeArcCost(arc, arc_cost);
+        DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
         chg->set_comment("AddOrUpdateEquivClassArcs/outgoing");
         AddGraphChange(chg);
-        flow_graph_->ChangeArcCost(arc, arc_cost);
       }
     }
   }
@@ -571,6 +583,8 @@ void FlowGraphManager::AddOrUpdateEquivClassArcs(
     }
   }
   for (auto& arc : to_delete) {
+    arc->cap_lower_bound_ = 0;
+    arc->cap_upper_bound_ = 0;
     DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
     chg->set_comment("AddOrUpdateEquivClassArcs/outgoing");
     AddGraphChange(chg);
@@ -838,7 +852,7 @@ void FlowGraphManager::DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv,
                                                        const char *comment) {
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
   if (equiv_node_ptr == NULL) {
-    // Equiv class node can be NULL because all it's task are running
+    // Equiv class node can be NULL because all its tasks are running
     // and are directly connected to resource nodes.
     return;
   }
@@ -862,7 +876,7 @@ void FlowGraphManager::DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
                                                        const char *comment) {
   FlowGraphNode* equiv_node_ptr = FindPtrOrNull(tec_to_node_, task_equiv);
   if (equiv_node_ptr == NULL) {
-    // Equiv class node can be NULL because all it's task are running
+    // Equiv class node can be NULL because all its tasks are running
     // and are directly connected to resource nodes.
     return;
   }
@@ -963,32 +977,53 @@ FlowGraphNode* FlowGraphManager::NodeForTaskID(TaskID_t task_id) {
 
 void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
                                      FlowGraphNode* res_node) {
+  bool added_running_arc = false;
   // Remove all arcs apart from the task -> resource mapping;
   // note that this effectively disables preemption!
   for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
          task_node->outgoing_arc_map_.begin();
        it != task_node->outgoing_arc_map_.end(); ) {
-    VLOG(2) << "Deleting arc from " << it->second->src_ << " to "
-            << it->second->dst_;
-    unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
+    FlowGraphArc* arc = it->second;
     ++it;
-    DIMACSChange *chg =
-      new DIMACSChangeArc(*it_tmp->second, it_tmp->second->cost_);
-    chg->set_comment("PinTaskToNode");
-    AddGraphChange(chg);
-    flow_graph_->DeleteArc(it_tmp->second);
+    if (arc->dst_node_->id_ == res_node->id_) {
+      // The running arc is the same as this preference arc. Hence,
+      // we don't delete. We just transform it into a running arc.
+      // TODO(ionel): This doesn't allow preemption. Set the
+      // cap_lower bound to 0 and the cost appropriately to allow
+      // preemption.
+      flow_graph_->ChangeArc(arc, 1, 1, arc->cost_);
+      arc->type_ = RUNNING;
+      DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
+      chg->set_comment("PinTaskToNode transform to running arc");
+      AddGraphChange(chg);
+      added_running_arc = true;
+    } else {
+      VLOG(2) << "Deleting arc from " << arc->src_ << " to " << arc->dst_;
+      arc->cap_lower_bound_ = 0;
+      arc->cap_upper_bound_ = 0;
+      DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
+      chg->set_comment("PinTaskToNode delete arc");
+      AddGraphChange(chg);
+      flow_graph_->DeleteArc(arc);
+    }
   }
   // Remove this task's potential flow from the per-job unscheduled
   // aggregator's outgoing edge
   UpdateUnscheduledAggToSinkCapacity(task_node->job_id_, -1);
-  // Re-add a single arc from the task to the resource node
-  FlowGraphArc* new_arc = flow_graph_->AddArc(task_node, res_node);
-  new_arc->cap_upper_bound_ = 1;
-  new_arc->type_ = RUNNING;
-
-  DIMACSChange *chg = new DIMACSNewArc(*new_arc);
-  chg->set_comment("PinTaskToNode");
-  AddGraphChange(chg);
+  if (!added_running_arc) {
+    // Re-add a single arc from the task to the resource node
+    FlowGraphArc* new_arc = flow_graph_->AddArc(task_node, res_node);
+    new_arc->cap_lower_bound_ = 1;
+    new_arc->cap_upper_bound_ = 1;
+    new_arc->type_ = RUNNING;
+    // TODO(ionel): This doesn't allow preemption. Set the
+    // cap_lower bound to 0 and the cost appropriately to allow
+    // preemption.
+    new_arc->cost_ = 0;
+    DIMACSChange *chg = new DIMACSNewArc(*new_arc);
+    chg->set_comment("PinTaskToNode add running arc");
+    AddGraphChange(chg);
+  }
 }
 
 void FlowGraphManager::RemoveMachine(ResourceID_t res_id) {
@@ -1008,6 +1043,8 @@ void FlowGraphManager::RemoveMachineSubTree(FlowGraphNode* res_node) {
     }
     if (it->second->dst_node_->resource_id_.is_nil()) {
       // The node is not a resource node. We will just delete the arc to it.
+      // We don't need to generate a DIMACS change because we'll later delete
+      // the node.
       flow_graph_->DeleteArc(it->second);
       continue;
     }
@@ -1017,7 +1054,8 @@ void FlowGraphManager::RemoveMachineSubTree(FlowGraphNode* res_node) {
       RemoveMachineSubTree(it->second->dst_node_);
     } else {
       // The node is not a machine related node. We will just delete the arc
-      // to it.
+      // to it. We don't need to generate a DIMACS change because we'll later
+      // delete the node.
       flow_graph_->DeleteArc(it->second);
     }
   }
@@ -1109,9 +1147,14 @@ void FlowGraphManager::UpdateArcsForEvictedTask(TaskID_t task_id,
     for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
            task_node->outgoing_arc_map_.begin();
          it != task_node->outgoing_arc_map_.end();) {
-      unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
+      FlowGraphArc* arc = it->second;
       ++it;
-      flow_graph_->DeleteArc(it_tmp->second);
+      arc->cap_lower_bound_ = 0;
+      arc->cap_upper_bound_ = 0;
+      DIMACSChange* chg = new DIMACSChangeArc(*arc, arc->cost_);
+      chg->set_comment("UpdateArcsForEvictedTasks delete running arc");
+      AddGraphChange(chg);
+      flow_graph_->DeleteArc(arc);
     }
     // Add back arcs to equiv class node, unscheduled agg and to
     // resource topology agg.
@@ -1236,10 +1279,11 @@ void FlowGraphManager::UpdateUnscheduledAggArcCosts() {
 
       Cost_t new_cost = cost_model_->TaskToUnscheduledAggCost(task_id);
       CHECK_GE(new_cost, 0);
-      DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
+      Cost_t old_cost = arc->cost_;
+      flow_graph_->ChangeArcCost(arc, new_cost);
+      DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
       chg->set_comment("UpdateUnscheduledAggArcCosts");
       AddGraphChange(chg);
-      flow_graph_->ChangeArcCost(arc, new_cost);
     }
   }
 }
