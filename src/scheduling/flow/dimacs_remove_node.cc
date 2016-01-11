@@ -5,10 +5,8 @@
 
 namespace firmament {
 
-DIMACSRemoveNode::DIMACSRemoveNode(const FlowGraphNode& node) :
-  DIMACSChange(),
-  node_id_(node.id_) {
-  stats_.nodes_removed_++;
+DIMACSRemoveNode::DIMACSRemoveNode(const FlowGraphNode& node)
+  : DIMACSChange(), node_id_(node.id_) {
 }
 
 const string DIMACSRemoveNode::GenerateChange() const {

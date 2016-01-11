@@ -11,13 +11,15 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/flow/dimacs_change_stats.h"
 
 namespace firmament {
 
 class OctopusCostModel : public CostModelInterface {
  public:
   explicit OctopusCostModel(shared_ptr<ResourceMap_t> resource_map,
-                            shared_ptr<TaskMap_t> task_map);
+                            shared_ptr<TaskMap_t> task_map,
+                            DIMACSChangeStats* dimacs_stats);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -64,6 +66,7 @@ class OctopusCostModel : public CostModelInterface {
   shared_ptr<ResourceMap_t> resource_map_;
   // The task map used in the rest of the system
   shared_ptr<TaskMap_t> task_map_;
+  DIMACSChangeStats* dimacs_stats_;
 };
 
 }  // namespace firmament

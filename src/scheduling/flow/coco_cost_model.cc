@@ -33,12 +33,14 @@ CocoCostModel::CocoCostModel(
     shared_ptr<TaskMap_t> task_map,
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-    shared_ptr<KnowledgeBase> knowledge_base)
+    shared_ptr<KnowledgeBase> knowledge_base,
+    DIMACSChangeStats* dimacs_stats)
   : resource_map_(resource_map),
     resource_topology_(resource_topology),
     task_map_(task_map),
     leaf_res_ids_(leaf_res_ids),
-    knowledge_base_(knowledge_base) {
+    knowledge_base_(knowledge_base),
+    dimacs_stats_(dimacs_stats) {
   // Set an initial value for infinity -- this overshoots a bit; would be nice
   // to have a tighter bound based on actual costs observed
   infinity_ = omega_ * (CostVector_t::dimensions_ - 1) +
@@ -1156,6 +1158,7 @@ FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
     arc->cost_ = new_cost;
     DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
     chg->set_comment("CoCo/UpdateStats");
+    dimacs_stats_->UpdateStats(CHG_ARC_BETWEEN_RES);
     flow_graph_manager_->AddGraphChange(chg);
   }
 

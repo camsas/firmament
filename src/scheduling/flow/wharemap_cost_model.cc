@@ -29,10 +29,12 @@ namespace firmament {
 
 WhareMapCostModel::WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
                                      shared_ptr<TaskMap_t> task_map,
-                                     shared_ptr<KnowledgeBase> knowledge_base)
+                                     shared_ptr<KnowledgeBase> knowledge_base,
+                                     DIMACSChangeStats* dimacs_stats)
   : resource_map_(resource_map),
     task_map_(task_map),
-    knowledge_base_(knowledge_base) {
+    knowledge_base_(knowledge_base),
+    dimacs_stats_(dimacs_stats) {
   // Create the cluster aggregator EC, which all machines are members of.
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
   VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;
@@ -864,6 +866,7 @@ FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
     arc->cost_ = new_cost;
     DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
     chg->set_comment("WhareMap/UpdateStats");
+    dimacs_stats_->UpdateStats(CHG_ARC_BETWEEN_RES);
     flow_graph_manager_->AddGraphChange(chg);
   }
 

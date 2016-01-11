@@ -58,7 +58,8 @@ FlowScheduler::FlowScheduler(
       topology_manager_(topo_mgr),
       last_updated_time_dependent_costs_(0ULL),
       leaf_res_ids_(new unordered_set<ResourceID_t,
-                      boost::hash<boost::uuids::uuid>>) {
+                      boost::hash<boost::uuids::uuid>>),
+      dimacs_stats_(new DIMACSChangeStats) {
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
           << FLAGS_flow_scheduling_cost_model << "\"";
@@ -74,7 +75,8 @@ FlowScheduler::FlowScheduler(
       break;
     case CostModelType::COST_MODEL_COCO:
       cost_model_ = new CocoCostModel(resource_map, *resource_topology,
-                                      task_map, leaf_res_ids_, knowledge_base_);
+                                      task_map, leaf_res_ids_, knowledge_base_,
+                                      dimacs_stats_);
       VLOG(1) << "Using the coco cost model";
       break;
     case CostModelType::COST_MODEL_SJF:
@@ -89,11 +91,11 @@ FlowScheduler::FlowScheduler(
       break;
     case CostModelType::COST_MODEL_WHARE:
       cost_model_ = new WhareMapCostModel(resource_map, task_map,
-                                          knowledge_base_);
+                                          knowledge_base_, dimacs_stats_);
       VLOG(1) << "Using the Whare-Map cost model";
       break;
     case CostModelType::COST_MODEL_OCTOPUS:
-      cost_model_ = new OctopusCostModel(resource_map, task_map);
+      cost_model_ = new OctopusCostModel(resource_map, task_map, dimacs_stats_);
       VLOG(1) << "Using the octopus cost model";
       break;
     case CostModelType::COST_MODEL_VOID:
@@ -111,7 +113,8 @@ FlowScheduler::FlowScheduler(
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
   }
 
-  flow_graph_manager_.reset(new FlowGraphManager(cost_model_, leaf_res_ids_));
+  flow_graph_manager_.reset(new FlowGraphManager(cost_model_, leaf_res_ids_,
+                                                 dimacs_stats_));
   cost_model_->SetFlowGraphManager(flow_graph_manager_);
 
   // Set up the initial flow graph
@@ -121,6 +124,7 @@ FlowScheduler::FlowScheduler(
 }
 
 FlowScheduler::~FlowScheduler() {
+  delete dimacs_stats_;
   delete cost_model_;
   delete solver_dispatcher_;
   delete leaf_res_ids_;

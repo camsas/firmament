@@ -21,6 +21,7 @@
 #include "scheduling/knowledge_base.h"
 #include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/scheduling_event_notifier_interface.h"
+#include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/dimacs_exporter.h"
 #include "scheduling/flow/flow_graph_manager.h"
 #include "scheduling/flow/solver_dispatcher.h"
@@ -44,6 +45,7 @@ class FlowScheduler : public EventDrivenScheduler {
                 SchedulingEventNotifierInterface* event_notifier,
                 ResourceID_t coordinator_res_id,
                 const string& coordinator_uri);
+
   ~FlowScheduler();
   virtual void DeregisterResource(ResourceID_t res_id);
   virtual void HandleJobCompletion(JobID_t job_id);
@@ -110,6 +112,7 @@ class FlowScheduler : public EventDrivenScheduler {
   uint64_t last_updated_time_dependent_costs_;
   // Set containing the resource ids of the PUs.
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
+  DIMACSChangeStats* dimacs_stats_;
 };
 
 }  // namespace scheduler

@@ -23,10 +23,10 @@ DIMACSAddNode::DIMACSAddNode(const FlowGraphNode& node,
                              const vector<FlowGraphArc*>& arcs) :
      DIMACSChange(), id_(node.id_), excess_(node.excess_), type_(node.type_) {
   for (FlowGraphArc* arc : arcs) {
+    // NOTE: The DIMACS stats for these new arcs have already been updated when
+    // the arcs were created.
     arc_additions_.push_back(DIMACSNewArc(*arc));
-    stats_.arcs_added_++;
   }
-  stats_.nodes_added_++;
 }
 
 const string DIMACSAddNode::GenerateChange() const {
