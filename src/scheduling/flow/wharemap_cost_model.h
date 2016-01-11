@@ -19,6 +19,7 @@
 #include "scheduling/common.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/flow/dimacs_change_stats.h"
 
 namespace firmament {
 
@@ -26,7 +27,8 @@ class WhareMapCostModel : public CostModelInterface {
  public:
   WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
                     shared_ptr<TaskMap_t> task_map,
-                    shared_ptr<KnowledgeBase> knowledge_base);
+                    shared_ptr<KnowledgeBase> knowledge_base,
+                    DIMACSChangeStats* dimacs_stats);
   ~WhareMapCostModel();
   // Debug info export
   virtual const string DebugInfo() const;
@@ -138,6 +140,7 @@ class WhareMapCostModel : public CostModelInterface {
   unordered_map<EquivClass_t, uint64_t> best_case_psi_map_;
   // Map to track task EC -> best-environment EC PsPI;
   unordered_map<EquivClass_t, uint64_t> best_case_xi_map_;
+  DIMACSChangeStats* dimacs_stats_;
 };
 
 }  // namespace firmament

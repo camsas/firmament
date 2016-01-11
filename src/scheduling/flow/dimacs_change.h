@@ -7,7 +7,6 @@
 #include <string>
 
 #include "base/types.h"
-#include "scheduling/flow/dimacs_change_stats.h"
 
 namespace firmament {
 
@@ -22,9 +21,6 @@ class DIMACSChange {
     if (comment) {
       comment_ = comment;
     }
-  }
-  inline const DIMACSChangeStats& stats() const {
-    return stats_;
   }
 
   const string GenerateChangeDescription() const {
@@ -41,7 +37,6 @@ class DIMACSChange {
 
  protected:
   string comment_;
-  DIMACSChangeStats stats_;
 };
 
 } // namespace firmament

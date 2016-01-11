@@ -19,6 +19,7 @@
 #include "scheduling/common.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/flow/dimacs_change_stats.h"
 
 namespace firmament {
 
@@ -43,7 +44,8 @@ class CocoCostModel : public CostModelInterface {
                 shared_ptr<TaskMap_t> task_map,
                 unordered_set<ResourceID_t,
                   boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-                shared_ptr<KnowledgeBase> knowledge_base);
+                shared_ptr<KnowledgeBase> knowledge_base,
+                DIMACSChangeStats* dimacs_stats);
   const string DebugInfo() const;
   const string DebugInfoCSV() const;
   // Costs pertaining to leaving tasks unscheduled
@@ -163,6 +165,7 @@ class CocoCostModel : public CostModelInterface {
   // present in the cluster (N.B.: these can execeed OMEGA).
   ResourceVector max_machine_capacity_;
   ResourceVector min_machine_capacity_;
+  DIMACSChangeStats* dimacs_stats_;
 };
 
 }  // namespace firmament

@@ -15,6 +15,7 @@
 #include "misc/map-util.h"
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/dimacs_change.h"
+#include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/flow_graph.h"
 #include "scheduling/flow/flow_graph_arc.h"
 #include "scheduling/flow/flow_graph_node.h"
@@ -28,7 +29,8 @@ class FlowGraphManager {
  public:
   explicit FlowGraphManager(CostModelInterface* cost_model,
                             unordered_set<ResourceID_t,
-                            boost::hash<boost::uuids::uuid>>* leaf_res_ids);
+                              boost::hash<boost::uuids::uuid>>* leaf_res_ids,
+                            DIMACSChangeStats* dimacs_stats);
   virtual ~FlowGraphManager();
   // Public API
   void AddGraphChange(DIMACSChange* change);
@@ -152,6 +154,7 @@ class FlowGraphManager {
   // Vector storing the graph changes occured since the last scheduling round.
   vector<DIMACSChange*> graph_changes_;
   GenerateTrace generate_trace_;
+  DIMACSChangeStats* dimacs_stats_;
 };
 
 }  // namespace firmament

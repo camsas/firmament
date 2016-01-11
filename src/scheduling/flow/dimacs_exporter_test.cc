@@ -18,6 +18,7 @@
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/string_utils.h"
+#include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/dimacs_exporter.h"
 #include "scheduling/flow/flow_graph_manager.h"
 #include "scheduling/flow/trivial_cost_model.h"
@@ -76,8 +77,10 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  DIMACSChangeStats dimacs_stats;
   FlowGraphManager flow_graph_manager(
-      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
+      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids,
+      &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
   string root_id = to_string(GenerateResourceID("test"));
@@ -126,8 +129,10 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+  DIMACSChangeStats dimacs_stats;
   FlowGraphManager flow_graph_manager(
-      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
+      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids,
+      &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
   int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
@@ -197,8 +202,10 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
     unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
       new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+    DIMACSChangeStats dimacs_stats;
     FlowGraphManager flow_graph_manager(
-        new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids);
+        new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids,
+        &dimacs_stats);
     // Test resource topology
     ResourceTopologyNodeDescriptor machine_tmpl;
     int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
