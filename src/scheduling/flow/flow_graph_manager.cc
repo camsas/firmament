@@ -246,7 +246,7 @@ void FlowGraphManager::AddOrUpdateJobNodes(JobDescriptor* jd) {
       task_node = flow_graph_->Node(*tn_ptr);
     }
     if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
-      generate_trace_->TaskSubmitted(JobIDFromString(jd->uuid()), cur->uid());
+      generate_trace_->TaskSubmitted(jd, cur->uid());
       vector<FlowGraphArc*> task_arcs;
       task_node = flow_graph_->AddNode();
       task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
@@ -447,9 +447,7 @@ void FlowGraphManager::AddResourceNode(
 
     if (rtnd_ptr->resource_desc().type() ==
         ResourceDescriptor::RESOURCE_MACHINE) {
-      ResourceID_t res_id =
-        ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
-      generate_trace_->AddMachine(res_id);
+      generate_trace_->AddMachine(rtnd_ptr->resource_desc());
       // We call AddMachine here, but do *not* yet create the ECs, since the
       // outgoing arcs from the ECs must know the number of task slots in the
       // machine, which isn't clear until we've recursed further.
@@ -1028,8 +1026,9 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
   }
 }
 
-void FlowGraphManager::RemoveMachine(ResourceID_t res_id) {
-  generate_trace_->RemoveMachine(res_id);
+void FlowGraphManager::RemoveMachine(const ResourceDescriptor& rd) {
+  generate_trace_->RemoveMachine(rd);
+  ResourceID_t res_id = ResourceIDFromString(rd.uuid());
   uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
   CHECK_NOTNULL(node_id);
   RemoveMachineSubTree(flow_graph_->Node(*node_id));

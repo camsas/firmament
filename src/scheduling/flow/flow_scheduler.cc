@@ -161,7 +161,7 @@ void FlowScheduler::DeregisterResource(ResourceID_t res_id) {
   ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs_ptr);
   if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_MACHINE) {
-    flow_graph_manager_->RemoveMachine(res_id);
+    flow_graph_manager_->RemoveMachine(rs_ptr->descriptor());
   }
   if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_PU) {
     EventDrivenScheduler::DeregisterResource(res_id);

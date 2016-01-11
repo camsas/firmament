@@ -88,13 +88,16 @@ ResourceDescriptor* SimulatorBridge::AddMachine(
   ResourceTopologyNodeDescriptor* new_machine = rtn_root_.add_children();
   new_machine->CopyFrom(machine_tmpl);
   const string& root_uuid = rtn_root_.resource_desc().uuid();
-  char hn[100];
-  snprintf(hn, sizeof(hn), "h%ju", machine_id);
+  // Mark the hostname as a simulation one. This is useful for generate_trace
+  // which if it detects a simulated host then it outputs the host's trace id
+  // rather than Firmament's machine id.
+  string hostname = "firmament_simulation_machine_" +
+    lexical_cast<string>(machine_id);
   DFSTraverseResourceProtobufTreeReturnRTND(
       new_machine, boost::bind(&SimulatorBridge::ResetUuidAndAddResource,
-                               this, _1, string(hn), root_uuid));
+                               this, _1, hostname, root_uuid));
   ResourceDescriptor* rd_ptr = new_machine->mutable_resource_desc();
-  rd_ptr->set_friendly_name(hn);
+  rd_ptr->set_friendly_name(hostname);
   rd_ptr->set_type(ResourceDescriptor::RESOURCE_MACHINE);
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
   CHECK(InsertIfNotPresent(&trace_machine_id_to_rtnd_, machine_id,
@@ -141,7 +144,7 @@ TaskDescriptor* SimulatorBridge::AddTask(
   }
   TaskDescriptor* td_ptr = NULL;
   if (FindOrNull(trace_task_id_to_td_, task_identifier) == NULL) {
-    td_ptr = AddTaskToJob(jd_ptr);
+    td_ptr = AddTaskToJob(jd_ptr, task_identifier.task_index);
     // XXX(ionel): Hack. We're setting the simulator job id as the binary
     // of the job in order for Firmament to uniquely identify it.
     td_ptr->set_binary(lexical_cast<string>(task_identifier.job_id));
@@ -220,11 +223,12 @@ void SimulatorBridge::AddTaskStats(
   trace_task_id_to_stats_.erase(trace_task_identifier);
 }
 
-TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr) {
+TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr,
+                                              uint64_t trace_task_id) {
   CHECK_NOTNULL(jd_ptr);
   TaskDescriptor* root_task = jd_ptr->mutable_root_task();
   TaskDescriptor* new_task = root_task->add_spawned();
-  new_task->set_uid(GenerateTaskID(*root_task));
+  new_task->set_uid(trace_task_id);
   new_task->set_state(TaskDescriptor::CREATED);
   new_task->set_job_id(jd_ptr->uuid());
   return new_task;
@@ -338,6 +342,11 @@ JobDescriptor* SimulatorBridge::PopulateJob(uint64_t trace_job_id) {
 
   // Maintain a mapping between the trace job_id and the generated job_id.
   jd_ptr->set_uuid(to_string(new_job_id));
+  // Set the name of the job to a string that denotes we're running a simulation
+  // continued by the trace job id. We use the name to generate a simulation
+  // trace that uses trace job ids.
+  jd_ptr->set_name("firmament_simulation_job_" +
+                   lexical_cast<string>(trace_job_id));
   InsertOrUpdate(&trace_job_id_to_jd_, trace_job_id, jd_ptr);
   InsertOrUpdate(&job_id_to_trace_job_id_, new_job_id, trace_job_id);
   TaskDescriptor* rt = jd_ptr->mutable_root_task();

@@ -28,18 +28,19 @@ class GenerateTrace {
  public:
   GenerateTrace();
   ~GenerateTrace();
-  void AddMachine(ResourceID_t res_id);
-  void RemoveMachine(ResourceID_t res_id);
-  void TaskSubmitted(JobID_t job_id, TaskID_t task_id);
+  void AddMachine(const ResourceDescriptor& rd);
+  void RemoveMachine(const ResourceDescriptor& rd);
+  void TaskSubmitted(JobDescriptor* jd_ptr, TaskID_t task_id);
   void TaskCompleted(TaskID_t task_id);
   void TaskEvicted(TaskID_t task_id);
   void TaskFailed(TaskID_t task_id);
   void TaskKilled(TaskID_t task_id);
   void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
  private:
+  uint64_t GetMachineId(const ResourceDescriptor& rd);
+
   unordered_map<TaskID_t, uint64_t> task_to_job_;
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
-  unordered_map<TaskID_t, uint64_t> task_to_index_;
   unordered_map<TaskID_t, TaskRuntime> task_to_runtime_;
   FILE* machine_events_;
   FILE* task_events_;
