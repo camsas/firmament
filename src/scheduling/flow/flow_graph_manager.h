@@ -49,7 +49,7 @@ class FlowGraphManager {
   void JobCompleted(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
-  void RemoveMachine(ResourceID_t res_id);
+  void RemoveMachine(const ResourceDescriptor& rd);
   void ResetChanges();
   void TaskCompleted(TaskID_t task_id);
   void TaskEvicted(TaskID_t task_id, ResourceID_t res_id);
