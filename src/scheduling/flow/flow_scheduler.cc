@@ -50,11 +50,12 @@ FlowScheduler::FlowScheduler(
     MessagingAdapterInterface<BaseMessage>* m_adapter,
     SchedulingEventNotifierInterface* event_notifier,
     ResourceID_t coordinator_res_id,
-    const string& coordinator_uri)
+    const string& coordinator_uri,
+    TimeInterface* time_manager)
     : EventDrivenScheduler(job_map, resource_map, resource_topology,
                            object_store, task_map, knowledge_base, topo_mgr,
                            m_adapter, event_notifier, coordinator_res_id,
-                           coordinator_uri),
+                           coordinator_uri, time_manager),
       topology_manager_(topo_mgr),
       last_updated_time_dependent_costs_(0ULL),
       leaf_res_ids_(new unordered_set<ResourceID_t,
@@ -76,11 +77,12 @@ FlowScheduler::FlowScheduler(
     case CostModelType::COST_MODEL_COCO:
       cost_model_ = new CocoCostModel(resource_map, *resource_topology,
                                       task_map, leaf_res_ids_, knowledge_base_,
-                                      dimacs_stats_);
+                                      time_manager_, dimacs_stats_);
       VLOG(1) << "Using the coco cost model";
       break;
     case CostModelType::COST_MODEL_SJF:
-      cost_model_ = new SJFCostModel(task_map, leaf_res_ids_, knowledge_base_);
+      cost_model_ = new SJFCostModel(task_map, leaf_res_ids_, knowledge_base_,
+                                     time_manager_);
       VLOG(1) << "Using the SJF cost model";
       break;
     case CostModelType::COST_MODEL_QUINCY:
@@ -91,7 +93,8 @@ FlowScheduler::FlowScheduler(
       break;
     case CostModelType::COST_MODEL_WHARE:
       cost_model_ = new WhareMapCostModel(resource_map, task_map,
-                                          knowledge_base_, dimacs_stats_);
+                                          knowledge_base_, time_manager_,
+                                          dimacs_stats_);
       VLOG(1) << "Using the Whare-Map cost model";
       break;
     case CostModelType::COST_MODEL_OCTOPUS:
@@ -114,7 +117,7 @@ FlowScheduler::FlowScheduler(
   }
 
   flow_graph_manager_.reset(new FlowGraphManager(cost_model_, leaf_res_ids_,
-                                                 dimacs_stats_));
+                                                 time_manager_, dimacs_stats_));
   cost_model_->SetFlowGraphManager(flow_graph_manager_);
 
   // Set up the initial flow graph
@@ -369,7 +372,7 @@ uint64_t FlowScheduler::RunSchedulingIteration(
 
   // If it's time to revisit time-dependent costs, do so now, just before
   // we run the solver.
-  uint64_t cur_time = GetCurrentTimestamp();
+  uint64_t cur_time = time_manager_->GetCurrentTimestamp();
   if (last_updated_time_dependent_costs_ <= (cur_time -
       static_cast<uint64_t>(FLAGS_time_dependent_cost_update_frequency))) {
     // First collect all non-finished jobs

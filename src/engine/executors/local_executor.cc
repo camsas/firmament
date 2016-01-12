@@ -55,10 +55,12 @@ namespace executor {
 using common::pb_to_vector;
 
 LocalExecutor::LocalExecutor(ResourceID_t resource_id,
-                             const string& coordinator_uri)
+                             const string& coordinator_uri,
+                             TimeInterface* time_manager)
     : local_resource_id_(resource_id),
       coordinator_uri_(coordinator_uri),
       health_checker_(&task_handler_threads_, &handler_map_mutex_),
+      time_manager_(time_manager),
       topology_manager_(shared_ptr<TopologyManager>()),  // NULL
       heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
@@ -68,10 +70,12 @@ LocalExecutor::LocalExecutor(ResourceID_t resource_id,
 
 LocalExecutor::LocalExecutor(ResourceID_t resource_id,
                              const string& coordinator_uri,
+                             TimeInterface* time_manager,
                              shared_ptr<TopologyManager> topology_mgr)
     : local_resource_id_(resource_id),
       coordinator_uri_(coordinator_uri),
       health_checker_(&task_handler_threads_, &handler_map_mutex_),
+      time_manager_(time_manager),
       topology_manager_(topology_mgr),
       heartbeat_interval_(1000000000ULL) {  // 1 billios nanosec = 1 sec
   VLOG(1) << "Executor for resource " << resource_id << " is up: " << *this;
@@ -171,7 +175,7 @@ void LocalExecutor::GetPerfDataFromLine(TaskFinalReport* report,
 
 void LocalExecutor::HandleTaskCompletion(TaskDescriptor* td,
                                          TaskFinalReport* report) {
-  uint64_t end_time = GetCurrentTimestamp();
+  uint64_t end_time = time_manager_->GetCurrentTimestamp();
   td->set_finish_time(end_time);
   uint64_t start_time = td->start_time();
   report->set_task_id(td->uid());
@@ -221,7 +225,7 @@ void LocalExecutor::HandleTaskEviction(TaskDescriptor* td) {
 }
 
 void LocalExecutor::HandleTaskFailure(TaskDescriptor* td) {
-  td->set_finish_time(GetCurrentTimestamp());
+  td->set_finish_time(time_manager_->GetCurrentTimestamp());
   // Nothing to be done other than cleaning up; there is no final
   // report for failed task at this time.
   CleanUpCompletedTask(*td);
@@ -231,7 +235,7 @@ void LocalExecutor::RunTask(TaskDescriptor* td,
                             bool firmament_binary) {
   CHECK(td);
   // Save the start time.
-  uint64_t start_time = GetCurrentTimestamp();
+  uint64_t start_time = time_manager_->GetCurrentTimestamp();
   // Mark the start time of the task.
   td->set_start_time(start_time);
   // XXX(malte): Move this over to use RunProcessAsync, instead of custom thread
@@ -522,13 +526,13 @@ bool LocalExecutor::WaitForPerfFile(const string& file_name) {
   // data to it when it finishes.
   struct stat st;
   bzero(&st, sizeof(struct stat));
-  uint64_t timestamp = GetCurrentTimestamp();
+  uint64_t timestamp = time_manager_->GetCurrentTimestamp();
   // Wait at most 10s for perf file to become available
   // TODO(malte): this is a bit of a hack to avoid us getting stuck here
   // forever; we will want to move to a saner, locking-based scheme here.
   if (stat(file_name.c_str(), &st) != 0)
     return false;
-  while (st.st_size == 0 && GetCurrentTimestamp() <=
+  while (st.st_size == 0 && time_manager_->GetCurrentTimestamp() <=
          timestamp + 1 * SECONDS_TO_MICROSECONDS) {
     if (stat(file_name.c_str(), &st) != 0) {
       PLOG(ERROR) << "Failed to stat perf data file " << file_name;

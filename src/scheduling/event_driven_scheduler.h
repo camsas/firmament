@@ -18,6 +18,7 @@
 #include "base/task_final_report.pb.h"
 #include "engine/executors/executor_interface.h"
 #include "misc/messaging_interface.h"
+#include "misc/time_interface.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/scheduler_interface.h"
 #include "scheduling/scheduling_event_notifier_interface.h"
@@ -40,7 +41,8 @@ class EventDrivenScheduler : public SchedulerInterface {
                        MessagingAdapterInterface<BaseMessage>* m_adapter,
                        SchedulingEventNotifierInterface* event_notifier,
                        ResourceID_t coordinator_res_id,
-                       const string& coordinator_uri);
+                       const string& coordinator_uri,
+                       TimeInterface* time_manager);
   ~EventDrivenScheduler();
   virtual void AddJob(JobDescriptor* jd_ptr);
   ResourceID_t* BoundResourceForTask(TaskID_t task_id);
@@ -133,6 +135,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   unordered_map<TaskID_t, ResourceID_t> task_bindings_;
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
+  TimeInterface* time_manager_;
 };
 
 }  // namespace scheduler

@@ -13,6 +13,7 @@
 #include "base/resource_topology_node_desc.pb.h"
 #include "misc/generate_trace.h"
 #include "misc/map-util.h"
+#include "misc/time_interface.h"
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/dimacs_change.h"
 #include "scheduling/flow/dimacs_change_stats.h"
@@ -30,6 +31,7 @@ class FlowGraphManager {
   explicit FlowGraphManager(CostModelInterface* cost_model,
                             unordered_set<ResourceID_t,
                               boost::hash<boost::uuids::uuid>>* leaf_res_ids,
+                            TimeInterface* time_manager,
                             DIMACSChangeStats* dimacs_stats);
   virtual ~FlowGraphManager();
   // Public API

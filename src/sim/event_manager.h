@@ -8,15 +8,17 @@
 #include <utility>
 
 #include "base/common.h"
+#include "misc/time_interface.h"
 #include "sim/event_desc.pb.h"
 #include "sim/trace_utils.h"
 
 namespace firmament {
 namespace sim {
 
-class EventManager {
+class EventManager : public TimeInterface {
  public:
   EventManager();
+  virtual ~EventManager();
 
   /**
    * Adds a new event to the trace.
@@ -24,6 +26,12 @@ class EventManager {
    * @param event struct describing the event
    */
   void AddEvent(uint64_t timestamp, EventDescriptor event);
+
+  uint64_t GetCurrentTimestamp() {
+    // TODO(ionel): The current simulation time doesn't get updated
+    // with the scheduler times. Figure out a solution!
+    return current_simulation_time_;
+  }
 
   /**
    * Get the next simulated event.

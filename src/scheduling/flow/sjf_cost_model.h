@@ -14,6 +14,7 @@
 #include "base/types.h"
 #include "scheduling/common.h"
 #include "scheduling/knowledge_base.h"
+#include "misc/time_interface.h"
 #include "misc/utils.h"
 #include "scheduling/flow/cost_model_interface.h"
 
@@ -24,7 +25,8 @@ class SJFCostModel : public CostModelInterface {
   SJFCostModel(shared_ptr<TaskMap_t> task_map,
                unordered_set<ResourceID_t,
                  boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-               shared_ptr<KnowledgeBase> knowledge_base);
+               shared_ptr<KnowledgeBase> knowledge_base,
+               TimeInterface* time_manager);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -75,6 +77,7 @@ class SJFCostModel : public CostModelInterface {
     boost::hash<boost::uuids::uuid>> machine_to_rtnd_;
   // Shared access to the overall set of tasks
   shared_ptr<TaskMap_t> task_map_;
+  TimeInterface* time_manager_;
 };
 
 }  // namespace firmament

@@ -37,11 +37,12 @@ FlowGraphManager::FlowGraphManager(
     CostModelInterface *cost_model,
     unordered_set<ResourceID_t,
     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
+    TimeInterface* time_manager,
     DIMACSChangeStats* dimacs_stats)
     : cost_model_(cost_model),
       flow_graph_(new FlowGraph),
       leaf_res_ids_(leaf_res_ids),
-      generate_trace_(new GenerateTrace),
+      generate_trace_(new GenerateTrace(time_manager)),
       dimacs_stats_(dimacs_stats) {
   // Add sink and cluster aggregator node
   AddSpecialNodes();

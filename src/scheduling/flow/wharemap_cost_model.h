@@ -15,6 +15,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "misc/time_interface.h"
 #include "misc/utils.h"
 #include "scheduling/common.h"
 #include "scheduling/knowledge_base.h"
@@ -28,6 +29,7 @@ class WhareMapCostModel : public CostModelInterface {
   WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
                     shared_ptr<TaskMap_t> task_map,
                     shared_ptr<KnowledgeBase> knowledge_base,
+                    TimeInterface* time_manager,
                     DIMACSChangeStats* dimacs_stats);
   ~WhareMapCostModel();
   // Debug info export
@@ -140,6 +142,7 @@ class WhareMapCostModel : public CostModelInterface {
   unordered_map<EquivClass_t, uint64_t> best_case_psi_map_;
   // Map to track task EC -> best-environment EC PsPI;
   unordered_map<EquivClass_t, uint64_t> best_case_xi_map_;
+  TimeInterface* time_manager_;
   DIMACSChangeStats* dimacs_stats_;
 };
 
