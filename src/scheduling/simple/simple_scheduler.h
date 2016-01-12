@@ -15,6 +15,7 @@
 #include "base/types.h"
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
+#include "misc/time_interface.h"
 #include "scheduling/event_driven_scheduler.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/scheduling_event_notifier_interface.h"
@@ -35,7 +36,8 @@ class SimpleScheduler : public EventDrivenScheduler {
                   MessagingAdapterInterface<BaseMessage>* m_adapter,
                   SchedulingEventNotifierInterface* event_notifier,
                   ResourceID_t coordinator_res_id,
-                  const string& coordinator_uri);
+                  const string& coordinator_uri,
+                  TimeInterface* time_manager);
   ~SimpleScheduler();
   void HandleTaskFinalReport(const TaskFinalReport& report,
                              TaskDescriptor* td_ptr);

@@ -24,9 +24,11 @@ namespace firmament {
 SJFCostModel::SJFCostModel(shared_ptr<TaskMap_t> task_map,
                            unordered_set<ResourceID_t,
                              boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-                           shared_ptr<KnowledgeBase> knowledge_base)
+                           shared_ptr<KnowledgeBase> knowledge_base,
+                           TimeInterface* time_manager)
   : knowledge_base_(knowledge_base),
-    task_map_(task_map) {
+    task_map_(task_map),
+    time_manager_(time_manager) {
   // Create the cluster aggregator EC, which all machines are members of.
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
   VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;
@@ -42,7 +44,7 @@ const TaskDescriptor& SJFCostModel::GetTask(TaskID_t task_id) {
 // scheduling it.
 Cost_t SJFCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
-  uint64_t now = GetCurrentTimestamp();
+  uint64_t now = time_manager_->GetCurrentTimestamp();
   uint64_t time_since_submit = now - td.submit_time();
   // timestamps are in microseconds, but we scale to tenths of a second here in
   // order to keep the costs small

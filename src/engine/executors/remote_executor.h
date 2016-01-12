@@ -13,6 +13,7 @@
 
 #include "base/common.h"
 #include "misc/messaging_interface.h"
+#include "misc/time_interface.h"
 #include "messages/base_message.pb.h"
 
 namespace firmament {
@@ -24,7 +25,8 @@ class RemoteExecutor : public ExecutorInterface {
                  ResourceID_t coordinator_resource_id,
                  const string& coordinator_uri,
                  ResourceMap_t* res_map,
-                 MessagingAdapterInterface<BaseMessage>* m_adapter_ptr);
+                 MessagingAdapterInterface<BaseMessage>* m_adapter_ptr,
+                 TimeInterface* time_manager);
   bool CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks);
   void HandleTaskCompletion(TaskDescriptor* td,
                             TaskFinalReport* report);
@@ -46,6 +48,7 @@ class RemoteExecutor : public ExecutorInterface {
   ResourceID_t local_resource_id_;
   ResourceMap_t* res_map_ptr_;
   MessagingAdapterInterface<BaseMessage>* m_adapter_ptr_;
+  TimeInterface* time_manager_;
 
   MessagingChannelInterface<BaseMessage>* GetChannel();
   void SendTaskExecutionMessage(

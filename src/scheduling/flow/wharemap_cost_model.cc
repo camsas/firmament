@@ -30,10 +30,12 @@ namespace firmament {
 WhareMapCostModel::WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
                                      shared_ptr<TaskMap_t> task_map,
                                      shared_ptr<KnowledgeBase> knowledge_base,
+                                     TimeInterface* time_manager,
                                      DIMACSChangeStats* dimacs_stats)
   : resource_map_(resource_map),
     task_map_(task_map),
     knowledge_base_(knowledge_base),
+    time_manager_(time_manager),
     dimacs_stats_(dimacs_stats) {
   // Create the cluster aggregator EC, which all machines are members of.
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
@@ -41,6 +43,8 @@ WhareMapCostModel::WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
 }
 
 WhareMapCostModel::~WhareMapCostModel() {
+  // time_manager_ is not owned by the WhareMapCostModel. We don't have to
+  // delete it.
   for (auto& psi : psi_map_) {
     delete psi.second;
   }
@@ -126,7 +130,7 @@ Cost_t WhareMapCostModel::MinFromVec(const vector<uint64_t>& vec) const {
 // scheduling it.
 Cost_t WhareMapCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
-  uint64_t now = GetCurrentTimestamp();
+  uint64_t now = time_manager_->GetCurrentTimestamp();
   uint64_t time_since_submit = now - td.submit_time();
   // timestamps are in microseconds, but we scale to tenths of a second here in
   // order to keep the costs small

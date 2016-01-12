@@ -28,6 +28,7 @@
 #include "base/task_final_report.pb.h"
 #include "engine/executors/task_health_checker.h"
 #include "engine/executors/topology_manager.h"
+#include "misc/time_interface.h"
 
 namespace firmament {
 namespace executor {
@@ -37,9 +38,11 @@ using machine::topology::TopologyManager;
 class LocalExecutor : public ExecutorInterface {
  public:
   LocalExecutor(ResourceID_t resource_id,
-                const string& coordinator_uri);
+                const string& coordinator_uri,
+                TimeInterface* time_manager);
   LocalExecutor(ResourceID_t resource_id,
                 const string& coordinator_uri,
+                TimeInterface* time_manager,
                 shared_ptr<TopologyManager> topology_mgr);
   bool CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks);
   void HandleTaskCompletion(TaskDescriptor* td,
@@ -100,6 +103,7 @@ class LocalExecutor : public ExecutorInterface {
   const string coordinator_uri_;
   // The health manager checks on the liveness of locally managed tasks.
   TaskHealthChecker health_checker_;
+  TimeInterface* time_manager_;
   // Local pointer to topology manager
   // TODO(malte): Figure out what to do if this local executor is associated
   // with a dumb worker, who does not have topology support!

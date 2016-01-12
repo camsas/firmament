@@ -11,6 +11,7 @@
 #include "base/job_desc.pb.h"
 #include "base/task_desc.pb.h"
 #include "misc/map-util.h"
+#include "misc/real_time.h"
 #include "misc/utils.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/simple/simple_scheduler.h"
@@ -51,11 +52,13 @@ class SimpleSchedulerTest : public ::testing::Test {
     res_map_->clear();
     job_map_->clear();
     obj_store_->Flush();
+    RealTime real_time;
     sched_.reset(new SimpleScheduler(job_map_, res_map_, &res_topo_,
                                      obj_store_, task_map_,
                                      shared_ptr<KnowledgeBase>(),
                                      shared_ptr<TopologyManager>(), NULL, NULL,
-                                     GenerateResourceID(), "test"));
+                                     GenerateResourceID(), "test",
+                                     &real_time));
   }
 
   virtual void TearDown() {

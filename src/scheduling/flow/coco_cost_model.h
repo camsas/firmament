@@ -15,6 +15,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "misc/time_interface.h"
 #include "misc/utils.h"
 #include "scheduling/common.h"
 #include "scheduling/knowledge_base.h"
@@ -45,6 +46,7 @@ class CocoCostModel : public CostModelInterface {
                 unordered_set<ResourceID_t,
                   boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                 shared_ptr<KnowledgeBase> knowledge_base,
+                TimeInterface* time_manager,
                 DIMACSChangeStats* dimacs_stats);
   const string DebugInfo() const;
   const string DebugInfoCSV() const;
@@ -165,6 +167,7 @@ class CocoCostModel : public CostModelInterface {
   // present in the cluster (N.B.: these can execeed OMEGA).
   ResourceVector max_machine_capacity_;
   ResourceVector min_machine_capacity_;
+  TimeInterface* time_manager_;
   DIMACSChangeStats* dimacs_stats_;
 };
 

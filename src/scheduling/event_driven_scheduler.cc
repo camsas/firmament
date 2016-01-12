@@ -46,18 +46,22 @@ EventDrivenScheduler::EventDrivenScheduler(
     MessagingAdapterInterface<BaseMessage>* m_adapter,
     SchedulingEventNotifierInterface* event_notifier,
     ResourceID_t coordinator_res_id,
-    const string& coordinator_uri)
+    const string& coordinator_uri,
+    TimeInterface* time_manager)
   : SchedulerInterface(job_map, knowledge_base, resource_map, resource_topology,
                        object_store, task_map),
       coordinator_uri_(coordinator_uri),
       coordinator_res_id_(coordinator_res_id),
       event_notifier_(event_notifier),
       m_adapter_ptr_(m_adapter),
-      topology_manager_(topo_mgr) {
+      topology_manager_(topo_mgr),
+      time_manager_(time_manager) {
   VLOG(1) << "EventDrivenScheduler initiated.";
 }
 
 EventDrivenScheduler::~EventDrivenScheduler() {
+  // time_manager_ is not owned by the EventDrivenScheduler. We don't have to
+  // delete it.
   for (map<ResourceID_t, ExecutorInterface*>::const_iterator
        exec_iter = executors_.begin();
        exec_iter != executors_.end();
@@ -113,7 +117,7 @@ void EventDrivenScheduler::CheckRunningTasksHealth() {
         CHECK_NOTNULL(td_ptr);
         if (td_ptr->state() != TaskDescriptor::COMPLETED &&
             td_ptr->last_heartbeat_time() <=
-            (GetCurrentTimestamp() - FLAGS_task_fail_timeout *
+            (time_manager_->GetCurrentTimestamp() - FLAGS_task_fail_timeout *
              SECONDS_TO_MICROSECONDS)) {
           LOG(INFO) << "Task " << td_ptr->uid() << " has not reported "
                     << "heartbeats for " << FLAGS_task_fail_timeout
@@ -619,7 +623,7 @@ void EventDrivenScheduler::RegisterLocalResource(ResourceID_t res_id) {
   // Create an executor for each resource.
   VLOG(1) << "Adding executor for local resource " << res_id;
   LocalExecutor* exec = new LocalExecutor(res_id, coordinator_uri_,
-                                          topology_manager_);
+                                          time_manager_, topology_manager_);
   CHECK(InsertIfNotPresent(&executors_, res_id, exec));
 }
 
@@ -643,7 +647,8 @@ void EventDrivenScheduler::RegisterRemoteResource(ResourceID_t res_id) {
   RemoteExecutor* exec = new RemoteExecutor(res_id, coordinator_res_id_,
                                             coordinator_uri_,
                                             resource_map_.get(),
-                                            m_adapter_ptr_);
+                                            m_adapter_ptr_,
+                                            time_manager_);
   CHECK(InsertIfNotPresent(&executors_, res_id, exec));
 }
 

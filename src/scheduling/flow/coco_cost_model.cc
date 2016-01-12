@@ -34,12 +34,14 @@ CocoCostModel::CocoCostModel(
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids,
     shared_ptr<KnowledgeBase> knowledge_base,
+    TimeInterface* time_manager,
     DIMACSChangeStats* dimacs_stats)
   : resource_map_(resource_map),
     resource_topology_(resource_topology),
     task_map_(task_map),
     leaf_res_ids_(leaf_res_ids),
     knowledge_base_(knowledge_base),
+    time_manager_(time_manager),
     dimacs_stats_(dimacs_stats) {
   // Set an initial value for infinity -- this overshoots a bit; would be nice
   // to have a tighter bound based on actual costs observed
@@ -524,7 +526,8 @@ Cost_t CocoCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   cost_vector.interference_score_ = 1;
   cost_vector.locality_score_ = 0;
   uint64_t base_cost = FlattenCostVector(cost_vector);
-  uint64_t time_since_submit = GetCurrentTimestamp() - td.submit_time();
+  uint64_t time_since_submit =
+    time_manager_->GetCurrentTimestamp() - td.submit_time();
   // timestamps are in microseconds, but we scale to tenths of a second here in
   // order to keep the costs small
   uint64_t wait_time_cost = WAIT_TIME_MULTIPLIER * (time_since_submit / 100000);

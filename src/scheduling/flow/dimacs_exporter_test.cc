@@ -17,6 +17,7 @@
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "misc/pb_utils.h"
+#include "misc/real_time.h"
 #include "misc/string_utils.h"
 #include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/dimacs_exporter.h"
@@ -78,8 +79,9 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
+  RealTime real_time;
   FlowGraphManager flow_graph_manager(
-      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids,
+      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &real_time,
       &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
@@ -130,8 +132,9 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
+  RealTime real_time;
   FlowGraphManager flow_graph_manager(
-      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids,
+      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &real_time,
       &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
@@ -203,8 +206,9 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
       new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
     DIMACSChangeStats dimacs_stats;
+    RealTime real_time;
     FlowGraphManager flow_graph_manager(
-        new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids,
+        new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &real_time,
         &dimacs_stats);
     // Test resource topology
     ResourceTopologyNodeDescriptor machine_tmpl;
