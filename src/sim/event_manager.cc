@@ -55,6 +55,9 @@ EventManager::EventManager() :
             << FLAGS_max_scheduling_rounds;
 }
 
+EventManager::~EventManager() {
+}
+
 void EventManager::AddEvent(uint64_t timestamp, EventDescriptor event) {
   events_.insert(pair<uint64_t, EventDescriptor>(timestamp, event));
 }

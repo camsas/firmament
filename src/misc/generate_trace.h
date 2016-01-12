@@ -7,6 +7,7 @@
 #define FIRMAMENT_MISC_GENERATE_TRACE_H
 
 #include "base/types.h"
+#include "misc/time_interface.h"
 
 namespace firmament {
 
@@ -26,7 +27,7 @@ struct TaskRuntime {
 
 class GenerateTrace {
  public:
-  GenerateTrace();
+  explicit GenerateTrace(TimeInterface* time_manager);
   ~GenerateTrace();
   void AddMachine(const ResourceDescriptor& rd);
   void RemoveMachine(const ResourceDescriptor& rd);
@@ -39,6 +40,7 @@ class GenerateTrace {
  private:
   uint64_t GetMachineId(const ResourceDescriptor& rd);
 
+  TimeInterface* time_manager_;
   unordered_map<TaskID_t, uint64_t> task_to_job_;
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
   unordered_map<TaskID_t, TaskRuntime> task_to_runtime_;

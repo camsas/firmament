@@ -11,6 +11,7 @@
 
 #include "base/common.h"
 #include "engine/executors/local_executor.h"
+#include "misc/real_time.h"
 
 namespace firmament {
 namespace executor {
@@ -52,7 +53,8 @@ class LocalExecutorTest : public ::testing::Test {
 // Test that we can synchronously execute a binary without arguments.
 TEST_F(LocalExecutorTest, SimpleSyncProcessExecutionTest) {
   ResourceID_t rid;
-  LocalExecutor le(rid, "");
+  RealTime real_time;
+  LocalExecutor le(rid, "", &real_time);
   vector<string> empty_args;
   unordered_map<string, string> empty_env;
   // We expect to get a return code of 0.
@@ -63,7 +65,8 @@ TEST_F(LocalExecutorTest, SimpleSyncProcessExecutionTest) {
 // Tests that we can synchronously execute a binary with arguments.
 TEST_F(LocalExecutorTest, SyncProcessExecutionWithArgsTest) {
   ResourceID_t rid;
-  LocalExecutor le(rid, "");
+  RealTime real_time;
+  LocalExecutor le(rid, "", &real_time);
   vector<string> args;
   unordered_map<string, string> env;
   args.push_back("-l");
@@ -77,7 +80,8 @@ TEST_F(LocalExecutorTest, SyncProcessExecutionWithArgsTest) {
 // be redesigned using explicit messaging.
 /*TEST_F(LocalExecutorTest, ExecutionFailureTest) {
   ResourceID_t rid;
-  LocalExecutor le(rid, "");
+  RealTime real_time;
+  LocalExecutor le(rid, "", &real_time);
   vector<string> empty_args;
   // We expect to fail this time.
   CHECK_NE(le.RunProcessSync("/bin/idonotexist", empty_args, false, false,
@@ -89,7 +93,8 @@ TEST_F(LocalExecutorTest, SyncProcessExecutionWithArgsTest) {
 // on the async thread in order to fix the test.
 /*TEST_F(LocalExecutorTest, AsyncProcessExecutionWithArgsTest) {
   ResourceID_t rid;
-  LocalExecutor le(rid, "");
+  RealTime real_time;
+  LocalExecutor le(rid, "", &real_time);
   vector<string> args;
   unordered_map<string, string> env;
   args.push_back("-l");
@@ -104,7 +109,8 @@ TEST_F(LocalExecutorTest, SyncProcessExecutionWithArgsTest) {
 // binary name in this case).
 TEST_F(LocalExecutorTest, SimpleTaskExecutionTest) {
   ResourceID_t rid;
-  LocalExecutor le(rid, "");
+  RealTime real_time;
+  LocalExecutor le(rid, "", &real_time);
   TaskDescriptor* td = new TaskDescriptor;
   td->set_uid(1234ULL);
   td->set_binary("/bin/ls");
@@ -115,7 +121,8 @@ TEST_F(LocalExecutorTest, SimpleTaskExecutionTest) {
 // As above, but also passing arguments this time.
 TEST_F(LocalExecutorTest, TaskExecutionWithArgsTest) {
   ResourceID_t rid;
-  LocalExecutor le(rid, "");
+  RealTime real_time;
+  LocalExecutor le(rid, "", &real_time);
   TaskDescriptor* td = new TaskDescriptor;
   td->set_uid(1234ULL);
   td->set_binary("/bin/ls");

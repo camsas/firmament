@@ -25,12 +25,14 @@ RemoteExecutor::RemoteExecutor(
     ResourceID_t coordinator_resource_id,
     const string& coordinator_uri,
     ResourceMap_t* res_map,
-    MessagingAdapterInterface<BaseMessage>* m_adapter_ptr)
+    MessagingAdapterInterface<BaseMessage>* m_adapter_ptr,
+    TimeInterface* time_manager)
     : managing_coordinator_uri_(coordinator_uri),
       remote_resource_id_(resource_id),
       local_resource_id_(coordinator_resource_id),
       res_map_ptr_(res_map),
-      m_adapter_ptr_(m_adapter_ptr) {
+      m_adapter_ptr_(m_adapter_ptr),
+      time_manager_(time_manager) {
 }
 
 bool RemoteExecutor::CheckRunningTasksHealth(vector<TaskID_t>* failed_tasks) {
@@ -42,7 +44,7 @@ void RemoteExecutor::HandleTaskCompletion(TaskDescriptor* td,
                                           TaskFinalReport* report) {
   // All of the actual cleanup is done at the remote coordinator's
   // executor, so here we only update bookkeeping information.
-  uint64_t end_time = GetCurrentTimestamp();
+  uint64_t end_time = time_manager_->GetCurrentTimestamp();
   td->set_finish_time(end_time);
 }
 
@@ -51,7 +53,7 @@ void RemoteExecutor::HandleTaskEviction(TaskDescriptor* td) {
 }
 
 void RemoteExecutor::HandleTaskFailure(TaskDescriptor* td) {
-  td->set_finish_time(GetCurrentTimestamp());
+  td->set_finish_time(time_manager_->GetCurrentTimestamp());
 }
 
 void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
@@ -67,7 +69,7 @@ void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
   // We already set the start time here, because the real task start time
   // is some time between now and when we receive the delegation response.
   // This may be unset again later if the delegation failed.
-  td->set_start_time(GetCurrentTimestamp());
+  td->set_start_time(time_manager_->GetCurrentTimestamp());
 }
 
 MessagingChannelInterface<BaseMessage>* RemoteExecutor::GetChannel() {

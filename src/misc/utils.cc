@@ -38,13 +38,6 @@ boost::mt19937 job_id_rg_;
 bool resource_id_rg_init_ = false;
 bool job_id_rg_init_ = false;
 
-/* Returns a timestamp in microseconds */
-uint64_t GetCurrentTimestamp() {
-  struct timeval ts;
-  gettimeofday(&ts, NULL);
-  return ts.tv_sec * 1000000 + ts.tv_usec;
-}
-
 /*uint64_t MakeJobUID(Job *job) {
   CHECK_NOTNULL(job);
   boost::hash<string> hasher;

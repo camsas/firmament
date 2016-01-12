@@ -24,9 +24,9 @@
 #include "messages/base_message.pb.h"
 #include "messages/storage_registration_message.pb.h"
 #include "messages/storage_message.pb.h"
+#include "misc/map-util.h"
 #include "misc/pb_utils.h"
 #include "misc/protobuf_envelope.h"
-#include "misc/map-util.h"
 #include "misc/utils.h"
 #include "scheduling/flow/flow_scheduler.h"
 #include "scheduling/knowledge_base.h"
@@ -65,7 +65,8 @@ Coordinator::Coordinator(PlatformID platform_id)
     topology_manager_(new TopologyManager()),
     object_store_(new store::SimpleObjectStore(uuid_)),
     parent_chan_(NULL),
-    hostname_(boost::asio::ip::host_name()) {
+    hostname_(boost::asio::ip::host_name()),
+    time_manager_(new RealTime) {
   // Start up a coordinator according to the platform parameter
   string desc_name = "Coordinator on " + hostname_;
   resource_desc_.set_uuid(to_string(uuid_));
@@ -83,14 +84,14 @@ Coordinator::Coordinator(PlatformID platform_id)
     scheduler_ = new SimpleScheduler(
         job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, knowledge_base, topology_manager_,
-        m_adapter_, NULL, uuid_, FLAGS_listen_uri);
+        m_adapter_, NULL, uuid_, FLAGS_listen_uri, time_manager_);
   } else if (FLAGS_scheduler == "flow") {
     // Quincy-style flow-based scheduling
     LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
     scheduler_ = new FlowScheduler(
         job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, knowledge_base, topology_manager_,
-        m_adapter_, NULL, uuid_, FLAGS_listen_uri);
+        m_adapter_, NULL, uuid_, FLAGS_listen_uri, time_manager_);
   } else {
     // Unknown scheduler specified, error.
     LOG(FATAL) << "Unknown or unrecognized scheduler '" << FLAGS_scheduler
@@ -122,6 +123,7 @@ Coordinator::Coordinator(PlatformID platform_id)
 }
 
 Coordinator::~Coordinator() {
+  delete time_manager_;
   // TODO(malte): check destruction order in C++; c_http_ui_ may already
   // have been destructed when we get here.
   /*#ifdef __HTTP_UI__
@@ -177,7 +179,7 @@ void Coordinator::AddResource(ResourceTopologyNodeDescriptor* rtnd,
           << "endpoint URI is " << endpoint_uri;
   CHECK(InsertIfNotPresent(associated_resources_.get(), res_id,
           new ResourceStatus(resource_desc, rtnd, endpoint_uri,
-                             GetCurrentTimestamp())));
+                             time_manager_->GetCurrentTimestamp())));
   // Record the machine UUID if this is the local topology
   if (resource_desc->type() == ResourceDescriptor::RESOURCE_MACHINE &&
       local) {
@@ -253,10 +255,10 @@ void Coordinator::Run() {
     VLOG(3) << "Hello from main loop!";
     AwaitNextMessage();
     // TODO(malte): wrap this in a timer
-    cur_time = GetCurrentTimestamp();
+    cur_time = time_manager_->GetCurrentTimestamp();
     if (cur_time - last_heartbeat_time > FLAGS_heartbeat_interval) {
       MachinePerfStatisticsSample stats;
-      stats.set_timestamp(GetCurrentTimestamp());
+      stats.set_timestamp(cur_time);
       stats.set_resource_id(to_string(machine_uuid_));
       machine_monitor_.CreateStatistics(&stats);
       // Record this sample locally
@@ -448,7 +450,7 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       if (msg.has_load())
         VLOG(2) << "Remote resource stats: " << msg.load().ShortDebugString();
       // Update timestamp
-      rsp->set_last_heartbeat(GetCurrentTimestamp());
+      rsp->set_last_heartbeat(time_manager_->GetCurrentTimestamp());
       // Record resource statistics sample
       scheduler_->knowledge_base()->AddMachineSample(msg.load());
   }
@@ -540,7 +542,7 @@ void Coordinator::HandleRegistrationRequest(
               << "Checking if this is a recovery.";
     // TODO(malte): Implement checking logic, deal with recovery case
     // Update timestamp (registration request is an implicit heartbeat)
-    (*rdp)->set_last_heartbeat(GetCurrentTimestamp());
+    (*rdp)->set_last_heartbeat(time_manager_->GetCurrentTimestamp());
   }
 }
 
@@ -555,7 +557,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
     // Remember the current location from which this task reports
     tdp->set_last_heartbeat_location(msg.location());
     // Remember the heartbeat time
-    tdp->set_last_heartbeat_time(GetCurrentTimestamp());
+    tdp->set_last_heartbeat_time(time_manager_->GetCurrentTimestamp());
     // Process the profiling information submitted by the task, add it to
     // the knowledge base
     scheduler_->knowledge_base()->AddTaskSample(msg.stats());
@@ -870,7 +872,7 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
   // the job ID in the job submission, which passes it in.
   td->set_job_id(to_string(job_id));
   // Set the submission timestamp for the task.
-  td->set_submit_time(GetCurrentTimestamp());
+  td->set_submit_time(time_manager_->GetCurrentTimestamp());
   // Insert task into task table
   VLOG(1) << "Adding task " << td->uid() << " to task table.";
   if (!InsertIfNotPresent(task_table_.get(), td->uid(), td)) {
@@ -960,7 +962,8 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   // set.
   if (root_task->has_relative_deadline()) {
     root_task->set_absolute_deadline(
-        GetCurrentTimestamp() + root_task->relative_deadline() * 1000000);
+        time_manager_->GetCurrentTimestamp() + root_task->relative_deadline() *
+        1000000);
   }
   // Add itself and its spawned tasks (if any) to the relevant tables:
   // - tasks to the task_table_

@@ -132,7 +132,7 @@ void TaskLib::AddTaskStatisticsToHeartbeat(
     TaskPerfStatisticsSample* stats) {
   // Task ID and timestamp
   stats->set_task_id(task_id_);
-  stats->set_timestamp(GetCurrentTimestamp());
+  stats->set_timestamp(time_manager_.GetCurrentTimestamp());
   stats->set_hostname(hostname_);
 
   if (use_procfs_) {

@@ -18,7 +18,8 @@ DEFINE_string(generated_trace_path, "",
 
 namespace firmament {
 
-GenerateTrace::GenerateTrace() {
+GenerateTrace::GenerateTrace(TimeInterface* time_manager)
+  : time_manager_(time_manager) {
   if (FLAGS_generate_trace) {
     MkdirIfNotPresent(FLAGS_generated_trace_path);
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/machine_events");
@@ -74,11 +75,12 @@ GenerateTrace::~GenerateTrace() {
     // }
     fclose(task_usage_stat_);
   }
+  // time_manager is not owned by this class. We don't have to delete it here.
 }
 
 void GenerateTrace::AddMachine(const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
-    uint64_t timestamp = GetCurrentTimestamp();
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     // 0 corresponds to add machine.
     int32_t machine_event = 0;
 
@@ -113,7 +115,7 @@ uint64_t GenerateTrace::GetMachineId(const ResourceDescriptor& rd) {
 
 void GenerateTrace::RemoveMachine(const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
-    uint64_t timestamp = GetCurrentTimestamp();
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     // 1 corresponds to remove machine.
     int32_t machine_event = 1;
     uint64_t machine_id = GetMachineId(rd);
@@ -124,7 +126,7 @@ void GenerateTrace::RemoveMachine(const ResourceDescriptor& rd) {
 
 void GenerateTrace::TaskSubmitted(JobDescriptor* jd_ptr, TaskID_t task_id) {
   if (FLAGS_generate_trace) {
-    uint64_t timestamp = GetCurrentTimestamp();
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     int32_t task_event = 0;
     uint64_t job_id;
     string simulator_job_prefix = "firmament_simulation_job_";
@@ -168,7 +170,7 @@ void GenerateTrace::TaskSubmitted(JobDescriptor* jd_ptr, TaskID_t task_id) {
 
 void GenerateTrace::TaskCompleted(TaskID_t task_id) {
   if (FLAGS_generate_trace) {
-    uint64_t timestamp = GetCurrentTimestamp();
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     int32_t task_event = 4;
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -185,7 +187,7 @@ void GenerateTrace::TaskCompleted(TaskID_t task_id) {
 
 void GenerateTrace::TaskEvicted(TaskID_t task_id) {
   if (FLAGS_generate_trace) {
-    uint64_t timestamp = GetCurrentTimestamp();
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     int32_t task_event = 2;
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -201,7 +203,7 @@ void GenerateTrace::TaskEvicted(TaskID_t task_id) {
 
 void GenerateTrace::TaskFailed(TaskID_t task_id) {
   if (FLAGS_generate_trace) {
-    uint64_t timestamp = GetCurrentTimestamp();
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     int32_t task_event = 3;
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -217,7 +219,7 @@ void GenerateTrace::TaskFailed(TaskID_t task_id) {
 
 void GenerateTrace::TaskKilled(TaskID_t task_id) {
   if (FLAGS_generate_trace) {
-    uint64_t timestamp = GetCurrentTimestamp();
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     int32_t task_event = 5;
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -233,7 +235,7 @@ void GenerateTrace::TaskKilled(TaskID_t task_id) {
 
 void GenerateTrace::TaskScheduled(TaskID_t task_id, ResourceID_t res_id) {
   if (FLAGS_generate_trace) {
-    uint64_t timestamp = GetCurrentTimestamp();
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     int32_t task_event = 1;
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);

@@ -38,10 +38,11 @@ SimulatorBridge::SimulatorBridge(
   ResourceDescriptor* rd_ptr = rtn_root_.mutable_resource_desc();
   rd_ptr->set_uuid(to_string(root_uuid));
   rd_ptr->set_type(ResourceDescriptor::RESOURCE_COORDINATOR);
-  CHECK(InsertIfNotPresent(resource_map_.get(), root_uuid,
-                           new ResourceStatus(rd_ptr, &rtn_root_,
-                                              "endpoint_uri",
-                                              GetCurrentTimestamp())));
+  CHECK(InsertIfNotPresent(
+      resource_map_.get(), root_uuid,
+      new ResourceStatus(rd_ptr, &rtn_root_,
+                         "endpoint_uri",
+                         event_manager_->GetCurrentTimestamp())));
   messaging_adapter_ =
     new platform::sim::SimulatedMessagingAdapter<BaseMessage>();
   if (FLAGS_scheduler == "flow") {
@@ -52,7 +53,8 @@ SimulatorBridge::SimulatorBridge(
         task_map_, knowledge_base_,
         shared_ptr<machine::topology::TopologyManager>(
             new machine::topology::TopologyManager),
-        messaging_adapter_, this, root_uuid, "http://localhost");
+        messaging_adapter_, this, root_uuid, "http://localhost",
+        event_manager_);
   } else {
     scheduler_ = new scheduler::SimpleScheduler(
         job_map_, resource_map_, &rtn_root_,
@@ -61,7 +63,8 @@ SimulatorBridge::SimulatorBridge(
         task_map_, knowledge_base_,
         shared_ptr<machine::topology::TopologyManager>(
             new machine::topology::TopologyManager),
-        messaging_adapter_, this, root_uuid, "http://localhost");
+        messaging_adapter_, this, root_uuid, "http://localhost",
+        event_manager_);
   }
 }
 
@@ -482,10 +485,11 @@ void SimulatorBridge::ResetUuidAndAddResource(
   ResourceDescriptor* rd = rtnd->mutable_resource_desc();
   rd->set_uuid(new_uuid);
   // Add the resource node to the map.
-  CHECK(InsertIfNotPresent(resource_map_.get(),
-                           ResourceIDFromString(rd->uuid()),
-                           new ResourceStatus(rd, rtnd, "endpoint_uri",
-                                              GetCurrentTimestamp())));
+  CHECK(InsertIfNotPresent(
+      resource_map_.get(),
+      ResourceIDFromString(rd->uuid()),
+      new ResourceStatus(rd, rtnd, "endpoint_uri",
+                         event_manager_->GetCurrentTimestamp())));
 }
 
 void SimulatorBridge::ScheduleJobs(SchedulerStats* scheduler_stats) {
