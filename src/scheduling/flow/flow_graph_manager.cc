@@ -256,7 +256,7 @@ void FlowGraphManager::AddOrUpdateJobNodes(JobDescriptor* jd) {
       task_node = flow_graph_->Node(*tn_ptr);
     }
     if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
-      generate_trace_->TaskSubmitted(jd, cur->uid());
+      generate_trace_->TaskSubmitted(jd, cur);
       vector<FlowGraphArc*> task_arcs;
       task_node = flow_graph_->AddNode();
       task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
