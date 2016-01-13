@@ -422,7 +422,14 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     solver_dispatcher_->NodeBindingToSchedulingDelta(
         *task, resource, &task_bindings_, &deltas);
   }
+  uint64_t scheduler_start_timestamp = time_manager_->GetCurrentTimestamp();
+  // Set the current timestamp to the timestamp of the end of the scheduler.
+  // This makes sure that all the changes applied as a result of scheduling
+  // have a timestamp equal to the end of the scheduling iteration.
+  time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp +
+                                        scheduler_stats->scheduler_runtime);
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
+  time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp);
   // Drop all deltas that were actioned
   for (vector<SchedulingDelta*>::iterator it = deltas.begin();
        it != deltas.end(); ) {

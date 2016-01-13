@@ -231,7 +231,8 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr,
   CHECK_NOTNULL(jd_ptr);
   TaskDescriptor* root_task = jd_ptr->mutable_root_task();
   TaskDescriptor* new_task = root_task->add_spawned();
-  new_task->set_uid(trace_task_id);
+  //  new_task->set_uid(trace_task_id);
+  new_task->set_uid(GenerateTaskID(*root_task));
   new_task->set_state(TaskDescriptor::CREATED);
   new_task->set_job_id(jd_ptr->uuid());
   return new_task;
@@ -261,6 +262,12 @@ void SimulatorBridge::TaskCompleted(
   scheduler_->HandleTaskFinalReport(report, td_ptr);
   task_map_->erase(td_ptr->uid());
   knowledge_base_->EraseTraceTaskStats(td_ptr->uid());
+  // Check if it was the last task of the job.
+  uint64_t* num_tasks = FindOrNull(job_num_tasks_, task_identifier.job_id);
+  CHECK_NOTNULL(num_tasks);
+  if (*num_tasks == 0) {
+    scheduler_->HandleJobCompletion(JobIDFromString(td_ptr->job_id()));
+  }
 }
 
 void SimulatorBridge::OnJobCompletion(JobID_t job_id) {

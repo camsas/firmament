@@ -57,26 +57,25 @@ void LogSchedulerRunStats(double avg_event_timestamp_in_scheduling_round,
                           uint64_t scheduler_executed_at,
                           const scheduler::SchedulerStats& scheduler_stats) {
   if (stats_file) {
-    boost::timer::cpu_times total_runtime_cpu_times = timer.elapsed();
-    double total_runtime = total_runtime_cpu_times.wall;
-    total_runtime /= SECONDS_TO_NANOSECONDS;
+    uint64_t total_runtime = timer.elapsed().wall / NANOSECONDS_IN_MICROSECOND;
     if (FLAGS_batch_step == 0) {
       // online mode
-      double scheduling_latency = scheduler_executed_at;
-      scheduling_latency += scheduler_stats.algorithm_runtime *
-        SECONDS_TO_MICROSECONDS;
-      scheduling_latency -= avg_event_timestamp_in_scheduling_round;
-      scheduling_latency /= SECONDS_TO_MICROSECONDS;
+      uint64_t scheduling_latency = 0;
+      if (avg_event_timestamp_in_scheduling_round >= 0 &&
+          scheduler_stats.algorithm_runtime < numeric_limits<uint64_t>::max()) {
+        // Set scheduling latency only if we've seen an event and
+        // if we have the runtime of the algorithm.
+        scheduling_latency = scheduler_executed_at +
+          scheduler_stats.algorithm_runtime -
+          avg_event_timestamp_in_scheduling_round;
+      }
 
-      // will be negative if we have not seen any event.
-      scheduling_latency = max(0.0, scheduling_latency);
-
-      fprintf(stats_file, "%jd,%lf,%lf,%lf,%lf,", scheduler_executed_at,
+      fprintf(stats_file, "%ju,%ju,%ju,%ju,%ju,", scheduler_executed_at,
               scheduling_latency, scheduler_stats.algorithm_runtime,
               scheduler_stats.scheduler_runtime, total_runtime);
     } else {
       // batch mode
-      fprintf(stats_file, "%jd,%lf%lf%lf,", scheduler_executed_at,
+      fprintf(stats_file, "%ju,%ju%ju%ju,", scheduler_executed_at,
               scheduler_stats.algorithm_runtime,
               scheduler_stats.scheduler_runtime, total_runtime);
     }

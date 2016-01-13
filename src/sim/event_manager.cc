@@ -18,10 +18,6 @@ DEFINE_double(online_factor, 0.0, "Online mode: speed at which to run at. "
               "Factor of 1 corresponds to real-time. Larger to include"
               " overheads elsewhere in Firmament etc., smaller to simulate"
               " solver running faster.");
-DEFINE_double(online_max_time, 100000000.0, "Online mode: cap on time solver "
-              "takes to run, in seconds. If unspecified, no cap imposed."
-              " Only use with incremental solver, in which case it should"
-              " be set to the worst case runtime of the full solver.");
 DEFINE_uint64(runtime, UINT64_MAX,
               "Maximum time in microsec to extract data for"
               "(from start of trace)");
@@ -62,6 +58,10 @@ void EventManager::AddEvent(uint64_t timestamp, EventDescriptor event) {
   events_.insert(pair<uint64_t, EventDescriptor>(timestamp, event));
 }
 
+uint64_t EventManager::GetCurrentTimestamp() {
+  return current_simulation_time_;
+}
+
 pair<uint64_t, EventDescriptor> EventManager::GetNextEvent() {
   num_events_processed_++;
   multimap<uint64_t, EventDescriptor>::iterator it = events_.begin();
@@ -81,18 +81,16 @@ uint64_t EventManager::GetTimeOfNextEvent() {
   }
 }
 
-uint64_t EventManager::GetTimeOfNextSchedulerRun(uint64_t cur_run_scheduler_at,
-                                                 double cur_scheduler_runtime) {
+uint64_t EventManager::GetTimeOfNextSchedulerRun(
+    uint64_t cur_run_scheduler_at,
+    uint64_t cur_scheduler_runtime) {
   if (FLAGS_batch_step == 0) {
-    // we're in online mode
-    // 1. when we run the scheduler next depends on how fast we were
-    double time_to_schedule = min(cur_scheduler_runtime, FLAGS_online_max_time);
-    time_to_schedule *= SECONDS_TO_MICROSECONDS;
-    // adjust for time warp factor
-    time_to_schedule *= FLAGS_online_factor;
-    cur_run_scheduler_at += static_cast<uint64_t>(time_to_schedule);
+    // We're in online mode.
+    // Adjust for time warp factor.
+    cur_scheduler_runtime *= FLAGS_online_factor;
+    cur_run_scheduler_at += cur_scheduler_runtime;
   } else {
-    // we're in batch mode
+    // We're in batch mode.
     cur_run_scheduler_at += FLAGS_batch_step;
   }
   return cur_run_scheduler_at;
@@ -133,6 +131,16 @@ void EventManager::RemoveTaskEndRuntimeEvent(
   // We've found the event.
   if (range_it.first != range_it.second) {
     events_.erase(range_it.first);
+  }
+}
+
+void EventManager::UpdateCurrentTimestamp(uint64_t timestamp) {
+  // In batch mode we run the scheduler every batch_step microseconds. We do
+  // not update the timestamp because the runtime of the scheduler is not
+  // accounted for in batch mode.
+  if (FLAGS_batch_step == 0) {
+    // Not running in batch mode => we can update the simulation time.
+    current_simulation_time_ = timestamp;
   }
 }
 
