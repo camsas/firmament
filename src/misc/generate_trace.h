@@ -12,6 +12,9 @@
 namespace firmament {
 
 struct TaskRuntime {
+  // The id of the task. When we run a simulation, the field  gets populated
+  // with the trace task id instead of Firmanent task id.
+  uint64_t task_id;
   uint64_t start_time;
   uint64_t num_runs;
   uint64_t last_schedule_time;
@@ -31,7 +34,7 @@ class GenerateTrace {
   ~GenerateTrace();
   void AddMachine(const ResourceDescriptor& rd);
   void RemoveMachine(const ResourceDescriptor& rd);
-  void TaskSubmitted(JobDescriptor* jd_ptr, TaskID_t task_id);
+  void TaskSubmitted(JobDescriptor* jd_ptr, TaskDescriptor* td_ptr);
   void TaskCompleted(TaskID_t task_id);
   void TaskEvicted(TaskID_t task_id);
   void TaskFailed(TaskID_t task_id);

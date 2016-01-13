@@ -231,8 +231,12 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr,
   CHECK_NOTNULL(jd_ptr);
   TaskDescriptor* root_task = jd_ptr->mutable_root_task();
   TaskDescriptor* new_task = root_task->add_spawned();
-  //  new_task->set_uid(trace_task_id);
   new_task->set_uid(GenerateTaskID(*root_task));
+  // XXX(ionel): HACK! I set the index to the trace task id which I can
+  // then access in generate_trace to print it instead of the Firmament
+  // task id. I can't set it directly as the uid of the task because
+  // trace task id are only uid within a job (i.e. they are indices).
+  new_task->set_index(trace_task_id);
   new_task->set_state(TaskDescriptor::CREATED);
   new_task->set_job_id(jd_ptr->uuid());
   return new_task;
