@@ -16,6 +16,7 @@ class RealTime : public TimeInterface {
   // Uses gettimeofday() under the hood, so does not make any guarantees w.r.t.
   // time zones etc.
   uint64_t GetCurrentTimestamp();
+  void UpdateCurrentTimestamp(uint64_t timestamp);
 };
 
 } // namespace firmament

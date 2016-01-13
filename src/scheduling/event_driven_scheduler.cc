@@ -188,6 +188,7 @@ void EventDrivenScheduler::HandleJobCompletion(JobID_t job_id) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   JobDescriptor* jd = FindOrNull(*job_map_, job_id);
   CHECK_NOTNULL(jd);
+  jobs_to_schedule_.erase(job_id);
   jd->set_state(JobDescriptor::COMPLETED);
   if (event_notifier_) {
     event_notifier_->OnJobCompletion(job_id);
@@ -256,6 +257,7 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   CHECK(UnbindTaskFromResource(td_ptr, res_id_tmp));
   // Record final report
   ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
+  td_ptr->set_state(TaskDescriptor::COMPLETED);
   CHECK_NOTNULL(exec);
   exec->HandleTaskCompletion(td_ptr, report);
   // Store the final report in the TD for future reference
@@ -286,7 +288,7 @@ void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
                                               ResourceDescriptor* rd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
-  VLOG(1) << "Handling completion of task " << td_ptr->uid()
+  VLOG(1) << "Handling eviction of task " << td_ptr->uid()
           << ", freeing resource " << res_id;
   CHECK(UnbindTaskFromResource(td_ptr, res_id));
   // Record final report
@@ -406,16 +408,16 @@ void EventDrivenScheduler::KillRunningTask(
                << "so cannot kill it!";
     return;
   }
-  // Find the current remote endpoint for this task
-  TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
+  td_ptr->set_state(TaskDescriptor::ABORTED);
   // Manufacture the message
   BaseMessage bm;
   SUBMSG_WRITE(bm, task_kill, task_id, task_id);
   SUBMSG_WRITE(bm, task_kill, reason, reason);
   // Send the message
   LOG(INFO) << "Sending KILL message to task " << task_id << " on resource "
-            << *rid << " (endpoint: " << td->last_heartbeat_location()  << ")";
-  m_adapter_ptr_->SendMessageToEndpoint(td->last_heartbeat_location(), bm);
+            << *rid << " (endpoint: " << td_ptr->last_heartbeat_location()
+            << ")";
+  m_adapter_ptr_->SendMessageToEndpoint(td_ptr->last_heartbeat_location(), bm);
 }
 
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
