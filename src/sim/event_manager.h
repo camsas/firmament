@@ -27,11 +27,10 @@ class EventManager : public TimeInterface {
    */
   void AddEvent(uint64_t timestamp, EventDescriptor event);
 
-  uint64_t GetCurrentTimestamp() {
-    // TODO(ionel): The current simulation time doesn't get updated
-    // with the scheduler times. Figure out a solution!
-    return current_simulation_time_;
-  }
+  /**
+   * Get the current timestamp of the simulation (in u-sec).
+   */
+  uint64_t GetCurrentTimestamp();
 
   /**
    * Get the next simulated event.
@@ -50,7 +49,7 @@ class EventManager : public TimeInterface {
    * @param scheduler_runtime the duration of the last scheduler run
    */
   uint64_t GetTimeOfNextSchedulerRun(uint64_t cur_run_scheduler_at,
-                                     double scheduler_runtime);
+                                     uint64_t scheduler_runtime);
 
   /**
    * Returns true if the simulation should stop.
@@ -67,6 +66,11 @@ class EventManager : public TimeInterface {
    */
   void RemoveTaskEndRuntimeEvent(const TraceTaskIdentifier& task_identifier,
                                  uint64_t task_end_time);
+
+  /**
+   * Overwrites the current timestmap of the simulation.
+   */
+  void UpdateCurrentTimestamp(uint64_t timestamp);
 
   uint64_t current_simulation_time() {
     return current_simulation_time_;

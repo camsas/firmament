@@ -21,6 +21,7 @@ namespace firmament {
 class TimeInterface {
  public:
   virtual uint64_t GetCurrentTimestamp() = 0;
+  virtual void UpdateCurrentTimestamp(uint64_t timestamp) = 0;
 };
 
 } // namespace firmament

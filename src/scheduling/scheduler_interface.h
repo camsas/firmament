@@ -31,10 +31,14 @@ using store::DataObjectMap_t;
 using store::ObjectStoreInterface;
 
 struct SchedulerStats {
-  // Accounts only the algorithmic part of the scheduler.
-  double algorithm_runtime;
-  // Accounts the entire scheduling time.
-  double scheduler_runtime;
+  SchedulerStats() : algorithm_runtime(numeric_limits<uint64_t>::max()),
+    scheduler_runtime(0) {
+  }
+  // Accounts only the algorithmic part of the scheduler (in u-sec).
+  uint64_t algorithm_runtime;
+  // Accounts the entire scheduling time in u-sec (i.e. DIMACS write, solver
+  // runtime, DIMACS read).
+  uint64_t scheduler_runtime;
 };
 
 class SchedulerInterface : public PrintableInterface {

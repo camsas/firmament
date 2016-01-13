@@ -166,7 +166,6 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   if (scheduler_stats && !FLAGS_flow_scheduling_time_reported) {
     LOG(ERROR) << "Error: cannot record algorithm time with solver "
                << "which does not report this time.";
-    scheduler_stats->algorithm_runtime = nan("");
   }
 
   // Adjusts the costs on the arcs from tasks to unsched aggs.
@@ -263,7 +262,13 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   }
 
   multimap<uint64_t, uint64_t>* task_mappings;
-  task_mappings = ReadOutput(&scheduler_stats->algorithm_runtime);
+  double algo_time_sec = nan("");
+  task_mappings = ReadOutput(&algo_time_sec);
+  if (algo_time_sec != nan("")) {
+    // Transform runtime from sec to u-sec.
+    algo_time_sec *= SECONDS_TO_MICROSECONDS;
+    scheduler_stats->algorithm_runtime = algo_time_sec;
+  }
 
   // Wait for exporter to complete. (Should already have happened when we
   // get here, given we've finished reading the output.)
@@ -272,8 +277,8 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   }
 
   if (scheduler_stats != NULL) {
-    scheduler_stats->scheduler_runtime = flowsolver_timer.elapsed().wall;
-    scheduler_stats->scheduler_runtime /= NANOSECONDS_IN_SECOND;
+    scheduler_stats->scheduler_runtime = flowsolver_timer.elapsed().wall
+      / NANOSECONDS_IN_MICROSECOND;
   }
 
   if (!FLAGS_incremental_flow) {
@@ -456,8 +461,6 @@ void *ProcessStderrAlgoTime(void *x) {
   double *algorithm_runtime = args->time;
   FILE *stderr = args->fptr;
   char line[1024];
-
-  *algorithm_runtime = nan("");
 
   while (fgets(line, sizeof(line), stderr) != NULL) {
     double time;
