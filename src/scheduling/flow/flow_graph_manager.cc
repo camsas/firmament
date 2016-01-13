@@ -962,20 +962,6 @@ void FlowGraphManager::JobCompleted(JobID_t job_id) {
   uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
   CHECK_NOTNULL(unsched_node_id);
   FlowGraphNode* node = flow_graph_->Node(*unsched_node_id);
-  for (unordered_map<uint64_t, FlowGraphArc*>::iterator
-         it = node->incoming_arc_map_.begin();
-       it != node->incoming_arc_map_.end();) {
-    unordered_map<uint64_t, FlowGraphArc*>::iterator it_tmp = it;
-    ++it;
-    FlowGraphArc* arc = it_tmp->second;
-    CHECK_NOTNULL(arc);
-    FlowGraphNode* task_node = arc->src_node_;
-    CHECK_NOTNULL(task_node);
-    CHECK_EQ(task_node->job_id_, job_id);
-    generate_trace_->TaskCompleted(task_node->task_id_);
-    DeleteTaskNode(task_node->task_id_, "JobCompleted: task node");
-    cost_model_->RemoveTask(task_node->task_id_);
-  }
   CHECK_EQ(node->incoming_arc_map_.size(), 0);
   job_unsched_to_node_id_.erase(job_id);
   DIMACSChange *chg = new DIMACSRemoveNode(*node);
@@ -984,7 +970,6 @@ void FlowGraphManager::JobCompleted(JobID_t job_id) {
   AddGraphChange(chg);
   flow_graph_->DeleteNode(node);
 }
-
 
 FlowGraphNode* FlowGraphManager::NodeForResourceID(const ResourceID_t& res_id) {
   uint64_t* id = FindOrNull(resource_to_nodeid_map_, res_id);

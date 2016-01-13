@@ -205,8 +205,17 @@ void Simulator::ReplaySimulation() {
     }
     if (run_scheduler_at <= FLAGS_runtime) {
       ProcessSimulatorEvents(run_scheduler_at, machine_tmpl);
+      uint64_t pre_scheduler_run_timestamp =
+        event_manager_->GetCurrentTimestamp();
+      // Current timestamp is at the last event <= run_scheduler_at. We want
+      // to make sure that it's at run_scheduler_at so that all the events
+      // that happen during scheduling have a timestamp >= run_scheduler_at.
+      event_manager_->UpdateCurrentTimestamp(run_scheduler_at);
       // Run the scheduler and update the time to run the scheduler at.
       run_scheduler_at = ScheduleJobsHelper(run_scheduler_at);
+      // Set timestamp back to the previous value to make sure we process
+      // the trace events that happen while we schedule.
+      event_manager_->UpdateCurrentTimestamp(pre_scheduler_run_timestamp);
       num_scheduling_rounds++;
       ResetSchedulingLatencyStats();
     } else {

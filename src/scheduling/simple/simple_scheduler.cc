@@ -148,8 +148,8 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
   if (num_scheduled_tasks > 0)
     jd_ptr->set_state(JobDescriptor::RUNNING);
   if (scheduler_stats != NULL) {
-    scheduler_stats->scheduler_runtime = scheduler_timer.elapsed().wall;
-    scheduler_stats->scheduler_runtime /= NANOSECONDS_IN_SECOND;
+    scheduler_stats->scheduler_runtime = scheduler_timer.elapsed().wall /
+      NANOSECONDS_IN_MICROSECOND;
   }
   LOG(INFO) << "STOP SCHEDULING " << jd_ptr->uuid();
   return num_scheduled_tasks;
@@ -164,8 +164,8 @@ uint64_t SimpleScheduler::ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
     num_scheduled_tasks += ScheduleJob(jd_ptr, scheduler_stats);
   }
   if (scheduler_stats != NULL) {
-    scheduler_stats->scheduler_runtime = scheduler_timer.elapsed().wall;
-    scheduler_stats->scheduler_runtime /= NANOSECONDS_IN_SECOND;
+    scheduler_stats->scheduler_runtime = scheduler_timer.elapsed().wall /
+      NANOSECONDS_IN_MICROSECOND;
   }
   return num_scheduled_tasks;
 }

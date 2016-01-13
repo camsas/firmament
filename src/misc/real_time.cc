@@ -15,4 +15,8 @@ uint64_t RealTime::GetCurrentTimestamp() {
   return ts.tv_sec * 1000000 + ts.tv_usec;
 }
 
+void RealTime::UpdateCurrentTimestamp(uint64_t timestmap) {
+  // NO-OP. We can't change the timestamp returned by a real timer.
+}
+
 } // namespace firmament
