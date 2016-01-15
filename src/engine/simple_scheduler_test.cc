@@ -66,17 +66,6 @@ class SimpleSchedulerTest : public ::testing::Test {
     // before the destructor).
   }
 
-  void PrintRunnableTasks(set<TaskID_t> runnable_tasks) {
-    int i = 0;
-    for (set<TaskID_t>::const_iterator t_iter =
-         runnable_tasks.begin();
-         t_iter != runnable_tasks.end();
-         ++t_iter) {
-      VLOG(1) << "Runnable task " << i << ": " << *t_iter;
-      ++i;
-    }
-  }
-
   void AddJobsTasksToTaskMap(JobDescriptor* jd) {
     AddTaskToTaskMap(jd->mutable_root_task());
   }
@@ -111,30 +100,33 @@ TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   JobDescriptor* test_job = new JobDescriptor;
   JobID_t job_id = GenerateJobID();
   test_job->set_uuid(to_string(job_id));
-  TaskDescriptor* rtp = new TaskDescriptor;
-  rtp->set_uid(GenerateTaskID(*rtp));
+  TaskDescriptor* rtp = test_job->mutable_root_task();
+  rtp->set_uid(GenerateRootTaskID(*test_job));
+  rtp->set_state(TaskDescriptor::CREATED);
+  rtp->set_job_id(to_string(job_id));
   set<DataObjectID_t*> output_ids(DataObjectIDsFromProtobuf(
       test_job->output_ids()));
   AddTaskToTaskMap(rtp);
-  uint64_t num_incomplete_tasks =
-      sched_->LazyGraphReduction(output_ids, rtp, job_id);
+  sched_->LazyGraphReduction(output_ids, rtp, job_id);
   // The root task should be runnable
-  EXPECT_EQ(num_incomplete_tasks, 1UL);
-  EXPECT_EQ(sched_->runnable_tasks_.size(), 1UL);
+  EXPECT_EQ(sched_->runnable_tasks_[job_id].size(), 1UL);
   // The only runnable task should be equivalent to the root task we pushed in.
-  EXPECT_EQ(*(sched_->runnable_tasks_.begin()), rtp->uid());
-  delete rtp;
+  EXPECT_EQ(*(sched_->runnable_tasks_[job_id].begin()), rtp->uid());
   delete test_job;
 }
 
-// Tests correct operation of the RunnableTasksForJob wrapper.
+// Tests correct operation of the ComputeRunnableTasksForJob wrapper.
 TEST_F(SimpleSchedulerTest, FindRunnableTasksForJob) {
   // Simple, plain, 1-task job (base case)
   JobDescriptor* test_job = new JobDescriptor;
-  test_job->set_uuid(to_string(GenerateJobID()));
+  JobID_t job_id = GenerateJobID();
+  test_job->set_uuid(to_string(job_id));
+  TaskDescriptor* rtp = test_job->mutable_root_task();
+  rtp->set_uid(GenerateRootTaskID(*test_job));
+  rtp->set_state(TaskDescriptor::CREATED);
+  rtp->set_job_id(to_string(job_id));
   AddJobsTasksToTaskMap(test_job);
-  set<TaskID_t> runnable_tasks =
-      sched_->RunnableTasksForJob(test_job);
+  set<TaskID_t> runnable_tasks = sched_->ComputeRunnableTasksForJob(test_job);
   // The root task should be runnable
   EXPECT_EQ(runnable_tasks.size(), 1UL);
   delete test_job;
@@ -177,8 +169,10 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   JobDescriptor* test_job = new JobDescriptor;
   JobID_t job_id = GenerateJobID();
   test_job->set_uuid(to_string(job_id));
-  test_job->mutable_root_task()->set_uid(0);
-  test_job->mutable_root_task()->set_name("root_task");
+  TaskDescriptor* rtp = test_job->mutable_root_task();
+  rtp->set_uid(GenerateRootTaskID(*test_job));
+  rtp->set_state(TaskDescriptor::CREATED);
+  rtp->set_job_id(to_string(job_id));
   // add spawned task #1
   TaskDescriptor* td1 = test_job->mutable_root_task()->add_spawned();
   td1->set_uid(GenerateTaskID(test_job->root_task()));
@@ -207,9 +201,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   CHECK(!obj_store_->AddReference(d0_td2_id, d0_td2));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
-  set<TaskID_t> runnable_tasks =
-      sched_->RunnableTasksForJob(test_job);
-  PrintRunnableTasks(runnable_tasks);
+  set<TaskID_t> runnable_tasks = sched_->ComputeRunnableTasksForJob(test_job);
   // Three tasks should be runnable: those spawned by the root task, and the
   // root task itself.
   EXPECT_EQ(runnable_tasks.size(), 3UL);
@@ -252,16 +244,11 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   CHECK(!obj_store_->AddReference(d0_td1_id, d0_td1));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
-  set<TaskID_t> runnable_tasks =
-      sched_->RunnableTasksForJob(test_job);
+  set<TaskID_t> runnable_tasks = sched_->ComputeRunnableTasksForJob(test_job);
   // Two tasks should be runnable: those spawned by the root task.
-  PrintRunnableTasks(runnable_tasks);
   EXPECT_EQ(runnable_tasks.size(), 2UL);
   delete test_job;
 }
-
-
-
 
 }  // namespace scheduler
 }  // namespace firmament
