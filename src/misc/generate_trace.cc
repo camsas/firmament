@@ -60,22 +60,22 @@ GenerateTrace::~GenerateTrace() {
       uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id_runtime.first);
       TaskRuntime task_runtime = task_id_runtime.second;
       // NOTE: We are using the job id as the job logical name.
-      fprintf(task_runtime_events_, "%ju %ju %ju %ju %ju %ju %ju\n",
+      fprintf(task_runtime_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju\n",
               *job_id_ptr, task_id_runtime.first, *job_id_ptr,
               task_runtime.start_time, task_runtime.total_runtime,
               task_runtime.runtime, task_runtime.num_runs);
     }
     fclose(task_runtime_events_);
     for (auto& job_to_num_tasks : job_num_tasks_) {
-      fprintf(jobs_num_tasks_, "%ju %ju\n", job_to_num_tasks.first,
+      fprintf(jobs_num_tasks_, "%ju,%ju\n", job_to_num_tasks.first,
               job_to_num_tasks.second);
     }
     fclose(jobs_num_tasks_);
     // TODO(ionel): Collect task usage stats.
     // for (auto& task_to_job : task_to_job_) {
     //   uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_to_job.first);
-    //   fprintf(task_usage_stat_, "%jd %jd 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
-    //           "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n", *job_id_ptr,
+    //   fprintf(task_usage_stat_, "%ju,%ju,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+    //           "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0\n", *job_id_ptr,
     //           task_to_job.first);
     // }
     fclose(task_usage_stat_);
@@ -90,7 +90,7 @@ void GenerateTrace::AddMachine(const ResourceDescriptor& rd) {
     int32_t machine_event = 0;
 
     uint64_t machine_id = GetMachineId(rd);
-    fprintf(machine_events_, "%jd %ju %d,,,\n",
+    fprintf(machine_events_, "%ju,%ju,%d,,,\n",
             timestamp, machine_id, machine_event);
   }
 }
@@ -182,7 +182,7 @@ void GenerateTrace::TaskSubmitted(JobDescriptor* jd_ptr,
         *num_tasks = *num_tasks + 1;
       }
     }
-    fprintf(task_events_, "%ju,,%ju,%ju,%d,,,,,,,\n",
+    fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
             timestamp, job_id, trace_task_id, task_event);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     if (tr_ptr == NULL) {
@@ -204,7 +204,7 @@ void GenerateTrace::TaskCompleted(TaskID_t task_id) {
     CHECK_NOTNULL(job_id_ptr);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
-    fprintf(task_events_, "%ju,,%ju,%ju,%d,,,,,,,\n",
+    fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id, task_event);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
@@ -221,7 +221,7 @@ void GenerateTrace::TaskEvicted(TaskID_t task_id) {
     CHECK_NOTNULL(job_id_ptr);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
-    fprintf(task_events_, "%ju,,%ju,%ju,%d,,,,,,,\n",
+    fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id, task_event);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
@@ -237,7 +237,7 @@ void GenerateTrace::TaskFailed(TaskID_t task_id) {
     CHECK_NOTNULL(job_id_ptr);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
-    fprintf(task_events_, "%ju,,%ju,%ju,%d,,,,,,,\n",
+    fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id, task_event);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
@@ -253,7 +253,7 @@ void GenerateTrace::TaskKilled(TaskID_t task_id) {
     CHECK_NOTNULL(job_id_ptr);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
-    fprintf(task_events_, "%ju,,%ju,%ju,%d,,,,,,,\n",
+    fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id, task_event);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
@@ -262,6 +262,7 @@ void GenerateTrace::TaskKilled(TaskID_t task_id) {
 }
 
 void GenerateTrace::TaskScheduled(TaskID_t task_id, ResourceID_t res_id) {
+  // TODO(ionel): Print machine id as well.
   if (FLAGS_generate_trace) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     int32_t task_event = 1;
@@ -269,7 +270,7 @@ void GenerateTrace::TaskScheduled(TaskID_t task_id, ResourceID_t res_id) {
     CHECK_NOTNULL(job_id_ptr);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
-    fprintf(task_events_, "%ju,,%ju,%ju,%d,,,,,,,\n",
+    fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id, task_event);
     tr_ptr->num_runs++;
     tr_ptr->last_schedule_time = timestamp;
