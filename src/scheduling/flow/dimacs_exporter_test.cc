@@ -14,11 +14,12 @@
 #include <boost/bind.hpp>
 
 #include "base/common.h"
+#include "misc/generate_trace.h"
 #include "misc/map-util.h"
-#include "misc/utils.h"
 #include "misc/pb_utils.h"
 #include "misc/real_time.h"
 #include "misc/string_utils.h"
+#include "misc/utils.h"
 #include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/dimacs_exporter.h"
 #include "scheduling/flow/flow_graph_manager.h"
@@ -80,9 +81,10 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   RealTime real_time;
+  GenerateTrace generate_trace(&real_time);
   FlowGraphManager flow_graph_manager(
       new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &real_time,
-      &dimacs_stats);
+      &generate_trace, &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
   string root_id = to_string(GenerateResourceID("test"));
@@ -133,9 +135,10 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   RealTime real_time;
+  GenerateTrace generate_trace(&real_time);
   FlowGraphManager flow_graph_manager(
       new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &real_time,
-      &dimacs_stats);
+      &generate_trace, &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
   int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
@@ -207,9 +210,10 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
       new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
     DIMACSChangeStats dimacs_stats;
     RealTime real_time;
+    GenerateTrace generate_trace(&real_time);
     FlowGraphManager flow_graph_manager(
         new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &real_time,
-        &dimacs_stats);
+        &generate_trace, &dimacs_stats);
     // Test resource topology
     ResourceTopologyNodeDescriptor machine_tmpl;
     int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);

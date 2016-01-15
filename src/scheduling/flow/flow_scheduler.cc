@@ -6,6 +6,7 @@
 
 #include "scheduling/flow/flow_scheduler.h"
 
+#include <boost/timer/timer.hpp>
 #include <cstdio>
 #include <map>
 #include <set>
@@ -14,6 +15,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
+#include "base/units.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
 #include "misc/string_utils.h"
@@ -62,6 +64,7 @@ FlowScheduler::FlowScheduler(
       last_updated_time_dependent_costs_(0ULL),
       leaf_res_ids_(new unordered_set<ResourceID_t,
                       boost::hash<boost::uuids::uuid>>),
+      generate_trace_(new GenerateTrace(time_manager)),
       dimacs_stats_(new DIMACSChangeStats) {
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
@@ -119,7 +122,8 @@ FlowScheduler::FlowScheduler(
   }
 
   flow_graph_manager_.reset(new FlowGraphManager(cost_model_, leaf_res_ids_,
-                                                 time_manager_, dimacs_stats_));
+                                                 time_manager_, generate_trace_,
+                                                 dimacs_stats_));
   cost_model_->SetFlowGraphManager(flow_graph_manager_);
 
   // Set up the initial flow graph
@@ -129,6 +133,7 @@ FlowScheduler::FlowScheduler(
 }
 
 FlowScheduler::~FlowScheduler() {
+  delete generate_trace_;
   delete dimacs_stats_;
   delete cost_model_;
   delete solver_dispatcher_;
@@ -322,7 +327,7 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   uint64_t num_scheduled_tasks = 0;
   if (jd_ptr_vect.size() > 0) {
-    LOG(INFO) << "START SCHEDULING jobs";
+    boost::timer::cpu_timer total_scheduler_timer;
     // First, we update the cost model's resource topology statistics
     // (e.g. based on machine load and prior decisions); these need to be known
     // before AddOrUpdateJobNodes is invoked below, as it may add arcs depending
@@ -330,7 +335,7 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
     UpdateCostModelResourceStats();
     bool run_scheduler = false;
     for (auto& jd_ptr : jd_ptr_vect) {
-      // Check if we have any runnable tasks in this job
+      // Check if we have any runnable tasks in this job.
       const set<TaskID_t> runnable_tasks = RunnableTasksForJob(jd_ptr);
       if (runnable_tasks.size() > 0) {
         run_scheduler = true;
@@ -340,18 +345,24 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
     if (run_scheduler) {
       num_scheduled_tasks +=
         RunSchedulingIteration(scheduler_stats);
-      LOG(INFO) << "STOP SCHEDULING, placed " << num_scheduled_tasks
-                << " tasks";
+      VLOG(1) << "STOP SCHEDULING, placed " << num_scheduled_tasks << " tasks";
       // If we have cost model debug logging turned on, write some debugging
       // information now.
       if (FLAGS_debug_cost_model) {
         LogDebugCostModel();
       }
+      // We reset the DIMACS stats here because all the graph changes we make
+      // from now on are going to be included in the next scheduler run.
+      DIMACSChangeStats current_run_dimacs_stats = *dimacs_stats_;
+      dimacs_stats_->ResetStats();
       // Resource reservations may have changed, so reconsider equivalence
-      // classes
+      // classes.
       for (auto& jd_ptr : jd_ptr_vect) {
         flow_graph_manager_->AddOrUpdateJobNodes(jd_ptr);
       }
+      scheduler_stats->total_runtime = total_scheduler_timer.elapsed().wall
+        / NANOSECONDS_IN_MICROSECOND;
+      generate_trace_->SchedulerRun(*scheduler_stats, current_run_dimacs_stats);
     }
   }
   return num_scheduled_tasks;

@@ -37,20 +37,20 @@ FlowGraphManager::FlowGraphManager(
     unordered_set<ResourceID_t,
     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
     TimeInterface* time_manager,
+    GenerateTrace* generate_trace,
     DIMACSChangeStats* dimacs_stats)
     : cost_model_(cost_model),
       flow_graph_(new FlowGraph),
       leaf_res_ids_(leaf_res_ids),
-      generate_trace_(new GenerateTrace(time_manager)),
+      generate_trace_(generate_trace),
       dimacs_stats_(dimacs_stats) {
   // Add sink and cluster aggregator node
   AddSpecialNodes();
 }
 
 FlowGraphManager::~FlowGraphManager() {
-  // We don't delete cost_model_ and dimacs_stats_ because they are owned by
-  // the FlowScheduler.
-  delete generate_trace_;
+  // We don't delete cost_model_, generate_trace_ and dimacs_stats_ because
+  // they are owned by the FlowScheduler.
   delete flow_graph_;
   ResetChanges();
   // XXX(malte): N.B. this leaks memory as we haven't destroyed all of the
