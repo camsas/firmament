@@ -29,7 +29,6 @@
 #include "scheduling/flow/flow_graph.h"
 
 DEFINE_bool(preemption, false, "Enable preemption and migration of tasks");
-DEFINE_bool(add_root_task_to_graph, true, "Add the job root task to the graph");
 
 namespace firmament {
 
@@ -49,7 +48,8 @@ FlowGraphManager::FlowGraphManager(
 }
 
 FlowGraphManager::~FlowGraphManager() {
-  // We don't delete cost_model_ because it's owned by the FlowScheduler.
+  // We don't delete cost_model_ and dimacs_stats_ because they are owned by
+  // the FlowScheduler.
   delete generate_trace_;
   delete flow_graph_;
   ResetChanges();
@@ -235,17 +235,7 @@ void FlowGraphManager::AddOrUpdateJobNodes(JobDescriptor* jd) {
   // Now add the job's task nodes
   // TODO(malte): This is a simple BFS lashup; maybe we can do better?
   queue<TaskDescriptor*> q;
-  if (FLAGS_add_root_task_to_graph) {
-    q.push(jd->mutable_root_task());
-  } else {
-    TaskDescriptor* root_task = jd->mutable_root_task();
-    for (auto& task : *root_task->mutable_spawned()) {
-      // We do actually need to push tasks even if they are already completed,
-      // failed or running, since they may have children eligible for
-      // scheduling.
-      q.push(&task);
-    }
-  }
+  q.push(jd->mutable_root_task());
   while (!q.empty()) {
     TaskDescriptor* cur = q.front();
     q.pop();
@@ -509,8 +499,8 @@ void FlowGraphManager::AddOrUpdateEquivClassArcs(
       // above implicit assumption may not always hold (even though it does
       // for now).
       if (!task_node) {
-        LOG(INFO) << "Skipping addition of arc from task " << task_id << "'s "
-                  << "node to EC " << ec << " as task not yet present.";
+        VLOG(2) << "Skipping addition of arc from task " << task_id << "'s "
+                << "node to EC " << ec << " as task not yet present.";
         continue;
       }
       uint64_t arc_cost = cost_model_->TaskToEquivClassAggregator(task_id, ec);
@@ -923,10 +913,12 @@ void FlowGraphManager::DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
   }
 }
 
-void FlowGraphManager::DeleteTaskNode(TaskID_t task_id, const char *comment) {
+uint64_t FlowGraphManager::DeleteTaskNode(TaskID_t task_id,
+                                          const char *comment) {
   uint64_t* node_id = FindOrNull(task_to_nodeid_map_, task_id);
   CHECK_NOTNULL(node_id);
-  FlowGraphNode* node = flow_graph_->Node(*node_id);
+  uint64_t task_node_id = *node_id;
+  FlowGraphNode* node = flow_graph_->Node(task_node_id);
   // Increase the sink's excess and set this node's excess to zero
   node->excess_ = 0;
   sink_node_->excess_++;
@@ -950,12 +942,13 @@ void FlowGraphManager::DeleteTaskNode(TaskID_t task_id, const char *comment) {
     cost_model_->GetTaskEquivClasses(task_id);
   // If there are no ECs, we're done
   if (!equiv_classes)
-    return;
+    return task_node_id;
   // Otherwise, delete the EC aggregators if necessary
   for (auto& equiv_class : *equiv_classes) {
     DeleteOrUpdateOutgoingEquivNode(equiv_class, comment);
   }
   delete equiv_classes;
+  return task_node_id;
 }
 
 void FlowGraphManager::JobCompleted(JobID_t job_id) {
@@ -1042,16 +1035,18 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
   }
 }
 
-void FlowGraphManager::RemoveMachine(const ResourceDescriptor& rd) {
+void FlowGraphManager::RemoveMachine(const ResourceDescriptor& rd,
+                                     set<uint64_t>* pus_removed) {
   generate_trace_->RemoveMachine(rd);
   ResourceID_t res_id = ResourceIDFromString(rd.uuid());
   uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
   CHECK_NOTNULL(node_id);
-  RemoveMachineSubTree(flow_graph_->Node(*node_id));
+  RemoveMachineSubTree(flow_graph_->Node(*node_id), pus_removed);
   cost_model_->RemoveMachine(res_id);
 }
 
-void FlowGraphManager::RemoveMachineSubTree(FlowGraphNode* res_node) {
+void FlowGraphManager::RemoveMachineSubTree(FlowGraphNode* res_node,
+                                            set<uint64_t>* pus_removed) {
   while (true) {
     unordered_map<uint64_t, FlowGraphArc*>::iterator
       it = res_node->outgoing_arc_map_.begin();
@@ -1068,7 +1063,7 @@ void FlowGraphManager::RemoveMachineSubTree(FlowGraphNode* res_node) {
     if (it->second->dst_node_->type_ == FlowNodeType::PU ||
         it->second->dst_node_->type_ == FlowNodeType::MACHINE ||
         it->second->dst_node_->type_ == FlowNodeType::UNKNOWN) {
-      RemoveMachineSubTree(it->second->dst_node_);
+      RemoveMachineSubTree(it->second->dst_node_, pus_removed);
     } else {
       // The node is not a machine related node. We will just delete the arc
       // to it. We don't need to generate a DIMACS change because we'll later
@@ -1076,14 +1071,18 @@ void FlowGraphManager::RemoveMachineSubTree(FlowGraphNode* res_node) {
       flow_graph_->DeleteArc(it->second);
     }
   }
+  if (res_node->type_ == FlowNodeType::PU) {
+    pus_removed->insert(res_node->id_);
+  }
   // We've deleted all its children. Now we can delete the node itself.
   DeleteResourceNode(res_node, "RemoveMachineSubTree");
 }
 
-void FlowGraphManager::TaskCompleted(TaskID_t tid) {
+uint64_t FlowGraphManager::TaskCompleted(TaskID_t tid) {
   generate_trace_->TaskCompleted(tid);
-  DeleteTaskNode(tid, "TaskCompleted");
+  uint64_t task_node_id = DeleteTaskNode(tid, "TaskCompleted");
   cost_model_->RemoveTask(tid);
+  return task_node_id;
 }
 
 void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {

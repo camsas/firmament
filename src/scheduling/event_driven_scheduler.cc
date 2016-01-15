@@ -130,21 +130,11 @@ void EventDrivenScheduler::CheckRunningTasksHealth() {
   }
 }
 
-void EventDrivenScheduler::ClearScheduledJobs() {
-  for (auto it = jobs_to_schedule_.begin(); it != jobs_to_schedule_.end(); ) {
-    if (RunnableTasksForJob(it->second).size() == 0) {
-      it = jobs_to_schedule_.erase(it);
-    } else {
-      it++;
-    }
-  }
-}
-
 void EventDrivenScheduler::DebugPrintRunnableTasks() {
-  VLOG(1) << "Runnable task queue now contains " << runnable_tasks_.size()
-          << " elements:";
-  for (auto& task : runnable_tasks_) {
-    VLOG(1) << "  " << task;
+  for (auto& runnable_tasks_per_job : runnable_tasks_) {
+    for (auto& task : runnable_tasks_per_job.second) {
+      VLOG(1) << "  " << task;
+    }
   }
 }
 
@@ -168,8 +158,8 @@ void EventDrivenScheduler::ExecuteTask(TaskDescriptor* td_ptr,
   TaskID_t task_id = td_ptr->uid();
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
   // Remove the task from the runnable set
-  CHECK_EQ(runnable_tasks_.erase(task_id), 1)
-    << "Failed to remove task " << task_id << " from runnable set!";
+  CHECK_EQ(runnable_tasks_[JobIDFromString(td_ptr->job_id())].erase(task_id),
+           1) << "Failed to remove task " << task_id << " from runnable set!";
   if (VLOG_IS_ON(2))
     DebugPrintRunnableTasks();
   // Find an executor for this resource.
@@ -189,6 +179,7 @@ void EventDrivenScheduler::HandleJobCompletion(JobID_t job_id) {
   JobDescriptor* jd = FindOrNull(*job_map_, job_id);
   CHECK_NOTNULL(jd);
   jobs_to_schedule_.erase(job_id);
+  runnable_tasks_.erase(job_id);
   jd->set_state(JobDescriptor::COMPLETED);
   if (event_notifier_) {
     event_notifier_->OnJobCompletion(job_id);
@@ -229,7 +220,7 @@ void EventDrivenScheduler::HandleReferenceStateChange(
       }
       if (!any_outstanding) {
         task->set_state(TaskDescriptor::RUNNABLE);
-        runnable_tasks_.insert(task->uid());
+        InsertTaskIntoRunnables(JobIDFromString(task->job_id()), task->uid());
       }
     }
   } else if (old_ref.Consumable() && !new_ref.Consumable()) {
@@ -276,9 +267,10 @@ void EventDrivenScheduler::HandleTaskDelegationFailure(
   CHECK(UnbindTaskFromResource(td_ptr, *res_id_ptr));
   // Go back to try scheduling this task again
   td_ptr->set_state(TaskDescriptor::RUNNABLE);
-  runnable_tasks_.insert(td_ptr->uid());
+  JobID_t job_id = JobIDFromString(td_ptr->job_id());
+  InsertTaskIntoRunnables(job_id, td_ptr->uid());
   td_ptr->clear_start_time();
-  JobDescriptor* jd = FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
+  JobDescriptor* jd = FindOrNull(*job_map_, job_id);
   CHECK_NOTNULL(jd);
   // Try again to schedule...
   ScheduleJob(jd, NULL);
@@ -294,7 +286,7 @@ void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
   // Record final report
   ExecutorInterface* exec = FindPtrOrNull(executors_, res_id);
   td_ptr->set_state(TaskDescriptor::RUNNABLE);
-  runnable_tasks_.insert(td_ptr->uid());
+  InsertTaskIntoRunnables(JobIDFromString(td_ptr->job_id()), td_ptr->uid());
   CHECK_NOTNULL(exec);
   exec->HandleTaskEviction(td_ptr);
   if (event_notifier_) {
@@ -420,16 +412,27 @@ void EventDrivenScheduler::KillRunningTask(
   m_adapter_ptr_->SendMessageToEndpoint(td_ptr->last_heartbeat_location(), bm);
 }
 
+void EventDrivenScheduler::InsertTaskIntoRunnables(JobID_t job_id,
+                                                   TaskID_t task_id) {
+  set<TaskID_t>* runnable_tasks_for_job = FindOrNull(runnable_tasks_, job_id);
+  if (runnable_tasks_for_job == NULL) {
+    set<TaskID_t> new_runnable_tasks_for_job;
+    new_runnable_tasks_for_job.insert(task_id);
+    InsertOrUpdate(&runnable_tasks_, job_id, new_runnable_tasks_for_job);
+  } else {
+    runnable_tasks_for_job->insert(task_id);
+  }
+}
+
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
 // Derek Murray's thesis on CIEL.
-uint64_t EventDrivenScheduler::LazyGraphReduction(
+void EventDrivenScheduler::LazyGraphReduction(
     const set<DataObjectID_t*>& output_ids,
     TaskDescriptor* root_task,
     const JobID_t& job_id) {
   VLOG(2) << "Performing lazy graph reduction";
   // Local data structures
   deque<TaskDescriptor*> newly_active_tasks;
-  bool do_schedule = false;
   // Add expected producer for object_id to queue, if the object reference is
   // not already concrete.
   VLOG(2) << "for a job with " << output_ids.size() << " outputs";
@@ -531,12 +534,10 @@ uint64_t EventDrivenScheduler::LazyGraphReduction(
       // This task is runnable
       VLOG(2) << "Adding task " << current_task->uid() << " to RUNNABLE set.";
       current_task->set_state(TaskDescriptor::RUNNABLE);
-      runnable_tasks_.insert(current_task->uid());
+      InsertTaskIntoRunnables(JobIDFromString(current_task->job_id()),
+                              current_task->uid());
     }
   }
-  VLOG(1) << "do_schedule is " << do_schedule << ", runnable_task set "
-          << "contains " << runnable_tasks_.size() << " tasks.";
-  return runnable_tasks_.size();
 }
 
 bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
@@ -563,7 +564,6 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
   }
   // Otherwise, bind the task
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  runnable_tasks_.insert(td->uid());
   InsertIfNotPresent(task_map_.get(), td->uid(), td);
   HandleTaskPlacement(td, rd);
   td->set_state(TaskDescriptor::RUNNING);
@@ -660,14 +660,22 @@ void EventDrivenScheduler::RegisterSimulatedResource(ResourceID_t res_id) {
   CHECK(InsertIfNotPresent(&executors_, res_id, exec));
 }
 
-const set<TaskID_t>& EventDrivenScheduler::RunnableTasksForJob(
+const set<TaskID_t>& EventDrivenScheduler::ComputeRunnableTasksForJob(
     JobDescriptor* job_desc) {
   // TODO(malte): check if this is broken
   set<DataObjectID_t*> outputs =
       DataObjectIDsFromProtobuf(job_desc->output_ids());
   TaskDescriptor* rtp = job_desc->mutable_root_task();
   LazyGraphReduction(outputs, rtp, JobIDFromString(job_desc->uuid()));
-  return runnable_tasks_;
+  JobID_t job_id = JobIDFromString(job_desc->uuid());
+  set<TaskID_t>* runnable_tasks_for_job = FindOrNull(runnable_tasks_, job_id);
+  if (runnable_tasks_for_job != NULL) {
+    return *runnable_tasks_for_job;
+  } else {
+    set<TaskID_t> new_runnable_tasks_for_job;
+    InsertOrUpdate(&runnable_tasks_, job_id, new_runnable_tasks_for_job);
+    return runnable_tasks_[job_id];
+  }
 }
 
 bool EventDrivenScheduler::UnbindTaskFromResource(TaskDescriptor* td_ptr,
