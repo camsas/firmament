@@ -145,8 +145,6 @@ void Simulator::ReplaySimulation() {
 }
 
 void Simulator::Run() {
-  // Terminate if flow solving binary fails.
-  FLAGS_flow_scheduling_strict = true;
   FLAGS_flow_scheduling_solver = FLAGS_solver;
   if (!FLAGS_solver.compare("flowlessly")) {
     FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
@@ -158,7 +156,6 @@ void Simulator::Run() {
     FLAGS_only_read_assignment_changes = false;
     FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-git/cs2.exe";
   } else if (!FLAGS_solver.compare("custom")) {
-    FLAGS_flow_scheduling_time_reported = true;
   }
 
   LOG(INFO) << "Starting Google trace simulator!";
