@@ -40,10 +40,13 @@ class SolverDispatcher {
   multimap<uint64_t, uint64_t>* GetMappings(
       vector< map< uint64_t, uint64_t > >* extracted_flow,
       unordered_set<uint64_t> leaves, uint64_t sink);
-  multimap<uint64_t, uint64_t>* ReadOutput(double *time);
+  multimap<uint64_t, uint64_t>* ReadOutput(uint64_t* algorithm_runtime);
   vector< map< uint64_t, uint64_t> >* ReadFlowGraph(FILE* fptr,
+                                                    uint64_t* algorithm_runtime,
                                                     uint64_t num_vertices);
-  multimap<uint64_t, uint64_t>* ReadTaskMappingChanges(FILE* fptr);
+  multimap<uint64_t, uint64_t>* ReadTaskMappingChanges(
+      FILE* fptr,
+      uint64_t* algorithm_runtime);
   void SolverConfiguration(const string& solver, string* binary,
                            vector<string> *args);
   friend void *ExportToSolver(void *x);
