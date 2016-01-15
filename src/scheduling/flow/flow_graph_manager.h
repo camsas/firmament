@@ -33,6 +33,7 @@ class FlowGraphManager {
                             unordered_set<ResourceID_t,
                               boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                             TimeInterface* time_manager,
+                            GenerateTrace* generate_trace,
                             DIMACSChangeStats* dimacs_stats);
   virtual ~FlowGraphManager();
   // Public API

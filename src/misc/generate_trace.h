@@ -8,6 +8,8 @@
 
 #include "base/types.h"
 #include "misc/time_interface.h"
+#include "scheduling/flow/dimacs_change_stats.h"
+#include "scheduling/scheduler_interface.h"
 
 namespace firmament {
 
@@ -34,12 +36,15 @@ class GenerateTrace {
   ~GenerateTrace();
   void AddMachine(const ResourceDescriptor& rd);
   void RemoveMachine(const ResourceDescriptor& rd);
+  void SchedulerRun(const scheduler::SchedulerStats& scheduler_stats,
+                    const DIMACSChangeStats& dimacs_stats);
   void TaskSubmitted(JobDescriptor* jd_ptr, TaskDescriptor* td_ptr);
   void TaskCompleted(TaskID_t task_id);
   void TaskEvicted(TaskID_t task_id);
   void TaskFailed(TaskID_t task_id);
   void TaskKilled(TaskID_t task_id);
   void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
+
  private:
   uint64_t GetMachineId(const ResourceDescriptor& rd);
 
@@ -48,6 +53,7 @@ class GenerateTrace {
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
   unordered_map<TaskID_t, TaskRuntime> task_to_runtime_;
   FILE* machine_events_;
+  FILE* scheduler_events_;
   FILE* task_events_;
   FILE* task_runtime_events_;
   FILE* jobs_num_tasks_;

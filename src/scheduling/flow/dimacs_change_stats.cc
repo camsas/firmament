@@ -4,6 +4,9 @@
 
 #include "scheduling/flow/dimacs_change_stats.h"
 
+#include <boost/lexical_cast.hpp>
+#include <string>
+
 namespace firmament {
 
 DIMACSChangeStats::DIMACSChangeStats() {
@@ -18,6 +21,29 @@ DIMACSChangeStats::DIMACSChangeStats() {
 }
 
 DIMACSChangeStats::~DIMACSChangeStats() {
+}
+
+string DIMACSChangeStats::GetStatsString() const {
+  string stats = boost::lexical_cast<string>(nodes_added_) + "," +
+    boost::lexical_cast<string>(nodes_removed_) + "," +
+    boost::lexical_cast<string>(arcs_added_) + "," +
+    boost::lexical_cast<string>(arcs_changed_) + "," +
+    boost::lexical_cast<string>(arcs_removed_);
+  for (uint32_t index = 0; index <= NUM_CHANGE_TYPES; index++) {
+    stats += "," + boost::lexical_cast<string>(num_changes_of_type_[index]);
+  }
+  return stats;
+}
+
+void DIMACSChangeStats::ResetStats() {
+  nodes_added_ = 0;
+  nodes_removed_ = 0;
+  arcs_added_ = 0;
+  arcs_changed_ = 0;
+  arcs_removed_ = 0;
+  for (uint32_t index = 0; index <= NUM_CHANGE_TYPES; index++) {
+    num_changes_of_type_[index] = 0;
+  }
 }
 
 void DIMACSChangeStats::UpdateStats(ChangeType change_type) {
