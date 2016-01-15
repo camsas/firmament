@@ -4,6 +4,7 @@
 #ifndef FIRMAMENT_SCHEDULING_FLOW_DIMACS_CHANGE_STATS_H
 #define FIRMAMENT_SCHEDULING_FLOW_DIMACS_CHANGE_STATS_H
 
+#include <string>
 #include <vector>
 
 #include "base/types.h"
@@ -56,6 +57,8 @@ struct DIMACSChangeStats {
   uint64_t num_changes_of_type_[NUM_CHANGE_TYPES + 1];
   DIMACSChangeStats();
   ~DIMACSChangeStats();
+  string GetStatsString() const;
+  void ResetStats();
   void UpdateStats(ChangeType change_type);
 };
 

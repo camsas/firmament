@@ -24,6 +24,7 @@ GenerateTrace::GenerateTrace(TimeInterface* time_manager)
     MkdirIfNotPresent(FLAGS_generated_trace_path);
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/machine_events");
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/task_events");
+    MkdirIfNotPresent(FLAGS_generated_trace_path + "/scheduler_events");
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/task_runtime_events");
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/jobs_num_tasks");
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/task_usage_stat");
@@ -31,6 +32,9 @@ GenerateTrace::GenerateTrace(TimeInterface* time_manager)
       FLAGS_generated_trace_path + "machine_events/part-00000-of-00001.csv";
     machine_events_ = fopen(path.c_str(), "w");
     CHECK(machine_events_ != NULL) << "Failed to open: " << path;
+    path = FLAGS_generated_trace_path + "scheduler_events/scheduler_events.csv";
+    scheduler_events_ = fopen(path.c_str(), "w");
+    CHECK(scheduler_events_ != NULL) << "Failed to open: " << path;
     path = FLAGS_generated_trace_path + "task_events/part-00000-of-00500.csv";
     task_events_ = fopen(path.c_str(), "w");
     CHECK(task_events_ != NULL) << "Failed to open: " << path;
@@ -50,6 +54,7 @@ GenerateTrace::GenerateTrace(TimeInterface* time_manager)
 GenerateTrace::~GenerateTrace() {
   if (FLAGS_generate_trace) {
     fclose(machine_events_);
+    fclose(scheduler_events_);
     fclose(task_events_);
     for (auto& task_id_runtime : task_to_runtime_) {
       uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id_runtime.first);
@@ -121,6 +126,18 @@ void GenerateTrace::RemoveMachine(const ResourceDescriptor& rd) {
     uint64_t machine_id = GetMachineId(rd);
     fprintf(machine_events_, "%ju,%ju,%d,,,\n",
             timestamp, machine_id, machine_event);
+  }
+}
+
+void GenerateTrace::SchedulerRun(
+    const scheduler::SchedulerStats& scheduler_stats,
+    const DIMACSChangeStats& dimacs_stats) {
+  if (FLAGS_generate_trace) {
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
+    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%s\n",
+            timestamp, scheduler_stats.scheduler_runtime,
+            scheduler_stats.algorithm_runtime, scheduler_stats.total_runtime,
+            dimacs_stats.GetStatsString().c_str());
   }
 }
 

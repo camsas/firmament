@@ -121,6 +121,7 @@ class FlowScheduler : public EventDrivenScheduler {
   // We use this set to make sure we don't try to place again the completed
   // tasks.
   set<uint64_t> tasks_completed_during_solver_run_;
+  GenerateTrace* generate_trace_;
   DIMACSChangeStats* dimacs_stats_;
 };
 
