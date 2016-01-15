@@ -55,7 +55,7 @@ struct DIMACSChangeStats {
   uint64_t arcs_removed_;
   uint64_t num_changes_of_type_[NUM_CHANGE_TYPES + 1];
   DIMACSChangeStats();
-  virtual ~DIMACSChangeStats();
+  ~DIMACSChangeStats();
   void UpdateStats(ChangeType change_type);
 };
 

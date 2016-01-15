@@ -42,61 +42,6 @@ void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl) {
   close(fd);
 }
 
-void LogStartOfSchedulerRun(FILE* graph_output,
-                            uint64_t run_scheduler_at) {
-  LOG(INFO) << "Scheduler run for time: " << run_scheduler_at;
-  if (graph_output) {
-    fprintf(graph_output, "c SOI %jd\n", run_scheduler_at);
-    fflush(graph_output);
-  }
-}
-
-void LogSchedulerRunStats(double avg_event_timestamp_in_scheduling_round,
-                          FILE* stats_file,
-                          const boost::timer::cpu_timer timer,
-                          uint64_t scheduler_executed_at,
-                          const scheduler::SchedulerStats& scheduler_stats) {
-  if (stats_file) {
-    uint64_t total_runtime = timer.elapsed().wall / NANOSECONDS_IN_MICROSECOND;
-    if (FLAGS_batch_step == 0) {
-      // online mode
-      uint64_t scheduling_latency = 0;
-      if (avg_event_timestamp_in_scheduling_round >= 0 &&
-          scheduler_stats.algorithm_runtime < numeric_limits<uint64_t>::max()) {
-        // Set scheduling latency only if we've seen an event and
-        // if we have the runtime of the algorithm.
-        scheduling_latency = scheduler_executed_at +
-          scheduler_stats.algorithm_runtime -
-          avg_event_timestamp_in_scheduling_round;
-      }
-
-      fprintf(stats_file, "%ju,%ju,%ju,%ju,%ju,", scheduler_executed_at,
-              scheduling_latency, scheduler_stats.algorithm_runtime,
-              scheduler_stats.scheduler_runtime, total_runtime);
-    } else {
-      // batch mode
-      fprintf(stats_file, "%ju,%ju%ju%ju,", scheduler_executed_at,
-              scheduler_stats.algorithm_runtime,
-              scheduler_stats.scheduler_runtime, total_runtime);
-    }
-    fflush(stats_file);
-  }
-}
-
-void OutputStatsHeader(FILE* stats_file) {
-  if (stats_file) {
-    if (FLAGS_batch_step == 0) {
-      // online
-      fprintf(stats_file, "cluster_timestamp,scheduling_latency,"
-              "algorithm_runtime,scheduler_runtime,total_time\n");
-    } else {
-      // batch
-      fprintf(stats_file, "cluster_timestamp,algorithm_runtime,"
-              "scheduler_runtime,total_time\n");
-    }
-  }
-}
-
 EventDescriptor_EventType TranslateMachineEvent(
     int32_t machine_event) {
   if (machine_event == MACHINE_ADD) {

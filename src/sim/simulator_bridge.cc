@@ -33,7 +33,8 @@ SimulatorBridge::SimulatorBridge(
     EventManager* event_manager) :
     event_manager_(event_manager), job_map_(new JobMap_t),
     knowledge_base_(new KnowledgeBaseSimulator),
-    resource_map_(new ResourceMap_t), task_map_(new TaskMap_t) {
+    resource_map_(new ResourceMap_t), task_map_(new TaskMap_t),
+    num_duplicate_task_ids_(0) {
   ResourceID_t root_uuid = GenerateRootResourceID("XXXsimulatorXXX");
   ResourceDescriptor* rd_ptr = rtn_root_.mutable_resource_desc();
   rd_ptr->set_uuid(to_string(root_uuid));
@@ -66,6 +67,8 @@ SimulatorBridge::SimulatorBridge(
         messaging_adapter_, this, root_uuid, "http://localhost",
         event_manager_);
   }
+  // Import a fictional machine resource topology
+  LoadMachineTemplate(&machine_tmpl_);
 }
 
 SimulatorBridge::~SimulatorBridge() {
@@ -85,11 +88,10 @@ SimulatorBridge::~SimulatorBridge() {
 }
 
 ResourceDescriptor* SimulatorBridge::AddMachine(
-    const ResourceTopologyNodeDescriptor& machine_tmpl,
     uint64_t machine_id) {
   // Create a new machine topology descriptor.
   ResourceTopologyNodeDescriptor* new_machine = rtn_root_.add_children();
-  new_machine->CopyFrom(machine_tmpl);
+  new_machine->CopyFrom(machine_tmpl_);
   const string& root_uuid = rtn_root_.resource_desc().uuid();
   // Mark the hostname as a simulation one. This is useful for generate_trace
   // which if it detects a simulated host then it outputs the host's trace id
@@ -148,8 +150,6 @@ TaskDescriptor* SimulatorBridge::AddTask(
   TaskDescriptor* td_ptr = NULL;
   if (FindOrNull(trace_task_id_to_td_, task_identifier) == NULL) {
     td_ptr = AddTaskToJob(jd_ptr, task_identifier.task_index);
-    // XXX(ionel): Hack. We're setting the simulator job id as the binary
-    // of the job in order for Firmament to uniquely identify it.
     td_ptr->set_binary(lexical_cast<string>(task_identifier.job_id));
     // TODO(ionel): Populate task with the appropriate type.
     td_ptr->set_task_type(TaskDescriptor::DEVIL);
@@ -230,8 +230,15 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr,
                                               uint64_t trace_task_id) {
   CHECK_NOTNULL(jd_ptr);
   TaskDescriptor* root_task = jd_ptr->mutable_root_task();
-  TaskDescriptor* new_task = root_task->add_spawned();
-  new_task->set_uid(GenerateTaskID(*root_task));
+  TaskDescriptor* new_task;
+  if (root_task->has_uid()) {
+    new_task = root_task->add_spawned();
+    new_task->set_uid(GenerateTaskID(*root_task));
+  } else {
+    // This is the first task we add for the job. We add it as the root task.
+    new_task = root_task;
+    new_task->set_uid(GenerateRootTaskID(*jd_ptr));
+  }
   // XXX(ionel): HACK! I set the index to the trace task id which I can
   // then access in generate_trace to print it instead of the Firmament
   // task id. I can't set it directly as the uid of the task because
@@ -257,6 +264,41 @@ void SimulatorBridge::LoadTraceData(TraceLoader* trace_loader) {
   trace_loader->LoadTaskUtilizationStats(&trace_task_id_to_stats_);
 }
 
+void SimulatorBridge::ProcessSimulatorEvents(uint64_t events_up_to_time) {
+  while (true) {
+    if (event_manager_->GetTimeOfNextEvent() > events_up_to_time) {
+      // Processed all events <= events_up_to_time.
+      break;
+    }
+    pair<uint64_t, EventDescriptor> event = event_manager_->GetNextEvent();
+    if (event.second.type() == EventDescriptor::ADD_MACHINE) {
+      AddMachine(event.second.machine_id());
+    } else if (event.second.type() == EventDescriptor::REMOVE_MACHINE) {
+      RemoveMachine(event.second.machine_id());
+    } else if (event.second.type() == EventDescriptor::UPDATE_MACHINE) {
+      // TODO(ionel): Handle machine update event.
+    } else if (event.second.type() == EventDescriptor::TASK_END_RUNTIME) {
+      TraceTaskIdentifier task_identifier;
+      task_identifier.task_index = event.second.task_index();
+      task_identifier.job_id = event.second.job_id();
+      TaskCompleted(task_identifier);
+    } else if (event.second.type() == EventDescriptor::MACHINE_HEARTBEAT) {
+      AddMachineSamples(event.first);
+    } else if (event.second.type() == EventDescriptor::TASK_SUBMIT) {
+      TraceTaskIdentifier task_identifier;
+      task_identifier.task_index = event.second.task_index();
+      task_identifier.job_id = event.second.job_id();
+      if (!AddTask(task_identifier)) {
+        num_duplicate_task_ids_++;
+        // duplicate task id -- ignore
+      }
+    } else {
+      LOG(FATAL) << "Unexpected event type " << event.second.type() << " @ "
+                 << event.first;
+    }
+  }
+}
+
 void SimulatorBridge::TaskCompleted(
     const TraceTaskIdentifier& task_identifier) {
   TaskDescriptor* td_ptr = FindPtrOrNull(trace_task_id_to_td_, task_identifier);
@@ -264,7 +306,13 @@ void SimulatorBridge::TaskCompleted(
   TaskFinalReport report;
   scheduler_->HandleTaskCompletion(td_ptr, &report);
   scheduler_->HandleTaskFinalReport(report, td_ptr);
-  task_map_->erase(td_ptr->uid());
+  JobDescriptor* jd_ptr =
+    FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
+  // Don't delete the root task so that tasks can still be appended to the job.
+  // The root tasks is only deleted when the job completes.
+  if (td_ptr != jd_ptr->mutable_root_task()) {
+    task_map_->erase(td_ptr->uid());
+  }
   knowledge_base_->EraseTraceTaskStats(td_ptr->uid());
   // Check if it was the last task of the job.
   uint64_t* num_tasks = FindOrNull(job_num_tasks_, task_identifier.job_id);
@@ -281,11 +329,16 @@ void SimulatorBridge::OnJobCompletion(JobID_t job_id) {
   CHECK_EQ(*num_tasks, 0) << "There are tasks that haven't finished";
   JobDescriptor* jd_ptr = FindOrNull(*job_map_, job_id);
   CHECK_NOTNULL(jd_ptr);
+  // Delete the root task.
   task_map_->erase(jd_ptr->root_task().uid());
   job_map_->erase(job_id);
   trace_job_id_to_jd_.erase(*trace_job_id);
   job_num_tasks_.erase(*trace_job_id);
   job_id_to_trace_job_id_.erase(job_id);
+}
+
+void SimulatorBridge::OnSchedulingDecisionsCompletion(uint64_t timestamp) {
+  ProcessSimulatorEvents(timestamp);
 }
 
 void SimulatorBridge::OnTaskCompletion(TaskDescriptor* td_ptr,
@@ -363,14 +416,6 @@ JobDescriptor* SimulatorBridge::PopulateJob(uint64_t trace_job_id) {
                    lexical_cast<string>(trace_job_id));
   InsertOrUpdate(&trace_job_id_to_jd_, trace_job_id, jd_ptr);
   InsertOrUpdate(&job_id_to_trace_job_id_, new_job_id, trace_job_id);
-  TaskDescriptor* rt = jd_ptr->mutable_root_task();
-  string bin;
-  // XXX(malte): hack, should use logical job name
-  spf(&bin, "%jd", trace_job_id);
-  rt->set_binary(bin);
-  rt->set_uid(GenerateRootTaskID(*jd_ptr));
-  rt->set_state(TaskDescriptor::CREATED);
-  CHECK(InsertIfNotPresent(task_map_.get(), rt->uid(), rt));
   return jd_ptr;
 }
 

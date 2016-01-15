@@ -6,6 +6,7 @@
 #ifndef FIRMAMENT_SCHEDULING_SCHEDULER_INTERFACE_H
 #define FIRMAMENT_SCHEDULING_SCHEDULER_INTERFACE_H
 
+#include <limits>
 #include <set>
 #include <vector>
 

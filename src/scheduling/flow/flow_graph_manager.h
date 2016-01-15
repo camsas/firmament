@@ -5,6 +5,7 @@
 #ifndef FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_MANAGER_H
 #define FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_MANAGER_H
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -51,9 +52,9 @@ class FlowGraphManager {
   void JobCompleted(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
-  void RemoveMachine(const ResourceDescriptor& rd);
+  void RemoveMachine(const ResourceDescriptor& rd, set<uint64_t>* pus_removed);
   void ResetChanges();
-  void TaskCompleted(TaskID_t task_id);
+  uint64_t TaskCompleted(TaskID_t task_id);
   void TaskEvicted(TaskID_t task_id, ResourceID_t res_id);
   void TaskFailed(TaskID_t task_id);
   void TaskKilled(TaskID_t task_id);
@@ -116,13 +117,14 @@ class FlowGraphManager {
                                  FlowGraphNode* new_node);
   uint32_t CountTaskSlotsBelowResourceNode(FlowGraphNode* node);
   void DeleteResourceNode(FlowGraphNode* res_node, const char *comment = NULL);
-  void DeleteTaskNode(TaskID_t task_id, const char *comment = NULL);
+  uint64_t DeleteTaskNode(TaskID_t task_id, const char *comment = NULL);
   void DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv,
                                        const char *comment = NULL);
   void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
                                        const char *comment = NULL);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
-  void RemoveMachineSubTree(FlowGraphNode* res_node);
+  void RemoveMachineSubTree(FlowGraphNode* res_node,
+                            set<uint64_t>* pus_removed);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
   void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);

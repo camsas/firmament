@@ -34,12 +34,10 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   /**
    * Add new machine to the topology. The method updates simulator's mapping
    * state.
-   * @param machine_tmpl the template topology descriptor of the new machine
    * @param machine_id the simulator machine id
    * @return a pointer to the resource descriptor of the new machine
    */
-  ResourceDescriptor* AddMachine(
-      const ResourceTopologyNodeDescriptor& machine_tmpl, uint64_t machine_id);
+  ResourceDescriptor* AddMachine(uint64_t machine_id);
 
   /**
    * Adds machine perf statistics to the knowledge base for every machine in the
@@ -62,6 +60,16 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
    * @param job_id the id of the completed job
    */
   void OnJobCompletion(JobID_t job_id);
+
+  /**
+   * Event called by the event driven scheduler when the scheduler finishes
+   * making decisions where to place tasks (i.e. when the solver finishes for
+   * the flow_scheduler).
+   * This method is to be used to apply the simulation changes that happen
+   * while the scheduler is deciding where to place tasks.
+   * @param timestamp the timestamp when the scheduler finished making decisions
+   */
+  void OnSchedulingDecisionsCompletion(uint64_t timestamp);
 
   /**
    * Event called by the event driven scheduler upon task completion.
@@ -103,6 +111,12 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   void OnTaskPlacement(TaskDescriptor* td_ptr,
                        ResourceDescriptor* rd_ptr);
 
+  /**
+   * Processes all the simulator events that happen at a given time.
+   * @param cur_time the timestamp for which to process the simulator events
+   */
+  void ProcessSimulatorEvents(uint64_t events_up_to_time);
+
   void RegisterMachinePUs(ResourceTopologyNodeDescriptor* rtnd_ptr,
                           ResourceID_t machine_res_id);
 
@@ -122,6 +136,10 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
    * @param task_identifier the simulator identifier of the completed task
    */
   void TaskCompleted(const TraceTaskIdentifier& task_identifier);
+
+  uint64_t get_num_duplicate_task_ids() {
+    return num_duplicate_task_ids_;
+  }
 
   unordered_map<uint64_t, uint64_t>* job_num_tasks() {
     return &job_num_tasks_;
@@ -242,6 +260,10 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.
   unordered_map<string, string> uuid_conversion_map_;
+  // The template topology descriptor of the new machine.
+  ResourceTopologyNodeDescriptor machine_tmpl_;
+  // Counter used to store the number of duplicate task ids seed in the trace.
+  uint64_t num_duplicate_task_ids_;
 };
 
 }  // namespace sim
