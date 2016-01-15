@@ -67,7 +67,7 @@ void GoogleTraceLoader::LoadJobsNumTasks(
   int64_t num_line = 1;
   while (!feof(jobs_tasks_file)) {
     if (fscanf(jobs_tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-      boost::split(cols, line, is_any_of(" "), token_compress_off);
+      boost::split(cols, line, is_any_of(","), token_compress_off);
       if (cols.size() != 2) {
         LOG(ERROR) << "Unexpected structure of jobs num tasks row on line: "
                    << num_line;
@@ -222,7 +222,7 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
   int64_t num_line = 1;
   while (!feof(usage_file)) {
     if (fscanf(usage_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-      boost::split(cols, line, is_any_of(" "), token_compress_off);
+      boost::split(cols, line, is_any_of(","), token_compress_off);
       if (cols.size() != 38) {
         LOG(WARNING) << "Malformed task usage, " << cols.size()
                      << " != 38 columns at line " << num_line;
@@ -300,7 +300,7 @@ void GoogleTraceLoader::LoadTasksRunningTime(
   int64_t num_line = 1;
   while (!feof(tasks_file)) {
     if (fscanf(tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
-      boost::split(cols, line, is_any_of(" "), token_compress_off);
+      boost::split(cols, line, is_any_of(","), token_compress_off);
       if (cols.size() != 13) {
         LOG(ERROR) << "Unexpected structure of task runtime row on line: "
                    << num_line;
