@@ -107,7 +107,6 @@ uint64_t SimpleScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats) {
     jobs.push_back(job_id_jd.second);
   }
   uint64_t num_scheduled_tasks = ScheduleJobs(jobs, scheduler_stats);
-  ClearScheduledJobs();
   return num_scheduled_tasks;
 }
 

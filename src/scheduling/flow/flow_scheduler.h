@@ -113,6 +113,14 @@ class FlowScheduler : public EventDrivenScheduler {
   uint64_t last_updated_time_dependent_costs_;
   // Set containing the resource ids of the PUs.
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
+  // Set storing the graph node id of the PUs that have been removed
+  // while the solver was running. This set is used to make sure we don't
+  // place tasks on PUs that have been removed.
+  set<uint64_t> pus_removed_during_solver_run_;
+  // Set of task node ids that have completed while the solver was running.
+  // We use this set to make sure we don't try to place again the completed
+  // tasks.
+  set<uint64_t> tasks_completed_during_solver_run_;
   DIMACSChangeStats* dimacs_stats_;
 };
 

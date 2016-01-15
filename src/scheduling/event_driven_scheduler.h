@@ -82,16 +82,16 @@ class EventDrivenScheduler : public SchedulerInterface {
   FRIEND_TEST(SimpleSchedulerTest, FindRunnableTasksForComplexJob);
   FRIEND_TEST(SimpleSchedulerTest, FindRunnableTasksForComplexJob2);
   void BindTaskToResource(TaskDescriptor* td_ptr, ResourceDescriptor* rd_ptr);
-  void ClearScheduledJobs();
   void DebugPrintRunnableTasks();
   void ExecuteTask(TaskDescriptor* td_ptr, ResourceDescriptor* rd_ptr);
   virtual void HandleTaskMigration(TaskDescriptor* td_ptr,
                                    ResourceDescriptor* rd_ptr);
   virtual void HandleTaskPlacement(TaskDescriptor* td_ptr,
                                    ResourceDescriptor* rd_ptr);
-  uint64_t LazyGraphReduction(const set<DataObjectID_t*>& output_ids,
-                              TaskDescriptor* root_task,
-                              const JobID_t& job_id);
+  void InsertTaskToRunnables(JobID_t job_id, TaskID_t task_id);
+  void LazyGraphReduction(const set<DataObjectID_t*>& output_ids,
+                          TaskDescriptor* root_task,
+                          const JobID_t& job_id);
   set<TaskDescriptor*> ProducingTasksForDataObjectID(const DataObjectID_t& id,
                                                      const JobID_t& cur_job);
   const set<ReferenceInterface*> ReferencesForID(const DataObjectID_t& id);
@@ -104,7 +104,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction. Note that this set includes tasks from all
   // jobs.
-  set<TaskID_t> runnable_tasks_;
+  unordered_map<JobID_t, set<TaskID_t>,
+    boost::hash<boost::uuids::uuid>> runnable_tasks_;
   // Initialized to hold the URI of the (currently unique) coordinator this
   // scheduler is associated with. This is passed down to the executor and to
   // tasks so that they can find the coordinator at runtime.

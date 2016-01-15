@@ -63,27 +63,9 @@ struct TraceTaskStats {
   double avg_mai;
 };
 
-inline void LogEvent(FILE* graph_output, const string& msg) {
-  VLOG(1) << msg;
-  if (graph_output && FLAGS_graph_output_events) {
-    fprintf(graph_output, "c %s\n", msg.c_str());
-  }
-}
-
 void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl);
 
-void LogSchedulerRunStats(double avg_event_timestamp_in_scheduling_round,
-                          FILE* stats_file,
-                          const boost::timer::cpu_timer timer,
-                          uint64_t scheduler_executed_at,
-                          const scheduler::SchedulerStats& scheduler_stats);
-
-void LogStartOfSchedulerRun(FILE* graph_output,
-                            uint64_t run_scheduler_at);
-
 uint64_t MaxEventIdToRetain();
-
-void OutputStatsHeader(FILE* stats_file);
 
 EventDescriptor_EventType TranslateMachineEvent(int32_t machine_event);
 

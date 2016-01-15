@@ -18,14 +18,14 @@ namespace sim {
 
 class SimulatorBridgeTest : public ::testing::Test {
  protected:
-  SimulatorBridgeTest()
-    : event_manager_(new EventManager()),
-      bridge_(new SimulatorBridge(event_manager_)),
-      loader_(new GoogleTraceLoader(event_manager_)) {
+  SimulatorBridgeTest() {
     // You can do set-up work for each test here.
     FLAGS_v = 2;
     FLAGS_scheduler = "flow";
     FLAGS_machine_tmpl_file = "../../../tests/testdata/machine_topo.pbin";
+    event_manager_ = new EventManager();
+    bridge_ = new SimulatorBridge(event_manager_);
+    loader_ = new GoogleTraceLoader(event_manager_);
   }
 
   virtual ~SimulatorBridgeTest() {
@@ -50,18 +50,16 @@ class SimulatorBridgeTest : public ::testing::Test {
 };
 
 TEST_F(SimulatorBridgeTest, AddMachine) {
-  ResourceTopologyNodeDescriptor machine_tmpl;
-  LoadMachineTemplate(&machine_tmpl);
   CHECK_EQ(bridge_->resource_map_->size(), 1);
   CHECK_EQ(bridge_->trace_machine_id_to_rtnd_.size(), 0);
   CHECK_EQ(bridge_->machine_res_id_pus_.size(), 0);
   // Add first machine.
-  bridge_->AddMachine(machine_tmpl, 1);
+  bridge_->AddMachine(1);
   CHECK_EQ(bridge_->resource_map_->size(), 24);
   CHECK_EQ(bridge_->trace_machine_id_to_rtnd_.size(), 1);
   CHECK_EQ(bridge_->machine_res_id_pus_.size(), 8);
   // Add second machine.
-  bridge_->AddMachine(machine_tmpl, 2);
+  bridge_->AddMachine(2);
   CHECK_EQ(bridge_->resource_map_->size(), 47);
   CHECK_EQ(bridge_->trace_machine_id_to_rtnd_.size(), 2);
   CHECK_EQ(bridge_->machine_res_id_pus_.size(), 16);
@@ -84,7 +82,7 @@ TEST_F(SimulatorBridgeTest, AddTask) {
   CHECK_EQ(ResourceIDFromString(td1_ptr->job_id()),
            bridge_->job_map_->begin()->first);
   CHECK_EQ(bridge_->trace_job_id_to_jd_.size(), 1);
-  CHECK_EQ(bridge_->task_map_->size(), 2);
+  CHECK_EQ(bridge_->task_map_->size(), 1);
   CHECK_EQ(bridge_->task_id_to_identifier_.size(), 1);
   CHECK_EQ(bridge_->trace_task_id_to_td_.size(), 1);
   // Add the second task.
@@ -96,7 +94,7 @@ TEST_F(SimulatorBridgeTest, AddTask) {
   CHECK_EQ(ResourceIDFromString(td1_ptr->job_id()),
            bridge_->job_map_->begin()->first);
   CHECK_EQ(bridge_->trace_job_id_to_jd_.size(), 1);
-  CHECK_EQ(bridge_->task_map_->size(), 3);
+  CHECK_EQ(bridge_->task_map_->size(), 2);
   CHECK_EQ(bridge_->task_id_to_identifier_.size(), 2);
   CHECK_EQ(bridge_->trace_task_id_to_td_.size(), 2);
 }
@@ -117,7 +115,7 @@ TEST_F(SimulatorBridgeTest, OnJobCompletion) {
   JobID_t job_id = JobIDFromString(td_ptr->job_id());
   bridge_->OnJobCompletion(job_id);
   // We've erased the root task from the task_map_.
-  CHECK_EQ(bridge_->task_map_->size(), 1);
+  CHECK_EQ(bridge_->task_map_->size(), 0);
   CHECK(FindOrNull(*bridge_->job_map_, job_id) == NULL);
   CHECK(FindOrNull(bridge_->trace_job_id_to_jd_, trace_task_id.job_id) == NULL);
   CHECK(FindOrNull(bridge_->job_num_tasks_, trace_task_id.job_id) == NULL);
@@ -144,7 +142,7 @@ TEST_F(SimulatorBridgeTest, OnTaskCompletion) {
     FindOrNull(bridge_->job_num_tasks_, trace_task_id.job_id);
   CHECK_EQ(*num_tasks, 0);
   // We don't erase the task from the task_map_.
-  CHECK_EQ(bridge_->task_map_->size(), 2);
+  CHECK_EQ(bridge_->task_map_->size(), 1);
 }
 
 TEST_F(SimulatorBridgeTest, OnTaskEviction) {
@@ -185,12 +183,10 @@ TEST_F(SimulatorBridgeTest, OnTaskPlacement) {
 }
 
 TEST_F(SimulatorBridgeTest, RemoveMachine) {
-  ResourceTopologyNodeDescriptor machine_tmpl;
-  LoadMachineTemplate(&machine_tmpl);
   CHECK_EQ(bridge_->resource_map_->size(), 1);
   CHECK_EQ(bridge_->trace_machine_id_to_rtnd_.size(), 0);
   CHECK_EQ(bridge_->machine_res_id_pus_.size(), 0);
-  bridge_->AddMachine(machine_tmpl, 1);
+  bridge_->AddMachine(1);
   CHECK_EQ(bridge_->resource_map_->size(), 24);
   CHECK_EQ(bridge_->trace_machine_id_to_rtnd_.size(), 1);
   CHECK_EQ(bridge_->machine_res_id_pus_.size(), 8);

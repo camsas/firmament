@@ -28,6 +28,8 @@ DEFINE_int32(flow_scheduling_cost_model, 0,
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
              "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, "
              "8 = SIMULATED QUINCY");
+DEFINE_uint64(max_solver_runtime, 100000000,
+              "Maximum runtime of the solver in u-sec");
 DEFINE_int64(time_dependent_cost_update_frequency, 10000000ULL,
              "Update frequency for time-dependent costs, in microseconds.");
 DEFINE_bool(debug_cost_model, false,
@@ -168,7 +170,8 @@ void FlowScheduler::DeregisterResource(ResourceID_t res_id) {
   ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs_ptr);
   if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_MACHINE) {
-    flow_graph_manager_->RemoveMachine(rs_ptr->descriptor());
+    flow_graph_manager_->RemoveMachine(rs_ptr->descriptor(),
+                                       &pus_removed_during_solver_run_);
   }
   if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_PU) {
     EventDrivenScheduler::DeregisterResource(res_id);
@@ -191,7 +194,8 @@ void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   // they are not currently represented in the flow graph.
   // Otherwise, we need to remove nodes, etc.
   if (!td_ptr->has_delegated_from()) {
-    flow_graph_manager_->TaskCompleted(td_ptr->uid());
+    uint64_t task_node_id = flow_graph_manager_->TaskCompleted(td_ptr->uid());
+    tasks_completed_during_solver_run_.insert(task_node_id);
   }
   // Call into superclass handler
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
@@ -295,10 +299,11 @@ uint64_t FlowScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   vector<JobDescriptor*> jobs;
   for (auto& job_id_jd : jobs_to_schedule_) {
-    jobs.push_back(job_id_jd.second);
+    if (RunnableTasksForJob(job_id_jd.second).size() > 0) {
+      jobs.push_back(job_id_jd.second);
+    }
   }
   uint64_t num_scheduled_tasks = ScheduleJobs(jobs, scheduler_stats);
-  ClearScheduledJobs();
   return num_scheduled_tasks;
 }
 
@@ -395,13 +400,35 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     flow_graph_manager_->UpdateTimeDependentCosts(&job_vec);
     last_updated_time_dependent_costs_ = cur_time;
   }
+  pus_removed_during_solver_run_.clear();
+  tasks_completed_during_solver_run_.clear();
   // Run the flow solver! This is where all the juicy goodness happens :)
   multimap<uint64_t, uint64_t>* task_mappings =
     solver_dispatcher_->Run(scheduler_stats);
+  CHECK_LE(scheduler_stats->scheduler_runtime, FLAGS_max_solver_runtime)
+    << "Solver took longer " << scheduler_stats->scheduler_runtime;
+  // Play all the simulation events that happened while the solver was running.
+  uint64_t scheduler_start_timestamp = time_manager_->GetCurrentTimestamp();
+  if (event_notifier_) {
+    event_notifier_->OnSchedulingDecisionsCompletion(
+        scheduler_start_timestamp + scheduler_stats->scheduler_runtime);
+  }
   // Solver's done, let's post-process the results.
   multimap<uint64_t, uint64_t>::iterator it;
   vector<SchedulingDelta*> deltas;
   for (it = task_mappings->begin(); it != task_mappings->end(); it++) {
+    if (tasks_completed_during_solver_run_.find(it->first) !=
+        tasks_completed_during_solver_run_.end()) {
+      VLOG(1) << "Task with node id: " << it->first
+              << " completed while the solver was running";
+      continue;
+    }
+    if (pus_removed_during_solver_run_.find(it->second) !=
+        pus_removed_during_solver_run_.end()) {
+      VLOG(1) << "PU with node id: " << it->second
+              << " was removed while the solver was running";
+      continue;
+    }
     VLOG(1) << "Bind " << it->first << " to " << it->second << endl;
     // Some sanity checks
     FlowGraphNode* src = flow_graph_manager_->flow_graph()->Node(it->first);
@@ -422,10 +449,9 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     solver_dispatcher_->NodeBindingToSchedulingDelta(
         *task, resource, &task_bindings_, &deltas);
   }
-  uint64_t scheduler_start_timestamp = time_manager_->GetCurrentTimestamp();
-  // Set the current timestamp to the timestamp of the end of the scheduler.
-  // This makes sure that all the changes applied as a result of scheduling
-  // have a timestamp equal to the end of the scheduling iteration.
+  // Set the current timestamp to the timestamp of the end of the scheduling
+  // round. Thus, we make sure that all the changes applied as a result of
+  // scheduling have a timestamp equal to the end of the scheduling iteration.
   time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp +
                                         scheduler_stats->scheduler_runtime);
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
@@ -460,7 +486,7 @@ void FlowScheduler::UpdateCostModelResourceStats() {
       CostModelType::COST_MODEL_OCTOPUS ||
       FLAGS_flow_scheduling_cost_model ==
       CostModelType::COST_MODEL_WHARE) {
-    LOG(INFO) << "Updating resource statistics in flow graph";
+    VLOG(2) << "Updating resource statistics in flow graph";
     flow_graph_manager_->ComputeTopologyStatistics(
         flow_graph_manager_->sink_node(),
         boost::bind(&CostModelInterface::PrepareStats,
@@ -472,7 +498,7 @@ void FlowScheduler::UpdateCostModelResourceStats() {
         boost::bind(&CostModelInterface::UpdateStats,
                     cost_model_, _1, _2));
   } else {
-    LOG(INFO) << "No resource stats update required";
+    VLOG(2) << "No resource stats update required";
   }
 }
 
