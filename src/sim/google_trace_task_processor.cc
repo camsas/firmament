@@ -149,12 +149,12 @@ namespace sim {
               if (task_time <= time_interval_bound) {
                 num_tasks++;
               } else {
-                fprintf(out_file, "(%jd, %jd]: %jd\n",
+                fprintf(out_file, "(%ju, %ju]: %ju\n",
                         time_interval_bound - FLAGS_bin_time_duration,
                         time_interval_bound, num_tasks);
                 time_interval_bound += FLAGS_bin_time_duration;
                 while (time_interval_bound < task_time) {
-                  fprintf(out_file, "(%jd, %jd]: 0\n",
+                  fprintf(out_file, "(%ju, %ju]: 0\n",
                           time_interval_bound - FLAGS_bin_time_duration,
                           time_interval_bound);
                   time_interval_bound += FLAGS_bin_time_duration;
@@ -167,7 +167,7 @@ namespace sim {
       }
       fclose(fptr);
     }
-    fprintf(out_file, "(%jd, %jd]: %jd\n",
+    fprintf(out_file, "(%ju, %ju]: %ju\n",
             time_interval_bound - FLAGS_bin_time_duration,
             time_interval_bound, num_tasks);
   }
@@ -461,9 +461,9 @@ namespace sim {
     }
 
     fprintf(usage_stat_file,
-            "%jd %jd %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf "
-            "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf "
-            "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+            "%ju,%ju,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,"
+            "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,"
+            "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
             task_id.job_id_, task_id.task_index_,
             task_stats->min_usage_.mean_cpu_usage_,
             task_stats->max_usage_.mean_cpu_usage_,
@@ -651,8 +651,8 @@ namespace sim {
       FILE* out_events_file, const TaskRuntime& task_runtime,
       const TaskIdentifier& task_id, string logical_job_name,
       uint64_t runtime) {
-    fprintf(out_events_file, "%jd %jd %s %jd %jd"
-            " %jd %jd %jd %jd %lf %lf %lf %d\n",
+    fprintf(out_events_file, "%ju,%ju,%s,%jd,%jd"
+            ",%ju,%ju,%jd,%jd,%lf,%lf,%lf,%d\n",
             task_id.job_id_, task_id.task_index_, logical_job_name.c_str(),
             task_runtime.start_time_, task_runtime.total_runtime_, runtime,
             task_runtime.num_runs_, task_runtime.scheduling_class_,
@@ -814,7 +814,7 @@ namespace sim {
     for (unordered_map<uint64_t, uint64_t>::iterator
            it = job_num_tasks->begin();
          it != job_num_tasks->end(); ++it) {
-      fprintf(out_file, "%jd %jd\n", it->first, it->second);
+      fprintf(out_file, "%ju,%ju\n", it->first, it->second);
     }
     fclose(out_file);
     scheduling_events.clear();
