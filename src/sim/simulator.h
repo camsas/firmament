@@ -21,8 +21,6 @@
 DECLARE_string(flow_scheduling_binary);
 DECLARE_bool(incremental_flow);
 DECLARE_bool(only_read_assignment_changes);
-DECLARE_bool(flow_scheduling_strict);
-DECLARE_bool(flow_scheduling_time_reported);
 
 namespace firmament {
 namespace sim {

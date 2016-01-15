@@ -27,10 +27,6 @@ DEFINE_string(flow_scheduling_binary, "", "Path to flow solving executable. "
               "Must be specified when using custom solver.");
 DEFINE_string(custom_flow_scheduling_args, "", "Arguments for custom solver. "
               "Defaults to no arguments.");
-DEFINE_bool(flow_scheduling_time_reported, false,
-            "Does solver report runtime to stderr?");
-DEFINE_bool(flow_scheduling_strict, false, "Terminate if flow solving binary"
-            " fails.");
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
@@ -40,6 +36,7 @@ DEFINE_string(flowlessly_algorithm, "fast_cost_scaling",
               "Algorithm to be used by flowlessly. Options: cycle_cancelling |"
               "cost_scaling | fast_cost_scaling | relax");
 DEFINE_string(cs2_binary, "ext/cs2-4.6/cs2.exe", "Path to the cs2 binary.");
+DEFINE_bool(log_solver_stderr, false, "Set to true to log solver's stderr.");
 
 namespace firmament {
 namespace scheduler {
@@ -163,11 +160,6 @@ void *ProcessStderrJustlog(void *x) {
 
 multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     SchedulerStats* scheduler_stats) {
-  if (scheduler_stats && !FLAGS_flow_scheduling_time_reported) {
-    LOG(ERROR) << "Error: cannot record algorithm time with solver "
-               << "which does not report this time.";
-  }
-
   // Adjusts the costs on the arcs from tasks to unsched aggs.
   if (solver_ran_once_) {
     flow_graph_manager_->UpdateUnscheduledAggArcCosts();
@@ -180,9 +172,8 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   }
 
   if (!solver_ran_once_ || !FLAGS_incremental_flow) {
-    // Always export full flow graph when first time running. If algorithm
+    // Always export full flow graph when running first time. If algorithm
     // is non-incremental, must do it for subsequent iterations too.
-
     dimacs_exporter_.Reset();
     dimacs_exporter_.Export(*flow_graph_manager_->flow_graph());
     flow_graph_manager_->ResetChanges();
@@ -241,7 +232,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
                  << infd_[1];
     }
 
-    if (!FLAGS_flow_scheduling_time_reported) {
+    if (!FLAGS_log_solver_stderr) {
       if (pthread_create(&logger_thread, NULL,
                          ProcessStderrJustlog, from_solver_stderr_)) {
         PLOG(FATAL) << "Error creating thread";
@@ -261,14 +252,9 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     PLOG(FATAL) << "Error creating thread";
   }
 
-  multimap<uint64_t, uint64_t>* task_mappings;
-  double algo_time_sec = nan("");
-  task_mappings = ReadOutput(&algo_time_sec);
-  if (algo_time_sec != nan("")) {
-    // Transform runtime from sec to u-sec.
-    algo_time_sec *= SECONDS_TO_MICROSECONDS;
-    scheduler_stats->algorithm_runtime = algo_time_sec;
-  }
+  uint64_t algorithm_runtime = numeric_limits<uint64_t>::max();
+  multimap<uint64_t, uint64_t>* task_mappings =
+    ReadOutput(&algorithm_runtime);
 
   // Wait for exporter to complete. (Should already have happened when we
   // get here, given we've finished reading the output.)
@@ -279,6 +265,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   if (scheduler_stats != NULL) {
     scheduler_stats->scheduler_runtime = flowsolver_timer.elapsed().wall
       / NANOSECONDS_IN_MICROSECOND;
+    scheduler_stats->algorithm_runtime = algorithm_runtime;
   }
 
   if (!FLAGS_incremental_flow) {
@@ -293,7 +280,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     // this (cs2 expects stdin to be closed before it terminates, so we can't do
     // it here)
 
-    if (!FLAGS_flow_scheduling_time_reported) {
+    if (!FLAGS_log_solver_stderr) {
       // wait for logger thread
       if (pthread_join(logger_thread, NULL)) {
         PLOG(FATAL) << "Error joining thread";
@@ -301,12 +288,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     }
 
     if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0)) {
-      std::string msg = "Solver terminated abnormally.";
-      if (FLAGS_flow_scheduling_strict) {
-        LOG(FATAL) << msg;
-      } else {
-        LOG(ERROR) << msg;
-      }
+      LOG(FATAL) << "Solver terminated abnormally";
     }
   }
   debug_seq_num_++;
@@ -451,83 +433,41 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::GetMappings(
   return task_node;
 }
 
-struct arguments {
-  FILE *fptr;
-  double *time;
-};
-
-void *ProcessStderrAlgoTime(void *x) {
-  struct arguments *args = (struct arguments *)x;
-  double *algorithm_runtime = args->time;
-  FILE *stderr = args->fptr;
-  char line[1024];
-
-  while (fgets(line, sizeof(line), stderr) != NULL) {
-    double time;
-    int num_matched = sscanf(line, "ALGOTIME: %lf\n", &time);
-    if (num_matched == 1) {
-      *algorithm_runtime = time;
-      break;
-    } else {
-      LOG(WARNING) << "STDERR from algorithm: " << line;
-    }
-  }
-
-  return NULL;
-}
-
 // Returns a vector containing a nodes arcs with flow > 0.
 // In the returned graph the arcs are the inverse of the arcs in the file.
 // If there is (i,j) with flow 1 then in the graph we will have (j,i).
-multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(double *time) {
+multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(
+    uint64_t* algorithm_runtime) {
   multimap<uint64_t, uint64_t>* task_mappings;
 
-  // Reading from two streams: stdout and stderr. Must process both
+  // If we read from stdout and stderr, then we must process both
   // in parallel. Otherwise, the buffer on one could get full, and the solver
   // would block. This could result in a situation of deadlock.
 
-  pthread_t stderr_thread = -1;
-  if (FLAGS_flow_scheduling_time_reported) {
-    // Create thread to process stderr
-    struct arguments args = { from_solver_stderr_, time };
-    if (pthread_create(&stderr_thread, NULL, ProcessStderrAlgoTime, &args)) {
-      PLOG(FATAL) << "Error creating thread";
-    }
-  }
-
   // Process stdout in main thread
   if (FLAGS_only_read_assignment_changes) {
-    task_mappings = ReadTaskMappingChanges(from_solver_);
+    task_mappings = ReadTaskMappingChanges(from_solver_, algorithm_runtime);
   } else {
     // Parse and process the result
     uint64_t num_nodes = flow_graph_manager_->flow_graph()->NumNodes();
     vector<map<uint64_t, uint64_t> >* extracted_flow =
-      ReadFlowGraph(from_solver_, num_nodes);
+      ReadFlowGraph(from_solver_, algorithm_runtime, num_nodes);
     task_mappings = GetMappings(extracted_flow,
                                 flow_graph_manager_->leaf_node_ids(),
                                 flow_graph_manager_->sink_node()->id_);
     delete extracted_flow;
   }
-
-  if (FLAGS_flow_scheduling_time_reported) {
-    // Wait for stderr processing to complete
-    if (pthread_join(stderr_thread, NULL)) {
-      PLOG(FATAL) << "Error joining thread";
-    }
-  }
-
   return task_mappings;
 }
 
 vector<map< uint64_t, uint64_t> >* SolverDispatcher::ReadFlowGraph(
-     FILE* fptr, uint64_t num_vertices) {
+    FILE* fptr, uint64_t* algorithm_runtime, uint64_t num_vertices) {
   vector<map< uint64_t, uint64_t > >* adj_list =
     new vector<map<uint64_t, uint64_t> >(num_vertices + 1);
   // The cost is not returned.
   uint64_t cost;
   char line[100];
   vector<string> vals;
-
   FILE* dbg_fptr = NULL;
   if (FLAGS_debug_flow_graph) {
     // Somewhat ugly hack to generate unique output file name.
@@ -536,55 +476,30 @@ vector<map< uint64_t, uint64_t> >* SolverDispatcher::ReadFlowGraph(
         FLAGS_debug_output_dir.c_str(), debug_seq_num_);
     CHECK((dbg_fptr = fopen(out_file_name.c_str(), "w")) != NULL);
   }
-  uint64_t l = 0;
-  while (fgets(line, sizeof(line), fptr)) {
-    size_t len = strlen(line);
-    if (len > 0 && line[len-1] == '\n') {
-      line[--len] = '\0';
-    }
-    if (len == 0) {
-      // empty line; skip
-      continue;
-    }
-
-    VLOG(3) << "Processing line " << l << ": " << line;
+  while (fgets(line, sizeof(line), fptr) != NULL) {
     if (FLAGS_debug_flow_graph) {
       fputs(line, dbg_fptr);
       fputc('\n', dbg_fptr);
     }
-    l++;
-    boost::split(vals, line, is_any_of(" "), token_compress_on);
-    if (vals[0].compare("f") == 0) {
-      if (vals.size() != 4) {
-        LOG(ERROR) << "Unexpected structure of flow row";
-      } else {
-        uint64_t src = lexical_cast<uint64_t>(vals[1]);
-        uint64_t dest = lexical_cast<uint64_t>(vals[2]);
-        uint64_t flow = lexical_cast<uint64_t>(vals[3]);
-        // Only add it to the adjacency list if flow > 0
-        if (flow > 0) {
-          (*adj_list)[dest].insert(make_pair(src, flow));
-        }
+    if (line[0] == 'f') {
+      uint64_t src;
+      uint64_t dst;
+      uint64_t flow;
+      CHECK_EQ(sscanf(line, "%*c %ju %ju %ju", &src, &dst, &flow), 3);
+      // Only add it to the adjacency list if flow > 0
+      if (flow > 0) {
+        (*adj_list)[dst].insert(make_pair(src, flow));
       }
+    } else if (line[0] == 'c') {
+      if (!strcmp(line, "c EOI\n")) {
+        break;
+      } else if (!strncmp(line, "c ALGORITHM TIME", 16)) {
+        sscanf(line, "%*c %*s %*s %ju", algorithm_runtime);
+      }
+    } else if (line[0] == 's') {
+      sscanf(line, "%*c %ju", &cost);
     } else {
-      if (vals[0].compare("c") == 0) {
-        if (vals.size() == 2 && vals[1].compare("EOI") == 0) {
-          // end of iteration
-          break;
-        } else {
-          // Comment line. Ignore.
-        }
-      } else {
-        if (vals[0].compare("s") == 0) {
-          cost = lexical_cast<uint64_t>(vals[1]);
-        } else {
-          if (vals[0].compare("") == 0) {
-            LOG(INFO) << "Empty row in flow graph.";
-          } else {
-            LOG(ERROR) << "Unknown type of row in flow graph: " << line;
-          }
-        }
-      }
+      LOG(ERROR) << "Unexpected line in flow graph: " << line;
     }
   }
   if (FLAGS_debug_flow_graph)
@@ -593,25 +508,25 @@ vector<map< uint64_t, uint64_t> >* SolverDispatcher::ReadFlowGraph(
 }
 
 multimap<uint64_t, uint64_t>* SolverDispatcher::ReadTaskMappingChanges(
-    FILE* fptr) {
+    FILE* fptr, uint64_t* algorithm_runtime) {
   multimap<uint64_t, uint64_t>* task_node =
     new multimap<uint64_t, uint64_t>();
   char line[100];
-  vector<string> vals;
   bool end_of_iteration = false;
   while (!end_of_iteration) {
     if (fgets(line, 100, fptr) != NULL) {
       if (line[0] == 'm') {
         uint64_t task_id;
         uint64_t core_id;
-        sscanf(line, "%*c %jd %jd", &task_id, &core_id);
+        CHECK_EQ(sscanf(line, "%*c %jd %jd", &task_id, &core_id), 2);
         VLOG(1) << "Assigning task node " << task_id << " to PU node "
                 << core_id;
         task_node->insert(pair<uint64_t, uint64_t>(task_id, core_id));
       } else if (line[0] == 'c') {
-        if (line[2] == 'E' && line[3] == 'O' && line[4] == 'I' &&
-            line[5] == '\n') {
+        if (!strcmp(line, "c EOI\n")) {
           end_of_iteration = true;
+        } else if (!strncmp(line, "c ALGORITHM TIME", 16)) {
+          sscanf(line, "%*c %*s %*s %ju", algorithm_runtime);
         }
       } else {
         LOG(ERROR) << "Unknown type of row in flow graph.";
