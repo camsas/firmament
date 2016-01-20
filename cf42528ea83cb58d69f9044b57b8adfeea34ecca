@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_e177a8d2",
+        "filename": "src/sim/google_trace_task_processor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 514,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-20T15:05:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_dbc45794",
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_1bbfcffc",
         "filename": "src/sim/google_trace_task_processor.cc",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2016-01-20T01:20:06Z",
       "side": 1,
       "message": "Is our convention \"foo \u003d\u003d NULL\" or \"!foo\"? We use \"!foo\" elsewhere, I think.",
+      "range": {
+        "startLine": 569,
+        "startChar": 12,
+        "endLine": 569,
+        "endChar": 40
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_0173dce7",
+        "filename": "src/sim/google_trace_task_processor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 569,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-20T15:05:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_1bbfcffc",
       "range": {
         "startLine": 569,
         "startChar": 12,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_e125e8c2",
+        "filename": "src/sim/google_trace_task_processor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 850,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-20T15:05:27Z",
+      "side": 1,
+      "message": "This function has 9 lines. I\u0027m not sure if it\u0027s worth splitting. However, I\u0027ve added a comment with the incremental variance calculation formula.",
+      "parentUuid": "fa81d914_3bbad30a",
+      "range": {
+        "startLine": 841,
+        "startChar": 0,
+        "endLine": 850,
+        "endChar": 77
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_5bd14756",
         "filename": "src/sim/google_trace_task_processor.h",
         "patchSetId": 1
@@ -76,6 +142,30 @@
       "writtenOn": "2016-01-20T01:20:06Z",
       "side": 1,
       "message": "Shouldn\u0027t these all have an underscore at the end, as per style guide rules for fields in classes/structs? I think that\u0027s how we do it elsewhere in the code base, too.",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 13
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_015afc4f",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-20T15:05:27Z",
+      "side": 1,
+      "message": "Yes, they should. I just didn\u0027t want to overload this diff with these changes as well. Done now.",
+      "parentUuid": "fa81d914_5bd14756",
       "range": {
         "startLine": 30,
         "startChar": 0,
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_ec131f5a",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-20T15:05:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_7bd44b47",
+      "range": {
+        "startLine": 52,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 19
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_9bcbbfa4",
         "filename": "src/sim/google_trace_task_processor.h",
         "patchSetId": 1
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_2159c05a",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-20T15:05:27Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "fa81d914_9bcbbfa4",
+      "range": {
+        "startLine": 72,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 29
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_bbcec3b2",
         "filename": "src/sim/google_trace_task_processor.h",
         "patchSetId": 1
@@ -145,6 +283,30 @@
       "writtenOn": "2016-01-20T01:20:06Z",
       "side": 1,
       "message": "Shouldn\u0027t we pass a const ref here, because the parameter is only read?",
+      "range": {
+        "startLine": 137,
+        "startChar": 18,
+        "endLine": 137,
+        "endChar": 41
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_a13cd0e3",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-20T15:05:27Z",
+      "side": 1,
+      "message": "We set some fields of task_resource to \u003d1 if they haven\u0027t been present in the trace at all.\nWe could update PrintStats not to do that but it\u0027s not worth the time (~ 20-30 minutes).",
+      "parentUuid": "fa81d914_bbcec3b2",
       "range": {
         "startLine": 137,
         "startChar": 18,
