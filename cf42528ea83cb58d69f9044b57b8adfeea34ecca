@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_dbc45794",
+        "filename": "src/sim/google_trace_task_processor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 514,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-20T01:20:06Z",
+      "side": 1,
+      "message": "There\u0027s no set following this comment?",
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_1bbfcffc",
+        "filename": "src/sim/google_trace_task_processor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 569,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-20T01:20:06Z",
+      "side": 1,
+      "message": "Is our convention \"foo \u003d\u003d NULL\" or \"!foo\"? We use \"!foo\" elsewhere, I think.",
+      "range": {
+        "startLine": 569,
+        "startChar": 12,
+        "endLine": 569,
+        "endChar": 40
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_3bbad30a",
+        "filename": "src/sim/google_trace_task_processor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 850,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-20T01:20:06Z",
+      "side": 1,
+      "message": "This is pretty involved stuff. Can we split it out into a separate function? I suppose the function would have to take loads of arguments, so maybe not. But maybe the calculation of variance_usage can be put into a helper function?",
+      "range": {
+        "startLine": 841,
+        "startChar": 0,
+        "endLine": 850,
+        "endChar": 77
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_5bd14756",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-20T01:20:06Z",
+      "side": 1,
+      "message": "Shouldn\u0027t these all have an underscore at the end, as per style guide rules for fields in classes/structs? I think that\u0027s how we do it elsewhere in the code base, too.",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 13
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_7bd44b47",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-20T01:20:06Z",
+      "side": 1,
+      "message": "See above. Also, \"num_*\" isn\u0027t very descriptive; can we have \"*_sample_count\" instead?",
+      "range": {
+        "startLine": 52,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 19
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_9bcbbfa4",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-20T01:20:06Z",
+      "side": 1,
+      "message": "See above.",
+      "range": {
+        "startLine": 72,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 29
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_bbcec3b2",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-20T01:20:06Z",
+      "side": 1,
+      "message": "Shouldn\u0027t we pass a const ref here, because the parameter is only read?",
+      "range": {
+        "startLine": 137,
+        "startChar": 18,
+        "endLine": 137,
+        "endChar": 41
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
