@@ -15,6 +15,7 @@
 
 #include "base/units.h"
 #include "misc/map-util.h"
+#include "misc/pb_utils.h"
 #include "misc/utils.h"
 #include "engine/executors/local_executor.h"
 #include "engine/executors/remote_executor.h"
@@ -630,17 +631,14 @@ void EventDrivenScheduler::RegisterLocalResource(ResourceID_t res_id) {
 }
 
 // Simple 2-argument wrapper
-void EventDrivenScheduler::RegisterResource(ResourceID_t res_id,
-                                            bool local,
-                                            bool simulated) {
+void EventDrivenScheduler::RegisterResource(
+    ResourceTopologyNodeDescriptor* rtnd_ptr,
+    bool local,
+    bool simulated) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  if (local) {
-    RegisterLocalResource(res_id);
-  } else if (simulated) {
-    RegisterSimulatedResource(res_id);
-  } else {
-    RegisterRemoteResource(res_id);
-  }
+  BFSTraverseResourceProtobufTreeReturnRTND(
+      rtnd_ptr, boost::bind(&EventDrivenScheduler::SetupPUs, this, _1,
+                            local, simulated));
 }
 
 void EventDrivenScheduler::RegisterRemoteResource(ResourceID_t res_id) {
@@ -675,6 +673,31 @@ const set<TaskID_t>& EventDrivenScheduler::RunnableTasksForJob(
     set<TaskID_t> new_runnable_tasks_for_job;
     InsertOrUpdate(&runnable_tasks_, job_id, new_runnable_tasks_for_job);
     return runnable_tasks_[job_id];
+  }
+}
+
+void EventDrivenScheduler::SetupPUs(ResourceTopologyNodeDescriptor* rtnd_ptr,
+                                    bool local,
+                                    bool simulated) {
+  CHECK_NOTNULL(rtnd_ptr);
+  ResourceDescriptor* rd_ptr = rtnd_ptr->mutable_resource_desc();
+  if (rd_ptr->type() == ResourceDescriptor::RESOURCE_PU) {
+    // TODO(malte): We make the assumption here that any local PU resource is
+    // exclusively owned by the calling coordinator, and set its state to IDLE
+    // if it is currently unknown. If coordinators were to ever shared PUs,
+    // we'd need something more clever here.
+    rd_ptr->set_schedulable(true);
+    if (rd_ptr->state() == ResourceDescriptor::RESOURCE_UNKNOWN) {
+      rd_ptr->set_state(ResourceDescriptor::RESOURCE_IDLE);
+    }
+    ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
+    if (local) {
+      RegisterLocalResource(res_id);
+    } else if (simulated) {
+      RegisterSimulatedResource(res_id);
+    } else {
+      RegisterRemoteResource(res_id);
+    }
   }
 }
 
