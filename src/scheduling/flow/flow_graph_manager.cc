@@ -388,8 +388,9 @@ void FlowGraphManager::AddResourceNode(
   FlowGraphNode* new_node;
   CHECK_NOTNULL(rtnd_ptr);
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
+  ResourceID_t res_id = ResourceIDFromString(rtnd.resource_desc().uuid());
   // Add the node if it does not already exist
-  if (!NodeForResourceID(ResourceIDFromString(rtnd.resource_desc().uuid()))) {
+  if (!NodeForResourceID(res_id)) {
     vector<FlowGraphArc*> resource_arcs;
     if (rtnd.resource_desc().has_friendly_name()) {
       VLOG(2) << "Adding node for resource "
@@ -415,23 +416,22 @@ void FlowGraphManager::AddResourceNode(
     } else {
       new_node->type_ = FlowNodeType::UNKNOWN;
     }
-    InsertIfNotPresent(&resource_to_nodeid_map_,
-                       ResourceIDFromString(rtnd.resource_desc().uuid()),
-                       new_node->id_);
-    new_node->resource_id_ = ResourceIDFromString(rtnd.resource_desc().uuid());
+    InsertIfNotPresent(&resource_to_nodeid_map_, res_id, new_node->id_);
+    new_node->resource_id_ = res_id;
+    new_node->rd_ptr_ = rtnd_ptr->mutable_resource_desc();
     if (rtnd.resource_desc().has_friendly_name())
       new_node->comment_ = rtnd.resource_desc().friendly_name();
     // Record the parent if we have one
     if (rtnd.has_parent_id()) {
       // Add arc from parent to us if it doesn't already exist
-      FlowGraphNode* parent_node =
-        NodeForResourceID(ResourceIDFromString(rtnd.parent_id()));
+      ResourceID_t parent_res_id = ResourceIDFromString(rtnd.parent_id());
+      FlowGraphNode* parent_node = NodeForResourceID(parent_res_id);
       CHECK_NOTNULL(parent_node);
       FlowGraphArc** arc =
         FindOrNull(parent_node->outgoing_arc_map_, new_node->id_);
       if (!arc) {
         VLOG(2) << "Adding missing arc from parent "
-                << parent_node->resource_id_
+                << parent_node->rd_ptr_->uuid()
                 << "(" << parent_node->id_ << ") to "
                 << rtnd.resource_desc().uuid() << "("  << new_node->id_ << ").";
         // The arc will have a 0 capacity, but it will be updated
@@ -442,7 +442,7 @@ void FlowGraphManager::AddResourceNode(
       }
       InsertIfNotPresent(&resource_to_parent_map_,
                          new_node->resource_id_,
-                         ResourceIDFromString(rtnd.parent_id()));
+                         parent_res_id);
     }
     // Add new resource node to the graph changes.
     DIMACSChange *chg = new DIMACSAddNode(*new_node, resource_arcs);

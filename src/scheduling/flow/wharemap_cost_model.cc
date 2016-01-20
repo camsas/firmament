@@ -762,11 +762,7 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
   if (other->resource_id_.is_nil()) {
     if (accumulator->type_ == FlowNodeType::PU) {
       // Base case: (PU -> SINK). We are at a PU and we gather the statistics.
-      ResourceStatus* rs_ptr =
-        FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-      if (!rs_ptr)
-        return accumulator;
-      ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+      ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
       if (!rd_ptr)
         return accumulator;
       if (rd_ptr->has_current_running_task()) {
@@ -810,17 +806,8 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
     return accumulator;
   }
   // Case: (RESOURCE -> RESOURCE)
-  ResourceStatus* acc_rs_ptr =
-    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-  CHECK_NOTNULL(acc_rs_ptr);
-  WhareMapStats* wms_acc_ptr =
-    acc_rs_ptr->mutable_descriptor()->mutable_whare_map_stats();
-  ResourceStatus* other_rs_ptr =
-    FindPtrOrNull(*resource_map_, other->resource_id_);
-  if (!other_rs_ptr)
-    return accumulator;
-  WhareMapStats* wms_other_ptr =
-    other_rs_ptr->mutable_descriptor()->mutable_whare_map_stats();
+  WhareMapStats* wms_acc_ptr = accumulator->rd_ptr_->mutable_whare_map_stats();
+  WhareMapStats* wms_other_ptr = other->rd_ptr_->mutable_whare_map_stats();
   if (accumulator->type_ == FlowNodeType::MACHINE) {
     AccumulateWhareMapStats(wms_acc_ptr, wms_other_ptr);
     // TODO(ionel): Update knowledge base.

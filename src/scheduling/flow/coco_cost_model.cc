@@ -847,11 +847,7 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
 
   // Case: (RESOURCE -> RESOURCE)
   // We're inside the resource topology
-  ResourceStatus* rs_ptr =
-    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-  if (!rs_ptr)
-    return accumulator;
-  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+  ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
   // Early exit if the resource is not yet there
   if (!rd_ptr)
     return accumulator;
@@ -948,19 +944,14 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
           (latest_stats.net_bw() / BYTES_TO_MB));
     }
   }
-  ResourceStatus* acc_rs_ptr =
-    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-  ResourceStatus* other_rs_ptr =
-    FindPtrOrNull(*resource_map_, other->resource_id_);
-  if (acc_rs_ptr && other_rs_ptr) {
-    ResourceDescriptor* acc_rd_ptr =  acc_rs_ptr->mutable_descriptor();
-    ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
-    AccumulateResourceStats(acc_rd_ptr, other_rd_ptr);
-    acc_rd_ptr->set_num_running_tasks_below(
-        acc_rd_ptr->num_running_tasks_below() +
-        other_rd_ptr->num_running_tasks_below());
-    acc_rd_ptr->set_num_leaves_below(acc_rd_ptr->num_leaves_below() +
-                                    other_rd_ptr->num_leaves_below());
+  if (accumulator->rd_ptr_ && other->rd_ptr_) {
+    AccumulateResourceStats(accumulator->rd_ptr_, other->rd_ptr_);
+    accumulator->rd_ptr_->set_num_running_tasks_below(
+        accumulator->rd_ptr_->num_running_tasks_below() +
+        other->rd_ptr_->num_running_tasks_below());
+    accumulator->rd_ptr_->set_num_leaves_below(
+        accumulator->rd_ptr_->num_leaves_below() +
+        other->rd_ptr_->num_leaves_below());
   }
   return accumulator;
 }
@@ -1037,11 +1028,7 @@ CocoCostModel::CompareResourceVectors(
 }
 
 void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
-  ResourceStatus* rs_ptr =
-    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-  if (!rs_ptr)
-    return;
-  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+  ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
   // Early exit if the resource is not yet there
   if (!rd_ptr) {
     LOG(WARNING) << "Queried RD that does not exist yet, for "
