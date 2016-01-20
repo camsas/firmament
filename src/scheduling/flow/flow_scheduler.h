@@ -63,7 +63,7 @@ class FlowScheduler : public EventDrivenScheduler {
                                            TemplateDictionary* dict) const;
   virtual void PopulateSchedulerTaskUI(TaskID_t task_id,
                                        TemplateDictionary* dict) const;
-  virtual void RegisterResource(ResourceID_t res_id,
+  virtual void RegisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr,
                                 bool local,
                                 bool simulated);
   virtual uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats);
