@@ -40,8 +40,8 @@ Cost_t TrivialCostModel::TaskToResourceNodeCost(TaskID_t task_id,
 }
 
 Cost_t TrivialCostModel::ResourceNodeToResourceNodeCost(
-    ResourceID_t source,
-    ResourceID_t destination) {
+    const ResourceDescriptor& source,
+    const ResourceDescriptor& destination) {
   return 0LL;
 }
 

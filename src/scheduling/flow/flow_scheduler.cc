@@ -457,12 +457,9 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     // Get the TD and RD for the source and destination
     TaskDescriptor* task = FindPtrOrNull(*task_map_, src->task_id_);
     CHECK_NOTNULL(task);
-    ResourceStatus* target_res_status =
-      FindPtrOrNull(*resource_map_, dst->resource_id_);
-    CHECK_NOTNULL(target_res_status);
-    const ResourceDescriptor& resource = target_res_status->descriptor();
+
     solver_dispatcher_->NodeBindingToSchedulingDelta(
-        *task, resource, &task_bindings_, &deltas);
+        *task, *dst->rd_ptr_, &task_bindings_, &deltas);
   }
   // Set the current timestamp to the timestamp of the end of the scheduling
   // round. Thus, we make sure that all the changes applied as a result of

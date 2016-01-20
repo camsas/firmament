@@ -60,8 +60,9 @@ class CostModelInterface {
   /**
    * Get the cost of an arc between two resource nodes.
    */
-  virtual Cost_t ResourceNodeToResourceNodeCost(ResourceID_t source,
-                                                ResourceID_t destination) = 0;
+  virtual Cost_t ResourceNodeToResourceNodeCost(
+      const ResourceDescriptor& source,
+      const ResourceDescriptor& destination) = 0;
   /**
    * Get the cost of an arc from a resource to the sink.
    **/

@@ -34,8 +34,8 @@ class SJFCostModel : public CostModelInterface {
   Cost_t TaskToResourceNodeCost(TaskID_t task_id,
                                 ResourceID_t resource_id);
   // Costs within the resource topology
-  Cost_t ResourceNodeToResourceNodeCost(ResourceID_t source,
-                                        ResourceID_t destination);
+  Cost_t ResourceNodeToResourceNodeCost(const ResourceDescriptor& source,
+                                        const ResourceDescriptor& destination);
   Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id);
   // Costs pertaining to preemption (i.e. already running tasks)
   Cost_t TaskContinuationCost(TaskID_t task_id);

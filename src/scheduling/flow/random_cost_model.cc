@@ -45,8 +45,8 @@ Cost_t RandomCostModel::TaskToResourceNodeCost(TaskID_t task_id,
 }
 
 Cost_t RandomCostModel::ResourceNodeToResourceNodeCost(
-    ResourceID_t source,
-    ResourceID_t destination) {
+    const ResourceDescriptor& source,
+    const ResourceDescriptor& destination) {
   return rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 4) + 1;
 }
 
