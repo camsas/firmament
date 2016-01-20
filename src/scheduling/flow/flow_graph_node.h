@@ -46,6 +46,8 @@ struct FlowGraphNode {
   JobID_t job_id_;
   // The ID of the resource that this node represents.
   ResourceID_t resource_id_;
+  // The descriptor of the resource that this node represents.
+  ResourceDescriptor* rd_ptr_;
   // The ID of the task represented by this node.
   TaskID_t task_id_;
   // Free-form comment for debugging purposes (used to label special nodes)

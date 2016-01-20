@@ -566,16 +566,12 @@ Cost_t CocoCostModel::TaskToResourceNodeCost(TaskID_t task_id,
 }
 
 Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
-    ResourceID_t source,
-    ResourceID_t destination) {
-  // Get RD for this resource
-  ResourceStatus* rs = FindPtrOrNull(*resource_map_, destination);
-  if (!rs)
-    return 0LL;
-  const ResourceDescriptor& rd = rs->descriptor();
+    const ResourceDescriptor& source,
+    const ResourceDescriptor& destination) {
   // Get the RD for the machine corresponding to this resource
+  ResourceID_t destination_res_id = ResourceIDFromString(destination.uuid());
   ResourceStatus* machine_rs =
-    FindPtrOrNull(*resource_map_, MachineResIDForResource(destination));
+    FindPtrOrNull(*resource_map_, MachineResIDForResource(destination_res_id));
   if (!machine_rs)
     return 0LL;
   const ResourceDescriptor& machine_rd = machine_rs->descriptor();
@@ -583,32 +579,33 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
   CostVector_t cost_vector;
   bzero(&cost_vector, sizeof(CostVector_t));
   cost_vector.priority_ = 0;
-  if (rd.type() == ResourceDescriptor::RESOURCE_PU) {
+  if (destination.type() == ResourceDescriptor::RESOURCE_PU) {
     cost_vector.cpu_cores_ =
-        NormalizeCost(1.0 - rd.available_resources().cpu_cores(), 1.0);
-  } else if (rd.type() == ResourceDescriptor::RESOURCE_MACHINE) {
+        NormalizeCost(1.0 - destination.available_resources().cpu_cores(), 1.0);
+  } else if (destination.type() == ResourceDescriptor::RESOURCE_MACHINE) {
     cost_vector.ram_cap_ =
         NormalizeCost(machine_rd.resource_capacity().ram_cap() -
-                      rd.available_resources().ram_cap(),
+                      destination.available_resources().ram_cap(),
                       machine_rd.resource_capacity().ram_cap());
     cost_vector.network_bw_ =
         NormalizeCost(machine_rd.resource_capacity().net_bw() -
-                      rd.available_resources().net_bw(),
+                      destination.available_resources().net_bw(),
                       machine_rd.resource_capacity().net_bw());
     cost_vector.disk_bw_ =
         NormalizeCost(machine_rd.resource_capacity().disk_bw() -
-                      rd.available_resources().disk_bw(),
+                      destination.available_resources().disk_bw(),
                       machine_rd.resource_capacity().disk_bw());
   }
   // XXX(malte): unimplemented
   cost_vector.machine_type_score_ = 0;
-  cost_vector.interference_score_ = ComputeInterferenceScore(destination);
+  cost_vector.interference_score_ =
+    ComputeInterferenceScore(destination_res_id);
   // XXX(malte): unimplemented
   cost_vector.locality_score_ = 0;
   Cost_t flat_cost = FlattenCostVector(cost_vector);
   if (VLOG_IS_ON(2) && flat_cost > 0) {
-    VLOG(2) << "Resource " << source << "'s cost to resource "
-            << destination << ":";
+    VLOG(2) << "Resource " << source.uuid() << "'s cost to resource "
+            << destination.uuid() << ":";
     PrintCostVector(cost_vector);
     VLOG(2) << "  Flattened: " << flat_cost;
   }
@@ -847,11 +844,7 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
 
   // Case: (RESOURCE -> RESOURCE)
   // We're inside the resource topology
-  ResourceStatus* rs_ptr =
-    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-  if (!rs_ptr)
-    return accumulator;
-  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+  ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
   // Early exit if the resource is not yet there
   if (!rd_ptr)
     return accumulator;
@@ -948,19 +941,14 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
           (latest_stats.net_bw() / BYTES_TO_MB));
     }
   }
-  ResourceStatus* acc_rs_ptr =
-    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-  ResourceStatus* other_rs_ptr =
-    FindPtrOrNull(*resource_map_, other->resource_id_);
-  if (acc_rs_ptr && other_rs_ptr) {
-    ResourceDescriptor* acc_rd_ptr =  acc_rs_ptr->mutable_descriptor();
-    ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
-    AccumulateResourceStats(acc_rd_ptr, other_rd_ptr);
-    acc_rd_ptr->set_num_running_tasks_below(
-        acc_rd_ptr->num_running_tasks_below() +
-        other_rd_ptr->num_running_tasks_below());
-    acc_rd_ptr->set_num_leaves_below(acc_rd_ptr->num_leaves_below() +
-                                    other_rd_ptr->num_leaves_below());
+  if (accumulator->rd_ptr_ && other->rd_ptr_) {
+    AccumulateResourceStats(accumulator->rd_ptr_, other->rd_ptr_);
+    accumulator->rd_ptr_->set_num_running_tasks_below(
+        accumulator->rd_ptr_->num_running_tasks_below() +
+        other->rd_ptr_->num_running_tasks_below());
+    accumulator->rd_ptr_->set_num_leaves_below(
+        accumulator->rd_ptr_->num_leaves_below() +
+        other->rd_ptr_->num_leaves_below());
   }
   return accumulator;
 }
@@ -1037,11 +1025,7 @@ CocoCostModel::CompareResourceVectors(
 }
 
 void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
-  ResourceStatus* rs_ptr =
-    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-  if (!rs_ptr)
-    return;
-  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+  ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
   // Early exit if the resource is not yet there
   if (!rd_ptr) {
     LOG(WARNING) << "Queried RD that does not exist yet, for "
@@ -1154,8 +1138,8 @@ FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
   }
   // Case: RESOURCE -> RESOURCE
   FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
-  uint64_t new_cost = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
-                                                     other->resource_id_);
+  uint64_t new_cost = ResourceNodeToResourceNodeCost(*accumulator->rd_ptr_,
+                                                     *other->rd_ptr_);
   if (arc->cost_ != new_cost) {
     uint64_t old_cost = arc->cost_;
     arc->cost_ = new_cost;

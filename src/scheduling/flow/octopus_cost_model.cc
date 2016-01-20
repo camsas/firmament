@@ -44,15 +44,11 @@ Cost_t OctopusCostModel::TaskToResourceNodeCost(TaskID_t task_id,
 }
 
 Cost_t OctopusCostModel::ResourceNodeToResourceNodeCost(
-    ResourceID_t src, ResourceID_t dst) {
-  ResourceStatus* dst_rs_ptr = FindPtrOrNull(*resource_map_, dst);
-  if (!dst_rs_ptr)
-    return 0LL;
-  ResourceDescriptor* dst_rd_ptr = dst_rs_ptr->mutable_descriptor();
+    const ResourceDescriptor& src,
+    const ResourceDescriptor& dst) {
   // The cost in the Octopus model is the number of already running tasks, i.e.
   // a crude per-task load balancing algorithm.
-  uint64_t num_tasks = dst_rd_ptr->num_running_tasks_below();
-  return num_tasks;
+  return dst.num_running_tasks_below();
 }
 
 Cost_t OctopusCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
@@ -189,37 +185,22 @@ FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
   if (other->resource_id_.is_nil()) {
     if (accumulator->type_ == FlowNodeType::PU) {
       // Base case. We are at a PU and we gather the statistics.
-      ResourceStatus* rs_ptr =
-        FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-      if (!rs_ptr)
+      if (!accumulator->rd_ptr_)
         return accumulator;
-      ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
-      if (!rd_ptr)
-        return accumulator;
-      if (rd_ptr->has_current_running_task()) {
-        rd_ptr->set_num_running_tasks_below(1);
+      if (accumulator->rd_ptr_->has_current_running_task()) {
+        accumulator->rd_ptr_->set_num_running_tasks_below(1);
       } else {
-        rd_ptr->set_num_running_tasks_below(0);
+        accumulator->rd_ptr_->set_num_running_tasks_below(0);
       }
     }
     return accumulator;
   }
 
-  ResourceStatus* acc_rs_ptr =
-    FindPtrOrNull(*resource_map_, accumulator->resource_id_);
-  CHECK_NOTNULL(acc_rs_ptr);
-  ResourceDescriptor* acc_rd_ptr = acc_rs_ptr->mutable_descriptor();
-
-  ResourceStatus* other_rs_ptr =
-    FindPtrOrNull(*resource_map_, other->resource_id_);
-  if (!other_rs_ptr)
+  if (!other->rd_ptr_)
     return accumulator;
-  ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
-  if (!other_rd_ptr)
-    return accumulator;
-  acc_rd_ptr->set_num_running_tasks_below(
-      acc_rd_ptr->num_running_tasks_below() +
-      other_rd_ptr->num_running_tasks_below());
+  accumulator->rd_ptr_->set_num_running_tasks_below(
+      accumulator->rd_ptr_->num_running_tasks_below() +
+      other->rd_ptr_->num_running_tasks_below());
   return accumulator;
 }
 
@@ -238,8 +219,8 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
   }
 
   FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
-  uint64_t new_cost = ResourceNodeToResourceNodeCost(accumulator->resource_id_,
-                                                     other->resource_id_);
+  uint64_t new_cost = ResourceNodeToResourceNodeCost(*accumulator->rd_ptr_,
+                                                     *other->rd_ptr_);
   if (arc->cost_ != new_cost) {
     uint64_t old_cost = arc->cost_;
     arc->cost_ = new_cost;
@@ -250,14 +231,9 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
   }
 
   // Reset the state.
-  ResourceStatus* other_rs_ptr =
-    FindPtrOrNull(*resource_map_, other->resource_id_);
-  if (!other_rs_ptr)
+  if (!other->rd_ptr_)
     return accumulator;
-  ResourceDescriptor* other_rd_ptr = other_rs_ptr->mutable_descriptor();
-  if (!other_rd_ptr)
-    return accumulator;
-  other_rd_ptr->set_num_running_tasks_below(0);
+  other->rd_ptr_->set_num_running_tasks_below(0);
   return accumulator;
 }
 

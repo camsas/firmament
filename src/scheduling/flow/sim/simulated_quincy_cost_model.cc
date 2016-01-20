@@ -84,8 +84,8 @@ Cost_t SimulatedQuincyCostModel::TaskToResourceNodeCost(
 
 // Cost from machines to cores, always 0.
 Cost_t SimulatedQuincyCostModel::ResourceNodeToResourceNodeCost(
-    ResourceID_t source,
-    ResourceID_t destination) {
+    const ResourceDescriptor& source,
+    const ResourceDescriptor& destination) {
   return 0ULL;
 }
 

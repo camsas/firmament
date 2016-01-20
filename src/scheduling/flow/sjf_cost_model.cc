@@ -86,8 +86,8 @@ Cost_t SJFCostModel::TaskToResourceNodeCost(TaskID_t task_id,
 }
 
 Cost_t SJFCostModel::ResourceNodeToResourceNodeCost(
-    ResourceID_t source,
-    ResourceID_t destination) {
+    const ResourceDescriptor& source,
+    const ResourceDescriptor& destination) {
   return 0LL;
 }
 

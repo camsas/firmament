@@ -39,8 +39,9 @@ Cost_t VoidCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
   return 0LL;
 }
 
-Cost_t VoidCostModel::ResourceNodeToResourceNodeCost(ResourceID_t source,
-                                                     ResourceID_t destination) {
+Cost_t VoidCostModel::ResourceNodeToResourceNodeCost(
+    const ResourceDescriptor& source,
+    const ResourceDescriptor& destination) {
   return 0LL;
 }
 
