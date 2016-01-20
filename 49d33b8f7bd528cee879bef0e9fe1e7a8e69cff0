@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_bb45e318",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-20T01:26:10Z",
+      "side": 1,
+      "message": "Does this imply that we can never have two arcs with the same cost between two nodes? (As in, the cost is used as a unique identifier for the arc?)",
+      "range": {
+        "startLine": 11,
+        "startChar": 18,
+        "endLine": 13,
+        "endChar": 31
+      },
+      "revId": "49d33b8f7bd528cee879bef0e9fe1e7a8e69cff0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_db4b7729",
+        "filename": "src/scheduling/flow/flow_graph_arc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-20T01:26:10Z",
+      "side": 1,
+      "message": "Should this be called FlowGraphArcType, since it\u0027s a publicly visible enum?",
+      "range": {
+        "startLine": 19,
+        "startChar": 5,
+        "endLine": 19,
+        "endChar": 12
+      },
+      "revId": "49d33b8f7bd528cee879bef0e9fe1e7a8e69cff0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
