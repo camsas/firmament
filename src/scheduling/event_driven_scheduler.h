@@ -64,7 +64,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   virtual void KillRunningTask(TaskID_t task_id,
                                TaskKillMessage::TaskKillReason reason);
   bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);
-  virtual void RegisterResource(ResourceID_t res_id,
+  virtual void RegisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr,
+                                const string& endpoint_uri,
                                 bool local,
                                 bool simulated);
   // N.B. ScheduleJob must be implemented in scheduler-specific logic
@@ -99,6 +100,10 @@ class EventDrivenScheduler : public SchedulerInterface {
   void RegisterRemoteResource(ResourceID_t res_id);
   void RegisterSimulatedResource(ResourceID_t res_id);
   const set<TaskID_t>& RunnableTasksForJob(JobDescriptor* job_desc);
+  void SetupPUs(ResourceTopologyNodeDescriptor* rtnd_ptr,
+                const string& endpoint_uri,
+                bool local,
+                bool simulated);
   bool UnbindTaskFromResource(TaskDescriptor* td_ptr, ResourceID_t res_id);
 
   // Cached sets of runnable and blocked tasks; these are updated on each

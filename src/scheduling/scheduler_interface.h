@@ -185,16 +185,18 @@ class SchedulerInterface : public PrintableInterface {
                                        TemplateDictionary* dict) const = 0;
 
   /**
-   * Registers a resource ID with the scheduler, who may subsequently assign
+   * Registers a resource with the scheduler, who may subsequently assign
    * work to this resource.
-   * @param res_id the id of the resource
+   * @param rtnd_ptr the resource topology node descriptor
+   * @param endpoint_uri the uri of the new resource
    * @param local boolean to indicate if the resource is local or not
    */
   // TODO(malte): Add support for registering a resource with multiple
   // schedulers.
   // TODO(ionel): Remove default argument value once we refactor the method
   // to receive the executor.
-  virtual void RegisterResource(ResourceID_t res_id,
+  virtual void RegisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr,
+                                const string& endpoint_uri,
                                 bool local,
                                 bool simulated = false) = 0;
 

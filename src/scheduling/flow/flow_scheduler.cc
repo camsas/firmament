@@ -368,15 +368,15 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
   return num_scheduled_tasks;
 }
 
-void FlowScheduler::RegisterResource(ResourceID_t res_id,
+void FlowScheduler::RegisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr,
+                                     const string& endpoint_uri,
                                      bool local,
                                      bool simulated) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  EventDrivenScheduler::RegisterResource(rtnd_ptr, endpoint_uri, local,
+                                         simulated);
   // Update the flow graph
-  UpdateResourceTopology(resource_topology_);
-  // Call into superclass method to do scheduler resource initialisation.
-  // This will create the executor for the new resource.
-  EventDrivenScheduler::RegisterResource(res_id, local, simulated);
+  UpdateResourceTopology(rtnd_ptr);
 }
 
 uint64_t FlowScheduler::RunSchedulingIteration(
@@ -514,13 +514,13 @@ void FlowScheduler::UpdateCostModelResourceStats() {
 }
 
 void FlowScheduler::UpdateResourceTopology(
-    ResourceTopologyNodeDescriptor* root) {
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
   // Run a topology refresh (somewhat expensive!); if only two nodes exist, the
   // flow graph is empty apart from cluster aggregator and sink.
   if (flow_graph_manager_->flow_graph()->NumNodes() == 1) {
-    flow_graph_manager_->AddResourceTopology(root);
+    flow_graph_manager_->AddResourceTopology(rtnd_ptr);
   } else {
-    flow_graph_manager_->AddMachine(root);
+    flow_graph_manager_->AddMachine(rtnd_ptr);
   }
   // We also need to update any stats or state in the cost model, as the
   // resource topology has changed.

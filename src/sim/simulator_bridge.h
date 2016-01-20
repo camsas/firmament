@@ -117,9 +117,6 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
    */
   void ProcessSimulatorEvents(uint64_t events_up_to_time);
 
-  void RegisterMachinePUs(ResourceTopologyNodeDescriptor* rtnd_ptr,
-                          ResourceID_t machine_res_id);
-
   /**
    * Removes a machine from the topology and all its associated state.
    * NOTE: The method currently assumes that the machine is directly
@@ -201,8 +198,11 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
    * The resource topology is built from the same protobuf file. The function
    * changes the uuids to make sure that there's no two identical uuids.
    */
-  void ResetUuidAndAddResource(ResourceTopologyNodeDescriptor* rtnd,
-                               const string& hostname, const string& root_uuid);
+  void SetupMachine(ResourceTopologyNodeDescriptor* rtnd,
+                    ResourceVector* machine_res_cap,
+                    const string& hostname,
+                    const string& root_uuid,
+                    ResourceID_t machine_res_id);
 
   EventManager* event_manager_;
 

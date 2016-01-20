@@ -164,6 +164,7 @@ void Coordinator::DetectLocalResources() {
   BFSTraverseResourceProtobufTreeReturnRTND(
       local_resource_topology_,
       boost::bind(&Coordinator::AddResource, this, _1, node_uri_, true));
+  scheduler_->RegisterResource(local_resource_topology_, node_uri_, true);
 }
 
 void Coordinator::AddResource(ResourceTopologyNodeDescriptor* rtnd,
@@ -190,21 +191,6 @@ void Coordinator::AddResource(ResourceTopologyNodeDescriptor* rtnd,
     ResourceVector* cap = resource_desc->mutable_resource_capacity();
     machine_monitor_.GetMachineCapacity(cap);
   }
-  // Register with scheduler if this resource is schedulable
-  if (resource_desc->type() == ResourceDescriptor::RESOURCE_PU) {
-    // TODO(malte): We make the assumption here that any local PU resource is
-    // exclusively owned by this coordinator, and set its state to IDLE if it is
-    // currently unknown. If coordinators were to ever shared PUs, we'd need
-    // something more clever here.
-    resource_desc->set_schedulable(true);
-    if (resource_desc->state() == ResourceDescriptor::RESOURCE_UNKNOWN)
-      resource_desc->set_state(ResourceDescriptor::RESOURCE_IDLE);
-    scheduler_->RegisterResource(res_id, local);
-    VLOG(1) << "Added " << (local ? "local" : "remote") << " resource "
-            << resource_desc->uuid()
-            << " [" << resource_desc->friendly_name()
-            << "] to scheduler.";
-  }
 }
 
 void Coordinator::Run() {
@@ -217,6 +203,7 @@ void Coordinator::Run() {
   } else {
     // We still add a node: a "virtual" resource representing this coordinator
     AddResource(local_resource_topology_, node_uri_, true);
+    scheduler_->RegisterResource(local_resource_topology_, node_uri_, true);
   }
 
   // Coordinator starting -- set up and wait for workers to connect.
@@ -535,6 +522,8 @@ void Coordinator::HandleRegistrationRequest(
     BFSTraverseResourceProtobufTreeReturnRTND(
         rtnd, boost::bind(&Coordinator::AddResource, this, _1,
                           msg.location(), false));
+    // Register the resource with the scheduler.
+    scheduler_->RegisterResource(rtnd, msg.location(), false);
     //InformStorageEngineNewResource(rd);
   } else {
     LOG(INFO) << "REGISTRATION request from resource " << msg.uuid()

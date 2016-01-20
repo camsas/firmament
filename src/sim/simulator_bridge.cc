@@ -98,18 +98,17 @@ ResourceDescriptor* SimulatorBridge::AddMachine(
   // rather than Firmament's machine id.
   string hostname = "firmament_simulation_machine_" +
     lexical_cast<string>(machine_id);
-  DFSTraverseResourceProtobufTreeReturnRTND(
-      new_machine, boost::bind(&SimulatorBridge::ResetUuidAndAddResource,
-                               this, _1, hostname, root_uuid));
   ResourceDescriptor* rd_ptr = new_machine->mutable_resource_desc();
   rd_ptr->set_friendly_name(hostname);
   rd_ptr->set_type(ResourceDescriptor::RESOURCE_MACHINE);
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
+  ResourceVector* res_cap = rd_ptr->mutable_resource_capacity();
+  DFSTraverseResourceProtobufTreeReturnRTND(
+      new_machine, boost::bind(&SimulatorBridge::SetupMachine,
+                               this, _1, res_cap, hostname, root_uuid, res_id));
   CHECK(InsertIfNotPresent(&trace_machine_id_to_rtnd_, machine_id,
                            new_machine));
-  DFSTraverseResourceProtobufTreeReturnRTND(
-      new_machine, boost::bind(&SimulatorBridge::RegisterMachinePUs,
-                               this, _1, res_id));
+  scheduler_->RegisterResource(new_machine, hostname, false, true);
   return rd_ptr;
 }
 
@@ -419,29 +418,6 @@ JobDescriptor* SimulatorBridge::PopulateJob(uint64_t trace_job_id) {
   return jd_ptr;
 }
 
-void SimulatorBridge::RegisterMachinePUs(
-    ResourceTopologyNodeDescriptor* rtnd_ptr,
-    ResourceID_t machine_res_id) {
-  if (rtnd_ptr->resource_desc().type() == ResourceDescriptor::RESOURCE_PU) {
-    scheduler_->RegisterResource(
-        ResourceIDFromString(rtnd_ptr->resource_desc().uuid()), false, true);
-    ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, machine_res_id);
-    CHECK_NOTNULL(rs_ptr);
-    ResourceDescriptor* machine_rd_ptr = rs_ptr->mutable_descriptor();
-    ResourceVector* machine_res_cap =
-      machine_rd_ptr->mutable_resource_capacity();
-    uint64_t cpu_cores = 1;
-    if (machine_res_cap->has_cpu_cores()) {
-      cpu_cores = machine_res_cap->cpu_cores() + 1;
-    }
-    // NOTE: We set the number of cpu_cores to the number of PUs.
-    machine_res_cap->set_cpu_cores(cpu_cores);
-    machine_res_id_pus_.insert(
-        pair<ResourceID_t, ResourceDescriptor*>(
-            machine_res_id, rtnd_ptr->mutable_resource_desc()));
-  }
-}
-
 void SimulatorBridge::RemoveMachine(uint64_t machine_id) {
   ResourceTopologyNodeDescriptor* rtnd_ptr =
     FindPtrOrNull(trace_machine_id_to_rtnd_, machine_id);
@@ -512,10 +488,12 @@ void SimulatorBridge::RemoveResourceNodeFromParentChildrenList(
   }
 }
 
-void SimulatorBridge::ResetUuidAndAddResource(
+void SimulatorBridge::SetupMachine(
     ResourceTopologyNodeDescriptor* rtnd,
+    ResourceVector* machine_res_cap,
     const string& hostname,
-    const string& root_uuid) {
+    const string& root_uuid,
+    ResourceID_t machine_res_id) {
   string new_uuid;
   if (rtnd->has_parent_id()) {
     // This is an intermediate node, so translate the parent UUID via the
@@ -546,6 +524,16 @@ void SimulatorBridge::ResetUuidAndAddResource(
       ResourceIDFromString(rd->uuid()),
       new ResourceStatus(rd, rtnd, "endpoint_uri",
                          event_manager_->GetCurrentTimestamp())));
+  if (rd->type() == ResourceDescriptor::RESOURCE_PU) {
+    uint64_t cpu_cores = 1;
+    if (machine_res_cap->has_cpu_cores()) {
+      cpu_cores = machine_res_cap->cpu_cores() + 1;
+    }
+    // NOTE: We set the number of cpu_cores to the number of PUs.
+    machine_res_cap->set_cpu_cores(cpu_cores);
+    machine_res_id_pus_.insert(
+        pair<ResourceID_t, ResourceDescriptor*>(machine_res_id, rd));
+  }
 }
 
 void SimulatorBridge::ScheduleJobs(SchedulerStats* scheduler_stats) {
