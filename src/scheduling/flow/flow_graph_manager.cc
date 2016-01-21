@@ -161,6 +161,7 @@ FlowGraphNode* FlowGraphManager::AddEquivClassNode(EquivClass_t ec) {
   // Add the equivalence class flow graph node.
   FlowGraphNode* ec_node = flow_graph_->AddNode();
   ec_node->type_ = FlowNodeType::EQUIVALENCE_CLASS;
+  ec_node->ec_id_ = ec;
   CHECK(InsertIfNotPresent(&tec_to_node_, ec, ec_node));
   string comment;
   spf(&comment, "EC_AGG_%ju", ec);
