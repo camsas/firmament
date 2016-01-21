@@ -355,11 +355,6 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
       // from now on are going to be included in the next scheduler run.
       DIMACSChangeStats current_run_dimacs_stats = *dimacs_stats_;
       dimacs_stats_->ResetStats();
-      // Resource reservations may have changed, so reconsider equivalence
-      // classes.
-      for (auto& jd_ptr : jd_ptr_vect) {
-        flow_graph_manager_->AddOrUpdateJobNodes(jd_ptr);
-      }
       scheduler_stats->total_runtime = total_scheduler_timer.elapsed().wall
         / NANOSECONDS_IN_MICROSECOND;
       generate_trace_->SchedulerRun(*scheduler_stats, current_run_dimacs_stats);
@@ -379,11 +374,6 @@ void FlowScheduler::RegisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr,
 
 uint64_t FlowScheduler::RunSchedulingIteration(
     SchedulerStats* scheduler_stats) {
-  // If this is the first iteration ever, we should ensure that the cost
-  // model's notion of statistics is correct.
-  if (solver_dispatcher_->seq_num() == 0)
-    UpdateCostModelResourceStats();
-
   // If it's time to revisit time-dependent costs, do so now, just before
   // we run the solver.
   uint64_t cur_time = time_manager_->GetCurrentTimestamp();
@@ -484,10 +474,6 @@ uint64_t FlowScheduler::RunSchedulingIteration(
       LOG(WARNING) << " * " << (*it)->DebugString();
   }
 
-  // The application of deltas may have changed relevant statistics, so
-  // we update them.
-  UpdateCostModelResourceStats();
-
   return num_scheduled;
 }
 
@@ -521,9 +507,6 @@ void FlowScheduler::UpdateResourceTopology(
   } else {
     flow_graph_manager_->AddMachine(rtnd_ptr);
   }
-  // We also need to update any stats or state in the cost model, as the
-  // resource topology has changed.
-  UpdateCostModelResourceStats();
 }
 
 }  // namespace scheduler
