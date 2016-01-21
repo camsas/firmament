@@ -46,10 +46,8 @@ class FlowGraphManager {
   void ComputeTopologyStatistics(
     FlowGraphNode* node,
     boost::function<void(FlowGraphNode*)> prepare,
-    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
-  void ComputeTopologyStatistics(
-    FlowGraphNode* node,
-    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather,
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> update);
   void JobCompleted(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
@@ -173,6 +171,10 @@ class FlowGraphManager {
   vector<DIMACSChange*> graph_changes_;
   GenerateTrace* generate_trace_;
   DIMACSChangeStats* dimacs_stats_;
+  // Counter updated whenever we compute topology statistics. The counter is
+  // used as a marker in the resource topology traversal. It helps us to avoid
+  // having to reset the visited state before each traversal.
+  uint64_t cur_traversal_counter_;
 };
 
 }  // namespace firmament
