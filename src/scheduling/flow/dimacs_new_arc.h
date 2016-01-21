@@ -18,7 +18,7 @@ class DIMACSNewArc : public DIMACSChange {
   const string GenerateChange() const;
 
  private:
-  FRIEND_TEST(FlowGraphTest, AddResourceNode);
+  FRIEND_TEST(FlowGraphTest, AddOrUpdateResourceNode);
   uint64_t src_;
   uint64_t dst_;
   uint64_t cap_lower_bound_;

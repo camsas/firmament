@@ -25,7 +25,7 @@ class DIMACSChangeArc : public DIMACSChange {
   }
 
  private:
-  FRIEND_TEST(FlowGraphTest, AddResourceNode);
+  FRIEND_TEST(FlowGraphTest, AddOrUpdateResourceNode);
   FRIEND_TEST(FlowGraphTest, AddOrUpdateJobNodes);
   FRIEND_TEST(FlowGraphTest, ChangeArc);
   uint64_t src_;

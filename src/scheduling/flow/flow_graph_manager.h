@@ -85,9 +85,6 @@ class FlowGraphManager {
   inline const unordered_set<uint64_t>& task_node_ids() const {
     return task_nodes_;
   }
-  inline const unordered_set<uint64_t>& unsched_agg_ids() const {
-    return unsched_agg_nodes_;
-  }
   inline FlowGraphNode* sink_node() {
     return sink_node_;
   }
@@ -96,7 +93,7 @@ class FlowGraphManager {
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
   FRIEND_TEST(DIMACSExporterTest, ScalabilityTestGraphs);
   FRIEND_TEST(FlowGraphManagerTest, AddOrUpdateJobNodes);
-  FRIEND_TEST(FlowGraphManagerTest, AddResourceNode);
+  FRIEND_TEST(FlowGraphManagerTest, AddOrUpdateResourceNode);
   FRIEND_TEST(FlowGraphManagerTest, DeleteTaskNode);
   FRIEND_TEST(FlowGraphManagerTest, DeleteResourceNode);
   FRIEND_TEST(FlowGraphManagerTest, UnschedAggCapacityAdjustment);
@@ -104,15 +101,22 @@ class FlowGraphManager {
   FRIEND_TEST(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob);
   void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
                       vector<FlowGraphArc*>* task_arcs);
+  void AddArcFromParentToResource(const FlowGraphNode& res_node,
+                                  ResourceID_t parent_res_id,
+                                  vector<FlowGraphArc*>* arcs);
   void AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
                                     FlowGraphNode* ec_node);
   FlowGraphNode* AddEquivClassNode(EquivClass_t ec);
+  FlowGraphNode* AddNewResourceNode(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void AddOrUpdateEquivClassArcs(EquivClass_t ec,
                                  vector<FlowGraphArc*>* ec_arcs);
+  FlowGraphNode* AddOrUpdateJobUnscheduledAgg(JobID_t job_id);
   void AddResourceEquivClasses(FlowGraphNode* res_node);
-  void AddResourceNode(ResourceTopologyNodeDescriptor* rtnd);
+  void AddOrUpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void AddSpecialNodes();
   void AddTaskEquivClasses(FlowGraphNode* task_node);
+  FlowGraphNode* AddTaskNode(JobDescriptor* jd_ptr, TaskDescriptor* td_ptr,
+                             FlowGraphNode* unsched_agg_node);
   uint64_t CapacityBetweenECNodes(const FlowGraphNode& src,
                                   const FlowGraphNode& dst);
   void ConfigureResourceNodeECs(ResourceTopologyNodeDescriptor* rtnd);
@@ -135,8 +139,12 @@ class FlowGraphManager {
   void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
                                        const char *comment = NULL);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
+  void RemoveInvalidPreferenceArcs(const FlowGraphNode& ec_node,
+                                   const vector<ResourceID_t>& res_pref_arcs);
   void RemoveMachineSubTree(FlowGraphNode* res_node,
                             set<uint64_t>* pus_removed);
+  void SetResourceNodeType(FlowGraphNode* res_node,
+                           const ResourceDescriptor& rd);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
   void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
@@ -162,7 +170,6 @@ class FlowGraphManager {
   unordered_set<uint64_t> leaf_nodes_;
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   unordered_set<uint64_t> task_nodes_;
-  unordered_set<uint64_t> unsched_agg_nodes_;
 
   // Mapping storing flow graph nodes for each task equivalence class.
   unordered_map<EquivClass_t, FlowGraphNode*> tec_to_node_;
