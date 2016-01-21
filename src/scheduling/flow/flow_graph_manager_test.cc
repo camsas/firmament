@@ -113,7 +113,7 @@ TEST_F(FlowGraphManagerTest, AddOrUpdateJobNodes) {
   CHECK_EQ(equiv_class->arc_additions_.size(), 0);
 }
 
-TEST_F(FlowGraphManagerTest, AddResourceNode) {
+TEST_F(FlowGraphManagerTest, AddOrUpdateResourceNode) {
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
@@ -132,7 +132,7 @@ TEST_F(FlowGraphManagerTest, AddResourceNode) {
   core_node->mutable_resource_desc()->set_uuid(core_uid);
   core_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   core_node->set_parent_id(root_id);
-  graph_manager.AddResourceNode(core_node);
+  graph_manager.AddOrUpdateResourceNode(core_node);
   // Check if the number of changes is correct. One change for adding the new
   // node, another change for adding an arc from the node to the sink and
   // another change for update the arc from the parent to the core.
@@ -222,7 +222,7 @@ TEST_F(FlowGraphManagerTest, DeleteResourceNode) {
   core_node->mutable_resource_desc()->set_uuid(core_uid);
   core_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   core_node->set_parent_id(root_id);
-  graph_manager.AddResourceNode(core_node);
+  graph_manager.AddOrUpdateResourceNode(core_node);
   uint32_t num_changes = graph_manager.graph_changes_.size();
   // Delete the core node.
   graph_manager.DeleteResourceNode(graph_manager.NodeForResourceID(
