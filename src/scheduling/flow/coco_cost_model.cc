@@ -705,7 +705,7 @@ pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
     LOG(WARNING) << "Unknown EC " << ec << " is not a TEC, so returning "
                  << "zero cost!";
     // No cost; no capacity
-    return pair<Cost_t, int64_t>(0LL, -1LL);
+    return pair<Cost_t, int64_t>(0LL, 0LL);
   }
 }
 
@@ -1136,13 +1136,25 @@ FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
     }
     return accumulator;
   }
-  // Case: RESOURCE -> RESOURCE
+
   FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
-  uint64_t new_cost = ResourceNodeToResourceNodeCost(*accumulator->rd_ptr_,
-                                                     *other->rd_ptr_);
+  uint64_t new_cost;
+  int64_t new_cap = arc->cap_upper_bound_;
+  if (accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+    // Case: EQUIV -> RESOURCE
+    auto new_cost_cap =
+      EquivClassToResourceNode(accumulator->ec_id_, other->resource_id_);
+    new_cost = new_cost_cap.first;
+    new_cap = new_cost_cap.second;
+  } else {
+    // Case: RESOURCE -> RESOURCE
+    new_cost =
+      ResourceNodeToResourceNodeCost(*accumulator->rd_ptr_, *other->rd_ptr_);
+  }
   if (arc->cost_ != new_cost) {
     uint64_t old_cost = arc->cost_;
     arc->cost_ = new_cost;
+    arc->cap_upper_bound_ = new_cap;
     DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
     chg->set_comment("CoCo/UpdateStats");
     dimacs_stats_->UpdateStats(CHG_ARC_BETWEEN_RES);
