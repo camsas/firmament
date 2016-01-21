@@ -56,6 +56,8 @@ struct FlowGraphNode {
   unordered_map<uint64_t, FlowGraphArc*> outgoing_arc_map_;
   // Incoming arcs to this node, keyed by source node
   unordered_map<uint64_t, FlowGraphArc*> incoming_arc_map_;
+  // Field use to mark if the node has been visited in a graph traversal.
+  uint32_t visited_;
 };
 
 }  // namespace firmament

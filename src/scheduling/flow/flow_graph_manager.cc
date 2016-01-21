@@ -43,7 +43,8 @@ FlowGraphManager::FlowGraphManager(
       flow_graph_(new FlowGraph),
       leaf_res_ids_(leaf_res_ids),
       generate_trace_(generate_trace),
-      dimacs_stats_(dimacs_stats) {
+      dimacs_stats_(dimacs_stats),
+      cur_traversal_mark_(0) {
   // Add sink and cluster aggregator node
   AddSpecialNodes();
 }
@@ -571,21 +572,15 @@ void FlowGraphManager::AddOrUpdateEquivClassArcs(
     }
   }
   // Check if we need to remove any arcs that are no longer in the set
-  set<FlowGraphArc*> to_delete;
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>> res_preferences(
+      res_pref_arcs->begin(),
+      res_pref_arcs->end());
+  unordered_set<FlowGraphArc*> to_delete;
   for (auto ait = ec_node->outgoing_arc_map_.begin();
        ait != ec_node->outgoing_arc_map_.end(); ++ait) {
     ResourceID_t target_rid = ait->second->dst_node_->resource_id_;
-    bool found = false;
-    // XXX(malte): Yuck, this is inefficient. We should use a set!
-    for (auto pit = res_pref_arcs->begin();
-         pit != res_pref_arcs->end(); ++pit) {
-      if (*pit == target_rid) {
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      // We need to remove this arc
+    if (res_preferences.find(target_rid) == res_preferences.end()) {
+      // We need to remove this arc.
       to_delete.insert(ait->second);
       LOG(INFO) << "Deleting no-longer-current arc from EC " << ec
                 << " to resource " << target_rid;
@@ -677,30 +672,43 @@ bool FlowGraphManager::CheckNodeType(uint64_t node, FlowNodeType type) {
 
 void FlowGraphManager::ComputeTopologyStatistics(
     FlowGraphNode* node,
-    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather) {
-  ComputeTopologyStatistics(node, NULL, gather);
-}
-
-void FlowGraphManager::ComputeTopologyStatistics(
-    FlowGraphNode* node,
     boost::function<void(FlowGraphNode*)> prepare,
-    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather) {
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather,
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> update) {
+  // XXX(ionel): The function only works correctly as long as the topology is a
+  // tree. If the topology is a DAG then it does not work correctly! It does
+  // not work in the DAG case because the function implements BFS. Hence,
+  // we may pop a not of the queue and propagate its statistics via its incoming
+  // arcs before we've received all the statistics at the node.
   queue<FlowGraphNode*> to_visit;
-  set<FlowGraphNode*> processed;
+  if (cur_traversal_mark_ == numeric_limits<uint32_t>::max()) {
+    // Reset all the visited field if the mark has reached max_int. This
+    // avoids wraparound issues.
+    flow_graph_->ResetVisited();
+  }
+  // We maintain a value that is used to mark visited nodes. Before each
+  // visit we increment the mark to make sure that nodes visited in previous
+  // traversal are not going to be treated as marked. By using the mark
+  // variable we avoid having to reset the visited state of each node before
+  // of a traversal.
+  cur_traversal_mark_++;
   to_visit.push(node);
-  processed.insert(node);
+  node->visited_ = cur_traversal_mark_;
   while (!to_visit.empty()) {
     FlowGraphNode* cur_node = to_visit.front();
     to_visit.pop();
     for (auto& incoming_arc : cur_node->incoming_arc_map_) {
-      if (processed.find(incoming_arc.second->src_node_) == processed.end()) {
-        if (prepare)
+      if (incoming_arc.second->src_node_->visited_ != cur_traversal_mark_) {
+        if (prepare) {
           prepare(incoming_arc.second->src_node_);
+        }
         to_visit.push(incoming_arc.second->src_node_);
-        processed.insert(incoming_arc.second->src_node_);
+        incoming_arc.second->src_node_->visited_ = cur_traversal_mark_;
       }
       incoming_arc.second->src_node_ =
         gather(incoming_arc.second->src_node_, cur_node);
+      incoming_arc.second->src_node_ =
+        update(incoming_arc.second->src_node_, cur_node);
     }
   }
 }

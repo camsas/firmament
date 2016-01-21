@@ -46,10 +46,8 @@ class FlowGraphManager {
   void ComputeTopologyStatistics(
     FlowGraphNode* node,
     boost::function<void(FlowGraphNode*)> prepare,
-    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
-  void ComputeTopologyStatistics(
-    FlowGraphNode* node,
-    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather);
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather,
+    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> update);
   void JobCompleted(JobID_t job_id);
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
@@ -160,6 +158,7 @@ class FlowGraphManager {
   vector<DIMACSChange*> graph_changes_;
   GenerateTrace* generate_trace_;
   DIMACSChangeStats* dimacs_stats_;
+  uint32_t cur_traversal_mark_;
 };
 
 }  // namespace firmament

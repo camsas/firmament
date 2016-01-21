@@ -27,6 +27,7 @@ class FlowGraph {
   void ChangeArcCost(FlowGraphArc* arc, uint64_t cost);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node);
+  void ResetVisited();
   static FlowGraphArc* GetArc(FlowGraphNode* src, FlowGraphNode* dst);
   inline const unordered_set<FlowGraphArc*>& Arcs() const { return arc_set_; }
   inline const unordered_map<uint64_t, FlowGraphNode*>& Nodes() const {

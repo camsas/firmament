@@ -500,9 +500,7 @@ void FlowScheduler::UpdateCostModelResourceStats() {
         boost::bind(&CostModelInterface::PrepareStats,
                     cost_model_, _1),
         boost::bind(&CostModelInterface::GatherStats,
-                    cost_model_, _1, _2));
-    flow_graph_manager_->ComputeTopologyStatistics(
-        flow_graph_manager_->sink_node(),
+                    cost_model_, _1, _2),
         boost::bind(&CostModelInterface::UpdateStats,
                     cost_model_, _1, _2));
   } else {

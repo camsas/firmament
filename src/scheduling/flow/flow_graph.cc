@@ -152,4 +152,10 @@ void FlowGraph::PopulateUnusedIds(uint64_t new_current_id) {
   current_id_ = new_current_id;
 }
 
+void FlowGraph::ResetVisited() {
+  for (auto& id_node : node_map_) {
+    id_node.second->visited_ = 0;
+  }
+}
+
 }  // namespace firmament
