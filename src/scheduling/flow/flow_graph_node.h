@@ -50,6 +50,8 @@ struct FlowGraphNode {
   ResourceDescriptor* rd_ptr_;
   // The ID of the task represented by this node.
   TaskID_t task_id_;
+  // the ID of the equivalence class represented by this node.
+  EquivClass_t ec_id_;
   // Free-form comment for debugging purposes (used to label special nodes)
   string comment_;
   // Outgoing arcs from this node, keyed by destination node
