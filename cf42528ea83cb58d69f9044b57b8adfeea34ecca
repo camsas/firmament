@@ -131,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_4d9422e2",
+        "filename": "src/sim/google_trace_task_processor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 850,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T13:45:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_e125e8c2",
+      "range": {
+        "startLine": 841,
+        "startChar": 0,
+        "endLine": 850,
+        "endChar": 77
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_5bd14756",
         "filename": "src/sim/google_trace_task_processor.h",
         "patchSetId": 1
@@ -166,6 +190,30 @@
       "side": 1,
       "message": "Yes, they should. I just didn\u0027t want to overload this diff with these changes as well. Done now.",
       "parentUuid": "fa81d914_5bd14756",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 13
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_8d961aef",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T13:45:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_015afc4f",
       "range": {
         "startLine": 30,
         "startChar": 0,
@@ -307,6 +355,30 @@
       "side": 1,
       "message": "We set some fields of task_resource to \u003d1 if they haven\u0027t been present in the trace at all.\nWe could update PrintStats not to do that but it\u0027s not worth the time (~ 20-30 minutes).",
       "parentUuid": "fa81d914_bbcec3b2",
+      "range": {
+        "startLine": 137,
+        "startChar": 18,
+        "endLine": 137,
+        "endChar": 41
+      },
+      "revId": "cf42528ea83cb58d69f9044b57b8adfeea34ecca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_cda01246",
+        "filename": "src/sim/google_trace_task_processor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T13:45:47Z",
+      "side": 1,
+      "message": "Hmm, I think it\u0027s funny for a method called \"PrintFoo\" to mutate state. I certainly didn\u0027t expect that, hence the comment. Let\u0027s maybe change it in a future diff and put a TODO here.",
+      "parentUuid": "fa81d914_a13cd0e3",
       "range": {
         "startLine": 137,
         "startChar": 18,
