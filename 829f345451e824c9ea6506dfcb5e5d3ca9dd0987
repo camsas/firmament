@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_2d08ce2c",
+        "filename": "src/misc/generate_trace.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:17:01Z",
+      "side": 1,
+      "message": "Is this change correct? I thought the Google trace identifies tasks by indices starting from 0 for each job ID? This (And subsequent changes in this file) seem to instead put the random uint64_t task ID from Firmament into the trace.",
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_4d07c21c",
+        "filename": "src/misc/generate_trace.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:17:01Z",
+      "side": 1,
+      "message": "Can we use an enum here?",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 118,
+        "endChar": 30
+      },
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_a803cc0b",
+        "filename": "src/misc/generate_trace.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:17:01Z",
+      "side": 1,
+      "message": "For consistency with GetMachineId, I would suggest putting this into a method called GetJobId.",
+      "range": {
+        "startLine": 129,
+        "startChar": 0,
+        "endLine": 146,
+        "endChar": 5
+      },
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_8827e8b5",
+        "filename": "src/sim/simulator_bridge.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:17:01Z",
+      "side": 1,
+      "message": "Comment is missing second parameter",
+      "range": {
+        "startLine": 156,
+        "startChar": 0,
+        "endLine": 157,
+        "endChar": 61
+      },
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_a82aec7b",
+        "filename": "src/sim/simulator_bridge.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:17:01Z",
+      "side": 1,
+      "message": "Ah, I see -- is this where we introduce the zero-based trace task indices?",
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
