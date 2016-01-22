@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_283d1cbc",
+        "filename": "src/scheduling/flow/dimacs_add_node.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:40:45Z",
+      "side": 1,
+      "message": "The node addition is counted in DIMACSChangeStats. In fact all the stats are counted there.",
+      "parentUuid": "fa81d914_edba366d",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 29
+      },
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_0db14a8f",
         "filename": "src/scheduling/flow/dimacs_change.h",
         "patchSetId": 2
@@ -36,6 +60,24 @@
       "writtenOn": "2016-01-22T14:09:39Z",
       "side": 1,
       "message": "This is probably fine, but why do we no longer track statistics on a per-change basis? Did you think those were useless?",
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_28643ce4",
+        "filename": "src/scheduling/flow/dimacs_change.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:40:45Z",
+      "side": 1,
+      "message": "We still do. I\u0027ve just changed the way we do it. We now in fact have even more comprehensive stats (e.g., number of running arc additions).",
+      "parentUuid": "fa81d914_0db14a8f",
       "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_889c48c2",
+        "filename": "src/scheduling/flow/dimacs_change_stats.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:40:45Z",
+      "side": 1,
+      "message": "Oh, I have to change NUM_CHANGE_TYPES so that it actually represents the number and not the largest value! The code is correct, but the variable name is not correct.\nI\u0027m going to tag comments for which I have to do something with TODO.",
+      "parentUuid": "fa81d914_adc03ee1",
+      "range": {
+        "startLine": 56,
+        "startChar": 32,
+        "endLine": 56,
+        "endChar": 52
+      },
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_ed487689",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 2
@@ -76,6 +142,24 @@
       "writtenOn": "2016-01-22T14:09:39Z",
       "side": 1,
       "message": "Is there a particular reason why this now happens outside the change constructor? It seems like this way, the user is more prone to forgetting to call UpdateStats() than if the change constructor does it for them.",
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_e8806448",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:40:45Z",
+      "side": 1,
+      "message": "I think the reason is that for some types of changes (e.g., DIMACSNewNode) we lose the types of the arc changes. As previously explained, DIMACSNewNode receives a list of the arcs the node has. We would have to create another list that contains the types of the arcs and pass it around wherever we pass the list of arcs.\nOverall, it would be nice to think a bit about passing this list of arcs because it\u0027s leading to rather unsafe code (e.g., explicitly calling UpdateStats and not having to generate a change straight after we add a new arc). However, I would put the task as a low priority for now.",
+      "parentUuid": "fa81d914_ed487689",
       "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -99,6 +183,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_a89f4cb3",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:40:45Z",
+      "side": 1,
+      "message": "TODO\nWe can certainly rename it. I think it wouldn\u0027t be trivial not to pass DIMACSChangeStats so maybe we can address it later on after we get some results.",
+      "parentUuid": "fa81d914_cd6e5201",
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_2d21aeb4",
         "filename": "src/scheduling/flow/octopus_cost_model.cc",
         "patchSetId": 2
@@ -110,6 +212,30 @@
       "writtenOn": "2016-01-22T14:09:39Z",
       "side": 1,
       "message": "A general note (not to be addressed in this diff): we\u0027ve generally tried to avoid mucking with the flow graph directly from the cost models, and instead rely on our API calls into the cost model. It\u0027d be nice (though I\u0027m not sure it\u0027s possible) to change the stats update code not to directly interface with the graph either.",
+      "range": {
+        "startLine": 243,
+        "startChar": 0,
+        "endLine": 250,
+        "endChar": 3
+      },
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_08b05842",
+        "filename": "src/scheduling/flow/octopus_cost_model.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:40:45Z",
+      "side": 1,
+      "message": "I\u0027m afraid all three non-trivial cost models do this in UpdateStats:(. We\u0027ll have to think about this in the future. I\u0027ll consider it while I implement the forward pass.",
+      "parentUuid": "fa81d914_2d21aeb4",
       "range": {
         "startLine": 243,
         "startChar": 0,
