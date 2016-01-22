@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_2dac4e35",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:02:49Z",
+      "side": 1,
+      "message": "Your interpretation is correct-ish. In DIMACS++ we have a DIMACSNewNode change in which we pass the node and a list of the arcs. The caller of AddArcsForTask will also create a DIMACSNewNode change to which it will pass the list of task_arcs. DIMACSNewNode will generate the changes.",
+      "parentUuid": "fa81d914_0f6ea296",
+      "range": {
+        "startLine": 58,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 34
+      },
+      "revId": "26aee0178ccb753ff29bc8045f70ea5a8c6648cb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_2f6d2699",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 2
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_ed7156e1",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 993,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:02:49Z",
+      "side": 1,
+      "message": "This is a very good question. I\u0027m setting it to zero because previously the cost was not set to any value.\n\nHowever, this highlights an important question. Is it actually updated somewhere else? I\u0027m not ware of any place!",
+      "parentUuid": "fa81d914_321bcd1c",
+      "range": {
+        "startLine": 993,
+        "startChar": 40,
+        "endLine": 993,
+        "endChar": 41
+      },
+      "revId": "26aee0178ccb753ff29bc8045f70ea5a8c6648cb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_521681f2",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 2
@@ -82,6 +130,30 @@
       "writtenOn": "2016-01-22T04:55:22Z",
       "side": 1,
       "message": "Am I correct in assuming that we now explicitly create the graph change here because DeleteArc() no longer implicitly generates a change?",
+      "range": {
+        "startLine": 1155,
+        "startChar": 0,
+        "endLine": 1156,
+        "endChar": 34
+      },
+      "revId": "26aee0178ccb753ff29bc8045f70ea5a8c6648cb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_6da64655",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 1156,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:02:49Z",
+      "side": 1,
+      "message": "I think this was a bug. We simply weren\u0027t generating a change. You haven\u0027t encountered the bug because we weren\u0027t using the incremental solver.",
+      "parentUuid": "fa81d914_521681f2",
       "range": {
         "startLine": 1155,
         "startChar": 0,
