@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "fa81d914_de451a18",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:43:58Z",
+      "side": 1,
+      "message": "Is that true? I think the code sets it to the time *after* the solver ran.",
+      "range": {
+        "startLine": 10,
+        "startChar": 47,
+        "endLine": 11,
+        "endChar": 48
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_7e834e56",
         "filename": "src/misc/real_time.cc",
         "patchSetId": 2
