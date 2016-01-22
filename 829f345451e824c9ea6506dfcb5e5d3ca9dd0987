@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_28d99c83",
+        "filename": "src/misc/generate_trace.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:46:22Z",
+      "side": 1,
+      "message": "See the other comment from the simulator_bridge.",
+      "parentUuid": "fa81d914_2d08ce2c",
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_4d07c21c",
         "filename": "src/misc/generate_trace.cc",
         "patchSetId": 2
@@ -30,6 +48,30 @@
       "writtenOn": "2016-01-22T14:17:01Z",
       "side": 1,
       "message": "Can we use an enum here?",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 118,
+        "endChar": 30
+      },
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_688c7480",
+        "filename": "src/misc/generate_trace.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:46:22Z",
+      "side": 1,
+      "message": "TODO\nI meant to do that for a while.",
+      "parentUuid": "fa81d914_4d07c21c",
       "range": {
         "startLine": 117,
         "startChar": 1,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_88ea880d",
+        "filename": "src/misc/generate_trace.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:46:22Z",
+      "side": 1,
+      "message": "TODO\nI didn\u0027t put it in a method because it\u0027s only used here.",
+      "parentUuid": "fa81d914_a803cc0b",
+      "range": {
+        "startLine": 129,
+        "startChar": 0,
+        "endLine": 146,
+        "endChar": 5
+      },
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_8827e8b5",
         "filename": "src/sim/simulator_bridge.h",
         "patchSetId": 2
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_a8ed8c27",
+        "filename": "src/sim/simulator_bridge.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:46:22Z",
+      "side": 1,
+      "message": "TODO",
+      "parentUuid": "fa81d914_8827e8b5",
+      "range": {
+        "startLine": 156,
+        "startChar": 0,
+        "endLine": 157,
+        "endChar": 61
+      },
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_a82aec7b",
         "filename": "src/sim/simulator_bridge.h",
         "patchSetId": 2
@@ -99,6 +189,24 @@
       "writtenOn": "2016-01-22T14:17:01Z",
       "side": 1,
       "message": "Ah, I see -- is this where we introduce the zero-based trace task indices?",
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_e8f784f3",
+        "filename": "src/sim/simulator_bridge.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T14:46:22Z",
+      "side": 1,
+      "message": "This is the place, but it was buggy because firmament requires the task ids to be unique. I\u0027ve fixed it later on.",
+      "parentUuid": "fa81d914_a82aec7b",
       "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
