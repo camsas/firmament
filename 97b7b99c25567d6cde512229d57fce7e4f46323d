@@ -22,6 +22,30 @@
       "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_3ec9d678",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 978,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 0,
+      "message": "From what I can see in the code JobCompleted doesn\u0027t get called when a job is killed. I think what happens is that every task gets killed one by one and then we don\u0027t do anything, which is wrong.\nI can fix this is a separate diff. However, I don\u0027t think we should call JobCompleted when we Kill a job. We should actually have JobKilled:)",
+      "parentUuid": "fa81d914_fe965e93",
+      "range": {
+        "startLine": 965,
+        "startChar": 0,
+        "endLine": 978,
+        "endChar": 3
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }

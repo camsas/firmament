@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_9ee1e2d2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 1,
+      "message": "It is true, but unfortunately the sentence is a bit loose. It\u0027s updated in the simulator before a solver run. Not exactly before the code that runs the solver. I\u0027ve updated the text to make it clearer.",
+      "parentUuid": "fa81d914_de451a18",
+      "range": {
+        "startLine": 10,
+        "startChar": 47,
+        "endLine": 11,
+        "endChar": 48
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_7e834e56",
         "filename": "src/misc/real_time.cc",
         "patchSetId": 2
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_dee19aff",
+        "filename": "src/misc/real_time.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 1,
+      "message": "Exactly! Not in lots of places, but in a few. I prefer this solution rather than trying to detect around which time of TimeInterface we have.\nThe only bad thing that can happen is that by mistake we end up using real time rather than simulated time. However, this case is easily detectable.",
+      "parentUuid": "fa81d914_7e834e56",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_de80ba48",
         "filename": "src/scheduling/event_driven_scheduler.cc",
         "patchSetId": 2
@@ -53,6 +95,24 @@
       "writtenOn": "2016-01-22T20:41:58Z",
       "side": 1,
       "message": "Is this required? I thought we already set the state to COMPLETED somewhere else, probably in exec-\u003eHandleTaskCompletion(). Of course, there might be an argument for doing it here instead.",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_fee73e10",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 1,
+      "message": "I\u0027ve grepped around and we only send a message in task_lib.cc with TaskDescriptor::Completed. Otherwise, we just use the field.\nWe want to set it here because otherwise the task will not complete from simulator\u0027s point of view.",
+      "parentUuid": "fa81d914_de80ba48",
       "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -82,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_1e917252",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 1,
+      "message": "TODO\nI think I\u0027ve later changed it. I\u0027ve just tag the comment with a TODO so that I revisit it later to double check.",
+      "parentUuid": "fa81d914_7eea6e10",
+      "range": {
+        "startLine": 425,
+        "startChar": 0,
+        "endLine": 430,
+        "endChar": 76
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_fedd7e71",
         "filename": "src/scheduling/flow/solver_dispatcher.cc",
         "patchSetId": 2
@@ -93,6 +177,24 @@
       "writtenOn": "2016-01-22T20:41:58Z",
       "side": 1,
       "message": "Break the whole expression onto the next line for readability",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_fea3be9b",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_fedd7e71",
       "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -116,6 +218,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_3ea0f69e",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_1ed97283",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_3ee8f60f",
         "filename": "src/scheduling/simple/simple_scheduler.cc",
         "patchSetId": 2
@@ -127,6 +247,24 @@
       "writtenOn": "2016-01-22T20:41:58Z",
       "side": 1,
       "message": "See above",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_5e9bea71",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_3ee8f60f",
       "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -156,6 +294,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_3e77163c",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 1,
+      "message": "No, it\u0027s duplicating the functionality.\n\nThe current timestamp can be at time 42.\nHowever, we may be running the scheduler at time 45. This makes sure that we move the timestamp to 45 so that all the events that happen at scheduling have the corrent timestamp.\n\nMoreover, in the scheduler we get the CurrentTimestamp \"before\" a solver run and we use the value to compute the timestamp at the end of the scheduling. If we wouldn\u0027t update the timestamp here then in the scheduler we would get 42 rather than 45 which is the correct time when the solver was run.",
+      "parentUuid": "fa81d914_5ee3ea32",
+      "range": {
+        "startLine": 210,
+        "startChar": 0,
+        "endLine": 212,
+        "endChar": 76
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_becb06a4",
         "filename": "src/sim/simulator_bridge.cc",
         "patchSetId": 2
@@ -173,6 +335,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_be9a2661",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 1,
+      "message": "One of the following diffs drops it.",
+      "parentUuid": "fa81d914_becb06a4",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_decefab3",
         "filename": "src/sim/trace_utils.cc",
         "patchSetId": 2
@@ -184,6 +364,30 @@
       "writtenOn": "2016-01-22T20:41:58Z",
       "side": 1,
       "message": "Is this also in microseconds now? (type is still double)",
+      "range": {
+        "startLine": 70,
+        "startChar": 10,
+        "endLine": 70,
+        "endChar": 49
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_de9d1a5b",
+        "filename": "src/sim/trace_utils.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:41:58Z",
+      "side": 1,
+      "message": "This code is going to be removed in one of the following diffs.",
+      "parentUuid": "fa81d914_decefab3",
       "range": {
         "startLine": 70,
         "startChar": 10,
