@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_0f6ea296",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T04:55:22Z",
+      "side": 1,
+      "message": "Add \"In other words: it is the caller\u0027s responsibility to generate DIMACS changes for the arcs added, which are returned in task_arcs.\"\n\n(assuming that\u0027s a correct interpretation)",
+      "range": {
+        "startLine": 58,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 34
+      },
+      "revId": "26aee0178ccb753ff29bc8045f70ea5a8c6648cb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_2f6d2699",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T04:55:22Z",
+      "side": 1,
+      "message": "See above.",
+      "range": {
+        "startLine": 473,
+        "startChar": 0,
+        "endLine": 476,
+        "endChar": 34
+      },
+      "revId": "26aee0178ccb753ff29bc8045f70ea5a8c6648cb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_321bcd1c",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 993,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T04:55:22Z",
+      "side": 1,
+      "message": "I assume it\u0027s okay to set the cost to zero here because it will be updated elsewhere (running arc costs are often time-dependent).",
+      "range": {
+        "startLine": 993,
+        "startChar": 40,
+        "endLine": 993,
+        "endChar": 41
+      },
+      "revId": "26aee0178ccb753ff29bc8045f70ea5a8c6648cb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_521681f2",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 1156,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T04:55:22Z",
+      "side": 1,
+      "message": "Am I correct in assuming that we now explicitly create the graph change here because DeleteArc() no longer implicitly generates a change?",
+      "range": {
+        "startLine": 1155,
+        "startChar": 0,
+        "endLine": 1156,
+        "endChar": 34
+      },
+      "revId": "26aee0178ccb753ff29bc8045f70ea5a8c6648cb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
