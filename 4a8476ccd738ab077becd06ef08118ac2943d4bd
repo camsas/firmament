@@ -1,0 +1,175 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_7e834e56",
+        "filename": "src/misc/real_time.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:41:58Z",
+      "side": 1,
+      "message": "Is no-op the right design here? Shouldn\u0027t this be a warning or an error, and the method should only be called when in simulation? (I suppose that would require us to be able to detect whether we\u0027re in simulation in a lot of places, and hence is tricky?)",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_de80ba48",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:41:58Z",
+      "side": 1,
+      "message": "Is this required? I thought we already set the state to COMPLETED somewhere else, probably in exec-\u003eHandleTaskCompletion(). Of course, there might be an argument for doing it here instead.",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_7eea6e10",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:41:58Z",
+      "side": 1,
+      "message": "Shouldn\u0027t we be using \"cur_time + scheduler_stats-\u003escheduler_runtime\" here? scheduler_start_timestamp is taken *after* the scheduler has already run, so we\u0027d be overshooting here.\n\nIn practice, this does not matter: in simulation, the time hasn\u0027t advanced, so cur_time \u003d\u003d scheduler_start_timestamp (?). In the real world, it will have changed, but the UpdateCurrentTimestamp() call is a no-op there.\n\nNevertheless, this seems like a logic bug to me that we should fix.",
+      "range": {
+        "startLine": 425,
+        "startChar": 0,
+        "endLine": 430,
+        "endChar": 76
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_fedd7e71",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:41:58Z",
+      "side": 1,
+      "message": "Break the whole expression onto the next line for readability",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_1ed97283",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:41:58Z",
+      "side": 1,
+      "message": "Break expression onto next line.",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_3ee8f60f",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:41:58Z",
+      "side": 1,
+      "message": "See above",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_5ee3ea32",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:41:58Z",
+      "side": 1,
+      "message": "Doesn\u0027t this duplicate functionality that also exists in flow_scheduler.cc?",
+      "range": {
+        "startLine": 210,
+        "startChar": 0,
+        "endLine": 212,
+        "endChar": 76
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_becb06a4",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:41:58Z",
+      "side": 1,
+      "message": "Drop commented code?",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_decefab3",
+        "filename": "src/sim/trace_utils.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:41:58Z",
+      "side": 1,
+      "message": "Is this also in microseconds now? (type is still double)",
+      "range": {
+        "startLine": 70,
+        "startChar": 10,
+        "endLine": 70,
+        "endChar": 49
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

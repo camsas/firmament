@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_fe965e93",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 978,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:41:58Z",
+      "side": 0,
+      "message": "Where did this code go, if anywhere? Do we just assume that all the task nodes for the job have already cleaned themselves up? (What if JobComplete() gets called as a result of a job kill? I think that\u0027s why we had this logic.)",
+      "range": {
+        "startLine": 965,
+        "startChar": 0,
+        "endLine": 978,
+        "endChar": 3
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
