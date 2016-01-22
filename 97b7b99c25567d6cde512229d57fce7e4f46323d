@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_a8f2ec6c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:25:12Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 12,
+        "startChar": 43,
+        "endLine": 12,
+        "endChar": 52
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_c8e9e081",
+        "filename": "src/engine/coordinator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:25:12Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 303,
+        "startChar": 25,
+        "endLine": 303,
+        "endChar": 28
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_0803f842",
+        "filename": "src/engine/coordinator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:25:12Z",
+      "side": 1,
+      "message": "I don\u0027t like this name -- shall we call it \"WallTime\", maybe? (vs. \"SimulatedWallTime\")",
+      "range": {
+        "startLine": 304,
+        "startChar": 2,
+        "endLine": 304,
+        "endChar": 10
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_e8a3044d",
+        "filename": "src/engine/executors/local_executor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:25:12Z",
+      "side": 1,
+      "message": "Can\u0027t this be a const ref? (Or at least a const pointer const?) We only read the time, so I don\u0027t see a need for a mutable pointer.",
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_28fefc38",
+        "filename": "src/misc/time_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:25:12Z",
+      "side": 1,
+      "message": "nit: it\u0027s not the solver that accesses this time, is it? Maybe just drop the mentioning of users and stick with the generic notion of running in real vs. simulated time?",
+      "range": {
+        "startLine": 5,
+        "startChar": 31,
+        "endLine": 7,
+        "endChar": 42
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_688f14cd",
+        "filename": "src/sim/event_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T20:25:12Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this be in a SimulatedTime class, rather than EventManager inheriting from TimeInterface? Seems cleaner to me, because this way you\u0027ll have to pass the EventManager instance as a TimeInterface to various parts of the system, which is odd.",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 3
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
