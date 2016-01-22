@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_fef9fec8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:01:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_a8f2ec6c",
+      "range": {
+        "startLine": 12,
+        "startChar": 43,
+        "endLine": 12,
+        "endChar": 52
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_c8e9e081",
         "filename": "src/engine/coordinator.h",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2016-01-22T20:25:12Z",
       "side": 1,
       "message": "typo",
+      "range": {
+        "startLine": 303,
+        "startChar": 25,
+        "endLine": 303,
+        "endChar": 28
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_be106602",
+        "filename": "src/engine/coordinator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:01:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_c8e9e081",
       "range": {
         "startLine": 303,
         "startChar": 25,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_fe201e4b",
+        "filename": "src/engine/coordinator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:01:22Z",
+      "side": 1,
+      "message": "It\u0027s time to get real.\nTODO change.",
+      "parentUuid": "fa81d914_0803f842",
+      "range": {
+        "startLine": 304,
+        "startChar": 2,
+        "endLine": 304,
+        "endChar": 10
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_e8a3044d",
         "filename": "src/engine/executors/local_executor.h",
         "patchSetId": 1
@@ -82,6 +154,24 @@
       "writtenOn": "2016-01-22T20:25:12Z",
       "side": 1,
       "message": "Can\u0027t this be a const ref? (Or at least a const pointer const?) We only read the time, so I don\u0027t see a need for a mutable pointer.",
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_de2a7a2b",
+        "filename": "src/engine/executors/local_executor.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:01:22Z",
+      "side": 1,
+      "message": "I\u0027m afraid it can\u0027t. Later on I add a method that modifies its state.",
+      "parentUuid": "fa81d914_e8a3044d",
       "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_7e06eecf",
+        "filename": "src/misc/time_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:01:22Z",
+      "side": 1,
+      "message": "Fixed. I was meaning scheduler, but I wrote solver everywhere:)",
+      "parentUuid": "fa81d914_28fefc38",
+      "range": {
+        "startLine": 5,
+        "startChar": 31,
+        "endLine": 7,
+        "endChar": 42
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_688f14cd",
         "filename": "src/sim/event_manager.h",
         "patchSetId": 1
@@ -122,6 +236,30 @@
       "writtenOn": "2016-01-22T20:25:12Z",
       "side": 1,
       "message": "Shouldn\u0027t this be in a SimulatedTime class, rather than EventManager inheriting from TimeInterface? Seems cleaner to me, because this way you\u0027ll have to pass the EventManager instance as a TimeInterface to various parts of the system, which is odd.",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 3
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_be278663",
+        "filename": "src/sim/event_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-22T21:01:22Z",
+      "side": 1,
+      "message": "As it stands there is no SimulatedTime class. In order to achieve what you\u0027re suggesting we would have to create a SimulatedTime class that we pass to the event_manager which will be reponsible with updating time. (i.e., whenever we update current_simulation_time we use the SimulatedTime). I have no preference wrt this. However, we definitely don\u0027t want to do the change here because the later diffs change this code.",
+      "parentUuid": "fa81d914_688f14cd",
       "range": {
         "startLine": 30,
         "startChar": 0,
