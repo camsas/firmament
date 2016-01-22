@@ -269,6 +269,30 @@
       "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_5ea92a7a",
+        "filename": "src/sim/event_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T21:39:44Z",
+      "side": 1,
+      "message": "Ok, I think we should change it. Let\u0027s do that in a later diff.",
+      "parentUuid": "fa81d914_be278663",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 3
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
