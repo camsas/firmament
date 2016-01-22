@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_edba366d",
+        "filename": "src/scheduling/flow/dimacs_add_node.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:09:39Z",
+      "side": 1,
+      "message": "Fine, but where is the node addition counted in the DIMACS stats?",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 29
+      },
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_0db14a8f",
+        "filename": "src/scheduling/flow/dimacs_change.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:09:39Z",
+      "side": 1,
+      "message": "This is probably fine, but why do we no longer track statistics on a per-change basis? Did you think those were useless?",
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_adc03ee1",
+        "filename": "src/scheduling/flow/dimacs_change_stats.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:09:39Z",
+      "side": 1,
+      "message": "Why +1? Is there another counter in addition to the 27 change counters?",
+      "range": {
+        "startLine": 56,
+        "startChar": 32,
+        "endLine": 56,
+        "endChar": 52
+      },
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_ed487689",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:09:39Z",
+      "side": 1,
+      "message": "Is there a particular reason why this now happens outside the change constructor? It seems like this way, the user is more prone to forgetting to call UpdateStats() than if the change constructor does it for them.",
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_cd6e5201",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:09:39Z",
+      "side": 1,
+      "message": "This is probably fine or unavoidable, but: it\u0027d be nice if the flow graph\u0027s public interface wasn\u0027t tied to the DIMACS format. In fact, the statistics we\u0027re collecting there aren\u0027t DIMACS-specific, so I\u0027d vote for just renaming the class to FlowGraphChangeStats or something similar.",
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_2d21aeb4",
+        "filename": "src/scheduling/flow/octopus_cost_model.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T14:09:39Z",
+      "side": 1,
+      "message": "A general note (not to be addressed in this diff): we\u0027ve generally tried to avoid mucking with the flow graph directly from the cost models, and instead rely on our API calls into the cost model. It\u0027d be nice (though I\u0027m not sure it\u0027s possible) to change the stats update code not to directly interface with the graph either.",
+      "range": {
+        "startLine": 243,
+        "startChar": 0,
+        "endLine": 250,
+        "endChar": 3
+      },
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
