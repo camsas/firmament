@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_adf2fe6c",
+        "filename": "src/misc/generate_trace.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T13:39:10Z",
+      "side": 1,
+      "message": "Isn\u0027t the Google trace format comma-separated, not space-separated? We use commas in other fprintfs below, but why spaces here?",
+      "range": {
+        "startLine": 59,
+        "startChar": 38,
+        "endLine": 59,
+        "endChar": 64
+      },
+      "revId": "3f88f1106f0393b1881af0c771dc1c2ce26ac315",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_edecf691",
+        "filename": "src/misc/generate_trace.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T13:39:10Z",
+      "side": 1,
+      "message": "Nice catch!",
+      "revId": "3f88f1106f0393b1881af0c771dc1c2ce26ac315",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_b2dedd3d",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-22T13:39:10Z",
+      "side": 1,
+      "message": "Somewhat off-topic for this diff: should this class be called \"TraceGenerator\" rather than \"GenerateTrace\"?",
+      "range": {
+        "startLine": 154,
+        "startChar": 2,
+        "endLine": 154,
+        "endChar": 15
+      },
+      "revId": "3f88f1106f0393b1881af0c771dc1c2ce26ac315",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
