@@ -1,0 +1,318 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_7e2c2e03",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "Break line at 72 chars",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_9e2f22f6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "Typo",
+      "range": {
+        "startLine": 16,
+        "startChar": 23,
+        "endLine": 16,
+        "endChar": 26
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_be36a650",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "Why would this happen? A task\u0027s completion in the simulator surely is its start time plus its runtime, so it won\u0027t ever complete before it\u0027s placed? Or is this handling various edge cases?",
+      "range": {
+        "startLine": 17,
+        "startChar": 42,
+        "endLine": 18,
+        "endChar": 15
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_1e3b3239",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "... and which gets cleared after each job is handled?\n\n(Having multiple jobs\u0027 running tasks in the set might be advantageous in order to be able to add multiple jobs to the flow graph at the same time. Does this change have any effect on our ability to do that?)\n\nEDIT: I see, it\u0027s now a map with per-job entries. That solves the problem elegantly.",
+      "range": {
+        "startLine": 20,
+        "startChar": 59,
+        "endLine": 21,
+        "endChar": 69
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_065124d8",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 678,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "Hmm, this is a bit funky: an accessor method (RunnableTasksForJob) that has the side-effect of putting something into the runnable_tasks_ map? Why isn\u0027t it sufficient to have the set inside runnable_tasks_ created when the first task is inserted for a job?\n\n(One reason I can see is that you want to return a set here, and you need any empty set if nothing exists. Could we return a bool or a number instead, and pass the set otherwise?)\n\nEDIT: on second thought, this is probably fine, but maybe we should rename the method to \"ComputeRunnableTasksForJob()\", to make it clearer that it has side-effects.",
+      "range": {
+        "startLine": 674,
+        "startChar": 0,
+        "endLine": 678,
+        "endChar": 3
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_5e45aab1",
+        "filename": "src/scheduling/event_driven_scheduler.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "s/InsertTaskToRunnables/InsertTaskIntoRunnables/",
+      "range": {
+        "startLine": 91,
+        "startChar": 7,
+        "endLine": 91,
+        "endChar": 28
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_865c34ef",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "I assume we pass in this set because we need to collect the node IDs for the PUs that were removed, in order to so that we can generate graph changes for them?",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_06684486",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "What\u0027s the return value? The node ID? (maybe put a comment)",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_260628cf",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "See above.",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_46095cdc",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "See above question re PU argument. Do we need to pass the res_node as a pointer?",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 127,
+        "endChar": 56
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_262d4847",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 409,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "typo: \"longer than limit of\"",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_c6770c3a",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "continue here simply ignores the delta, and tries again to schedule the task in question, presumably? If so, let\u0027s put a comment so that it\u0027s clear what happens.",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_e676d03d",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "see above",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_2690e842",
+        "filename": "src/scheduling/scheduling_event_notifier_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "What does OnSchedulingDecisionsCompletion do? (Doesn\u0027t necessarily require a comment, I\u0027m just not 100% sure I understand its role)\n\nEDIT: I now understand after reading the comment in simulator_bridge.h. All good.",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_869d145c",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "What\u0027s the unit of the hard-coded constant here? Microseconds? Should this be a configurable parameter?",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_66b100e1",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 1,
+      "message": "Hmm -- technically, we don\u0027t want to delete any non-root tasks either, because they could still spawn children! (Won\u0027t happen in the current simulations, though.)",
+      "range": {
+        "startLine": 311,
+        "startChar": 0,
+        "endLine": 315,
+        "endChar": 3
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

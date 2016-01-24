@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_06720449",
+        "filename": "src/sim/simulator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 0,
+      "message": "Where did all of this deleted stuff go?",
+      "revId": "c895be03ee48b9777c27921233262fd1dc8c370f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_26b708da",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 0,
+      "message": "The hack\u0027s still there, isn\u0027t it? :)",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 152,
+        "endChar": 65
+      },
+      "revId": "c895be03ee48b9777c27921233262fd1dc8c370f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_c69e2c54",
+        "filename": "src/sim/simulator_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 0,
+      "message": "Why do we no longer allow a template to be specified? This could be useful if we wanted to e.g. simulate a heterogeneous cluster.",
+      "revId": "c895be03ee48b9777c27921233262fd1dc8c370f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_86b434d2",
+        "filename": "src/sim/trace_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:16:14Z",
+      "side": 0,
+      "message": "Is the deleted stuff here no longer used?",
+      "revId": "c895be03ee48b9777c27921233262fd1dc8c370f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
