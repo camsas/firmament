@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_46e15ccf",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-24T17:21:33Z",
+      "side": 1,
+      "message": "There\u0027s a bit of duplication going on between this and ReadFlowGraph. Maybe we can refactor things to avoid that in the future?",
+      "range": {
+        "startLine": 528,
+        "startChar": 0,
+        "endLine": 529,
+        "endChar": 61
+      },
+      "revId": "01f14dc4b6958c0e6d5244f7ce0993489f065506",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
