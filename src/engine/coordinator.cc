@@ -66,7 +66,7 @@ Coordinator::Coordinator(PlatformID platform_id)
     object_store_(new store::SimpleObjectStore(uuid_)),
     parent_chan_(NULL),
     hostname_(boost::asio::ip::host_name()),
-    time_manager_(new RealTime) {
+    time_manager_(new WallTime) {
   // Start up a coordinator according to the platform parameter
   string desc_name = "Coordinator on " + hostname_;
   resource_desc_.set_uuid(to_string(uuid_));

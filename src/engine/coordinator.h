@@ -42,7 +42,7 @@
 #include "messages/task_state_message.pb.h"
 #include "messages/storage_message.pb.h"
 #include "misc/messaging_interface.h"
-#include "misc/real_time.h"
+#include "misc/wall_time.h"
 #include "platforms/common.h"
 #include "platforms/unix/signal_handler.h"
 #include "platforms/unix/stream_sockets_adapter.h"
@@ -301,7 +301,7 @@ class Coordinator : public Node,
   // Local machine's host name
   const string hostname_;
   // Object that must be used to get the current time.
-  RealTime* time_manager_;
+  WallTime* time_manager_;
 };
 
 }  // namespace firmament

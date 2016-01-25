@@ -23,7 +23,7 @@
 #include "messages/base_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
-#include "misc/real_time.h"
+#include "misc/wall_time.h"
 #include "platforms/common.h"
 #include "platforms/unix/procfs_monitor.h"
 #include "platforms/unix/stream_sockets_adapter.h"
@@ -97,7 +97,7 @@ class TaskLib {
   uint64_t heartbeat_seq_number_;
   bool use_procfs_;
   string hostname_;
-  RealTime time_manager_;
+  WallTime time_manager_;
   volatile bool stop_;
   bool internal_completed_;
   // If set, gives the fraction of task completed.
