@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_9a5e4744",
+        "filename": "src/scheduling/flow/dimacs_add_node.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T16:56:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_283d1cbc",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 29
+      },
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_0db14a8f",
         "filename": "src/scheduling/flow/dimacs_change.h",
         "patchSetId": 2
@@ -236,6 +260,30 @@
       "side": 1,
       "message": "I\u0027m afraid all three non-trivial cost models do this in UpdateStats:(. We\u0027ll have to think about this in the future. I\u0027ll consider it while I implement the forward pass.",
       "parentUuid": "fa81d914_2d21aeb4",
+      "range": {
+        "startLine": 243,
+        "startChar": 0,
+        "endLine": 250,
+        "endChar": 3
+      },
+      "revId": "ea4dc1b900f0a593510cab8092d1fe4342f6884a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_da58bf58",
+        "filename": "src/scheduling/flow/octopus_cost_model.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T16:56:12Z",
+      "side": 1,
+      "message": "Ok, sounds good.",
+      "parentUuid": "fa81d914_08b05842",
       "range": {
         "startLine": 243,
         "startChar": 0,
