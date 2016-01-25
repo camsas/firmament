@@ -16,6 +16,24 @@
       "revId": "3b46b557f0f58b32463d312cac1a6d1977f882c4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_1a7a57f1",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T15:57:55Z",
+      "side": 0,
+      "message": "We discussed about this on hangouts.",
+      "parentUuid": "fa81d914_c9463f21",
+      "revId": "3b46b557f0f58b32463d312cac1a6d1977f882c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
