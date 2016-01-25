@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_49624fae",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 681,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T03:18:56Z",
+      "side": 1,
+      "message": "Why is this endpoint_uri argument required? It looks like it\u0027s never used, and it may be a hanger-on from an earlier version of the code.",
+      "revId": "646fe580a4a583c9731bd980d4abe8270908dec2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_295fdbe6",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 379,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T03:18:56Z",
+      "side": 1,
+      "message": "This is changing the order of calls: we used to first update the resource topology, then call into the superclass method. Now we call the superclass method first and then update the resource topology -- is that still correct?",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 379,
+        "endChar": 35
+      },
+      "revId": "646fe580a4a583c9731bd980d4abe8270908dec2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
