@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_fa010307",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T17:10:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_9ee1e2d2",
+      "range": {
+        "startLine": 10,
+        "startChar": 47,
+        "endLine": 11,
+        "endChar": 48
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_7e834e56",
         "filename": "src/misc/real_time.cc",
         "patchSetId": 2
@@ -113,6 +137,24 @@
       "side": 1,
       "message": "I\u0027ve grepped around and we only send a message in task_lib.cc with TaskDescriptor::Completed. Otherwise, we just use the field.\nWe want to set it here because otherwise the task will not complete from simulator\u0027s point of view.",
       "parentUuid": "fa81d914_de80ba48",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_d51df067",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T17:10:02Z",
+      "side": 1,
+      "message": "I see -- so in the real coordinator, the code that handles the Completed message updates this outside HandleTaskCompletion. Your grep didn\u0027t find that instance, because we updated the task state to whatever state we received a message for, without mentioning COMPLETED explicitly. This is fine however, because the change here is idempotent.",
+      "parentUuid": "fa81d914_fee73e10",
       "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -318,6 +360,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_152788b7",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T17:10:02Z",
+      "side": 1,
+      "message": "Makes sense. Done.",
+      "parentUuid": "fa81d914_3e77163c",
+      "range": {
+        "startLine": 210,
+        "startChar": 0,
+        "endLine": 212,
+        "endChar": 76
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_becb06a4",
         "filename": "src/sim/simulator_bridge.cc",
         "patchSetId": 2
@@ -347,6 +413,24 @@
       "side": 1,
       "message": "One of the following diffs drops it.",
       "parentUuid": "fa81d914_becb06a4",
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_352acc7e",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T17:10:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_be9a2661",
       "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -388,6 +472,30 @@
       "side": 1,
       "message": "This code is going to be removed in one of the following diffs.",
       "parentUuid": "fa81d914_decefab3",
+      "range": {
+        "startLine": 70,
+        "startChar": 10,
+        "endLine": 70,
+        "endChar": 49
+      },
+      "revId": "4a8476ccd738ab077becd06ef08118ac2943d4bd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_5521009e",
+        "filename": "src/sim/trace_utils.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T17:10:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_de9d1a5b",
       "range": {
         "startLine": 70,
         "startChar": 10,

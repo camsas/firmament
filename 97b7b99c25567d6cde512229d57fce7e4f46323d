@@ -46,6 +46,30 @@
       "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_f5183477",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 978,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T17:10:02Z",
+      "side": 0,
+      "message": "Fair point -- we should handle this in JobKilled.",
+      "parentUuid": "fa81d914_3ec9d678",
+      "range": {
+        "startLine": 965,
+        "startChar": 0,
+        "endLine": 978,
+        "endChar": 3
+      },
+      "revId": "97b7b99c25567d6cde512229d57fce7e4f46323d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
