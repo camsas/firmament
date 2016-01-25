@@ -349,6 +349,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_b42162fe",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T11:07:18Z",
+      "side": 1,
+      "message": "TODO: Ok, I\u0027ll make a new diff in which I track all the resources removed.",
+      "parentUuid": "fa81d914_69f473f2",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_06684486",
         "filename": "src/scheduling/flow/flow_graph_manager.h",
         "patchSetId": 1
@@ -760,6 +778,30 @@
       "side": 1,
       "message": "Ok, that\u0027s fine, but please put an XXX or TODO comment here to highlight this issue.",
       "parentUuid": "fa81d914_8616f453",
+      "range": {
+        "startLine": 311,
+        "startChar": 0,
+        "endLine": 315,
+        "endChar": 3
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_54366653",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T11:07:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_e9e7833e",
       "range": {
         "startLine": 311,
         "startChar": 0,
