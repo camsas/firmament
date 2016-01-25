@@ -131,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_29ea7b0f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T02:59:16Z",
+      "side": 1,
+      "message": "Ah, good point, thanks for explaining. Done.",
+      "parentUuid": "fa81d914_e96223d7",
+      "range": {
+        "startLine": 17,
+        "startChar": 42,
+        "endLine": 18,
+        "endChar": 15
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_1e3b3239",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -307,6 +331,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_69f473f2",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T02:59:16Z",
+      "side": 1,
+      "message": "Ok, makes sense. I suppose we might want a slightly more general \"nodes_removed\" or \"resources_removed\", because that\u0027s effectively what it is (and one could imagine a world in which tasks don\u0027t necessarily schedule through PUs, so it might make sense to keep it general here).",
+      "parentUuid": "fa81d914_696f13c6",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_06684486",
         "filename": "src/scheduling/flow/flow_graph_manager.h",
         "patchSetId": 1
@@ -336,6 +378,24 @@
       "side": 1,
       "message": "It\u0027s the id of the task node. I\u0027ve added a comment.",
       "parentUuid": "fa81d914_06684486",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_49edef24",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T02:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_895b672d",
       "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -412,6 +472,30 @@
       "side": 1,
       "message": "Unfortunately, we do. RemoveMachineSubTree calls DeleteResourceNode which calls DeleteNode. DeleteNode requires a pointer because it actually updates res_node.",
       "parentUuid": "fa81d914_46095cdc",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 127,
+        "endChar": 56
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_89f7e7f4",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T02:59:16Z",
+      "side": 1,
+      "message": "Good point. Done.",
+      "parentUuid": "fa81d914_c9355fdc",
       "range": {
         "startLine": 126,
         "startChar": 0,
@@ -599,6 +683,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_a9dd8b72",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T02:59:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_49032f0d",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_66b100e1",
         "filename": "src/sim/simulator_bridge.cc",
         "patchSetId": 1
@@ -634,6 +736,30 @@
       "side": 1,
       "message": "It\u0027s not going to happen with the types of simulations we currently run. Moreover, if we don\u0027t delete them then we will likely run out of memory while using the Google trace.",
       "parentUuid": "fa81d914_66b100e1",
+      "range": {
+        "startLine": 311,
+        "startChar": 0,
+        "endLine": 315,
+        "endChar": 3
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_e9e7833e",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T02:59:16Z",
+      "side": 1,
+      "message": "Ok, that\u0027s fine, but please put an XXX or TODO comment here to highlight this issue.",
+      "parentUuid": "fa81d914_8616f453",
       "range": {
         "startLine": 311,
         "startChar": 0,
