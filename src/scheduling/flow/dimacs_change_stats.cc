@@ -15,7 +15,7 @@ DIMACSChangeStats::DIMACSChangeStats() {
   arcs_added_ = 0;
   arcs_changed_ = 0;
   arcs_removed_ = 0;
-  for (uint32_t chg_index = 0; chg_index <= NUM_CHANGE_TYPES; ++chg_index) {
+  for (uint32_t chg_index = 0; chg_index < NUM_CHANGE_TYPES; ++chg_index) {
     num_changes_of_type_[chg_index] = 0;
   }
 }
@@ -29,7 +29,7 @@ string DIMACSChangeStats::GetStatsString() const {
     boost::lexical_cast<string>(arcs_added_) + "," +
     boost::lexical_cast<string>(arcs_changed_) + "," +
     boost::lexical_cast<string>(arcs_removed_);
-  for (uint32_t index = 0; index <= NUM_CHANGE_TYPES; index++) {
+  for (uint32_t index = 0; index < NUM_CHANGE_TYPES; index++) {
     stats += "," + boost::lexical_cast<string>(num_changes_of_type_[index]);
   }
   return stats;
@@ -41,7 +41,7 @@ void DIMACSChangeStats::ResetStats() {
   arcs_added_ = 0;
   arcs_changed_ = 0;
   arcs_removed_ = 0;
-  for (uint32_t index = 0; index <= NUM_CHANGE_TYPES; index++) {
+  for (uint32_t index = 0; index < NUM_CHANGE_TYPES; index++) {
     num_changes_of_type_[index] = 0;
   }
 }
