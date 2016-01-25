@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_a94bcb29",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T03:09:45Z",
+      "side": 1,
+      "message": "That\u0027s not true, I think: for example, what if resource availability on a machine changes due to a task increasing it\u0027s memory usage or entering an I/O-intensive phase? At this point, other tasks may no longer be eligible to schedule there, and arcs may need updating, even though the jobs haven\u0027t changed. (Or a machine may fail, which will also result in arcs changing without the jobs being updated!)",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 5
+      },
+      "revId": "22d2fd9dd22d2813aa63db9b7ce358474e2b36fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
