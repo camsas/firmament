@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_5a3ccfe2",
+        "filename": "src/misc/generate_trace.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T16:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_28d99c83",
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_4d07c21c",
         "filename": "src/misc/generate_trace.cc",
         "patchSetId": 2
@@ -207,6 +225,24 @@
       "side": 1,
       "message": "This is the place, but it was buggy because firmament requires the task ids to be unique. I\u0027ve fixed it later on.",
       "parentUuid": "fa81d914_a82aec7b",
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_3a355bf7",
+        "filename": "src/sim/simulator_bridge.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T16:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_e8f784f3",
       "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
