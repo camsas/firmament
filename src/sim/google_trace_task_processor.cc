@@ -337,166 +337,95 @@ namespace sim {
 
   void GoogleTraceTaskProcessor::PrintStats(
       FILE* usage_stat_file, const TaskIdentifier& task_id,
-      TaskResourceUsageStats* task_stats) {
-    double sd_mean_cpu_usage;
-    double sd_canonical_mem_usage;
-    double sd_assigned_mem_usage;
-    double sd_unmapped_page_cache;
-    double sd_total_page_cache;
-    double sd_max_mem_usage;
-    double sd_mean_disk_io_time;
-    double sd_mean_local_disk_used;
-    double sd_max_cpu_usage;
-    double sd_max_disk_io_time;
-    double sd_cpi;
-    double sd_mai;
+      const TaskResourceUsageStats& task_stats) {
+    fprintf(usage_stat_file, "%ju,%ju", task_id.job_id_, task_id.task_index_);
+
     // Set values to -1 if no samples have been recorded.
-    if (task_stats->sample_count_mean_cpu_usage_ == 0) {
-      task_stats->min_usage_.mean_cpu_usage_ = -1.0;
-      task_stats->max_usage_.mean_cpu_usage_ = -1.0;
-      task_stats->avg_usage_.mean_cpu_usage_ = -1.0;
-      sd_mean_cpu_usage = -1.0;
+    if (task_stats.sample_count_mean_cpu_usage_ == 0) {
+      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0");
     } else {
-      // Replace variance with sd for printing.
-      sd_mean_cpu_usage = sqrt(task_stats->variance_usage_.mean_cpu_usage_);
+      fprintf(usage_stat_file, ",%lf,%lf,%lf,%lf",
+              task_stats.min_usage_.mean_cpu_usage_,
+              task_stats.max_usage_.mean_cpu_usage_,
+              task_stats.avg_usage_.mean_cpu_usage_,
+              sqrt(task_stats.variance_usage_.mean_cpu_usage_));
     }
-    if (task_stats->sample_count_canonical_mem_usage_ == 0) {
-      task_stats->min_usage_.canonical_mem_usage_ = -1.0;
-      task_stats->max_usage_.canonical_mem_usage_ = -1.0;
-      task_stats->avg_usage_.canonical_mem_usage_ = -1.0;
-      sd_canonical_mem_usage = -1.0;
+    if (task_stats.sample_count_canonical_mem_usage_ == 0) {
+      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0");
     } else {
-      sd_canonical_mem_usage =
-        sqrt(task_stats->variance_usage_.canonical_mem_usage_);
+      fprintf(usage_stat_file, ",%lf,%lf,%lf,%lf",
+              task_stats.min_usage_.canonical_mem_usage_,
+              task_stats.max_usage_.canonical_mem_usage_,
+              task_stats.avg_usage_.canonical_mem_usage_,
+              sqrt(task_stats.variance_usage_.canonical_mem_usage_));
     }
-    if (task_stats->sample_count_assigned_mem_usage_ == 0) {
-      task_stats->min_usage_.assigned_mem_usage_ = -1.0;
-      task_stats->max_usage_.assigned_mem_usage_ = -1.0;
-      task_stats->avg_usage_.assigned_mem_usage_ = -1.0;
-      sd_assigned_mem_usage = -1.0;
+    if (task_stats.sample_count_assigned_mem_usage_ == 0) {
+      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0");
     } else {
-      sd_assigned_mem_usage =
-        sqrt(task_stats->variance_usage_.assigned_mem_usage_);
+      fprintf(usage_stat_file, ",%lf,%lf,%lf,%lf",
+              task_stats.min_usage_.assigned_mem_usage_,
+              task_stats.max_usage_.assigned_mem_usage_,
+              task_stats.avg_usage_.assigned_mem_usage_,
+              sqrt(task_stats.variance_usage_.assigned_mem_usage_));
     }
-    if (task_stats->sample_count_unmapped_page_cache_ == 0) {
-      task_stats->min_usage_.unmapped_page_cache_ = -1.0;
-      task_stats->max_usage_.unmapped_page_cache_ = -1.0;
-      task_stats->avg_usage_.unmapped_page_cache_ = -1.0;
-      sd_unmapped_page_cache = -1.0;
+    if (task_stats.sample_count_unmapped_page_cache_ == 0) {
+      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0");
     } else {
-      sd_unmapped_page_cache =
-        sqrt(task_stats->variance_usage_.unmapped_page_cache_);
+      fprintf(usage_stat_file, ",%lf,%lf,%lf,%lf",
+              task_stats.min_usage_.unmapped_page_cache_,
+              task_stats.max_usage_.unmapped_page_cache_,
+              task_stats.avg_usage_.unmapped_page_cache_,
+              sqrt(task_stats.variance_usage_.unmapped_page_cache_));
     }
-    if (task_stats->sample_count_total_page_cache_ == 0) {
-      task_stats->min_usage_.total_page_cache_ = -1.0;
-      task_stats->max_usage_.total_page_cache_ = -1.0;
-      task_stats->avg_usage_.total_page_cache_ = -1.0;
-      sd_total_page_cache = -1.0;
+    if (task_stats.sample_count_total_page_cache_ == 0) {
+      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0");
     } else {
-      sd_total_page_cache =
-        sqrt(task_stats->variance_usage_.total_page_cache_);
+      fprintf(usage_stat_file, ",%lf,%lf,%lf,%lf",
+              task_stats.min_usage_.total_page_cache_,
+              task_stats.max_usage_.total_page_cache_,
+              task_stats.avg_usage_.total_page_cache_,
+              sqrt(task_stats.variance_usage_.total_page_cache_));
     }
-    if (task_stats->sample_count_max_mem_usage_ == 0) {
-      task_stats->min_usage_.max_mem_usage_ = -1.0;
-      task_stats->max_usage_.max_mem_usage_ = -1.0;
-      task_stats->avg_usage_.max_mem_usage_ = -1.0;
-      sd_max_mem_usage = -1.0;
+    if (task_stats.sample_count_mean_disk_io_time_ == 0) {
+      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0");
     } else {
-      sd_max_mem_usage =
-        sqrt(task_stats->variance_usage_.max_mem_usage_);
+      fprintf(usage_stat_file, ",%lf,%lf,%lf,%lf",
+              task_stats.min_usage_.mean_disk_io_time_,
+              task_stats.max_usage_.mean_disk_io_time_,
+              task_stats.avg_usage_.mean_disk_io_time_,
+              sqrt(task_stats.variance_usage_.mean_disk_io_time_));
     }
-    if (task_stats->sample_count_mean_disk_io_time_ == 0) {
-      task_stats->min_usage_.mean_disk_io_time_ = -1.0;
-      task_stats->max_usage_.mean_disk_io_time_ = -1.0;
-      task_stats->avg_usage_.mean_disk_io_time_ = -1.0;
-      sd_mean_disk_io_time = -1.0;
+    if (task_stats.sample_count_mean_local_disk_used_ == 0) {
+      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0");
     } else {
-      sd_mean_disk_io_time =
-        sqrt(task_stats->variance_usage_.mean_disk_io_time_);
-    }
-    if (task_stats->sample_count_mean_local_disk_used_ == 0) {
-      task_stats->min_usage_.mean_local_disk_used_ = -1.0;
-      task_stats->max_usage_.mean_local_disk_used_ = -1.0;
-      task_stats->avg_usage_.mean_local_disk_used_ = -1.0;
-      sd_mean_local_disk_used = -1.0;
-    } else {
-      sd_mean_local_disk_used =
-        sqrt(task_stats->variance_usage_.mean_local_disk_used_);
-    }
-    if (task_stats->sample_count_max_cpu_usage_ == 0) {
-      task_stats->min_usage_.max_cpu_usage_ = -1.0;
-      task_stats->max_usage_.max_cpu_usage_ = -1.0;
-      task_stats->avg_usage_.max_cpu_usage_ = -1.0;
-      sd_max_cpu_usage = -1.0;
-    } else {
-      sd_max_cpu_usage =
-        sqrt(task_stats->variance_usage_.max_cpu_usage_);
-    }
-    if (task_stats->sample_count_max_disk_io_time_ == 0) {
-      task_stats->min_usage_.max_disk_io_time_ = -1.0;
-      task_stats->max_usage_.max_disk_io_time_ = -1.0;
-      task_stats->avg_usage_.max_disk_io_time_ = -1.0;
-      sd_max_disk_io_time = -1.0;
-    } else {
-      sd_max_disk_io_time =
-        sqrt(task_stats->variance_usage_.max_disk_io_time_);
-    }
-    if (task_stats->sample_count_cpi_ == 0) {
-      task_stats->min_usage_.cpi_ = -1.0;
-      task_stats->max_usage_.cpi_ = -1.0;
-      task_stats->avg_usage_.cpi_ = -1.0;
-      sd_cpi = -1.0;
-    } else {
-      sd_cpi =
-        sqrt(task_stats->variance_usage_.cpi_);
-    }
-    if (task_stats->sample_count_mai_ == 0) {
-      task_stats->min_usage_.mai_ = -1.0;
-      task_stats->max_usage_.mai_ = -1.0;
-      task_stats->avg_usage_.mai_ = -1.0;
-      sd_mai = -1.0;
-    } else {
-      sd_mai =
-        sqrt(task_stats->variance_usage_.mai_);
+      fprintf(usage_stat_file, ",%lf,%lf,%lf,%lf",
+              task_stats.min_usage_.mean_local_disk_used_,
+              task_stats.max_usage_.mean_local_disk_used_,
+              task_stats.avg_usage_.mean_local_disk_used_,
+              sqrt(task_stats.variance_usage_.mean_local_disk_used_));
     }
 
-    fprintf(usage_stat_file,
-            "%ju,%ju,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,"
-            "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,"
-            "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
-            task_id.job_id_, task_id.task_index_,
-            task_stats->min_usage_.mean_cpu_usage_,
-            task_stats->max_usage_.mean_cpu_usage_,
-            task_stats->avg_usage_.mean_cpu_usage_,
-            sd_mean_cpu_usage,
-            task_stats->min_usage_.canonical_mem_usage_,
-            task_stats->max_usage_.canonical_mem_usage_,
-            task_stats->avg_usage_.canonical_mem_usage_,
-            sd_canonical_mem_usage,
-            task_stats->min_usage_.assigned_mem_usage_,
-            task_stats->max_usage_.assigned_mem_usage_,
-            task_stats->avg_usage_.assigned_mem_usage_,
-            sd_assigned_mem_usage,
-            task_stats->min_usage_.unmapped_page_cache_,
-            task_stats->max_usage_.unmapped_page_cache_,
-            task_stats->avg_usage_.unmapped_page_cache_,
-            sd_unmapped_page_cache,
-            task_stats->min_usage_.total_page_cache_,
-            task_stats->max_usage_.total_page_cache_,
-            task_stats->avg_usage_.total_page_cache_,
-            sd_total_page_cache,
-            task_stats->min_usage_.mean_disk_io_time_,
-            task_stats->max_usage_.mean_disk_io_time_,
-            task_stats->avg_usage_.mean_disk_io_time_,
-            sd_mean_disk_io_time,
-            task_stats->min_usage_.mean_local_disk_used_,
-            task_stats->max_usage_.mean_local_disk_used_,
-            task_stats->avg_usage_.mean_local_disk_used_,
-            sd_mean_local_disk_used,
-            task_stats->min_usage_.cpi_, task_stats->max_usage_.cpi_,
-            task_stats->avg_usage_.cpi_, sd_cpi,
-            task_stats->min_usage_.mai_, task_stats->max_usage_.mai_,
-            task_stats->avg_usage_.mai_, sd_mai);
+    if (task_stats.sample_count_cpi_ == 0) {
+      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0");
+    } else {
+      fprintf(usage_stat_file, ",%lf,%lf,%lf,%lf",
+              task_stats.min_usage_.cpi_,
+              task_stats.max_usage_.cpi_,
+              task_stats.avg_usage_.cpi_,
+              sqrt(task_stats.variance_usage_.cpi_));
+    }
+
+    if (task_stats.sample_count_mai_ == 0) {
+      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0");
+    } else {
+      fprintf(usage_stat_file, ",%lf,%lf,%lf,%lf\n",
+              task_stats.min_usage_.mai_,
+              task_stats.max_usage_.mai_,
+              task_stats.avg_usage_.mai_,
+              sqrt(task_stats.variance_usage_.mai_));
+    }
+    // XXX(ionel): We don't print aggerageted statistics of max_cpu_usage,
+    // max_mem_usage and max_disk_io_time.
   }
 
   void GoogleTraceTaskProcessor::AggregateTaskUsage() {
@@ -588,7 +517,7 @@ namespace sim {
     // Write stats for tasks that are still running.
     for (auto &task_id_to_usage : task_usage_stats) {
       PrintStats(usage_stat_file, task_id_to_usage.first,
-                 &task_id_to_usage.second);
+                 task_id_to_usage.second);
     }
     task_usage_stats.clear();
     scheduling_events.clear();
@@ -679,7 +608,7 @@ namespace sim {
         TaskIdentifier task_id;
         task_id.job_id_ = evt.job_id_;
         task_id.task_index_ = evt.task_index_;
-        PrintStats(usage_stat_file, task_id, &(*task_usage_stats)[task_id]);
+        PrintStats(usage_stat_file, task_id, (*task_usage_stats)[task_id]);
         task_usage_stats->erase(task_id);
         finished_tasks->insert(task_id);
       }
