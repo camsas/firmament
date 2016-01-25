@@ -7,6 +7,7 @@
 
 #include "misc/utils.h"
 #include "sim/google_trace_loader.h"
+#include "sim/simulated_wall_time.h"
 #include "sim/simulator_bridge.h"
 #include "sim/trace_utils.h"
 
@@ -23,8 +24,9 @@ class SimulatorBridgeTest : public ::testing::Test {
     FLAGS_v = 2;
     FLAGS_scheduler = "flow";
     FLAGS_machine_tmpl_file = "../../../tests/testdata/machine_topo.pbin";
-    event_manager_ = new EventManager();
-    bridge_ = new SimulatorBridge(event_manager_);
+    simulated_time_ = new SimulatedWallTime();
+    event_manager_ = new EventManager(simulated_time_);
+    bridge_ = new SimulatorBridge(event_manager_, simulated_time_);
     loader_ = new GoogleTraceLoader(event_manager_);
   }
 
@@ -44,6 +46,7 @@ class SimulatorBridgeTest : public ::testing::Test {
     // before the destructor).
   }
 
+  SimulatedWallTime* simulated_time_;
   EventManager* event_manager_;
   SimulatorBridge* bridge_;
   GoogleTraceLoader* loader_;

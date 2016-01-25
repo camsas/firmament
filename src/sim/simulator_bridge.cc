@@ -29,10 +29,10 @@ DECLARE_string(scheduler);
 namespace firmament {
 namespace sim {
 
-SimulatorBridge::SimulatorBridge(
-    EventManager* event_manager) :
-    event_manager_(event_manager), job_map_(new JobMap_t),
-    knowledge_base_(new KnowledgeBaseSimulator),
+SimulatorBridge::SimulatorBridge(EventManager* event_manager,
+                                 SimulatedWallTime* simulated_time)
+    : event_manager_(event_manager), simulated_time_(simulated_time),
+    job_map_(new JobMap_t), knowledge_base_(new KnowledgeBaseSimulator),
     resource_map_(new ResourceMap_t), task_map_(new TaskMap_t),
     num_duplicate_task_ids_(0) {
   ResourceID_t root_uuid = GenerateRootResourceID("XXXsimulatorXXX");
@@ -43,7 +43,7 @@ SimulatorBridge::SimulatorBridge(
       resource_map_.get(), root_uuid,
       new ResourceStatus(rd_ptr, &rtn_root_,
                          "endpoint_uri",
-                         event_manager_->GetCurrentTimestamp())));
+                         simulated_time_->GetCurrentTimestamp())));
   messaging_adapter_ =
     new platform::sim::SimulatedMessagingAdapter<BaseMessage>();
   if (FLAGS_scheduler == "flow") {
@@ -55,7 +55,7 @@ SimulatorBridge::SimulatorBridge(
         shared_ptr<machine::topology::TopologyManager>(
             new machine::topology::TopologyManager),
         messaging_adapter_, this, root_uuid, "http://localhost",
-        event_manager_);
+        simulated_time_);
   } else {
     scheduler_ = new scheduler::SimpleScheduler(
         job_map_, resource_map_, &rtn_root_,
@@ -65,7 +65,7 @@ SimulatorBridge::SimulatorBridge(
         shared_ptr<machine::topology::TopologyManager>(
             new machine::topology::TopologyManager),
         messaging_adapter_, this, root_uuid, "http://localhost",
-        event_manager_);
+        simulated_time_);
   }
   // Import a fictional machine resource topology
   LoadMachineTemplate(&machine_tmpl_);
@@ -76,7 +76,8 @@ SimulatorBridge::~SimulatorBridge() {
     rtn_root_.mutable_children()->RemoveLast();
   }
   // N.B. We don't have to delete:
-  // 1) event_manager_ because it is owned by trace_simulator.
+  // 1) event_manager_ and simulated_time_ because they are owned by
+  // trace_simulator.
   // 2) machine_res_id_pus_ and resource_map because rds are deleted when
   // we remove the machines from rtn_root_.
   // 3) job_map_ and trace_job_id_to_jd_ because the jds are deleted
@@ -189,9 +190,9 @@ void SimulatorBridge::AddTaskEndEvent(
   event_desc.set_type(EventDescriptor::TASK_END_RUNTIME);
   if (runtime_ptr != NULL) {
     // We can approximate the duration of the task.
-    event_manager_->AddEvent(event_manager_->current_simulation_time() +
+    event_manager_->AddEvent(simulated_time_->GetCurrentTimestamp() +
                              *runtime_ptr, event_desc);
-    td_ptr->set_finish_time(event_manager_->current_simulation_time() +
+    td_ptr->set_finish_time(simulated_time_->GetCurrentTimestamp() +
                             *runtime_ptr);
   } else {
     // The task didn't finish in the trace. Set the task's end event to the
@@ -388,7 +389,7 @@ void SimulatorBridge::OnTaskMigration(TaskDescriptor* td_ptr,
     FindOrNull(task_id_to_identifier_, td_ptr->uid());
   CHECK_NOTNULL(ti_ptr);
   uint64_t task_end_time = td_ptr->finish_time();
-  td_ptr->set_start_time(event_manager_->current_simulation_time());
+  td_ptr->set_start_time(simulated_time_->GetCurrentTimestamp());
   event_manager_->RemoveTaskEndRuntimeEvent(*ti_ptr, task_end_time);
   AddTaskEndEvent(*ti_ptr, td_ptr);
 }
@@ -398,7 +399,7 @@ void SimulatorBridge::OnTaskPlacement(TaskDescriptor* td_ptr,
   TraceTaskIdentifier* ti_ptr =
     FindOrNull(task_id_to_identifier_, td_ptr->uid());
   CHECK_NOTNULL(ti_ptr);
-  td_ptr->set_start_time(event_manager_->current_simulation_time());
+  td_ptr->set_start_time(simulated_time_->GetCurrentTimestamp());
   AddTaskEndEvent(*ti_ptr, td_ptr);
 }
 
@@ -528,7 +529,7 @@ void SimulatorBridge::SetupMachine(
       resource_map_.get(),
       ResourceIDFromString(rd->uuid()),
       new ResourceStatus(rd, rtnd, "endpoint_uri",
-                         event_manager_->GetCurrentTimestamp())));
+                         simulated_time_->GetCurrentTimestamp())));
   if (rd->type() == ResourceDescriptor::RESOURCE_PU) {
     uint64_t cpu_cores = 1;
     if (machine_res_cap->has_cpu_cores()) {

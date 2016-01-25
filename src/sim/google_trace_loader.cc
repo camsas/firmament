@@ -183,7 +183,7 @@ void GoogleTraceLoader::LoadTaskEvents(
             continue;
           }
 
-          if (event_type == SUBMIT_EVENT) {
+          if (event_type == TASK_SUBMIT_EVENT) {
             EventDescriptor event_desc;
             event_desc.set_type(EventDescriptor::TASK_SUBMIT);
             event_desc.set_job_id(task_id.job_id);

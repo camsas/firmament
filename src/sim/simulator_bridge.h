@@ -17,6 +17,7 @@
 #include "scheduling/scheduling_event_notifier_interface.h"
 #include "sim/event_manager.h"
 #include "sim/knowledge_base_simulator.h"
+#include "sim/simulated_wall_time.h"
 #include "sim/trace_loader.h"
 #include "sim/trace_utils.h"
 #include "storage/object_store_interface.h"
@@ -28,7 +29,8 @@ using scheduler::SchedulerStats;
 
 class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
  public:
-  SimulatorBridge(EventManager* event_manager);
+  SimulatorBridge(EventManager* event_manager,
+                  SimulatedWallTime* simulated_time);
   virtual ~SimulatorBridge();
 
   /**
@@ -205,6 +207,7 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
                     ResourceID_t machine_res_id);
 
   EventManager* event_manager_;
+  SimulatedWallTime* simulated_time_;
 
   // Map used to convert between the simulator job_ids and the Firmament
   // job descriptors.

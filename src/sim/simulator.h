@@ -15,6 +15,7 @@
 #include "base/resource_topology_node_desc.pb.h"
 #include "scheduling/flow/solver_dispatcher.h"
 #include "sim/event_manager.h"
+#include "sim/simulated_wall_time.h"
 #include "sim/simulator_bridge.h"
 #include "sim/trace_utils.h"
 
@@ -45,6 +46,7 @@ class Simulator {
 
   SimulatorBridge* bridge_;
   EventManager* event_manager_;
+  SimulatedWallTime simulated_time_;
 };
 
 }  // namespace sim

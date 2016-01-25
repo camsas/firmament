@@ -9,6 +9,7 @@
 #include <string>
 
 #include "base/common.h"
+#include "misc/trace_generator.h"
 #include "scheduling/scheduler_interface.h"
 #include "sim/event_desc.pb.h"
 
@@ -17,22 +18,6 @@ DECLARE_bool(graph_output_events);
 
 namespace firmament {
 namespace sim {
-
-// Google trace events. The definition and value of each event are documented
-// at https://github.com/google/cluster-data/blob/master/ClusterData2011_2.md.
-#define SUBMIT_EVENT 0
-#define SCHEDULE_EVENT 1
-#define EVICT_EVENT 2
-#define FAIL_EVENT 3
-#define FINISH_EVENT 4
-#define KILL_EVENT 5
-#define LOST_EVENT 6
-#define UPDATE_PENDING_EVENT 7
-#define UPDATE_RUNNING_EVENT 8
-
-#define MACHINE_ADD 0
-#define MACHINE_REMOVE 1
-#define MACHINE_UPDATE 2
 
 static const uint64_t kSeed = 0;
 

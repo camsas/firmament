@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "sim/event_manager.h"
+#include "sim/simulated_wall_time.h"
 
 namespace firmament {
 namespace sim {
@@ -32,7 +33,8 @@ class EventManagerTest : public ::testing::Test {
 };
 
 TEST(EventManagerTest, AddEvent) {
-  EventManager event_manager;
+  SimulatedWallTime simulated_time;
+  EventManager event_manager(&simulated_time);
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_END_RUNTIME);
   event_manager.AddEvent(2, event_desc);
@@ -44,7 +46,8 @@ TEST(EventManagerTest, AddEvent) {
 }
 
 TEST(EventManagerTest, GetNextEvent) {
-  EventManager event_manager;
+  SimulatedWallTime simulated_time;
+  EventManager event_manager(&simulated_time);
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_END_RUNTIME);
   event_manager.AddEvent(2, event_desc);
@@ -55,8 +58,8 @@ TEST(EventManagerTest, GetNextEvent) {
 }
 
 TEST(EventManagerTest, RemoveTaskEndRuntimeEvent) {
-  EXPECT_EQ(1, 1);
-  EventManager event_manager;
+  SimulatedWallTime simulated_time;
+  EventManager event_manager(&simulated_time);
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_END_RUNTIME);
   event_desc.set_job_id(1);

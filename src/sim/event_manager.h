@@ -10,14 +10,15 @@
 #include "base/common.h"
 #include "misc/time_interface.h"
 #include "sim/event_desc.pb.h"
+#include "sim/simulated_wall_time.h"
 #include "sim/trace_utils.h"
 
 namespace firmament {
 namespace sim {
 
-class EventManager : public TimeInterface {
+class EventManager {
  public:
-  EventManager();
+  explicit EventManager(SimulatedWallTime* simulated_time);
   virtual ~EventManager();
 
   /**
@@ -26,11 +27,6 @@ class EventManager : public TimeInterface {
    * @param event struct describing the event
    */
   void AddEvent(uint64_t timestamp, EventDescriptor event);
-
-  /**
-   * Get the current timestamp of the simulation (in u-sec).
-   */
-  uint64_t GetCurrentTimestamp();
 
   /**
    * Get the next simulated event.
@@ -67,17 +63,8 @@ class EventManager : public TimeInterface {
   void RemoveTaskEndRuntimeEvent(const TraceTaskIdentifier& task_identifier,
                                  uint64_t task_end_time);
 
-  /**
-   * Overwrites the current timestmap of the simulation.
-   */
-  void UpdateCurrentTimestamp(uint64_t timestamp);
-
-  uint64_t current_simulation_time() {
-    return current_simulation_time_;
-  }
-
  private:
-  uint64_t current_simulation_time_;
+  SimulatedWallTime* simulated_time_;
   // The map storing the simulator events. Maps from timestamp to simulator
   // event.
   multimap<uint64_t, EventDescriptor> events_;

@@ -80,8 +80,9 @@ static const bool simulation_validator =
 namespace firmament {
 namespace sim {
 
-Simulator::Simulator() : event_manager_(new EventManager) {
-  bridge_ = new SimulatorBridge(event_manager_);
+Simulator::Simulator() {
+  event_manager_ = new EventManager(&simulated_time_);
+  bridge_ = new SimulatorBridge(event_manager_, &simulated_time_);
 }
 
 Simulator::~Simulator() {
@@ -124,7 +125,7 @@ void Simulator::ReplaySimulation() {
       // Current timestamp is at the last event <= run_scheduler_at. We want
       // to make sure that it's at run_scheduler_at so that all the events
       // that happen during scheduling have a timestamp >= run_scheduler_at.
-      event_manager_->UpdateCurrentTimestamp(run_scheduler_at);
+      simulated_time_.UpdateCurrentTimestamp(run_scheduler_at);
       uint64_t old_run_scheduler_at = run_scheduler_at;
       // Run the scheduler and update the time to run the scheduler at.
       run_scheduler_at = ScheduleJobsHelper(run_scheduler_at);

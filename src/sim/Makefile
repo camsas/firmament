@@ -11,7 +11,7 @@ LIBS += -lboost_thread -lboost_system -lboost_regex -lboost_timer \
         -ljansson $(PB2JSON_LIB) $(PION_LIB) $(SPOOKY_OBJ)
 LIB =
 SIMULATOR_OBJS = event_manager.o google_trace_loader.o \
-                 knowledge_base_simulator.o simulator.o \
+                 knowledge_base_simulator.o simulated_wall_time.o simulator.o \
                  simulator_bridge.o synthetic_trace_loader.o trace_utils.o
 PROCESSOR_OBJS = google_trace_task_processor.o
 PBS = event_desc.pb.o
@@ -20,6 +20,7 @@ TESTS_DEPS = $(BUILD_DIR)/sim/google_trace_loader.o \
              $(BUILD_DIR)/sim/trace_utils.o \
              $(BUILD_DIR)/sim/event_desc.pb.o \
              $(BUILD_DIR)/sim/knowledge_base_simulator.o \
+             $(BUILD_DIR)/sim/simulated_wall_time.o \
              $(BUILD_DIR)/scheduling/common.o \
              $(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
              $(BUILD_DIR)/scheduling/libfirmament_scheduling.a \
@@ -71,6 +72,7 @@ $(OBJ_DIR)/simulator: $(addprefix $(OBJ_DIR)/, $(SIMULATOR_OBJS)) \
 		$(CXX) $(CPPFLAGS) \
 		$(SRC_ROOT_DIR)/sim/simulator_main.cc \
 		$(OPTFLAGS) $(DEFINES) \
+		$(BUILD_DIR)/sim/simulated_wall_time.o \
 		$(BUILD_DIR)/sim/simulator_bridge.o \
 		$(BUILD_DIR)/sim/event_manager.o \
 		$(BUILD_DIR)/sim/google_trace_loader.o \
