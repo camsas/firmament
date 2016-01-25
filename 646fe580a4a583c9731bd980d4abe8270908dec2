@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_d53410e0",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 681,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T17:14:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_4ff40ff2",
+      "revId": "646fe580a4a583c9731bd980d4abe8270908dec2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_295fdbe6",
         "filename": "src/scheduling/flow/flow_scheduler.cc",
         "patchSetId": 1
@@ -72,6 +90,30 @@
       "side": 1,
       "message": "Yes, it\u0027s still correct. I think we want them in this order because SetupPUs which is called by EventDrivenScheduler::RegisterResource sets schedulable for resource to true.\nOtherwise, the order doesn\u0027t matter.",
       "parentUuid": "fa81d914_295fdbe6",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 379,
+        "endChar": 35
+      },
+      "revId": "646fe580a4a583c9731bd980d4abe8270908dec2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_154ea86f",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 379,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T17:14:31Z",
+      "side": 1,
+      "message": "Ok, that seems good. Done.",
+      "parentUuid": "fa81d914_af466b1f",
       "range": {
         "startLine": 376,
         "startChar": 0,
