@@ -401,6 +401,7 @@ uint64_t FlowScheduler::RunSchedulingIteration(
   }
   pus_removed_during_solver_run_.clear();
   tasks_completed_during_solver_run_.clear();
+  uint64_t scheduler_start_timestamp = time_manager_->GetCurrentTimestamp();
   // Run the flow solver! This is where all the juicy goodness happens :)
   multimap<uint64_t, uint64_t>* task_mappings =
     solver_dispatcher_->Run(scheduler_stats);
@@ -408,7 +409,6 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     << "Solver took longer than limit of "
     << scheduler_stats->scheduler_runtime;
   // Play all the simulation events that happened while the solver was running.
-  uint64_t scheduler_start_timestamp = time_manager_->GetCurrentTimestamp();
   if (event_notifier_) {
     event_notifier_->OnSchedulingDecisionsCompletion(
         scheduler_start_timestamp + scheduler_stats->scheduler_runtime);
