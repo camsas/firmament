@@ -9,7 +9,7 @@
 
 #include "base/types.h"
 
-#define NUM_CHANGE_TYPES 27
+#define NUM_CHANGE_TYPES 28
 
 namespace firmament {
 
@@ -54,7 +54,7 @@ struct DIMACSChangeStats {
   uint64_t arcs_added_;
   uint64_t arcs_changed_;
   uint64_t arcs_removed_;
-  uint64_t num_changes_of_type_[NUM_CHANGE_TYPES + 1];
+  uint64_t num_changes_of_type_[NUM_CHANGE_TYPES];
   DIMACSChangeStats();
   ~DIMACSChangeStats();
   string GetStatsString() const;
