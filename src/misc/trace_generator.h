@@ -3,8 +3,8 @@
 //
 // Generate Google style trace.
 
-#ifndef FIRMAMENT_MISC_GENERATE_TRACE_H
-#define FIRMAMENT_MISC_GENERATE_TRACE_H
+#ifndef FIRMAMENT_MISC_TRACE_GENERATOR_H
+#define FIRMAMENT_MISC_TRACE_GENERATOR_H
 
 #include "base/types.h"
 #include "misc/time_interface.h"
@@ -12,6 +12,26 @@
 #include "scheduling/scheduler_interface.h"
 
 namespace firmament {
+
+// Google trace events. The definition and value of each event are documented
+// at https://github.com/google/cluster-data/blob/master/ClusterData2011_2.md.
+enum TraceTaskEvent {
+  TASK_SUBMIT_EVENT = 0,
+  TASK_SCHEDULE_EVENT = 1,
+  TASK_EVICT_EVENT = 2,
+  TASK_FAIL_EVENT = 3,
+  TASK_FINISH_EVENT = 4,
+  TASK_KILL_EVENT = 5,
+  TASK_LOST_EVENT = 6,
+  TASK_UPDATE_PENDING_EVENT = 7,
+  TASK_UPDATE_RUNNING_EVENT = 8,
+};
+
+enum TraceMachineEvent {
+  MACHINE_ADD = 0,
+  MACHINE_REMOVE = 1,
+  MACHINE_UPDATE = 2
+};
 
 struct TaskRuntime {
   // The id of the task. When we run a simulation, the field  gets populated
@@ -30,10 +50,10 @@ struct TaskRuntime {
   int32_t machine_constraint;
 };
 
-class GenerateTrace {
+class TraceGenerator {
  public:
-  explicit GenerateTrace(TimeInterface* time_manager);
-  ~GenerateTrace();
+  explicit TraceGenerator(TimeInterface* time_manager);
+  ~TraceGenerator();
   void AddMachine(const ResourceDescriptor& rd);
   void RemoveMachine(const ResourceDescriptor& rd);
   void SchedulerRun(const scheduler::SchedulerStats& scheduler_stats,
@@ -62,4 +82,4 @@ class GenerateTrace {
 
 } // namespace firmament
 
-#endif  // FIRMAMENT_MISC_GENERATE_TRACE_H
+#endif  // FIRMAMENT_MISC_TRACE_GENERATOR_H

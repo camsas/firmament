@@ -12,9 +12,9 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_topology_node_desc.pb.h"
-#include "misc/generate_trace.h"
 #include "misc/map-util.h"
 #include "misc/time_interface.h"
+#include "misc/trace_generator.h"
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/dimacs_change.h"
 #include "scheduling/flow/dimacs_change_stats.h"
@@ -33,7 +33,7 @@ class FlowGraphManager {
                             unordered_set<ResourceID_t,
                               boost::hash<boost::uuids::uuid>>* leaf_res_ids,
                             TimeInterface* time_manager,
-                            GenerateTrace* generate_trace,
+                            TraceGenerator* trace_generator,
                             DIMACSChangeStats* dimacs_stats);
   virtual ~FlowGraphManager();
   // Public API
@@ -176,7 +176,7 @@ class FlowGraphManager {
 
   // Vector storing the graph changes occured since the last scheduling round.
   vector<DIMACSChange*> graph_changes_;
-  GenerateTrace* generate_trace_;
+  TraceGenerator* trace_generator_;
   DIMACSChangeStats* dimacs_stats_;
   // Counter updated whenever we compute topology statistics. The counter is
   // used as a marker in the resource topology traversal. It helps us to avoid

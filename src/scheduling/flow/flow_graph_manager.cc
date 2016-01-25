@@ -38,12 +38,12 @@ FlowGraphManager::FlowGraphManager(
     unordered_set<ResourceID_t,
     boost::hash<boost::uuids::uuid>>* leaf_res_ids,
     TimeInterface* time_manager,
-    GenerateTrace* generate_trace,
+    TraceGenerator* trace_generator,
     DIMACSChangeStats* dimacs_stats)
     : cost_model_(cost_model),
       flow_graph_(new FlowGraph),
       leaf_res_ids_(leaf_res_ids),
-      generate_trace_(generate_trace),
+      trace_generator_(trace_generator),
       dimacs_stats_(dimacs_stats),
       cur_traversal_counter_(0) {
   // Add sink and cluster aggregator node
@@ -51,7 +51,7 @@ FlowGraphManager::FlowGraphManager(
 }
 
 FlowGraphManager::~FlowGraphManager() {
-  // We don't delete cost_model_, generate_trace_ and dimacs_stats_ because
+  // We don't delete cost_model_, trace_generator_ and dimacs_stats_ because
   // they are owned by the FlowScheduler.
   delete flow_graph_;
   ResetChanges();
@@ -249,7 +249,7 @@ FlowGraphNode* FlowGraphManager::AddNewResourceNode(
   AddGraphChange(chg);
 
   if (rd_ptr->type() == ResourceDescriptor::RESOURCE_MACHINE) {
-    generate_trace_->AddMachine(*rd_ptr);
+    trace_generator_->AddMachine(*rd_ptr);
     // We call AddMachine here, but do *not* yet create the ECs, since the
     // outgoing arcs from the ECs must know the number of task slots in the
     // machine, which isn't clear until we've recursed further.
@@ -600,7 +600,7 @@ void FlowGraphManager::AddTaskEquivClasses(FlowGraphNode* task_node) {
 FlowGraphNode* FlowGraphManager::AddTaskNode(JobDescriptor* jd_ptr,
                                              TaskDescriptor* td_ptr,
                                              FlowGraphNode* unsched_agg_node) {
-  generate_trace_->TaskSubmitted(jd_ptr, td_ptr);
+  trace_generator_->TaskSubmitted(jd_ptr, td_ptr);
   vector<FlowGraphArc*> task_arcs;
   FlowGraphNode* task_node = flow_graph_->AddNode();
   task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
@@ -1046,7 +1046,7 @@ void FlowGraphManager::RemoveInvalidPreferenceArcs(
 
 void FlowGraphManager::RemoveMachine(const ResourceDescriptor& rd,
                                      set<uint64_t>* pus_removed) {
-  generate_trace_->RemoveMachine(rd);
+  trace_generator_->RemoveMachine(rd);
   ResourceID_t res_id = ResourceIDFromString(rd.uuid());
   uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
   CHECK_NOTNULL(node_id);
@@ -1101,14 +1101,14 @@ void FlowGraphManager::SetResourceNodeType(FlowGraphNode* res_node,
 }
 
 uint64_t FlowGraphManager::TaskCompleted(TaskID_t tid) {
-  generate_trace_->TaskCompleted(tid);
+  trace_generator_->TaskCompleted(tid);
   uint64_t task_node_id = DeleteTaskNode(tid, "TaskCompleted");
   cost_model_->RemoveTask(tid);
   return task_node_id;
 }
 
 void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
-  generate_trace_->TaskEvicted(tid);
+  trace_generator_->TaskEvicted(tid);
   FlowGraphNode* task_node = NodeForTaskID(tid);
   CHECK_NOTNULL(task_node);
   task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
@@ -1119,13 +1119,13 @@ void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
 }
 
 void FlowGraphManager::TaskFailed(TaskID_t tid) {
-  generate_trace_->TaskFailed(tid);
+  trace_generator_->TaskFailed(tid);
   DeleteTaskNode(tid, "TaskFailed");
   cost_model_->RemoveTask(tid);
 }
 
 void FlowGraphManager::TaskKilled(TaskID_t tid) {
-  generate_trace_->TaskKilled(tid);
+  trace_generator_->TaskKilled(tid);
   DeleteTaskNode(tid, "TaskKilled");
   cost_model_->RemoveTask(tid);
 }
@@ -1138,7 +1138,7 @@ void FlowGraphManager::TaskMigrated(TaskID_t tid,
 }
 
 void FlowGraphManager::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
-  generate_trace_->TaskScheduled(tid, res_id);
+  trace_generator_->TaskScheduled(tid, res_id);
   // Mark the task as scheduled
   FlowGraphNode* node = NodeForTaskID(tid);
   CHECK_NOTNULL(node);
