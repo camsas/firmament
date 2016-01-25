@@ -16,6 +16,24 @@
       "revId": "a331f802726cfeef279ef6347c0efe52c3d12741",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_87ac2ba2",
+        "filename": "src/sim/trace_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T22:37:03Z",
+      "side": 0,
+      "message": "Hehe..busted! I broke the build with the previous TraceGenerator diff because I didn\u0027t not run make clean before compiling:)",
+      "parentUuid": "fa81d914_87b50bf0",
+      "revId": "a331f802726cfeef279ef6347c0efe52c3d12741",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
