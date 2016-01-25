@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_4ff40ff2",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 681,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T12:38:12Z",
+      "side": 1,
+      "message": "I can\u0027t see any reason. I\u0027ve removed it.",
+      "parentUuid": "fa81d914_49624fae",
+      "revId": "646fe580a4a583c9731bd980d4abe8270908dec2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_295fdbe6",
         "filename": "src/scheduling/flow/flow_scheduler.cc",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2016-01-25T03:18:56Z",
       "side": 1,
       "message": "This is changing the order of calls: we used to first update the resource topology, then call into the superclass method. Now we call the superclass method first and then update the resource topology -- is that still correct?",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 379,
+        "endChar": 35
+      },
+      "revId": "646fe580a4a583c9731bd980d4abe8270908dec2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_af466b1f",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 379,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T12:38:12Z",
+      "side": 1,
+      "message": "Yes, it\u0027s still correct. I think we want them in this order because SetupPUs which is called by EventDrivenScheduler::RegisterResource sets schedulable for resource to true.\nOtherwise, the order doesn\u0027t matter.",
+      "parentUuid": "fa81d914_295fdbe6",
       "range": {
         "startLine": 376,
         "startChar": 0,
