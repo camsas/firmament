@@ -22,6 +22,30 @@
       "revId": "c754aded3ee7cf054231254576b5fa6b347315ac",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_95aff8e2",
+        "filename": "src/scheduling/flow/flow_graph_node.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T17:27:20Z",
+      "side": 1,
+      "message": "We can get resource_id_ from rd_ptr_ by calling ResourceIDFromString which is a bit expensive. I\u0027m keeping it because it costs us nothing in terms of memory and makes Firmament/the simulations to run faster.",
+      "parentUuid": "fa81d914_55582032",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 30
+      },
+      "revId": "c754aded3ee7cf054231254576b5fa6b347315ac",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
