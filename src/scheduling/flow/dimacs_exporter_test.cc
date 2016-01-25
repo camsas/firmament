@@ -14,7 +14,7 @@
 #include <boost/bind.hpp>
 
 #include "base/common.h"
-#include "misc/generate_trace.h"
+#include "misc/trace_generator.h"
 #include "misc/map-util.h"
 #include "misc/pb_utils.h"
 #include "misc/wall_time.h"
@@ -81,10 +81,10 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
-  GenerateTrace generate_trace(&wall_time);
+  TraceGenerator trace_generator(&wall_time);
   FlowGraphManager flow_graph_manager(
       new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &wall_time,
-      &generate_trace, &dimacs_stats);
+      &trace_generator, &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
   string root_id = to_string(GenerateResourceID("test"));
@@ -135,10 +135,10 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
-  GenerateTrace generate_trace(&wall_time);
+  TraceGenerator trace_generator(&wall_time);
   FlowGraphManager flow_graph_manager(
       new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &wall_time,
-      &generate_trace, &dimacs_stats);
+      &trace_generator, &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
   int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
@@ -210,10 +210,10 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
       new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
     DIMACSChangeStats dimacs_stats;
     WallTime wall_time;
-    GenerateTrace generate_trace(&wall_time);
+    TraceGenerator trace_generator(&wall_time);
     FlowGraphManager flow_graph_manager(
         new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &wall_time,
-        &generate_trace, &dimacs_stats);
+        &trace_generator, &dimacs_stats);
     // Test resource topology
     ResourceTopologyNodeDescriptor machine_tmpl;
     int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);

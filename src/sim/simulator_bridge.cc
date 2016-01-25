@@ -93,7 +93,7 @@ ResourceDescriptor* SimulatorBridge::AddMachine(
   ResourceTopologyNodeDescriptor* new_machine = rtn_root_.add_children();
   new_machine->CopyFrom(machine_tmpl_);
   const string& root_uuid = rtn_root_.resource_desc().uuid();
-  // Mark the hostname as a simulation one. This is useful for generate_trace
+  // Mark the hostname as a simulation one. This is useful for TraceGenerator
   // which if it detects a simulated host then it outputs the host's trace id
   // rather than Firmament's machine id.
   string hostname = "firmament_simulation_machine_" +
@@ -242,7 +242,7 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr,
     new_task->set_uid(GenerateRootTaskID(*jd_ptr));
   }
   // XXX(ionel): HACK! I set the index to the trace task id which I can
-  // then access in generate_trace to print it instead of the Firmament
+  // then access in TraceGenerator to print it instead of the Firmament
   // task id. I can't set it directly as the uid of the task because
   // trace task id are only uid within a job (i.e. they are indices).
   new_task->set_index(trace_task_id);

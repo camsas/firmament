@@ -64,7 +64,7 @@ FlowScheduler::FlowScheduler(
       last_updated_time_dependent_costs_(0ULL),
       leaf_res_ids_(new unordered_set<ResourceID_t,
                       boost::hash<boost::uuids::uuid>>),
-      generate_trace_(new GenerateTrace(time_manager)),
+      trace_generator_(new TraceGenerator(time_manager)),
       dimacs_stats_(new DIMACSChangeStats) {
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
@@ -121,9 +121,9 @@ FlowScheduler::FlowScheduler(
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";
   }
 
-  flow_graph_manager_.reset(new FlowGraphManager(cost_model_, leaf_res_ids_,
-                                                 time_manager_, generate_trace_,
-                                                 dimacs_stats_));
+  flow_graph_manager_.reset(
+      new FlowGraphManager(cost_model_, leaf_res_ids_, time_manager_,
+                           trace_generator_, dimacs_stats_));
   cost_model_->SetFlowGraphManager(flow_graph_manager_);
 
   // Set up the initial flow graph
@@ -133,7 +133,7 @@ FlowScheduler::FlowScheduler(
 }
 
 FlowScheduler::~FlowScheduler() {
-  delete generate_trace_;
+  delete trace_generator_;
   delete dimacs_stats_;
   delete cost_model_;
   delete solver_dispatcher_;
@@ -357,7 +357,8 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
       dimacs_stats_->ResetStats();
       scheduler_stats->total_runtime = total_scheduler_timer.elapsed().wall
         / NANOSECONDS_IN_MICROSECOND;
-      generate_trace_->SchedulerRun(*scheduler_stats, current_run_dimacs_stats);
+      trace_generator_->SchedulerRun(*scheduler_stats,
+                                     current_run_dimacs_stats);
     }
   }
   return num_scheduled_tasks;
