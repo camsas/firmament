@@ -136,7 +136,7 @@ class GoogleTraceTaskProcessor {
   void PopulateTaskRuntime(TaskRuntime* task_runtime_ptr,
                            vector<string>& cols); // NOLINT
   void PrintStats(FILE* usage_stat_file, const TaskIdentifier& task_id,
-                  TaskResourceUsageStats* task_resource);
+                  const TaskResourceUsageStats& task_resource);
   void PrintTaskRuntime(FILE* out_events_file, const TaskRuntime& task_runtime,
                         const TaskIdentifier& task_id,
                         string logical_job_name, uint64_t runtime);
