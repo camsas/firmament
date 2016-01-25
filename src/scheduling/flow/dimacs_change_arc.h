@@ -33,7 +33,7 @@ class DIMACSChangeArc : public DIMACSChange {
   uint64_t cap_lower_bound_;
   uint64_t cap_upper_bound_;
   uint64_t cost_;
-  ArcType type_;
+  FlowGraphArcType type_;
   uint64_t old_cost_;
 
   friend DIMACSChangeStats;

@@ -16,7 +16,7 @@ namespace firmament {
 // Forward declaration.
 struct FlowGraphNode;
 
-enum ArcType {
+enum FlowGraphArcType {
   OTHER = 0,
   RUNNING = 1,
 };
@@ -34,7 +34,7 @@ struct FlowGraphArc {
   uint64_t cost_;
   FlowGraphNode* src_node_;
   FlowGraphNode* dst_node_;
-  ArcType type_;
+  FlowGraphArcType type_;
 };
 
 } // namespace firmament
