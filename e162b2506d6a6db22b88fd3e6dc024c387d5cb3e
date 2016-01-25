@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_d54970d1",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 682,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T19:22:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_757284ae",
+      "range": {
+        "startLine": 678,
+        "startChar": 0,
+        "endLine": 682,
+        "endChar": 63
+      },
+      "revId": "e162b2506d6a6db22b88fd3e6dc024c387d5cb3e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_b5631cdc",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2016-01-25T17:25:11Z",
       "side": 1,
       "message": "This saves 32-bits :D If you used uint64_t for the traversal mark, it won\u0027t wrap around before we\u0027re both dead. (This is fine though, no need to change it.)",
+      "range": {
+        "startLine": 684,
+        "startChar": 0,
+        "endLine": 688,
+        "endChar": 3
+      },
+      "revId": "e162b2506d6a6db22b88fd3e6dc024c387d5cb3e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_151308b9",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 688,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T19:22:38Z",
+      "side": 1,
+      "message": "I\u0027ve changed it to uint64_t. You don\u0027t have big hopes for life expectancy to improve:)",
+      "parentUuid": "fa81d914_b5631cdc",
       "range": {
         "startLine": 684,
         "startChar": 0,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_35164ca8",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 694,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T19:22:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_f55d9416",
+      "range": {
+        "startLine": 694,
+        "startChar": 0,
+        "endLine": 694,
+        "endChar": 24
+      },
+      "revId": "e162b2506d6a6db22b88fd3e6dc024c387d5cb3e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_1575c897",
         "filename": "src/scheduling/flow/flow_graph_manager.h",
         "patchSetId": 2
@@ -82,6 +154,24 @@
       "writtenOn": "2016-01-25T17:25:11Z",
       "side": 1,
       "message": "Who\u0027s he? What is he used for?",
+      "revId": "e162b2506d6a6db22b88fd3e6dc024c387d5cb3e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_550d808f",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T19:22:38Z",
+      "side": 1,
+      "message": "I\u0027ve added a comment.",
+      "parentUuid": "fa81d914_1575c897",
       "revId": "e162b2506d6a6db22b88fd3e6dc024c387d5cb3e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
