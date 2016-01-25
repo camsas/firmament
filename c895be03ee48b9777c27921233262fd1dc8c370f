@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_09193779",
+        "filename": "src/sim/simulator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 0,
+      "message": "ProcessSimulatorEvents got moved to SimulatorBridge. This is because we need to get back from the FlowScheduler to the simulation to process the events that happened while the solver was running. We need to do this before we apply the solver\u0027s results. SimulatorBridge is the class to which we can callback from the scheduler (i.e., Simulator implementing SchedulingEventNotifier). Hence, I moved ProcessSimulatorEvents to SimulatorBridge.\n\nI removed the methods and fields related to scheduling latency because they weren\u0027t fine grained enough. A later diff introduces a better way to capture the scheduling latency. It even creates a Google-style scheduling_latency csv file.",
+      "parentUuid": "fa81d914_06720449",
+      "revId": "c895be03ee48b9777c27921233262fd1dc8c370f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_26b708da",
         "filename": "src/sim/simulator_bridge.cc",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2016-01-24T17:16:14Z",
       "side": 0,
       "message": "The hack\u0027s still there, isn\u0027t it? :)",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 152,
+        "endChar": 65
+      },
+      "revId": "c895be03ee48b9777c27921233262fd1dc8c370f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_0602040b",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 0,
+      "message": "I\u0027ve added a comment to explain why this isn\u0027t that much of a hack.",
+      "parentUuid": "fa81d914_26b708da",
       "range": {
         "startLine": 151,
         "startChar": 0,
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_093057e7",
+        "filename": "src/sim/simulator_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 0,
+      "message": "I removed it because machine_tmpl is now a field of simulator_bridge. I can add it back later if we need to extend the simulator to support heterogeneous clusters. I would have to transform the machine_tmpl field to a vector and then pick the appropriate template of the vector.",
+      "parentUuid": "fa81d914_c69e2c54",
+      "revId": "c895be03ee48b9777c27921233262fd1dc8c370f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_86b434d2",
         "filename": "src/sim/trace_utils.h",
         "patchSetId": 1
@@ -70,6 +130,24 @@
       "writtenOn": "2016-01-24T17:16:14Z",
       "side": 0,
       "message": "Is the deleted stuff here no longer used?",
+      "revId": "c895be03ee48b9777c27921233262fd1dc8c370f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_6613c066",
+        "filename": "src/sim/trace_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 0,
+      "message": "Yes, it\u0027s no longer used. We now print the statistics in the Google-style trace.",
+      "parentUuid": "fa81d914_86b434d2",
       "revId": "c895be03ee48b9777c27921233262fd1dc8c370f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false

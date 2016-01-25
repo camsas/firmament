@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_a9682bbb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_7e2c2e03",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_9e2f22f6",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2016-01-24T17:16:14Z",
       "side": 1,
       "message": "Typo",
+      "range": {
+        "startLine": 16,
+        "startChar": 23,
+        "endLine": 16,
+        "endChar": 26
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_c9639fdb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_9e2f22f6",
       "range": {
         "startLine": 16,
         "startChar": 23,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_e96223d7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "It\u0027s an edge case. Imagine we place a task and then in a subsequent iteration it gets migrated on a different PU by the solver. However, while the solver is running the task actually completes:)",
+      "parentUuid": "fa81d914_be36a650",
+      "range": {
+        "startLine": 17,
+        "startChar": 42,
+        "endLine": 18,
+        "endChar": 15
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_1e3b3239",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -76,6 +142,30 @@
       "writtenOn": "2016-01-24T17:16:14Z",
       "side": 1,
       "message": "... and which gets cleared after each job is handled?\n\n(Having multiple jobs\u0027 running tasks in the set might be advantageous in order to be able to add multiple jobs to the flow graph at the same time. Does this change have any effect on our ability to do that?)\n\nEDIT: I see, it\u0027s now a map with per-job entries. That solves the problem elegantly.",
+      "range": {
+        "startLine": 20,
+        "startChar": 59,
+        "endLine": 21,
+        "endChar": 69
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_095e9712",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_1e3b3239",
       "range": {
         "startLine": 20,
         "startChar": 59,
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_897287ab",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 678,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_065124d8",
+      "range": {
+        "startLine": 674,
+        "startChar": 0,
+        "endLine": 678,
+        "endChar": 3
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_5e45aab1",
         "filename": "src/scheduling/event_driven_scheduler.h",
         "patchSetId": 1
@@ -122,6 +236,30 @@
       "writtenOn": "2016-01-24T17:16:14Z",
       "side": 1,
       "message": "s/InsertTaskToRunnables/InsertTaskIntoRunnables/",
+      "range": {
+        "startLine": 91,
+        "startChar": 7,
+        "endLine": 91,
+        "endChar": 28
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_a93aebca",
+        "filename": "src/scheduling/event_driven_scheduler.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_5e45aab1",
       "range": {
         "startLine": 91,
         "startChar": 7,
@@ -151,6 +289,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_696f13c6",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "No, we pass them because of the following:\n1. The solver runs and decides to place task 1 to PUs 1.\n2. while the solver was running PU 1 got removed from the graph because its machine failed.\n3. We would end up trying to place task 1 to PUs 1 despite it not being present any more. This is a problem when we\u0027re running in the simulation mode because we delete the state when a task complete or machine gets removed.\n\nI maintain a set of PUs that get removed while the solver is running. Then when I apply the solver\u0027s binding, I make sure that I don\u0027t apply the changes that place tasks of PUs that have been removed.",
+      "parentUuid": "fa81d914_865c34ef",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_06684486",
         "filename": "src/scheduling/flow/flow_graph_manager.h",
         "patchSetId": 1
@@ -168,6 +324,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_895b672d",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "It\u0027s the id of the task node. I\u0027ve added a comment.",
+      "parentUuid": "fa81d914_06684486",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_260628cf",
         "filename": "src/scheduling/flow/flow_graph_manager.h",
         "patchSetId": 1
@@ -179,6 +353,24 @@
       "writtenOn": "2016-01-24T17:16:14Z",
       "side": 1,
       "message": "See above.",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_a9410b3b",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_260628cf",
       "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -208,6 +400,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_c9355fdc",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Unfortunately, we do. RemoveMachineSubTree calls DeleteResourceNode which calls DeleteNode. DeleteNode requires a pointer because it actually updates res_node.",
+      "parentUuid": "fa81d914_46095cdc",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 127,
+        "endChar": 56
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_262d4847",
         "filename": "src/scheduling/flow/flow_scheduler.cc",
         "patchSetId": 1
@@ -219,6 +435,24 @@
       "writtenOn": "2016-01-24T17:16:14Z",
       "side": 1,
       "message": "typo: \"longer than limit of\"",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_492a4f7f",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 409,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_262d4847",
       "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -242,6 +476,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_892447b0",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_c6770c3a",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_e676d03d",
         "filename": "src/scheduling/flow/flow_scheduler.cc",
         "patchSetId": 1
@@ -253,6 +505,24 @@
       "writtenOn": "2016-01-24T17:16:14Z",
       "side": 1,
       "message": "see above",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_6921d39e",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_e676d03d",
       "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -276,6 +546,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_2927dbb7",
+        "filename": "src/scheduling/scheduling_event_notifier_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_2690e842",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_869d145c",
         "filename": "src/sim/simulator.cc",
         "patchSetId": 1
@@ -293,6 +581,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_49032f0d",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "It\u0027s microseconds. I\u0027ve fixed this hacky solution in one of the following diffs. I just wanted to cut the diff here because it was already getting rather big.",
+      "parentUuid": "fa81d914_869d145c",
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_66b100e1",
         "filename": "src/sim/simulator_bridge.cc",
         "patchSetId": 1
@@ -304,6 +610,30 @@
       "writtenOn": "2016-01-24T17:16:14Z",
       "side": 1,
       "message": "Hmm -- technically, we don\u0027t want to delete any non-root tasks either, because they could still spawn children! (Won\u0027t happen in the current simulations, though.)",
+      "range": {
+        "startLine": 311,
+        "startChar": 0,
+        "endLine": 315,
+        "endChar": 3
+      },
+      "revId": "e71dd9edab7ca9768f615a504b9e58b4acd9bd85",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_8616f453",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T00:57:10Z",
+      "side": 1,
+      "message": "It\u0027s not going to happen with the types of simulations we currently run. Moreover, if we don\u0027t delete them then we will likely run out of memory while using the Google trace.",
+      "parentUuid": "fa81d914_66b100e1",
       "range": {
         "startLine": 311,
         "startChar": 0,
