@@ -102,6 +102,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_8758ab33",
+        "filename": "src/misc/generate_trace.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-01-25T21:10:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_688c7480",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 118,
+        "endChar": 30
+      },
+      "revId": "829f345451e824c9ea6506dfcb5e5d3ca9dd0987",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_a803cc0b",
         "filename": "src/misc/generate_trace.cc",
         "patchSetId": 2
