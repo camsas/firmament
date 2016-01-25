@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_55582032",
+        "filename": "src/scheduling/flow/flow_graph_node.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-01-25T17:19:33Z",
+      "side": 1,
+      "message": "Do we need both resource_id_ and rd_ptr_? We can get the ID from the rd_ptr_, so it seems redundant to store both.",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 30
+      },
+      "revId": "c754aded3ee7cf054231254576b5fa6b347315ac",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
