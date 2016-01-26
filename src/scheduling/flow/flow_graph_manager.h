@@ -158,8 +158,8 @@ class FlowGraphManager {
   FlowGraphNode* sink_node_;
   // Resource and task mappings
   unordered_map<TaskID_t, uint64_t> task_to_nodeid_map_;
-  unordered_map<ResourceID_t, uint64_t,
-      boost::hash<boost::uuids::uuid> > resource_to_nodeid_map_;
+  unordered_map<ResourceID_t, FlowGraphNode*,
+      boost::hash<boost::uuids::uuid> > resource_to_node_map_;
   // Hacky solution for retrieval of the parent of any particular resource
   // (needed to assign capacities properly by back-tracking).
   unordered_map<ResourceID_t, ResourceID_t,

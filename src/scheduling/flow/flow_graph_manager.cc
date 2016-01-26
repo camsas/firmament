@@ -230,7 +230,7 @@ FlowGraphNode* FlowGraphManager::AddNewResourceNode(
   }
   FlowGraphNode* res_node = flow_graph_->AddNode();
   SetResourceNodeType(res_node, *rd_ptr);
-  InsertIfNotPresent(&resource_to_nodeid_map_, res_id, res_node->id_);
+  InsertIfNotPresent(&resource_to_node_map_, res_id, res_node);
   res_node->resource_id_ = res_id;
   res_node->rd_ptr_ = rd_ptr;
   if (rd_ptr->has_friendly_name()) {
@@ -826,7 +826,7 @@ void FlowGraphManager::DeleteResourceNode(FlowGraphNode* res_node,
   // This erase is going to delete the res_id. That's why we use
   // res_id_tmp from now onwards.
   leaf_res_ids_->erase(res_id);
-  resource_to_nodeid_map_.erase(res_id_tmp);
+  resource_to_node_map_.erase(res_id_tmp);
   VLOG(2) << "Deleting node " << res_node->id_;
   DIMACSChange *chg = new DIMACSRemoveNode(*res_node);
   chg->set_comment(comment);
@@ -947,12 +947,7 @@ void FlowGraphManager::JobCompleted(JobID_t job_id) {
 }
 
 FlowGraphNode* FlowGraphManager::NodeForResourceID(const ResourceID_t& res_id) {
-  uint64_t* id = FindOrNull(resource_to_nodeid_map_, res_id);
-  // Returns NULL if resource unknown
-  if (!id)
-    return NULL;
-  VLOG(2) << "Resource " << res_id << " is represented by node " << *id;
-  return flow_graph_->Node(*id);
+  return FindPtrOrNull(resource_to_node_map_, res_id);
 }
 
 FlowGraphNode* FlowGraphManager::NodeForTaskID(TaskID_t task_id) {
@@ -1048,9 +1043,9 @@ void FlowGraphManager::RemoveMachine(const ResourceDescriptor& rd,
                                      set<uint64_t>* pus_removed) {
   trace_generator_->RemoveMachine(rd);
   ResourceID_t res_id = ResourceIDFromString(rd.uuid());
-  uint64_t* node_id = FindOrNull(resource_to_nodeid_map_, res_id);
-  CHECK_NOTNULL(node_id);
-  RemoveMachineSubTree(flow_graph_->Node(*node_id), pus_removed);
+  FlowGraphNode* res_node = FindPtrOrNull(resource_to_node_map_, res_id);
+  CHECK_NOTNULL(res_node);
+  RemoveMachineSubTree(res_node, pus_removed);
   cost_model_->RemoveMachine(res_id);
 }
 
@@ -1227,9 +1222,7 @@ void FlowGraphManager::UpdateResourceNode(
   const ResourceTopologyNodeDescriptor& rtnd = *rtnd_ptr;
   ResourceID_t res_id = ResourceIDFromString(rtnd.resource_desc().uuid());
   // First of all, check if this node already exists in our resource topology
-  uint64_t* found_node = FindOrNull(resource_to_nodeid_map_, res_id);
-  VLOG(2) << "Considering resource " << res_id << ", which is "
-          << (found_node ? *found_node : 0);
+  FlowGraphNode* found_node = FindPtrOrNull(resource_to_node_map_, res_id);
   if (found_node) {
     // Check if its parent is identical
     if (rtnd.has_parent_id()) {
@@ -1241,15 +1234,15 @@ void FlowGraphManager::UpdateResourceNode(
         // If not, we need to move it to the new parent
         InsertOrUpdate(&resource_to_parent_map_, res_id, new_parent_id);
         // Remove arc corresponding to the old parent/child relationship
-        uint64_t* new_parent_node =
-            FindOrNull(resource_to_nodeid_map_, new_parent_id);
+        FlowGraphNode* new_parent_node =
+            FindPtrOrNull(resource_to_node_map_, new_parent_id);
         CHECK_NOTNULL(new_parent_node);
         LOG(FATAL) << "Moving resources to new parents not supported yet";
       }
       // Parent is the same as before (and not NULL)
       if (old_parent_id) {
-        uint64_t* old_parent_node =
-            FindOrNull(resource_to_nodeid_map_, *old_parent_id);
+        FlowGraphNode* old_parent_node =
+            FindPtrOrNull(resource_to_node_map_, *old_parent_id);
         CHECK_NOTNULL(old_parent_node);
         // TODO(malte): Is there anything we need to do here?
       }
@@ -1259,9 +1252,10 @@ void FlowGraphManager::UpdateResourceNode(
          child_iter = rtnd_ptr->mutable_children()->pointer_begin();
          child_iter != rtnd_ptr->mutable_children()->pointer_end();
          ++child_iter) {
-      uint64_t* child_node =
-        FindOrNull(resource_to_nodeid_map_,
-                   ResourceIDFromString((*child_iter)->resource_desc().uuid()));
+      ResourceID_t child_res_id =
+          ResourceIDFromString((*child_iter)->resource_desc().uuid());
+      FlowGraphNode* child_node =
+          FindPtrOrNull(resource_to_node_map_, child_res_id);
       if (!child_node)
         AddResourceTopology(*child_iter);
     }
