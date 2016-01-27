@@ -277,7 +277,7 @@ void FlowGraphManager::AddOrUpdateJobNodes(JobDescriptor* jd) {
       task_node = flow_graph_->Node(*tn_ptr);
     }
     if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
-      task_node = AddTaskNode(jd, cur, unsched_agg_node);
+      task_node = AddTaskNode(job_id, cur, unsched_agg_node);
       AddTaskEquivClasses(task_node);
     } else if (task_node && cur->state() == TaskDescriptor::RUNNABLE) {
       // We already have the task's nodes, so we need to revisit the ECs to see
@@ -597,17 +597,17 @@ void FlowGraphManager::AddTaskEquivClasses(FlowGraphNode* task_node) {
   delete equiv_classes;
 }
 
-FlowGraphNode* FlowGraphManager::AddTaskNode(JobDescriptor* jd_ptr,
+FlowGraphNode* FlowGraphManager::AddTaskNode(JobID_t job_id,
                                              TaskDescriptor* td_ptr,
                                              FlowGraphNode* unsched_agg_node) {
-  trace_generator_->TaskSubmitted(jd_ptr, td_ptr);
+  trace_generator_->TaskSubmitted(td_ptr);
   vector<FlowGraphArc*> task_arcs;
   FlowGraphNode* task_node = flow_graph_->AddNode();
   task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
   // Add the current task's node
   task_node->excess_ = 1;
   task_node->task_id_ = td_ptr->uid();  // set task ID in node
-  task_node->job_id_ = JobIDFromString(jd_ptr->uuid());
+  task_node->job_id_ = job_id;
   sink_node_->excess_--;
   task_nodes_.insert(task_node->id_);
   // Insert a record for the node representing this task's ID

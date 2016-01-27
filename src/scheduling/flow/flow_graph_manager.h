@@ -115,7 +115,7 @@ class FlowGraphManager {
   void AddOrUpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void AddSpecialNodes();
   void AddTaskEquivClasses(FlowGraphNode* task_node);
-  FlowGraphNode* AddTaskNode(JobDescriptor* jd_ptr, TaskDescriptor* td_ptr,
+  FlowGraphNode* AddTaskNode(JobID_t job_id, TaskDescriptor* td_ptr,
                              FlowGraphNode* unsched_agg_node);
   uint64_t CapacityBetweenECNodes(const FlowGraphNode& src,
                                   const FlowGraphNode& dst);
