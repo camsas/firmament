@@ -136,30 +136,29 @@ void TraceGenerator::SchedulerRun(
   }
 }
 
-void TraceGenerator::TaskSubmitted(JobDescriptor* jd_ptr,
-                                   TaskDescriptor* td_ptr) {
+void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
   if (FLAGS_generate_trace) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t job_id;
     string simulator_job_prefix = "firmament_simulation_job_";
     TaskID_t task_id = td_ptr->uid();
     uint64_t trace_task_id;
-    if (jd_ptr->has_name() &&
-        jd_ptr->name().find(simulator_job_prefix) == 0) {
+    if (td_ptr->has_name() &&
+        td_ptr->name().find(simulator_job_prefix) == 0) {
       // The job is coming from a simulation. Get the job id out of
       // the job's name.
       string job_id_str =
-        jd_ptr->name().substr(simulator_job_prefix.size(), string::npos);
+        td_ptr->name().substr(simulator_job_prefix.size(), string::npos);
       try {
         job_id = boost::lexical_cast<uint64_t>(job_id_str);
       } catch (const boost::bad_lexical_cast &) {
-        LOG(FATAL) << "Could not convert: " << jd_ptr->name();
+        LOG(FATAL) << "Could not convert: " << td_ptr->name();
       }
       // Set the id to the trace task id which is passed via the index.
       trace_task_id = td_ptr->index();
     } else {
       size_t hash = 42;
-      boost::hash_combine(hash, job_id);
+      boost::hash_combine(hash, td_ptr->job_id());
       job_id = static_cast<uint64_t>(hash);
       // Not running in simulation mode => set the id to Firmament task id.
       trace_task_id = task_id;

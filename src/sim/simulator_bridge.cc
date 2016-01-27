@@ -249,6 +249,10 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr,
   new_task->set_index(trace_task_id);
   new_task->set_state(TaskDescriptor::CREATED);
   new_task->set_job_id(jd_ptr->uuid());
+  // XXX(ionel): HACK! I set the name of the task to the hacked name of the job
+  // so that we can reconstruct the job trace id of the task in the
+  // TraceGenerator.
+  new_task->set_name(jd_ptr->name());
   return new_task;
 }
 

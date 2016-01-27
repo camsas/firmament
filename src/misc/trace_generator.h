@@ -58,7 +58,7 @@ class TraceGenerator {
   void RemoveMachine(const ResourceDescriptor& rd);
   void SchedulerRun(const scheduler::SchedulerStats& scheduler_stats,
                     const DIMACSChangeStats& dimacs_stats);
-  void TaskSubmitted(JobDescriptor* jd_ptr, TaskDescriptor* td_ptr);
+  void TaskSubmitted(TaskDescriptor* td_ptr);
   void TaskCompleted(TaskID_t task_id);
   void TaskEvicted(TaskID_t task_id);
   void TaskFailed(TaskID_t task_id);
