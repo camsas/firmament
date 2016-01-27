@@ -116,7 +116,9 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   CHECK(InsertIfNotPresent(task_map.get(), ct2->uid(), ct2));
   // Add resources and job to flow graph
   flow_graph_manager.AddResourceTopology(&rtn_root);
-  flow_graph_manager.AddOrUpdateJobNodes(&jd);
+  vector<JobDescriptor*> jd_ptr_vect;
+  jd_ptr_vect.push_back(&jd);
+  flow_graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
   // Export
   DIMACSExporter exp;
   exp.Export(*flow_graph_manager.flow_graph());
@@ -184,7 +186,9 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
       ct->set_job_id(jd.uuid());
       CHECK(InsertIfNotPresent(task_map.get(), ct->uid(), ct));
     }
-    flow_graph_manager.AddOrUpdateJobNodes(&jd);
+    vector<JobDescriptor*> jd_ptr_vect;
+    jd_ptr_vect.push_back(&jd);
+    flow_graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
   }
   VLOG(1) << "Added " << j*t << " tasks in " << j << " jobs (" << t
           << " tasks each).";
@@ -259,7 +263,9 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
         ct->set_job_id(jd.uuid());
         CHECK(InsertIfNotPresent(task_map.get(), ct->uid(), ct));
       }
-      flow_graph_manager.AddOrUpdateJobNodes(&jd);
+      vector<JobDescriptor*> jd_ptr_vect;
+      jd_ptr_vect.push_back(&jd);
+      flow_graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
     }
     // Export
     DIMACSExporter exp;

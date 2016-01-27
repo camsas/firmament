@@ -258,47 +258,56 @@ FlowGraphNode* FlowGraphManager::AddNewResourceNode(
   return res_node;
 }
 
-void FlowGraphManager::AddOrUpdateJobNodes(JobDescriptor* jd) {
-  JobID_t job_id = JobIDFromString(jd->uuid());
-  // First add an unscheduled aggregator node for this job
-  // if none exists already.
-  FlowGraphNode* unsched_agg_node = AddOrUpdateJobUnscheduledAgg(job_id);
-  // Now add the job's task nodes
-  // TODO(malte): This is a simple BFS lashup; maybe we can do better?
-  queue<TaskDescriptor*> q;
-  q.push(jd->mutable_root_task());
-  while (!q.empty()) {
-    TaskDescriptor* cur = q.front();
-    q.pop();
-    // Check if this node has already been added
+void FlowGraphManager::AddOrUpdateJobNodes(
+    const vector<JobDescriptor*>& jd_ptr_vect) {
+  queue<TaskDescriptor*> queue;
+  for (const auto& jd_ptr : jd_ptr_vect) {
+    JobID_t job_id = JobIDFromString(jd_ptr->uuid());
+    // First add an unscheduled aggregator node for this job
+    // if none exists already.
+    FlowGraphNode* unsched_agg_node = AddOrUpdateJobUnscheduledAgg(job_id);
+    // Set the excess on the unscheduled node to the difference between the
+    // maximum number of running tasks for this job and the number of tasks
+    // (F_j - N_j in Quincy terms).
+    // TODO(malte): Stub -- this currently allows an unlimited number of tasks
+    // per job to be scheduled.
+    unsched_agg_node->excess_ = 0;
+    queue.push(jd_ptr->mutable_root_task());
+  }
+  // Set storing the equivalence classes we've already visited.
+  unordered_set<EquivClass_t> visited_ecs;
+  // Now add task nodes.
+  while (!queue.empty()) {
+    TaskDescriptor* cur = queue.front();
+    queue.pop();
+    // Check if this node has already been added.
     uint64_t* tn_ptr = FindOrNull(task_to_nodeid_map_, cur->uid());
     FlowGraphNode* task_node = NULL;
     if (tn_ptr) {
       task_node = flow_graph_->Node(*tn_ptr);
     }
     if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
-      task_node = AddTaskNode(job_id, cur, unsched_agg_node);
+      task_node = AddTaskNode(JobIDFromString(cur->job_id()), cur);
       AddTaskEquivClasses(task_node);
     } else if (task_node && cur->state() == TaskDescriptor::RUNNABLE) {
       // We already have the task's nodes, so we need to revisit the ECs to see
       // if any new arcs need to be added
-      // TODO(malte): note that this isn't particularly efficient, since we
-      // revisit the EC again even if we've already revisited it for another
-      // task in the same job or in another. In the future, we might want to
-      // track this and avoid doing redundant work.
       vector<EquivClass_t>* equiv_classes =
         cost_model_->GetTaskEquivClasses(task_node->task_id_);
       // If there are no equivalence classes, there's nothing to do
       if (equiv_classes) {
         // Otherwise, revisit each EC and add missing arcs
         for (auto& equiv_class : *equiv_classes) {
-          vector<FlowGraphArc*> ec_arcs;
-          AddOrUpdateEquivClassArcs(equiv_class, &ec_arcs);
-          for (auto& arc : ec_arcs) {
-            DIMACSChange* chg = new DIMACSNewArc(*arc);
-            chg->set_comment("AddOrUpdateJobNodes: add EC arc");
-            dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_EQUIV_CLASS);
-            AddGraphChange(chg);
+          if (visited_ecs.find(equiv_class) == visited_ecs.end()) {
+            visited_ecs.insert(equiv_class);
+            vector<FlowGraphArc*> ec_arcs;
+            AddOrUpdateEquivClassArcs(equiv_class, &ec_arcs);
+            for (auto& arc : ec_arcs) {
+              DIMACSChange* chg = new DIMACSNewArc(*arc);
+              chg->set_comment("AddOrUpdateJobNodes: add EC arc");
+              dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_EQUIV_CLASS);
+              AddGraphChange(chg);
+            }
           }
         }
       }
@@ -320,15 +329,9 @@ void FlowGraphManager::AddOrUpdateJobNodes(JobDescriptor* jd) {
       // We do actually need to push tasks even if they are already completed,
       // failed or running, since they may have children eligible for
       // scheduling.
-      q.push(&task);
+      queue.push(&task);
     }
   }
-  // Set the excess on the unscheduled node to the difference between the
-  // maximum number of running tasks for this job and the number of tasks
-  // (F_j - N_j in Quincy terms).
-  // TODO(malte): Stub -- this currently allows an unlimited number of tasks per
-  // job to be scheduled.
-  unsched_agg_node->excess_ = 0;
 }
 
 FlowGraphNode* FlowGraphManager::AddOrUpdateJobUnscheduledAgg(JobID_t job_id) {
@@ -508,8 +511,7 @@ void FlowGraphManager::AddOrUpdateEquivClassArcs(
       pair<Cost_t, int64_t> cost_and_cap =
         cost_model_->EquivClassToResourceNode(ec, res_id);
       Cost_t arc_cost = cost_and_cap.first;
-      FlowGraphArc* arc = FindPtrOrNull(ec_node->outgoing_arc_map_,
-                                        rn->id_);
+      FlowGraphArc* arc = FindPtrOrNull(ec_node->outgoing_arc_map_, rn->id_);
       if (!arc) {
         // We don't have the arc yet, so add it
         arc = flow_graph_->AddArc(ec_node->id_, rn->id_);
@@ -598,8 +600,7 @@ void FlowGraphManager::AddTaskEquivClasses(FlowGraphNode* task_node) {
 }
 
 FlowGraphNode* FlowGraphManager::AddTaskNode(JobID_t job_id,
-                                             TaskDescriptor* td_ptr,
-                                             FlowGraphNode* unsched_agg_node) {
+                                             TaskDescriptor* td_ptr) {
   trace_generator_->TaskSubmitted(td_ptr);
   vector<FlowGraphArc*> task_arcs;
   FlowGraphNode* task_node = flow_graph_->AddNode();
@@ -615,8 +616,11 @@ FlowGraphNode* FlowGraphManager::AddTaskNode(JobID_t job_id,
   // Log info
   VLOG(2) << "Adding edges for task " << td_ptr->uid() << "'s node ("
           << task_node->id_ << "); task state is " << td_ptr->state();
+  uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
+  CHECK_NOTNULL(unsched_agg_node_id);
   // Arcs for this node
-  AddArcsForTask(task_node, unsched_agg_node, &task_arcs);
+  AddArcsForTask(task_node, flow_graph_->Node(*unsched_agg_node_id),
+                 &task_arcs);
   // Add the new task node to the graph changes
   DIMACSChange *chg = new DIMACSAddNode(*task_node, task_arcs);
   chg->set_comment("AddOrUpdateJobNodes: task node");
@@ -1289,11 +1293,9 @@ void FlowGraphManager::ResetChanges() {
   graph_changes_.clear();
 }
 
-void FlowGraphManager::UpdateTimeDependentCosts(vector<JobDescriptor*>* jobs) {
-  for (auto& jd_ptr : *jobs) {
-    VLOG(1) << "Reconsidering time-dependent costs for job " << jd_ptr->uuid();
-    AddOrUpdateJobNodes(jd_ptr);
-  }
+void FlowGraphManager::UpdateTimeDependentCosts(
+    const vector<JobDescriptor*>& jd_ptr_vec) {
+  AddOrUpdateJobNodes(jd_ptr_vec);
 }
 
 void FlowGraphManager::UpdateUnscheduledAggArcCosts() {
