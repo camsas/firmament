@@ -113,32 +113,6 @@ vector<ResourceID_t>* OctopusCostModel::GetOutgoingEquivClassPrefArcs(
   return arc_destinations;
 }
 
-vector<TaskID_t>* OctopusCostModel::GetIncomingEquivClassPrefArcs(
-    EquivClass_t ec) {
-  vector<TaskID_t>* tasks_with_incoming_arcs = new vector<TaskID_t>();
-  if (ec == cluster_aggregator_ec_) {
-    // ec is the cluster aggregator.
-    // We add an arc from each task to the cluster aggregator.
-    // XXX(malte): This is very slow because it iterates over all tasks; we
-    // should instead only return the set of tasks that do not yet have the
-    // appropriate arcs.
-    for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
-         ++it) {
-      // XXX(malte): task_map_ contains ALL tasks ever seen by the system,
-      // including those that have completed, failed or are otherwise no longer
-      // present in the flow graph. We do some crude filtering here, but clearly
-      // we should instead maintain a collection of tasks actually eligible for
-      // scheduling.
-      if (it->second->state() == TaskDescriptor::RUNNABLE ||
-          (FLAGS_preemption &&
-           it->second->state() == TaskDescriptor::RUNNING)) {
-        tasks_with_incoming_arcs->push_back(it->first);
-      }
-    }
-  }
-  return tasks_with_incoming_arcs;
-}
-
 vector<ResourceID_t>* OctopusCostModel::GetTaskPreferenceArcs(
     TaskID_t task_id) {
   // Not used in Octopus cost model

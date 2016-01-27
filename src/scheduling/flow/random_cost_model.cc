@@ -140,54 +140,7 @@ vector<ResourceID_t>* RandomCostModel::GetOutgoingEquivClassPrefArcs(
   return arc_destinations;
 }
 
-vector<TaskID_t>* RandomCostModel::GetIncomingEquivClassPrefArcs(
-    EquivClass_t ec) {
-  vector<TaskID_t>* prefered_task = new vector<TaskID_t>();
-  if (ec == cluster_aggregator_ec_) {
-    // ec is the cluster aggregator.
-    // We add an arc from each task to the cluster aggregator.
-    // XXX(malte): This is very slow because it iterates over all tasks; we
-    // should instead only return the set of tasks that do not yet have the
-    // appropriate arcs.
-    for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
-         ++it) {
-      // XXX(malte): task_map_ contains ALL tasks ever seen by the system,
-      // including those that have completed, failed or are otherwise no longer
-      // present in the flow graph. We do some crude filtering here, but clearly
-      // we should instead maintain a collection of tasks actually eligible for
-      // scheduling.
-      if (it->second->state() == TaskDescriptor::RUNNABLE ||
-          (FLAGS_preemption &&
-           it->second->state() == TaskDescriptor::RUNNING)) {
-        prefered_task->push_back(it->first);
-      }
-    }
-  } else if (task_aggs_.find(ec) != task_aggs_.end()) {
-    // ec is a task aggregator.
-    // This is where we add preference arcs from tasks to new equiv class
-    // aggregators.
-    // XXX(ionel): This is very slow because it iterates over all tasks.
-    for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
-         ++it) {
-      size_t hash = 0;
-      boost::hash_combine(hash, it->second->binary());
-      EquivClass_t task_ec = static_cast<EquivClass_t>(hash);
-      if (task_ec == ec) {
-        prefered_task->push_back(it->first);
-      }
-    }
-  } else {
-    LOG(FATAL) << "Unexpected type of task equivalence aggregator";
-  }
-  return prefered_task;
-}
-
 vector<ResourceID_t>* RandomCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
-  // Tasks do not have preference arcs to resources, but all tasks
-  // have arcs to the cluster aggregator. This arc is added in
-  // GetIncomingEquivClassPrefArcs(), rather than here, since this
-  // method returns a vector of ResourceID_t, i.e. it is used for
-  // direct preferences to resources.
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   return prefered_res;
 }

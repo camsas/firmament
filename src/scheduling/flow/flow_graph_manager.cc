@@ -298,6 +298,9 @@ void FlowGraphManager::AddOrUpdateJobNodes(
       if (equiv_classes) {
         // Otherwise, revisit each EC and add missing arcs
         for (auto& equiv_class : *equiv_classes) {
+          FlowGraphNode* ec_node = FindPtrOrNull(tec_to_node_, equiv_class);
+          CHECK_NOTNULL(ec_node);
+          UpdateArcTaskToEquivClass(task_node, ec_node);
           if (visited_ecs.find(equiv_class) == visited_ecs.end()) {
             visited_ecs.insert(equiv_class);
             vector<FlowGraphArc*> ec_arcs;
@@ -310,6 +313,8 @@ void FlowGraphManager::AddOrUpdateJobNodes(
             }
           }
         }
+        // TODO(ionel): We do not currently check if we need to remove any arcs
+        // if the task's assignment to equivalence class changes.
       }
       delete equiv_classes;
     } else if (cur->state() == TaskDescriptor::RUNNING ||
@@ -453,54 +458,8 @@ void FlowGraphManager::AddOrUpdateEquivClassArcs(
   // all the arcs in one go when we create a new node. Otherwise,
   // if we just update an existing node then the code calling this method
   // must generate DIMACS changes.
-
   FlowGraphNode* ec_node = FindPtrOrNull(tec_to_node_, ec);
   CHECK_NOTNULL(ec_node);
-  vector<TaskID_t>* task_pref_arcs =
-    cost_model_->GetIncomingEquivClassPrefArcs(ec);
-  if (task_pref_arcs) {
-    // Add the incoming arcs to the equivalence class node.
-    for (auto& task_id : *task_pref_arcs) {
-      FlowGraphNode* task_node = NodeForTaskID(task_id);
-      // The equivalence class may contain many tasks, and not all of them
-      // may have corresponding task nodes in the flow graph yet. This is the
-      // case for example when a job with many tasks is added and we process
-      // AddEquivClassArcs for the first time. It's fine to simply ignore the
-      // not-yet-existing tasks here, because we know that we will come back
-      // later and call in here again, with the task present, at which point
-      // the correct arc will be added.
-      // TODO(malte): think about whether we can do this more elegantly; the
-      // above implicit assumption may not always hold (even though it does
-      // for now).
-      if (!task_node) {
-        VLOG(2) << "Skipping addition of arc from task " << task_id << "'s "
-                << "node to EC " << ec << " as task not yet present.";
-        continue;
-      }
-      uint64_t arc_cost = cost_model_->TaskToEquivClassAggregator(task_id, ec);
-      FlowGraphArc* arc = FindPtrOrNull(task_node->outgoing_arc_map_,
-                                        ec_node->id_);
-      if (!arc) {
-        // We don't have the arc yet, so add it
-        VLOG(2) << "Adding arc from task " << task_id << " to EC " << ec;
-        arc = flow_graph_->AddArc(task_node->id_, ec_node->id_);
-        // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
-        arc->cap_upper_bound_ = 1;
-        arc->cost_ = arc_cost;
-        ec_arcs->push_back(arc);
-        dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_EQUIV_CLASS);
-      } else if (arc_cost != arc->cost_) {
-        // It already exists, but its cost has changed
-        Cost_t old_cost = arc->cost_;
-        flow_graph_->ChangeArcCost(arc, arc_cost);
-        DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
-        chg->set_comment("AddOrUpdateEquivClassArcs/incoming");
-        dimacs_stats_->UpdateStats(CHG_ARC_TASK_TO_EQUIV_CLASS);
-        AddGraphChange(chg);
-      }
-    }
-    delete task_pref_arcs;
-  }
   vector<ResourceID_t>* res_pref_arcs =
     cost_model_->GetOutgoingEquivClassPrefArcs(ec);
   if (res_pref_arcs) {
@@ -573,10 +532,8 @@ void FlowGraphManager::AddTaskEquivClasses(FlowGraphNode* task_node) {
       // Node for task equiv class doesn't yet exist.
       ec_node_ptr = AddEquivClassNode(equiv_class);
     }
-    // Node for task equiv class now exists for sure. Add arc to it if we
-    // don't already have one: we might, as the act of adding the EC above
-    // mav already have created the arc, if it is returned by
-    // AddEquivClassNode's cost_model_->GetIncomingEquivClassPrefArcs().
+    // Add arc to EC if we don't already have one: we might, as the act of
+    // adding the EC may already have created the arc.
     if (!FlowGraph::GetArc(task_node, ec_node_ptr)) {
       VLOG(2) << "AddTaskEquivClasses adding arc from task " << task_node->id_
               << " to EC " << ec_node_ptr->id_;
@@ -1291,6 +1248,36 @@ void FlowGraphManager::ResetChanges() {
     delete *it_tmp;
   }
   graph_changes_.clear();
+}
+
+void FlowGraphManager::UpdateArcTaskToEquivClass(FlowGraphNode* task_node,
+                                                 FlowGraphNode* ec_node) {
+  uint64_t arc_cost =
+    cost_model_->TaskToEquivClassAggregator(task_node->task_id_,
+                                            ec_node->ec_id_);
+  FlowGraphArc* arc = FindPtrOrNull(task_node->outgoing_arc_map_, ec_node->id_);
+  if (!arc) {
+    // We don't have the arc yet, so add it
+    VLOG(2) << "Adding arc from task " << task_node->task_id_
+            << " to EC " << ec_node->ec_id_;
+    arc = flow_graph_->AddArc(task_node->id_, ec_node->id_);
+    // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
+    arc->cap_upper_bound_ = 1;
+    arc->cost_ = arc_cost;
+    DIMACSChange* chg = new DIMACSNewArc(*arc);
+    chg->set_comment("UpdateArcTaskToEquivClass: add EC arc");
+    dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_EQUIV_CLASS);
+    AddGraphChange(chg);
+    dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_EQUIV_CLASS);
+  } else if (arc_cost != arc->cost_) {
+    // It already exists, but its cost has changed
+    Cost_t old_cost = arc->cost_;
+    flow_graph_->ChangeArcCost(arc, arc_cost);
+    DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
+    chg->set_comment("UpdateArcTaskToEquivClass: change EC arc cost");
+    dimacs_stats_->UpdateStats(CHG_ARC_TASK_TO_EQUIV_CLASS);
+    AddGraphChange(chg);
+  }
 }
 
 void FlowGraphManager::UpdateTimeDependentCosts(
