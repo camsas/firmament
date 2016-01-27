@@ -89,7 +89,9 @@ TEST_F(FlowGraphManagerTest, AddOrUpdateJobNodes) {
   rt->set_job_id(test_job.uuid());
   CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
   uint32_t num_changes = graph_manager.graph_changes_.size();
-  graph_manager.AddOrUpdateJobNodes(&test_job);
+  vector<JobDescriptor*> jd_ptr_vect;
+  jd_ptr_vect.push_back(&test_job);
+  graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
   // This should add one new node for the agg, one arc change from agg to
   // sink, one new node for the root task, one new node for the
   // equivalence class and one new node for the cluster equiv class.
@@ -164,7 +166,9 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob) {
   rt->set_uid(GenerateRootTaskID(test_job));
   rt->set_job_id(test_job.uuid());
   CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
-  graph_manager.AddOrUpdateJobNodes(&test_job);
+  vector<JobDescriptor*> jd_ptr_vect;
+  jd_ptr_vect.push_back(&test_job);
+  graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
   // Three resource nodes, plus one task, plus unsched aggregator,
   // plus cluster aggregator EC, plus task EC
   CHECK_EQ(graph_manager.flow_graph()->NumNodes(), num_nodes + 7);
@@ -311,7 +315,9 @@ TEST_F(FlowGraphManagerTest, UnschedAggCapacityAdjustment) {
   rt->set_uid(GenerateRootTaskID(test_job));
   rt->set_job_id(test_job.uuid());
   CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
-  graph_manager.AddOrUpdateJobNodes(&test_job);
+  vector<JobDescriptor*> jd_ptr_vect;
+  jd_ptr_vect.push_back(&test_job);
+  graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
   // Grab the unscheduled aggregator for the new job
   uint64_t* unsched_agg_node_id =
     FindOrNull(graph_manager.job_unsched_to_node_id_, jid);
