@@ -39,7 +39,7 @@ class FlowGraphManager {
   // Public API
   void AddGraphChange(DIMACSChange* change);
   void AddMachine(ResourceTopologyNodeDescriptor* root);
-  void AddOrUpdateJobNodes(JobDescriptor* jd);
+  void AddOrUpdateJobNodes(const vector<JobDescriptor*>& jd_ptr_vect);
   void AddResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);
   bool CheckNodeType(uint64_t node, FlowNodeType type);
@@ -70,7 +70,7 @@ class FlowGraphManager {
   FlowGraphNode* UnscheduledAggregatorForJobID(JobID_t job_id);
   void UpdateResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);
-  void UpdateTimeDependentCosts(vector<JobDescriptor*>* job_vec);
+  void UpdateTimeDependentCosts(const vector<JobDescriptor*>& jd_ptr_vec);
   void UpdateUnscheduledAggArcCosts();
   // Simple accessor methods
   inline FlowGraph* flow_graph() {
@@ -115,8 +115,7 @@ class FlowGraphManager {
   void AddOrUpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void AddSpecialNodes();
   void AddTaskEquivClasses(FlowGraphNode* task_node);
-  FlowGraphNode* AddTaskNode(JobID_t job_id, TaskDescriptor* td_ptr,
-                             FlowGraphNode* unsched_agg_node);
+  FlowGraphNode* AddTaskNode(JobID_t job_id, TaskDescriptor* td_ptr);
   uint64_t CapacityBetweenECNodes(const FlowGraphNode& src,
                                   const FlowGraphNode& dst);
   void ConfigureResourceNodeECs(ResourceTopologyNodeDescriptor* rtnd);
