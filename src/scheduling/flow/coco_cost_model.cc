@@ -458,38 +458,6 @@ vector<ResourceID_t>* CocoCostModel::GetOutgoingEquivClassPrefArcs(
   return prefered_res;
 }
 
-vector<TaskID_t>* CocoCostModel::GetIncomingEquivClassPrefArcs(
-    EquivClass_t tec) {
-  vector<TaskID_t>* prefered_task = new vector<TaskID_t>();
-  if (task_aggs_.find(tec) != task_aggs_.end()) {
-    // tec is a task aggregator.
-    // This is where we add preference arcs from tasks to new equiv class
-    // aggregators.
-    // XXX(ionel): This is very slow because it iterates over all tasks.
-    for (TaskMap_t::iterator it = task_map_->begin(); it != task_map_->end();
-         ++it) {
-      vector<EquivClass_t>* tec_vec = GetTaskEquivClasses(it->first);
-      for (auto tvi = tec_vec->begin(); tvi != tec_vec->end(); ++tvi) {
-        if (*tvi == tec) {
-          // XXX(malte): task_map_ contains ALL tasks ever seen by the system,
-          // including those that have completed, failed or are otherwise no
-          // longer present in the flow graph. We do some crude filtering here,
-          // but clearly we should instead maintain a collection of tasks
-          // actually eligible for scheduling.
-          if (it->second->state() == TaskDescriptor::RUNNABLE ||
-              (FLAGS_preemption &&
-               it->second->state() == TaskDescriptor::RUNNING)) {
-            prefered_task->push_back(it->first);
-          }
-        }
-      }
-    }
-  } else {
-    LOG(FATAL) << "Unexpected type of task equivalence aggregator";
-  }
-  return prefered_task;
-}
-
 vector<ResourceID_t>* CocoCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   // TODO(malte): implement!
   return NULL;

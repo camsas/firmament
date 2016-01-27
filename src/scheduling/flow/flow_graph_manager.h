@@ -146,6 +146,8 @@ class FlowGraphManager {
                            const ResourceDescriptor& rd);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
+  void UpdateArcTaskToEquivClass(FlowGraphNode* task_node,
+                                 FlowGraphNode* ec_node);
   void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void UpdateUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta);
 

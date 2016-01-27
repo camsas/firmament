@@ -157,12 +157,6 @@ vector<ResourceID_t>* SimulatedQuincyCostModel::GetOutgoingEquivClassPrefArcs(
   return res;
 }
 
-vector<TaskID_t>* SimulatedQuincyCostModel::GetIncomingEquivClassPrefArcs(
-    EquivClass_t tec) {
-  vector<TaskID_t>* res = new vector<TaskID_t>();
-  return res;
-}
-
 vector<ResourceID_t>* SimulatedQuincyCostModel::GetTaskPreferenceArcs(
     TaskID_t task_id) {
   vector<ResourceID_t>* preferred_res = new vector<ResourceID_t>();

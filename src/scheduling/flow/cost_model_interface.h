@@ -114,13 +114,6 @@ class CostModelInterface {
       EquivClass_t tec) = 0;
 
   /**
-   * Get the task ids that have preference arcs to the given equivalence class.
-   * @param tec the equivalence class for which to get the task ids
-   */
-  virtual vector<TaskID_t>* GetIncomingEquivClassPrefArcs(
-      EquivClass_t tec) = 0;
-
-  /**
    * Get the resource preference arcs of a task.
    * @param task_id the id of the task for which to get the preference arcs
    */
