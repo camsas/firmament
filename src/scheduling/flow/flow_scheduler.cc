@@ -448,6 +448,9 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     solver_dispatcher_->NodeBindingToSchedulingDelta(
         *task, *dst->rd_ptr_, &task_bindings_, &deltas);
   }
+  // Freeing the mappings because they're not used below.
+  delete task_mappings;
+
   // Set the current timestamp to the timestamp of the end of the scheduling
   // round. Thus, we make sure that all the changes applied as a result of
   // scheduling have a timestamp equal to the end of the scheduling iteration.
