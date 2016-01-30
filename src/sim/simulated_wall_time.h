@@ -12,6 +12,7 @@ namespace sim {
 
 class SimulatedWallTime : public TimeInterface {
  public:
+  SimulatedWallTime();
   virtual ~SimulatedWallTime();
 
   /**

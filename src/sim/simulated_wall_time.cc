@@ -9,6 +9,9 @@ DECLARE_uint64(batch_step);
 namespace firmament {
 namespace sim {
 
+SimulatedWallTime::SimulatedWallTime() : current_simulation_timestamp_(0) {
+}
+
 SimulatedWallTime::~SimulatedWallTime() {
 }
 

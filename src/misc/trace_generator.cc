@@ -56,16 +56,18 @@ TraceGenerator::~TraceGenerator() {
     fclose(machine_events_);
     fclose(scheduler_events_);
     fclose(task_events_);
+    // Print runtime for service tasks or tasks that haven't completed.
     for (auto& task_id_runtime : task_to_runtime_) {
       uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id_runtime.first);
       TaskRuntime task_runtime = task_id_runtime.second;
       // NOTE: We are using the job id as the job logical name.
       fprintf(task_runtime_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju\n",
-              *job_id_ptr, task_id_runtime.first, *job_id_ptr,
-              task_runtime.start_time, task_runtime.total_runtime,
-              task_runtime.runtime, task_runtime.num_runs);
+              *job_id_ptr, task_runtime.task_id_, *job_id_ptr,
+              task_runtime.start_time_, task_runtime.total_runtime_,
+              task_runtime.runtime_, task_runtime.num_runs_);
     }
     fclose(task_runtime_events_);
+    // Print number of tasks for service jobs or jobs that haven't completed.
     for (auto& job_to_num_tasks : job_num_tasks_) {
       fprintf(jobs_num_tasks_, "%ju,%ju\n", job_to_num_tasks.first,
               job_to_num_tasks.second);
@@ -180,10 +182,10 @@ void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     if (tr_ptr == NULL) {
       TaskRuntime task_runtime;
-      task_runtime.task_id = trace_task_id;
-      task_runtime.start_time = timestamp;
-      task_runtime.num_runs = 0;
-      task_runtime.last_schedule_time = 0;
+      task_runtime.task_id_ = trace_task_id;
+      task_runtime.start_time_ = timestamp;
+      task_runtime.num_runs_ = 0;
+      task_runtime.last_schedule_time_ = 0;
       InsertIfNotPresent(&task_to_runtime_, task_id, task_runtime);
     }
   }
@@ -194,14 +196,19 @@ void TraceGenerator::TaskCompleted(TaskID_t task_id) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
+    task_to_job_.erase(task_id);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
     fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
-            timestamp, *job_id_ptr, tr_ptr->task_id, TASK_FINISH_EVENT);
+            timestamp, *job_id_ptr, tr_ptr->task_id_, TASK_FINISH_EVENT);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
-    tr_ptr->total_runtime += timestamp - tr_ptr->last_schedule_time;
-    tr_ptr->runtime = timestamp - tr_ptr->last_schedule_time;
+    tr_ptr->total_runtime_ += timestamp - tr_ptr->last_schedule_time_;
+    tr_ptr->runtime_ = timestamp - tr_ptr->last_schedule_time_;
+    fprintf(task_runtime_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju\n",
+            *job_id_ptr, tr_ptr->task_id_, *job_id_ptr, tr_ptr->start_time_,
+            tr_ptr->total_runtime_, tr_ptr->runtime_, tr_ptr->num_runs_);
+    task_to_runtime_.erase(task_id);
   }
 }
 
@@ -213,10 +220,10 @@ void TraceGenerator::TaskEvicted(TaskID_t task_id) {
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
     fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
-            timestamp, *job_id_ptr, tr_ptr->task_id, TASK_EVICT_EVENT);
+            timestamp, *job_id_ptr, tr_ptr->task_id_, TASK_EVICT_EVENT);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
-    tr_ptr->total_runtime += timestamp - tr_ptr->last_schedule_time;
+    tr_ptr->total_runtime_ += timestamp - tr_ptr->last_schedule_time_;
   }
 }
 
@@ -225,13 +232,18 @@ void TraceGenerator::TaskFailed(TaskID_t task_id) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
+    task_to_job_.erase(task_id);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
     fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
-            timestamp, *job_id_ptr, tr_ptr->task_id, TASK_FAIL_EVENT);
+            timestamp, *job_id_ptr, tr_ptr->task_id_, TASK_FAIL_EVENT);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
-    tr_ptr->total_runtime += timestamp - tr_ptr->last_schedule_time;
+    tr_ptr->total_runtime_ += timestamp - tr_ptr->last_schedule_time_;
+    fprintf(task_runtime_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju\n",
+            *job_id_ptr, tr_ptr->task_id_, *job_id_ptr, tr_ptr->start_time_,
+            tr_ptr->total_runtime_, tr_ptr->runtime_, tr_ptr->num_runs_);
+    task_to_runtime_.erase(task_id);
   }
 }
 
@@ -240,13 +252,18 @@ void TraceGenerator::TaskKilled(TaskID_t task_id) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
+    task_to_job_.erase(task_id);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
     fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
-            timestamp, *job_id_ptr, tr_ptr->task_id, TASK_KILL_EVENT);
+            timestamp, *job_id_ptr, tr_ptr->task_id_, TASK_KILL_EVENT);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
-    tr_ptr->total_runtime += timestamp - tr_ptr->last_schedule_time;
+    tr_ptr->total_runtime_ += timestamp - tr_ptr->last_schedule_time_;
+    fprintf(task_runtime_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju\n",
+            *job_id_ptr, tr_ptr->task_id_, *job_id_ptr, tr_ptr->start_time_,
+            tr_ptr->total_runtime_, tr_ptr->runtime_, tr_ptr->num_runs_);
+    task_to_runtime_.erase(task_id);
   }
 }
 
@@ -259,9 +276,9 @@ void TraceGenerator::TaskScheduled(TaskID_t task_id, ResourceID_t res_id) {
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
     fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
-            timestamp, *job_id_ptr, tr_ptr->task_id, TASK_SCHEDULE_EVENT);
-    tr_ptr->num_runs++;
-    tr_ptr->last_schedule_time = timestamp;
+            timestamp, *job_id_ptr, tr_ptr->task_id_, TASK_SCHEDULE_EVENT);
+    tr_ptr->num_runs_++;
+    tr_ptr->last_schedule_time_ = timestamp;
   }
 }
 
