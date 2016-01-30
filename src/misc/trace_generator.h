@@ -34,20 +34,27 @@ enum TraceMachineEvent {
 };
 
 struct TaskRuntime {
+  TaskRuntime() : task_id_(0), start_time_(0), num_runs_(0),
+    last_schedule_time_(0), total_runtime_(0), runtime_(0),
+    scheduling_class_(0), priority_(0), cpu_request_(0), ram_request_(0),
+    disk_request_(0), machine_constraint_(0) {
+  }
+
   // The id of the task. When we run a simulation, the field  gets populated
   // with the trace task id instead of Firmanent task id.
-  uint64_t task_id;
-  uint64_t start_time;
-  uint64_t num_runs;
-  uint64_t last_schedule_time;
-  uint64_t total_runtime;
-  uint64_t runtime;
-  int64_t scheduling_class;
-  int64_t priority;
-  double cpu_request;
-  double ram_request;
-  double disk_request;
-  int32_t machine_constraint;
+  uint64_t task_id_;
+  uint64_t start_time_;
+  uint64_t num_runs_;
+  uint64_t last_schedule_time_;
+  uint64_t total_runtime_;
+  uint64_t runtime_;
+  // TODO(ionel): Populate the remainder of the fields.
+  int64_t scheduling_class_;
+  int64_t priority_;
+  double cpu_request_;
+  double ram_request_;
+  double disk_request_;
+  int32_t machine_constraint_;
 };
 
 class TraceGenerator {
@@ -70,6 +77,9 @@ class TraceGenerator {
 
   TimeInterface* time_manager_;
   unordered_map<TaskID_t, uint64_t> task_to_job_;
+  // We currently only remove data from job_num_tasks_ when
+  // TraceGenerator is deleted. Update the code if the table
+  // ends up consuming too much memory.
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
   unordered_map<TaskID_t, TaskRuntime> task_to_runtime_;
   FILE* machine_events_;
