@@ -281,11 +281,7 @@ void FlowGraphManager::AddOrUpdateJobNodes(
     TaskDescriptor* cur = queue.front();
     queue.pop();
     // Check if this node has already been added.
-    uint64_t* tn_ptr = FindOrNull(task_to_nodeid_map_, cur->uid());
-    FlowGraphNode* task_node = NULL;
-    if (tn_ptr) {
-      task_node = flow_graph_->Node(*tn_ptr);
-    }
+    FlowGraphNode* task_node = FindPtrOrNull(task_to_node_map_, cur->uid());
     if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
       task_node = AddTaskNode(JobIDFromString(cur->job_id()), cur);
       AddTaskEquivClasses(task_node);
@@ -340,9 +336,8 @@ void FlowGraphManager::AddOrUpdateJobNodes(
 }
 
 FlowGraphNode* FlowGraphManager::AddOrUpdateJobUnscheduledAgg(JobID_t job_id) {
-  uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
-  FlowGraphNode* unsched_agg_node;
-  if (!unsched_agg_node_id) {
+  FlowGraphNode* unsched_agg_node = FindPtrOrNull(job_unsched_to_node_, job_id);
+  if (!unsched_agg_node) {
     unsched_agg_node = flow_graph_->AddNode();
     unsched_agg_node->type_ = FlowNodeType::JOB_AGGREGATOR;
     unsched_agg_node->comment_ = "UNSCHED_AGG_for_" + to_string(job_id);
@@ -353,9 +348,7 @@ FlowGraphNode* FlowGraphManager::AddOrUpdateJobUnscheduledAgg(JobID_t job_id) {
     unsched_agg_to_sink_arc->cost_ =
       cost_model_->UnscheduledAggToSinkCost(job_id);
     // Record this for the future in the job <-> node ID lookup table
-    CHECK(InsertIfNotPresent(&job_unsched_to_node_id_,
-                             job_id,
-                             unsched_agg_node->id_));
+    CHECK(InsertIfNotPresent(&job_unsched_to_node_, job_id, unsched_agg_node));
     dimacs_stats_->UpdateStats(ADD_ARC_FROM_UNSCHED);
     // Add new job unscheduled agg to the graph changes.
     vector<FlowGraphArc*> unsched_arcs;
@@ -364,10 +357,6 @@ FlowGraphNode* FlowGraphManager::AddOrUpdateJobUnscheduledAgg(JobID_t job_id) {
     chg->set_comment("AddOrUpdateJobNodes: unsched_agg");
     dimacs_stats_->UpdateStats(ADD_UNSCHED_JOB_NODE);
     AddGraphChange(chg);
-  } else {
-    CHECK_NOTNULL(unsched_agg_node_id);
-    unsched_agg_node = flow_graph_->Node(*unsched_agg_node_id);
-    CHECK_NOTNULL(unsched_agg_node);
   }
   return unsched_agg_node;
 }
@@ -567,17 +556,15 @@ FlowGraphNode* FlowGraphManager::AddTaskNode(JobID_t job_id,
   task_node->task_id_ = td_ptr->uid();  // set task ID in node
   task_node->job_id_ = job_id;
   sink_node_->excess_--;
-  task_nodes_.insert(task_node->id_);
   // Insert a record for the node representing this task's ID
-  InsertIfNotPresent(&task_to_nodeid_map_, td_ptr->uid(), task_node->id_);
+  InsertIfNotPresent(&task_to_node_map_, td_ptr->uid(), task_node);
   // Log info
   VLOG(2) << "Adding edges for task " << td_ptr->uid() << "'s node ("
           << task_node->id_ << "); task state is " << td_ptr->state();
-  uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
-  CHECK_NOTNULL(unsched_agg_node_id);
+  FlowGraphNode* unsched_agg_node = FindPtrOrNull(job_unsched_to_node_, job_id);
+  CHECK_NOTNULL(unsched_agg_node);
   // Arcs for this node
-  AddArcsForTask(task_node, flow_graph_->Node(*unsched_agg_node_id),
-                 &task_arcs);
+  AddArcsForTask(task_node, unsched_agg_node, &task_arcs);
   // Add the new task node to the graph changes
   DIMACSChange *chg = new DIMACSAddNode(*task_node, task_arcs);
   chg->set_comment("AddOrUpdateJobNodes: task node");
@@ -858,10 +845,9 @@ void FlowGraphManager::DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
 
 uint64_t FlowGraphManager::DeleteTaskNode(TaskID_t task_id,
                                           const char *comment) {
-  uint64_t* node_id = FindOrNull(task_to_nodeid_map_, task_id);
-  CHECK_NOTNULL(node_id);
-  uint64_t task_node_id = *node_id;
-  FlowGraphNode* node = flow_graph_->Node(task_node_id);
+  FlowGraphNode* node = FindPtrOrNull(task_to_node_map_, task_id);
+  CHECK_NOTNULL(node);
+  uint64_t task_node_id = node->id_;
   // Increase the sink's excess and set this node's excess to zero
   node->excess_ = 0;
   sink_node_->excess_++;
@@ -872,8 +858,7 @@ uint64_t FlowGraphManager::DeleteTaskNode(TaskID_t task_id,
   // Then remove node meta-data
   VLOG(2) << "Deleting task node with id " << node->id_ << ", task id "
           << node->task_id_;
-  CHECK_EQ(task_nodes_.erase(node->id_), 1);
-  CHECK_EQ(task_to_nodeid_map_.erase(task_id), 1);
+  CHECK_EQ(task_to_node_map_.erase(task_id), 1);
   // Then remove the node itself. This needs to happen first, so that the arc
   // counts for ECs are correct.
   DIMACSChange *chg = new DIMACSRemoveNode(*node);
@@ -895,11 +880,10 @@ uint64_t FlowGraphManager::DeleteTaskNode(TaskID_t task_id,
 }
 
 void FlowGraphManager::JobCompleted(JobID_t job_id) {
-  uint64_t* unsched_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
-  CHECK_NOTNULL(unsched_node_id);
-  FlowGraphNode* node = flow_graph_->Node(*unsched_node_id);
+  FlowGraphNode* node = FindPtrOrNull(job_unsched_to_node_, job_id);
+  CHECK_NOTNULL(node);
   CHECK_EQ(node->incoming_arc_map_.size(), 0);
-  job_unsched_to_node_id_.erase(job_id);
+  job_unsched_to_node_.erase(job_id);
   DIMACSChange *chg = new DIMACSRemoveNode(*node);
   chg->set_comment("JobCompleted: unsched");
   dimacs_stats_->UpdateStats(DEL_UNSCHED_JOB_NODE);
@@ -912,12 +896,7 @@ FlowGraphNode* FlowGraphManager::NodeForResourceID(const ResourceID_t& res_id) {
 }
 
 FlowGraphNode* FlowGraphManager::NodeForTaskID(TaskID_t task_id) {
-  uint64_t* id = FindOrNull(task_to_nodeid_map_, task_id);
-  // Returns NULL if task unknown
-  if (!id)
-    return NULL;
-  VLOG(2) << "Task " << task_id << " is represented by node " << *id;
-  return flow_graph_->Node(*id);
+  return FindPtrOrNull(task_to_node_map_, task_id);
 }
 
 void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
@@ -1106,16 +1085,6 @@ void FlowGraphManager::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
   UpdateArcsForBoundTask(tid, res_id);
 }
 
-FlowGraphNode* FlowGraphManager::UnscheduledAggregatorForJobID(JobID_t job_id) {
-  uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_, job_id);
-  if (unsched_agg_node_id == NULL) {
-    LOG(WARNING) << "Job " << job_id << " does not have an unscheduled "
-                 << "aggregator node";
-    return NULL;
-  }
-  return flow_graph_->Node(*unsched_agg_node_id);
-}
-
 void FlowGraphManager::UpdateArcsForBoundTask(TaskID_t tid,
                                               ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(tid);
@@ -1154,10 +1123,8 @@ void FlowGraphManager::UpdateArcsForEvictedTask(TaskID_t task_id,
     // Add back arcs to equiv class node, unscheduled agg and to
     // resource topology agg.
     vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
-    uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_,
-                                               task_node->job_id_);
-    FlowGraphNode* unsched_agg_node_ptr =
-      flow_graph_->Node(*unsched_agg_node_id);
+    FlowGraphNode* unsched_agg_node_ptr = FindPtrOrNull(job_unsched_to_node_,
+                                                        task_node->job_id_);
     CHECK_NOTNULL(unsched_agg_node_ptr);
 
     AddArcsForTask(task_node, unsched_agg_node_ptr, task_arcs);
@@ -1286,11 +1253,8 @@ void FlowGraphManager::UpdateTimeDependentCosts(
 }
 
 void FlowGraphManager::UpdateUnscheduledAggArcCosts() {
-  unordered_map<JobID_t, uint64_t,
-                boost::hash<boost::uuids::uuid> >::iterator it =
-      job_unsched_to_node_id_.begin();
-  for (; it != job_unsched_to_node_id_.end(); ++it) {
-    FlowGraphNode* unsched_node = flow_graph_->Node(it->second);
+  for (auto& job_node : job_unsched_to_node_) {
+    FlowGraphNode* unsched_node = job_node.second;
     for (unordered_map<uint64_t, FlowGraphArc*>::iterator
          ait = unsched_node->incoming_arc_map_.begin();
          ait != unsched_node->incoming_arc_map_.end();) {
@@ -1314,11 +1278,10 @@ void FlowGraphManager::UpdateUnscheduledAggArcCosts() {
 
 void FlowGraphManager::UpdateUnscheduledAggToSinkCapacity(
     JobID_t job, int64_t delta) {
-  uint64_t* unsched_agg_node_id = FindOrNull(job_unsched_to_node_id_, job);
-  CHECK_NOTNULL(unsched_agg_node_id);
+  FlowGraphNode* unsched_agg_node = FindPtrOrNull(job_unsched_to_node_, job);
+  CHECK_NOTNULL(unsched_agg_node);
   FlowGraphArc* unsched_agg_to_sink_arc =
-    FindPtrOrNull(flow_graph_->Node(*unsched_agg_node_id)->outgoing_arc_map_,
-                  sink_node_->id_);
+    FindPtrOrNull(unsched_agg_node->outgoing_arc_map_, sink_node_->id_);
   CHECK_NOTNULL(unsched_agg_to_sink_arc);
   unsched_agg_to_sink_arc->cap_upper_bound_ += delta;
   DIMACSChange *chg = new DIMACSChangeArc(*unsched_agg_to_sink_arc,

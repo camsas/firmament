@@ -67,7 +67,6 @@ class FlowGraphManager {
                     ResourceID_t old_res_id,
                     ResourceID_t new_res_id);
   void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
-  FlowGraphNode* UnscheduledAggregatorForJobID(JobID_t job_id);
   void UpdateResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);
   void UpdateTimeDependentCosts(const vector<JobDescriptor*>& jd_ptr_vec);
@@ -81,9 +80,6 @@ class FlowGraphManager {
   }
   inline const unordered_set<uint64_t>& leaf_node_ids() const {
     return leaf_nodes_;
-  }
-  inline const unordered_set<uint64_t>& task_node_ids() const {
-    return task_nodes_;
   }
   inline FlowGraphNode* sink_node() {
     return sink_node_;
@@ -158,7 +154,7 @@ class FlowGraphManager {
 
   FlowGraphNode* sink_node_;
   // Resource and task mappings
-  unordered_map<TaskID_t, uint64_t> task_to_nodeid_map_;
+  unordered_map<TaskID_t, FlowGraphNode*> task_to_node_map_;
   unordered_map<ResourceID_t, FlowGraphNode*,
       boost::hash<boost::uuids::uuid> > resource_to_node_map_;
   // Hacky solution for retrieval of the parent of any particular resource
@@ -166,11 +162,10 @@ class FlowGraphManager {
   unordered_map<ResourceID_t, ResourceID_t,
       boost::hash<boost::uuids::uuid> > resource_to_parent_map_;
   // The "node ID" for the job is currently the ID of the job's unscheduled node
-  unordered_map<JobID_t, uint64_t,
-      boost::hash<boost::uuids::uuid> > job_unsched_to_node_id_;
+  unordered_map<JobID_t, FlowGraphNode*,
+      boost::hash<boost::uuids::uuid> > job_unsched_to_node_;
   unordered_set<uint64_t> leaf_nodes_;
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
-  unordered_set<uint64_t> task_nodes_;
 
   // Mapping storing flow graph nodes for each task equivalence class.
   unordered_map<EquivClass_t, FlowGraphNode*> tec_to_node_;
