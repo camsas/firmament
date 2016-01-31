@@ -64,4 +64,7 @@ message TaskDescriptor {
   optional TaskType task_type = 26;
   /* Final report after successful execution */
   optional TaskFinalReport final_report = 27;
+  /* Simulation related fields*/
+  optional uint64 trace_job_id = 28;
+  optional uint64 trace_task_id = 29;
 }

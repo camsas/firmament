@@ -145,19 +145,9 @@ void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
     string simulator_job_prefix = "firmament_simulation_job_";
     TaskID_t task_id = td_ptr->uid();
     uint64_t trace_task_id;
-    if (td_ptr->has_name() &&
-        td_ptr->name().find(simulator_job_prefix) == 0) {
-      // The job is coming from a simulation. Get the job id out of
-      // the job's name.
-      string job_id_str =
-        td_ptr->name().substr(simulator_job_prefix.size(), string::npos);
-      try {
-        job_id = boost::lexical_cast<uint64_t>(job_id_str);
-      } catch (const boost::bad_lexical_cast &) {
-        LOG(FATAL) << "Could not convert: " << td_ptr->name();
-      }
-      // Set the id to the trace task id which is passed via the index.
-      trace_task_id = td_ptr->index();
+    if (td_ptr->has_trace_job_id()) {
+      job_id = td_ptr->trace_job_id();
+      trace_task_id = td_ptr->trace_task_id();
     } else {
       size_t hash = 42;
       boost::hash_combine(hash, td_ptr->job_id());

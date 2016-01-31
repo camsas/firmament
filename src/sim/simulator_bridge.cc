@@ -165,6 +165,8 @@ bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier) {
   }
 
   TaskDescriptor* td_ptr = AddTaskToJob(jd_ptr, task_identifier.task_index);
+  td_ptr->set_trace_job_id(task_identifier.job_id);
+  td_ptr->set_trace_task_id(task_identifier.task_index);
   // The task binary is used by GenerateRootTaskID to generate a unique
   // root task identifier. Hence, we set it to the trace job id which
   // is unique.
@@ -261,19 +263,8 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr,
     new_task = root_task;
     new_task->set_uid(GenerateRootTaskID(*jd_ptr));
   }
-  // XXX(ionel): HACK! I set the index to the trace task id which I can
-  // then access in TraceGenerator to print it instead of the Firmament
-  // task id. I can't set it directly as the uid of the task because
-  // trace task id are only uid within a job (i.e. they are indices).
-  new_task->set_index(trace_task_id);
   new_task->set_state(TaskDescriptor::CREATED);
   new_task->set_job_id(jd_ptr->uuid());
-  // XXX(ionel): HACK! I set the name of the task to the hacked name of the job
-  // so that we can reconstruct the job trace id of the task in the
-  // TraceGenerator.
-  // TODO(ionel): Add an optional trace task and job id fields to TaskDescriptor
-  // protobuf.
-  new_task->set_name(jd_ptr->name());
   return new_task;
 }
 
@@ -436,9 +427,6 @@ JobDescriptor* SimulatorBridge::PopulateJob(uint64_t trace_job_id) {
 
   // Maintain a mapping between the trace job_id and the generated job_id.
   jd_ptr->set_uuid(to_string(new_job_id));
-  // Set the name of the job to a string that denotes we're running a simulation
-  // continued by the trace job id. We use the name to generate a simulation
-  // trace that uses trace job ids.
   jd_ptr->set_name("firmament_simulation_job_" +
                    lexical_cast<string>(trace_job_id));
   if (!InsertIfNotPresent(&trace_job_id_to_jd_, trace_job_id, jd_ptr)) {
