@@ -207,24 +207,15 @@ void SimulatorBridge::AddTaskStats(
     TaskID_t task_id) {
   TraceTaskStats* task_stats =
     FindOrNull(trace_task_id_to_stats_, trace_task_identifier);
-  if (task_stats == NULL) {
-    // Already added stats to knowledge base.
-    LOG(WARNING) << "Already added stats to knowledge base for "
-                 << trace_task_identifier.job_id << "/"
-                 << trace_task_identifier.task_index;
+  if (!task_stats) {
+    // We have no stats for the task.
+    LOG(WARNING) << "No stats for " << trace_task_identifier.job_id << ","
+                 << trace_task_identifier.task_index << " exist";
     return;
   }
-  uint64_t* task_runtime_ptr =
-    FindOrNull(task_runtime_, trace_task_identifier);
-  double runtime = 0.0;
-  if (task_runtime_ptr != NULL) {
-    // knowledge base has runtime in ms, but we get it in micros
-    runtime = *task_runtime_ptr / MILLISECONDS_TO_MICROSECONDS;
-  } else {
-    // We don't have information about this task's runtime.
-    // Set its runtime to max which means it's a service task.
-    runtime = numeric_limits<double>::max();
-  }
+  // NOTE: We do not add runtime statistics./ Hence, the simulations
+  // work without knowing tasks' runtime before their first run. I believe this
+  // is the correct way to replay the trace.
   knowledge_base_->SetTraceTaskStats(task_id, *task_stats);
   trace_task_id_to_stats_.erase(trace_task_identifier);
 }
