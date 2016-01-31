@@ -51,9 +51,9 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   /**
    * Adds a new task to the flow graph. Updates the internal mappings as well.
    * @param task_identifier the simulator task identifier
-   * @return a pointer to the descriptor of the task
+   * @return true if the task has been added.
    */
-  TaskDescriptor* AddTask(const TraceTaskIdentifier& task_identifier);
+  bool AddTask(const TraceTaskIdentifier& task_identifier);
 
   void LoadTraceData(TraceLoader* trace_loader);
 
@@ -197,6 +197,14 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
       const ResourceTopologyNodeDescriptor& rtnd);
 
   /**
+   * Removes a spawned task from the job's spanwed list.
+   * @param jd_ptr the descriptor of the job
+   * @param td_to_remove the descriptor of the task to be removed
+   */
+  void RemoveTaskFromSpawned(JobDescriptor* jd_ptr,
+                             const TaskDescriptor& td_to_remove);
+
+  /**
    * The resource topology is built from the same protobuf file. The function
    * changes the uuids to make sure that there's no two identical uuids.
    */
@@ -259,6 +267,9 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   // task descriptors.
   unordered_map<TraceTaskIdentifier, TaskDescriptor*, TraceTaskIdentifierHasher>
       trace_task_id_to_td_;
+  // Set storing all the submitted tasks.
+  unordered_set<TraceTaskIdentifier,
+    TraceTaskIdentifierHasher> submitted_tasks_;
 
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.

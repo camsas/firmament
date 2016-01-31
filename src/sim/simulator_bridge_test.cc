@@ -78,7 +78,9 @@ TEST_F(SimulatorBridgeTest, AddTask) {
   CHECK_EQ(bridge_->task_id_to_identifier_.size(), 0);
   CHECK_EQ(bridge_->trace_task_id_to_td_.size(), 0);
   // Add the first task.
-  TaskDescriptor* td1_ptr = bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id);
+  TaskDescriptor* td1_ptr =
+    FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   CHECK_NOTNULL(td1_ptr);
   CHECK_EQ(td1_ptr->state(), TaskDescriptor::CREATED);
   CHECK_EQ(bridge_->job_map_->size(), 1);
@@ -90,7 +92,9 @@ TEST_F(SimulatorBridgeTest, AddTask) {
   CHECK_EQ(bridge_->trace_task_id_to_td_.size(), 1);
   // Add the second task.
   trace_task_id.task_index = 2;
-  TaskDescriptor* td2_ptr = bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id);
+  TaskDescriptor* td2_ptr =
+    FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   CHECK_NOTNULL(td2_ptr);
   CHECK_EQ(td2_ptr->state(), TaskDescriptor::CREATED);
   CHECK_EQ(bridge_->job_map_->size(), 1);
@@ -108,7 +112,9 @@ TEST_F(SimulatorBridgeTest, OnJobCompletion) {
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
-  TaskDescriptor* td_ptr = bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id);
+  TaskDescriptor* td_ptr =
+    FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
   CHECK(InsertIfNotPresent(&bridge_->job_num_tasks_, trace_task_id.job_id, 1));
   CHECK(InsertIfNotPresent(&bridge_->task_runtime_, trace_task_id, 10));
@@ -131,7 +137,9 @@ TEST_F(SimulatorBridgeTest, OnTaskCompletion) {
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
-  TaskDescriptor* td_ptr = bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id);
+  TaskDescriptor* td_ptr =
+    FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
   CHECK(InsertIfNotPresent(&bridge_->job_num_tasks_, trace_task_id.job_id, 1));
   CHECK(InsertIfNotPresent(&bridge_->task_runtime_, trace_task_id, 10));
@@ -154,7 +162,9 @@ TEST_F(SimulatorBridgeTest, OnTaskEviction) {
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
-  TaskDescriptor* td_ptr = bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id);
+  TaskDescriptor* td_ptr =
+    FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
   CHECK(InsertIfNotPresent(&bridge_->task_runtime_, trace_task_id, 10));
   bridge_->OnTaskPlacement(td_ptr, pu_rd_ptr);
@@ -176,7 +186,9 @@ TEST_F(SimulatorBridgeTest, OnTaskPlacement) {
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
-  TaskDescriptor* td_ptr = bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id);
+  TaskDescriptor* td_ptr =
+    FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
   CHECK(InsertIfNotPresent(&bridge_->task_runtime_, trace_task_id, 10));
   bridge_->OnTaskPlacement(td_ptr, pu_rd_ptr);

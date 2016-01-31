@@ -317,7 +317,10 @@ void GoogleTraceLoader::LoadTasksRunningTime(
           // skip event
           continue;
         }
-
+        // Get the total runtime of the task. This includes the time
+        // of the runs that failed or were killed. In this way, we make
+        // sure that the task runs for the same amount of time as when
+        // it executed in real-world.
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
         if (!InsertIfNotPresent(task_runtime, task_id, runtime) &&
             VLOG_IS_ON(1)) {
