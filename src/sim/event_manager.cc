@@ -85,6 +85,20 @@ uint64_t EventManager::GetTimeOfNextSchedulerRun(
     // Adjust for time warp factor.
     cur_scheduler_runtime *= FLAGS_online_factor;
     cur_run_scheduler_at += cur_scheduler_runtime;
+    if (cur_scheduler_runtime == 0) {
+      // The scheduler didn't have anything to do.
+      // Only run it after the next event that can change task placement.
+      for (auto& time_event : events_) {
+        if (time_event.second.type() == EventDescriptor::TASK_SUBMIT ||
+            time_event.second.type() == EventDescriptor::REMOVE_MACHINE ||
+            time_event.second.type() == EventDescriptor::ADD_MACHINE ||
+            time_event.second.type() == EventDescriptor::TASK_END_RUNTIME) {
+          return time_event.first;
+        }
+      }
+      // There's no event left that requires a scheduler run.
+      return UINT64_MAX;
+    }
   } else {
     // We're in batch mode.
     cur_run_scheduler_at += FLAGS_batch_step;

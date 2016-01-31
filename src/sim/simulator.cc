@@ -131,12 +131,7 @@ void Simulator::ReplaySimulation() {
       run_scheduler_at = ScheduleJobsHelper(run_scheduler_at);
       // We don't have to set the time to the previous value because
       // we already processed the events up to run_scheduler_at.
-      if (old_run_scheduler_at == run_scheduler_at) {
-        // The scheduler had nothing to do.
-        // TODO(ionel): Figure out a way of only running the scheduler again
-        // when a task has to be rescheduled or a new task has been submited.
-        run_scheduler_at += 10000;
-      }
+      CHECK_NE(old_run_scheduler_at, run_scheduler_at);
       num_scheduling_rounds++;
     } else {
       bridge_->ProcessSimulatorEvents(FLAGS_runtime);
