@@ -207,7 +207,7 @@ namespace sim {
       unordered_map<TaskIdentifier, TaskRuntime,
                     TaskIdentifierHasher>* tasks_runtime,
       unordered_map<uint64_t, string>* job_id_to_name,
-      FILE* out_events_file, vector<string>& line_cols) {
+      vector<string>& line_cols) {
     if (event_type == TASK_SCHEDULE) {
       TaskRuntime* task_runtime_ptr = FindOrNull(*tasks_runtime, task_id);
       if (task_runtime_ptr == NULL) {
@@ -255,17 +255,15 @@ namespace sim {
         task_runtime.num_runs_ = 1;
         task_runtime.total_runtime_ = timestamp;
         PopulateTaskRuntime(&task_runtime, line_cols);
+        task_runtime.runtime_ = timestamp;
         InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
-        PrintTaskRuntime(out_events_file, task_runtime, task_id,
-                         logical_job_name, timestamp);
       } else {
         task_runtime_ptr->num_runs_++;
         task_runtime_ptr->total_runtime_ +=
           timestamp - task_runtime_ptr->last_schedule_time_;
         PopulateTaskRuntime(task_runtime_ptr, line_cols);
-        PrintTaskRuntime(out_events_file, *task_runtime_ptr, task_id,
-                         logical_job_name,
-                         timestamp - task_runtime_ptr->last_schedule_time_);
+        task_runtime_ptr->runtime_ =
+          timestamp - task_runtime_ptr->last_schedule_time_;
         task_runtime_ptr->last_schedule_time_ = -2;  // unscheduled
       }
     } else if (event_type == TASK_UPDATE_PENDING ||
@@ -578,16 +576,15 @@ namespace sim {
 
   void GoogleTraceTaskProcessor::PrintTaskRuntime(
       FILE* out_events_file, const TaskRuntime& task_runtime,
-      const TaskIdentifier& task_id, string logical_job_name,
-      uint64_t runtime) {
+      const TaskIdentifier& task_id, string logical_job_name) {
     fprintf(out_events_file, "%ju,%ju,%s,%jd,%jd"
             ",%ju,%ju,%jd,%jd,%lf,%lf,%lf,%d\n",
             task_id.job_id_, task_id.task_index_, logical_job_name.c_str(),
-            task_runtime.start_time_, task_runtime.total_runtime_, runtime,
-            task_runtime.num_runs_, task_runtime.scheduling_class_,
-            task_runtime.priority_, task_runtime.cpu_request_,
-            task_runtime.ram_request_, task_runtime.disk_request_,
-            task_runtime.machine_constraint_);
+            task_runtime.start_time_, task_runtime.total_runtime_,
+            task_runtime.runtime_, task_runtime.num_runs_,
+            task_runtime.scheduling_class_, task_runtime.priority_,
+            task_runtime.cpu_request_, task_runtime.ram_request_,
+            task_runtime.disk_request_, task_runtime.machine_constraint_);
   }
 
   void GoogleTraceTaskProcessor::ProcessSchedulingEvents(
@@ -628,17 +625,11 @@ namespace sim {
     string out_events_directory;
     spf(&out_events_directory, "%s/task_runtime_events", trace_path_.c_str());
     MkdirIfNotPresent(out_events_directory);
-    FILE* out_events_file_all;
-    FILE* out_events_file_avg;
-    string out_file_all_name, out_file_avg_name;
-    spf(&out_file_all_name, "%s/all_task_runtime_events.csv",
+    FILE* out_events_file;
+    string out_file_name;
+    spf(&out_file_name, "%s/task_runtime_events.csv",
         out_events_directory.c_str());
-    if ((out_events_file_all = fopen(out_file_all_name.c_str(), "w")) == NULL) {
-      LOG(FATAL) << "Failed to open task_runtime_events file for writing";
-    }
-    spf(&out_file_avg_name, "%s/task_runtime_events.csv",
-        out_events_directory.c_str());
-    if ((out_events_file_avg = fopen(out_file_avg_name.c_str(), "w")) == NULL) {
+    if ((out_events_file = fopen(out_file_name.c_str(), "w")) == NULL) {
       LOG(FATAL) << "Failed to open task_runtime_events file for writing";
     }
     for (int32_t file_num = 0; file_num < FLAGS_num_files_to_process;
@@ -668,60 +659,60 @@ namespace sim {
             task_id.task_index_ = lexical_cast<uint64_t>(line_cols[3]);
             int32_t event_type = lexical_cast<int32_t>(line_cols[5]);
             ExpandTaskEvent(timestamp, task_id, event_type, &tasks_runtime,
-                            &job_id_to_name, out_events_file_all, line_cols);
+                            &job_id_to_name, line_cols);
           }
         }
         num_line++;
       }
       fclose(events_file);
     }
-    fclose(out_events_file_all);
 
-    // this outputs averages for all tasks
-    for (unordered_map<TaskIdentifier, TaskRuntime,
-           TaskIdentifierHasher>::iterator it = tasks_runtime.begin();
-         it != tasks_runtime.end(); ++it) {
-      TaskIdentifier task_id = it->first;
+    for (auto& task_id_runtime : tasks_runtime) {
+      TaskIdentifier task_id = task_id_runtime.first;
       string logical_job_name =  job_id_to_name[task_id.job_id_];
-      uint64_t runtime = 0;
-      TaskRuntime task_runtime = it->second;
-
+      TaskRuntime task_runtime = task_id_runtime.second;
       if (task_runtime.last_schedule_time_ >= 0) {
-        // task is still running
+        // Task is still running.
         if (task_runtime.num_runs_ == 0) {
-          runtime = end_simulation_time - task_runtime.last_schedule_time_;
+          // It's the first time the task is running. We assume it
+          // runs until the end of the trace.
+          task_runtime.runtime_ =
+            end_simulation_time - task_runtime.last_schedule_time_;
           task_runtime.num_runs_++;
-          task_runtime.total_runtime_ = runtime;
+          task_runtime.total_runtime_ = task_runtime.runtime_;
         } else {
-          uint64_t avg_runtime =
-            task_runtime.total_runtime_ / task_runtime.num_runs_;
-          runtime = end_simulation_time - task_runtime.last_schedule_time_;
-          // If the average runtime to failure is bigger than the current
-          // runtime then we assume that the task is going to run for avg
-          // runtime to failure.
-          if (avg_runtime > runtime) {
-            runtime = avg_runtime;
+          if (task_runtime.runtime_ == 0) {
+            // The task has never completed successfully.
+            // We assume that the task is going to run for the average duration
+            // of the previous failed runs.
+            task_runtime.runtime_ =
+              task_runtime.total_runtime_ / task_runtime.num_runs_;
+          }
+          // Make sure the time left to run the task doesn't exceed
+          // simulation's end time.
+          if (task_runtime.runtime_ >
+              end_simulation_time - task_runtime.last_schedule_time_) {
+            task_runtime.total_runtime_ +=
+              end_simulation_time - task_runtime.last_schedule_time_;
+          } else {
+            task_runtime.total_runtime_ += task_runtime.runtime_;
           }
           task_runtime.num_runs_++;
-          task_runtime.total_runtime_ += runtime;
         }
       } else {
-        // task has finished, compute average
-        // (most the time, there will be just one run)
-        // SOMEDAY(adam): unclear if this is the 'right' way of handling it
-        // e.g. if you had task be killed, rescheduled, then finish probably
-        // only want to count the last run (ignore the failed one)
-        uint64_t avg_runtime =
-          task_runtime.total_runtime_ / task_runtime.num_runs_;
-        runtime = avg_runtime;
+        if (task_runtime.runtime_ == 0) {
+          // The task has never completed successfully. Set the runtime
+          // to the average of the failed runs.
+          task_runtime.runtime_ =
+            task_runtime.total_runtime_ / task_runtime.num_runs_;
+        }
       }
-
-      PrintTaskRuntime(out_events_file_avg, task_runtime, task_id,
-                       logical_job_name, runtime);
+      PrintTaskRuntime(out_events_file, task_runtime, task_id,
+                       logical_job_name);
     }
     job_id_to_name.clear();
     delete &job_id_to_name;
-    fclose(out_events_file_avg);
+    fclose(out_events_file);
   }
 
   void GoogleTraceTaskProcessor::JobsNumTasks() {
