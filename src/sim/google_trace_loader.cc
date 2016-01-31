@@ -18,6 +18,8 @@
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 
+#define MAX_LINE_LENGTH 1000
+
 DEFINE_double(events_fraction, 1.0, "Fraction of events to retain.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(trace_path, "", "Path where the trace files are.");
@@ -56,7 +58,7 @@ GoogleTraceLoader::~GoogleTraceLoader() {
 
 void GoogleTraceLoader::LoadJobsNumTasks(
     unordered_map<uint64_t, uint64_t>* job_num_tasks) {
-  char line[200];
+  char line[MAX_LINE_LENGTH];
   vector<string> cols;
   FILE* jobs_tasks_file = NULL;
   string jobs_tasks_file_name = FLAGS_trace_path +
@@ -84,7 +86,7 @@ void GoogleTraceLoader::LoadJobsNumTasks(
 
 void GoogleTraceLoader::LoadMachineEvents(
     multimap<uint64_t, EventDescriptor>* machine_events) {
-  char line[200];
+  char line[MAX_LINE_LENGTH];
   vector<string> cols;
   FILE* machines_file;
   string machines_file_name = FLAGS_trace_path +
@@ -137,7 +139,7 @@ void GoogleTraceLoader::LoadMachineEvents(
 void GoogleTraceLoader::LoadTaskEvents(
     uint64_t events_up_to_time,
     unordered_map<uint64_t, uint64_t>* job_num_tasks) {
-  char line[200];
+  char line[MAX_LINE_LENGTH];
   vector<string> vals;
   while (true) {
     // Check if we're already reading from a file.
@@ -211,7 +213,7 @@ void GoogleTraceLoader::LoadTaskEvents(
 void GoogleTraceLoader::LoadTaskUtilizationStats(
     unordered_map<TraceTaskIdentifier, TraceTaskStats,
       TraceTaskIdentifierHasher>* task_id_to_stats) {
-  char line[1000];
+  char line[MAX_LINE_LENGTH];
   vector<string> cols;
   FILE* usage_file = NULL;
   string usage_file_name = FLAGS_trace_path +
@@ -288,7 +290,7 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
 void GoogleTraceLoader::LoadTasksRunningTime(
     unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
       task_runtime) {
-  char line[200];
+  char line[MAX_LINE_LENGTH];
   vector<string> cols;
   FILE* tasks_file = NULL;
   string tasks_file_name = FLAGS_trace_path +
