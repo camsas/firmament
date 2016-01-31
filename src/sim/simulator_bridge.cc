@@ -138,8 +138,24 @@ void SimulatorBridge::AddMachineSamples(uint64_t current_time) {
   }
 }
 
-TaskDescriptor* SimulatorBridge::AddTask(
-    const TraceTaskIdentifier& task_identifier) {
+bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier) {
+  if (submitted_tasks_.find(task_identifier) != submitted_tasks_.end()) {
+    // In the trace, a task is submitted again after a task FAIL, EVICT, KILL
+    // or LOST event. We can't exactly replay these events because they depend
+    // on scheduling decisions. Instead, in the simulation the runtime of
+    // a task is equal to the sum of runtimes of every attempt to run the task
+    // in the trace. With this approach, the task will keep resources busy
+    // for the same amount of time.
+    // We only care about the first SUBMIT event because that's when we start
+    // the task. The subsequent SUBMIT events can be ignored.
+    VLOG(1) << "Task already submitted: " << task_identifier.job_id << ","
+            << task_identifier.task_index;
+    return false;
+  }
+  // We never remove the task identifiers from the submitted_tasks_ set. We are
+  // using the set to handle the case in which a task finishes before one of
+  // its following SUBMIT events.
+  submitted_tasks_.insert(task_identifier);
   JobDescriptor* jd_ptr = FindPtrOrNull(trace_job_id_to_jd_,
                                         task_identifier.job_id);
   if (!jd_ptr) {
@@ -147,37 +163,48 @@ TaskDescriptor* SimulatorBridge::AddTask(
     jd_ptr = PopulateJob(task_identifier.job_id);
     CHECK_NOTNULL(jd_ptr);
   }
-  TaskDescriptor* td_ptr = NULL;
-  if (FindOrNull(trace_task_id_to_td_, task_identifier) == NULL) {
-    td_ptr = AddTaskToJob(jd_ptr, task_identifier.task_index);
-    // The task binary is used by GenerateRootTaskID to generate a unique
-    // root task identifier. Hence, we set it to the trace job id which
-    // is unique.
-    td_ptr->set_binary(lexical_cast<string>(task_identifier.job_id));
-    // TODO(ionel): Populate task with the appropriate type.
-    td_ptr->set_task_type(TaskDescriptor::DEVIL);
-    if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
-      CHECK(InsertIfNotPresent(&task_id_to_identifier_,
-                               td_ptr->uid(), task_identifier));
-      // Add task to the simulator (job_id, task_index) to TaskDescriptor* map.
-      CHECK(InsertIfNotPresent(&trace_task_id_to_td_, task_identifier, td_ptr));
-      // Update statistics used by cost models. This must be done prior
-      // to adding the job to the scheduler, as costs computed in that step.
-      AddTaskStats(task_identifier, td_ptr->uid());
-      scheduler_->AddJob(jd_ptr);
-    } else {
-      // TODO(ionel): We should handle duplicate task ids.
-      LOG(WARNING) << "Duplicate task id: " << td_ptr->uid() << " for task "
-                   << task_identifier.job_id << " "
-                   << task_identifier.task_index;
-     return NULL;
-    }
+
+  TaskDescriptor* td_ptr = AddTaskToJob(jd_ptr, task_identifier.task_index);
+  // The task binary is used by GenerateRootTaskID to generate a unique
+  // root task identifier. Hence, we set it to the trace job id which
+  // is unique.
+  td_ptr->set_binary(lexical_cast<string>(task_identifier.job_id));
+  // TODO(ionel): Populate task with the appropriate type.
+  td_ptr->set_task_type(TaskDescriptor::DEVIL);
+  if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
+    CHECK(InsertIfNotPresent(&task_id_to_identifier_,
+                             td_ptr->uid(), task_identifier));
+    // Add task to the simulator (job_id, task_index) to TaskDescriptor* map.
+    CHECK(InsertIfNotPresent(&trace_task_id_to_td_, task_identifier, td_ptr));
+    // Update statistics used by cost models. This must be done prior
+    // to adding the job to the scheduler, as costs computed in that step.
+    AddTaskStats(task_identifier, td_ptr->uid());
+    scheduler_->AddJob(jd_ptr);
   } else {
-    // Ignore task if it has already been added.
-    LOG(WARNING) << "Task already added: " << task_identifier.job_id << " "
-                 << task_identifier.task_index;
+    // We can end up with duplicate task ids if the there's a hash collision or
+    // if there are two jobs with identical ids.
+    // In the trace there is only one job that has the same id after it gets
+    // restarted. Hence, we can ignore it as it won't significantly affect
+    // the results of the experiments.
+    num_duplicate_task_ids_++;
+    LOG(ERROR) << "Duplicate task id: " << td_ptr->uid() << " for task "
+               << task_identifier.job_id << " "
+               << task_identifier.task_index;
+    if (jd_ptr->root_task().uid() == td_ptr->uid()) {
+      // The task was added as root. We can just delete the entire job
+      // to clean up the state.
+      JobID_t job_id = JobIDFromString(jd_ptr->uuid());
+      job_map_->erase(job_id);
+      trace_job_id_to_jd_.erase(task_identifier.job_id);
+      job_num_tasks_.erase(task_identifier.job_id);
+      job_id_to_trace_job_id_.erase(job_id);
+    } else {
+      // Remove the task from the job.
+      RemoveTaskFromSpawned(jd_ptr, *td_ptr);
+    }
+    return false;
   }
-  return td_ptr;
+  return true;
 }
 
 void SimulatorBridge::AddTaskEndEvent(
@@ -289,10 +316,7 @@ void SimulatorBridge::ProcessSimulatorEvents(uint64_t events_up_to_time) {
       TraceTaskIdentifier task_identifier;
       task_identifier.task_index = event.second.task_index();
       task_identifier.job_id = event.second.job_id();
-      if (!AddTask(task_identifier)) {
-        num_duplicate_task_ids_++;
-        // duplicate task id -- ignore
-      }
+      AddTask(task_identifier);
     } else {
       LOG(FATAL) << "Unexpected event type " << event.second.type() << " @ "
                  << event.first;
@@ -311,8 +335,8 @@ void SimulatorBridge::TaskCompleted(
     FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
   // Don't delete the root task so that tasks can still be appended to the job.
   // The root task is only deleted when the job completes.
-  // xxx(ionel): Do not the tasks here if we want to run simulations that allow
-  // tasks to spawn other tasks.
+  // XXX(ionel): Do not erase the tasks here if we want to run simulations that
+  // allow tasks to spawn other tasks.
   if (td_ptr != jd_ptr->mutable_root_task()) {
     task_map_->erase(td_ptr->uid());
   }
@@ -417,8 +441,11 @@ JobDescriptor* SimulatorBridge::PopulateJob(uint64_t trace_job_id) {
   // trace that uses trace job ids.
   jd_ptr->set_name("firmament_simulation_job_" +
                    lexical_cast<string>(trace_job_id));
-  InsertOrUpdate(&trace_job_id_to_jd_, trace_job_id, jd_ptr);
-  InsertOrUpdate(&job_id_to_trace_job_id_, new_job_id, trace_job_id);
+  if (!InsertIfNotPresent(&trace_job_id_to_jd_, trace_job_id, jd_ptr)) {
+    LOG(ERROR) << "Job " << trace_job_id << " has already been populated";
+  } else {
+    InsertOrUpdate(&job_id_to_trace_job_id_, new_job_id, trace_job_id);
+  }
   return jd_ptr;
 }
 
@@ -489,6 +516,28 @@ void SimulatorBridge::RemoveResourceNodeFromParentChildrenList(
     parent_children->RemoveLast();
   } else {
     LOG(FATAL) << "Could not found the machine in the parent's list";
+  }
+}
+
+void SimulatorBridge::RemoveTaskFromSpawned(
+    JobDescriptor* jd_ptr,
+    const TaskDescriptor& td_to_remove) {
+  TaskDescriptor* root_td_ptr = jd_ptr->mutable_root_task();
+  RepeatedPtrField<TaskDescriptor>* spawned = root_td_ptr->mutable_spawned();
+  int32_t index = 0;
+  for (auto& td : *spawned) {
+    if (td.uid() == td_to_remove.uid()) {
+      break;
+    }
+    ++index;
+  }
+  if (index < spawned->size()) {
+    if (index < spawned->size() - 1) {
+      spawned->SwapElements(index, spawned->size() - 1);
+    }
+    spawned->RemoveLast();
+  } else {
+    LOG(FATAL) << "Could not find task among job's tasks";
   }
 }
 
