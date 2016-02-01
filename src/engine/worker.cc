@@ -19,6 +19,7 @@
 
 // N.B.: We will be inheriting a bunch of standard flags from Node here (in
 // addition to those specified below).
+DECLARE_uint64(heartbeat_interval);
 DECLARE_string(listen_uri);
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
 DEFINE_string(name, "", "A friendly name for this worker.");
