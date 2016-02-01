@@ -9,9 +9,9 @@
 #include <gtest/gtest.h>
 
 #include "base/common.h"
-#include "engine/stub_object_store.h"
 #include "misc/map-util.h"
 #include "misc/utils.h"
+#include "storage/stub_object_store.h"
 
 namespace firmament {
 namespace store {

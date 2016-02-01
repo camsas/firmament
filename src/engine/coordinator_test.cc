@@ -52,12 +52,11 @@ class CoordinatorTest : public ::testing::Test {
 
 // Tests that the platform gets set correctly when instantiating a worker.
 TEST_F(CoordinatorTest, HTTPUIStartStopTest) {
-  FLAGS_platform = "PL_UNIX";
 #ifdef __HTTP_UI__
   FLAGS_http_ui = true;
 #endif
   FLAGS_v = 2;
-  Coordinator test_coordinator();
+  Coordinator test_coordinator;
   // Hold on for 1 second
   boost::this_thread::sleep(boost::posix_time::seconds(1));
   test_coordinator.Shutdown("test end");

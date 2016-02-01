@@ -8,6 +8,8 @@
 #include "sim/event_manager.h"
 #include "sim/simulated_wall_time.h"
 
+DEFINE_string(scheduler, "flow", "The scheduler to use for tests.");
+
 namespace firmament {
 namespace sim {
 
