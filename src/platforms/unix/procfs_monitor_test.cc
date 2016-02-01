@@ -8,11 +8,13 @@
 #include <boost/thread.hpp>
 
 #include "base/common.h"
-#include "platforms/common.pb.h"
 #include "platforms/unix/common.h"
 #include "platforms/unix/procfs_monitor.h"
 
 using firmament::common::InitFirmament;
+
+DEFINE_uint64(heartbeat_interval, 1000000,
+              "Heartbeat interval in microseconds.");
 
 namespace firmament {
 namespace platform_unix {

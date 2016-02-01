@@ -484,7 +484,7 @@ void LocalExecutor::SetUpEnvironmentForTask(
   InsertIfNotPresent(env, "FLAGS_task_data_dir", data_dir);
   if (td.inject_task_lib()) {
     InsertIfNotPresent(env, "LD_LIBRARY_PATH", FLAGS_task_lib_dir);
-    InsertIfNotPresent(env, "LD_PRELOAD", "task_lib_inject.so");
+    InsertIfNotPresent(env, "LD_PRELOAD", "libtask_lib_inject.so");
     // This effectively does a "basename" on the executable; the TASK_COMM
     // environment variable is used to match the executable for against
     // /proc/self/comm when deciding whether to inject a monitor thread.

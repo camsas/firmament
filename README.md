@@ -31,14 +31,17 @@ Reasons for known breakage:
 After cloning the repository,
 
 ```console
-$ make all
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
 ```
 
-fetches dependencies are necessary, and may ask you to install required
-packages.
+This fetches and builds dependencies are necessary, although CMake may ask you to
+install required packages and libraries.
 
 ```console
-$ make test
+$ ctest
 ```
 
 runs unit tests.
@@ -55,7 +58,7 @@ Binaries are in the build/ subdirectory of the project root, and all accept the
 Start up by running a coordinator:
 
 ```console
-$ build/engine/coordinator --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/build/engine/
+$ build/src/coordinator --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/build/engine/
 ```
 
 Once the coordinator is up and running, you can access its HTTP interface at
@@ -92,7 +95,7 @@ to instead use our new scheduler based on flow network optimization, pass
 the `--scheduler flow` flag to the coordinator on startup:
 
 ```console
-$ build/engine/coordinator --scheduler flow --flow_scheduling_cost_model 6 --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/build/engine/
+$ build/src/coordinator --scheduler flow --flow_scheduling_cost_model 6 --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/build/src
 ```
 
 The `--flow_scheduling_cost_model` option choses the cost model on which the
@@ -111,7 +114,7 @@ There are currently seven cost models in the Firmament code base:
 | SJF (2)     | Shortest job first policy based on avg. past runtimes.    | Complete |
 | QUINCY (3)  | Original Quincy cost model, with data locality.           | Broken!  |
 | WHARE (4)   | Implementation of Whare-Map's M and MCs policies.         | Complete |
-| COCO (5)    | Coordinated co-location model (in development).           | In dev   |
+| COCO (5)    | Coordinated co-location model (in development).           | Complete   |
 | OCTOPUS (6) | Simple load balancing based on task counts.               | Complete |
 | ----------- | --------------------------------------------------------- | -------- |
 | VOID (7)    | Bogus cost model used for KB in simple scheduler.         | Complete |
