@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_057e5a6b",
+        "filename": "src/sim/event_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-01T17:11:29Z",
+      "side": 1,
+      "message": "What does this check mean? Why would the runtime be zero? Even if the scheduler didn\u0027t do anything, the solver would still have taken time, surely",
+      "revId": "bcff2a6dd646f33022344d1be00d679ffcbbee98",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
