@@ -22,6 +22,8 @@
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
+DEFINE_uint64(heartbeat_interval, 1000000,
+              "Heartbeat interval in microseconds.");
 DEFINE_string(platform, "PL_UNIX", "The platform we are running on, or AUTO "
               "for attempting automatic discovery.");
 DEFINE_string(listen_uri, "tcp:localhost:9998",

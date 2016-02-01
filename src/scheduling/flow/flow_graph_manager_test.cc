@@ -74,8 +74,9 @@ TEST_F(FlowGraphManagerTest, AddOrUpdateJobNodes) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
+  TraceGenerator tg(&wall_time);
   FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &dimacs_stats);
+                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   graph_manager.AddResourceTopology(&rtn_root);
@@ -121,8 +122,9 @@ TEST_F(FlowGraphManagerTest, AddOrUpdateResourceNode) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
+  TraceGenerator tg(&wall_time);
   FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &dimacs_stats);
+                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   graph_manager.AddResourceTopology(&rtn_root);
@@ -150,8 +152,9 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
+  TraceGenerator tg(&wall_time);
   FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &dimacs_stats);
+                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   uint64_t num_nodes = graph_manager.flow_graph()->NumNodes();
@@ -214,8 +217,9 @@ TEST_F(FlowGraphManagerTest, DeleteResourceNode) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
+  TraceGenerator tg(&wall_time);
   FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &dimacs_stats);
+                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   graph_manager.AddResourceTopology(&rtn_root);
@@ -243,8 +247,9 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopo) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
+  TraceGenerator tg(&wall_time);
   FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &dimacs_stats);
+                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   uint64_t num_nodes = graph_manager.flow_graph()->NumNodes();
@@ -287,8 +292,9 @@ TEST_F(FlowGraphManagerTest, SimpleResourceTopo) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
+  TraceGenerator tg(&wall_time);
   FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &dimacs_stats);
+                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   graph_manager.AddResourceTopology(&rtn_root);
@@ -301,8 +307,9 @@ TEST_F(FlowGraphManagerTest, UnschedAggCapacityAdjustment) {
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
+  TraceGenerator tg(&wall_time);
   FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &dimacs_stats);
+                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   graph_manager.AddResourceTopology(&rtn_root);
@@ -319,25 +326,24 @@ TEST_F(FlowGraphManagerTest, UnschedAggCapacityAdjustment) {
   jd_ptr_vect.push_back(&test_job);
   graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
   // Grab the unscheduled aggregator for the new job
-  uint64_t* unsched_agg_node_id =
-    FindOrNull(graph_manager.job_unsched_to_node_id_, jid);
-  CHECK_NOTNULL(unsched_agg_node_id);
+  FlowGraphNode* unsched_agg_node =
+    FindPtrOrNull(graph_manager.job_unsched_to_node_, jid);
+  CHECK_NOTNULL(unsched_agg_node);
   FlowGraphArc* unsched_agg_to_sink_arc = FindPtrOrNull(
-      graph_manager.flow_graph()->Node(*unsched_agg_node_id)->outgoing_arc_map_,
+      unsched_agg_node->outgoing_arc_map_,
       graph_manager.sink_node_->id_);
   CHECK_NOTNULL(unsched_agg_to_sink_arc);
   CHECK_EQ(unsched_agg_to_sink_arc->cap_upper_bound_, 1);
   // Now pin the root task to the first resource leaf
-  uint64_t* root_task_node_id =
-      FindOrNull(graph_manager.task_to_nodeid_map_, test_job.root_task().uid());
-  CHECK_NOTNULL(root_task_node_id);
-  uint64_t* resource_node_id =
-      FindOrNull(graph_manager.resource_to_nodeid_map_, ResourceIDFromString(
+  FlowGraphNode* root_task_node =
+      FindPtrOrNull(graph_manager.task_to_node_map_,
+                    test_job.root_task().uid());
+  CHECK_NOTNULL(root_task_node);
+  FlowGraphNode* resource_node =
+      FindPtrOrNull(graph_manager.resource_to_node_map_, ResourceIDFromString(
           rtn_root.mutable_children()->Get(0).resource_desc().uuid()));
-  CHECK_NOTNULL(resource_node_id);
-  graph_manager.PinTaskToNode(
-    graph_manager.flow_graph()->Node(*root_task_node_id),
-    graph_manager.flow_graph()->Node(*resource_node_id));
+  CHECK_NOTNULL(resource_node);
+  graph_manager.PinTaskToNode(root_task_node, resource_node);
   // The unscheduled aggregator's outbound capacity should have been
   // decremented.
   CHECK_EQ(unsched_agg_to_sink_arc->cap_upper_bound_, 0);
