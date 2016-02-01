@@ -22,6 +22,30 @@
       "revId": "ed6f2c620433467cc262bf9faa0bf116248b8489",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_255fde73",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-01T19:06:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_c59c42c3",
+      "range": {
+        "startLine": 216,
+        "startChar": 0,
+        "endLine": 219,
+        "endChar": 25
+      },
+      "revId": "ed6f2c620433467cc262bf9faa0bf116248b8489",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
