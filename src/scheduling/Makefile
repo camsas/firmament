@@ -3,7 +3,7 @@ SUFFIX=scheduling
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_system
+LIBS += -lboost_system $(SPOOKY_OBJ)
 
 LIB = libfirmament_scheduling.a
 OBJS = common.o event_driven_scheduler.o knowledge_base.o

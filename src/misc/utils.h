@@ -26,6 +26,7 @@ namespace firmament {
 using google::protobuf::EnumDescriptor;
 
 #define COMPARE_EPS 0.00000000001
+#define SEED 42
 
 #define ENUM_TO_STRING(t, v) t ## _descriptor()->FindValueByNumber(v)->name()
 
@@ -54,10 +55,9 @@ DataObjectID_t GenerateDataObjectID(TaskID_t producing_task,
 TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task, uint64_t child_num);
-size_t HashCommandLine(const TaskDescriptor& td);
-size_t HashJobID(JobID_t job_id);
-size_t HashJobID(const TaskDescriptor& td);
-size_t HashString(const string& str);
+uint64_t HashCommandLine(const TaskDescriptor& td);
+uint64_t HashJobID(const TaskDescriptor& td);
+uint64_t HashString(const string& str);
 bool IsEqual(double first, double second);
 void MkdirIfNotPresent(const string &directory);
 // Utility functions to parse various types from strings.

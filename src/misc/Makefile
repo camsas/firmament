@@ -3,7 +3,7 @@ SUFFIX=misc
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_system -lssl -lcrypto
+LIBS += -lboost_system -lssl -lcrypto $(SPOOKY_OBJ)
 
 LIB = libfirmament_misc.a
 OBJS = pb_utils.o string_utils.o trace_generator.o utils.o wall_time.o

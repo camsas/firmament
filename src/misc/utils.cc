@@ -26,6 +26,8 @@ extern "C" {
 #include <sys/stat.h>
 #endif
 
+#include <SpookyV2.h>
+
 #include "misc/utils.h"
 
 DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
@@ -77,7 +79,6 @@ ResourceID_t GenerateResourceID(const string& seed) {
 }
 
 void SetupResourceID(boost::mt19937 *resource_id, const char *seed) {
-  size_t hash = 42;
   char hn[100];
   bzero(&hn, 100);
   if (seed == NULL) {
@@ -86,16 +87,14 @@ void SetupResourceID(boost::mt19937 *resource_id, const char *seed) {
     snprintf(hn, sizeof(hn), "%s", seed);
   }
   // Hash the hostname (truncated to 100 characters)
-  boost::hash_combine(hash, hn);
-  VLOG(2) << "Seeding resource ID RNG with " << hash << " from seed "
-          << hn;
+  uint64_t hash = SpookyHash::Hash64(&hn, sizeof(hn), SEED);
+  VLOG(2) << "Seeding resource ID RNG with " << hash << " from seed " << hn;
   resource_id->seed(hash);
 }
 
 ResourceID_t GenerateRootResourceID(const string& hostname) {
-  size_t hash = 42;
   // Hash the hostname
-  boost::hash_combine(hash, hostname);
+  uint64_t hash = HashString(hostname);
   VLOG(2) << "Seeing resource ID RNG with " << hash << " from hostname "
           << hostname;
   resource_id_rg_.seed(hash);
@@ -114,9 +113,7 @@ JobID_t GenerateJobID() {
 }
 
 JobID_t GenerateJobID(uint64_t job_id) {
-  size_t hash = 42;
-  // Hash the hostname
-  boost::hash_combine(hash, job_id);
+  uint64_t hash = SpookyHash::Hash64(&job_id, sizeof(job_id), SEED);
   job_id_rg_.seed(hash);
   job_id_rg_init_ = true;
   boost::uuids::basic_random_generator<boost::mt19937> gen(&job_id_rg_);
@@ -124,11 +121,8 @@ JobID_t GenerateJobID(uint64_t job_id) {
 }
 
 TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc) {
-  size_t hash = 42;
-  //boost::hash_combine(hash, job_desc.uuid());
-  boost::hash_combine(hash, job_desc.name());
+  uint64_t hash = HashString(job_desc.name());
   boost::hash_combine(hash, job_desc.root_task().binary());
-
   return static_cast<TaskID_t>(hash);
 }
 
@@ -136,8 +130,8 @@ TaskID_t GenerateTaskID(const TaskDescriptor& parent_task) {
   // A new task's ID is a hash of the parent (spawning) task's ID and its
   // current spawn counter value, which is implicitly stored in the TD by means
   // of the length of its set of spawned tasks.
-  size_t hash = 42;
-  boost::hash_combine(hash, parent_task.uid());
+  uint64_t parent_id = parent_task.uid();
+  uint64_t hash = SpookyHash::Hash64(&parent_id, sizeof(parent_id), SEED);
   boost::hash_combine(hash, parent_task.spawned_size());
   return static_cast<TaskID_t>(hash);
 }
@@ -146,8 +140,8 @@ TaskID_t GenerateTaskID(const TaskDescriptor& parent_task, uint64_t child_num) {
   // A new task's ID is a hash of the parent (spawning) task's ID and its
   // current spawn counter value, which is implicitly stored in the TD by means
   // of the length of its set of spawned tasks.
-  size_t hash = 42;
-  boost::hash_combine(hash, parent_task.uid());
+  uint64_t parent_id = parent_task.uid();
+  uint64_t hash = SpookyHash::Hash64(&parent_id, sizeof(parent_id), SEED);
   boost::hash_combine(hash, child_num);
   return static_cast<TaskID_t>(hash);
 }
@@ -176,31 +170,20 @@ DataObjectID_t GenerateDataObjectID(
   return doid;
 }
 
-size_t HashCommandLine(const TaskDescriptor& td) {
-  size_t hash = 42;
-  boost::hash_combine(hash, td.binary());
+uint64_t HashCommandLine(const TaskDescriptor& td) {
+  uint64_t hash = HashString(td.binary());
   for (auto it = td.args().begin(); it != td.args().end(); ++it) {
     boost::hash_combine(hash, *it);
   }
   return hash;
 }
 
-size_t HashJobID(JobID_t job_id) {
-  size_t hash = 42;
-  boost::hash_combine(hash, job_id);
-  return hash;
+uint64_t HashJobID(const TaskDescriptor& td) {
+  return HashString(td.job_id());
 }
 
-size_t HashJobID(const TaskDescriptor& td) {
-  size_t hash = 42;
-  boost::hash_combine(hash, td.job_id());
-  return hash;
-}
-
-size_t HashString(const string& str) {
-  size_t hash = 42;
-  boost::hash_combine(hash, str);
-  return hash;
+uint64_t HashString(const string& str) {
+  return SpookyHash::Hash64(str.c_str(), sizeof(char) * str.length(), SEED);
 }
 
 void MkdirIfNotPresent(const string &directory) {

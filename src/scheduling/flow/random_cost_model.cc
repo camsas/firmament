@@ -94,9 +94,8 @@ vector<EquivClass_t>* RandomCostModel::GetTaskEquivClasses(
   // An additional TEC is the hash of the task binary name.
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
-  size_t hash = 0;
-  boost::hash_combine(hash, td_ptr->binary());
-  EquivClass_t task_agg = static_cast<EquivClass_t>(hash);
+  EquivClass_t task_agg =
+    static_cast<EquivClass_t>(HashString(td_ptr->binary()));
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);
   unordered_map<EquivClass_t, set<TaskID_t> >::iterator task_ec_it =
