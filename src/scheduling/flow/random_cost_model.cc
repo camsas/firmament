@@ -3,6 +3,7 @@
 
 #include "scheduling/flow/random_cost_model.h"
 
+#include <SpookyV2.h>
 #include <set>
 #include <string>
 
@@ -94,8 +95,9 @@ vector<EquivClass_t>* RandomCostModel::GetTaskEquivClasses(
   // An additional TEC is the hash of the task binary name.
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
-  size_t hash = 0;
-  boost::hash_combine(hash, td_ptr->binary());
+  string td_binary = td_ptr->binary();
+  uint64_t hash = SpookyHash::Hash64(td_binary.c_str(),
+                                     sizeof(char) * td_binary.length(), SEED);
   EquivClass_t task_agg = static_cast<EquivClass_t>(hash);
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);

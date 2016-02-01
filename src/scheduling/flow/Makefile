@@ -3,7 +3,8 @@ SUFFIX=scheduling/flow
 
 include $(ROOT_DIR)/include/Makefile.config
 
-LIBS += -lboost_system -lboost_thread -lboost_timer -lssl -lcrypto -lctemplate
+LIBS += -lboost_system -lboost_thread -lboost_timer -lssl -lcrypto -lctemplate \
+        $(SPOOKY_OBJ)
 
 LIB = libfirmament_scheduling_flow.a
 

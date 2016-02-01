@@ -5,8 +5,9 @@
 
 #include "misc/trace_generator.h"
 
-#include <string>
 #include <boost/functional/hash.hpp>
+#include <SpookyV2.h>
+#include <string>
 
 #include "base/common.h"
 #include "misc/map-util.h"
@@ -110,9 +111,7 @@ uint64_t TraceGenerator::GetMachineId(const ResourceDescriptor& rd) {
       LOG(FATAL) << "Could not convert: " << rd.friendly_name();
     }
   } else {
-    size_t hash = 42;
-    boost::hash_combine(hash, rd.uuid());
-    machine_id = static_cast<uint64_t>(hash);
+    machine_id = HashString(rd.uuid());
   }
   return machine_id;
 }
@@ -159,9 +158,7 @@ void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
       // Set the id to the trace task id which is passed via the index.
       trace_task_id = td_ptr->index();
     } else {
-      size_t hash = 42;
-      boost::hash_combine(hash, td_ptr->job_id());
-      job_id = static_cast<uint64_t>(hash);
+      job_id = HashString(td_ptr->job_id());
       // Not running in simulation mode => set the id to Firmament task id.
       trace_task_id = task_id;
     }

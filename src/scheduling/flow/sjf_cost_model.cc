@@ -5,6 +5,7 @@
 
 #include "scheduling/flow/sjf_cost_model.h"
 
+#include <SpookyV2.h>
 #include <algorithm>
 #include <string>
 #include <unordered_map>
@@ -128,8 +129,9 @@ vector<EquivClass_t>* SJFCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
   CHECK_NOTNULL(td_ptr);
   // A level 0 TEC is the hash of the task binary name.
-  size_t hash = 0;
-  boost::hash_combine(hash, td_ptr->binary());
+  string td_binary = td_ptr->binary();
+  uint64_t hash = SpookyHash::Hash64(td_binary.c_str(),
+                                     sizeof(char) * td_binary.length(), SEED);
   equiv_classes->push_back(static_cast<EquivClass_t>(hash));
   // All tasks also have an arc to the cluster aggregator.
   equiv_classes->push_back(cluster_aggregator_ec_);
