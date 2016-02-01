@@ -14,7 +14,6 @@
 // __PLATFORM_UNIX__
 #include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
-#include "platforms/common.pb.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_channel.h"
 
@@ -23,6 +22,9 @@ using firmament::platform_unix::streamsockets::StreamSocketsChannel;
 using firmament::common::InitFirmament;
 using firmament::misc::Envelope;
 using ::google::protobuf::Message;
+
+DEFINE_uint64(heartbeat_interval, 1000000,
+              "Heartbeat interval in microseconds.");
 
 namespace firmament {
 namespace platform_unix {

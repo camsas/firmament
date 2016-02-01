@@ -35,6 +35,7 @@
 
 // It is necessary to declare listen_uri here, since "node.o" comes after
 // "coordinator.o" in linking order (I *think*).
+DECLARE_uint64(heartbeat_interval);
 DECLARE_string(listen_uri);
 DEFINE_string(parent_uri, "", "The URI of the parent coordinator to register "
         "with.");
@@ -47,8 +48,6 @@ DEFINE_bool(http_ui, true, "Enable HTTP interface");
 DEFINE_int32(http_ui_port, 8080,
         "The port that the HTTP UI will be served on; -1 to disable.");
 #endif
-DEFINE_uint64(heartbeat_interval, 1000000,
-              "Heartbeat interval in microseconds.");
 DEFINE_bool(populate_knowledge_base_from_file, false,
             "True if we should load the knowledge base from file.");
 

@@ -1,0 +1,2 @@
+set(ENV{PATH} "@cpplint_SOURCE_DIR@/:$ENV{PATH}")
+execute_process(COMMAND python @Firmament_ROOT_DIR@/tests/all_lint.py @Firmament_SOURCE_DIR@ ${LINT_VERBOSE})

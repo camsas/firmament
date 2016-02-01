@@ -45,7 +45,7 @@ try:
 
     try:
       retdata = subprocess.check_output(
-          ["python", "ext/cpplint.py",
+          ["cpplint.py",
            "--filter=%s" % (filter_string), source_file],
           stderr=subprocess.STDOUT)
       retcode = 0
