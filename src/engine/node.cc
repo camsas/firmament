@@ -32,29 +32,21 @@ namespace firmament {
 // Initial value of exit_ toggle
 bool Node::exit_ = false;
 
-Node::Node(PlatformID platform_id, ResourceID_t uuid)
-  : platform_id_(platform_id),
-    node_uri_(FLAGS_listen_uri),
+Node::Node(ResourceID_t uuid)
+  : node_uri_(FLAGS_listen_uri),
     uuid_(uuid) {
   // Set up the node's resource descriptor
   resource_desc_.set_uuid(to_string(uuid_));
 
-  switch (platform_id) {
-    case PL_UNIX: {
-      // Set up a message adapter for control messages.
-      m_adapter_ = new platform_unix::streamsockets::
-          StreamSocketsAdapter<BaseMessage>();
-      VLOG(1) << "Node's adapter is at " << m_adapter_;
-      // Also set up a signal handler so that we can quit the node using
-      // signals.
-      SignalHandler handler;
-      handler.ConfigureSignal(SIGINT, Node::HandleSignal, this);
-      handler.ConfigureSignal(SIGTERM, Node::HandleSignal, this);
-      break;
-    }
-    default:
-      LOG(FATAL) << "Unimplemented!";
-  }
+  // Set up a message adapter for control messages.
+  m_adapter_ = new platform_unix::streamsockets::
+      StreamSocketsAdapter<BaseMessage>();
+  VLOG(1) << "Node's adapter is at " << m_adapter_;
+  // Also set up a signal handler so that we can quit the node using
+  // signals.
+  SignalHandler handler;
+  handler.ConfigureSignal(SIGINT, Node::HandleSignal, this);
+  handler.ConfigureSignal(SIGTERM, Node::HandleSignal, this);
 }
 
 Node::~Node() {

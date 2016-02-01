@@ -15,7 +15,6 @@
 
 #include "base/types.h"
 #include "misc/envelope.h"
-#include "platforms/common.pb.h"
 
 namespace firmament {
 namespace platform_unix {
