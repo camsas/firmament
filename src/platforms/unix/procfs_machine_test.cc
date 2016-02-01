@@ -10,7 +10,6 @@
 
 #include "base/common.h"
 #include "base/machine_perf_statistics_sample.pb.h"
-#include "platforms/common.pb.h"
 #include "platforms/unix/common.h"
 #include "platforms/unix/procfs_machine.h"
 

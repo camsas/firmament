@@ -12,7 +12,7 @@
 #include "sim/trace_utils.h"
 
 DECLARE_string(machine_tmpl_file);
-DECLARE_string(scheduler);
+DEFINE_string(scheduler, "flow", "The scheduler to use for tests.");
 
 namespace firmament {
 namespace sim {
