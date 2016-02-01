@@ -35,14 +35,11 @@ using platform_unix::streamsockets::StreamSocketsAdapter;
 
 class Node {
  public:
-  Node(PlatformID platform_id, ResourceID_t uuid);
+  explicit Node(ResourceID_t uuid);
   virtual ~Node();
   virtual void Run() = 0;
   void Shutdown(const string& reason);
 
-  inline PlatformID platform_id() {
-    return platform_id_;
-  }
   inline ResourceID_t uuid() { return uuid_; }
 
  protected:
@@ -66,9 +63,6 @@ class Node {
   static void HandleSignal(int signum);
 #endif
 
-  // The node's platform's ID.
-  // TODO(malte): This is deprecated and may be removed in the future.
-  PlatformID platform_id_;
   // Boolean flag that when set to true will cause the node to shut down.
   static bool exit_;
   // The configured URI at which this node is reachable.

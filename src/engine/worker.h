@@ -33,7 +33,7 @@ namespace firmament {
 
 class Worker : public Node {
  public:
-  explicit Worker(PlatformID platform_id);
+  explicit Worker();
   void Run();
   bool RunCoordinatorDiscovery(const string &coordinator_uri);
   bool ConnectToCoordinator(const string& coordinator_uri);

@@ -80,7 +80,7 @@ using webui::CoordinatorHTTPUI;
 class Coordinator : public Node,
                     public boost::enable_shared_from_this<Coordinator> {
  public:
-  explicit Coordinator(PlatformID platform_id);
+  explicit Coordinator();
   virtual ~Coordinator();
   void Run();
   JobDescriptor* DescriptorForJob(const string& job_id);

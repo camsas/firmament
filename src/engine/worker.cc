@@ -15,7 +15,6 @@
 #include "messages/heartbeat_message.pb.h"
 #include "messages/registration_message.pb.h"
 #include "misc/utils.h"
-#include "platforms/common.pb.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 
 // N.B.: We will be inheriting a bunch of standard flags from Node here (in
@@ -32,26 +31,14 @@ using boost::posix_time::second_clock;
 using boost::posix_time::seconds;
 #endif
 
-Worker::Worker(PlatformID platform_id)
-  : Node(platform_id,
-      GenerateResourceID(
+Worker::Worker()
+  : Node(GenerateResourceID(
         boost::asio::ip::host_name() + "/" + FLAGS_listen_uri)),
     chan_(new StreamSocketsChannel<BaseMessage>(
           StreamSocketsChannel<BaseMessage>::SS_TCP)),
     coordinator_uri_(FLAGS_coordinator_uri) {
   string hostname = "";  // platform_.GetHostname();
-  VLOG(1) << "Worker starting on host " << hostname << ", platform "
-          << platform_id;
-  // Start up a worker according to the platform parameter
-  switch (platform_id) {
-    case PL_UNIX: {
-      // Initiate UNIX worker.
-      // worker_ = new UnixWorker();
-      break;
-    }
-    default:
-      LOG(FATAL) << "Unimplemented!";
-  }
+  VLOG(1) << "Worker starting on host " << hostname;
 
   // TODO(malte): fix this!
   resource_desc_.set_uuid(boost::uuids::to_string(uuid_));

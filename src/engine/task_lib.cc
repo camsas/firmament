@@ -23,7 +23,6 @@
 #include "messages/task_state_message.pb.h"
 #include "misc/utils.h"
 #include "platforms/common.h"
-#include "platforms/common.pb.h"
 
 
 DEFINE_string(coordinator_uri, "", "The URI to contact the coordinator at.");
