@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_c63b659a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-03T00:05:48Z",
+      "side": 1,
+      "message": "Typo",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 28
+      },
+      "revId": "570a1b0284b5909a4b674e28dc5fd69b99397db7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_c6d7e521",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-03T00:05:48Z",
+      "side": 1,
+      "message": "Did it previously only have one of them? (Doesn\u0027t look like that from the code to me?)",
+      "range": {
+        "startLine": 11,
+        "startChar": 20,
+        "endLine": 11,
+        "endChar": 47
+      },
+      "revId": "570a1b0284b5909a4b674e28dc5fd69b99397db7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_a6d4b120",
+        "filename": "src/sim/google_trace_task_processor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-03T00:05:48Z",
+      "side": 1,
+      "message": "Hmm, we should have a comment explaining this formula. What\u0027s happening here? As far as I can see, we set the runtime to the current time (timestamp) minus the time when the task last scheduled, i.e. the difference between when it last scheduled and now. Is that correct? What if the task ran, failed, took a long time to schedule again, and now runs again? In that case, would the wait time be part of its \"runtime\" we account?",
+      "range": {
+        "startLine": 265,
+        "startChar": 0,
+        "endLine": 266,
+        "endChar": 60
+      },
+      "revId": "570a1b0284b5909a4b674e28dc5fd69b99397db7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
