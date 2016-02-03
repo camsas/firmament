@@ -71,6 +71,10 @@ struct TaskResourceUsageStats {
 };
 
 struct TaskRuntime {
+  TaskRuntime() : start_time_(0), num_runs_(0), last_schedule_time_(-1),
+    total_runtime_(0), scheduling_class_(0), priority_(0), cpu_request_(0),
+    ram_request_(0), disk_request_(0), machine_constraint_(0), runtime_(0) {
+  }
   int64_t start_time_;
   uint64_t num_runs_;
   int64_t last_schedule_time_;
@@ -81,6 +85,7 @@ struct TaskRuntime {
   double ram_request_;
   double disk_request_;
   int32_t machine_constraint_;
+  uint64_t runtime_;
 };
 
 struct TaskIdentifier {
@@ -130,7 +135,7 @@ class GoogleTraceTaskProcessor {
       uint64_t timestamp, const TaskIdentifier& task_id, int32_t event_type,
       unordered_map<TaskIdentifier, TaskRuntime,
                     TaskIdentifierHasher>* tasks_runtime,
-      unordered_map<uint64_t, string>* job_id_to_name, FILE* out_events_file,
+      unordered_map<uint64_t, string>* job_id_to_name,
       vector<string>& line_cols); // NOLINT
   void InitializeResourceUsageStats(TaskResourceUsageStats* usage_stats);
   void PopulateTaskRuntime(TaskRuntime* task_runtime_ptr,
@@ -138,8 +143,7 @@ class GoogleTraceTaskProcessor {
   void PrintStats(FILE* usage_stat_file, const TaskIdentifier& task_id,
                   const TaskResourceUsageStats& task_resource);
   void PrintTaskRuntime(FILE* out_events_file, const TaskRuntime& task_runtime,
-                        const TaskIdentifier& task_id,
-                        string logical_job_name, uint64_t runtime);
+                        const TaskIdentifier& task_id, string logical_job_name);
   void ProcessSchedulingEvents(
       uint64_t timestamp,
       multimap<uint64_t, TaskSchedulingEvent>* scheduling_events,
