@@ -37,15 +37,15 @@ struct TraceTaskIdentifierHasher {
 };
 
 struct TraceTaskStats {
-  double avg_mean_cpu_usage;
-  double avg_canonical_mem_usage;
-  double avg_assigned_mem_usage;
-  double avg_unmapped_page_cache;
-  double avg_total_page_cache;
-  double avg_mean_disk_io_time;
-  double avg_mean_local_disk_used;
-  double avg_cpi;
-  double avg_mai;
+  double avg_mean_cpu_usage_;
+  double avg_canonical_mem_usage_;
+  double avg_assigned_mem_usage_;
+  double avg_unmapped_page_cache_;
+  double avg_total_page_cache_;
+  double avg_mean_disk_io_time_;
+  double avg_mean_local_disk_used_;
+  double avg_cpi_;
+  double avg_mai_;
 };
 
 void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl);

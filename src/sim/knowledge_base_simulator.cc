@@ -34,9 +34,9 @@ void KnowledgeBaseSimulator::AddMachineSample(
   for (auto& task_id_rd : task_id_to_rd) {
     TraceTaskStats* task_stat = FindOrNull(task_stats_, task_id_rd.first);
     CHECK_NOTNULL(task_stat);
-    mem_usage += task_stat->avg_canonical_mem_usage +
-      task_stat->avg_unmapped_page_cache -
-      task_stat->avg_total_page_cache;
+    mem_usage += task_stat->avg_canonical_mem_usage_ +
+      task_stat->avg_unmapped_page_cache_ -
+      task_stat->avg_total_page_cache_;
     string label = task_id_rd.second->friendly_name();
     uint64_t idx = label.find("PU #");
     CHECK_NE(idx, string::npos)
@@ -49,7 +49,7 @@ void KnowledgeBaseSimulator::AddMachineSample(
     // TODO(ionel): This assumes that all the machines in the trace are the
     // same. The reported cpu_usage is relative to the machine type. Fix!
     CHECK_LT(core_id, num_cores);
-    cpus_usage[core_id] -= task_stat->avg_mean_cpu_usage;
+    cpus_usage[core_id] -= task_stat->avg_mean_cpu_usage_;
   }
   // RAM stats
   machine_stats.set_total_ram(rd_ptr->resource_capacity().ram_cap());

@@ -233,15 +233,15 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
         task_id.job_id = lexical_cast<uint64_t>(cols[0]);
         task_id.task_index = lexical_cast<uint64_t>(cols[1]);
         TraceTaskStats task_stats;
-        task_stats.avg_mean_cpu_usage = lexical_cast<double>(cols[4]);
-        task_stats.avg_canonical_mem_usage = lexical_cast<double>(cols[8]);
-        task_stats.avg_assigned_mem_usage = lexical_cast<double>(cols[12]);
-        task_stats.avg_unmapped_page_cache = lexical_cast<double>(cols[16]);
-        task_stats.avg_total_page_cache = lexical_cast<double>(cols[20]);
-        task_stats.avg_mean_disk_io_time = lexical_cast<double>(cols[24]);
-        task_stats.avg_mean_local_disk_used = lexical_cast<double>(cols[28]);
-        task_stats.avg_cpi = lexical_cast<double>(cols[32]);
-        task_stats.avg_mai = lexical_cast<double>(cols[36]);
+        task_stats.avg_mean_cpu_usage_ = lexical_cast<double>(cols[4]);
+        task_stats.avg_canonical_mem_usage_ = lexical_cast<double>(cols[8]);
+        task_stats.avg_assigned_mem_usage_ = lexical_cast<double>(cols[12]);
+        task_stats.avg_unmapped_page_cache_ = lexical_cast<double>(cols[16]);
+        task_stats.avg_total_page_cache_ = lexical_cast<double>(cols[20]);
+        task_stats.avg_mean_disk_io_time_ = lexical_cast<double>(cols[24]);
+        task_stats.avg_mean_local_disk_used_ = lexical_cast<double>(cols[28]);
+        task_stats.avg_cpi_ = lexical_cast<double>(cols[32]);
+        task_stats.avg_mai_ = lexical_cast<double>(cols[36]);
 
         if (!InsertIfNotPresent(task_id_to_stats, task_id, task_stats) &&
             VLOG_IS_ON(1)) {

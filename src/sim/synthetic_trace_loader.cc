@@ -121,11 +121,11 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
   uint64_t usec_between_jobs =
     MICROSECONDS_IN_SECOND / FLAGS_synthetic_jobs_per_second;
   TraceTaskStats task_stats;
-  task_stats.avg_mean_cpu_usage = 0.5;
-  task_stats.avg_canonical_mem_usage = 0.2;
-  task_stats.avg_assigned_mem_usage = 0.2;
-  task_stats.avg_unmapped_page_cache = 0.2;
-  task_stats.avg_total_page_cache = 0.2;
+  task_stats.avg_mean_cpu_usage_ = 0.5;
+  task_stats.avg_canonical_mem_usage_ = 0.2;
+  task_stats.avg_assigned_mem_usage_ = 0.2;
+  task_stats.avg_unmapped_page_cache_ = 0.2;
+  task_stats.avg_total_page_cache_ = 0.2;
   uint64_t job_id = 1;
   for (uint64_t timestamp = usec_between_jobs; timestamp <= FLAGS_runtime;
        timestamp += usec_between_jobs, ++job_id) {
