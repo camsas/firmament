@@ -14,6 +14,14 @@
 
 using boost::lexical_cast;
 
+DEFINE_double(rabbit_cpi_threshold, 0.9, "CPI threshold for RABBIT");
+DEFINE_double(rabbit_mai_threshold, 0.001, "MAI threshold for RABBIT");
+DEFINE_double(devil_mai_threshold, 0.005, "MAI threshold for DEVIL");
+DEFINE_double(devil_page_cache_threshold, 0.05,
+              "Total page cache threshold for DEVIL");
+DEFINE_double(sheep_cpi_threshold, 1.6, "CPI threshold for SHEEP");
+DEFINE_double(sheep_mai_threshold, 0.001, "MAI thereshold for SHEEP");
+
 namespace firmament {
 namespace sim {
 
@@ -72,6 +80,35 @@ void KnowledgeBaseSimulator::AddMachineSample(
 
 void KnowledgeBaseSimulator::EraseTraceTaskStats(TaskID_t task_id) {
   task_stats_.erase(task_id);
+}
+
+void KnowledgeBaseSimulator::SetTaskType(TaskDescriptor* td_ptr) {
+  // The classification works as follows:
+  // low CPI, low MAI (lots of compute, but little memory access) => rabbit
+  // high MAI, large page cache (lots of memory access, data-intensive) => devil
+  // high CPI, high MAI (slow-ish compute, but lots of memory traffic) => sheep
+  // else => turtle
+  TraceTaskStats* task_stats = FindOrNull(task_stats_, td_ptr->uid());
+  if (task_stats) {
+    if (task_stats->avg_cpi_ < FLAGS_rabbit_cpi_threshold &&
+        task_stats->avg_mai_ < FLAGS_rabbit_mai_threshold) {
+      td_ptr->set_task_type(TaskDescriptor::RABBIT);
+      return;
+    }
+    if (task_stats->avg_mai_ > FLAGS_devil_mai_threshold &&
+        task_stats->avg_total_page_cache_ > FLAGS_devil_page_cache_threshold) {
+      td_ptr->set_task_type(TaskDescriptor::DEVIL);
+      return;
+    }
+    if (task_stats->avg_cpi_ > FLAGS_sheep_cpi_threshold &&
+        task_stats->avg_mai_ > FLAGS_sheep_mai_threshold) {
+      td_ptr->set_task_type(TaskDescriptor::SHEEP);
+      return;
+    }
+  }
+  // We don't have any stats for the task. We assume it's a turtle so
+  // that it can be placed anywhere.
+  td_ptr->set_task_type(TaskDescriptor::TURTLE);
 }
 
 void KnowledgeBaseSimulator::SetTraceTaskStats(

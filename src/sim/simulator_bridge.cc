@@ -171,8 +171,6 @@ bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier) {
   // root task identifier. Hence, we set it to the trace job id which
   // is unique.
   td_ptr->set_binary(lexical_cast<string>(task_identifier.job_id));
-  // TODO(ionel): Populate task with the appropriate type.
-  td_ptr->set_task_type(TaskDescriptor::DEVIL);
   if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
     CHECK(InsertIfNotPresent(&task_id_to_identifier_,
                              td_ptr->uid(), task_identifier));
@@ -181,6 +179,8 @@ bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier) {
     // Update statistics used by cost models. This must be done prior
     // to adding the job to the scheduler, as costs computed in that step.
     AddTaskStats(task_identifier, td_ptr->uid());
+    // We can only set the type of the task after we've added the stats.
+    knowledge_base_->SetTaskType(td_ptr);
     scheduler_->AddJob(jd_ptr);
   } else {
     // We can end up with duplicate task ids if the there's a hash collision or
