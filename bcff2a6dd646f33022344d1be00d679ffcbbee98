@@ -16,6 +16,24 @@
       "revId": "bcff2a6dd646f33022344d1be00d679ffcbbee98",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_c64e0596",
+        "filename": "src/sim/event_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-03T08:29:02Z",
+      "side": 1,
+      "message": "cur_scheduling_runtime can be 0 because of the way ScheduleJobs works. It receives a vector of jobs for which it first checks if any of the jobs has runnable tasks. If there a no runnable tasks then the solver doesn\u0027t get executed. Thus, we can end up with 0 scheduling runtime.",
+      "parentUuid": "fa81d914_057e5a6b",
+      "revId": "bcff2a6dd646f33022344d1be00d679ffcbbee98",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
