@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_66ab991d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-03T08:22:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_c63b659a",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 28
+      },
+      "revId": "570a1b0284b5909a4b674e28dc5fd69b99397db7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_c6d7e521",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_46acd535",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-03T08:22:34Z",
+      "side": 1,
+      "message": "Previously, we were generating two tables:\nall_task_events*.csv and task_runtime_events.csv. Confusingly, all_task_events*.csv only contained stats for tasks that finished in the trace. On the other hand task_runtime_events.csv had all the events but the runtime for service jobs was computed incorrectly.",
+      "parentUuid": "fa81d914_c6d7e521",
+      "range": {
+        "startLine": 11,
+        "startChar": 20,
+        "endLine": 11,
+        "endChar": 47
+      },
+      "revId": "570a1b0284b5909a4b674e28dc5fd69b99397db7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_a6d4b120",
         "filename": "src/sim/google_trace_task_processor.cc",
         "patchSetId": 1
@@ -59,6 +107,30 @@
       "writtenOn": "2016-02-03T00:05:48Z",
       "side": 1,
       "message": "Hmm, we should have a comment explaining this formula. What\u0027s happening here? As far as I can see, we set the runtime to the current time (timestamp) minus the time when the task last scheduled, i.e. the difference between when it last scheduled and now. Is that correct? What if the task ran, failed, took a long time to schedule again, and now runs again? In that case, would the wait time be part of its \"runtime\" we account?",
+      "range": {
+        "startLine": 265,
+        "startChar": 0,
+        "endLine": 266,
+        "endChar": 60
+      },
+      "revId": "570a1b0284b5909a4b674e28dc5fd69b99397db7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_06bbbd72",
+        "filename": "src/sim/google_trace_task_processor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-03T08:22:34Z",
+      "side": 1,
+      "message": "In the tasks stats we have two fields: total_runtime_ and runtime_\n\n1) total_runtime_ represents the entire time the task was running. This includes even the time spent in runs that ended up failing or being killed.\n\n2) runtime_ represents the time the task spent running in the run that finished correctly. This value is computed as timestamp at TASK_FINISHED - timestamp of when the task got scheduled. If a task fails then in the trace there\u0027s going to be another SCHEDULE event for it before a FINISH event. Moreover, it is guaranteed that there won\u0027t be any other task events between the SCHEDULE and the FINISH event. Hence, we just make sure to reset a task\u0027s last_schedule_time_ whenever we a TASK_SCHEDULE event.\n\nI\u0027ve added a comment to the code.",
+      "parentUuid": "fa81d914_a6d4b120",
       "range": {
         "startLine": 265,
         "startChar": 0,
