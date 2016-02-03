@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   common::InitFirmament(argc, argv);
 
   LOG(INFO) << "Firmament worker starting ...";
-  Worker worker();
+  Worker worker;
 
   worker.Run();
 

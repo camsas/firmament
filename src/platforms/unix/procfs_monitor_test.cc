@@ -8,7 +8,6 @@
 #include <boost/thread.hpp>
 
 #include "base/common.h"
-#include "platforms/common.pb.h"
 #include "platforms/unix/common.h"
 #include "platforms/unix/procfs_monitor.h"
 

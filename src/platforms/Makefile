@@ -3,7 +3,7 @@ SUFFIX=platforms
 
 include $(ROOT_DIR)/include/Makefile.config
 
-PBS = common.pb.o
+PBS =
 # TODO(malte): This is a temporary hack to force building of the unix platform
 # in all cases. In the long run, we would like to be able to specify the
 # platform, or auto-detect it.

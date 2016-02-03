@@ -14,7 +14,6 @@
 #include "platforms/unix/common.h"
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
-#include "platforms/common.pb.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_channel.h"
 

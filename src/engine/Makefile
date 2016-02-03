@@ -32,7 +32,6 @@ TESTS_DEPS = $(BUILD_DIR)/misc/libfirmament_misc.a \
              $(BUILD_DIR)/base/libfirmament_base.a \
              $(BUILD_DIR)/messages/libfirmament_messages.a \
              $(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
-             $(BUILD_DIR)/platforms/common.pb.o \
              $(BUILD_DIR)/storage/libfirmament_storage.a
 # Test-specific dependencies; we keep these separate from the others in order
 # to avoid cyclic dependencies that will break test compilation.
@@ -114,7 +113,6 @@ $(OBJ_DIR)/coordinator: $(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
 		$(OPTFLAGS) -fsanitize=address $(DEFINES) \
 		$(BUILD_DIR)/scheduling/knowledge_base.o \
 		$(addprefix $(OBJ_DIR)/, $(COORD_OBJS)) \
-		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/scheduling/common.o \
 		$(BUILD_DIR)/scheduling/flow/libfirmament_scheduling_flow.a \
@@ -146,7 +144,6 @@ $(OBJ_DIR)/worker: $(addprefix $(OBJ_DIR)/, $(OBJS)) \
 		$(BUILD_DIR)/messages/libfirmament_messages.a \
 		$(BUILD_DIR)/misc/libfirmament_misc.a \
 		$(BUILD_DIR)/base/libfirmament_base.a \
-		$(BUILD_DIR)/platforms/common.pb.o \
 		$(BUILD_DIR)/platforms/unix/libfirmament_unix.a \
 		$(BUILD_DIR)/storage/libfirmament_storage.a \
 		$(LIBS) -o $(BUILD_DIR)/engine/worker, \
