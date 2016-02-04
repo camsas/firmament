@@ -113,6 +113,9 @@ class CostModelInterface {
   virtual vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(
       EquivClass_t tec) = 0;
 
+  // TODO(ionel): The task preference arcs are currently never updated
+  // after we add them. Change flow_graph_manager.cc to update the task to
+  // resource preference arcs.
   /**
    * Get the resource preference arcs of a task.
    * @param task_id the id of the task for which to get the preference arcs
