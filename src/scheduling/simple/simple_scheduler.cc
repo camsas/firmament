@@ -39,7 +39,8 @@ SimpleScheduler::SimpleScheduler(
     : EventDrivenScheduler(job_map, resource_map, resource_topology,
                            object_store, task_map, knowledge_base, topo_mgr,
                            m_adapter, event_notifier, coordinator_res_id,
-                           coordinator_uri, time_manager) {
+                           coordinator_uri, time_manager,
+                           new TraceGenerator(time_manager)) {
   VLOG(1) << "SimpleScheduler initiated.";
 }
 

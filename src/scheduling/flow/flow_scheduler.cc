@@ -59,12 +59,12 @@ FlowScheduler::FlowScheduler(
     : EventDrivenScheduler(job_map, resource_map, resource_topology,
                            object_store, task_map, knowledge_base, topo_mgr,
                            m_adapter, event_notifier, coordinator_res_id,
-                           coordinator_uri, time_manager),
+                           coordinator_uri, time_manager,
+                           new TraceGenerator(time_manager)),
       topology_manager_(topo_mgr),
       last_updated_time_dependent_costs_(0ULL),
       leaf_res_ids_(new unordered_set<ResourceID_t,
                       boost::hash<boost::uuids::uuid>>),
-      trace_generator_(new TraceGenerator(time_manager)),
       dimacs_stats_(new DIMACSChangeStats) {
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
@@ -133,7 +133,6 @@ FlowScheduler::FlowScheduler(
 }
 
 FlowScheduler::~FlowScheduler() {
-  delete trace_generator_;
   delete dimacs_stats_;
   delete cost_model_;
   delete solver_dispatcher_;
@@ -240,14 +239,16 @@ void FlowScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
   ResourceID_t* old_res_id_ptr = FindOrNull(task_bindings_, task_id);
   CHECK_NOTNULL(old_res_id_ptr);
   ResourceID_t old_res_id = *old_res_id_ptr;
-  flow_graph_manager_->TaskMigrated(task_id, old_res_id, *rd_ptr);
+  flow_graph_manager_->TaskMigrated(task_id, old_res_id,
+                                    ResourceIDFromString(rd_ptr->uuid()));
   EventDrivenScheduler::HandleTaskMigration(td_ptr, rd_ptr);
 }
 
 void FlowScheduler::HandleTaskPlacement(TaskDescriptor* td_ptr,
                                         ResourceDescriptor* rd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  flow_graph_manager_->TaskScheduled(td_ptr->uid(), *rd_ptr);
+  flow_graph_manager_->TaskScheduled(td_ptr->uid(),
+                                     ResourceIDFromString(rd_ptr->uuid()));
   EventDrivenScheduler::HandleTaskPlacement(td_ptr, rd_ptr);
 }
 

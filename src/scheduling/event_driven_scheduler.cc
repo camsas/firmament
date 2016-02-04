@@ -48,7 +48,8 @@ EventDrivenScheduler::EventDrivenScheduler(
     SchedulingEventNotifierInterface* event_notifier,
     ResourceID_t coordinator_res_id,
     const string& coordinator_uri,
-    TimeInterface* time_manager)
+    TimeInterface* time_manager,
+    TraceGenerator* trace_generator)
   : SchedulerInterface(job_map, knowledge_base, resource_map, resource_topology,
                        object_store, task_map),
       coordinator_uri_(coordinator_uri),
@@ -56,13 +57,15 @@ EventDrivenScheduler::EventDrivenScheduler(
       event_notifier_(event_notifier),
       m_adapter_ptr_(m_adapter),
       topology_manager_(topo_mgr),
-      time_manager_(time_manager) {
+      time_manager_(time_manager),
+      trace_generator_(trace_generator) {
   VLOG(1) << "EventDrivenScheduler initiated.";
 }
 
 EventDrivenScheduler::~EventDrivenScheduler() {
   // time_manager_ is not owned by the EventDrivenScheduler. We don't have to
   // delete it.
+  delete trace_generator_;
   for (map<ResourceID_t, ExecutorInterface*>::const_iterator
        exec_iter = executors_.begin();
        exec_iter != executors_.end();
@@ -254,6 +257,7 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   exec->HandleTaskCompletion(td_ptr, report);
   // Store the final report in the TD for future reference
   td_ptr->mutable_final_report()->CopyFrom(*report);
+  trace_generator_->TaskCompleted(td_ptr->uid(), rs_ptr->descriptor());
   if (event_notifier_) {
     event_notifier_->OnTaskCompletion(td_ptr, rs_ptr->mutable_descriptor());
   }
@@ -290,6 +294,7 @@ void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
   InsertTaskIntoRunnables(JobIDFromString(td_ptr->job_id()), td_ptr->uid());
   CHECK_NOTNULL(exec);
   exec->HandleTaskEviction(td_ptr);
+  trace_generator_->TaskEvicted(td_ptr->uid(), *rd_ptr);
   if (event_notifier_) {
     event_notifier_->OnTaskEviction(td_ptr, rd_ptr);
   }
@@ -325,6 +330,7 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   if (td_ptr->has_delegated_from()) {
     // XXX(malte): Need to forward message about task failure to delegator here!
   }
+  trace_generator_->TaskFailed(td_ptr->uid(), rs_ptr->descriptor());
   if (event_notifier_) {
     event_notifier_->OnTaskFailure(td_ptr, rs_ptr->mutable_descriptor());
   }
@@ -379,6 +385,7 @@ void EventDrivenScheduler::HandleTaskPlacement(
   if (jd->state() != JobDescriptor::RUNNING)
     jd->set_state(JobDescriptor::RUNNING);
   ExecuteTask(td_ptr, rd_ptr);
+  trace_generator_->TaskScheduled(task_id, *rd_ptr);
   if (event_notifier_) {
     event_notifier_->OnTaskPlacement(td_ptr, rd_ptr);
   }
@@ -402,6 +409,7 @@ void EventDrivenScheduler::KillRunningTask(
     return;
   }
   td_ptr->set_state(TaskDescriptor::ABORTED);
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, *rid);
   // Manufacture the message
   BaseMessage bm;
   SUBMSG_WRITE(bm, task_kill, task_id, task_id);
@@ -411,6 +419,7 @@ void EventDrivenScheduler::KillRunningTask(
             << *rid << " (endpoint: " << td_ptr->last_heartbeat_location()
             << ")";
   m_adapter_ptr_->SendMessageToEndpoint(td_ptr->last_heartbeat_location(), bm);
+  trace_generator_->TaskKilled(task_id, rs_ptr->descriptor());
 }
 
 void EventDrivenScheduler::InsertTaskIntoRunnables(JobID_t job_id,
