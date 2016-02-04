@@ -65,8 +65,8 @@ class FlowGraphManager {
   void TaskKilled(TaskID_t task_id);
   void TaskMigrated(TaskID_t task_id,
                     ResourceID_t old_res_id,
-                    const ResourceDescriptor& new_rd);
-  void TaskScheduled(TaskID_t task_id, const ResourceDescriptor& rd);
+                    ResourceID_t new_res_id);
+  void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
   void UpdateResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);
   void UpdateTimeDependentCosts(const vector<JobDescriptor*>& jd_ptr_vec);

@@ -19,6 +19,7 @@
 #include "engine/executors/executor_interface.h"
 #include "misc/messaging_interface.h"
 #include "misc/time_interface.h"
+#include "misc/trace_generator.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/scheduler_interface.h"
 #include "scheduling/scheduling_event_notifier_interface.h"
@@ -42,7 +43,8 @@ class EventDrivenScheduler : public SchedulerInterface {
                        SchedulingEventNotifierInterface* event_notifier,
                        ResourceID_t coordinator_res_id,
                        const string& coordinator_uri,
-                       TimeInterface* time_manager);
+                       TimeInterface* time_manager,
+                       TraceGenerator* trace_generator);
   ~EventDrivenScheduler();
   virtual void AddJob(JobDescriptor* jd_ptr);
   ResourceID_t* BoundResourceForTask(TaskID_t task_id);
@@ -140,6 +142,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   // Pointer to the coordinator's topology manager
   shared_ptr<TopologyManager> topology_manager_;
   TimeInterface* time_manager_;
+  TraceGenerator* trace_generator_;
 };
 
 }  // namespace scheduler

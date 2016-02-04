@@ -1036,14 +1036,12 @@ void FlowGraphManager::SetResourceNodeType(FlowGraphNode* res_node,
 }
 
 uint64_t FlowGraphManager::TaskCompleted(TaskID_t tid) {
-  trace_generator_->TaskCompleted(tid);
   uint64_t task_node_id = DeleteTaskNode(tid, "TaskCompleted");
   cost_model_->RemoveTask(tid);
   return task_node_id;
 }
 
 void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
-  trace_generator_->TaskEvicted(tid);
   FlowGraphNode* task_node = NodeForTaskID(tid);
   CHECK_NOTNULL(task_node);
   task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
@@ -1054,27 +1052,23 @@ void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
 }
 
 void FlowGraphManager::TaskFailed(TaskID_t tid) {
-  trace_generator_->TaskFailed(tid);
   DeleteTaskNode(tid, "TaskFailed");
   cost_model_->RemoveTask(tid);
 }
 
 void FlowGraphManager::TaskKilled(TaskID_t tid) {
-  trace_generator_->TaskKilled(tid);
   DeleteTaskNode(tid, "TaskKilled");
   cost_model_->RemoveTask(tid);
 }
 
 void FlowGraphManager::TaskMigrated(TaskID_t tid,
                                     ResourceID_t old_res_id,
-                                    const ResourceDescriptor& new_rd) {
+                                    ResourceID_t new_res_id) {
   TaskEvicted(tid, old_res_id);
-  TaskScheduled(tid, new_rd);
+  TaskScheduled(tid, new_res_id);
 }
 
-void FlowGraphManager::TaskScheduled(TaskID_t tid,
-                                     const ResourceDescriptor& rd) {
-  trace_generator_->TaskScheduled(tid, rd);
+void FlowGraphManager::TaskScheduled(TaskID_t tid, ResourceID_t rid) {
   // Mark the task as scheduled
   FlowGraphNode* node = NodeForTaskID(tid);
   CHECK_NOTNULL(node);
@@ -1083,7 +1077,7 @@ void FlowGraphManager::TaskScheduled(TaskID_t tid,
   // graph apart from the bound resource.
   // N.B.: This disables preemption and migration, unless FLAGS_preemption
   // is set!
-  UpdateArcsForBoundTask(tid, ResourceIDFromString(rd.uuid()));
+  UpdateArcsForBoundTask(tid, rid);
 }
 
 void FlowGraphManager::UpdateArcsForBoundTask(TaskID_t tid,
