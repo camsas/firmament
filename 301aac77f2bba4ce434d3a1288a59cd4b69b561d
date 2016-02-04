@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_ed5cc4ef",
+        "filename": "src/sim/knowledge_base_simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-04T10:37:24Z",
+      "side": 1,
+      "message": "So the logic here is:\n\n  * low CPI, low MAI (lots of compute, but little memory access, i.e. mostly on in-cache data) \u003d\u003e rabbit\n  * high MAI, large page cache (lots of memory access, data-intensive) \u003d\u003e devil\n  * high CPI, high MAI (slow-ish compute, but lots of memory traffic) \u003d\u003e sheep\n  * else \u003d\u003e turtle\n\nCorrect? This seems reasonable, but we should maybe document this rationale in a comment.\n\nMore generally (not for this diff), I wonder if this classification business should be in the cost model, and devil/turtle/rabbit/sheep should just be tags associated with a job/task. That ways, we end up with a more flexible design, but can still do everything we want to do, I think.",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 103,
+        "endChar": 3
+      },
+      "revId": "301aac77f2bba4ce434d3a1288a59cd4b69b561d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
