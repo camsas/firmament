@@ -150,7 +150,9 @@ class FlowGraphManager {
                                  FlowGraphNode* ec_node);
   void UpdateArcTasksToEquivClasses(queue<TaskDescriptor*>* tasks_to_update,
                                     unordered_set<EquivClass_t>* ecs_to_update);
+  void UpdateArcToUnscheduledAgg(FlowGraphNode* task_node);
   void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
+  void UpdateRunningTaskArcs(FlowGraphNode* task_node);
   void UpdateUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta);
 
   // Flow scheduling cost model used
@@ -175,6 +177,9 @@ class FlowGraphManager {
 
   // Mapping storing flow graph nodes for each task equivalence class.
   unordered_map<EquivClass_t, FlowGraphNode*> tec_to_node_;
+
+  // Map storing the running arc for every task that is running.
+  unordered_map<TaskID_t, FlowGraphArc*> task_to_running_arc_;
 
   // Vector storing the graph changes occured since the last scheduling round.
   vector<DIMACSChange*> graph_changes_;

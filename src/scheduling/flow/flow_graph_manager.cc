@@ -928,13 +928,16 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
     if (arc->dst_node_->id_ == res_node->id_ && !added_running_arc) {
       // This preference arc connects the same nodes as the running arc. Hence,
       // we just transform it into the running arc.
-      // TODO(ionel): This doesn't allow preemption. Set the
-      // cap_lower bound to 0 and the cost appropriately to allow preemption.
-      flow_graph_->ChangeArc(arc, 1, 1, 0);
+      uint64_t new_cost =
+        cost_model_->TaskContinuationCost(task_node->task_id_);
+      uint64_t old_cost = arc->cost_;
+      flow_graph_->ChangeArc(arc, 1, 1, new_cost);
       arc->type_ = RUNNING;
-      DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
+      CHECK(InsertIfNotPresent(&task_to_running_arc_,
+                               task_node->task_id_, arc));
+      DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
       chg->set_comment("PinTaskToNode transform to running arc");
-      dimacs_stats_->UpdateStats(CHG_ARC_PIN_TASK);
+      dimacs_stats_->UpdateStats(CHG_ARC_RUNNING_TASK);
       AddGraphChange(chg);
       added_running_arc = true;
     } else {
@@ -943,7 +946,7 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
       arc->cap_upper_bound_ = 0;
       DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
       chg->set_comment("PinTaskToNode delete arc");
-      dimacs_stats_->UpdateStats(DEL_ARC_PIN_TASK);
+      dimacs_stats_->UpdateStats(DEL_ARC_RUNNING_TASK);
       AddGraphChange(chg);
       flow_graph_->DeleteArc(arc);
     }
@@ -957,13 +960,12 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
     new_arc->cap_lower_bound_ = 1;
     new_arc->cap_upper_bound_ = 1;
     new_arc->type_ = RUNNING;
-    // TODO(ionel): This doesn't allow preemption. Set the
-    // cap_lower bound to 0 and the cost appropriately to allow
-    // preemption.
-    new_arc->cost_ = 0;
+    new_arc->cost_ = cost_model_->TaskContinuationCost(task_node->task_id_);
+    CHECK(InsertIfNotPresent(&task_to_running_arc_,
+                             task_node->task_id_, new_arc));
     DIMACSChange *chg = new DIMACSNewArc(*new_arc);
     chg->set_comment("PinTaskToNode add running arc");
-    dimacs_stats_->UpdateStats(ADD_ARC_PIN_TASK);
+    dimacs_stats_->UpdateStats(ADD_ARC_RUNNING_TASK);
     AddGraphChange(chg);
   }
 }
@@ -1078,6 +1080,7 @@ void FlowGraphManager::SetResourceNodeType(FlowGraphNode* res_node,
 
 uint64_t FlowGraphManager::TaskCompleted(TaskID_t tid) {
   trace_generator_->TaskCompleted(tid);
+  task_to_running_arc_.erase(tid);
   uint64_t task_node_id = DeleteTaskNode(tid, "TaskCompleted");
   cost_model_->RemoveTask(tid);
   return task_node_id;
@@ -1088,6 +1091,7 @@ void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(tid);
   CHECK_NOTNULL(task_node);
   task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
+  task_to_running_arc_.erase(tid);
   UpdateArcsForEvictedTask(tid, res_id);
   // We do not have to remove the task from the cost model because
   // the task will still exist in the flow graph at the end of
@@ -1096,12 +1100,14 @@ void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
 
 void FlowGraphManager::TaskFailed(TaskID_t tid) {
   trace_generator_->TaskFailed(tid);
+  task_to_running_arc_.erase(tid);
   DeleteTaskNode(tid, "TaskFailed");
   cost_model_->RemoveTask(tid);
 }
 
 void FlowGraphManager::TaskKilled(TaskID_t tid) {
   trace_generator_->TaskKilled(tid);
+  task_to_running_arc_.erase(tid);
   DeleteTaskNode(tid, "TaskKilled");
   cost_model_->RemoveTask(tid);
 }
@@ -1119,8 +1125,6 @@ void FlowGraphManager::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
   FlowGraphNode* node = NodeForTaskID(tid);
   CHECK_NOTNULL(node);
   node->type_ = FlowNodeType::SCHEDULED_TASK;
-  // After the task is bound, we now remove all of its edges into the flow
-  // graph apart from the bound resource.
   // N.B.: This disables preemption and migration, unless FLAGS_preemption
   // is set!
   UpdateArcsForBoundTask(tid, res_id);
@@ -1139,6 +1143,36 @@ void FlowGraphManager::UpdateArcsForBoundTask(TaskID_t tid,
     VLOG(2) << "Disabling preemption for " << tid;
     // Disable preemption
     PinTaskToNode(task_node, assigned_res_node);
+  } else {
+    // Add running arc. We don't delete the task's other arcs.
+    FlowGraphArc* running_arc =
+      FindPtrOrNull(task_node->outgoing_arc_map_, assigned_res_node->id_);
+    if (!running_arc) {
+      FlowGraphArc* new_arc = flow_graph_->AddArc(task_node, assigned_res_node);
+      new_arc->cap_upper_bound_ = 1;
+      new_arc->type_ = RUNNING;
+      new_arc->cost_ = cost_model_->TaskContinuationCost(task_node->task_id_);
+      CHECK(InsertIfNotPresent(&task_to_running_arc_, tid, new_arc));
+      DIMACSChange *chg = new DIMACSNewArc(*new_arc);
+      chg->set_comment("UpdateArcsForBoudTask add running arc");
+      dimacs_stats_->UpdateStats(ADD_ARC_RUNNING_TASK);
+      AddGraphChange(chg);
+    } else {
+      // The running arc points to the same destination as a preference arc.
+      // We just modify the preference arc because the graph doesn't currently
+      // support multi-arcs.
+      uint64_t new_cost =
+        cost_model_->TaskContinuationCost(task_node->task_id_);
+      uint64_t old_cost = running_arc->cost_;
+      flow_graph_->ChangeArc(running_arc, 0, 1, new_cost);
+      running_arc->type_ = RUNNING;
+      CHECK(InsertIfNotPresent(&task_to_running_arc_, tid, running_arc));
+      DIMACSChange* chg = new DIMACSChangeArc(*running_arc, old_cost);
+      chg->set_comment("UpdateArcsForBoundTask change pref to running arc");
+      dimacs_stats_->UpdateStats(CHG_ARC_RUNNING_TASK);
+      AddGraphChange(chg);
+    }
+    UpdateArcToUnscheduledAgg(task_node);
   }
 }
 
@@ -1146,43 +1180,41 @@ void FlowGraphManager::UpdateArcsForEvictedTask(TaskID_t task_id,
                                                 ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(task_id);
   CHECK_NOTNULL(task_node);
-  if (!FLAGS_preemption) {
-    // Delete outgoing arcs for running task.
-    for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
-           task_node->outgoing_arc_map_.begin();
-         it != task_node->outgoing_arc_map_.end();) {
-      FlowGraphArc* arc = it->second;
-      ++it;
-      arc->cap_lower_bound_ = 0;
-      arc->cap_upper_bound_ = 0;
-      DIMACSChange* chg = new DIMACSChangeArc(*arc, arc->cost_);
-      chg->set_comment("UpdateArcsForEvictedTasks delete running arc");
-      dimacs_stats_->UpdateStats(DEL_ARC_EVICTED_TASK);
-      AddGraphChange(chg);
-      flow_graph_->DeleteArc(arc);
-    }
-    // Add back arcs to equiv class node, unscheduled agg and to
-    // resource topology agg.
-    vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
-    FlowGraphNode* unsched_agg_node_ptr = FindPtrOrNull(job_unsched_to_node_,
-                                                        task_node->job_id_);
-    CHECK_NOTNULL(unsched_agg_node_ptr);
-
-    AddArcsForTask(task_node, unsched_agg_node_ptr, task_arcs);
-    for (auto& task_arc : *task_arcs) {
-      DIMACSChange *chg = new DIMACSNewArc(*task_arc);
-      chg->set_comment("UpdateArcsForEvictedTask");
-      dimacs_stats_->UpdateStats(CHG_ARC_EVICTED_TASK);
-      AddGraphChange(chg);
-    }
-    delete task_arcs;
-
-    AddTaskEquivClasses(task_node);
-
-    // Add this task's potential flow from the per-job unscheduled
-    // aggregator's outgoing edge
-    UpdateUnscheduledAggToSinkCapacity(task_node->job_id_, 1);
+  // Delete outgoing arcs for running task.
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
+         task_node->outgoing_arc_map_.begin();
+       it != task_node->outgoing_arc_map_.end();) {
+    FlowGraphArc* arc = it->second;
+    ++it;
+    arc->cap_lower_bound_ = 0;
+    arc->cap_upper_bound_ = 0;
+    DIMACSChange* chg = new DIMACSChangeArc(*arc, arc->cost_);
+    chg->set_comment("UpdateArcsForEvictedTasks delete running arc");
+    dimacs_stats_->UpdateStats(DEL_ARC_EVICTED_TASK);
+    AddGraphChange(chg);
+    flow_graph_->DeleteArc(arc);
   }
+  // Add back arcs to equiv class node, unscheduled agg and to
+  // resource topology agg.
+  vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
+  FlowGraphNode* unsched_agg_node_ptr = FindPtrOrNull(job_unsched_to_node_,
+                                                      task_node->job_id_);
+  CHECK_NOTNULL(unsched_agg_node_ptr);
+
+  AddArcsForTask(task_node, unsched_agg_node_ptr, task_arcs);
+  for (auto& task_arc : *task_arcs) {
+    DIMACSChange *chg = new DIMACSNewArc(*task_arc);
+    chg->set_comment("UpdateArcsForEvictedTask");
+    dimacs_stats_->UpdateStats(CHG_ARC_EVICTED_TASK);
+    AddGraphChange(chg);
+  }
+  delete task_arcs;
+
+  AddTaskEquivClasses(task_node);
+
+  // Add this task's potential flow from the per-job unscheduled
+  // aggregator's outgoing edge
+  UpdateUnscheduledAggToSinkCapacity(task_node->job_id_, 1);
 }
 
 void FlowGraphManager::UpdateResourceNode(
@@ -1319,7 +1351,8 @@ void FlowGraphManager::UpdateArcTasksToEquivClasses(
     } else if (cur->state() == TaskDescriptor::RUNNING ||
                cur->state() == TaskDescriptor::ASSIGNED) {
       // The task is already running, so it must have a node already
-      //task_node->type_ = FlowNodeType::SCHEDULED_TASK;
+      CHECK_NOTNULL(task_node);
+      UpdateRunningTaskArcs(task_node);
     } else if (task_node) {
       VLOG(2) << "Ignoring task " << cur->uid()
               << ", as its node already exists.";
@@ -1335,6 +1368,40 @@ void FlowGraphManager::UpdateArcTasksToEquivClasses(
       // scheduling.
       tasks_to_update->push(&task);
     }
+  }
+}
+
+void FlowGraphManager::UpdateArcToUnscheduledAgg(FlowGraphNode* task_node) {
+  uint64_t new_cost = cost_model_->TaskPreemptionCost(task_node->task_id_);
+  const FlowGraphNode* unsched_agg_node =
+    FindPtrOrNull(job_unsched_to_node_, task_node->job_id_);
+  FlowGraphArc* arc =
+    FindPtrOrNull(task_node->outgoing_arc_map_, unsched_agg_node->id_);
+  if (arc->cost_ != new_cost) {
+    Cost_t old_cost = arc->cost_;
+    flow_graph_->ChangeArcCost(arc, new_cost);
+    DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
+    chg->set_comment("UpdateRunningTaskArcs: update preemption cost");
+    dimacs_stats_->UpdateStats(CHG_ARC_TASK_TO_EQUIV_CLASS);
+    AddGraphChange(chg);
+  }
+}
+
+void FlowGraphManager::UpdateRunningTaskArcs(FlowGraphNode* task_node) {
+  // Update running arc.
+  uint64_t new_cost = cost_model_->TaskContinuationCost(task_node->task_id_);
+  FlowGraphArc* arc = FindPtrOrNull(task_to_running_arc_, task_node->task_id_);
+  CHECK_NOTNULL(arc);
+  if (arc->cost_ != new_cost) {
+    Cost_t old_cost = arc->cost_;
+    flow_graph_->ChangeArcCost(arc, new_cost);
+    DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
+    chg->set_comment("UpdateRunningTaskArcs: update continuation cost");
+    dimacs_stats_->UpdateStats(CHG_ARC_TASK_TO_EQUIV_CLASS);
+    AddGraphChange(chg);
+  }
+  if (FLAGS_preemption) {
+    UpdateArcToUnscheduledAgg(task_node);
   }
 }
 
