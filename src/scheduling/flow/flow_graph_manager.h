@@ -5,6 +5,7 @@
 #ifndef FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_MANAGER_H
 #define FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_MANAGER_H
 
+#include <queue>
 #include <set>
 #include <string>
 #include <vector>
@@ -104,8 +105,8 @@ class FlowGraphManager {
                                     FlowGraphNode* ec_node);
   FlowGraphNode* AddEquivClassNode(EquivClass_t ec);
   FlowGraphNode* AddNewResourceNode(ResourceTopologyNodeDescriptor* rtnd_ptr);
-  void AddOrUpdateEquivClassArcs(EquivClass_t ec,
-                                 vector<FlowGraphArc*>* ec_arcs);
+  void AddOrUpdateEquivClassPrefArcs(EquivClass_t ec,
+                                     vector<FlowGraphArc*>* ec_arcs);
   FlowGraphNode* AddOrUpdateJobUnscheduledAgg(JobID_t job_id);
   void AddResourceEquivClasses(FlowGraphNode* res_node);
   void AddOrUpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
@@ -134,6 +135,8 @@ class FlowGraphManager {
   void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
                                        const char *comment = NULL);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
+  void RemoveInvalidECToECArcs(const FlowGraphNode& ec_node,
+                               const vector<EquivClass_t>& ec_to_ec_arcs);
   void RemoveInvalidPreferenceArcs(const FlowGraphNode& ec_node,
                                    const vector<ResourceID_t>& res_pref_arcs);
   void RemoveMachineSubTree(FlowGraphNode* res_node,
@@ -142,8 +145,11 @@ class FlowGraphManager {
                            const ResourceDescriptor& rd);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
+  void UpdateArcsFromEquivClasses(unordered_set<EquivClass_t>* ecs_to_update);
   void UpdateArcTaskToEquivClass(FlowGraphNode* task_node,
                                  FlowGraphNode* ec_node);
+  void UpdateArcTasksToEquivClasses(queue<TaskDescriptor*>* tasks_to_update,
+                                    unordered_set<EquivClass_t>* ecs_to_update);
   void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void UpdateUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta);
 
