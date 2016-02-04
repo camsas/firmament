@@ -70,7 +70,7 @@ class TraceGenerator {
   void TaskEvicted(TaskID_t task_id);
   void TaskFailed(TaskID_t task_id);
   void TaskKilled(TaskID_t task_id);
-  void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
+  void TaskScheduled(TaskID_t task_id, const ResourceDescriptor& rd);
 
  private:
   uint64_t GetMachineId(const ResourceDescriptor& rd);

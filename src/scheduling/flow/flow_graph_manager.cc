@@ -1067,13 +1067,14 @@ void FlowGraphManager::TaskKilled(TaskID_t tid) {
 
 void FlowGraphManager::TaskMigrated(TaskID_t tid,
                                     ResourceID_t old_res_id,
-                                    ResourceID_t new_res_id) {
+                                    const ResourceDescriptor& new_rd) {
   TaskEvicted(tid, old_res_id);
-  TaskScheduled(tid, new_res_id);
+  TaskScheduled(tid, new_rd);
 }
 
-void FlowGraphManager::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
-  trace_generator_->TaskScheduled(tid, res_id);
+void FlowGraphManager::TaskScheduled(TaskID_t tid,
+                                     const ResourceDescriptor& rd) {
+  trace_generator_->TaskScheduled(tid, rd);
   // Mark the task as scheduled
   FlowGraphNode* node = NodeForTaskID(tid);
   CHECK_NOTNULL(node);
@@ -1082,7 +1083,7 @@ void FlowGraphManager::TaskScheduled(TaskID_t tid, ResourceID_t res_id) {
   // graph apart from the bound resource.
   // N.B.: This disables preemption and migration, unless FLAGS_preemption
   // is set!
-  UpdateArcsForBoundTask(tid, res_id);
+  UpdateArcsForBoundTask(tid, ResourceIDFromString(rd.uuid()));
 }
 
 void FlowGraphManager::UpdateArcsForBoundTask(TaskID_t tid,

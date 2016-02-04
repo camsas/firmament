@@ -55,4 +55,6 @@ message ResourceDescriptor {
   // Cost-model-specific statistics
   optional WhareMapStats whare_map_stats = 19;
   optional CoCoInterferenceScores coco_interference_scores = 20;
+  // Simulation related fields
+  optional uint64 trace_machine_id = 21;
 }

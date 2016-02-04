@@ -96,24 +96,11 @@ void TraceGenerator::AddMachine(const ResourceDescriptor& rd) {
 }
 
 uint64_t TraceGenerator::GetMachineId(const ResourceDescriptor& rd) {
-  uint64_t machine_id;
-  string simulator_machine_prefix = "firmament_simulation_machine_";
-  if (rd.has_friendly_name() &&
-      rd.friendly_name().find(simulator_machine_prefix) == 0) {
-    // This is a simulated machine. Get the trace machine id out of
-    // the machine's friendly name.
-    string machine_id_str =
-      rd.friendly_name().substr(simulator_machine_prefix.size(),
-                                string::npos);
-    try {
-      machine_id = boost::lexical_cast<uint64_t>(machine_id_str);
-    } catch (const boost::bad_lexical_cast &) {
-      LOG(FATAL) << "Could not convert: " << rd.friendly_name();
-    }
+  if (rd.has_trace_machine_id()) {
+    return rd.trace_machine_id();
   } else {
-    machine_id = HashString(rd.uuid());
+    return HashString(rd.uuid());
   }
-  return machine_id;
 }
 
 void TraceGenerator::RemoveMachine(const ResourceDescriptor& rd) {
@@ -179,6 +166,7 @@ void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
 }
 
 void TraceGenerator::TaskCompleted(TaskID_t task_id) {
+  // TODO(ionel): Print the machine_id as well.
   if (FLAGS_generate_trace) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
@@ -200,6 +188,7 @@ void TraceGenerator::TaskCompleted(TaskID_t task_id) {
 }
 
 void TraceGenerator::TaskEvicted(TaskID_t task_id) {
+  // TODO(ionel): Print the machine_id as well.
   if (FLAGS_generate_trace) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
@@ -215,6 +204,7 @@ void TraceGenerator::TaskEvicted(TaskID_t task_id) {
 }
 
 void TraceGenerator::TaskFailed(TaskID_t task_id) {
+  // TODO(ionel): Print the machine_id as well.
   if (FLAGS_generate_trace) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
@@ -235,6 +225,7 @@ void TraceGenerator::TaskFailed(TaskID_t task_id) {
 }
 
 void TraceGenerator::TaskKilled(TaskID_t task_id) {
+  // TODO(ionel): Print the machine_id as well.
   if (FLAGS_generate_trace) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
@@ -254,16 +245,18 @@ void TraceGenerator::TaskKilled(TaskID_t task_id) {
   }
 }
 
-void TraceGenerator::TaskScheduled(TaskID_t task_id, ResourceID_t res_id) {
-  // TODO(ionel): Print machine id as well.
+void TraceGenerator::TaskScheduled(TaskID_t task_id,
+                                   const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
-    fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
-            timestamp, *job_id_ptr, tr_ptr->task_id_, TASK_SCHEDULE_EVENT);
+    uint64_t machine_id = GetMachineId(rd);
+    fprintf(task_events_, "%ju,,%ju,%ju,%ju,%d,,,,,,,\n",
+            timestamp, *job_id_ptr, tr_ptr->task_id_, machine_id,
+            TASK_SCHEDULE_EVENT);
     tr_ptr->num_runs_++;
     tr_ptr->last_schedule_time_ = timestamp;
   }
