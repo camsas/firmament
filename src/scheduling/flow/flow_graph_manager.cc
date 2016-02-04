@@ -101,6 +101,9 @@ void FlowGraphManager::AddArcsForTask(FlowGraphNode* task_node,
 
 void FlowGraphManager::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
                                                     FlowGraphNode* ec_node) {
+  // TODO(ionel): The method bellow assumes that the source and destination
+  // EC are already present. This might not necessarly be true in complex
+  // cost models.
   pair<vector<EquivClass_t>*,
        vector<EquivClass_t>*> equiv_class_to_connect =
     cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
@@ -168,7 +171,7 @@ FlowGraphNode* FlowGraphManager::AddEquivClassNode(EquivClass_t ec) {
   spf(&comment, "EC_AGG_%ju", ec);
   ec_node->comment_ = comment;
   // Add arcs for the new EC
-  AddOrUpdateEquivClassArcs(ec, &ec_arcs);
+  AddOrUpdateEquivClassPrefArcs(ec, &ec_arcs);
   // Add the new equivalence node to the graph changes
   DIMACSChange *chg = new DIMACSAddNode(*ec_node, ec_arcs);
   chg->set_comment("AddEquivClassNode");
@@ -260,7 +263,7 @@ FlowGraphNode* FlowGraphManager::AddNewResourceNode(
 
 void FlowGraphManager::AddOrUpdateJobNodes(
     const vector<JobDescriptor*>& jd_ptr_vect) {
-  queue<TaskDescriptor*> queue;
+  queue<TaskDescriptor*> tasks_to_update;
   for (const auto& jd_ptr : jd_ptr_vect) {
     JobID_t job_id = JobIDFromString(jd_ptr->uuid());
     // First add an unscheduled aggregator node for this job
@@ -272,67 +275,12 @@ void FlowGraphManager::AddOrUpdateJobNodes(
     // TODO(malte): Stub -- this currently allows an unlimited number of tasks
     // per job to be scheduled.
     unsched_agg_node->excess_ = 0;
-    queue.push(jd_ptr->mutable_root_task());
+    tasks_to_update.push(jd_ptr->mutable_root_task());
   }
-  // Set storing the equivalence classes we've already visited.
-  unordered_set<EquivClass_t> visited_ecs;
-  // Now add task nodes.
-  while (!queue.empty()) {
-    TaskDescriptor* cur = queue.front();
-    queue.pop();
-    // Check if this node has already been added.
-    FlowGraphNode* task_node = FindPtrOrNull(task_to_node_map_, cur->uid());
-    if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
-      task_node = AddTaskNode(JobIDFromString(cur->job_id()), cur);
-      AddTaskEquivClasses(task_node);
-    } else if (task_node && cur->state() == TaskDescriptor::RUNNABLE) {
-      // We already have the task's nodes, so we need to revisit the ECs to see
-      // if any new arcs need to be added
-      vector<EquivClass_t>* equiv_classes =
-        cost_model_->GetTaskEquivClasses(task_node->task_id_);
-      // If there are no equivalence classes, there's nothing to do
-      if (equiv_classes) {
-        // Otherwise, revisit each EC and add missing arcs
-        for (auto& equiv_class : *equiv_classes) {
-          FlowGraphNode* ec_node = FindPtrOrNull(tec_to_node_, equiv_class);
-          CHECK_NOTNULL(ec_node);
-          UpdateArcTaskToEquivClass(task_node, ec_node);
-          if (visited_ecs.find(equiv_class) == visited_ecs.end()) {
-            visited_ecs.insert(equiv_class);
-            vector<FlowGraphArc*> ec_arcs;
-            AddOrUpdateEquivClassArcs(equiv_class, &ec_arcs);
-            for (auto& arc : ec_arcs) {
-              DIMACSChange* chg = new DIMACSNewArc(*arc);
-              chg->set_comment("AddOrUpdateJobNodes: add EC arc");
-              dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_EQUIV_CLASS);
-              AddGraphChange(chg);
-            }
-          }
-        }
-        // TODO(ionel): We do not currently check if we need to remove any arcs
-        // if the task's assignment to equivalence class changes.
-      }
-      delete equiv_classes;
-    } else if (cur->state() == TaskDescriptor::RUNNING ||
-               cur->state() == TaskDescriptor::ASSIGNED) {
-      // The task is already running, so it must have a node already
-      //task_node->type_ = FlowNodeType::SCHEDULED_TASK;
-    } else if (task_node) {
-      VLOG(2) << "Ignoring task " << cur->uid()
-              << ", as its node already exists.";
-    } else {
-      VLOG(2) << "Ignoring task " << cur->uid() << " [" << hex << cur
-              << "], which is in state "
-              << ENUM_TO_STRING(TaskDescriptor::TaskState, cur->state());
-    }
-    // Enqueue any existing children of this task
-    for (auto& task : *cur->mutable_spawned()) {
-      // We do actually need to push tasks even if they are already completed,
-      // failed or running, since they may have children eligible for
-      // scheduling.
-      queue.push(&task);
-    }
-  }
+  // Set to be populated with the ECs that we need to visit.
+  unordered_set<EquivClass_t> ecs_to_update;
+  UpdateArcTasksToEquivClasses(&tasks_to_update, &ecs_to_update);
+  UpdateArcsFromEquivClasses(&ecs_to_update);
 }
 
 FlowGraphNode* FlowGraphManager::AddOrUpdateJobUnscheduledAgg(JobID_t job_id) {
@@ -440,7 +388,75 @@ void FlowGraphManager::AddOrUpdateResourceNode(
   }
 }
 
-void FlowGraphManager::AddOrUpdateEquivClassArcs(
+void FlowGraphManager::UpdateArcsFromEquivClasses(
+    unordered_set<EquivClass_t>* ecs_to_update) {
+  queue<FlowGraphNode*> to_visit;
+  for (auto& ec : *ecs_to_update) {
+    FlowGraphNode* ec_node = FindPtrOrNull(tec_to_node_, ec);
+    to_visit.push(ec_node);
+  }
+  while (!to_visit.empty()) {
+    FlowGraphNode* ec_node = to_visit.front();
+    to_visit.pop();
+    vector<FlowGraphArc*> ec_arcs;
+    AddOrUpdateEquivClassPrefArcs(ec_node->ec_id_, &ec_arcs);
+    for (auto& arc : ec_arcs) {
+      DIMACSChange* chg = new DIMACSNewArc(*arc);
+      chg->set_comment("AddOrUpdateJobNodes: add EC arc");
+      dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_EQUIV_CLASS);
+      AddGraphChange(chg);
+    }
+    pair<vector<EquivClass_t>*,
+         vector<EquivClass_t>*> equiv_class_to_connect =
+      cost_model_->GetEquivClassToEquivClassesArcs(ec_node->ec_id_);
+    if (equiv_class_to_connect.second) {
+      // TODO(ionel): We assume that all the destination equivalence classes
+      // have already been added to the graph. If a cost model needs to add
+      // equiv classes as a result of updating an equivalence class then
+      // we need to update the code bellow. Ideally, we would change
+      // AddEquivClassNode() to AddOrUpdateEquivClassNode().
+      for (auto& dst_equiv_class : *equiv_class_to_connect.second) {
+        FlowGraphNode* ec_dst_ptr =
+          FindPtrOrNull(tec_to_node_, dst_equiv_class);
+        CHECK_NOTNULL(ec_dst_ptr);
+        if (ecs_to_update->find(dst_equiv_class) == ecs_to_update->end()) {
+          // Only add the EC to the queue if it is not in the queue and
+          // we haven't already visited it.
+          ecs_to_update->insert(dst_equiv_class);
+          to_visit.push(ec_dst_ptr);
+        }
+        Cost_t new_cost =
+          cost_model_->EquivClassToEquivClass(ec_node->ec_id_,
+                                              dst_equiv_class);
+        uint64_t new_capacity = CapacityBetweenECNodes(*ec_node, *ec_dst_ptr);
+        FlowGraphArc* arc =
+          FindPtrOrNull(ec_node->outgoing_arc_map_, ec_dst_ptr->id_);
+        if (!arc) {
+          // The arc doesn't exist yet. We need to add it.
+          arc = flow_graph_->AddArc(ec_node->id_, ec_dst_ptr->id_);
+          arc->cost_ = new_cost;
+          arc->cap_upper_bound_ = new_capacity;
+          DIMACSChange *chg = new DIMACSNewArc(*arc);
+          chg->set_comment("UpdateArcFromEquivClasses");
+          dimacs_stats_->UpdateStats(ADD_ARC_BETWEEN_EQUIV_CLASS);
+          AddGraphChange(chg);
+        } else {
+          Cost_t old_cost = arc->cost_;
+          if (old_cost != new_cost || arc->cap_upper_bound_ != new_capacity) {
+            flow_graph_->ChangeArc(arc, 0, new_capacity, new_cost);
+            DIMACSChange* chg = new DIMACSChangeArc(*arc, old_cost);
+            chg->set_comment("UpdateArcFromEquivClasses");
+            dimacs_stats_->UpdateStats(CHG_ARC_BETWEEN_EQUIV_CLASS);
+            AddGraphChange(chg);
+          }
+        }
+      }
+      RemoveInvalidECToECArcs(*ec_node, *equiv_class_to_connect.second);
+    }
+  }
+}
+
+void FlowGraphManager::AddOrUpdateEquivClassPrefArcs(
     EquivClass_t ec,
     vector<FlowGraphArc*>* ec_arcs) {
   // NOTE: We do not create DIMACS changes for new arcs because we can add
@@ -952,6 +968,31 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
   }
 }
 
+void FlowGraphManager::RemoveInvalidECToECArcs(
+    const FlowGraphNode& ec_node,
+    const vector<EquivClass_t>& ec_to_ec_arcs) {
+  unordered_set<EquivClass_t> ec_preferences(ec_to_ec_arcs.begin(),
+                                             ec_to_ec_arcs.end());
+  unordered_set<FlowGraphArc*> to_delete;
+  for (auto& dst_arc : ec_node.outgoing_arc_map_) {
+    EquivClass_t target_ec = dst_arc.second->dst_node_->ec_id_;
+    if (ec_preferences.find(target_ec) == ec_preferences.end()) {
+      to_delete.insert(dst_arc.second);
+      VLOG(1) << "Deleting no-longer-current arc from EC " << ec_node.ec_id_
+              << " to EC " << target_ec;
+    }
+  }
+  for (auto& arc : to_delete) {
+    arc->cap_lower_bound_ = 0;
+    arc->cap_upper_bound_ = 0;
+    DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
+    dimacs_stats_->UpdateStats(DEL_ARC_BETWEEN_EQUIV_CLASS);
+    chg->set_comment("UpdateEquivClassArcs/ec pref arc");
+    AddGraphChange(chg);
+    flow_graph_->DeleteArc(arc);
+  }
+}
+
 void FlowGraphManager::RemoveInvalidPreferenceArcs(
     const FlowGraphNode& ec_node, const vector<ResourceID_t>& res_pref_arcs) {
   // Check if we need to remove any arcs that are no longer in the set
@@ -964,8 +1005,8 @@ void FlowGraphManager::RemoveInvalidPreferenceArcs(
     if (res_preferences.find(target_rid) == res_preferences.end()) {
       // We need to remove this arc.
       to_delete.insert(dst_arc.second);
-      LOG(INFO) << "Deleting no-longer-current arc from EC " << ec_node.ec_id_
-                << " to resource " << target_rid;
+      VLOG(1) << "Deleting no-longer-current arc from EC " << ec_node.ec_id_
+              << " to resource " << target_rid;
     }
   }
   for (auto& arc : to_delete) {
@@ -973,7 +1014,7 @@ void FlowGraphManager::RemoveInvalidPreferenceArcs(
     arc->cap_upper_bound_ = 0;
     DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
     dimacs_stats_->UpdateStats(DEL_ARC_EQUIV_CLASS_TO_RES);
-    chg->set_comment("AddOrUpdateEquivClassArcs/outgoing");
+    chg->set_comment("AddOrUpdateEquivClassArcs/resource pref arc");
     AddGraphChange(chg);
     flow_graph_->DeleteArc(arc);
   }
@@ -1244,6 +1285,56 @@ void FlowGraphManager::UpdateArcTaskToEquivClass(FlowGraphNode* task_node,
     chg->set_comment("UpdateArcTaskToEquivClass: change EC arc cost");
     dimacs_stats_->UpdateStats(CHG_ARC_TASK_TO_EQUIV_CLASS);
     AddGraphChange(chg);
+  }
+}
+
+void FlowGraphManager::UpdateArcTasksToEquivClasses(
+    queue<TaskDescriptor*>* tasks_to_update,
+    unordered_set<EquivClass_t>* ecs_to_update) {
+  // Now add task nodes.
+  while (!tasks_to_update->empty()) {
+    TaskDescriptor* cur = tasks_to_update->front();
+    tasks_to_update->pop();
+    // Check if this node has already been added.
+    FlowGraphNode* task_node = FindPtrOrNull(task_to_node_map_, cur->uid());
+    if (cur->state() == TaskDescriptor::RUNNABLE && !task_node) {
+      task_node = AddTaskNode(JobIDFromString(cur->job_id()), cur);
+      AddTaskEquivClasses(task_node);
+    } else if (task_node && cur->state() == TaskDescriptor::RUNNABLE) {
+      // We already have the task's nodes, so we need to revisit the ECs to see
+      // if any new arcs need to be added
+      vector<EquivClass_t>* equiv_classes =
+        cost_model_->GetTaskEquivClasses(task_node->task_id_);
+      // If there are no equivalence classes, there's nothing to do
+      if (equiv_classes) {
+        // Otherwise, revisit each EC and add missing arcs
+        for (auto& equiv_class : *equiv_classes) {
+          FlowGraphNode* ec_node = FindPtrOrNull(tec_to_node_, equiv_class);
+          CHECK_NOTNULL(ec_node);
+          UpdateArcTaskToEquivClass(task_node, ec_node);
+          ecs_to_update->insert(equiv_class);
+        }
+      }
+      delete equiv_classes;
+    } else if (cur->state() == TaskDescriptor::RUNNING ||
+               cur->state() == TaskDescriptor::ASSIGNED) {
+      // The task is already running, so it must have a node already
+      //task_node->type_ = FlowNodeType::SCHEDULED_TASK;
+    } else if (task_node) {
+      VLOG(2) << "Ignoring task " << cur->uid()
+              << ", as its node already exists.";
+    } else {
+      VLOG(2) << "Ignoring task " << cur->uid() << " [" << hex << cur
+              << "], which is in state "
+              << ENUM_TO_STRING(TaskDescriptor::TaskState, cur->state());
+    }
+    // Enqueue any existing children of this task
+    for (auto& task : *cur->mutable_spawned()) {
+      // We do actually need to push tasks even if they are already completed,
+      // failed or running, since they may have children eligible for
+      // scheduling.
+      tasks_to_update->push(&task);
+    }
   }
 }
 
