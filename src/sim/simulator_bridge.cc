@@ -94,19 +94,18 @@ ResourceDescriptor* SimulatorBridge::AddMachine(
   ResourceTopologyNodeDescriptor* new_machine = rtn_root_.add_children();
   new_machine->CopyFrom(machine_tmpl_);
   const string& root_uuid = rtn_root_.resource_desc().uuid();
-  // Mark the hostname as a simulation one. This is useful for TraceGenerator
-  // which if it detects a simulated host then it outputs the host's trace id
-  // rather than Firmament's machine id.
   string hostname = "firmament_simulation_machine_" +
     lexical_cast<string>(machine_id);
   ResourceDescriptor* rd_ptr = new_machine->mutable_resource_desc();
   rd_ptr->set_friendly_name(hostname);
   rd_ptr->set_type(ResourceDescriptor::RESOURCE_MACHINE);
+  rd_ptr->set_trace_machine_id(machine_id);
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
   ResourceVector* res_cap = rd_ptr->mutable_resource_capacity();
   DFSTraverseResourceProtobufTreeReturnRTND(
       new_machine, boost::bind(&SimulatorBridge::SetupMachine,
-                               this, _1, res_cap, hostname, root_uuid, res_id));
+                               this, _1, res_cap, hostname, machine_id,
+                               root_uuid, res_id));
   CHECK(InsertIfNotPresent(&trace_machine_id_to_rtnd_, machine_id,
                            new_machine));
   scheduler_->RegisterResource(new_machine, false, true);
@@ -532,6 +531,7 @@ void SimulatorBridge::SetupMachine(
     ResourceTopologyNodeDescriptor* rtnd,
     ResourceVector* machine_res_cap,
     const string& hostname,
+    uint64_t trace_machine_id,
     const string& root_uuid,
     ResourceID_t machine_res_id) {
   string new_uuid;
@@ -558,6 +558,7 @@ void SimulatorBridge::SetupMachine(
   InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(), new_uuid);
   ResourceDescriptor* rd = rtnd->mutable_resource_desc();
   rd->set_uuid(new_uuid);
+  rd->set_trace_machine_id(trace_machine_id);
   // Add the resource node to the map.
   CHECK(InsertIfNotPresent(
       resource_map_.get(),

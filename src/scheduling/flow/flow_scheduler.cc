@@ -240,16 +240,14 @@ void FlowScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
   ResourceID_t* old_res_id_ptr = FindOrNull(task_bindings_, task_id);
   CHECK_NOTNULL(old_res_id_ptr);
   ResourceID_t old_res_id = *old_res_id_ptr;
-  flow_graph_manager_->TaskMigrated(task_id, old_res_id,
-                                    ResourceIDFromString(rd_ptr->uuid()));
+  flow_graph_manager_->TaskMigrated(task_id, old_res_id, *rd_ptr);
   EventDrivenScheduler::HandleTaskMigration(td_ptr, rd_ptr);
 }
 
 void FlowScheduler::HandleTaskPlacement(TaskDescriptor* td_ptr,
                                         ResourceDescriptor* rd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  flow_graph_manager_->TaskScheduled(td_ptr->uid(),
-                                     ResourceIDFromString(rd_ptr->uuid()));
+  flow_graph_manager_->TaskScheduled(td_ptr->uid(), *rd_ptr);
   EventDrivenScheduler::HandleTaskPlacement(td_ptr, rd_ptr);
 }
 

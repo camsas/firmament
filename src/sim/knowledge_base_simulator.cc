@@ -25,7 +25,7 @@ DEFINE_double(sheep_mai_threshold, 0.001, "MAI thereshold for SHEEP");
 namespace firmament {
 namespace sim {
 
-KnowledgeBaseSimulator::KnowledgeBaseSimulator()
+KnowledgeBaseSimulator::KnowledgeBaseSimulator() {
 }
 
 void KnowledgeBaseSimulator::AddMachineSample(

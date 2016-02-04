@@ -211,6 +211,7 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   void SetupMachine(ResourceTopologyNodeDescriptor* rtnd,
                     ResourceVector* machine_res_cap,
                     const string& hostname,
+                    uint64_t trace_machine_id,
                     const string& root_uuid,
                     ResourceID_t machine_res_id);
 
