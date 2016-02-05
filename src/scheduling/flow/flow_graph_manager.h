@@ -146,10 +146,20 @@ class FlowGraphManager {
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
   void UpdateArcsFromEquivClasses(unordered_set<EquivClass_t>* ecs_to_update);
+  /**
+   * Updates all the outgoing arcs from one or more tasks.
+   * @param tasks_to_update queue with the tasks to update
+   * @param ecs_to_update set to be populated with the ECs that are reachable
+   * from the updated tasks. These ECs must be updated as well.
+   */
+  void UpdateArcsFromTasks(queue<TaskDescriptor*>* tasks_to_update,
+                           unordered_set<EquivClass_t>* ecs_to_update);
+  void UpdateArcsFromTaskToEquivClasses(
+      FlowGraphNode* task_node,
+      unordered_set<EquivClass_t>* ecs_to_update);
+  void UpdateArcsFromTaskToResources(FlowGraphNode* task_node);
   void UpdateArcTaskToEquivClass(FlowGraphNode* task_node,
                                  FlowGraphNode* ec_node);
-  void UpdateArcTasksToEquivClasses(queue<TaskDescriptor*>* tasks_to_update,
-                                    unordered_set<EquivClass_t>* ecs_to_update);
   void UpdateArcToUnscheduledAgg(FlowGraphNode* task_node);
   void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void UpdateRunningTaskArcs(FlowGraphNode* task_node);

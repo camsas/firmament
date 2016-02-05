@@ -9,7 +9,7 @@
 
 #include "base/types.h"
 
-#define NUM_CHANGE_TYPES 29
+#define NUM_CHANGE_TYPES 30
 
 namespace firmament {
 
@@ -24,7 +24,7 @@ enum ChangeType {
   ADD_UNSCHED_JOB_NODE = 3,
   ADD_SINK_NODE = 4,
   ADD_ARC_TASK_TO_EQUIV_CLASS = 5,
-  ARC_ARC_TASK_TO_RES = 6,
+  ADD_ARC_TASK_TO_RES = 6,
   ADD_ARC_EQUIV_CLASS_TO_RES = 7,
   ADD_ARC_BETWEEN_EQUIV_CLASS = 8,
   ADD_ARC_BETWEEN_RES = 9,
@@ -47,6 +47,7 @@ enum ChangeType {
   CHG_ARC_BETWEEN_EQUIV_CLASS = 26,
   CHG_ARC_BETWEEN_RES = 27,
   CHG_ARC_RUNNING_TASK = 28,
+  CHG_ARC_TASK_TO_RES = 29,
 };
 
 struct DIMACSChangeStats {
