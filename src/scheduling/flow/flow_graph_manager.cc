@@ -93,7 +93,7 @@ void FlowGraphManager::AddArcsForTask(FlowGraphNode* task_node,
     arc_to_res->cost_ =
       cost_model_->TaskToResourceNodeCost(task_node->task_id_, pref_res_id);
     arc_to_res->cap_upper_bound_ = 1;
-    dimacs_stats_->UpdateStats(ARC_ARC_TASK_TO_RES);
+    dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_RES);
     task_arcs->push_back(arc_to_res);
   }
   delete task_pref_arcs;
@@ -279,7 +279,7 @@ void FlowGraphManager::AddOrUpdateJobNodes(
   }
   // Set to be populated with the ECs that we need to visit.
   unordered_set<EquivClass_t> ecs_to_update;
-  UpdateArcTasksToEquivClasses(&tasks_to_update, &ecs_to_update);
+  UpdateArcsFromTasks(&tasks_to_update, &ecs_to_update);
   UpdateArcsFromEquivClasses(&ecs_to_update);
 }
 
@@ -1320,7 +1320,7 @@ void FlowGraphManager::UpdateArcTaskToEquivClass(FlowGraphNode* task_node,
   }
 }
 
-void FlowGraphManager::UpdateArcTasksToEquivClasses(
+void FlowGraphManager::UpdateArcsFromTasks(
     queue<TaskDescriptor*>* tasks_to_update,
     unordered_set<EquivClass_t>* ecs_to_update) {
   // Now add task nodes.
@@ -1333,21 +1333,8 @@ void FlowGraphManager::UpdateArcTasksToEquivClasses(
       task_node = AddTaskNode(JobIDFromString(cur->job_id()), cur);
       AddTaskEquivClasses(task_node);
     } else if (task_node && cur->state() == TaskDescriptor::RUNNABLE) {
-      // We already have the task's nodes, so we need to revisit the ECs to see
-      // if any new arcs need to be added
-      vector<EquivClass_t>* equiv_classes =
-        cost_model_->GetTaskEquivClasses(task_node->task_id_);
-      // If there are no equivalence classes, there's nothing to do
-      if (equiv_classes) {
-        // Otherwise, revisit each EC and add missing arcs
-        for (auto& equiv_class : *equiv_classes) {
-          FlowGraphNode* ec_node = FindPtrOrNull(tec_to_node_, equiv_class);
-          CHECK_NOTNULL(ec_node);
-          UpdateArcTaskToEquivClass(task_node, ec_node);
-          ecs_to_update->insert(equiv_class);
-        }
-      }
-      delete equiv_classes;
+      UpdateArcsFromTaskToEquivClasses(task_node, ecs_to_update);
+      UpdateArcsFromTaskToResources(task_node);
     } else if (cur->state() == TaskDescriptor::RUNNING ||
                cur->state() == TaskDescriptor::ASSIGNED) {
       // The task is already running, so it must have a node already
@@ -1369,6 +1356,63 @@ void FlowGraphManager::UpdateArcTasksToEquivClasses(
       tasks_to_update->push(&task);
     }
   }
+}
+
+void FlowGraphManager::UpdateArcsFromTaskToEquivClasses(
+    FlowGraphNode* task_node,
+    unordered_set<EquivClass_t>* ecs_to_update) {
+  vector<EquivClass_t>* equiv_classes =
+    cost_model_->GetTaskEquivClasses(task_node->task_id_);
+  // If there are no equivalence classes, there's nothing to do
+  if (equiv_classes) {
+    // Otherwise, revisit each EC and add missing arcs
+    for (auto& equiv_class : *equiv_classes) {
+      FlowGraphNode* ec_node = FindPtrOrNull(tec_to_node_, equiv_class);
+      CHECK_NOTNULL(ec_node);
+      UpdateArcTaskToEquivClass(task_node, ec_node);
+      ecs_to_update->insert(equiv_class);
+    }
+  }
+  // TODO(ionel): We don't currently check if we need to remove any invalid arcs
+  // to ECs.
+  delete equiv_classes;
+}
+
+void FlowGraphManager::UpdateArcsFromTaskToResources(FlowGraphNode* task_node) {
+  vector<ResourceID_t>* task_res_pref_arcs =
+    cost_model_->GetTaskPreferenceArcs(task_node->task_id_);
+  if (task_res_pref_arcs) {
+    for (auto& pref_res_id : *task_res_pref_arcs) {
+      FlowGraphNode* res_node =
+        FindPtrOrNull(resource_to_node_map_, pref_res_id);
+      CHECK_NOTNULL(res_node);
+      Cost_t new_cost =
+        cost_model_->TaskToResourceNodeCost(task_node->task_id_, pref_res_id);
+      FlowGraphArc* arc =
+        FindPtrOrNull(task_node->outgoing_arc_map_, res_node->id_);
+      if (!arc) {
+        arc = flow_graph_->AddArc(task_node->id_, res_node->id_);
+        arc->cost_ = new_cost;
+        arc->cap_upper_bound_ = 1;
+        DIMACSChange* chg = new DIMACSNewArc(*arc);
+        chg->set_comment("UpdateArcsFromTaskToResources");
+        dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_RES);
+        AddGraphChange(chg);
+      } else {
+        Cost_t old_cost = arc->cost_;
+        if (old_cost != new_cost) {
+          flow_graph_->ChangeArcCost(arc, new_cost);
+          DIMACSChange* chg = new DIMACSChangeArc(*arc, old_cost);
+          chg->set_comment("UpdateArcsFromTaskToResources");
+          dimacs_stats_->UpdateStats(CHG_ARC_TASK_TO_RES);
+          AddGraphChange(chg);
+        }
+      }
+    }
+  }
+  // TODO(ionel): We don't currently check if we need to remove any invalid arcs
+  // to resources.
+  delete task_res_pref_arcs;
 }
 
 void FlowGraphManager::UpdateArcToUnscheduledAgg(FlowGraphNode* task_node) {

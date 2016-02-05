@@ -56,7 +56,7 @@ void DIMACSChangeStats::UpdateStats(ChangeType change_type) {
     return;
   }
   if (change_type == ADD_ARC_TASK_TO_EQUIV_CLASS ||
-      change_type == ARC_ARC_TASK_TO_RES ||
+      change_type == ADD_ARC_TASK_TO_RES ||
       change_type == ADD_ARC_EQUIV_CLASS_TO_RES ||
       change_type == ADD_ARC_BETWEEN_EQUIV_CLASS ||
       change_type == ADD_ARC_BETWEEN_RES || change_type == ADD_ARC_TO_UNSCHED ||
@@ -84,6 +84,7 @@ void DIMACSChangeStats::UpdateStats(ChangeType change_type) {
       change_type == CHG_ARC_EQUIV_CLASS_TO_RES ||
       change_type == CHG_ARC_BETWEEN_EQUIV_CLASS ||
       change_type == CHG_ARC_BETWEEN_RES ||
+      change_type == CHG_ARC_TASK_TO_RES ||
       change_type == CHG_ARC_RUNNING_TASK) {
     arcs_changed_++;
     return;
