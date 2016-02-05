@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_400bd229",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-05T10:32:26Z",
+      "side": 1,
+      "message": "(1) typo: EventDrienScheduler\n(2) which class? Not clearly defined. I think you mean that EventDrivenScheduler now owns a TraceGenerator, when previously it was owned by FlowGraphManager?",
+      "range": {
+        "startLine": 12,
+        "startChar": 39,
+        "endLine": 14,
+        "endChar": 20
+      },
+      "revId": "abd554f85f81ca47819a1ddd7a2e529cc05dfa0f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_80014a08",
+        "filename": "src/misc/trace_generator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-05T10:32:26Z",
+      "side": 1,
+      "message": "This is fine, although it\u0027s worth pointing out that (I think) the TD has the relevant information, too: it\u0027s in the scheduled_to_resource() field.",
+      "revId": "abd554f85f81ca47819a1ddd7a2e529cc05dfa0f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
