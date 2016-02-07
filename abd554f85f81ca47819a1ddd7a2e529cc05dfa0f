@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_d48064c2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-07T17:22:45Z",
+      "side": 1,
+      "message": "(1) Done.\n(2) Unfortunate typo class-\u003ecalls. Done.",
+      "parentUuid": "fa81d914_400bd229",
+      "range": {
+        "startLine": 12,
+        "startChar": 39,
+        "endLine": 14,
+        "endChar": 20
+      },
+      "revId": "abd554f85f81ca47819a1ddd7a2e529cc05dfa0f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_80014a08",
         "filename": "src/misc/trace_generator.h",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2016-02-05T10:32:26Z",
       "side": 1,
       "message": "This is fine, although it\u0027s worth pointing out that (I think) the TD has the relevant information, too: it\u0027s in the scheduled_to_resource() field.",
+      "revId": "abd554f85f81ca47819a1ddd7a2e529cc05dfa0f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_941b4cc9",
+        "filename": "src/misc/trace_generator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-07T17:22:45Z",
+      "side": 1,
+      "message": "Good to know! I would have to change the methods to receive TaskDescriptors instead of TaskIDs. We can do that at some point in the future, but it\u0027s definitely very low priority.",
+      "parentUuid": "fa81d914_80014a08",
       "revId": "abd554f85f81ca47819a1ddd7a2e529cc05dfa0f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
