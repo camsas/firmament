@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_81c22932",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-08T12:49:26Z",
+      "side": 1,
+      "message": "Why do we need to pass the ECs here? Presumably we\u0027ll be updating all ECs for the tasks in the task_to_update queue?\n\nEDIT: Ah, I see, the set is populated in UpdateArcsFromTaskToEquivClasses() and passed back as an output. Might be worth pointing this out in a comment.",
+      "revId": "a82048c988524d40a1852e9f87dda5445321522a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_c1dfc10b",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-08T12:49:26Z",
+      "side": 1,
+      "message": "(See above.)",
+      "revId": "a82048c988524d40a1852e9f87dda5445321522a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
