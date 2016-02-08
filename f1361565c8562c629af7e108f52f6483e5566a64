@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_a4a57b48",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-08T18:05:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_01d0f9c7",
+      "range": {
+        "startLine": 9,
+        "startChar": 53,
+        "endLine": 9,
+        "endChar": 55
+      },
+      "revId": "f1361565c8562c629af7e108f52f6483e5566a64",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_c4650f1f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-08T18:05:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_e1ce852d",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 45
+      },
+      "revId": "f1361565c8562c629af7e108f52f6483e5566a64",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_a12acd8d",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 1
@@ -59,6 +107,24 @@
       "writtenOn": "2016-02-08T15:29:15Z",
       "side": 1,
       "message": "Given the comment that was removed, shouldn\u0027t the lower bound be zero here? Otherwise the scheduler will never move the task, surely?",
+      "revId": "f1361565c8562c629af7e108f52f6483e5566a64",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_64af032b",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 934,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-08T18:05:11Z",
+      "side": 1,
+      "message": "I think the comment was misleading. This code is in PinTaskToNode which is only used when we don\u0027t allow preemption.",
+      "parentUuid": "fa81d914_a12acd8d",
       "revId": "f1361565c8562c629af7e108f52f6483e5566a64",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_84a87721",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 960,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-08T18:05:11Z",
+      "side": 1,
+      "message": "setting to 1 is ok. We don\u0027t want the task to ever be moved or preempted because this happens in PinTaskToNode.",
+      "parentUuid": "fa81d914_c11a617c",
+      "revId": "f1361565c8562c629af7e108f52f6483e5566a64",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_a4673bb6",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 1
@@ -93,6 +177,30 @@
       "writtenOn": "2016-02-08T15:29:15Z",
       "side": 1,
       "message": "Ah, I see, we keep an arc to the unscheduled aggregator, but not the arcs to all preferences. In other words, we support preemption, but not migration.\n\nThat\u0027s different behaviour to Quincy, but okay for now. We should make a note to revisit it.",
+      "range": {
+        "startLine": 1403,
+        "startChar": 0,
+        "endLine": 1405,
+        "endChar": 3
+      },
+      "revId": "f1361565c8562c629af7e108f52f6483e5566a64",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_44b2ff94",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1405,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-08T18:05:11Z",
+      "side": 1,
+      "message": "No, we support migration as well. We keep all the arcs. However, here we only update the running arc and the arc to the unsched aggregator. The other arcs are updated in AddOrUpdateJobNodes.",
+      "parentUuid": "fa81d914_a4673bb6",
       "range": {
         "startLine": 1403,
         "startChar": 0,
