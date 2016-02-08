@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_6471c375",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1149,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-08T15:29:15Z",
+      "side": 0,
+      "message": "Why do we no longer need this conditional?",
+      "revId": "113a94dd6fc57167db3d91c4e2bbb7cc00e9340a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
