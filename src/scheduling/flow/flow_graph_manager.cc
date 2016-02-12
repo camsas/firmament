@@ -1079,7 +1079,6 @@ void FlowGraphManager::SetResourceNodeType(FlowGraphNode* res_node,
 }
 
 uint64_t FlowGraphManager::TaskCompleted(TaskID_t tid) {
-  trace_generator_->TaskCompleted(tid);
   task_to_running_arc_.erase(tid);
   uint64_t task_node_id = DeleteTaskNode(tid, "TaskCompleted");
   cost_model_->RemoveTask(tid);
@@ -1098,14 +1097,12 @@ void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
 }
 
 void FlowGraphManager::TaskFailed(TaskID_t tid) {
-  trace_generator_->TaskFailed(tid);
   task_to_running_arc_.erase(tid);
   DeleteTaskNode(tid, "TaskFailed");
   cost_model_->RemoveTask(tid);
 }
 
 void FlowGraphManager::TaskKilled(TaskID_t tid) {
-  trace_generator_->TaskKilled(tid);
   task_to_running_arc_.erase(tid);
   DeleteTaskNode(tid, "TaskKilled");
   cost_model_->RemoveTask(tid);
