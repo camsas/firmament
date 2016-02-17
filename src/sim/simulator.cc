@@ -54,9 +54,8 @@ static const bool solver_validator =
   google::RegisterFlagValidator(&FLAGS_solver, &ValidateSolver);
 
 static bool ValidateRunIncremental(const char* flagname, bool run_incremental) {
-  if (run_incremental && FLAGS_solver.compare("flowlessly")) {
-    LOG(ERROR) << "run_incremental_scheduler can only be set with the "
-               << "flowlessly solver";
+  if (run_incremental && !FLAGS_solver.compare("cs2")) {
+    LOG(ERROR) << "run_incremental_scheduler can not be set with the cs solver";
     return false;
   }
   return true;
