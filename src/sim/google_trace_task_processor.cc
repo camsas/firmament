@@ -426,7 +426,7 @@ namespace sim {
     }
 
     if (task_stats.sample_count_mai_ == 0) {
-      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0");
+      fprintf(usage_stat_file, ",-1.0,-1.0,-1.0,-1.0\n");
     } else {
       fprintf(usage_stat_file, ",%lf,%lf,%lf,%lf\n",
               task_stats.min_usage_.mai_,
