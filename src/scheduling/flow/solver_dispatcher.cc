@@ -35,6 +35,9 @@ DEFINE_string(flowlessly_binary, "ext/flowlessly-git/build/flow_scheduler",
 DEFINE_string(flowlessly_algorithm, "fast_cost_scaling",
               "Algorithm to be used by flowlessly. Options: cycle_cancelling |"
               "cost_scaling | fast_cost_scaling | relax");
+DEFINE_string(flowlessly_initial_run_algorithm, "",
+              "Algorithm to be used for the first solver run. If empty then "
+              "flowlessly_algorithm is used.");
 DEFINE_string(cs2_binary, "ext/cs2-4.6/cs2.exe", "Path to the cs2 binary.");
 DEFINE_bool(log_solver_stderr, false, "Set to true to log solver's stderr.");
 
@@ -338,6 +341,10 @@ void SolverDispatcher::SolverConfiguration(const string& solver,
       }
       if (!FLAGS_incremental_flow) {
         args->push_back("--daemon=false");
+      }
+      if (FLAGS_flowlessly_initial_run_algorithm.compare("")) {
+        args->push_back("--algorithm_first_solver_run=" +
+                        FLAGS_flowlessly_initial_run_algorithm);
       }
     } else if (solver == "cs2") {
       // Nothing to do
