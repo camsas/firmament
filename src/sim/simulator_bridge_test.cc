@@ -78,7 +78,7 @@ TEST_F(SimulatorBridgeTest, AddTask) {
   CHECK_EQ(bridge_->task_id_to_identifier_.size(), 0);
   CHECK_EQ(bridge_->trace_task_id_to_td_.size(), 0);
   // Add the first task.
-  bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id, 1, 1);
   TaskDescriptor* td1_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   CHECK_NOTNULL(td1_ptr);
@@ -92,7 +92,7 @@ TEST_F(SimulatorBridgeTest, AddTask) {
   CHECK_EQ(bridge_->trace_task_id_to_td_.size(), 1);
   // Add the second task.
   trace_task_id.task_index = 2;
-  bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id, 1, 1);
   TaskDescriptor* td2_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   CHECK_NOTNULL(td2_ptr);
@@ -112,7 +112,7 @@ TEST_F(SimulatorBridgeTest, OnJobCompletion) {
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
-  bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id, 1, 1);
   TaskDescriptor* td_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
@@ -137,7 +137,7 @@ TEST_F(SimulatorBridgeTest, OnTaskCompletion) {
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
-  bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id, 1, 1);
   TaskDescriptor* td_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
@@ -162,7 +162,7 @@ TEST_F(SimulatorBridgeTest, OnTaskEviction) {
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
-  bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id, 1, 1);
   TaskDescriptor* td_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
@@ -186,7 +186,7 @@ TEST_F(SimulatorBridgeTest, OnTaskPlacement) {
   TraceTaskIdentifier trace_task_id;
   trace_task_id.job_id = 1;
   trace_task_id.task_index = 1;
-  bridge_->AddTask(trace_task_id);
+  bridge_->AddTask(trace_task_id, 1, 1);
   TaskDescriptor* td_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
