@@ -25,6 +25,7 @@ using boost::hash;
 
 DECLARE_uint64(runtime);
 DECLARE_string(scheduler);
+DECLARE_int64(sim_machine_max_ram);
 
 namespace firmament {
 namespace sim {
@@ -102,6 +103,9 @@ ResourceDescriptor* SimulatorBridge::AddMachine(
   rd_ptr->set_trace_machine_id(machine_id);
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
   ResourceVector* res_cap = rd_ptr->mutable_resource_capacity();
+  // TODO(ionel): Do not manually set ram_cap! Update the machine protobuf
+  // to include resource capacity values.
+  res_cap->set_ram_cap(FLAGS_sim_machine_max_ram);
   DFSTraverseResourceProtobufTreeReturnRTND(
       new_machine, boost::bind(&SimulatorBridge::SetupMachine,
                                this, _1, res_cap, hostname, machine_id,
@@ -137,7 +141,9 @@ void SimulatorBridge::AddMachineSamples(uint64_t current_time) {
   }
 }
 
-bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier) {
+bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier,
+                              double requested_cpu_cores,
+                              uint64_t requested_ram_mb) {
   if (submitted_tasks_.find(task_identifier) != submitted_tasks_.end()) {
     // In the trace, a task is submitted again after a task FAIL, EVICT, KILL
     // or LOST event. We can't exactly replay these events because they depend
@@ -170,6 +176,8 @@ bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier) {
   // root task identifier. Hence, we set it to the trace job id which
   // is unique.
   td_ptr->set_binary(lexical_cast<string>(task_identifier.job_id));
+  td_ptr->mutable_resource_request()->set_cpu_cores(requested_cpu_cores);
+  td_ptr->mutable_resource_request()->set_ram_cap(requested_ram_mb);
   if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
     CHECK(InsertIfNotPresent(&task_id_to_identifier_,
                              td_ptr->uid(), task_identifier));
@@ -305,7 +313,8 @@ void SimulatorBridge::ProcessSimulatorEvents(uint64_t events_up_to_time) {
       TraceTaskIdentifier task_identifier;
       task_identifier.task_index = event.second.task_index();
       task_identifier.job_id = event.second.job_id();
-      AddTask(task_identifier);
+      AddTask(task_identifier, event.second.requested_cpu_cores(),
+              event.second.requested_ram());
     } else {
       LOG(FATAL) << "Unexpected event type " << event.second.type() << " @ "
                  << event.first;

@@ -53,7 +53,9 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
    * @param task_identifier the simulator task identifier
    * @return true if the task has been added.
    */
-  bool AddTask(const TraceTaskIdentifier& task_identifier);
+  bool AddTask(const TraceTaskIdentifier& task_identifier,
+               double requested_cpu_cores,
+               uint64_t requested_ram_mb);
 
   void LoadTraceData(TraceLoader* trace_loader);
 

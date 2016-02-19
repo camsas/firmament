@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "base/common.h"
+#include "base/units.h"
 #include "misc/map-util.h"
 
 using boost::lexical_cast;
@@ -60,8 +61,10 @@ void KnowledgeBaseSimulator::AddMachineSample(
     cpus_usage[core_id] -= task_stat->avg_mean_cpu_usage_;
   }
   // RAM stats
-  machine_stats.set_total_ram(rd_ptr->resource_capacity().ram_cap());
-  machine_stats.set_free_ram(rd_ptr->resource_capacity().ram_cap() - mem_usage);
+  machine_stats.set_total_ram(rd_ptr->resource_capacity().ram_cap() *
+                              MB_TO_BYTES);
+  machine_stats.set_free_ram(
+      (rd_ptr->resource_capacity().ram_cap() - mem_usage) * MB_TO_BYTES);
   // CPU stats
   for (auto& usage : cpus_usage) {
     CpuUsage* cpu_usage = machine_stats.add_cpus_usage();

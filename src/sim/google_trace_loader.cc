@@ -23,6 +23,10 @@
 DEFINE_double(events_fraction, 1.0, "Fraction of events to retain.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(trace_path, "", "Path where the trace files are.");
+DEFINE_int64(sim_machine_max_cores, 12,
+             "Maximum number of cores the simulated machines have");
+DEFINE_int64(sim_machine_max_ram, 65536,
+             "Maximum ram size (in MB) the simulated machines have");
 
 DECLARE_uint64(runtime);
 
@@ -190,6 +194,19 @@ void GoogleTraceLoader::LoadTaskEvents(
             event_desc.set_type(EventDescriptor::TASK_SUBMIT);
             event_desc.set_job_id(task_id.job_id);
             event_desc.set_task_index(task_id.task_index);
+            try {
+              event_desc.set_requested_cpu_cores(lexical_cast<double>(vals[9]) *
+                                                 FLAGS_sim_machine_max_cores);
+            } catch (boost::bad_lexical_cast e) {
+              event_desc.set_requested_cpu_cores(0);
+            }
+            try {
+              event_desc.set_requested_ram(
+                  static_cast<uint64_t>(lexical_cast<double>(vals[10]) *
+                                        FLAGS_sim_machine_max_ram));
+            } catch (boost::bad_lexical_cast e) {
+              event_desc.set_requested_ram(0);
+            }
             event_manager_->AddEvent(task_event_time, event_desc);
           } else {
             // Skip this event and read next event from the trace.

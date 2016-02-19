@@ -1010,27 +1010,21 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
 
 uint64_t CocoCostModel::TaskFitCount(const ResourceVector& req,
                                      const ResourceVector& avail) {
-  uint64_t num_tasks = 1;
-  ResourceVectorFitIndication_t fit = RESOURCE_VECTOR_DOES_NOT_FIT;
-  do {
-    ResourceVector tmp;
-    tmp.set_cpu_cores(num_tasks * req.cpu_cores());
-    tmp.set_ram_cap(num_tasks * req.ram_cap());
-    tmp.set_net_bw(num_tasks * req.net_bw());
-    tmp.set_disk_bw(num_tasks * req.disk_bw());
-    VLOG(2) << "Fit comparison (" << num_tasks << " instances):";
-    VLOG(2) << tmp.DebugString();
-    VLOG(2) << avail.DebugString();
-    fit = CompareResourceVectors(tmp, avail);
-    VLOG(2) << "Result: " << fit;
-    if (fit != RESOURCE_VECTOR_WHOLLY_FITS)
-      // We no longer fit, so return the previous count
-      return num_tasks - 1;
-    else
-      ++num_tasks;
-  } while (fit == RESOURCE_VECTOR_WHOLLY_FITS);
-  // If we exit here, the task did not fit at all
-  return 0;
+  uint64_t num_tasks = numeric_limits<uint64_t>::max();
+  if (fabsl(req.cpu_cores()) > COMPARE_EPS) {
+    num_tasks = min(num_tasks,
+                    static_cast<uint64_t>(avail.cpu_cores() / req.cpu_cores()));
+  }
+  if (req.ram_cap() > 0) {
+    num_tasks = min(num_tasks, avail.ram_cap() / req.ram_cap());
+  }
+  if (req.disk_bw() > 0) {
+    num_tasks = min(num_tasks, avail.disk_bw() / req.disk_bw());
+  }
+  if (req.net_bw() > 0) {
+    num_tasks = min(num_tasks, avail.net_bw() / req.net_bw());
+  }
+  return num_tasks;
 }
 
 CocoCostModel::TaskFitIndication_t
