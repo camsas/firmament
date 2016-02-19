@@ -16,6 +16,24 @@
       "revId": "5f119ea44a6271cc81478cc7511d7111cd053b33",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba7be1f8_bd5a734e",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1024,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-19T20:31:11Z",
+      "side": 0,
+      "message": "This case was not previously used at all. Here we were only computing the number of tasks that wholly fit.",
+      "parentUuid": "ba7be1f8_7d49db8a",
+      "revId": "5f119ea44a6271cc81478cc7511d7111cd053b33",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
