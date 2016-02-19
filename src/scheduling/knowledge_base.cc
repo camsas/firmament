@@ -25,6 +25,8 @@ DEFINE_string(serial_machine_samples, "serial_machine_samples",
 DEFINE_string(serial_task_samples, "serial_task_samples",
               "Path to the file where the knowledge base will serialize task"
               " specific information");
+DEFINE_int64(max_sample_queue_size, 100,
+             "Maximum size (in KB) of each queue storing historical data");
 
 namespace firmament {
 
@@ -75,7 +77,7 @@ void KnowledgeBase::AddMachineSample(
     q = FindOrNull(machine_map_, rid);
     CHECK_NOTNULL(q);
   }
-  if (q->size() * sizeof(sample) >= 1 * MB_TO_BYTES)
+  if (q->size() * sizeof(sample) >= FLAGS_max_sample_queue_size * KB_TO_BYTES)
     q->pop_front();  // drop from the front
   q->push_back(sample);
   if (FLAGS_serialize_knowledge_base) {
@@ -99,7 +101,7 @@ void KnowledgeBase::AddTaskSample(const TaskPerfStatisticsSample& sample) {
     q = FindOrNull(task_map_, tid);
     CHECK_NOTNULL(q);
   }
-  if (q->size() * sizeof(sample) >= 1 * MB_TO_BYTES)
+  if (q->size() * sizeof(sample) >= FLAGS_max_sample_queue_size * KB_TO_BYTES)
     q->pop_front();  // drop from the front
   q->push_back(sample);
   if (FLAGS_serialize_knowledge_base) {
@@ -307,7 +309,8 @@ void KnowledgeBase::ProcessTaskFinalReport(
       reports = FindOrNull(task_exec_reports_, tec);
       CHECK_NOTNULL(reports);
     }
-    if (reports->size() * sizeof(report) >= 1 * MB_TO_BYTES) {
+    if (reports->size() * sizeof(report) >=
+        FLAGS_max_sample_queue_size * KB_TO_BYTES) {
       reports->pop_front();
     }
     reports->push_back(report);

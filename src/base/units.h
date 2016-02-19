@@ -13,6 +13,7 @@ namespace firmament {
 // Capacity
 const uint64_t BYTES_TO_MB = 1024 * 1024;
 const uint64_t BYTES_TO_GB = 1024 * 1024 * 1024;
+const uint64_t KB_TO_BYTES = 1024;
 const uint64_t KB_TO_MB = 1024;
 const uint64_t KB_TO_GB = 1024 * 1024;
 const uint64_t MB_TO_BYTES = 1024 * 1024;
