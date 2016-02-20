@@ -140,11 +140,12 @@ void GoogleTraceLoader::LoadMachineEvents(
   fclose(machines_file);
 }
 
-void GoogleTraceLoader::LoadTaskEvents(
+bool GoogleTraceLoader::LoadTaskEvents(
     uint64_t events_up_to_time,
     unordered_map<uint64_t, uint64_t>* job_num_tasks) {
   char line[MAX_LINE_LENGTH];
   vector<string> vals;
+  bool loaded_event = false;
   while (true) {
     // Check if we're already reading from a file.
     if (!task_events_file_) {
@@ -158,7 +159,7 @@ void GoogleTraceLoader::LoadTaskEvents(
         }
       } else {
         // There are no task events left to load.
-        return;
+        return loaded_event;
       }
     }
     while (!feof(task_events_file_)) {
@@ -208,6 +209,7 @@ void GoogleTraceLoader::LoadTaskEvents(
               event_desc.set_requested_ram(0);
             }
             event_manager_->AddEvent(task_event_time, event_desc);
+            loaded_event = true;
           } else {
             // Skip this event and read next event from the trace.
             continue;
@@ -215,7 +217,7 @@ void GoogleTraceLoader::LoadTaskEvents(
           if (task_event_time > events_up_to_time) {
             // We've loaded all the events up to the given time.
             // NOTE: we also loaded the current task event.
-            return;
+            return true;
           }
         }
       }
@@ -225,6 +227,7 @@ void GoogleTraceLoader::LoadTaskEvents(
     // We set the file to NULL to indicate that we should open the next file.
     task_events_file_ = NULL;
   }
+  return true;
 }
 
 void GoogleTraceLoader::LoadTaskUtilizationStats(

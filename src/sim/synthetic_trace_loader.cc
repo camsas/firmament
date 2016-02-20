@@ -87,14 +87,14 @@ void SyntheticTraceLoader::LoadMachineEvents(
   }
 }
 
-void SyntheticTraceLoader::LoadTaskEvents(
+bool SyntheticTraceLoader::LoadTaskEvents(
     uint64_t events_up_to_time,
     unordered_map<uint64_t, uint64_t>* job_num_tasks) {
   uint64_t usec_between_jobs =
     MICROSECONDS_IN_SECOND / FLAGS_synthetic_jobs_per_second;
   uint64_t last_timestamp = last_generated_job_id_ * usec_between_jobs;
   if (last_timestamp > events_up_to_time) {
-    return;
+    return true;
   }
   for (uint64_t timestamp = (last_generated_job_id_ + 1) * usec_between_jobs; ;
        timestamp += usec_between_jobs) {
@@ -110,7 +110,7 @@ void SyntheticTraceLoader::LoadTaskEvents(
     if (timestamp > events_up_to_time) {
       // We want to add one additional event after events_up_to_time to make
       // sure that the simulation doesn't end.
-      return;
+      return true;
     }
   }
 }

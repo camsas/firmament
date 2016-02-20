@@ -36,6 +36,9 @@ DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
 DEFINE_string(simulation, "google",
               "The type of simulation to run: google | synthetic");
+DEFINE_bool(exit_simulation_after_last_task_event, false,
+            "True if the simulation should not wait for the running tasks "
+            "to complete");
 
 DECLARE_uint64(heartbeat_interval);
 DECLARE_uint64(max_solver_runtime);
@@ -110,8 +113,9 @@ void Simulator::ReplaySimulation() {
     // the scheduler will callback to the simulator
     // (via OnSchedulingDecisionsCompletion) after it decides where to place
     // tasks.
-    trace_loader->LoadTaskEvents(run_scheduler_at + FLAGS_max_solver_runtime,
-                                 bridge_->job_num_tasks());
+    bool loaded_events =
+      trace_loader->LoadTaskEvents(run_scheduler_at + FLAGS_max_solver_runtime,
+                                   bridge_->job_num_tasks());
     // Add the machine heartbeat events up to the next scheduler run.
     for (; run_scheduler_at >= current_heartbeat_time;
          current_heartbeat_time += FLAGS_heartbeat_interval) {
@@ -134,6 +138,10 @@ void Simulator::ReplaySimulation() {
       num_scheduling_rounds++;
     } else {
       bridge_->ProcessSimulatorEvents(FLAGS_runtime);
+    }
+    if (!loaded_events && FLAGS_exit_simulation_after_last_task_event) {
+      // The simulator has finished loading all the task events.
+      break;
     }
   }
   delete trace_loader;
