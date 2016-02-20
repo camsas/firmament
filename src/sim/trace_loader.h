@@ -36,8 +36,10 @@ class TraceLoader {
    * @param events_up_to_time the time up to which to load the events
    * @param job_num_tasks map containing the number of tasks each job has. The
    * map is going to be updated if any task events are filtered.
+   * @return false if no events have been loaded and there are no more events
+   * left to be loaded.
    */
-  virtual void LoadTaskEvents(
+  virtual bool LoadTaskEvents(
       uint64_t events_up_to_time,
       unordered_map<uint64_t, uint64_t>* job_num_tasks) = 0;
 
