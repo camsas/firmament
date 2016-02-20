@@ -587,14 +587,12 @@ Cost_t CocoCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
 }
 
 Cost_t CocoCostModel::TaskContinuationCost(TaskID_t task_id) {
-  // XXX(malte): not currently used.
-  LOG(FATAL) << "Unimplememented!";
+  // TODO(malte): Implement!
   return 0LL;
 }
 
 Cost_t CocoCostModel::TaskPreemptionCost(TaskID_t task_id) {
-  // XXX(malte): not currently used.
-  LOG(FATAL) << "Unimplememented!";
+  // TODO(malte): Implement!
   return 0LL;
 }
 
@@ -993,11 +991,21 @@ CocoCostModel::CompareResourceVectors(
 }
 
 void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
+  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
+      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_ == FlowNodeType::SINK ||
+      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+    // The node is not a resource.
+    return;
+  }
   ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
-  // Early exit if the resource is not yet there
+  // Early exit if the resource is not yet there.
   if (!rd_ptr) {
-    LOG(WARNING) << "Queried RD that does not exist yet, for "
-                 << accumulator->resource_id_;
+    LOG(ERROR) << "Queried RD that does not exist yet, for "
+               << accumulator->resource_id_;
+    return;
   }
   rd_ptr->clear_available_resources();
   rd_ptr->clear_reserved_resources();
