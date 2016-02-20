@@ -17,7 +17,7 @@ class SyntheticTraceLoader : public TraceLoader {
   explicit SyntheticTraceLoader(EventManager* event_manager);
   void LoadJobsNumTasks(unordered_map<uint64_t, uint64_t>* job_num_tasks);
   void LoadMachineEvents(multimap<uint64_t, EventDescriptor>* machine_events);
-  void LoadTaskEvents(uint64_t events_up_to_time,
+  bool LoadTaskEvents(uint64_t events_up_to_time,
                       unordered_map<uint64_t, uint64_t>* job_num_tasks);
   void LoadTaskUtilizationStats(
       unordered_map<TraceTaskIdentifier, TraceTaskStats,
