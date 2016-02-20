@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba7be1f8_129c4969",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-20T20:48:15Z",
+      "side": 1,
+      "message": "Typo",
+      "range": {
+        "startLine": 11,
+        "startChar": 63,
+        "endLine": 11,
+        "endChar": 72
+      },
+      "revId": "189fccad9ab37d82cdd9d420cfdfd44d00fe6e78",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba7be1f8_32886d22",
+        "filename": "src/sim/google_trace_loader.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-20T20:48:15Z",
+      "side": 1,
+      "message": "@return missing",
+      "revId": "189fccad9ab37d82cdd9d420cfdfd44d00fe6e78",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
