@@ -382,6 +382,16 @@ void SimulatorBridge::OnTaskEviction(TaskDescriptor* td_ptr,
     FindOrNull(task_id_to_identifier_, td_ptr->uid());
   CHECK_NOTNULL(ti_ptr);
   uint64_t task_end_time = td_ptr->finish_time();
+  uint64_t task_executed_for =
+    simulated_time_->GetCurrentTimestamp() - td_ptr->start_time();
+  uint64_t* runtime_ptr = FindOrNull(task_runtime_, *ti_ptr);
+  if (runtime_ptr != NULL) {
+    // NOTE: We assume that the work conducted by a task until eviction is
+    // saved. Hence, we update the time the task has left to run.
+    InsertOrUpdate(&task_runtime_, *ti_ptr, *runtime_ptr - task_executed_for);
+  } else {
+    // The task didn't finish in the trace.
+  }
   td_ptr->set_start_time(0);
   event_manager_->RemoveTaskEndRuntimeEvent(*ti_ptr, task_end_time);
 }
