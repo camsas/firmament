@@ -765,10 +765,10 @@ void CocoCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
 void CocoCostModel::AddTask(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   const TaskDescriptor& td = GetTask(task_id);
-  for (auto it = equiv_classes->begin();
-       it != equiv_classes->end();
-       ++it) {
-    InsertIfNotPresent(&task_ec_to_resource_request_, *it,
+  for (auto& equiv_class : *equiv_classes) {
+    // NOTE: The code assumes that only one task is connected to an
+    // equivalence class.
+    InsertIfNotPresent(&task_ec_to_resource_request_, equiv_class,
                        td.resource_request());
   }
   delete equiv_classes;
@@ -779,17 +779,19 @@ void CocoCostModel::RemoveMachine(ResourceID_t res_id) {
 
 void CocoCostModel::RemoveTask(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
-  for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
-       it != equiv_classes->end(); ++it) {
+  for (auto& equiv_class : *equiv_classes) {
     unordered_map<EquivClass_t, set<TaskID_t> >::iterator set_it =
-      task_ec_to_set_task_id_.find(*it);
+      task_ec_to_set_task_id_.find(equiv_class);
     if (set_it != task_ec_to_set_task_id_.end()) {
       set_it->second.erase(task_id);
       if (set_it->second.size() == 0) {
-        task_ec_to_set_task_id_.erase(*it);
-        task_aggs_.erase(*it);
+        task_ec_to_set_task_id_.erase(equiv_class);
+        task_aggs_.erase(equiv_class);
       }
     }
+    // NOTE: The code assumes that only one task is connected to an
+    // equivalence class.
+    task_ec_to_resource_request_.erase(equiv_class);
   }
 }
 

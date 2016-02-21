@@ -158,7 +158,6 @@ class CocoCostModel : public CostModelInterface {
   unordered_map<EquivClass_t, ResourceVector> task_ec_to_resource_request_;
   // Track equivalence class aggregators present
   unordered_set<EquivClass_t> task_aggs_;
-  unordered_set<EquivClass_t> machine_aggs_;
 
   // Largest cost seen so far, plus one
   uint64_t infinity_;
