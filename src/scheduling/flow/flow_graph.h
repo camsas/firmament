@@ -38,11 +38,12 @@ class FlowGraph {
   }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
   inline uint64_t NumNodes() const {
-    if (FLAGS_flow_scheduling_solver != "cs2") {
+    if (!FLAGS_flow_scheduling_solver.compare("flowlessly")) {
       return node_map_.size();
     } else {
-      // TODO(malte): This is a work-around as cs2 does not allow sparse node
-      // IDs, and will get tripped up if current_id > graph.NumNodes().
+      // TODO(malte): This is a work-around as cs2 and Relax IV do not allow
+      // sparse node IDs, and will get tripped up
+      // if current_id > graph.NumNodes().
       return current_id_;
     }
   }
