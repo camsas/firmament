@@ -125,11 +125,13 @@ void TraceGenerator::SchedulerRun(
                    << " of tasks are unscheduled";
     }
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
-    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%s\n",
+    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju,%s\n",
             timestamp, scheduler_stats.scheduler_runtime,
             scheduler_stats.algorithm_runtime, scheduler_stats.total_runtime,
-            unscheduled_tasks_cnt_, unscheduled_tasks_cnt_ + running_tasks_cnt_,
+            unscheduled_tasks_cnt_, evicted_tasks_cnt_,
+            unscheduled_tasks_cnt_ + running_tasks_cnt_,
             dimacs_stats.GetStatsString().c_str());
+    evicted_tasks_cnt_ = 0;
   }
 }
 
@@ -204,6 +206,7 @@ void TraceGenerator::TaskEvicted(TaskID_t task_id,
                                  const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
     running_tasks_cnt_--;
+    evicted_tasks_cnt_++;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);

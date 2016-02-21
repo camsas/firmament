@@ -90,6 +90,7 @@ class TraceGenerator {
   FILE* task_usage_stat_;
   uint64_t unscheduled_tasks_cnt_;
   uint64_t running_tasks_cnt_;
+  uint64_t evicted_tasks_cnt_;
 };
 
 } // namespace firmament
