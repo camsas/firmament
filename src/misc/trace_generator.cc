@@ -13,6 +13,8 @@
 #include "misc/map-util.h"
 #include "misc/utils.h"
 
+#define UNSCHEDULED_TASKS_WARNING_THRESHOLD 1.0 // Percentage
+
 DEFINE_bool(generate_trace, false, "Generate Google style trace");
 DEFINE_string(generated_trace_path, "",
               "Path to where the trace will be generated");
@@ -116,16 +118,24 @@ void TraceGenerator::SchedulerRun(
     const scheduler::SchedulerStats& scheduler_stats,
     const DIMACSChangeStats& dimacs_stats) {
   if (FLAGS_generate_trace) {
+    double unscheduled_tasks_percentage = unscheduled_tasks_cnt_ * 100.0 /
+      (unscheduled_tasks_cnt_ + running_tasks_cnt_);
+    if (unscheduled_tasks_percentage > UNSCHEDULED_TASKS_WARNING_THRESHOLD) {
+      LOG(WARNING) << unscheduled_tasks_percentage
+                   << " of tasks are unscheduled";
+    }
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
-    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%s\n",
+    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%s\n",
             timestamp, scheduler_stats.scheduler_runtime,
             scheduler_stats.algorithm_runtime, scheduler_stats.total_runtime,
+            unscheduled_tasks_cnt_, unscheduled_tasks_cnt_ + running_tasks_cnt_,
             dimacs_stats.GetStatsString().c_str());
   }
 }
 
 void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
   if (FLAGS_generate_trace) {
+    unscheduled_tasks_cnt_++;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t job_id;
     string simulator_job_prefix = "firmament_simulation_job_";
@@ -168,6 +178,7 @@ void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
 void TraceGenerator::TaskCompleted(TaskID_t task_id,
                                    const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
+    running_tasks_cnt_--;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -192,6 +203,7 @@ void TraceGenerator::TaskCompleted(TaskID_t task_id,
 void TraceGenerator::TaskEvicted(TaskID_t task_id,
                                  const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
+    running_tasks_cnt_--;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -210,6 +222,7 @@ void TraceGenerator::TaskEvicted(TaskID_t task_id,
 void TraceGenerator::TaskFailed(TaskID_t task_id,
                                 const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
+    running_tasks_cnt_--;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -233,6 +246,7 @@ void TraceGenerator::TaskFailed(TaskID_t task_id,
 void TraceGenerator::TaskKilled(TaskID_t task_id,
                                 const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
+    running_tasks_cnt_--;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -256,6 +270,8 @@ void TraceGenerator::TaskKilled(TaskID_t task_id,
 void TraceGenerator::TaskScheduled(TaskID_t task_id,
                                    const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
+    running_tasks_cnt_++;
+    unscheduled_tasks_cnt_--;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
