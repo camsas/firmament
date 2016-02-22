@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_a5c6de47",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 770,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-22T15:17:36Z",
+      "side": 1,
+      "message": "Huh? That doesn\u0027t seem very realistic to me -- or am I misunderstanding? The whole point of ECs, surely, is to aggregate multiple tasks?",
+      "range": {
+        "startLine": 769,
+        "startChar": 0,
+        "endLine": 770,
+        "endChar": 25
+      },
+      "revId": "d463fccaf1bdcd933af66a0e55fc19afb2c02ec9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_45b0cadd",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 793,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-22T15:17:36Z",
+      "side": 1,
+      "message": "See above.",
+      "range": {
+        "startLine": 792,
+        "startChar": 0,
+        "endLine": 793,
+        "endChar": 25
+      },
+      "revId": "d463fccaf1bdcd933af66a0e55fc19afb2c02ec9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
