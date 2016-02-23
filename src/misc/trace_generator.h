@@ -67,9 +67,13 @@ class TraceGenerator {
                     const DIMACSChangeStats& dimacs_stats);
   void TaskSubmitted(TaskDescriptor* td_ptr);
   void TaskCompleted(TaskID_t task_id, const ResourceDescriptor& rd);
-  void TaskEvicted(TaskID_t task_id, const ResourceDescriptor& rd);
+  void TaskEvicted(TaskID_t task_id, const ResourceDescriptor& rd,
+                   bool migrated);
   void TaskFailed(TaskID_t task_id, const ResourceDescriptor& rd);
   void TaskKilled(TaskID_t task_id, const ResourceDescriptor& rd);
+  void TaskMigrated(TaskDescriptor* td_ptr,
+                    const ResourceDescriptor& old_rd,
+                    const ResourceDescriptor& new_rd);
   void TaskScheduled(TaskID_t task_id, const ResourceDescriptor& rd);
 
  private:

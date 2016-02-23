@@ -203,10 +203,13 @@ void TraceGenerator::TaskCompleted(TaskID_t task_id,
 }
 
 void TraceGenerator::TaskEvicted(TaskID_t task_id,
-                                 const ResourceDescriptor& rd) {
+                                 const ResourceDescriptor& rd,
+                                 bool migrated) {
   if (FLAGS_generate_trace) {
     running_tasks_cnt_--;
-    evicted_tasks_cnt_++;
+    if (!migrated) {
+      evicted_tasks_cnt_++;
+    }
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -267,6 +270,16 @@ void TraceGenerator::TaskKilled(TaskID_t task_id,
             *job_id_ptr, tr_ptr->task_id_, *job_id_ptr, tr_ptr->start_time_,
             tr_ptr->total_runtime_, tr_ptr->runtime_, tr_ptr->num_runs_);
     task_to_runtime_.erase(task_id);
+  }
+}
+
+void TraceGenerator::TaskMigrated(TaskDescriptor* td_ptr,
+                                  const ResourceDescriptor& old_rd,
+                                  const ResourceDescriptor& new_rd) {
+  if (FLAGS_generate_trace) {
+    TaskEvicted(td_ptr->uid(), old_rd, true);
+    TaskSubmitted(td_ptr);
+    TaskScheduled(td_ptr->uid(), new_rd);
   }
 }
 
