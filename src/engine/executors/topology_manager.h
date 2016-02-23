@@ -33,11 +33,14 @@ class TopologyManager {
  public:
   TopologyManager();
   void AsProtobuf(ResourceTopologyNodeDescriptor* topology_pb);
+  void AsProtobuf(hwloc_topology_t topology,
+                  ResourceTopologyNodeDescriptor* topology_pb);
   bool BindPIDToResource(pid_t pid, ResourceID_t res_id);
   bool BindSelfToResource(ResourceID_t res_id);
   vector<ResourceDescriptor> FlatResourceSet();
   void LoadAndParseTopology();
-  void LoadAndParseSyntheticTopology(const string& topology_desc);
+  uint32_t LoadAndParseSyntheticTopology(const string& topology_desc,
+                                         hwloc_topology_t topology);
   void DebugPrintRawTopology();
   uint32_t NumProcessingUnits() const;
 

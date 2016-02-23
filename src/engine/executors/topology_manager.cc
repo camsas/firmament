@@ -23,9 +23,14 @@ TopologyManager::TopologyManager() {
 }
 
 void TopologyManager::AsProtobuf(ResourceTopologyNodeDescriptor* topology_pb) {
+  AsProtobuf(topology_, topology_pb);
+}
+
+void TopologyManager::AsProtobuf(hwloc_topology_t topology,
+                                 ResourceTopologyNodeDescriptor* topology_pb) {
   ResourceDescriptor* root_resource = topology_pb->mutable_resource_desc();
   root_resource->set_type(ResourceDescriptor::RESOURCE_MACHINE);
-  hwloc_obj_t root_obj = hwloc_get_root_obj(topology_);
+  hwloc_obj_t root_obj = hwloc_get_root_obj(topology);
   MakeProtobufTree(root_obj, topology_pb, NULL);
   VLOG(3) << topology_pb->DebugString();
 }
@@ -75,18 +80,20 @@ void TopologyManager::LoadAndParseTopology() {
   topology_depth_ = hwloc_topology_get_depth(topology_);
 }
 
-void TopologyManager::LoadAndParseSyntheticTopology(
-    const string& topology_desc) {
+uint32_t TopologyManager::LoadAndParseSyntheticTopology(
+    const string& topology_desc,
+    hwloc_topology_t topology) {
   VLOG(1) << "Synthetic topology load...";
 #if HWLOC_API_VERSION > 0x00010500
-  hwloc_topology_set_synthetic(topology_, topology_desc.c_str());
-  hwloc_topology_load(topology_);
-  topology_depth_ = hwloc_topology_get_depth(topology_);
+  hwloc_topology_set_synthetic(topology, topology_desc.c_str());
+  hwloc_topology_load(topology);
+  return hwloc_topology_get_depth(topology);
 #else
   LOG(ERROR) << "The version of hwloc used is too old to support synthetic "
              << "topology generation. Version is " << hex
              << hwloc_get_api_version() << ", we require >="
              << 0x00010500 << ". Topology string was: " << topology_desc;
+  return 0;
 #endif
 }
 

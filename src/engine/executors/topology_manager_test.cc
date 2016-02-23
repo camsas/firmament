@@ -55,8 +55,9 @@ TEST_F(TopologyManagerTest, ParseSyntheticTopology) {
   //  * 2 sockets in each of them,
   //  * 2 physical cores with private L2 per socket,
   //  * 2 threads per core (sharing L2).
-  t.LoadAndParseSyntheticTopology("n:2 2 3 1 p:2");
-  t.DebugPrintRawTopology();
+  string topo_description = "NUMANode:2 Socket:2 Cache:3 Core:1 PU:2";
+  hwloc_topology_t topology;
+  hwloc_topology_init(&topology);
   ResourceTopologyNodeDescriptor res_desc;
   t.AsProtobuf(&res_desc);
   LOG(INFO) << res_desc.DebugString();
