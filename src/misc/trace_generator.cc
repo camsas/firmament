@@ -135,7 +135,7 @@ void TraceGenerator::SchedulerRun(
             unscheduled_tasks_cnt_, evicted_tasks_cnt_,
             unscheduled_tasks_cnt_ + running_tasks_cnt_,
             dimacs_stats.GetStatsString().c_str(),
-            task_events_cnt_per_round, machine_events_cnt_per_round);
+            task_events_cnt_per_round_, machine_events_cnt_per_round_);
     evicted_tasks_cnt_ = 0;
     task_events_cnt_per_round_ = 0;
     machine_events_cnt_per_round_ = 0;
