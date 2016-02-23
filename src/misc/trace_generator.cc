@@ -22,7 +22,9 @@ DEFINE_string(generated_trace_path, "",
 namespace firmament {
 
 TraceGenerator::TraceGenerator(TimeInterface* time_manager)
-  : time_manager_(time_manager) {
+  : time_manager_(time_manager), unscheduled_tasks_cnt_(0),
+    running_tasks_cnt_(0), evicted_tasks_cnt_(0), task_events_cnt_per_round_(0),
+    machine_events_cnt_per_round_(0) {
   if (FLAGS_generate_trace) {
     MkdirIfNotPresent(FLAGS_generated_trace_path);
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/machine_events");
@@ -90,6 +92,7 @@ TraceGenerator::~TraceGenerator() {
 
 void TraceGenerator::AddMachine(const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
+    machine_events_cnt_per_round_++;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t machine_id = GetMachineId(rd);
     fprintf(machine_events_, "%ju,%ju,%d,,,\n",
@@ -107,6 +110,7 @@ uint64_t TraceGenerator::GetMachineId(const ResourceDescriptor& rd) {
 
 void TraceGenerator::RemoveMachine(const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
+    machine_events_cnt_per_round_++;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t machine_id = GetMachineId(rd);
     fprintf(machine_events_, "%ju,%ju,%d,,,\n",
@@ -125,19 +129,23 @@ void TraceGenerator::SchedulerRun(
                    << " of tasks are unscheduled";
     }
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
-    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju,%s\n",
+    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju,%s,%ju,%ju\n",
             timestamp, scheduler_stats.scheduler_runtime,
             scheduler_stats.algorithm_runtime, scheduler_stats.total_runtime,
             unscheduled_tasks_cnt_, evicted_tasks_cnt_,
             unscheduled_tasks_cnt_ + running_tasks_cnt_,
-            dimacs_stats.GetStatsString().c_str());
+            dimacs_stats.GetStatsString().c_str(),
+            task_events_cnt_per_round, machine_events_cnt_per_round);
     evicted_tasks_cnt_ = 0;
+    task_events_cnt_per_round_ = 0;
+    machine_events_cnt_per_round_ = 0;
   }
 }
 
 void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
   if (FLAGS_generate_trace) {
     unscheduled_tasks_cnt_++;
+    task_events_cnt_per_round_++;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t job_id;
     string simulator_job_prefix = "firmament_simulation_job_";
@@ -181,6 +189,7 @@ void TraceGenerator::TaskCompleted(TaskID_t task_id,
                                    const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
     running_tasks_cnt_--;
+    task_events_cnt_per_round_++;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -207,6 +216,7 @@ void TraceGenerator::TaskEvicted(TaskID_t task_id,
                                  bool migrated) {
   if (FLAGS_generate_trace) {
     running_tasks_cnt_--;
+    task_events_cnt_per_round_++;
     if (!migrated) {
       evicted_tasks_cnt_++;
     }
@@ -229,6 +239,7 @@ void TraceGenerator::TaskFailed(TaskID_t task_id,
                                 const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
     running_tasks_cnt_--;
+    task_events_cnt_per_round_++;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -253,6 +264,7 @@ void TraceGenerator::TaskKilled(TaskID_t task_id,
                                 const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
     running_tasks_cnt_--;
+    task_events_cnt_per_round_++;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
@@ -277,6 +289,8 @@ void TraceGenerator::TaskMigrated(TaskDescriptor* td_ptr,
                                   const ResourceDescriptor& old_rd,
                                   const ResourceDescriptor& new_rd) {
   if (FLAGS_generate_trace) {
+    // Note: We don't have to update the counters here because they're
+    // updated in TaskEvicted/Submitted/Scheduled.
     TaskEvicted(td_ptr->uid(), old_rd, true);
     TaskSubmitted(td_ptr);
     TaskScheduled(td_ptr->uid(), new_rd);
