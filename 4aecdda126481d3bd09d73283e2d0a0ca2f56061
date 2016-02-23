@@ -22,6 +22,30 @@
       "revId": "4aecdda126481d3bd09d73283e2d0a0ca2f56061",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_dac73163",
+        "filename": "src/misc/trace_generator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-23T19:29:34Z",
+      "side": 1,
+      "message": "The others are not exactly related to scheduling rounds. They\u0027re continuously updated when tasks are submitted or finish/fail..\n\nOn the other hand, the new counters are set to zero after every scheduling round to just count the events that happened between rounds.",
+      "parentUuid": "5a72e520_1abaa9e1",
+      "range": {
+        "startLine": 100,
+        "startChar": 27,
+        "endLine": 100,
+        "endChar": 37
+      },
+      "revId": "4aecdda126481d3bd09d73283e2d0a0ca2f56061",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
