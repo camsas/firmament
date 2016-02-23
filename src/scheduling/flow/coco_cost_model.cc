@@ -766,8 +766,8 @@ void CocoCostModel::AddTask(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   const TaskDescriptor& td = GetTask(task_id);
   for (auto& equiv_class : *equiv_classes) {
-    // NOTE: The code assumes that only one task is connected to an
-    // equivalence class.
+    // NOTE: The code assumes that all the task connected to an
+    // equivalence class request the same amount of resources.
     InsertIfNotPresent(&task_ec_to_resource_request_, equiv_class,
                        td.resource_request());
   }
@@ -787,11 +787,9 @@ void CocoCostModel::RemoveTask(TaskID_t task_id) {
       if (set_it->second.size() == 0) {
         task_ec_to_set_task_id_.erase(equiv_class);
         task_aggs_.erase(equiv_class);
+        task_ec_to_resource_request_.erase(equiv_class);
       }
     }
-    // NOTE: The code assumes that only one task is connected to an
-    // equivalence class.
-    task_ec_to_resource_request_.erase(equiv_class);
   }
 }
 
