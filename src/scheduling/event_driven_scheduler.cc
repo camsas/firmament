@@ -294,7 +294,7 @@ void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
   InsertTaskIntoRunnables(JobIDFromString(td_ptr->job_id()), td_ptr->uid());
   CHECK_NOTNULL(exec);
   exec->HandleTaskEviction(td_ptr);
-  trace_generator_->TaskEvicted(td_ptr->uid(), *rd_ptr);
+  trace_generator_->TaskEvicted(td_ptr->uid(), *rd_ptr, false);
   // The Google-style trace requires a submit event to be printed after
   // a task is evicted.
   trace_generator_->TaskSubmitted(td_ptr);
@@ -369,6 +369,7 @@ void EventDrivenScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
   rd_ptr->set_current_running_task(task_id);
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
   InsertOrUpdate(&task_bindings_, task_id, res_id);
+  trace_generator_->TaskMigrated(td_ptr, *old_rd, *rd_ptr);
   if (event_notifier_) {
     event_notifier_->OnTaskMigration(td_ptr, rd_ptr);
   }
