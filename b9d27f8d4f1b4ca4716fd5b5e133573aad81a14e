@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_daf011cc",
+        "filename": "src/misc/trace_generator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-23T19:20:04Z",
+      "side": 1,
+      "message": "General thought: it might be cleaner to have a NoOpTraceGenerator and a GoogleStyleTraceGenerator class with different implementations of a TraceGenerator interface, rather than an \"if (FLAGS_generate_trace)\" statement in each method. It\u0027s easy to forget the conditional, and having two classes also allows for other trace formats to be supported in the future.",
+      "revId": "b9d27f8d4f1b4ca4716fd5b5e133573aad81a14e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
