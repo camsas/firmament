@@ -23,10 +23,15 @@ TopologyManager::TopologyManager() {
 }
 
 void TopologyManager::AsProtobuf(ResourceTopologyNodeDescriptor* topology_pb) {
+  AsProtobuf(topology_, topology_pb);
+}
+
+void TopologyManager::AsProtobuf(hwloc_topology_t topology,
+                                 ResourceTopologyNodeDescriptor* topology_pb) {
   ResourceDescriptor* root_resource = topology_pb->mutable_resource_desc();
   root_resource->set_type(ResourceDescriptor::RESOURCE_MACHINE);
-  hwloc_obj_t root_obj = hwloc_get_root_obj(topology_);
-  MakeProtobufTree(root_obj, topology_pb, NULL);
+  hwloc_obj_t root_obj = hwloc_get_root_obj(topology);
+  MakeProtobufTree(topology, root_obj, topology_pb, NULL);
   VLOG(3) << topology_pb->DebugString();
 }
 
@@ -75,18 +80,20 @@ void TopologyManager::LoadAndParseTopology() {
   topology_depth_ = hwloc_topology_get_depth(topology_);
 }
 
-void TopologyManager::LoadAndParseSyntheticTopology(
-    const string& topology_desc) {
+uint32_t TopologyManager::LoadAndParseSyntheticTopology(
+    const string& topology_desc,
+    hwloc_topology_t topology) {
   VLOG(1) << "Synthetic topology load...";
 #if HWLOC_API_VERSION > 0x00010500
-  hwloc_topology_set_synthetic(topology_, topology_desc.c_str());
-  hwloc_topology_load(topology_);
-  topology_depth_ = hwloc_topology_get_depth(topology_);
+  hwloc_topology_set_synthetic(topology, topology_desc.c_str());
+  hwloc_topology_load(topology);
+  return hwloc_topology_get_depth(topology);
 #else
   LOG(ERROR) << "The version of hwloc used is too old to support synthetic "
              << "topology generation. Version is " << hex
              << hwloc_get_api_version() << ", we require >="
              << 0x00010500 << ". Topology string was: " << topology_desc;
+  return 0;
 #endif
 }
 
@@ -107,12 +114,13 @@ vector<ResourceDescriptor> TopologyManager::FlatResourceSet() {
 }
 
 void TopologyManager::MakeProtobufTree(
+    hwloc_topology_t topology,
     hwloc_obj_t node,
     ResourceTopologyNodeDescriptor* obj_pb,
     ResourceTopologyNodeDescriptor* parent_pb) {
   char obj_string[128];
   // Add this object
-  hwloc_obj_snprintf(obj_string, sizeof(obj_string), topology_, node, " #", 0);
+  hwloc_obj_snprintf(obj_string, sizeof(obj_string), topology, node, " #", 0);
   const ResourceID_t* res_id = FindOrNull(obj_to_resourceID_, node);
   string obj_id;
   if (!res_id) {
@@ -135,10 +143,10 @@ void TopologyManager::MakeProtobufTree(
   // Iterate over the children of this object and add them recursively
   hwloc_obj_t prev_child_obj = NULL;
   for (uint32_t depth = 0; depth < node->arity; depth++) {
-    hwloc_obj_t next_child_obj = hwloc_get_next_child(topology_, node,
+    hwloc_obj_t next_child_obj = hwloc_get_next_child(topology, node,
                                                       prev_child_obj);
     ResourceTopologyNodeDescriptor* child = obj_pb->add_children();
-    MakeProtobufTree(next_child_obj, child, obj_pb);
+    MakeProtobufTree(topology, next_child_obj, child, obj_pb);
     prev_child_obj = next_child_obj;
   }
 }
