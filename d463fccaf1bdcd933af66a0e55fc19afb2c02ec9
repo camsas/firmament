@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_5958b3fa",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 770,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-23T10:19:59Z",
+      "side": 1,
+      "message": "Hmm, I think this diff is actually broken. CoCo has a per job task aggregator node. The problem is that by maintaining task_ec_to_resource_request we assume that all of a job\u0027s tasks have the same resource requirement.\n\nI\u0027ll update the code to make sure we only delete from task_ec_to_resource_request_ once all the tasks have been removed. Alternatively, I may try to get rid of the constraint that all the tasks should have the same resource request because this constraint may bite us in the simulations.",
+      "parentUuid": "5a72e520_a5c6de47",
+      "range": {
+        "startLine": 769,
+        "startChar": 0,
+        "endLine": 770,
+        "endChar": 25
+      },
+      "revId": "d463fccaf1bdcd933af66a0e55fc19afb2c02ec9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_45b0cadd",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2016-02-22T15:17:36Z",
       "side": 1,
       "message": "See above.",
+      "range": {
+        "startLine": 792,
+        "startChar": 0,
+        "endLine": 793,
+        "endChar": 25
+      },
+      "revId": "d463fccaf1bdcd933af66a0e55fc19afb2c02ec9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_795d6fe9",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 793,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-23T10:19:59Z",
+      "side": 1,
+      "message": "See above.",
+      "parentUuid": "5a72e520_45b0cadd",
       "range": {
         "startLine": 792,
         "startChar": 0,
