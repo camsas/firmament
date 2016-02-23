@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_1abaa9e1",
+        "filename": "src/misc/trace_generator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-23T19:21:19Z",
+      "side": 1,
+      "message": "Why is \"per_round\" needed? Aren\u0027t all the counters implicitly per-round?",
+      "range": {
+        "startLine": 100,
+        "startChar": 27,
+        "endLine": 100,
+        "endChar": 37
+      },
+      "revId": "4aecdda126481d3bd09d73283e2d0a0ca2f56061",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
