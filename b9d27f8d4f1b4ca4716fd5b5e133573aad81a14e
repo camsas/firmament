@@ -16,6 +16,24 @@
       "revId": "b9d27f8d4f1b4ca4716fd5b5e133573aad81a14e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_3aa685c2",
+        "filename": "src/misc/trace_generator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-23T19:36:21Z",
+      "side": 1,
+      "message": "Yes, we can do this at some point in the future.",
+      "parentUuid": "5a72e520_daf011cc",
+      "revId": "b9d27f8d4f1b4ca4716fd5b5e133573aad81a14e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
