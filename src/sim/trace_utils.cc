@@ -12,7 +12,7 @@
 #include "base/units.h"
 #include "misc/utils.h"
 
-DEFINE_string(machine_tmpl_file, "../../tests/testdata/machine_topo.pbin",
+DEFINE_string(machine_tmpl_file, "../../tests/testdata/machine_24pus.pbin",
               "File specifying machine topology. (Note: the given path must be "
               "relative to the directory of the binary)");
 
