@@ -299,7 +299,9 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
     }
   }
   LOG(INFO) << "External execution of command: " << full_cmd_line;
-  pid = fork();
+  // NOTE: vfork() should only be used if it is shortly followed by an
+  // exec() call.
+  pid = vfork();
   switch (pid) {
     case -1:
       // Error
