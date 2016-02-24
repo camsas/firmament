@@ -193,7 +193,6 @@ void TraceGenerator::TaskCompleted(TaskID_t task_id,
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
-    task_to_job_.erase(task_id);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
     uint64_t machine_id = GetMachineId(rd);
@@ -207,6 +206,7 @@ void TraceGenerator::TaskCompleted(TaskID_t task_id,
     fprintf(task_runtime_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju\n",
             *job_id_ptr, tr_ptr->task_id_, *job_id_ptr, tr_ptr->start_time_,
             tr_ptr->total_runtime_, tr_ptr->runtime_, tr_ptr->num_runs_);
+    task_to_job_.erase(task_id);
     task_to_runtime_.erase(task_id);
   }
 }
@@ -243,7 +243,6 @@ void TraceGenerator::TaskFailed(TaskID_t task_id,
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
-    task_to_job_.erase(task_id);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
     uint64_t machine_id = GetMachineId(rd);
@@ -256,6 +255,7 @@ void TraceGenerator::TaskFailed(TaskID_t task_id,
     fprintf(task_runtime_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju\n",
             *job_id_ptr, tr_ptr->task_id_, *job_id_ptr, tr_ptr->start_time_,
             tr_ptr->total_runtime_, tr_ptr->runtime_, tr_ptr->num_runs_);
+    task_to_job_.erase(task_id);
     task_to_runtime_.erase(task_id);
   }
 }
@@ -268,7 +268,6 @@ void TraceGenerator::TaskKilled(TaskID_t task_id,
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
     CHECK_NOTNULL(job_id_ptr);
-    task_to_job_.erase(task_id);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
     uint64_t machine_id = GetMachineId(rd);
@@ -281,6 +280,7 @@ void TraceGenerator::TaskKilled(TaskID_t task_id,
     fprintf(task_runtime_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju\n",
             *job_id_ptr, tr_ptr->task_id_, *job_id_ptr, tr_ptr->start_time_,
             tr_ptr->total_runtime_, tr_ptr->runtime_, tr_ptr->num_runs_);
+    task_to_job_.erase(task_id);
     task_to_runtime_.erase(task_id);
   }
 }
