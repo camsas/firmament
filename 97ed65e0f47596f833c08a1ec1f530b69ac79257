@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_e2f43f89",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-24T20:45:59Z",
+      "side": 1,
+      "message": "Typo",
+      "range": {
+        "startLine": 17,
+        "startChar": 30,
+        "endLine": 17,
+        "endChar": 36
+      },
+      "revId": "97ed65e0f47596f833c08a1ec1f530b69ac79257",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_82fe2b6a",
+        "filename": "src/misc/utils.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-24T20:45:59Z",
+      "side": 1,
+      "message": "Maybe add a sentence to the comment explaining that we use it in order to avoid running out of memory.",
+      "range": {
+        "startLine": 302,
+        "startChar": 0,
+        "endLine": 303,
+        "endChar": 17
+      },
+      "revId": "97ed65e0f47596f833c08a1ec1f530b69ac79257",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
