@@ -409,6 +409,9 @@ void FlowGraphManager::UpdateArcsFromEquivClasses(
     pair<vector<EquivClass_t>*,
          vector<EquivClass_t>*> equiv_class_to_connect =
       cost_model_->GetEquivClassToEquivClassesArcs(ec_node->ec_id_);
+    if (equiv_class_to_connect.first) {
+      delete equiv_class_to_connect.first;
+    }
     if (equiv_class_to_connect.second) {
       // TODO(ionel): We assume that all the destination equivalence classes
       // have already been added to the graph. If a cost model needs to add
@@ -452,6 +455,7 @@ void FlowGraphManager::UpdateArcsFromEquivClasses(
         }
       }
       RemoveInvalidECToECArcs(*ec_node, *equiv_class_to_connect.second);
+      delete equiv_class_to_connect.second;
     }
   }
 }
@@ -506,10 +510,14 @@ void FlowGraphManager::AddOrUpdateEquivClassPrefArcs(
         AddGraphChange(chg);
       }
     }
+    RemoveInvalidPreferenceArcs(*ec_node, *res_pref_arcs);
+    // Finally, throw the preference arc vector away
+    delete res_pref_arcs;
+  } else {
+    // Remove all the arcs.
+    vector<ResourceID_t> no_res_pref_arcs;
+    RemoveInvalidPreferenceArcs(*ec_node, no_res_pref_arcs);
   }
-  RemoveInvalidPreferenceArcs(*ec_node, *res_pref_arcs);
-  // Finally, throw the preference arc vector away
-  delete res_pref_arcs;
 }
 
 void FlowGraphManager::AddSpecialNodes() {
@@ -1389,10 +1397,10 @@ void FlowGraphManager::UpdateArcsFromTaskToEquivClasses(
       UpdateArcTaskToEquivClass(task_node, ec_node);
       ecs_to_update->insert(equiv_class);
     }
+    delete equiv_classes;
   }
-  // TODO(ionel): We don't currently check if we need to remove any invalid arcs
-  // to ECs.
-  delete equiv_classes;
+  // TODO(ionel): We don't currently check if we need to remove any invalid
+  // arcs to ECs.
 }
 
 void FlowGraphManager::UpdateArcsFromTaskToResources(FlowGraphNode* task_node) {
@@ -1426,10 +1434,10 @@ void FlowGraphManager::UpdateArcsFromTaskToResources(FlowGraphNode* task_node) {
         }
       }
     }
+    delete task_res_pref_arcs;
   }
   // TODO(ionel): We don't currently check if we need to remove any invalid arcs
   // to resources.
-  delete task_res_pref_arcs;
 }
 
 void FlowGraphManager::UpdateArcToUnscheduledAgg(FlowGraphNode* task_node) {

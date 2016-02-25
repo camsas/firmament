@@ -90,24 +90,20 @@ vector<EquivClass_t>* VoidCostModel::GetTaskEquivClasses(TaskID_t task_id) {
 
 vector<EquivClass_t>* VoidCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
-  LOG(FATAL) << "Not implemented";
   return NULL;
 }
 
 vector<ResourceID_t>* VoidCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t tec) {
-  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
 vector<ResourceID_t>* VoidCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
-  LOG(FATAL) << "Not implemented!";
   return NULL;
 }
 
 pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     VoidCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
-  LOG(FATAL) << "Not implemented!";
   return pair<vector<EquivClass_t>*, vector<EquivClass_t>*>(NULL, NULL);
 }
 

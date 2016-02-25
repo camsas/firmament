@@ -666,6 +666,7 @@ void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
       }
     }
   }
+  delete equiv_classes;
 }
 
 void WhareMapCostModel::ComputeMachineTypeHash(

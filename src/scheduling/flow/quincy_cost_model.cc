@@ -120,7 +120,6 @@ vector<EquivClass_t>* QuincyCostModel::GetTaskEquivClasses(
 
 vector<EquivClass_t>* QuincyCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
-  LOG(FATAL) << "Not implemented";
   return NULL;
 }
 
@@ -142,9 +141,8 @@ vector<ResourceID_t>* QuincyCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
 
 pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
     QuincyCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
-  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
   return pair<vector<EquivClass_t>*,
-              vector<EquivClass_t>*>(equiv_classes, equiv_classes);
+              vector<EquivClass_t>*>(NULL, NULL);
 }
 
 void QuincyCostModel::AddMachine(
