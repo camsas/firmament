@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_532c064b",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-25T14:56:16Z",
+      "side": 1,
+      "message": "I agree that we might need to do this, but we need to be careful here: if we limit the number of arcs, we may lose optimality of the solution.",
+      "revId": "f9e807e76d63c6de10d59b4af5c086b4aa2bb653",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_f31c1216",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 548,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-25T14:56:16Z",
+      "side": 1,
+      "message": "I think this situation used to be triggered in the first run when the resource topology is still incomplete. However, the new single-pass stats update may have made that issue go away. Nevertheless useful to keep around, but unless it always happens, we should upgrade it to a CHECK",
+      "range": {
+        "startLine": 544,
+        "startChar": 0,
+        "endLine": 548,
+        "endChar": 3
+      },
+      "revId": "f9e807e76d63c6de10d59b4af5c086b4aa2bb653",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_73d82254",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 701,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-25T14:56:16Z",
+      "side": 1,
+      "message": "This *may* occur in benign settings, specially on the first run when the resource topology is still incomplete. Revisit if this leads to crashes, I suppose.",
+      "range": {
+        "startLine": 698,
+        "startChar": 0,
+        "endLine": 701,
+        "endChar": 5
+      },
+      "revId": "f9e807e76d63c6de10d59b4af5c086b4aa2bb653",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_f3e33203",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1081,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-25T14:56:16Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 1081,
+        "startChar": 43,
+        "endLine": 1081,
+        "endChar": 46
+      },
+      "revId": "f9e807e76d63c6de10d59b4af5c086b4aa2bb653",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
