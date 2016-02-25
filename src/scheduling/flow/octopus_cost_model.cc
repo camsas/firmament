@@ -156,6 +156,15 @@ FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
     // We don't have to accumulate any state.
     return accumulator;
   }
+
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU);
+
   if (other->resource_id_.is_nil()) {
     if (accumulator->type_ == FlowNodeType::PU) {
       // Base case. We are at a PU and we gather the statistics.
@@ -188,6 +197,15 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
       accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
     return accumulator;
   }
+
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU);
+
   if (other->resource_id_.is_nil()) {
     return accumulator;
   }

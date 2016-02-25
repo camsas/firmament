@@ -23,13 +23,15 @@ enum FlowNodeType {
   SCHEDULED_TASK = 1,
   UNSCHEDULED_TASK = 2,
   JOB_AGGREGATOR = 3,
-  RACK_AGGREGATOR = 4,  // currently unused
-  COORDINATOR = 5,
-  MACHINE = 6,
-  PU = 7,
-  SINK = 8,
-  UNKNOWN = 9,
-  EQUIVALENCE_CLASS = 10,
+  SINK = 4,
+  EQUIVALENCE_CLASS = 5,
+  COORDINATOR = 6,
+  MACHINE = 7,
+  NUMA_NODE = 8,
+  SOCKET = 9,
+  CACHE = 10,
+  CORE = 11,
+  PU = 12,
 };
 
 struct FlowGraphNode {
