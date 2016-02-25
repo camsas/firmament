@@ -81,7 +81,7 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
   ResourceVector* other_min = other->mutable_min_available_resources_below();
   // Note that we have a special case for zero here, as non-reporting resources
   // would otherwise dominate the min().
-  if (fabsl(acc_min->cpu_cores()) == 0.0)
+  if (fabsl(acc_min->cpu_cores()) < COMPARE_EPS)
     acc_min->set_cpu_cores(other_min->cpu_cores());
   else if (other_min->cpu_cores() > 0.0)
     acc_min->set_cpu_cores(min(acc_min->cpu_cores(), other_min->cpu_cores()));
@@ -172,8 +172,7 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
     // Base case, we're at a PU
     if (rd.has_current_running_task()) {
       CoCoInterferenceScores iv;
-      GetInterferenceScoreForTask(rd.current_running_task(),
-                                  &iv);
+      GetInterferenceScoreForTask(rd.current_running_task(), &iv);
       return FlattenInterferenceScore(iv);
     } else {
       return 0;
@@ -387,6 +386,8 @@ vector<EquivClass_t>* CocoCostModel::GetResourceEquivClasses(
 
 vector<ResourceID_t>* CocoCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t ec) {
+  // TODO(ionel): This method may end up adding many preference arcs.
+  // Limit the number of preference arcs it adds.
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
   if (task_aggs_.find(ec) != task_aggs_.end()) {
     ResourceStatus* root_rs =
@@ -470,7 +471,6 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
               vector<EquivClass_t>*>(NULL, NULL);
 }
 
-
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
 Cost_t CocoCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
@@ -529,7 +529,8 @@ Cost_t CocoCostModel::TaskToClusterAggCost(TaskID_t task_id) {
 Cost_t CocoCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                              ResourceID_t resource_id) {
   // Not used in CoCo, as we don't have direct arcs from tasks to resources;
-  // we only connect via TECs
+  // we only connect via TECs.
+  LOG(ERROR) << "Arcs from tasks to resource nodes should not be present";
   return 0LL;
 }
 
@@ -540,8 +541,11 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
   ResourceID_t destination_res_id = ResourceIDFromString(destination.uuid());
   ResourceStatus* machine_rs =
     FindPtrOrNull(*resource_map_, MachineResIDForResource(destination_res_id));
-  if (!machine_rs)
+  if (!machine_rs) {
+    LOG(WARNING) << destination_res_id
+                 << " doesn't have an entry in resource_map";
     return 0LL;
+  }
   const ResourceDescriptor& machine_rd = machine_rs->descriptor();
   // Compute resource request dimensions (normalized by machine capacity)
   CostVector_t cost_vector;
@@ -563,6 +567,9 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
         NormalizeCost(machine_rd.resource_capacity().disk_bw() -
                       destination.available_resources().disk_bw(),
                       machine_rd.resource_capacity().disk_bw());
+  } else {
+    // Cost on arcs pointing to resource nodes that are not PUs or
+    // MACHINEs is 0.
   }
   // XXX(malte): unimplemented
   cost_vector.machine_type_score_ = 0;
@@ -603,6 +610,7 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   if (!td.has_resource_request()) {
     LOG(ERROR) << "Task " << task_id << " does not have a resource "
                << "specification!";
+    return 0LL;
   }
   // Compute resource request dimensions (normalized by largest machine)
   CostVector_t cost_vector;
@@ -619,10 +627,9 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   cost_vector.interference_score_ = 0;
   cost_vector.locality_score_ = 0;
   if (VLOG_IS_ON(2)) {
-    VLOG(1) << "Task " << task_id << "'s cost to EC "
-            << tec << ":";
+    VLOG(2) << "Task " << task_id << "'s cost to EC " << tec << ":";
     PrintCostVector(cost_vector);
-    VLOG(1) << "  Flattened: " << FlattenCostVector(cost_vector);
+    VLOG(2) << "  Flattened: " << FlattenCostVector(cost_vector);
   }
   // Return the flattened vector
   return FlattenCostVector(cost_vector);
@@ -647,6 +654,8 @@ pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
     set<TaskID_t>* task_set = FindOrNull(task_ec_to_set_task_id_, ec);
     uint32_t score = 0;
     if (task_set) {
+      // TODO(ionel): Enhance condition!
+      CHECK_GE(task_set->size(), 1);
       // N.B.: This assumes that all tasks in an EC are of the same type.
       TaskID_t sample_task_id = *task_set->begin();
       const TaskDescriptor& td = GetTask(sample_task_id);
@@ -677,6 +686,7 @@ pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
 
 Cost_t CocoCostModel::EquivClassToEquivClass(EquivClass_t tec1,
                                              EquivClass_t tec2) {
+  LOG(ERROR) << "Arcs from equiv class to equiv class should not be present";
   return 0LL;
 }
 
@@ -686,9 +696,8 @@ ResourceID_t CocoCostModel::MachineResIDForResource(ResourceID_t res_id) {
   ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
   while (rtnd->resource_desc().type() != ResourceDescriptor::RESOURCE_MACHINE) {
     if (!rtnd->has_parent_id()) {
-      VLOG(2) << "Non-machine resource " << rtnd->resource_desc().uuid()
-              << " has no parent!";
-      return ResourceID_t();
+      LOG(FATAL) << "Non-machine resource " << rtnd->resource_desc().uuid()
+                 << " has no parent!";
     }
     rs = FindPtrOrNull(*resource_map_, ResourceIDFromString(rtnd->parent_id()));
     rtnd = rs->mutable_topology_node();
@@ -744,7 +753,7 @@ void CocoCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
   if (cap.disk_bw() > max_machine_capacity_.disk_bw())
     max_machine_capacity_.set_disk_bw(cap.disk_bw());
   // Check if this machine's capacity is the minimum in any capacity
-  if (min_machine_capacity_.cpu_cores() == 0.0 ||
+  if (fabsl(min_machine_capacity_.cpu_cores()) < COMPARE_EPS ||
       cap.cpu_cores() < min_machine_capacity_.cpu_cores()) {
     min_machine_capacity_.set_cpu_cores(cap.cpu_cores());
   }
@@ -808,12 +817,28 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
     return accumulator;
   }
 
+  if (accumulator->type_ == FlowNodeType::COORDINATOR) {
+    // We're not allowed to scheduled tasks via the cluster aggregator in CoCo.
+    // There's no point to update its state.
+    return accumulator;
+  }
+
+  CHECK(accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU);
+
   // Case: (RESOURCE -> RESOURCE)
   // We're inside the resource topology
   ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
   // Early exit if the resource is not yet there
-  if (!rd_ptr)
+  if (!rd_ptr) {
+    LOG(WARNING) << "Node " << accumulator->id_
+                 << " doesn't have an associated resource descriptor";
     return accumulator;
+  }
   // Use the KB to find load information and compute available resources
   ResourceID_t machine_res_id =
     MachineResIDForResource(accumulator->resource_id_);
@@ -1000,6 +1025,13 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
     // The node is not a resource.
     return;
   }
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::PU ||
+        accumulator->type_ == FlowNodeType::CORE);
   ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
   // Early exit if the resource is not yet there.
   if (!rd_ptr) {
@@ -1099,6 +1131,16 @@ FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
     //        2) TASK -> RESOURCE
     return accumulator;
   }
+
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU ||
+        accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS);
+
   if (other->resource_id_.is_nil()) {
     if (accumulator->type_ == FlowNodeType::PU) {
       // Base case: (PU -> SINK)
@@ -1110,6 +1152,7 @@ FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
   FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
   uint64_t new_cost;
   int64_t new_cap = arc->cap_upper_bound_;
+  CHECK_NE(other->type_, FlowNodeType::EQUIVALENCE_CLASS);
   if (accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
     // Case: EQUIV -> RESOURCE
     auto new_cost_cap =
