@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_93b4bef3",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-25T15:12:22Z",
+      "side": 1,
+      "message": "Yep, there\u0027s some trade-offs we\u0027ll have to look into.",
+      "parentUuid": "5a72e520_532c064b",
+      "revId": "f9e807e76d63c6de10d59b4af5c086b4aa2bb653",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_f31c1216",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2016-02-25T14:56:16Z",
       "side": 1,
       "message": "I think this situation used to be triggered in the first run when the resource topology is still incomplete. However, the new single-pass stats update may have made that issue go away. Nevertheless useful to keep around, but unless it always happens, we should upgrade it to a CHECK",
+      "range": {
+        "startLine": 544,
+        "startChar": 0,
+        "endLine": 548,
+        "endChar": 3
+      },
+      "revId": "f9e807e76d63c6de10d59b4af5c086b4aa2bb653",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_538fa623",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 548,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-25T15:12:22Z",
+      "side": 1,
+      "message": "I haven\u0027t seen it in simulations, but let\u0027s keep it around as a warning and change it to a CHECK if it doesn\u0027t happen in real experiments.",
+      "parentUuid": "5a72e520_f31c1216",
       "range": {
         "startLine": 544,
         "startChar": 0,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_b387fa0e",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 701,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-25T15:12:22Z",
+      "side": 1,
+      "message": "I think with the changes I\u0027ve made this should not happen in any case. We can revisit if I\u0027m wrong.",
+      "parentUuid": "5a72e520_73d82254",
+      "range": {
+        "startLine": 698,
+        "startChar": 0,
+        "endLine": 701,
+        "endChar": 5
+      },
+      "revId": "f9e807e76d63c6de10d59b4af5c086b4aa2bb653",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_f3e33203",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 1
@@ -76,6 +142,30 @@
       "writtenOn": "2016-02-25T14:56:16Z",
       "side": 1,
       "message": "typo",
+      "range": {
+        "startLine": 1081,
+        "startChar": 43,
+        "endLine": 1081,
+        "endChar": 46
+      },
+      "revId": "f9e807e76d63c6de10d59b4af5c086b4aa2bb653",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_d3947646",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1081,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-25T15:12:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_f3e33203",
       "range": {
         "startLine": 1081,
         "startChar": 43,
