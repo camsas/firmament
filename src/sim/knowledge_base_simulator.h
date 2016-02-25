@@ -20,6 +20,7 @@ class KnowledgeBaseSimulator : public KnowledgeBase {
       ResourceDescriptor* rd_ptr,
       const unordered_map<TaskID_t, ResourceDescriptor*>& task_id_to_rd);
   void EraseTraceTaskStats(TaskID_t task_id);
+  void PopulateTaskFinalReport(TaskDescriptor* td_ptr, TaskFinalReport* report);
   void SetTaskType(TaskDescriptor* td_ptr);
   void SetTraceTaskStats(TaskID_t task_id, const TraceTaskStats& task_stat);
 

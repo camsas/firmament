@@ -13,6 +13,8 @@
 #include "base/units.h"
 #include "misc/map-util.h"
 
+#define SIMULATED_CPU_FREQUENCY 2200000000 // 2.2 Ghz
+
 using boost::lexical_cast;
 
 DEFINE_double(rabbit_cpi_threshold, 0.9, "CPI threshold for RABBIT");
@@ -83,6 +85,26 @@ void KnowledgeBaseSimulator::AddMachineSample(
 
 void KnowledgeBaseSimulator::EraseTraceTaskStats(TaskID_t task_id) {
   task_stats_.erase(task_id);
+}
+
+void KnowledgeBaseSimulator::PopulateTaskFinalReport(TaskDescriptor* td_ptr,
+                                                     TaskFinalReport* report) {
+  TraceTaskStats* task_stats = FindOrNull(task_stats_, td_ptr->uid());
+  if (task_stats && task_stats->avg_cpi_ > 0) {
+    double instructions = (td_ptr->finish_time() - td_ptr->start_time()) *
+      SIMULATED_CPU_FREQUENCY / task_stats->avg_cpi_;
+    report->set_instructions(instructions);
+    report->set_cycles(instructions * task_stats->avg_cpi_);
+  } else {
+    // We don't have any stats for the task.
+    // XXX(ionel): We assume a CPI of 1. Maybe set to the avg_cpi of the
+    // entire trace.
+    double cpi = 1.0;
+    double instructions = (td_ptr->finish_time() - td_ptr->start_time()) *
+      SIMULATED_CPU_FREQUENCY / cpi;
+    report->set_instructions(instructions);
+    report->set_cycles(instructions * cpi);
+  }
 }
 
 void KnowledgeBaseSimulator::SetTaskType(TaskDescriptor* td_ptr) {
