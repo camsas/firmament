@@ -798,6 +798,7 @@ void CocoCostModel::RemoveTask(TaskID_t task_id) {
       }
     }
   }
+  delete equiv_classes;
 }
 
 FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
