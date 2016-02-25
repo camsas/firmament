@@ -328,6 +328,7 @@ void SimulatorBridge::TaskCompleted(
   CHECK_NOTNULL(td_ptr);
   TaskFinalReport report;
   scheduler_->HandleTaskCompletion(td_ptr, &report);
+  knowledge_base_->PopulateTaskFinalReport(td_ptr, &report);
   scheduler_->HandleTaskFinalReport(report, td_ptr);
   JobDescriptor* jd_ptr =
     FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
