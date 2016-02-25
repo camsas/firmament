@@ -1049,7 +1049,11 @@ void FlowGraphManager::RemoveMachineSubTree(FlowGraphNode* res_node,
     }
     if (it->second->dst_node_->type_ == FlowNodeType::PU ||
         it->second->dst_node_->type_ == FlowNodeType::MACHINE ||
-        it->second->dst_node_->type_ == FlowNodeType::UNKNOWN) {
+        it->second->dst_node_->type_ == FlowNodeType::COORDINATOR ||
+        it->second->dst_node_->type_ == FlowNodeType::NUMA_NODE ||
+        it->second->dst_node_->type_ == FlowNodeType::SOCKET ||
+        it->second->dst_node_->type_ == FlowNodeType::CACHE ||
+        it->second->dst_node_->type_ == FlowNodeType::CORE) {
       RemoveMachineSubTree(it->second->dst_node_, pus_removed);
     } else {
       // The node is not a machine related node. We will just delete the arc
@@ -1069,12 +1073,28 @@ void FlowGraphManager::SetResourceNodeType(FlowGraphNode* res_node,
                                            const ResourceDescriptor& rd) {
   if (rd.type() == ResourceDescriptor::RESOURCE_PU) {
     res_node->type_ = FlowNodeType::PU;
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_CORE) {
+    res_node->type_ = FlowNodeType::CORE;
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_CACHE) {
+    res_node->type_ = FlowNodeType::CACHE;
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_NIC) {
+    LOG(FATAL) << "Node type not supported yet: " << rd.type();
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_DISK) {
+    LOG(FATAL) << "Node type not supported yet: " << rd.type();
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_SSD) {
+    LOG(FATAL) << "Node type not supported yet: " << rd.type();
   } else if (rd.type() == ResourceDescriptor::RESOURCE_MACHINE) {
     res_node->type_ = FlowNodeType::MACHINE;
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_LOGICAL) {
+    LOG(FATAL) << "Node type not supported yet: " << rd.type();
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_NUMA_NODE) {
+    res_node->type_ = FlowNodeType::NUMA_NODE;
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_SOCKET) {
+    res_node->type_ = FlowNodeType::SOCKET;
   } else if (rd.type() == ResourceDescriptor::RESOURCE_COORDINATOR) {
     res_node->type_ = FlowNodeType::COORDINATOR;
   } else {
-    res_node->type_ = FlowNodeType::UNKNOWN;
+    LOG(FATAL) << "Unknown node type: " << rd.type();
   }
 }
 
