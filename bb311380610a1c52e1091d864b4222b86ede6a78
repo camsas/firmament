@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_b6a44858",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 520,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-25T22:00:54Z",
+      "side": 1,
+      "message": "Well-spotted, this was presumably a bug where if there are now no arcs left, we would not delete any?",
+      "range": {
+        "startLine": 516,
+        "startChar": 0,
+        "endLine": 520,
+        "endChar": 3
+      },
+      "revId": "bb311380610a1c52e1091d864b4222b86ede6a78",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
