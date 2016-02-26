@@ -101,8 +101,8 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
   accumulator->set_num_running_tasks_below(
       accumulator->num_running_tasks_below() +
       other->num_running_tasks_below());
-  accumulator->set_num_leaves_below(accumulator->num_leaves_below() +
-                                    other->num_leaves_below());
+  accumulator->set_num_slots_below(accumulator->num_slots_below() +
+                                   other->num_slots_below());
   // Interference scores
   CoCoInterferenceScores* aiv = accumulator->mutable_coco_interference_scores();
   const CoCoInterferenceScores& oiv = other->coco_interference_scores();
@@ -150,24 +150,24 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
   const ResourceTopologyNodeDescriptor& rtnd = rs->topology_node();
   // TODO(malte): note that the below implicitly assumes that each leaf runs
   // exactly one task; we may need to revisit this assumption in the future.
-  uint64_t num_total_leaves_below = rd.num_leaves_below();
-  uint64_t num_idle_leaves_below = num_total_leaves_below;
+  uint64_t num_total_slots_below = rd.num_slots_below();
+  uint64_t num_idle_slots_below = num_total_slots_below;
   double scale_factor = 1;
-  if (rd.has_num_running_tasks_below() && num_total_leaves_below > 0) {
-    num_idle_leaves_below = num_total_leaves_below -
+  if (rd.has_num_running_tasks_below() && num_total_slots_below > 0) {
+    num_idle_slots_below = num_total_slots_below -
       rd.num_running_tasks_below();
-    VLOG(2) << num_idle_leaves_below << " of " << num_total_leaves_below
-            << " leaves are idle.";
+    VLOG(2) << num_idle_slots_below << " of " << num_total_slots_below
+            << " slots are idle.";
     scale_factor =
-      exp(static_cast<double>(num_total_leaves_below - num_idle_leaves_below) /
-          static_cast<double>(num_total_leaves_below));
+      exp(static_cast<double>(num_total_slots_below - num_idle_slots_below) /
+          static_cast<double>(num_total_slots_below));
     VLOG(2) << "Scale factor: " << scale_factor;
   }
   uint64_t summed_interference_costs = 0;
-  if (num_total_leaves_below == 0) {
-    // Leaves haven't been initialised yet
+  if (num_total_slots_below == 0) {
+    // Slots haven't been initialised yet
     return 0;
-  } else if (num_total_leaves_below == 1 &&
+  } else if (num_total_slots_below == 1 &&
              rd.type() == ResourceDescriptor::RESOURCE_PU) {
     // Base case, we're at a PU
     if (rd.has_current_running_task()) {
@@ -635,7 +635,7 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return FlattenCostVector(cost_vector);
 }
 
-pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> CocoCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
   if (ContainsKey(task_aggs_, ec)) {
@@ -673,12 +673,12 @@ pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
     }
     VLOG(2) << num_tasks_that_fit << " tasks of TEC " << ec << " fit under "
             << res_id << ", at interference score of " << score;
-    return pair<Cost_t, int64_t>(score, num_tasks_that_fit);
+    return pair<Cost_t, uint64_t>(score, num_tasks_that_fit);
   } else {
     LOG(WARNING) << "Unknown EC " << ec << " is not a TEC, so returning "
                  << "zero cost!";
     // No cost; no capacity
-    return pair<Cost_t, int64_t>(0LL, 0LL);
+    return pair<Cost_t, uint64_t>(0LL, 0ULL);
   }
 }
 
@@ -884,7 +884,7 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
       } else {
         rd_ptr->set_num_running_tasks_below(0);
       }
-      rd_ptr->set_num_leaves_below(1);
+      rd_ptr->set_num_slots_below(1);
       // Interference score vectors and resource reservations are accumulated if
       // we have a running task here.
       if (rd_ptr->has_current_running_task()) {
@@ -936,9 +936,9 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
     accumulator->rd_ptr_->set_num_running_tasks_below(
         accumulator->rd_ptr_->num_running_tasks_below() +
         other->rd_ptr_->num_running_tasks_below());
-    accumulator->rd_ptr_->set_num_leaves_below(
-        accumulator->rd_ptr_->num_leaves_below() +
-        other->rd_ptr_->num_leaves_below());
+    accumulator->rd_ptr_->set_num_slots_below(
+        accumulator->rd_ptr_->num_slots_below() +
+        other->rd_ptr_->num_slots_below());
   }
   return accumulator;
 }
@@ -1043,13 +1043,16 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
   rd_ptr->clear_min_available_resources_below();
   rd_ptr->clear_max_available_resources_below();
   rd_ptr->clear_num_running_tasks_below();
-  rd_ptr->clear_num_leaves_below();
+  rd_ptr->clear_num_slots_below();
   rd_ptr->clear_coco_interference_scores();
 }
 
 uint64_t CocoCostModel::TaskFitCount(const ResourceVector& req,
                                      const ResourceVector& avail) {
-  uint64_t num_tasks = numeric_limits<uint64_t>::max();
+  // Note: Do not initialize to MAX_UINT64 because there can be
+  // several arcs with max capacity going into a node. This would
+  // make the solver's supply values to overflow.
+  uint64_t num_tasks = task_map_->size();
   if (fabsl(req.cpu_cores()) > COMPARE_EPS) {
     num_tasks = min(num_tasks,
                     static_cast<uint64_t>(avail.cpu_cores() / req.cpu_cores()));

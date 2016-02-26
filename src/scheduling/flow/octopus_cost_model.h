@@ -35,7 +35,7 @@ class OctopusCostModel : public CostModelInterface {
   Cost_t TaskPreemptionCost(TaskID_t task_id);
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
-  pair<Cost_t, int64_t> EquivClassToResourceNode(
+  pair<Cost_t, uint64_t> EquivClassToResourceNode(
       EquivClass_t tec,
       ResourceID_t res_id);
   Cost_t EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
@@ -51,6 +51,7 @@ class OctopusCostModel : public CostModelInterface {
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
   FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
+  void PrepareStats(FlowGraphNode* accumulator);
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:

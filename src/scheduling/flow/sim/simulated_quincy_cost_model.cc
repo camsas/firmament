@@ -111,12 +111,16 @@ Cost_t SimulatedQuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return preferred_rack_map_[task_id][tec];
 }
 
-pair<Cost_t, int64_t> SimulatedQuincyCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> SimulatedQuincyCostModel::EquivClassToResourceNode(
     EquivClass_t tec,
     ResourceID_t res_id) {
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  uint64_t num_free_slots = rs->descriptor().num_slots_below() -
+    rs->descriptor().num_running_tasks_below();
   // cost of arcs from rack aggregators are always zero
   // (costs are instead encoded in arc from task to aggregator)
-  return pair<Cost_t, int64_t>(0LL, -1LL);
+  return pair<Cost_t, uint64_t>(0ULL, num_free_slots);
 }
 
 Cost_t SimulatedQuincyCostModel::EquivClassToEquivClass(EquivClass_t tec1,
@@ -342,12 +346,74 @@ void SimulatedQuincyCostModel::RemoveTask(TaskID_t task_id) {
 
 FlowGraphNode* SimulatedQuincyCostModel::GatherStats(FlowGraphNode* accumulator,
                                                      FlowGraphNode* other) {
-  return NULL;
+  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
+      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_ == FlowNodeType::SINK ||
+      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+    return accumulator;
+  }
+
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU);
+
+  if (other->resource_id_.is_nil()) {
+    // The other node is not a resource node.
+    if (other->type_ == FlowNodeType::SINK) {
+      // TODO(ionel): This code assumes that only one task can run on a PU.
+      if (accumulator->rd_ptr_->has_current_running_task()) {
+        accumulator->rd_ptr_->set_num_running_tasks_below(1);
+      } else {
+        accumulator->rd_ptr_->set_num_running_tasks_below(0);
+      }
+      accumulator->rd_ptr_->set_num_slots_below(1);
+    }
+    return accumulator;
+  }
+
+  if (!other->rd_ptr_) {
+    return accumulator;
+  }
+  accumulator->rd_ptr_->set_num_running_tasks_below(
+      accumulator->rd_ptr_->num_running_tasks_below() +
+      other->rd_ptr_->num_running_tasks_below());
+  accumulator->rd_ptr_->set_num_slots_below(
+      accumulator->rd_ptr_->num_slots_below() +
+      other->rd_ptr_->num_slots_below());
+  return accumulator;
+}
+
+void SimulatedQuincyCostModel::PrepareStats(FlowGraphNode* accumulator) {
+  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
+      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_ == FlowNodeType::SINK ||
+      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+    // The node is not a resource.
+    return;
+  }
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU);
+  CHECK_NOTNULL(accumulator->rd_ptr_);
+  accumulator->rd_ptr_->clear_num_running_tasks_below();
+  accumulator->rd_ptr_->clear_num_slots_below();
 }
 
 FlowGraphNode* SimulatedQuincyCostModel::UpdateStats(FlowGraphNode* accumulator,
                                                      FlowGraphNode* other) {
-  return NULL;
+  return accumulator;
 }
 
 } // namespace scheduler

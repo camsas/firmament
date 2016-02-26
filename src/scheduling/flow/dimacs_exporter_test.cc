@@ -76,6 +76,8 @@ class DIMACSExporterTest : public ::testing::Test {
 // Tests allocation of an empty envelope and puts an integer into it (using
 // memcopy internally).
 TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
+  shared_ptr<ResourceMap_t> resource_map =
+    shared_ptr<ResourceMap_t>(new ResourceMap_t);
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
@@ -83,8 +85,8 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   WallTime wall_time;
   TraceGenerator trace_generator(&wall_time);
   FlowGraphManager flow_graph_manager(
-      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &wall_time,
-      &trace_generator, &dimacs_stats);
+      new TrivialCostModel(resource_map, task_map, leaf_res_ids), leaf_res_ids,
+      &wall_time, &trace_generator, &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
   string root_id = to_string(GenerateResourceID("test"));
@@ -132,6 +134,8 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
 //  - 100 jobs of 100 tasks each
 //  - 20 preference edges per task
 TEST_F(DIMACSExporterTest, LargeGraph) {
+  shared_ptr<ResourceMap_t> resource_map =
+    shared_ptr<ResourceMap_t>(new ResourceMap_t);
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
@@ -139,8 +143,8 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   WallTime wall_time;
   TraceGenerator trace_generator(&wall_time);
   FlowGraphManager flow_graph_manager(
-      new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &wall_time,
-      &trace_generator, &dimacs_stats);
+      new TrivialCostModel(resource_map, task_map, leaf_res_ids), leaf_res_ids,
+      &wall_time, &trace_generator, &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor machine_tmpl;
   int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
@@ -208,6 +212,8 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
 // magnitude here, so that the tests don't take forever when run in batch mode.
 // Adapt as required :)
 TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
+  shared_ptr<ResourceMap_t> resource_map =
+    shared_ptr<ResourceMap_t>(new ResourceMap_t);
   for (uint64_t f = 1; f < 100; f *= 2) {
     shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
     unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
@@ -216,8 +222,8 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     WallTime wall_time;
     TraceGenerator trace_generator(&wall_time);
     FlowGraphManager flow_graph_manager(
-        new TrivialCostModel(task_map, leaf_res_ids), leaf_res_ids, &wall_time,
-        &trace_generator, &dimacs_stats);
+        new TrivialCostModel(resource_map, task_map, leaf_res_ids),
+        leaf_res_ids, &wall_time, &trace_generator, &dimacs_stats);
     // Test resource topology
     ResourceTopologyNodeDescriptor machine_tmpl;
     int fd = open("../tests/testdata/machine_topo.pbin", O_RDONLY);
