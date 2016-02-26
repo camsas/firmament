@@ -238,21 +238,23 @@ Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
     return 0;
 }
 
-pair<Cost_t, int64_t> WhareMapCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  uint64_t num_free_slots = rs->descriptor().num_slots_below() -
+    rs->descriptor().num_running_tasks_below();
   // If ec isn't a task aggregator, we don't need to do anything
   if (task_aggs_.find(ec) == task_aggs_.end()) {
     // ec must be a machine agg or the cluster agg; we don't need
     // any cost here.
-    return pair<Cost_t, int64_t>(0LL, -1LL);
+    return pair<Cost_t, uint64_t>(0LL, num_free_slots);
   }
   // Otherwise, ec must be a TEC, so we extract the Whare-MCs cost
   // here. Whare-M does not have TEC -> resource arcs, so this won't
   // ever happen with Whare-M only.
   // Get machine for res_id
-  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
-  CHECK_NOTNULL(rs);
   ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
   CHECK_EQ(rtnd->resource_desc().type(),
            ResourceDescriptor::RESOURCE_MACHINE);
@@ -273,10 +275,11 @@ pair<Cost_t, int64_t> WhareMapCostModel::EquivClassToResourceNode(
     CHECK_NOTNULL(best_avg_pspi);
     // Average PsPI for tasks in ec1 on machine of type ec2
     uint64_t avg_for_ec = AverageFromVec(*xi_vec);
-    return pair<Cost_t, int64_t>((avg_for_ec * 100) / *best_avg_pspi, -1LL);
+    return pair<Cost_t, uint64_t>((avg_for_ec * 100) / *best_avg_pspi,
+                                  num_free_slots);
   }
   // No record exists, so we return a high cost
-  return pair<Cost_t, int64_t>(INT64_MAX, -1LL);
+  return pair<Cost_t, uint64_t>(INT64_MAX, num_free_slots);
 }
 
 Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,
@@ -694,7 +697,9 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
       ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
       if (!rd_ptr)
         return accumulator;
+      CHECK_EQ(other->type_, FlowNodeType::SINK);
       if (rd_ptr->has_current_running_task()) {
+        accumulator->rd_ptr_->set_num_running_tasks_below(1);
         TaskDescriptor* td_ptr =
           FindPtrOrNull(*task_map_, rd_ptr->current_running_task());
         if (td_ptr->has_task_type()) {
@@ -714,7 +719,10 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
         } else {
           LOG(WARNING) << "Task " << td_ptr->uid() << " does not have a type";
         }
+      } else {
+        accumulator->rd_ptr_->set_num_running_tasks_below(0);
       }
+      accumulator->rd_ptr_->set_num_slots_below(1);
     }
     return accumulator;
   }
@@ -743,7 +751,39 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
     return accumulator;
   }
   AccumulateWhareMapStats(wms_acc_ptr, wms_other_ptr);
+
+  if (!other->rd_ptr_) {
+    return accumulator;
+  }
+  accumulator->rd_ptr_->set_num_running_tasks_below(
+      accumulator->rd_ptr_->num_running_tasks_below() +
+      other->rd_ptr_->num_running_tasks_below());
+  accumulator->rd_ptr_->set_num_slots_below(
+      accumulator->rd_ptr_->num_slots_below() +
+      other->rd_ptr_->num_slots_below());
   return accumulator;
+}
+
+void WhareMapCostModel::PrepareStats(FlowGraphNode* accumulator) {
+  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
+      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_ == FlowNodeType::SINK ||
+      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+    // The node is not a resource.
+    return;
+  }
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU);
+  CHECK_NOTNULL(accumulator->rd_ptr_);
+  accumulator->rd_ptr_->clear_num_running_tasks_below();
+  accumulator->rd_ptr_->clear_num_slots_below();
 }
 
 FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,

@@ -120,7 +120,6 @@ class FlowGraphManager {
                                    FlowGraphNode* new_node);
   void ConfigureResourceLeafNode(const ResourceTopologyNodeDescriptor& rtnd,
                                  FlowGraphNode* new_node);
-  uint32_t CountTaskSlotsBelowResourceNode(FlowGraphNode* node);
   void DeleteResourceNode(FlowGraphNode* res_node, const char *comment = NULL);
 
   /**

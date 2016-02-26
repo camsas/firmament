@@ -14,8 +14,9 @@
 
 namespace firmament {
 
-VoidCostModel::VoidCostModel(shared_ptr<TaskMap_t> task_map)
-    : task_map_(task_map) {
+VoidCostModel::VoidCostModel(shared_ptr<ResourceMap_t> resource_map,
+                             shared_ptr<TaskMap_t> task_map)
+    : resource_map_(resource_map), task_map_(task_map) {
 }
 
 Cost_t VoidCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
@@ -62,10 +63,14 @@ Cost_t VoidCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return 0LL;
 }
 
-pair<Cost_t, int64_t> VoidCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> VoidCostModel::EquivClassToResourceNode(
     EquivClass_t tec,
     ResourceID_t res_id) {
-  return pair<Cost_t, int64_t>(0LL, -1LL);
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  uint64_t num_free_slots = rs->descriptor().num_slots_below() -
+    rs->descriptor().num_running_tasks_below();
+  return pair<Cost_t, uint64_t>(0LL, num_free_slots);
 }
 
 Cost_t VoidCostModel::EquivClassToEquivClass(EquivClass_t tec1,
@@ -121,12 +126,74 @@ void VoidCostModel::RemoveTask(TaskID_t task_id) {
 
 FlowGraphNode* VoidCostModel::GatherStats(FlowGraphNode* accumulator,
                                           FlowGraphNode* other) {
-  return NULL;
+  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
+      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_ == FlowNodeType::SINK ||
+      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+    return accumulator;
+  }
+
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU);
+
+  if (other->resource_id_.is_nil()) {
+    // The other node is not a resource node.
+    if (other->type_ == FlowNodeType::SINK) {
+      // TODO(ionel): This code assumes that only one task can run on a PU.
+      if (accumulator->rd_ptr_->has_current_running_task()) {
+        accumulator->rd_ptr_->set_num_running_tasks_below(1);
+      } else {
+        accumulator->rd_ptr_->set_num_running_tasks_below(0);
+      }
+      accumulator->rd_ptr_->set_num_slots_below(1);
+    }
+    return accumulator;
+  }
+
+  if (!other->rd_ptr_) {
+    return accumulator;
+  }
+  accumulator->rd_ptr_->set_num_running_tasks_below(
+      accumulator->rd_ptr_->num_running_tasks_below() +
+      other->rd_ptr_->num_running_tasks_below());
+  accumulator->rd_ptr_->set_num_slots_below(
+      accumulator->rd_ptr_->num_slots_below() +
+      other->rd_ptr_->num_slots_below());
+  return accumulator;
+}
+
+void VoidCostModel::PrepareStats(FlowGraphNode* accumulator) {
+  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
+      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_ == FlowNodeType::SINK ||
+      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+    // The node is not a resource.
+    return;
+  }
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU);
+  CHECK_NOTNULL(accumulator->rd_ptr_);
+  accumulator->rd_ptr_->clear_num_running_tasks_below();
+  accumulator->rd_ptr_->clear_num_slots_below();
 }
 
 FlowGraphNode* VoidCostModel::UpdateStats(FlowGraphNode* accumulator,
                                           FlowGraphNode* other) {
-  return NULL;
+  return accumulator;
 }
 
 } // namespace firmament

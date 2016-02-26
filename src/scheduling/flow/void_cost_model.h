@@ -17,7 +17,8 @@ namespace firmament {
 
 class VoidCostModel : public CostModelInterface {
  public:
-  explicit VoidCostModel(shared_ptr<TaskMap_t> task_map);
+  explicit VoidCostModel(shared_ptr<ResourceMap_t> resource_map,
+                         shared_ptr<TaskMap_t> task_map);
   // Costs pertaining to leaving tasks unscheduled
   Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
   Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
@@ -34,7 +35,7 @@ class VoidCostModel : public CostModelInterface {
   Cost_t TaskPreemptionCost(TaskID_t task_id);
   // Costs to equivalence class aggregators
   Cost_t TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
-  pair<Cost_t, int64_t> EquivClassToResourceNode(
+  pair<Cost_t, uint64_t> EquivClassToResourceNode(
       EquivClass_t tec,
       ResourceID_t res_id);
   Cost_t EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
@@ -50,10 +51,13 @@ class VoidCostModel : public CostModelInterface {
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
   FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
+  void PrepareStats(FlowGraphNode* accumulator);
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
   Cost_t TaskToClusterAggCost(TaskID_t task_id);
+
+  shared_ptr<ResourceMap_t> resource_map_;
   // Map of tasks present in the system, initialised externally
   shared_ptr<TaskMap_t> task_map_;
 };

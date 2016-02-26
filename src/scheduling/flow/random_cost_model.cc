@@ -15,9 +15,11 @@ DECLARE_bool(preemption);
 namespace firmament {
 
 RandomCostModel::RandomCostModel(
+    shared_ptr<ResourceMap_t> resource_map,
     shared_ptr<TaskMap_t> task_map,
     unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids)
-  : task_map_(task_map),
+  : resource_map_(resource_map),
+    task_map_(task_map),
     leaf_res_ids_(leaf_res_ids) {
   // Create the cluster aggregator EC, which all machines are members of.
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
@@ -74,11 +76,15 @@ Cost_t RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
     return 0;
 }
 
-pair<Cost_t, int64_t> RandomCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> RandomCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
-  return pair<Cost_t, int64_t>(rand_r(&rand_seed_) %
-                               (FLAGS_flow_max_arc_cost / 2) + 1, -1LL);
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  uint64_t num_free_slots = rs->descriptor().num_slots_below() -
+    rs->descriptor().num_running_tasks_below();
+  Cost_t cost = rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 2) + 1;
+  return pair<Cost_t, uint64_t>(cost, num_free_slots);
 }
 
 Cost_t RandomCostModel::EquivClassToEquivClass(EquivClass_t ec1,
@@ -185,14 +191,74 @@ void RandomCostModel::RemoveTask(TaskID_t task_id) {
 
 FlowGraphNode* RandomCostModel::GatherStats(FlowGraphNode* accumulator,
                                             FlowGraphNode* other) {
-  // No-op in random cost model
-  return NULL;
+  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
+      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_ == FlowNodeType::SINK ||
+      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+    return accumulator;
+  }
+
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU);
+
+  if (other->resource_id_.is_nil()) {
+    // The other node is not a resource node.
+    if (other->type_ == FlowNodeType::SINK) {
+      // TODO(ionel): This code assumes that only one task can run on a PU.
+      if (accumulator->rd_ptr_->has_current_running_task()) {
+        accumulator->rd_ptr_->set_num_running_tasks_below(1);
+      } else {
+        accumulator->rd_ptr_->set_num_running_tasks_below(0);
+      }
+      accumulator->rd_ptr_->set_num_slots_below(1);
+    }
+    return accumulator;
+  }
+
+  if (!other->rd_ptr_) {
+    return accumulator;
+  }
+  accumulator->rd_ptr_->set_num_running_tasks_below(
+      accumulator->rd_ptr_->num_running_tasks_below() +
+      other->rd_ptr_->num_running_tasks_below());
+  accumulator->rd_ptr_->set_num_slots_below(
+      accumulator->rd_ptr_->num_slots_below() +
+      other->rd_ptr_->num_slots_below());
+  return accumulator;
+}
+
+void RandomCostModel::PrepareStats(FlowGraphNode* accumulator) {
+  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
+      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
+      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
+      accumulator->type_ == FlowNodeType::SINK ||
+      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+    // The node is not a resource.
+    return;
+  }
+  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
+        accumulator->type_ == FlowNodeType::MACHINE ||
+        accumulator->type_ == FlowNodeType::NUMA_NODE ||
+        accumulator->type_ == FlowNodeType::SOCKET ||
+        accumulator->type_ == FlowNodeType::CACHE ||
+        accumulator->type_ == FlowNodeType::CORE ||
+        accumulator->type_ == FlowNodeType::PU);
+  CHECK_NOTNULL(accumulator->rd_ptr_);
+  accumulator->rd_ptr_->clear_num_running_tasks_below();
+  accumulator->rd_ptr_->clear_num_slots_below();
 }
 
 FlowGraphNode* RandomCostModel::UpdateStats(FlowGraphNode* accumulator,
                                             FlowGraphNode* other) {
-  // No-op in random cost model
-  return NULL;
+  return accumulator;
 }
 
 }  // namespace firmament

@@ -72,11 +72,11 @@ FlowScheduler::FlowScheduler(
 
   switch (FLAGS_flow_scheduling_cost_model) {
     case CostModelType::COST_MODEL_TRIVIAL:
-      cost_model_ = new TrivialCostModel(task_map, leaf_res_ids_);
+      cost_model_ = new TrivialCostModel(resource_map, task_map, leaf_res_ids_);
       VLOG(1) << "Using the trivial cost model";
       break;
     case CostModelType::COST_MODEL_RANDOM:
-      cost_model_ = new RandomCostModel(task_map, leaf_res_ids_);
+      cost_model_ = new RandomCostModel(resource_map, task_map, leaf_res_ids_);
       VLOG(1) << "Using the random cost model";
       break;
     case CostModelType::COST_MODEL_COCO:
@@ -86,8 +86,8 @@ FlowScheduler::FlowScheduler(
       VLOG(1) << "Using the coco cost model";
       break;
     case CostModelType::COST_MODEL_SJF:
-      cost_model_ = new SJFCostModel(task_map, leaf_res_ids_, knowledge_base_,
-                                     time_manager_);
+      cost_model_ = new SJFCostModel(resource_map, task_map, leaf_res_ids_,
+                                     knowledge_base_, time_manager_);
       VLOG(1) << "Using the SJF cost model";
       break;
     case CostModelType::COST_MODEL_QUINCY:
@@ -107,7 +107,7 @@ FlowScheduler::FlowScheduler(
       VLOG(1) << "Using the octopus cost model";
       break;
     case CostModelType::COST_MODEL_VOID:
-      cost_model_ = new VoidCostModel(task_map);
+      cost_model_ = new VoidCostModel(resource_map, task_map);
       VLOG(1) << "Using the void cost model";
       break;
     case CostModelType::COST_MODEL_SIMULATED_QUINCY:
@@ -477,24 +477,12 @@ uint64_t FlowScheduler::RunSchedulingIteration(
 }
 
 void FlowScheduler::UpdateCostModelResourceStats() {
-  if (FLAGS_flow_scheduling_cost_model ==
-      CostModelType::COST_MODEL_COCO ||
-      FLAGS_flow_scheduling_cost_model ==
-      CostModelType::COST_MODEL_OCTOPUS ||
-      FLAGS_flow_scheduling_cost_model ==
-      CostModelType::COST_MODEL_WHARE) {
-    VLOG(2) << "Updating resource statistics in flow graph";
-    flow_graph_manager_->ComputeTopologyStatistics(
-        flow_graph_manager_->sink_node(),
-        boost::bind(&CostModelInterface::PrepareStats,
-                    cost_model_, _1),
-        boost::bind(&CostModelInterface::GatherStats,
-                    cost_model_, _1, _2),
-        boost::bind(&CostModelInterface::UpdateStats,
-                    cost_model_, _1, _2));
-  } else {
-    VLOG(2) << "No resource stats update required";
-  }
+  VLOG(2) << "Updating resource statistics in flow graph";
+  flow_graph_manager_->ComputeTopologyStatistics(
+      flow_graph_manager_->sink_node(),
+      boost::bind(&CostModelInterface::PrepareStats, cost_model_, _1),
+      boost::bind(&CostModelInterface::GatherStats, cost_model_, _1, _2),
+      boost::bind(&CostModelInterface::UpdateStats, cost_model_, _1, _2));
 }
 
 void FlowScheduler::UpdateResourceTopology(
