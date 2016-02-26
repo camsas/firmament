@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_adaa2fd2",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1055,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-26T20:22:41Z",
+      "side": 1,
+      "message": "Good catch! Did we really set the capacity to UINT64_MAX before fixing this? :O",
+      "range": {
+        "startLine": 1052,
+        "startChar": 0,
+        "endLine": 1055,
+        "endChar": 41
+      },
+      "revId": "c7355e674638e187c563f1dc3bba3cc8cba76cee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_2db63f3e",
+        "filename": "src/scheduling/flow/octopus_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-02-26T20:22:41Z",
+      "side": 1,
+      "message": "I think this introduces a bug: previously, returning -1 would have resulted in CountTaskSlotsBelowNode()\u0027s return value being used as capacity (basically, the count of PUs below this resource node). Now we\u0027re returning zero, so the capacity will be zero?!",
+      "revId": "c7355e674638e187c563f1dc3bba3cc8cba76cee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
