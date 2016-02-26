@@ -112,10 +112,10 @@ Cost_t SJFCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
     return 0ULL;
 }
 
-pair<Cost_t, int64_t> SJFCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> SJFCostModel::EquivClassToResourceNode(
     EquivClass_t tec,
     ResourceID_t res_id) {
-  return pair<Cost_t, int64_t>(0LL, -1LL);
+  return pair<Cost_t, int64_t>(0LL, 0ULL);
 }
 
 Cost_t SJFCostModel::EquivClassToEquivClass(EquivClass_t tec1,

@@ -111,12 +111,12 @@ Cost_t SimulatedQuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return preferred_rack_map_[task_id][tec];
 }
 
-pair<Cost_t, int64_t> SimulatedQuincyCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> SimulatedQuincyCostModel::EquivClassToResourceNode(
     EquivClass_t tec,
     ResourceID_t res_id) {
   // cost of arcs from rack aggregators are always zero
   // (costs are instead encoded in arc from task to aggregator)
-  return pair<Cost_t, int64_t>(0LL, -1LL);
+  return pair<Cost_t, int64_t>(0ULL, 0ULL);
 }
 
 Cost_t SimulatedQuincyCostModel::EquivClassToEquivClass(EquivClass_t tec1,

@@ -635,7 +635,7 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return FlattenCostVector(cost_vector);
 }
 
-pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> CocoCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
   if (ContainsKey(task_aggs_, ec)) {
@@ -673,12 +673,12 @@ pair<Cost_t, int64_t> CocoCostModel::EquivClassToResourceNode(
     }
     VLOG(2) << num_tasks_that_fit << " tasks of TEC " << ec << " fit under "
             << res_id << ", at interference score of " << score;
-    return pair<Cost_t, int64_t>(score, num_tasks_that_fit);
+    return pair<Cost_t, uint64_t>(score, num_tasks_that_fit);
   } else {
     LOG(WARNING) << "Unknown EC " << ec << " is not a TEC, so returning "
                  << "zero cost!";
     // No cost; no capacity
-    return pair<Cost_t, int64_t>(0LL, 0LL);
+    return pair<Cost_t, uint64_t>(0LL, 0ULL);
   }
 }
 
@@ -1049,7 +1049,10 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
 
 uint64_t CocoCostModel::TaskFitCount(const ResourceVector& req,
                                      const ResourceVector& avail) {
-  uint64_t num_tasks = numeric_limits<uint64_t>::max();
+  // Note: Do not initialize to MAX_UINT64 because there can be
+  // several arcs with max capacity going into a node. This would
+  // make the solver's supply values to overflow.
+  uint64_t num_tasks = task_map_->size();
   if (fabsl(req.cpu_cores()) > COMPARE_EPS) {
     num_tasks = min(num_tasks,
                     static_cast<uint64_t>(avail.cpu_cores() / req.cpu_cores()));

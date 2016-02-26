@@ -238,14 +238,17 @@ Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
     return 0;
 }
 
-pair<Cost_t, int64_t> WhareMapCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
+  // TODO(ionel): Make sure the method returns a non-zero capacity.
+  // Use CountTaskSlotsBelowResourceNode() to compute it.
+
   // If ec isn't a task aggregator, we don't need to do anything
   if (task_aggs_.find(ec) == task_aggs_.end()) {
     // ec must be a machine agg or the cluster agg; we don't need
     // any cost here.
-    return pair<Cost_t, int64_t>(0LL, -1LL);
+    return pair<Cost_t, int64_t>(0LL, 0ULL);
   }
   // Otherwise, ec must be a TEC, so we extract the Whare-MCs cost
   // here. Whare-M does not have TEC -> resource arcs, so this won't
@@ -273,10 +276,10 @@ pair<Cost_t, int64_t> WhareMapCostModel::EquivClassToResourceNode(
     CHECK_NOTNULL(best_avg_pspi);
     // Average PsPI for tasks in ec1 on machine of type ec2
     uint64_t avg_for_ec = AverageFromVec(*xi_vec);
-    return pair<Cost_t, int64_t>((avg_for_ec * 100) / *best_avg_pspi, -1LL);
+    return pair<Cost_t, int64_t>((avg_for_ec * 100) / *best_avg_pspi, 0ULL);
   }
   // No record exists, so we return a high cost
-  return pair<Cost_t, int64_t>(INT64_MAX, -1LL);
+  return pair<Cost_t, int64_t>(INT64_MAX, 0ULL);
 }
 
 Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,

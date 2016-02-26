@@ -68,10 +68,10 @@ Cost_t OctopusCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return 0ULL;
 }
 
-pair<Cost_t, int64_t> OctopusCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> OctopusCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
-  return pair<Cost_t, int64_t>(0LL, -1LL);
+  return pair<Cost_t, int64_t>(0LL, 0ULL);
 }
 
 Cost_t OctopusCostModel::EquivClassToEquivClass(EquivClass_t ec1,

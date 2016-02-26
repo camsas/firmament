@@ -335,16 +335,9 @@ void FlowGraphManager::AddResourceEquivClasses(FlowGraphNode* res_node) {
       if (!ec_arc) {
         ec_arc = flow_graph_->AddArc(ec_node_ptr->id_, res_node->id_);
       }
-      pair<Cost_t, int64_t> cost_and_cap =
+      pair<Cost_t, uint64_t> cost_and_cap =
         cost_model_->EquivClassToResourceNode(equiv_class, res_id);
-      if (cost_and_cap.second >= 0) {
-        // Use capacity specified by cost model
-        ec_arc->cap_upper_bound_ = cost_and_cap.second;
-      } else {
-        // Cost model did not specify a capacity, so use the maximum
-        // TODO(malte): N.B.: this assumes no PU sharing.
-        ec_arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(res_node);
-      }
+      ec_arc->cap_upper_bound_ = cost_and_cap.second;
       ec_arc->cost_ = cost_and_cap.first;
       VLOG(2) << "    Adding arc from EC node " << ec_node_ptr->id_
               << " to " << res_node->id_ << " at cap "
@@ -476,21 +469,14 @@ void FlowGraphManager::AddOrUpdateEquivClassPrefArcs(
     for (auto& res_id : *res_pref_arcs) {
       FlowGraphNode* rn = NodeForResourceID(res_id);
       CHECK_NOTNULL(rn);
-      pair<Cost_t, int64_t> cost_and_cap =
+      pair<Cost_t, uint64_t> cost_and_cap =
         cost_model_->EquivClassToResourceNode(ec, res_id);
       Cost_t arc_cost = cost_and_cap.first;
       FlowGraphArc* arc = FindPtrOrNull(ec_node->outgoing_arc_map_, rn->id_);
       if (!arc) {
         // We don't have the arc yet, so add it
         arc = flow_graph_->AddArc(ec_node->id_, rn->id_);
-        if (cost_and_cap.second >= 0) {
-          // Use the capacity from the cost model
-          arc->cap_upper_bound_ = cost_and_cap.second;
-        } else {
-          // Cost model did not give us a capacity, so we use the maximum
-          // TODO(malte): N.B.: this assumes no PU sharing.
-          arc->cap_upper_bound_ = CountTaskSlotsBelowResourceNode(rn);
-        }
+        arc->cap_upper_bound_ = cost_and_cap.second;
         arc->cost_ = arc_cost;
         VLOG(2) << "    adding arc from EC node " << ec_node->id_
                 << " to " << rn->id_ << " at cap "

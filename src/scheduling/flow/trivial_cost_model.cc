@@ -65,10 +65,10 @@ Cost_t TrivialCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
     return 0ULL;
 }
 
-pair<Cost_t, int64_t> TrivialCostModel::EquivClassToResourceNode(
+pair<Cost_t, uint64_t> TrivialCostModel::EquivClassToResourceNode(
     EquivClass_t tec,
     ResourceID_t res_id) {
-  return pair<Cost_t, int64_t>(0LL, -1LL);
+  return pair<Cost_t, int64_t>(0LL, 0ULL);
 }
 
 Cost_t TrivialCostModel::EquivClassToEquivClass(EquivClass_t tec1,
