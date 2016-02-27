@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_68d58542",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1055,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-27T15:17:04Z",
+      "side": 1,
+      "message": "Nope, previously we were setting it to 0 and iterate for as long as tasks fit. However, we would iterator forever of tasks with empty/o requests.",
+      "parentUuid": "5a72e520_adaa2fd2",
+      "range": {
+        "startLine": 1052,
+        "startChar": 0,
+        "endLine": 1055,
+        "endChar": 41
+      },
+      "revId": "c7355e674638e187c563f1dc3bba3cc8cba76cee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_2db63f3e",
         "filename": "src/scheduling/flow/octopus_cost_model.cc",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2016-02-26T20:22:41Z",
       "side": 1,
       "message": "I think this introduces a bug: previously, returning -1 would have resulted in CountTaskSlotsBelowNode()\u0027s return value being used as capacity (basically, the count of PUs below this resource node). Now we\u0027re returning zero, so the capacity will be zero?!",
+      "revId": "c7355e674638e187c563f1dc3bba3cc8cba76cee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_c8f839c7",
+        "filename": "src/scheduling/flow/octopus_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-02-27T15:17:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_2db63f3e",
       "revId": "c7355e674638e187c563f1dc3bba3cc8cba76cee",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
