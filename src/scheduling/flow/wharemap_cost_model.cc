@@ -119,7 +119,7 @@ Cost_t WhareMapCostModel::MaxFromVec(const vector<uint64_t>& vec) const {
 }
 
 Cost_t WhareMapCostModel::MinFromVec(const vector<uint64_t>& vec) const {
-  uint64_t cur_min = UINT64_MAX;
+  uint64_t cur_min = FLAGS_flow_max_arc_cost;
   for (auto it = vec.begin(); it != vec.end(); ++it) {
     cur_min = min(cur_min, *it);
   }
@@ -279,7 +279,7 @@ pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToResourceNode(
                                   num_free_slots);
   }
   // No record exists, so we return a high cost
-  return pair<Cost_t, uint64_t>(INT64_MAX, num_free_slots);
+  return pair<Cost_t, uint64_t>(FLAGS_flow_max_arc_cost, num_free_slots);
 }
 
 Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,
