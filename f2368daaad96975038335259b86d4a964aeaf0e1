@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_4f6525e0",
+        "filename": "cmake/ExternalDependencies.cmake",
+        "patchSetId": 11
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-01T18:25:46Z",
+      "side": 1,
+      "message": "Can you add a TODO here?",
+      "revId": "f2368daaad96975038335259b86d4a964aeaf0e1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_afd05954",
+        "filename": "src/CMakeLists.txt",
+        "patchSetId": 11
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-01T18:25:46Z",
+      "side": 1,
+      "message": "Can you just remove the commented subdirectories?",
+      "revId": "f2368daaad96975038335259b86d4a964aeaf0e1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_4fc1a57f",
+        "filename": "src/platforms/CMakeLists.txt",
+        "patchSetId": 11
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-01T18:25:46Z",
+      "side": 1,
+      "message": "Drop it.",
+      "revId": "f2368daaad96975038335259b86d4a964aeaf0e1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
