@@ -6,6 +6,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <errno.h>
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <sys/stat.h>
 #include <sys/types.h>

@@ -22,6 +22,9 @@ using firmament::platform_unix::streamsockets::StreamSocketsChannel;
 using firmament::common::InitFirmament;
 using firmament::misc::Envelope;
 
+DEFINE_uint64(heartbeat_interval, 1000000,
+              "Heartbeat interval in microseconds.");
+
 namespace firmament {
 namespace platform_unix {
 namespace streamsockets {
