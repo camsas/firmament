@@ -58,7 +58,7 @@ Binaries are in the build/ subdirectory of the project root, and all accept the
 Start up by running a coordinator:
 
 ```console
-$ build/src/coordinator --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/build/engine/
+$ build/src/coordinator --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/build/src/
 ```
 
 Once the coordinator is up and running, you can access its HTTP interface at
@@ -130,7 +130,7 @@ subordinate childrens' resources.
 To run a coordinator as a child of a parent coordinator, pass the `--parent_uri`
 flag on launch and set it to the parent coordinator's network location:
 ```console
-$ build/engine/coordinator --listen_uri tcp:<local host>:<local port> --parent_uri tcp:<parent host>:<parent port> --task_lib_dir=$(pwd)/build/engine/
+$ build/src/coordinator --listen_uri tcp:<local host>:<local port> --parent_uri tcp:<parent host>:<parent port> --task_lib_dir=$(pwd)/build/src/
 ```
 The parent coordinator must already be running. Once both coordinators are up,
 you will be able to see the child resources on the parent coordinator's web UI.
