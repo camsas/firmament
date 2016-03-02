@@ -156,7 +156,9 @@ void *ProcessStderrJustlog(void *x) {
   char line[1024];
   FILE *stderr = reinterpret_cast<FILE*>(x);
   while (fgets(line, sizeof(line), stderr) != NULL) {
-    LOG(WARNING) << "STDERR from solver: " << line;
+    if (FLAGS_log_solver_stderr) {
+      LOG(WARNING) << "STDERR from solver: " << line;
+    }
   }
   return NULL;
 }
@@ -235,11 +237,9 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
                  << infd_[1];
     }
 
-    if (!FLAGS_log_solver_stderr) {
-      if (pthread_create(&logger_thread, NULL,
-                         ProcessStderrJustlog, from_solver_stderr_)) {
-        PLOG(FATAL) << "Error creating thread";
-      }
+    if (pthread_create(&logger_thread, NULL,
+                       ProcessStderrJustlog, from_solver_stderr_)) {
+      PLOG(FATAL) << "Error creating thread";
     }
   }
 
@@ -283,11 +283,9 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     // this (cs2 expects stdin to be closed before it terminates, so we can't do
     // it here)
 
-    if (!FLAGS_log_solver_stderr) {
-      // wait for logger thread
-      if (pthread_join(logger_thread, NULL)) {
-        PLOG(FATAL) << "Error joining thread";
-      }
+    // wait for logger thread
+    if (pthread_join(logger_thread, NULL)) {
+      PLOG(FATAL) << "Error joining thread";
     }
 
     if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0)) {
