@@ -463,7 +463,7 @@ void SimulatorBridge::RemoveMachine(uint64_t machine_id) {
   machine_res_id_pus_.erase(res_id);
   // Traverse the resource topology tree in order to evict tasks and
   // remove resources from resource_map.
-  DFSTraverseResourceProtobufTreeReturnRTND(
+  DFSTraversePostOrderResourceProtobufTreeReturnRTND(
       rtnd_ptr, boost::bind(&SimulatorBridge::RemoveResource, this, _1));
   if (rtnd_ptr->has_parent_id()) {
     if (rtnd_ptr->parent_id().compare(rtn_root_.resource_desc().uuid()) == 0) {
