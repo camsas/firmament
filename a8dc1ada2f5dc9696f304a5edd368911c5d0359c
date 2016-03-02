@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_78aaa91a",
+        "filename": "cmake/Config.cmake",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-02T15:13:50Z",
+      "side": 1,
+      "message": "Let\u0027s roll this back and fix pb2json.",
+      "revId": "a8dc1ada2f5dc9696f304a5edd368911c5d0359c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_58740dcf",
+        "filename": "src/platforms/unix/stream_sockets_adapter.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-02T15:13:50Z",
+      "side": 1,
+      "message": "Let\u0027s just delete these commented lines.",
+      "revId": "a8dc1ada2f5dc9696f304a5edd368911c5d0359c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
