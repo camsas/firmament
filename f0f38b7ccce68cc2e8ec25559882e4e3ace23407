@@ -16,6 +16,24 @@
       "revId": "f0f38b7ccce68cc2e8ec25559882e4e3ace23407",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_e3a0aaf6",
+        "filename": ".travis.yml",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-02T15:47:03Z",
+      "side": 0,
+      "message": "It was only used by fetch-externals.sh, which we no longer use.",
+      "parentUuid": "5a72e520_036f86c6",
+      "revId": "f0f38b7ccce68cc2e8ec25559882e4e3ace23407",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
