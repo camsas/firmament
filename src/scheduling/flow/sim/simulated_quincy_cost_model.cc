@@ -174,13 +174,9 @@ vector<ResourceID_t>* SimulatedQuincyCostModel::GetTaskPreferenceArcs(
   return preferred_res;
 }
 
-pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    SimulatedQuincyCostModel::GetEquivClassToEquivClassesArcs(
-        EquivClass_t tec) {
-  vector<EquivClass_t>* incoming_arcs = new vector<EquivClass_t>();
-  vector<EquivClass_t>* outgoing_arcs = new vector<EquivClass_t>();
-  return pair<vector<EquivClass_t>*, vector<EquivClass_t>*>(incoming_arcs,
-                                                            outgoing_arcs);
+vector<EquivClass_t>* SimulatedQuincyCostModel::GetEquivClassToEquivClassesArcs(
+    EquivClass_t tec) {
+  return NULL;
 }
 
 void SimulatedQuincyCostModel::AddMachine(

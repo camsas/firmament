@@ -171,10 +171,10 @@ vector<ResourceID_t>* SJFCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   return NULL;
 }
 
-pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    SJFCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
+vector<EquivClass_t>* SJFCostModel::GetEquivClassToEquivClassesArcs(
+    EquivClass_t tec) {
   // There are no internal EC connectors in the SJF cost model
-  return pair<vector<EquivClass_t>*, vector<EquivClass_t>*>(NULL, NULL);
+  return NULL;
 }
 
 void SJFCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {

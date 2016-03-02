@@ -120,13 +120,12 @@ class CostModelInterface {
   virtual vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id) = 0;
 
   /**
-   * Get equivlance classes to which an equivalence class is connected.
-   * @return a pair consisting of two vectors. The first one contains the
-   * equivalence classes from which we have an incoming arc and the second one
-   * equivalence classes to which we have an outgoing arc.
+   * Get equivalence classes to which the outgoing arcs of an equivalence class
+   * are pointing to.
+   * @return a vectors of equivalence classes to which we have an outgoing arc.
    */
-  virtual pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    GetEquivClassToEquivClassesArcs(EquivClass_t tec) = 0;
+  virtual vector<EquivClass_t>* GetEquivClassToEquivClassesArcs(
+      EquivClass_t tec) = 0;
 
   /**
    * Called by the flow_graph when a machine is added.

@@ -58,8 +58,7 @@ class WhareMapCostModel : public CostModelInterface {
   vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
   vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(EquivClass_t tec);
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
-  pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    GetEquivClassToEquivClassesArcs(EquivClass_t tec);
+  vector<EquivClass_t>* GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   uint64_t HashWhareMapStats(const WhareMapStats& wms);
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void AddTask(TaskID_t task_id);

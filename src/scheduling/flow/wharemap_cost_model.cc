@@ -430,34 +430,24 @@ vector<ResourceID_t>* WhareMapCostModel::GetTaskPreferenceArcs(
   return prefered_res;
 }
 
-pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    WhareMapCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
-  vector<EquivClass_t>* incoming_ec = new vector<EquivClass_t>();
+vector<EquivClass_t>* WhareMapCostModel::GetEquivClassToEquivClassesArcs(
+    EquivClass_t tec) {
   vector<EquivClass_t>* outgoing_ec = new vector<EquivClass_t>();
   if (tec == cluster_aggregator_ec_) {
     // Cluster aggregator: has no outgoing arcs to other ECs in this
     // cost model. (Could have, e.g., arcs to rack aggregators, though!).
   } else if (task_aggs_.find(tec) != task_aggs_.end()) {
     // Add the machine equivalence classes to the vector.
-    for (unordered_set<EquivClass_t>::iterator
-           it = machine_aggs_.begin();
-         it != machine_aggs_.end();
-         ++it) {
-      outgoing_ec->push_back(*it);
+    for (auto& equiv_class : machine_aggs_) {
+      outgoing_ec->push_back(equiv_class);
     }
   } else if (machine_aggs_.find(tec) != machine_aggs_.end()) {
-    // Add the task equivalence classes to the vector.
-    for (unordered_set<EquivClass_t>::iterator
-           it = task_aggs_.begin();
-         it != task_aggs_.end();
-         ++it) {
-      incoming_ec->push_back(*it);
-    }
+    // Machine equivalence classes don't have outgoing arcs to other equivalence
+    // classes.
   } else {
     // Nothing to do, ignore
   }
-  return pair<vector<EquivClass_t>*,
-              vector<EquivClass_t>*>(incoming_ec, outgoing_ec);
+  return outgoing_ec;
 }
 
 void WhareMapCostModel::AddMachine(
@@ -469,7 +459,6 @@ void WhareMapCostModel::AddMachine(
       rtnd_ptr, &hash,
       boost::bind(&WhareMapCostModel::ComputeMachineTypeHash, this, _1, _2));
   ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
-  // Set the number of cores for the machine.
   EquivClass_t machine_ec = static_cast<EquivClass_t>(hash);
   // Add mapping between task equiv class and resource id.
   machine_ec_to_res_id_.insert(

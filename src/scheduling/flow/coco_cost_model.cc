@@ -464,11 +464,10 @@ vector<ResourceID_t>* CocoCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   return NULL;
 }
 
-pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    CocoCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
+vector<EquivClass_t>* CocoCostModel::GetEquivClassToEquivClassesArcs(
+    EquivClass_t tec) {
   // TODO(malte): implement!
-  return pair<vector<EquivClass_t>*,
-              vector<EquivClass_t>*>(NULL, NULL);
+  return NULL;
 }
 
 // The cost of leaving a task unscheduled should be higher than the cost of

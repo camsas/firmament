@@ -143,10 +143,9 @@ vector<ResourceID_t>* QuincyCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   return prefered_res;
 }
 
-pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    QuincyCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
-  return pair<vector<EquivClass_t>*,
-              vector<EquivClass_t>*>(NULL, NULL);
+vector<EquivClass_t>* QuincyCostModel::GetEquivClassToEquivClassesArcs(
+    EquivClass_t tec) {
+  return NULL;
 }
 
 void QuincyCostModel::AddMachine(

@@ -101,42 +101,14 @@ void FlowGraphManager::AddArcsForTask(FlowGraphNode* task_node,
 
 void FlowGraphManager::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
                                                     FlowGraphNode* ec_node) {
-  // TODO(ionel): The method below assumes that the source and destination
-  // EC are already present. This might not necessarly be true in complex
-  // cost models.
-  pair<vector<EquivClass_t>*,
-       vector<EquivClass_t>*> equiv_class_to_connect =
+  vector<EquivClass_t>* to_equiv_class =
     cost_model_->GetEquivClassToEquivClassesArcs(equiv_class);
-  // Add incoming arcs.
-  if (equiv_class_to_connect.first) {
-    for (auto& src_equiv_class : *equiv_class_to_connect.first) {
-      FlowGraphNode* ec_src_ptr = FindPtrOrNull(tec_to_node_, src_equiv_class);
-      CHECK_NOTNULL(ec_src_ptr);
-      FlowGraphArc* arc = flow_graph_->AddArc(ec_src_ptr->id_, ec_node->id_);
-      arc->cost_ =
-        cost_model_->EquivClassToEquivClass(src_equiv_class, equiv_class);
-      // We set the capacity to the max of the source EC's incoming capacity and
-      // the destination EC's outgoing capacity. This works, although it's
-      // not optimal: we could use the min, to give tighter bounds to the
-      // solver, but doing so would require us to dynamically update the
-      // capacities at runtime, which we currently don't.
-      // Such dynamic updates may, however, still be required even with the
-      // current model when more than two layers of ECs are connected.
-      // ---
-      // The capacity on the arc is max(sum(src_in_caps), sum(dst_out_caps))
-      arc->cap_upper_bound_ = CapacityBetweenECNodes(*ec_src_ptr, *ec_node);
-      DIMACSChange *chg = new DIMACSNewArc(*arc);
-      chg->set_comment("AddArcsFromToOtherEquivNodes: incoming");
-      dimacs_stats_->UpdateStats(ADD_ARC_BETWEEN_EQUIV_CLASS);
-      AddGraphChange(chg);
-    }
-    delete equiv_class_to_connect.first;
-  }
-  // Add outgoing arcs.
-  if (equiv_class_to_connect.second) {
-    for (auto& dst_equiv_class : *equiv_class_to_connect.second) {
+  if (to_equiv_class) {
+    for (auto& dst_equiv_class : *to_equiv_class) {
       FlowGraphNode* ec_dst_ptr = FindPtrOrNull(tec_to_node_, dst_equiv_class);
-      CHECK_NOTNULL(ec_dst_ptr);
+      if (!ec_dst_ptr) {
+        ec_dst_ptr = AddEquivClassNode(dst_equiv_class);
+      }
       FlowGraphArc* arc = flow_graph_->AddArc(ec_node->id_, ec_dst_ptr->id_);
       arc->cost_ =
         cost_model_->EquivClassToEquivClass(equiv_class, dst_equiv_class);
@@ -155,7 +127,7 @@ void FlowGraphManager::AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
       dimacs_stats_->UpdateStats(ADD_ARC_BETWEEN_EQUIV_CLASS);
       AddGraphChange(chg);
     }
-    delete equiv_class_to_connect.second;
+    delete to_equiv_class;
   }
 }
 
@@ -401,22 +373,15 @@ void FlowGraphManager::UpdateArcsFromEquivClasses(
       dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_EQUIV_CLASS);
       AddGraphChange(chg);
     }
-    pair<vector<EquivClass_t>*,
-         vector<EquivClass_t>*> equiv_class_to_connect =
+    vector<EquivClass_t>* to_equiv_class =
       cost_model_->GetEquivClassToEquivClassesArcs(ec_node->ec_id_);
-    if (equiv_class_to_connect.first) {
-      delete equiv_class_to_connect.first;
-    }
-    if (equiv_class_to_connect.second) {
-      // TODO(ionel): We assume that all the destination equivalence classes
-      // have already been added to the graph. If a cost model needs to add
-      // equiv classes as a result of updating an equivalence class then
-      // we need to update the code below. Ideally, we would change
-      // AddEquivClassNode() to AddOrUpdateEquivClassNode().
-      for (auto& dst_equiv_class : *equiv_class_to_connect.second) {
+    if (to_equiv_class) {
+      for (auto& dst_equiv_class : *to_equiv_class) {
         FlowGraphNode* ec_dst_ptr =
           FindPtrOrNull(tec_to_node_, dst_equiv_class);
-        CHECK_NOTNULL(ec_dst_ptr);
+        if (!ec_dst_ptr) {
+          ec_dst_ptr = AddEquivClassNode(dst_equiv_class);
+        }
         if (ecs_to_update->find(dst_equiv_class) == ecs_to_update->end()) {
           // Only add the EC to the queue if it is not in the queue and
           // we haven't already visited it.
@@ -449,8 +414,8 @@ void FlowGraphManager::UpdateArcsFromEquivClasses(
           }
         }
       }
-      RemoveInvalidECToECArcs(*ec_node, *equiv_class_to_connect.second);
-      delete equiv_class_to_connect.second;
+      RemoveInvalidECToECArcs(*ec_node, *to_equiv_class);
+      delete to_equiv_class;
     }
   }
 }

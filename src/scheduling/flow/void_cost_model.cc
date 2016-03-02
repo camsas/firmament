@@ -111,9 +111,9 @@ vector<ResourceID_t>* VoidCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   return NULL;
 }
 
-pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    VoidCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
-  return pair<vector<EquivClass_t>*, vector<EquivClass_t>*>(NULL, NULL);
+vector<EquivClass_t>* VoidCostModel::GetEquivClassToEquivClassesArcs(
+    EquivClass_t tec) {
+  return NULL;
 }
 
 void VoidCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {

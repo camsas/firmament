@@ -150,11 +150,10 @@ vector<ResourceID_t>* RandomCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   return prefered_res;
 }
 
-pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    RandomCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t ec) {
+vector<EquivClass_t>* RandomCostModel::GetEquivClassToEquivClassesArcs(
+    EquivClass_t ec) {
   // Not used in the random cost model
-  return pair<vector<EquivClass_t>*,
-              vector<EquivClass_t>*>(NULL, NULL);
+  return NULL;
 }
 
 void RandomCostModel::AddMachine(

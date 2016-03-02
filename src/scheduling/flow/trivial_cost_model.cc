@@ -131,10 +131,10 @@ vector<ResourceID_t>* TrivialCostModel::GetTaskPreferenceArcs(
   return prefered_res;
 }
 
-pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    TrivialCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t tec) {
+vector<EquivClass_t>* TrivialCostModel::GetEquivClassToEquivClassesArcs(
+    EquivClass_t tec) {
   // The trivial cost model does not have any interconnected ECs.
-  return pair<vector<EquivClass_t>*, vector<EquivClass_t>*>(NULL, NULL);
+  return NULL;
 }
 
 void TrivialCostModel::AddMachine(

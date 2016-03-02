@@ -123,10 +123,9 @@ vector<ResourceID_t>* OctopusCostModel::GetTaskPreferenceArcs(
   return NULL;
 }
 
-pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
-    OctopusCostModel::GetEquivClassToEquivClassesArcs(EquivClass_t ec) {
-  return pair<vector<EquivClass_t>*,
-              vector<EquivClass_t>*>(NULL, NULL);
+vector<EquivClass_t>* OctopusCostModel::GetEquivClassToEquivClassesArcs(
+    EquivClass_t ec) {
+  return NULL;
 }
 
 void OctopusCostModel::AddMachine(
