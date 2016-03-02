@@ -69,14 +69,17 @@ class FlowGraphManagerTest : public ::testing::Test {
 };
 
 TEST_F(FlowGraphManagerTest, AddOrUpdateJobNodes) {
+  shared_ptr<ResourceMap_t> resource_map =
+    shared_ptr<ResourceMap_t>(new ResourceMap_t);
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
   TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
+  FlowGraphManager graph_manager(
+      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
+      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   graph_manager.AddResourceTopology(&rtn_root);
@@ -117,14 +120,17 @@ TEST_F(FlowGraphManagerTest, AddOrUpdateJobNodes) {
 }
 
 TEST_F(FlowGraphManagerTest, AddOrUpdateResourceNode) {
+  shared_ptr<ResourceMap_t> resource_map =
+    shared_ptr<ResourceMap_t>(new ResourceMap_t);
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
   TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
+  FlowGraphManager graph_manager(
+      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
+      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   graph_manager.AddResourceTopology(&rtn_root);
@@ -147,14 +153,17 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob) {
   // We have to set the solver not to be cs2 so that we actually adjust
   // NumNodes when we delete a node.
   FLAGS_flow_scheduling_solver = "flowlessly";
+  shared_ptr<ResourceMap_t> resource_map =
+    shared_ptr<ResourceMap_t>(new ResourceMap_t);
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
   TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
+  FlowGraphManager graph_manager(
+      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
+      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   uint64_t num_nodes = graph_manager.flow_graph()->NumNodes();
@@ -212,14 +221,17 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob) {
 }
 
 TEST_F(FlowGraphManagerTest, DeleteResourceNode) {
+  shared_ptr<ResourceMap_t> resource_map =
+    shared_ptr<ResourceMap_t>(new ResourceMap_t);
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
   TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
+  FlowGraphManager graph_manager(
+      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
+      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   graph_manager.AddResourceTopology(&rtn_root);
@@ -241,6 +253,8 @@ TEST_F(FlowGraphManagerTest, DeleteResourceNode) {
 TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopo) {
   // We have to set the solver not to be cs2 so that we actually adjust
   // NumNodes when we delete a node.
+  shared_ptr<ResourceMap_t> resource_map =
+    shared_ptr<ResourceMap_t>(new ResourceMap_t);
   FLAGS_flow_scheduling_solver = "flowlessly";
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
@@ -248,8 +262,9 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopo) {
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
   TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
+  FlowGraphManager graph_manager(
+      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
+      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   uint64_t num_nodes = graph_manager.flow_graph()->NumNodes();
@@ -287,14 +302,17 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopo) {
 
 // Add simple resource topology to graph
 TEST_F(FlowGraphManagerTest, SimpleResourceTopo) {
+  shared_ptr<ResourceMap_t> resource_map =
+    shared_ptr<ResourceMap_t>(new ResourceMap_t);
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
   TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
+  FlowGraphManager graph_manager(
+      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
+      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   graph_manager.AddResourceTopology(&rtn_root);
@@ -302,14 +320,17 @@ TEST_F(FlowGraphManagerTest, SimpleResourceTopo) {
 
 // Test correct increment/decrement of unscheduled aggregator capacities.
 TEST_F(FlowGraphManagerTest, UnschedAggCapacityAdjustment) {
+  shared_ptr<ResourceMap_t> resource_map =
+    shared_ptr<ResourceMap_t>(new ResourceMap_t);
   shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
     new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
   DIMACSChangeStats dimacs_stats;
   WallTime wall_time;
   TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(new TrivialCostModel(task_map, leaf_res_ids),
-                                 leaf_res_ids, &wall_time, &tg, &dimacs_stats);
+  FlowGraphManager graph_manager(
+      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
+      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
   graph_manager.AddResourceTopology(&rtn_root);
