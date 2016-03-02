@@ -108,12 +108,18 @@ class ProcFSMonitor {
   // Find a line matching the regular expression provided
   vector<string>* FindMatchingLine(const string& regexp, const string& data);
   void GetStatsForPID(pid_t pid, ProcessStatistics_t* stats);
-  inline void readone(FILE* input, uint64_t *x) { fscanf(input, "%ju ", x); }
-  inline void readunsigned(FILE* input, uint64_t *x) {
-    fscanf(input, "%ju ", x);
+  inline void readone(FILE* input, uint64_t *x) {
+    CHECK_EQ(fscanf(input, "%ju ", x), 1);
   }
-  inline void readstr(FILE* input, char *x) {  fscanf(input, "%s ", x); }
-  inline void readchar(FILE* input, char *x) {  fscanf(input, "%c ", x); }
+  inline void readunsigned(FILE* input, uint64_t *x) {
+    CHECK_EQ(fscanf(input, "%ju ", x), 1);
+  }
+  inline void readstr(FILE* input, char *x) {
+    CHECK_EQ(fscanf(input, "%s ", x), 1);
+  }
+  inline void readchar(FILE* input, char *x) {
+    CHECK_EQ(fscanf(input, "%c ", x), 1);
+  }
   inline void skip(FILE* input, int64_t num) {  fseek(input, num, SEEK_CUR); }
 };
 

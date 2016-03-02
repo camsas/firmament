@@ -61,7 +61,7 @@ class ProcFSMachine {
   NetworkStatistics_t GetNetworkStats();
 
   inline void readunsigned(FILE* input, uint64_t *x) {
-    fscanf(input, "%ju ", x);
+    CHECK_EQ(fscanf(input, "%ju ", x), 1);
   }
 
   vector<CPUStatistics_t> cpu_stats_;
