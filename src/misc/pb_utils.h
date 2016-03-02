@@ -26,6 +26,10 @@ void DFSTraverseResourceProtobufTreeReturnRTND(
     ResourceTopologyNodeDescriptor* pb,
     boost::function<void(ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
 
+void DFSTraversePostOrderResourceProtobufTreeReturnRTND(
+    ResourceTopologyNodeDescriptor* pb,
+    boost::function<void(ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
+
 // Traversal implementation taking a callback that itself takes a
 // ResourceTopologyNodeDescriptor as its argument.
 void DFSTraverseResourceProtobufTreeReturnRTND(
