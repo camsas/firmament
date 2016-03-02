@@ -175,7 +175,7 @@ namespace sim {
 
   TaskResourceUsage GoogleTraceTaskProcessor::BuildTaskResourceUsage(
       vector<string>& line_cols) {
-    TaskResourceUsage task_resource_usage = {};
+    TaskResourceUsage task_resource_usage;
     // Set resource value to -1 if not present. We can then later not take it
     // into account when we compute the statistics.
     for (uint32_t index = 5; index < 17; index++) {
@@ -212,7 +212,7 @@ namespace sim {
     if (event_type == TASK_SCHEDULE) {
       TaskRuntime* task_runtime_ptr = FindOrNull(*tasks_runtime, task_id);
       if (task_runtime_ptr == NULL) {
-        TaskRuntime task_runtime = {};
+        TaskRuntime task_runtime;
         task_runtime.start_time_ = timestamp;
         task_runtime.last_schedule_time_ = timestamp;
         PopulateTaskRuntime(&task_runtime, line_cols);
@@ -229,7 +229,7 @@ namespace sim {
       if (task_runtime_ptr == NULL) {
         // First event for this task. This means that the task was running
         // from the beginning of the trace.
-        TaskRuntime task_runtime = {};
+        TaskRuntime task_runtime;
         task_runtime.last_schedule_time_ = -1;  // unscheduled
         task_runtime.start_time_ = 0;
         task_runtime.num_runs_ = 1;
@@ -250,7 +250,7 @@ namespace sim {
       TaskRuntime* task_runtime_ptr = FindOrNull(*tasks_runtime, task_id);
       if (task_runtime_ptr == NULL) {
         // First event for this task.
-        TaskRuntime task_runtime = {};
+        TaskRuntime task_runtime;
         task_runtime.last_schedule_time_ = -1;  // unscheduled
         task_runtime.start_time_ = 0;
         task_runtime.num_runs_ = 1;
@@ -285,7 +285,7 @@ namespace sim {
       if (task_runtime_ptr == NULL) {
         // First event for this task. Task has been running from the
         // beginning of the trace.
-        TaskRuntime task_runtime = {};
+        TaskRuntime task_runtime;
         InsertIfNotPresent(tasks_runtime, task_id, task_runtime);
       }
     }

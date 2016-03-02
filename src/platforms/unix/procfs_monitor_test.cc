@@ -57,7 +57,7 @@ TEST_F(ProcFSMonitorTest, SimpleProcessStatsTest) {
   const ProcFSMonitor::ProcessStatistics_t* stats =
       pfsm_.ProcessInformation(pid, NULL);
   CHECK_EQ(stats->pid, pid);
-  malloc(getpagesize());
+  CHECK_NOTNULL(malloc(getpagesize()));
   // Should have more pages allocated now...
   CHECK_LT(stats->rss, pfsm_.ProcessInformation(pid, NULL)->rss);
 }

@@ -302,7 +302,6 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
                                       bool debug,
                                       bool default_args,
                                       const string& tasklog) {
-  char* perf_prefix;
   pid_t pid;
   /*int pipe_to[2];    // pipe to feed input data to task
   int pipe_from[3];  // pipe to receive output data from task
@@ -323,12 +322,12 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
     // task debugging is active, so reserve extra space for the
     // gdb invocation prefix.
     argv.reserve(args.size() + (default_args ? 4 : 3));
-    perf_prefix = AddDebuggingToCommandLine(&argv);
+    AddDebuggingToCommandLine(&argv);
   } else if (perf_monitoring) {
     // performance monitoring is active, so reserve extra space for the
     // "perf" invocation prefix.
     argv.reserve(args.size() + (default_args ? 11 : 10));
-    perf_prefix = AddPerfMonitoringToCommandLine(env, &argv);
+    AddPerfMonitoringToCommandLine(env, &argv);
   } else {
     // no performance monitoring, so we only need to reserve space for the
     // default and NULL args
@@ -393,7 +392,7 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
         PLOG(FATAL) << "Failed to close stderr FD in child";
 
       // Change to task's working directory
-      chdir(env["FLAGS_task_data_dir"].c_str());
+      CHECK_EQ(chdir(env["FLAGS_task_data_dir"].c_str()), 0);
 
       // Close the open FDs in the child before exec-ing, so that the task does
       // not inherit all of the coordinator's sockets and FDs.

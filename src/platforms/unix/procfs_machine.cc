@@ -247,8 +247,8 @@ MemoryStatistics_t ProcFSMachine::GetMemoryStats() {
   while (!feof(mem_stat_fd)) {
     char label[100];
     uint64_t val = 0;
-    fscanf(mem_stat_fd, "%s", label);
-    fscanf(mem_stat_fd, "%ju", &val);
+    CHECK_EQ(fscanf(mem_stat_fd, "%s", label), 1);
+    CHECK_EQ(fscanf(mem_stat_fd, "%ju", &val), 1);
     if (strncmp(label, "MemTotal:", 100) == 0) {
       mem_stats.mem_total = val * 1024;
     } else if (strncmp(label, "MemFree:", 100) == 0) {

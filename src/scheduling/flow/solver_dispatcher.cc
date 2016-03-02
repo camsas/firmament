@@ -199,7 +199,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
 
   // Now run the solver
   vector<string> args;
-  pid_t solver_pid;
+  pid_t solver_pid = 0;
   pthread_t logger_thread = -1;
   // If the solver hasn't executed or if we're not running in incremental mode.
   if (!solver_ran_once_ || !FLAGS_incremental_flow) {

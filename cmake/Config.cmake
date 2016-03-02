@@ -12,5 +12,3 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 else()
   # other compilers, usually g++
 endif()
-
-

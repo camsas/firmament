@@ -59,7 +59,6 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
       return;
     // Otherwise, let's make sure we have an outstanding async receive request
     // for each fo them.
-    bool any_outstanding = false;
     {
       boost::lock_guard<boost::mutex> envel_lock(channel_recv_envelopes_mutex_);
       for (__typeof__(endpoint_channel_map_.begin()) chan_iter =
@@ -79,7 +78,6 @@ class StreamSocketsAdapter : public firmament::MessagingAdapterInterface<T>,
                                   boost::asio::placeholders::error,
                                   boost::asio::placeholders::bytes_transferred,
                                   chan));
-          any_outstanding = true;
         }
       }
     }
