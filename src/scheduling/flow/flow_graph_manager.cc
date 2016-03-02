@@ -332,21 +332,23 @@ void FlowGraphManager::AddResourceEquivClasses(FlowGraphNode* res_node) {
 
       FlowGraphArc* ec_arc = FindPtrOrNull(res_node->incoming_arc_map_,
                                            ec_node_ptr->id_);
-      if (!ec_arc) {
-        ec_arc = flow_graph_->AddArc(ec_node_ptr->id_, res_node->id_);
-      }
       pair<Cost_t, uint64_t> cost_and_cap =
         cost_model_->EquivClassToResourceNode(equiv_class, res_id);
-      ec_arc->cap_upper_bound_ = cost_and_cap.second;
-      ec_arc->cost_ = cost_and_cap.first;
-      VLOG(2) << "    Adding arc from EC node " << ec_node_ptr->id_
-              << " to " << res_node->id_ << " at cap "
-              << ec_arc->cap_upper_bound_ << ", cost " << ec_arc->cost_ << "!";
-
-      DIMACSChange *chg = new DIMACSNewArc(*ec_arc);
-      chg->set_comment("AddResourceEquivClasses: from EC to RES");
-      dimacs_stats_->UpdateStats(ADD_ARC_EQUIV_CLASS_TO_RES);
-      AddGraphChange(chg);
+      if (cost_and_cap.second > 0) {
+        if (!ec_arc) {
+          ec_arc = flow_graph_->AddArc(ec_node_ptr->id_, res_node->id_);
+        }
+        ec_arc->cap_upper_bound_ = cost_and_cap.second;
+        ec_arc->cost_ = cost_and_cap.first;
+        VLOG(2) << "    Adding arc from EC node " << ec_node_ptr->id_
+                << " to " << res_node->id_ << " at cap "
+                << ec_arc->cap_upper_bound_ << ", cost "
+                << ec_arc->cost_ << "!";
+        DIMACSChange *chg = new DIMACSNewArc(*ec_arc);
+        chg->set_comment("AddResourceEquivClasses: from EC to RES");
+        dimacs_stats_->UpdateStats(ADD_ARC_EQUIV_CLASS_TO_RES);
+        AddGraphChange(chg);
+      }
     }
   }
   delete equiv_classes;
@@ -483,13 +485,25 @@ void FlowGraphManager::AddOrUpdateEquivClassPrefArcs(
                 << arc->cap_upper_bound_ << ", cost " << arc->cost_ << "!";
         ec_arcs->push_back(arc);
         dimacs_stats_->UpdateStats(ADD_ARC_EQUIV_CLASS_TO_RES);
+      } else if (cost_and_cap.second == 0) {
+        VLOG(1) << "Removing arc from EC -> resource arc from " << ec
+                << " to " << arc->dst_node_->resource_id_
+                << " due to lack of capacity";
+        arc->cap_lower_bound_ = 0;
+        arc->cap_upper_bound_ = 0;
+        DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
+        chg->set_comment("AddOrUpdateEquivClassArcs/outgoing");
+        dimacs_stats_->UpdateStats(DEL_ARC_EQUIV_CLASS_TO_RES);
+        AddGraphChange(chg);
+        flow_graph_->DeleteArc(arc);
       } else if (static_cast<uint64_t>(arc_cost) != arc->cost_) {
         // It already exists, but its cost has changed
         VLOG(1) << "Updating cost on EC -> resource arc from " << ec
                 << " to " << arc->dst_node_->resource_id_ << " from "
                 << arc->cost_ << " to " << arc_cost;
         Cost_t old_cost = arc->cost_;
-        flow_graph_->ChangeArcCost(arc, arc_cost);
+        flow_graph_->ChangeArc(arc, arc->cap_lower_bound_, cost_and_cap.second,
+                               arc_cost);
         DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
         chg->set_comment("AddOrUpdateEquivClassArcs/outgoing");
         dimacs_stats_->UpdateStats(CHG_ARC_EQUIV_CLASS_TO_RES);
