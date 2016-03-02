@@ -60,6 +60,9 @@ class VoidCostModel : public CostModelInterface {
   shared_ptr<ResourceMap_t> resource_map_;
   // Map of tasks present in the system, initialised externally
   shared_ptr<TaskMap_t> task_map_;
+  // Mapping betweeen machine res id and resource topology node descriptor.
+  unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
+    boost::hash<boost::uuids::uuid>> machine_to_rtnd_;
 };
 
 }  // namespace firmament

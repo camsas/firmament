@@ -100,7 +100,11 @@ vector<EquivClass_t>* VoidCostModel::GetResourceEquivClasses(
 
 vector<ResourceID_t>* VoidCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t tec) {
-  return NULL;
+  vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
+  for (auto& res_id_rtnd : machine_to_rtnd_) {
+    prefered_res->push_back(res_id_rtnd.first);
+  }
+  return prefered_res;
 }
 
 vector<ResourceID_t>* VoidCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
@@ -113,12 +117,19 @@ pair<vector<EquivClass_t>*, vector<EquivClass_t>*>
 }
 
 void VoidCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  CHECK_EQ(rtnd_ptr->resource_desc().type(),
+           ResourceDescriptor::RESOURCE_MACHINE);
+  // Add mapping between resource id and resource topology node.
+  InsertIfNotPresent(&machine_to_rtnd_,
+                     ResourceIDFromString(rtnd_ptr->resource_desc().uuid()),
+                     rtnd_ptr);
 }
 
 void VoidCostModel::AddTask(TaskID_t task_id) {
 }
 
 void VoidCostModel::RemoveMachine(ResourceID_t res_id) {
+  CHECK_EQ(machine_to_rtnd_.erase(res_id), 1);
 }
 
 void VoidCostModel::RemoveTask(TaskID_t task_id) {
