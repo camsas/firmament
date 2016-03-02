@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_036f86c6",
+        "filename": ".travis.yml",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-02T15:44:17Z",
+      "side": 0,
+      "message": "Why is this not required any more?",
+      "revId": "f0f38b7ccce68cc2e8ec25559882e4e3ace23407",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
