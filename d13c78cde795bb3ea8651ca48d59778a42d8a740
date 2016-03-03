@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_e87242e4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-03T16:08:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_a8f3ea71",
+      "revId": "d13c78cde795bb3ea8651ca48d59778a42d8a740",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_68e2d2a0",
         "filename": "/COMMIT_MSG",
         "patchSetId": 1
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_c86d8606",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-03T16:08:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_68e2d2a0",
+      "range": {
+        "startLine": 10,
+        "startChar": 47,
+        "endLine": 12,
+        "endChar": 43
+      },
+      "revId": "d13c78cde795bb3ea8651ca48d59778a42d8a740",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_68f9f24c",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 1
@@ -53,6 +95,24 @@
       "writtenOn": "2016-03-03T16:02:04Z",
       "side": 1,
       "message": "This is fine for now, but it seems like these two methods could be unified? They seem to duplicate a lot of code, and we can tell whether an arc points to an EC or a resource, I think?",
+      "revId": "d13c78cde795bb3ea8651ca48d59778a42d8a740",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_88bc6e6e",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-03T16:08:18Z",
+      "side": 1,
+      "message": "We discussed offline.",
+      "parentUuid": "5a72e520_68f9f24c",
       "revId": "d13c78cde795bb3ea8651ca48d59778a42d8a740",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
