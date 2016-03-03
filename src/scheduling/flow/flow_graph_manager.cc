@@ -925,7 +925,9 @@ void FlowGraphManager::RemoveInvalidECToECArcs(
   unordered_set<FlowGraphArc*> to_delete;
   for (auto& dst_arc : ec_node.outgoing_arc_map_) {
     EquivClass_t target_ec = dst_arc.second->dst_node_->ec_id_;
-    if (ec_preferences.find(target_ec) == ec_preferences.end()) {
+    // Remove if the target is an EC node and it's not in the preferences vector
+    if (target_ec != 0 &&
+        ec_preferences.find(target_ec) == ec_preferences.end()) {
       to_delete.insert(dst_arc.second);
       VLOG(1) << "Deleting no-longer-current arc from EC " << ec_node.ec_id_
               << " to EC " << target_ec;
@@ -951,7 +953,10 @@ void FlowGraphManager::RemoveInvalidPreferenceArcs(
   unordered_set<FlowGraphArc*> to_delete;
   for (auto& dst_arc : ec_node.outgoing_arc_map_) {
     ResourceID_t target_rid = dst_arc.second->dst_node_->resource_id_;
-    if (res_preferences.find(target_rid) == res_preferences.end()) {
+    // Remove if the target is a resource node and it's not in the preferences
+    // vector
+    if (!target_rid.is_nil() &&
+        res_preferences.find(target_rid) == res_preferences.end()) {
       // We need to remove this arc.
       to_delete.insert(dst_arc.second);
       VLOG(1) << "Deleting no-longer-current arc from EC " << ec_node.ec_id_
