@@ -34,3 +34,4 @@ set(GTEST_ROOT ${gtest_BINARY_DIR})
 
 # The "src" subdir has all source code
 subdirs(src)
+subdirs(scripts/job)
