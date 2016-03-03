@@ -153,11 +153,11 @@ void Simulator::Run() {
     FLAGS_incremental_flow = FLAGS_run_incremental_scheduler;
     FLAGS_only_read_assignment_changes = true;
     FLAGS_flow_scheduling_binary =
-        SOLVER_DIR "/flowlessly-git/build/flow_scheduler";
+        SOLVER_DIR "/flowlessly/src/flowlessly/build/flow_scheduler";
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
     FLAGS_only_read_assignment_changes = false;
-    FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2-git/cs2.exe";
+    FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2/src/cs2/cs2";
   } else if (!FLAGS_solver.compare("custom")) {
   }
 
