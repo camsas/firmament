@@ -65,7 +65,8 @@ FlowScheduler::FlowScheduler(
       last_updated_time_dependent_costs_(0ULL),
       leaf_res_ids_(new unordered_set<ResourceID_t,
                       boost::hash<boost::uuids::uuid>>),
-      dimacs_stats_(new DIMACSChangeStats) {
+      dimacs_stats_(new DIMACSChangeStats),
+      first_solver_run_(true) {
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
           << FLAGS_flow_scheduling_cost_model << "\"";
@@ -406,8 +407,14 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     << scheduler_stats->scheduler_runtime;
   // Play all the simulation events that happened while the solver was running.
   if (event_notifier_) {
-    event_notifier_->OnSchedulingDecisionsCompletion(
-        scheduler_start_timestamp + scheduler_stats->scheduler_runtime);
+    if (first_solver_run_) {
+      event_notifier_->OnSchedulingDecisionsCompletion(
+         scheduler_start_timestamp);
+      first_solver_run_ = false;
+    } else {
+      event_notifier_->OnSchedulingDecisionsCompletion(
+          scheduler_start_timestamp + scheduler_stats->scheduler_runtime);
+    }
   }
   // Solver's done, let's post-process the results.
   multimap<uint64_t, uint64_t>::iterator it;

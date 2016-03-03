@@ -122,6 +122,7 @@ class FlowScheduler : public EventDrivenScheduler {
   // tasks.
   set<uint64_t> tasks_completed_during_solver_run_;
   DIMACSChangeStats* dimacs_stats_;
+  bool first_solver_run_;
 };
 
 }  // namespace scheduler
