@@ -155,10 +155,11 @@ set(TASK_LIB_SRCS
 
 add_library(task_lib_inject SHARED ${TASK_LIB_SRCS})
 
-add_dependencies(task_lib_inject gtest spooky-hash thread-safe-stl-containers)
+add_dependencies(task_lib_inject glog gflags gtest spooky-hash
+  thread-safe-stl-containers)
 
 target_link_libraries(task_lib_inject LINK_PUBLIC ${spooky-hash_BINARY}
-  ${Firmament_SHARED_LIBRARIES} hwloc protobuf)
+  ${Firmament_SHARED_LIBRARIES} glog gflags hwloc protobuf)
 
 ###############################################################################
 # Worker

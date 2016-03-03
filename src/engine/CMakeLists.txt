@@ -35,6 +35,10 @@ set(ENGINE_TESTS
   engine/executors/topology_manager_test.cc
   )
 
+set(TASK_LIB_SRC
+  engine/task_lib.cc
+)
+
 ###############################################################################
 # Unit tests
 

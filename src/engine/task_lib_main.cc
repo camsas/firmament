@@ -32,15 +32,16 @@ void LaunchTasklib() {
   // Read these important variables from the environment.
   sleep(1);
 
-  string sargs = "--logtostderr";
   string progargs = "task_lib";
   boost::thread::id task_thread_id = boost::this_thread::get_id();
 
-  char* argv[2];
+  char* argv[1];
   argv[0] = const_cast<char*>(progargs.c_str());
 
-  argv[1] = const_cast<char*>(sargs.c_str());
-    firmament::common::InitFirmament(2, argv);
+  // Ensure that we get log output from TaskLib
+  setenv("GLOG_logtostderr", "1", 1);
+
+  firmament::common::InitFirmament(1, argv);
 
   // Set process/thread name for debugging
   prctl(PR_SET_NAME, "TaskLibMonitor", 0, 0, 0);
