@@ -44,7 +44,7 @@ add_library(sim OBJECT ${SIM_SRC} ${SIM_DFS_SRC} ${SIM_PROTOBUF_SRCS}
   ${BASE_PROTOBUF_HDRS} ${MESSAGES_PROTOBUF_HDRS} ${SCHEDULING_PROTOBUF_HDRS})
 # XXX(malte): get rid of this
 target_compile_definitions(sim PRIVATE
-  -DSOLVER_DIR="${Firmament_BINARY_DIR}/third-party")
+  -DSOLVER_DIR="${Firmament_BINARY_DIR}/third_party")
 add_dependencies(sim gtest spooky-hash thread-safe-stl-containers)
 add_library(sim_dfs OBJECT ${SIM_DFS_SRC} ${SIM_PROTOBUF_SRCS}
   ${BASE_PROTOBUF_HDRS})
@@ -133,7 +133,7 @@ add_executable(simulator ${SIMULATOR_SRCS}
 add_dependencies(simulator gtest spooky-hash thread-safe-stl-containers)
 
 target_compile_definitions(simulator PRIVATE
-  -DSOLVER_DIR="${Firmament_BINARY_DIR}/third-party")
+  -DSOLVER_DIR="${Firmament_BINARY_DIR}/third_party")
 
 target_link_libraries(simulator LINK_PUBLIC ${spooky-hash_BINARY}
   ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc jansson protobuf)

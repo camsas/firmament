@@ -30,7 +30,8 @@ DEFINE_string(custom_flow_scheduling_args, "", "Arguments for custom solver. "
 DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
-DEFINE_string(flowlessly_binary, "ext/flowlessly-git/build/flow_scheduler",
+DEFINE_string(flowlessly_binary,
+              "build/third_party/flowlessly/src/flowlessly/build/flow_scheduler",
               "Path to the flowlessly binary.");
 DEFINE_string(flowlessly_algorithm, "fast_cost_scaling",
               "Algorithm to be used by flowlessly. Options: cycle_cancelling |"
@@ -38,7 +39,8 @@ DEFINE_string(flowlessly_algorithm, "fast_cost_scaling",
 DEFINE_string(flowlessly_initial_run_algorithm, "",
               "Algorithm to be used for the first solver run. If empty then "
               "flowlessly_algorithm is used.");
-DEFINE_string(cs2_binary, "ext/cs2-4.6/cs2.exe", "Path to the cs2 binary.");
+DEFINE_string(cs2_binary, "build/third_party/cs2/src/cs2/cs2",
+              "Path to the cs2 binary.");
 DEFINE_bool(log_solver_stderr, false, "Set to true to log solver's stderr.");
 
 namespace firmament {
