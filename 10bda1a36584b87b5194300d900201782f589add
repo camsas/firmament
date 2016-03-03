@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_a894ca37",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-03T15:28:42Z",
+      "side": 1,
+      "message": "I assume you\u0027ve double-checked that this still generates the correct graph, i.e. that the TEC -\u003e MEC arcs are still created correctly? (Previously, we return the arc both (a) as an outgoing arc if GetEquivClassToEquivClassesArcs was called on the TEC, and (b) as an incoming arc if GetEquivClassToEquivClassesArcs was called on the MEC.)",
+      "range": {
+        "startLine": 445,
+        "startChar": 0,
+        "endLine": 446,
+        "endChar": 15
+      },
+      "revId": "10bda1a36584b87b5194300d900201782f589add",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
