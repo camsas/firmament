@@ -324,6 +324,7 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr,
 uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
                                      SchedulerStats* scheduler_stats) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  CHECK_NOTNULL(scheduler_stats);
   uint64_t num_scheduled_tasks = 0;
   boost::timer::cpu_timer total_scheduler_timer;
   vector<JobDescriptor*> jds_with_runnables;
