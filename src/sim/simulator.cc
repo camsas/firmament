@@ -85,6 +85,7 @@ namespace sim {
 Simulator::Simulator() {
   event_manager_ = new EventManager(&simulated_time_);
   bridge_ = new SimulatorBridge(event_manager_, &simulated_time_);
+  first_scheduler_run_ = true;
 }
 
 Simulator::~Simulator() {
@@ -134,7 +135,6 @@ void Simulator::ReplaySimulation() {
       run_scheduler_at = ScheduleJobsHelper(run_scheduler_at);
       // We don't have to set the time to the previous value because
       // we already processed the events up to run_scheduler_at.
-      CHECK_NE(old_run_scheduler_at, run_scheduler_at);
       num_scheduling_rounds++;
     } else {
       bridge_->ProcessSimulatorEvents(FLAGS_runtime);
@@ -176,8 +176,13 @@ uint64_t Simulator::ScheduleJobsHelper(uint64_t run_scheduler_at) {
   scheduler::SchedulerStats scheduler_stats;
   bridge_->ScheduleJobs(&scheduler_stats);
   alarm(0);
-  return event_manager_->GetTimeOfNextSchedulerRun(
-      run_scheduler_at, scheduler_stats.scheduler_runtime);
+  if (first_scheduler_run_ && FLAGS_batch_step == 0) {
+    first_scheduler_run_ = false;
+    return run_scheduler_at;
+  } else {
+    return event_manager_->GetTimeOfNextSchedulerRun(
+        run_scheduler_at, scheduler_stats.scheduler_runtime);
+  }
 }
 
 void Simulator::SchedulerTimeoutHandler(int sig) {
