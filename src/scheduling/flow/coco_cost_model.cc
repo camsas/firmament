@@ -932,12 +932,6 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
   }
   if (accumulator->rd_ptr_ && other->rd_ptr_) {
     AccumulateResourceStats(accumulator->rd_ptr_, other->rd_ptr_);
-    accumulator->rd_ptr_->set_num_running_tasks_below(
-        accumulator->rd_ptr_->num_running_tasks_below() +
-        other->rd_ptr_->num_running_tasks_below());
-    accumulator->rd_ptr_->set_num_slots_below(
-        accumulator->rd_ptr_->num_slots_below() +
-        other->rd_ptr_->num_slots_below());
   }
   return accumulator;
 }
