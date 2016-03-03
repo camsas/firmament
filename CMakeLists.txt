@@ -25,6 +25,9 @@ include(Options)
 # Linting targets
 include(LintTargets)
 
+# Docker target (image build)
+include(DockerTargets)
+
 # Unit tests
 enable_testing()
 set(GTEST_ROOT ${gtest_BINARY_DIR})
