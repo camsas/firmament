@@ -439,21 +439,9 @@ uint64_t FlowScheduler::RunSchedulingIteration(
       continue;
     }
     VLOG(2) << "Bind " << it->first << " to " << it->second << endl;
-    // Some sanity checks
-    FlowGraphNode* src = flow_graph_manager_->flow_graph()->Node(it->first);
-    FlowGraphNode* dst = flow_graph_manager_->flow_graph()->Node(it->second);
-    // Source must be a task node as this point
-    CHECK(src->type_ == FlowNodeType::SCHEDULED_TASK ||
-          src->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-          src->type_ == FlowNodeType::ROOT_TASK);
-    // Destination must be a PU node
-    CHECK(dst->type_ == FlowNodeType::PU);
-    // Get the TD and RD for the source and destination
-    TaskDescriptor* task = FindPtrOrNull(*task_map_, src->task_id_);
-    CHECK_NOTNULL(task);
-
-    solver_dispatcher_->NodeBindingToSchedulingDelta(
-        *task, *dst->rd_ptr_, &task_bindings_, &deltas);
+    flow_graph_manager_->NodeBindingToSchedulingDeltas(it->first, it->second,
+                                                       &task_bindings_,
+                                                       &deltas);
   }
   // Freeing the mappings because they're not used below.
   delete task_mappings;

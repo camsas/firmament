@@ -50,8 +50,8 @@ struct FlowGraphNode {
   ResourceID_t resource_id_;
   // The descriptor of the resource that this node represents.
   ResourceDescriptor* rd_ptr_;
-  // The ID of the task represented by this node.
-  TaskID_t task_id_;
+  // The descriptor of the task represented by this node.
+  TaskDescriptor* td_ptr_;
   // the ID of the equivalence class represented by this node.
   EquivClass_t ec_id_;
   // Free-form comment for debugging purposes (used to label special nodes)
