@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_3a3c9be2",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-04T23:49:12Z",
+      "side": 1,
+      "message": "This FGM is shared between all tests -- that\u0027s quite dangerous unless there\u0027s a way to reset its state at the beginning of each test. The GTest design discourages the use of such shared objects. Is there a reason why we must share it?",
+      "revId": "4ac898fa6d98f0d15029a9bc84d632d209377b39",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
