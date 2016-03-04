@@ -561,7 +561,7 @@ void SimulatorBridge::SetupMachine(
     const string& old_parent_id = rtnd->parent_id();
     string* new_parent_id = FindOrNull(uuid_conversion_map_, rtnd->parent_id());
     CHECK_NOTNULL(new_parent_id);
-    VLOG(2) << "Resetting parent UUID for " << rtnd->resource_desc().uuid()
+    VLOG(3) << "Resetting parent UUID for " << rtnd->resource_desc().uuid()
             << ", parent was " << old_parent_id
             << ", is now " << *new_parent_id;
     rtnd->set_parent_id(*new_parent_id);
@@ -573,7 +573,7 @@ void SimulatorBridge::SetupMachine(
     rtnd->set_parent_id(root_uuid);
     new_uuid = to_string(GenerateRootResourceID(hostname));
   }
-  VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid() << " to "
+  VLOG(3) << "Resetting UUID for " << rtnd->resource_desc().uuid() << " to "
           << new_uuid;
   InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(), new_uuid);
   ResourceDescriptor* rd = rtnd->mutable_resource_desc();

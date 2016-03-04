@@ -1056,7 +1056,7 @@ CocoCostModel::TaskFitsUnderResourceAggregate(
                             static_cast<int64_t>(reserved.net_bw()), 0L));
   unreserved.set_disk_bw(max(static_cast<int64_t>(cap.disk_bw()) -
                              static_cast<int64_t>(reserved.disk_bw()), 0L));
-  VLOG(1) << "Unreserved resources under " << res.uuid() << ": "
+  VLOG(2) << "Unreserved resources under " << res.uuid() << ": "
           << ResourceVectorToString(unreserved, " / ");
   if (CompareResourceVectors(*request, unreserved) ==
       RESOURCE_VECTOR_WHOLLY_FITS) {

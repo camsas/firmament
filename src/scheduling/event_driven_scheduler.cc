@@ -143,7 +143,7 @@ void EventDrivenScheduler::DebugPrintRunnableTasks() {
 }
 
 void EventDrivenScheduler::DeregisterResource(ResourceID_t res_id) {
-  VLOG(1) << "Removing executor for resource " << res_id
+  VLOG(2) << "Removing executor for resource " << res_id
           << " which is now deregistered from this scheduler.";
   ExecutorInterface* exec = FindPtrOrNull(executors_, res_id);
   CHECK_NOTNULL(exec);
@@ -175,7 +175,7 @@ void EventDrivenScheduler::ExecuteTask(TaskDescriptor* td_ptr,
   // Mark task as running and report
   td_ptr->set_state(TaskDescriptor::RUNNING);
   td_ptr->set_scheduled_to_resource(rd_ptr->uuid());
-  VLOG(1) << "Task " << task_id << " running.";
+  VLOG(2) << "Task " << task_id << " running.";
 }
 
 void EventDrivenScheduler::HandleJobCompletion(JobID_t job_id) {
@@ -342,7 +342,7 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
 void EventDrivenScheduler::HandleTaskFinalReport(const TaskFinalReport& report,
                                                  TaskDescriptor* td_ptr) {
   CHECK_NOTNULL(td_ptr);
-  VLOG(1) << "Handling task final report for " << report.task_id();
+  VLOG(2) << "Handling task final report for " << report.task_id();
   // Add the report to the TD if the task is not local (otherwise, the
   // scheduler has already done so)
   if (td_ptr->has_delegated_to()) {

@@ -314,7 +314,7 @@ void KnowledgeBase::ProcessTaskFinalReport(
       reports->pop_front();
     }
     reports->push_back(report);
-    VLOG(1) << "Recorded final report for task " << report.task_id();
+    VLOG(2) << "Recorded final report for task " << report.task_id();
   }
 }
 
