@@ -1061,11 +1061,24 @@ void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
   FlowGraphNode* task_node = NodeForTaskID(tid);
   CHECK_NOTNULL(task_node);
   task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
+  FlowGraphArc* running_arc =
+    FindPtrOrNull(task_to_running_arc_, task_node->task_id_);
+  CHECK_NOTNULL(running_arc);
   task_to_running_arc_.erase(tid);
-  UpdateArcsForEvictedTask(tid, res_id);
-  // We do not have to remove the task from the cost model because
-  // the task will still exist in the flow graph at the end of
-  // UpdateArcsForEvictedTask.
+
+  // Delete running arc.
+  running_arc->cap_lower_bound_ = 0;
+  running_arc->cap_upper_bound_ = 0;
+  DIMACSChange* chg = new DIMACSChangeArc(*running_arc, running_arc->cost_);
+  chg->set_comment("UpdateArcsForEvictedTasks delete running arc");
+  dimacs_stats_->UpdateStats(DEL_ARC_EVICTED_TASK);
+  AddGraphChange(chg);
+  flow_graph_->DeleteArc(running_arc);
+
+  // Increase capacity from unscheduled to the sink because now the task
+  // can stay unscheduled.
+  UpdateUnscheduledAggToSinkCapacity(task_node->job_id_, 1);
+  // The task's arcs will be updated just before the next solver run.
 }
 
 void FlowGraphManager::TaskFailed(TaskID_t tid) {
@@ -1141,49 +1154,6 @@ void FlowGraphManager::UpdateArcsForBoundTask(TaskID_t tid,
     }
     UpdateArcToUnscheduledAgg(task_node);
   }
-}
-
-void FlowGraphManager::UpdateArcsForEvictedTask(TaskID_t task_id,
-                                                ResourceID_t res_id) {
-  // TODO(ionel): Remove just the running arc rather than removing all the arcs
-  // just to add them back later on.
-  FlowGraphNode* task_node = NodeForTaskID(task_id);
-  CHECK_NOTNULL(task_node);
-  // Delete outgoing arcs for running task.
-  for (unordered_map<uint64_t, FlowGraphArc*>::iterator it =
-         task_node->outgoing_arc_map_.begin();
-       it != task_node->outgoing_arc_map_.end();) {
-    FlowGraphArc* arc = it->second;
-    ++it;
-    arc->cap_lower_bound_ = 0;
-    arc->cap_upper_bound_ = 0;
-    DIMACSChange* chg = new DIMACSChangeArc(*arc, arc->cost_);
-    chg->set_comment("UpdateArcsForEvictedTasks delete running arc");
-    dimacs_stats_->UpdateStats(DEL_ARC_EVICTED_TASK);
-    AddGraphChange(chg);
-    flow_graph_->DeleteArc(arc);
-  }
-  // Add back arcs to equiv class node, unscheduled agg and to
-  // resource topology agg.
-  vector<FlowGraphArc*> *task_arcs = new vector<FlowGraphArc*>();
-  FlowGraphNode* unsched_agg_node_ptr = FindPtrOrNull(job_unsched_to_node_,
-                                                      task_node->job_id_);
-  CHECK_NOTNULL(unsched_agg_node_ptr);
-
-  AddArcsForTask(task_node, unsched_agg_node_ptr, task_arcs);
-  for (auto& task_arc : *task_arcs) {
-    DIMACSChange *chg = new DIMACSNewArc(*task_arc);
-    chg->set_comment("UpdateArcsForEvictedTask");
-    dimacs_stats_->UpdateStats(CHG_ARC_EVICTED_TASK);
-    AddGraphChange(chg);
-  }
-  delete task_arcs;
-
-  AddTaskEquivClasses(task_node);
-
-  // Add this task's potential flow from the per-job unscheduled
-  // aggregator's outgoing edge
-  UpdateUnscheduledAggToSinkCapacity(task_node->job_id_, 1);
 }
 
 void FlowGraphManager::UpdateResourceBelowStats(
@@ -1337,6 +1307,7 @@ void FlowGraphManager::UpdateArcsFromTasks(
     } else if (task_node && cur->state() == TaskDescriptor::RUNNABLE) {
       UpdateArcsFromTaskToEquivClasses(task_node, ecs_to_update);
       UpdateArcsFromTaskToResources(task_node);
+      UpdateArcToUnscheduledAgg(task_node);
     } else if (cur->state() == TaskDescriptor::RUNNING ||
                cur->state() == TaskDescriptor::ASSIGNED) {
       // The task is already running, so it must have a node already
@@ -1423,7 +1394,18 @@ void FlowGraphManager::UpdateArcToUnscheduledAgg(FlowGraphNode* task_node) {
     FindPtrOrNull(job_unsched_to_node_, task_node->job_id_);
   FlowGraphArc* arc =
     FindPtrOrNull(task_node->outgoing_arc_map_, unsched_agg_node->id_);
-  if (arc->cost_ != new_cost) {
+  if (!arc) {
+    // The arc to the unscheduled agg has been removed. Add it back.
+    FlowGraphArc* unsched_arc =
+      flow_graph_->AddArc(task_node->id_, unsched_agg_node->id_);
+    unsched_arc->cost_ =
+      cost_model_->TaskToUnscheduledAggCost(task_node->task_id_);
+    unsched_arc->cap_upper_bound_ = 1;
+    DIMACSChange* chg = new DIMACSNewArc(*unsched_arc);
+    chg->set_comment("AddARcToUnscheduledAgg");
+    dimacs_stats_->UpdateStats(ADD_ARC_TO_UNSCHED);
+    AddGraphChange(chg);
+  } else if (arc->cost_ != new_cost) {
     Cost_t old_cost = arc->cost_;
     flow_graph_->ChangeArcCost(arc, new_cost);
     DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
