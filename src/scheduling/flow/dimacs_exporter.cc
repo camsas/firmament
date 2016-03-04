@@ -137,13 +137,16 @@ const string DIMACSExporter::GenerateHeader(uint64_t num_nodes,
 
 const string DIMACSExporter::GenerateNode(const FlowGraphNode& node) {
   stringstream ss;
-  if (node.comment_ != "") {
-    ss << "c nd " << node.task_id_ << " " << node.comment_ << "\n";
-  } else if (node.rd_ptr_) {
-    ss << "c nd " << node.task_id_ << " " << node.rd_ptr_->uuid() << "\n";
-  } else if (node.task_id_) {
-    ss << "c nd T_" << node.task_id_ << "\n";
+  if (node.rd_ptr_) {
+    ss << "c nd Res_" << node.rd_ptr_->uuid() << "\n";
+  } else if (node.td_ptr_) {
+    ss << "c nd Task_" << node.td_ptr_->uid() << "\n";
+  } else if (node.ec_id_) {
+    ss << "c nd EC_" << node.ec_id_ << "\n";
+  } else {
+    ss << "c nd " << node.comment_ << "\n";
   }
+
   uint32_t node_type = 0;
   if (node.type_ == FlowNodeType::PU) {
     node_type = 2;

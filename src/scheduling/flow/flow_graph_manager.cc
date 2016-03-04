@@ -68,7 +68,7 @@ void FlowGraphManager::AddArcsForTask(FlowGraphNode* task_node,
   // must generate DIMACS changes.
 
   // Cost model may need to do some setup for newly added tasks
-  cost_model_->AddTask(task_node->task_id_);
+  cost_model_->AddTask(task_node->td_ptr_->uid());
   // We always have an edge to our job's unscheduled node
   FlowGraphArc* unsched_arc = flow_graph_->AddArc(task_node, unsched_agg_node);
   // Add this task's potential flow to the per-job unscheduled
@@ -76,13 +76,13 @@ void FlowGraphManager::AddArcsForTask(FlowGraphNode* task_node,
   UpdateUnscheduledAggToSinkCapacity(task_node->job_id_, 1);
   // Assign cost to the (task -> unscheduled agg) edge from cost model
   unsched_arc->cost_ =
-      cost_model_->TaskToUnscheduledAggCost(task_node->task_id_);
+    cost_model_->TaskToUnscheduledAggCost(task_node->td_ptr_->uid());
   // Set up arc to unscheduled aggregator
   unsched_arc->cap_upper_bound_ = 1;
   dimacs_stats_->UpdateStats(ADD_ARC_TO_UNSCHED);
   task_arcs->push_back(unsched_arc);
   vector<ResourceID_t>* task_pref_arcs =
-    cost_model_->GetTaskPreferenceArcs(task_node->task_id_);
+    cost_model_->GetTaskPreferenceArcs(task_node->td_ptr_->uid());
   // Nothing to do if there are no task preference arcs for this task
   if (!task_pref_arcs)
     return;
@@ -91,7 +91,8 @@ void FlowGraphManager::AddArcsForTask(FlowGraphNode* task_node,
     FlowGraphArc* arc_to_res =
       flow_graph_->AddArc(task_node, NodeForResourceID(pref_res_id));
     arc_to_res->cost_ =
-      cost_model_->TaskToResourceNodeCost(task_node->task_id_, pref_res_id);
+      cost_model_->TaskToResourceNodeCost(task_node->td_ptr_->uid(),
+                                          pref_res_id);
     arc_to_res->cap_upper_bound_ = 1;
     dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_RES);
     task_arcs->push_back(arc_to_res);
@@ -499,7 +500,7 @@ void FlowGraphManager::AddSpecialNodes() {
 
 void FlowGraphManager::AddTaskEquivClasses(FlowGraphNode* task_node) {
   vector<EquivClass_t>* equiv_classes =
-    cost_model_->GetTaskEquivClasses(task_node->task_id_);
+    cost_model_->GetTaskEquivClasses(task_node->td_ptr_->uid());
   // If there are no equivalence classes, there's nothing to do
   if (!equiv_classes)
     return;
@@ -519,7 +520,7 @@ void FlowGraphManager::AddTaskEquivClasses(FlowGraphNode* task_node) {
         flow_graph_->AddArc(task_node->id_, ec_node_ptr->id_);
       ec_arc->cap_upper_bound_ = 1;
       ec_arc->cost_ =
-        cost_model_->TaskToEquivClassAggregator(task_node->task_id_,
+        cost_model_->TaskToEquivClassAggregator(task_node->td_ptr_->uid(),
                                                 equiv_class);
       DIMACSChange *chg = new DIMACSNewArc(*ec_arc);
       dimacs_stats_->UpdateStats(ADD_ARC_TASK_TO_EQUIV_CLASS);
@@ -542,7 +543,7 @@ FlowGraphNode* FlowGraphManager::AddTaskNode(JobID_t job_id,
   task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
   // Add the current task's node
   task_node->excess_ = 1;
-  task_node->task_id_ = td_ptr->uid();  // set task ID in node
+  task_node->td_ptr_ = td_ptr;
   task_node->job_id_ = job_id;
   sink_node_->excess_--;
   // Insert a record for the node representing this task's ID
@@ -820,7 +821,7 @@ uint64_t FlowGraphManager::DeleteTaskNode(TaskID_t task_id,
   // currently).
   // Then remove node meta-data
   VLOG(2) << "Deleting task node with id " << node->id_ << ", task id "
-          << node->task_id_;
+          << node->td_ptr_->uid();
   CHECK_EQ(task_to_node_map_.erase(task_id), 1);
   // Then remove the node itself. This needs to happen first, so that the arc
   // counts for ECs are correct.
@@ -854,6 +855,64 @@ void FlowGraphManager::JobCompleted(JobID_t job_id) {
   flow_graph_->DeleteNode(node);
 }
 
+void FlowGraphManager::NodeBindingToSchedulingDelta(
+    uint64_t task_node_id, uint64_t res_node_id,
+    unordered_map<TaskID_t, ResourceID_t>* task_bindings,
+    vector<SchedulingDelta*>* deltas) {
+  TaskDescriptor* td_ptr = flow_graph_->Node(task_node_id)->td_ptr_;
+  CHECK_NOTNULL(td_ptr);
+  const TaskDescriptor& task = *td_ptr;
+  ResourceDescriptor* rd_ptr = flow_graph_->Node(res_node_id)->rd_ptr_;
+  CHECK_NOTNULL(rd_ptr);
+  const ResourceDescriptor& res = *rd_ptr;
+  // Is the source (task) already placed elsewhere?
+  ResourceID_t* bound_res = FindOrNull(*task_bindings, task.uid());
+  // Does the destination (resource) already have a task bound?
+  TaskID_t current_bound_task_id = res.current_running_task();
+  VLOG(2) << "Task ID: " << task.uid() << ", bound_res: " << bound_res
+          << ", current bound task ID: " << current_bound_task_id;
+  if (bound_res && (*bound_res != ResourceIDFromString(res.uuid()))) {
+    // If so, we have a migration
+    VLOG(2) << "MIGRATION: take " << task.uid() << " off "
+            << *bound_res << " and move it to "
+            << res.uuid();
+    SchedulingDelta* delta = new SchedulingDelta;
+    delta->set_type(SchedulingDelta::MIGRATE);
+    delta->set_task_id(task.uid());
+    delta->set_resource_id(res.uuid());
+    deltas->push_back(delta);
+  } else if (bound_res && (*bound_res == ResourceIDFromString(res.uuid()))) {
+    // We were already scheduled here. No-op, so insert no delta.
+  } else if (!bound_res
+             && current_bound_task_id // resource is not idle
+             && current_bound_task_id != task.uid()) {
+    // XXX: wrong, need to check if unscheduled?
+    // Is something else bound to the same resource?
+    // If so, we need to kick it off (a preemption)
+    VLOG(2) << "PREEMPTION: take " << current_bound_task_id << " off "
+            << res.uuid() << " and replace it with " << task.uid();
+    SchedulingDelta* preempt_delta = new SchedulingDelta;
+    preempt_delta->set_type(SchedulingDelta::PREEMPT);
+    preempt_delta->set_task_id(current_bound_task_id);
+    preempt_delta->set_resource_id(res.uuid());
+    deltas->push_back(preempt_delta);
+    SchedulingDelta* place_delta = new SchedulingDelta;
+    place_delta->set_type(SchedulingDelta::PLACE);
+    place_delta->set_task_id(task.uid());
+    place_delta->set_resource_id(res.uuid());
+    deltas->push_back(place_delta);
+  } else {
+    // If neither, we have a scheduling event
+    VLOG(2) << "SCHEDULING: place " << task.uid() << " on "
+            << res.uuid() << ", which was idle.";
+    SchedulingDelta* delta = new SchedulingDelta;
+    delta->set_type(SchedulingDelta::PLACE);
+    delta->set_task_id(task.uid());
+    delta->set_resource_id(res.uuid());
+    deltas->push_back(delta);
+  }
+}
+
 FlowGraphNode* FlowGraphManager::NodeForResourceID(const ResourceID_t& res_id) {
   return FindPtrOrNull(resource_to_node_map_, res_id);
 }
@@ -876,12 +935,12 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
       // This preference arc connects the same nodes as the running arc. Hence,
       // we just transform it into the running arc.
       uint64_t new_cost =
-        cost_model_->TaskContinuationCost(task_node->task_id_);
+        cost_model_->TaskContinuationCost(task_node->td_ptr_->uid());
       uint64_t old_cost = arc->cost_;
       flow_graph_->ChangeArc(arc, 1, 1, new_cost);
       arc->type_ = RUNNING;
       CHECK(InsertIfNotPresent(&task_to_running_arc_,
-                               task_node->task_id_, arc));
+                               task_node->td_ptr_->uid(), arc));
       DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
       chg->set_comment("PinTaskToNode transform to running arc");
       dimacs_stats_->UpdateStats(CHG_ARC_RUNNING_TASK);
@@ -907,9 +966,10 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
     new_arc->cap_lower_bound_ = 1;
     new_arc->cap_upper_bound_ = 1;
     new_arc->type_ = RUNNING;
-    new_arc->cost_ = cost_model_->TaskContinuationCost(task_node->task_id_);
+    new_arc->cost_ =
+      cost_model_->TaskContinuationCost(task_node->td_ptr_->uid());
     CHECK(InsertIfNotPresent(&task_to_running_arc_,
-                             task_node->task_id_, new_arc));
+                             task_node->td_ptr_->uid(), new_arc));
     DIMACSChange *chg = new DIMACSNewArc(*new_arc);
     chg->set_comment("PinTaskToNode add running arc");
     dimacs_stats_->UpdateStats(ADD_ARC_RUNNING_TASK);
@@ -1062,7 +1122,7 @@ void FlowGraphManager::TaskEvicted(TaskID_t tid, ResourceID_t res_id) {
   CHECK_NOTNULL(task_node);
   task_node->type_ = FlowNodeType::UNSCHEDULED_TASK;
   FlowGraphArc* running_arc =
-    FindPtrOrNull(task_to_running_arc_, task_node->task_id_);
+    FindPtrOrNull(task_to_running_arc_, task_node->td_ptr_->uid());
   CHECK_NOTNULL(running_arc);
   task_to_running_arc_.erase(tid);
 
@@ -1131,7 +1191,8 @@ void FlowGraphManager::UpdateArcsForBoundTask(TaskID_t tid,
       FlowGraphArc* new_arc = flow_graph_->AddArc(task_node, assigned_res_node);
       new_arc->cap_upper_bound_ = 1;
       new_arc->type_ = RUNNING;
-      new_arc->cost_ = cost_model_->TaskContinuationCost(task_node->task_id_);
+      new_arc->cost_ =
+        cost_model_->TaskContinuationCost(task_node->td_ptr_->uid());
       CHECK(InsertIfNotPresent(&task_to_running_arc_, tid, new_arc));
       DIMACSChange *chg = new DIMACSNewArc(*new_arc);
       chg->set_comment("UpdateArcsForBoudTask add running arc");
@@ -1142,7 +1203,7 @@ void FlowGraphManager::UpdateArcsForBoundTask(TaskID_t tid,
       // We just modify the preference arc because the graph doesn't currently
       // support multi-arcs.
       uint64_t new_cost =
-        cost_model_->TaskContinuationCost(task_node->task_id_);
+        cost_model_->TaskContinuationCost(task_node->td_ptr_->uid());
       uint64_t old_cost = running_arc->cost_;
       flow_graph_->ChangeArc(running_arc, 0, 1, new_cost);
       running_arc->type_ = RUNNING;
@@ -1265,12 +1326,12 @@ void FlowGraphManager::ResetChanges() {
 void FlowGraphManager::UpdateArcTaskToEquivClass(FlowGraphNode* task_node,
                                                  FlowGraphNode* ec_node) {
   uint64_t arc_cost =
-    cost_model_->TaskToEquivClassAggregator(task_node->task_id_,
+    cost_model_->TaskToEquivClassAggregator(task_node->td_ptr_->uid(),
                                             ec_node->ec_id_);
   FlowGraphArc* arc = FindPtrOrNull(task_node->outgoing_arc_map_, ec_node->id_);
   if (!arc) {
     // We don't have the arc yet, so add it
-    VLOG(2) << "Adding arc from task " << task_node->task_id_
+    VLOG(2) << "Adding arc from task " << task_node->td_ptr_->uid()
             << " to EC " << ec_node->ec_id_;
     arc = flow_graph_->AddArc(task_node->id_, ec_node->id_);
     // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
@@ -1335,7 +1396,7 @@ void FlowGraphManager::UpdateArcsFromTaskToEquivClasses(
     FlowGraphNode* task_node,
     unordered_set<EquivClass_t>* ecs_to_update) {
   vector<EquivClass_t>* equiv_classes =
-    cost_model_->GetTaskEquivClasses(task_node->task_id_);
+    cost_model_->GetTaskEquivClasses(task_node->td_ptr_->uid());
   // If there are no equivalence classes, there's nothing to do
   if (equiv_classes) {
     // Otherwise, revisit each EC and add missing arcs
@@ -1353,14 +1414,15 @@ void FlowGraphManager::UpdateArcsFromTaskToEquivClasses(
 
 void FlowGraphManager::UpdateArcsFromTaskToResources(FlowGraphNode* task_node) {
   vector<ResourceID_t>* task_res_pref_arcs =
-    cost_model_->GetTaskPreferenceArcs(task_node->task_id_);
+    cost_model_->GetTaskPreferenceArcs(task_node->td_ptr_->uid());
   if (task_res_pref_arcs) {
     for (auto& pref_res_id : *task_res_pref_arcs) {
       FlowGraphNode* res_node =
         FindPtrOrNull(resource_to_node_map_, pref_res_id);
       CHECK_NOTNULL(res_node);
       Cost_t new_cost =
-        cost_model_->TaskToResourceNodeCost(task_node->task_id_, pref_res_id);
+        cost_model_->TaskToResourceNodeCost(task_node->td_ptr_->uid(),
+                                            pref_res_id);
       FlowGraphArc* arc =
         FindPtrOrNull(task_node->outgoing_arc_map_, res_node->id_);
       if (!arc) {
@@ -1389,7 +1451,8 @@ void FlowGraphManager::UpdateArcsFromTaskToResources(FlowGraphNode* task_node) {
 }
 
 void FlowGraphManager::UpdateArcToUnscheduledAgg(FlowGraphNode* task_node) {
-  uint64_t new_cost = cost_model_->TaskPreemptionCost(task_node->task_id_);
+  uint64_t new_cost =
+    cost_model_->TaskPreemptionCost(task_node->td_ptr_->uid());
   const FlowGraphNode* unsched_agg_node =
     FindPtrOrNull(job_unsched_to_node_, task_node->job_id_);
   FlowGraphArc* arc =
@@ -1399,7 +1462,7 @@ void FlowGraphManager::UpdateArcToUnscheduledAgg(FlowGraphNode* task_node) {
     FlowGraphArc* unsched_arc =
       flow_graph_->AddArc(task_node->id_, unsched_agg_node->id_);
     unsched_arc->cost_ =
-      cost_model_->TaskToUnscheduledAggCost(task_node->task_id_);
+      cost_model_->TaskToUnscheduledAggCost(task_node->td_ptr_->uid());
     unsched_arc->cap_upper_bound_ = 1;
     DIMACSChange* chg = new DIMACSNewArc(*unsched_arc);
     chg->set_comment("AddARcToUnscheduledAgg");
@@ -1419,8 +1482,10 @@ void FlowGraphManager::UpdateRunningTaskArcs(FlowGraphNode* task_node) {
   // NOTE: Here we update the running arc and the arc to the unscheduled
   // aggregator if we support preemption. The preference arcs are updated
   // in AddOrUpdateJobNodes, just before we schedule the job.
-  uint64_t new_cost = cost_model_->TaskContinuationCost(task_node->task_id_);
-  FlowGraphArc* arc = FindPtrOrNull(task_to_running_arc_, task_node->task_id_);
+  uint64_t new_cost =
+    cost_model_->TaskContinuationCost(task_node->td_ptr_->uid());
+  FlowGraphArc* arc = FindPtrOrNull(task_to_running_arc_,
+                                    task_node->td_ptr_->uid());
   CHECK_NOTNULL(arc);
   if (arc->cost_ != new_cost) {
     Cost_t old_cost = arc->cost_;
@@ -1450,7 +1515,7 @@ void FlowGraphManager::UpdateUnscheduledAggArcCosts() {
       ++ait;
       FlowGraphArc* arc = ait_tmp->second;
       CHECK_NOTNULL(arc);
-      TaskID_t task_id = flow_graph_->Node(arc->src_)->task_id_;
+      TaskID_t task_id = arc->src_node_->td_ptr_->uid();
 
       Cost_t new_cost = cost_model_->TaskToUnscheduledAggCost(task_id);
       CHECK_GE(new_cost, 0);

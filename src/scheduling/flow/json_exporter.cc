@@ -92,8 +92,8 @@ const string JSONExporter::GenerateNode(const FlowGraphNode& node) const {
     label << node.comment_;
   } else if (node.rd_ptr_) {
     label << "res: " << node.rd_ptr_->uuid();
-  } else if (node.task_id_) {
-    label << "tsk: " << node.task_id_;
+  } else if (node.td_ptr_) {
+    label << "tsk: " << node.td_ptr_->uid();
   }
   ss << "{ \"id\": " << node.id_ << ", \"label\": \"" << label.str() << "\", "
      << "\"shape\": \"" << node_shape << "\", "

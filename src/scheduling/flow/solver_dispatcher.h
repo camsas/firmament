@@ -9,7 +9,6 @@
 
 #include "base/common.h"
 #include "scheduling/scheduler_interface.h"
-#include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/flow/dimacs_exporter.h"
 #include "scheduling/flow/json_exporter.h"
 #include "scheduling/flow/flow_graph_manager.h"
@@ -24,10 +23,6 @@ class SolverDispatcher {
   ~SolverDispatcher();
 
   void ExportJSON(string* output) const;
-  void NodeBindingToSchedulingDelta(
-      const TaskDescriptor& task, const ResourceDescriptor& res,
-      unordered_map<TaskID_t, ResourceID_t>* task_bindings,
-      vector<SchedulingDelta*>* deltas);
   multimap<uint64_t, uint64_t>* Run(SchedulerStats* scheduler_stats);
 
   uint64_t seq_num() const {

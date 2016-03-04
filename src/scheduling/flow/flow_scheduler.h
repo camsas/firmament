@@ -20,11 +20,11 @@
 #include "misc/time_interface.h"
 #include "scheduling/event_driven_scheduler.h"
 #include "scheduling/knowledge_base.h"
-#include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/scheduling_event_notifier_interface.h"
 #include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/dimacs_exporter.h"
 #include "scheduling/flow/flow_graph_manager.h"
+#include "scheduling/flow/scheduling_delta.pb.h"
 #include "scheduling/flow/solver_dispatcher.h"
 #include "storage/reference_interface.h"
 

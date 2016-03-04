@@ -102,58 +102,6 @@ void *ExportToSolver(void *x) {
   return NULL;
 }
 
-void SolverDispatcher::NodeBindingToSchedulingDelta(
-    const TaskDescriptor& task, const ResourceDescriptor& res,
-    unordered_map<TaskID_t, ResourceID_t>* task_bindings,
-    vector<SchedulingDelta*>* deltas) {
-  // Is the source (task) already placed elsewhere?
-  ResourceID_t* bound_res = FindOrNull(*task_bindings, task.uid());
-  // Does the destination (resource) already have a task bound?
-  TaskID_t current_bound_task_id = res.current_running_task();
-  VLOG(2) << "Task ID: " << task.uid() << ", bound_res: " << bound_res
-          << ", current bound task ID: " << current_bound_task_id;
-  if (bound_res && (*bound_res != ResourceIDFromString(res.uuid()))) {
-    // If so, we have a migration
-    VLOG(2) << "MIGRATION: take " << task.uid() << " off "
-            << *bound_res << " and move it to "
-            << res.uuid();
-    SchedulingDelta* delta = new SchedulingDelta;
-    delta->set_type(SchedulingDelta::MIGRATE);
-    delta->set_task_id(task.uid());
-    delta->set_resource_id(res.uuid());
-    deltas->push_back(delta);
-  } else if (bound_res && (*bound_res == ResourceIDFromString(res.uuid()))) {
-    // We were already scheduled here. No-op, so insert no delta.
-  } else if (!bound_res
-             && current_bound_task_id // resource is not idle
-             && current_bound_task_id != task.uid()) {
-    // XXX: wrong, need to check if unscheduled?
-    // Is something else bound to the same resource?
-    // If so, we need to kick it off (a preemption)
-    VLOG(2) << "PREEMPTION: take " << current_bound_task_id << " off "
-            << res.uuid() << " and replace it with " << task.uid();
-    SchedulingDelta* preempt_delta = new SchedulingDelta;
-    preempt_delta->set_type(SchedulingDelta::PREEMPT);
-    preempt_delta->set_task_id(current_bound_task_id);
-    preempt_delta->set_resource_id(res.uuid());
-    deltas->push_back(preempt_delta);
-    SchedulingDelta* place_delta = new SchedulingDelta;
-    place_delta->set_type(SchedulingDelta::PLACE);
-    place_delta->set_task_id(task.uid());
-    place_delta->set_resource_id(res.uuid());
-    deltas->push_back(place_delta);
-  } else {
-    // If neither, we have a scheduling event
-    VLOG(2) << "SCHEDULING: place " << task.uid() << " on "
-            << res.uuid() << ", which was idle.";
-    SchedulingDelta* delta = new SchedulingDelta;
-    delta->set_type(SchedulingDelta::PLACE);
-    delta->set_task_id(task.uid());
-    delta->set_resource_id(res.uuid());
-    deltas->push_back(delta);
-  }
-}
-
 void *ProcessStderrJustlog(void *x) {
   char line[1024];
   FILE *stderr = reinterpret_cast<FILE*>(x);

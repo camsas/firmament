@@ -32,7 +32,7 @@ set(SCHEDULING_SRC
   )
 
 set(SCHEDULING_PROTOBUFS
-  scheduling/scheduling_delta.proto
+  scheduling/flow/scheduling_delta.proto
   )
 
 set(SCHEDULING_TESTS
