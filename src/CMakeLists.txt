@@ -106,6 +106,23 @@ target_link_libraries(google_trace_processor LINK_PUBLIC ${spooky-hash_BINARY}
   ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)
 
 ###############################################################################
+# Scheduling library (for integrations)
+
+add_library(firmament_scheduling SHARED
+  ${BASE_SRC} ${BASE_PROTOBUF_SRCS}
+  ${EXECUTOR_SRC}
+  ${MESSAGES_PROTOBUF_SRCS} ${MISC_SRC}
+  ${MISC_TRACE_GENERATOR_SRC}
+  ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS}
+  ${SIM_DFS_SRC} ${STORAGE_SRC})
+
+add_dependencies(firmament_scheduling glog gflags gtest pb2json pion spooky-hash
+  thread-safe-stl-containers)
+
+target_link_libraries(firmament_scheduling LINK_PUBLIC ${spooky-hash_BINARY}
+  ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc protobuf)
+
+###############################################################################
 # Trace-driven simulator
 
 set(SIMULATOR_SRCS
