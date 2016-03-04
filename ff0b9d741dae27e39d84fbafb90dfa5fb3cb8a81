@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_7a5e1347",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-04T23:14:04Z",
+      "side": 0,
+      "message": "These sanity checks don\u0027t appear to be present in the new implementation of NodeBindingToSchedulingDelta, but I think they\u0027re still necessary?",
+      "range": {
+        "startLine": 445,
+        "startChar": 0,
+        "endLine": 450,
+        "endChar": 42
+      },
+      "revId": "ff0b9d741dae27e39d84fbafb90dfa5fb3cb8a81",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
