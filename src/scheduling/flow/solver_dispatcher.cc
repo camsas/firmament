@@ -114,7 +114,7 @@ void SolverDispatcher::NodeBindingToSchedulingDelta(
           << ", current bound task ID: " << current_bound_task_id;
   if (bound_res && (*bound_res != ResourceIDFromString(res.uuid()))) {
     // If so, we have a migration
-    VLOG(1) << "MIGRATION: take " << task.uid() << " off "
+    VLOG(2) << "MIGRATION: take " << task.uid() << " off "
             << *bound_res << " and move it to "
             << res.uuid();
     SchedulingDelta* delta = new SchedulingDelta;
@@ -130,7 +130,7 @@ void SolverDispatcher::NodeBindingToSchedulingDelta(
     // XXX: wrong, need to check if unscheduled?
     // Is something else bound to the same resource?
     // If so, we need to kick it off (a preemption)
-    VLOG(1) << "PREEMPTION: take " << current_bound_task_id << " off "
+    VLOG(2) << "PREEMPTION: take " << current_bound_task_id << " off "
             << res.uuid() << " and replace it with " << task.uid();
     SchedulingDelta* preempt_delta = new SchedulingDelta;
     preempt_delta->set_type(SchedulingDelta::PREEMPT);
@@ -144,7 +144,7 @@ void SolverDispatcher::NodeBindingToSchedulingDelta(
     deltas->push_back(place_delta);
   } else {
     // If neither, we have a scheduling event
-    VLOG(1) << "SCHEDULING: place " << task.uid() << " on "
+    VLOG(2) << "SCHEDULING: place " << task.uid() << " on "
             << res.uuid() << ", which was idle.";
     SchedulingDelta* delta = new SchedulingDelta;
     delta->set_type(SchedulingDelta::PLACE);
@@ -428,7 +428,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::GetMappings(
         uint64_t task = AssignNode(extracted_flow, *set_it);
         // Arc back to a task, so we have a scheduling assignment
         if (task != 0) {
-          VLOG(1) << "Assigning task node " << task << " to PU node "
+          VLOG(2) << "Assigning task node " << task << " to PU node "
                   << *set_it;
           task_node->insert(pair<uint64_t, uint64_t>(task, *set_it));
         } else {
@@ -526,7 +526,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::ReadTaskMappingChanges(
         uint64_t task_id;
         uint64_t core_id;
         CHECK_EQ(sscanf(line, "%*c %ju %ju", &task_id, &core_id), 2);
-        VLOG(1) << "Assigning task node " << task_id << " to PU node "
+        VLOG(2) << "Assigning task node " << task_id << " to PU node "
                 << core_id;
         task_node->insert(pair<uint64_t, uint64_t>(task_id, core_id));
       } else if (line[0] == 'c') {

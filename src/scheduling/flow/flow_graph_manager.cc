@@ -149,7 +149,7 @@ FlowGraphNode* FlowGraphManager::AddEquivClassNode(EquivClass_t ec) {
   chg->set_comment("AddEquivClassNode");
   dimacs_stats_->UpdateStats(ADD_EQUIV_CLASS_NODE);
   AddGraphChange(chg);
-  VLOG(1) << "Adding equivalence class node, with change "
+  VLOG(2) << "Adding equivalence class node, with change "
           << chg->GenerateChange();
   AddArcsFromToOtherEquivNodes(ec, ec_node);
   // Return the new EC node
@@ -451,7 +451,7 @@ void FlowGraphManager::AddOrUpdateEquivClassPrefArcs(
         ec_arcs->push_back(arc);
         dimacs_stats_->UpdateStats(ADD_ARC_EQUIV_CLASS_TO_RES);
       } else if (cost_and_cap.second == 0) {
-        VLOG(1) << "Removing arc from EC -> resource arc from " << ec
+        VLOG(2) << "Removing arc from EC -> resource arc from " << ec
                 << " to " << arc->dst_node_->resource_id_
                 << " due to lack of capacity";
         arc->cap_lower_bound_ = 0;
@@ -463,7 +463,7 @@ void FlowGraphManager::AddOrUpdateEquivClassPrefArcs(
         flow_graph_->DeleteArc(arc);
       } else if (static_cast<uint64_t>(arc_cost) != arc->cost_) {
         // It already exists, but its cost has changed
-        VLOG(1) << "Updating cost on EC -> resource arc from " << ec
+        VLOG(2) << "Updating cost on EC -> resource arc from " << ec
                 << " to " << arc->dst_node_->resource_id_ << " from "
                 << arc->cost_ << " to " << arc_cost;
         Cost_t old_cost = arc->cost_;
@@ -929,7 +929,7 @@ void FlowGraphManager::RemoveInvalidECToECArcs(
     if (target_ec != 0 &&
         ec_preferences.find(target_ec) == ec_preferences.end()) {
       to_delete.insert(dst_arc.second);
-      VLOG(1) << "Deleting no-longer-current arc from EC " << ec_node.ec_id_
+      VLOG(2) << "Deleting no-longer-current arc from EC " << ec_node.ec_id_
               << " to EC " << target_ec;
     }
   }
@@ -959,7 +959,7 @@ void FlowGraphManager::RemoveInvalidPreferenceArcs(
         res_preferences.find(target_rid) == res_preferences.end()) {
       // We need to remove this arc.
       to_delete.insert(dst_arc.second);
-      VLOG(1) << "Deleting no-longer-current arc from EC " << ec_node.ec_id_
+      VLOG(2) << "Deleting no-longer-current arc from EC " << ec_node.ec_id_
               << " to resource " << target_rid;
     }
   }
@@ -1260,7 +1260,7 @@ void FlowGraphManager::UpdateResourceNode(
     }
   } else {
     // It does not already exist, so add it.
-    VLOG(1) << "Adding new resource " << res_id << " to flow graph.";
+    VLOG(2) << "Adding new resource " << res_id << " to flow graph.";
     // N.B.: We need to ensure we hook in at the right place here by setting the
     // parent ID appropriately if it is not already.
     AddOrUpdateResourceNode(rtnd_ptr);

@@ -144,9 +144,9 @@ uint64_t FlowScheduler::ApplySchedulingDeltas(
     const vector<SchedulingDelta*>& deltas) {
   uint64_t num_scheduled = 0;
   // Perform the necessary actions to apply the scheduling changes.
-  VLOG(1) << "Applying " << deltas.size() << " scheduling deltas...";
+  VLOG(2) << "Applying " << deltas.size() << " scheduling deltas...";
   for (auto& delta : deltas) {
-    VLOG(1) << "Processing delta of type " << delta->type();
+    VLOG(2) << "Processing delta of type " << delta->type();
     ResourceID_t res_id = ResourceIDFromString(delta->resource_id());
     TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, delta->task_id());
     ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
@@ -438,7 +438,7 @@ uint64_t FlowScheduler::RunSchedulingIteration(
               << " was removed while the solver was running";
       continue;
     }
-    VLOG(1) << "Bind " << it->first << " to " << it->second << endl;
+    VLOG(2) << "Bind " << it->first << " to " << it->second << endl;
     // Some sanity checks
     FlowGraphNode* src = flow_graph_manager_->flow_graph()->Node(it->first);
     FlowGraphNode* dst = flow_graph_manager_->flow_graph()->Node(it->second);
