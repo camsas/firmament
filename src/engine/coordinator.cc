@@ -466,7 +466,8 @@ void Coordinator::HandleIONotification(const BaseMessage& bm,
     }
     // Call into scheduler, as this change may have made things runnable
     JobDescriptor* jd = DescriptorForJob((*td_ptr)->job_id());
-    scheduler_->ScheduleJob(jd, NULL);
+    scheduler::SchedulerStats scheduler_stats;
+    scheduler_->ScheduleJob(jd, &scheduler_stats);
   }
 }
 
@@ -656,7 +657,8 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
   // Run the scheduler for this job
   JobDescriptor* job = FindOrNull(*job_table_, job_id);
   CHECK_NOTNULL(job);
-  uint64_t tasks_scheduled = scheduler_->ScheduleJob(job, NULL);
+  scheduler::SchedulerStats scheduler_stats;
+  uint64_t tasks_scheduled = scheduler_->ScheduleJob(job, &scheduler_stats);
   LOG(INFO) << "Scheduled " << tasks_scheduled << " tasks for job "
             << job_id;
 }
@@ -714,7 +716,8 @@ void Coordinator::HandleTaskStateChange(
   // the scheduling iteration from within the earlier handler call into the
   // scheduler
   JobDescriptor* jd = DescriptorForJob(td_ptr->job_id());
-  scheduler_->ScheduleJob(jd, NULL);
+  scheduler::SchedulerStats scheduler_stats;
+  scheduler_->ScheduleJob(jd, &scheduler_stats);
   // XXX(malte): tear down the respective connection, cleanup
 }
 
@@ -962,8 +965,10 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
         << ", which we just added!";
   }
   // Kick off the scheduler for this job.
+  scheduler::SchedulerStats scheduler_stats;
   uint64_t num_scheduled =
-    scheduler_->ScheduleJob(FindOrNull(*job_table_, new_job_id), NULL);
+    scheduler_->ScheduleJob(FindOrNull(*job_table_, new_job_id),
+                            &scheduler_stats);
   LOG(INFO) << "Attempted to schedule job " << new_job_id << ", successfully "
             << "scheduled " << num_scheduled << " tasks.";
   // Finally, return the new job's ID

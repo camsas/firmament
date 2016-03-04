@@ -47,6 +47,7 @@ class Simulator {
   SimulatorBridge* bridge_;
   EventManager* event_manager_;
   SimulatedWallTime simulated_time_;
+  bool first_scheduler_run_;
 };
 
 }  // namespace sim

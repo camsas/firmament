@@ -219,12 +219,10 @@ Cost_t WhareMapCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
 }
 
 Cost_t WhareMapCostModel::TaskContinuationCost(TaskID_t task_id) {
-  LOG(FATAL) << "Should not be called";
   return 0LL;
 }
 
 Cost_t WhareMapCostModel::TaskPreemptionCost(TaskID_t task_id) {
-  LOG(FATAL) << "Should not be called";
   return 0LL;
 }
 
@@ -335,13 +333,13 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
 vector<EquivClass_t>* WhareMapCostModel::GetResourceEquivClasses(
     ResourceID_t res_id) {
   vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
-  // Get the machine aggregator corresponding to this machine.
   EquivClass_t* ec_class = FindOrNull(machine_to_ec_, res_id);
   if (ec_class) {
+    // The resource is a machine.
     equiv_classes->push_back(*ec_class);
+    // Every machine is also in the special cluster aggregator EC
+    equiv_classes->push_back(cluster_aggregator_ec_);
   }
-  // Every machine is also in the special cluster aggregator EC
-  equiv_classes->push_back(cluster_aggregator_ec_);
   return equiv_classes;
 }
 
@@ -377,7 +375,7 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
       for (auto it = machine_to_rtnd_.begin();
            it != machine_to_rtnd_.end();
            ++it) {
-        pair<Cost_t, int64_t> cost_and_cap_to_res =
+        pair<Cost_t, uint64_t> cost_and_cap_to_res =
           EquivClassToResourceNode(ec, it->first);
         Cost_t cost_to_res = cost_and_cap_to_res.first;
         ResourceID_t res_id =
@@ -732,6 +730,14 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
     return accumulator;
   }
   // Case: (RESOURCE -> RESOURCE)
+  CHECK_NOTNULL(other->rd_ptr_);
+  accumulator->rd_ptr_->set_num_running_tasks_below(
+      accumulator->rd_ptr_->num_running_tasks_below() +
+      other->rd_ptr_->num_running_tasks_below());
+  accumulator->rd_ptr_->set_num_slots_below(
+      accumulator->rd_ptr_->num_slots_below() +
+      other->rd_ptr_->num_slots_below());
+
   WhareMapStats* wms_acc_ptr = accumulator->rd_ptr_->mutable_whare_map_stats();
   WhareMapStats* wms_other_ptr = other->rd_ptr_->mutable_whare_map_stats();
   if (accumulator->type_ == FlowNodeType::MACHINE) {
@@ -740,16 +746,6 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
     return accumulator;
   }
   AccumulateWhareMapStats(wms_acc_ptr, wms_other_ptr);
-
-  if (!other->rd_ptr_) {
-    return accumulator;
-  }
-  accumulator->rd_ptr_->set_num_running_tasks_below(
-      accumulator->rd_ptr_->num_running_tasks_below() +
-      other->rd_ptr_->num_running_tasks_below());
-  accumulator->rd_ptr_->set_num_slots_below(
-      accumulator->rd_ptr_->num_slots_below() +
-      other->rd_ptr_->num_slots_below());
   return accumulator;
 }
 

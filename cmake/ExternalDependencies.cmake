@@ -13,6 +13,7 @@ if (${ENABLE_CS2})
       PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/cs2
       # no configure or install step required
       CONFIGURE_COMMAND ""
+      PATCH_COMMAND cp ${Firmament_ROOT_DIR}/scripts/cs2-custom-makefile makefile
       INSTALL_COMMAND ""
       BUILD_IN_SOURCE ON
       # Wrap download, configure and build steps in a script to log output

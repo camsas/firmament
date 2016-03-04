@@ -135,17 +135,7 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
   // Find resource within topology
   VLOG(2) << "Computing interference scores for resources below " << res_id;
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
-  // TODO(malte): rs can be NULL if the resource is not yet present (this
-  // happens e.g. on startup). It's safe to ignore for now as the cost will
-  // be set correctly on the first update iteration, although we should fix it
-  // later.
-  if (!rs) {
-    LOG(WARNING) << "Returning zero interference score for not-yet-existent "
-                 << "resource ID " << res_id << ". This is common during "
-                 << "initialisation, but should not persist in normal"
-                 << "operation.";
-    return 0ULL;
-  }
+  CHECK_NOTNULL(rs);
   const ResourceDescriptor& rd = rs->descriptor();
   const ResourceTopologyNodeDescriptor& rtnd = rs->topology_node();
   // TODO(malte): note that the below implicitly assumes that each leaf runs
@@ -540,11 +530,7 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
   ResourceID_t destination_res_id = ResourceIDFromString(destination.uuid());
   ResourceStatus* machine_rs =
     FindPtrOrNull(*resource_map_, MachineResIDForResource(destination_res_id));
-  if (!machine_rs) {
-    LOG(WARNING) << destination_res_id
-                 << " doesn't have an entry in resource_map";
-    return 0LL;
-  }
+  CHECK_NOTNULL(machine_rs);
   const ResourceDescriptor& machine_rd = machine_rs->descriptor();
   // Compute resource request dimensions (normalized by machine capacity)
   CostVector_t cost_vector;
@@ -831,12 +817,7 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
   // Case: (RESOURCE -> RESOURCE)
   // We're inside the resource topology
   ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
-  // Early exit if the resource is not yet there
-  if (!rd_ptr) {
-    LOG(WARNING) << "Node " << accumulator->id_
-                 << " doesn't have an associated resource descriptor";
-    return accumulator;
-  }
+  CHECK_NOTNULL(rd_ptr);
   // Use the KB to find load information and compute available resources
   ResourceID_t machine_res_id =
     MachineResIDForResource(accumulator->resource_id_);
@@ -932,12 +913,6 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
   }
   if (accumulator->rd_ptr_ && other->rd_ptr_) {
     AccumulateResourceStats(accumulator->rd_ptr_, other->rd_ptr_);
-    accumulator->rd_ptr_->set_num_running_tasks_below(
-        accumulator->rd_ptr_->num_running_tasks_below() +
-        other->rd_ptr_->num_running_tasks_below());
-    accumulator->rd_ptr_->set_num_slots_below(
-        accumulator->rd_ptr_->num_slots_below() +
-        other->rd_ptr_->num_slots_below());
   }
   return accumulator;
 }
@@ -1031,12 +1006,7 @@ void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
         accumulator->type_ == FlowNodeType::PU ||
         accumulator->type_ == FlowNodeType::CORE);
   ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
-  // Early exit if the resource is not yet there.
-  if (!rd_ptr) {
-    LOG(ERROR) << "Queried RD that does not exist yet, for "
-               << accumulator->resource_id_;
-    return;
-  }
+  CHECK_NOTNULL(rd_ptr);
   rd_ptr->clear_available_resources();
   rd_ptr->clear_reserved_resources();
   rd_ptr->clear_min_available_resources_below();

@@ -160,6 +160,7 @@ class FlowGraphManager {
   void UpdateArcTaskToEquivClass(FlowGraphNode* task_node,
                                  FlowGraphNode* ec_node);
   void UpdateArcToUnscheduledAgg(FlowGraphNode* task_node);
+  void UpdateResourceBelowStats(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void UpdateRunningTaskArcs(FlowGraphNode* task_node);
   void UpdateUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta);

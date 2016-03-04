@@ -1186,6 +1186,35 @@ void FlowGraphManager::UpdateArcsForEvictedTask(TaskID_t task_id,
   UpdateUnscheduledAggToSinkCapacity(task_node->job_id_, 1);
 }
 
+void FlowGraphManager::UpdateResourceBelowStats(
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  ResourceDescriptor* rd_ptr = rtnd_ptr->mutable_resource_desc();
+  if (rd_ptr->type() == ResourceDescriptor::RESOURCE_PU &&
+      !rd_ptr->has_num_slots_below()) {
+    // XXX(ionel): Assumes no PU sharing.
+    rd_ptr->set_num_slots_below(1);
+    if (!rd_ptr->has_num_running_tasks_below()) {
+      if (rd_ptr->has_current_running_task()) {
+        rd_ptr->set_num_running_tasks_below(1);
+      } else {
+        rd_ptr->set_num_running_tasks_below(0);
+      }
+    }
+  }
+  for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::pointer_iterator
+       rtnd_iter = rtnd_ptr->mutable_children()->pointer_begin();
+       rtnd_iter != rtnd_ptr->mutable_children()->pointer_end();
+       ++rtnd_iter) {
+    UpdateResourceBelowStats(*rtnd_iter);
+    rd_ptr->set_num_slots_below(
+        rd_ptr->num_slots_below() +
+        (*rtnd_iter)->resource_desc().num_slots_below());
+    rd_ptr->set_num_running_tasks_below(
+        rd_ptr->num_running_tasks_below() +
+        (*rtnd_iter)->resource_desc().num_running_tasks_below());
+  }
+}
+
 void FlowGraphManager::UpdateResourceNode(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   CHECK_NOTNULL(rtnd_ptr);
@@ -1240,6 +1269,10 @@ void FlowGraphManager::UpdateResourceNode(
 
 void FlowGraphManager::UpdateResourceTopology(
     ResourceTopologyNodeDescriptor* resource_tree) {
+  // XXX(ionel): We do an additional traversal to update num_slots_below and
+  // num_running_tasks_below for each resource. This pass could be merged in
+  // the UpdateResourceNode pass, but it would require some code refactoring.
+  UpdateResourceBelowStats(resource_tree);
   // N.B.: This only considers ADDITION of resources currently; if resources
   // are removed from the topology (e.g. due to a failure), they won't
   // disappear via this method.

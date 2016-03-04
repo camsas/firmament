@@ -221,9 +221,7 @@ FlowGraphNode* RandomCostModel::GatherStats(FlowGraphNode* accumulator,
     return accumulator;
   }
 
-  if (!other->rd_ptr_) {
-    return accumulator;
-  }
+  CHECK_NOTNULL(other->rd_ptr_);
   accumulator->rd_ptr_->set_num_running_tasks_below(
       accumulator->rd_ptr_->num_running_tasks_below() +
       other->rd_ptr_->num_running_tasks_below());
