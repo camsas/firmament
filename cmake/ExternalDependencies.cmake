@@ -25,7 +25,7 @@ endif (${ENABLE_CS2})
 if (${ENABLE_FLOWLESSLY})
   ExternalProject_Add(
       flowlessly
-      GIT_REPOSITORY https://github.com/ICGog/FlowlesslyPrivate.git
+      GIT_REPOSITORY git@github.com:ICGog/FlowlesslyPrivate.git
       TIMEOUT 10
       PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/flowlessly
       # no install required, we link the library from the build tree
