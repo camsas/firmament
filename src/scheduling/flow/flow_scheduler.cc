@@ -484,7 +484,7 @@ void FlowScheduler::UpdateResourceTopology(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   // Run a topology refresh (somewhat expensive!); if only two nodes exist, the
   // flow graph is empty apart from cluster aggregator and sink.
-  if (flow_graph_manager_->flow_graph()->NumNodes() == 1) {
+  if (flow_graph_manager_->flow_graph().NumNodes() == 1) {
     flow_graph_manager_->AddResourceTopology(rtnd_ptr);
   } else {
     flow_graph_manager_->AddMachine(rtnd_ptr);

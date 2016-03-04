@@ -87,7 +87,7 @@ SolverDispatcher::~SolverDispatcher() {
 }
 
 void SolverDispatcher::ExportJSON(string* output) const {
-  return json_exporter_.Export(*flow_graph_manager_->flow_graph(), output);
+  return json_exporter_.Export(flow_graph_manager_->flow_graph(), output);
 }
 
 void *ExportToSolver(void *x) {
@@ -130,7 +130,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     // Always export full flow graph when running first time. If algorithm
     // is non-incremental, must do it for subsequent iterations too.
     dimacs_exporter_.Reset();
-    dimacs_exporter_.Export(*flow_graph_manager_->flow_graph());
+    dimacs_exporter_.Export(flow_graph_manager_->flow_graph());
     flow_graph_manager_->ResetChanges();
   }
 
@@ -311,9 +311,6 @@ uint64_t SolverDispatcher::AssignNode(
   map<uint64_t, uint64_t>::iterator map_it;
   for (map_it = (*extracted_flow)[node].begin();
        map_it != (*extracted_flow)[node].end(); map_it++) {
-    VLOG(2) << "Checking direct edge back to " << map_it->first << " (type: "
-            << flow_graph_manager_->flow_graph()->Node(map_it->first)->type_
-            << ")";
     // Check if node = root or node = task
     if (flow_graph_manager_->CheckNodeType(map_it->first,
                                            FlowNodeType::ROOT_TASK) ||
@@ -404,7 +401,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(
     task_mappings = ReadTaskMappingChanges(from_solver_, algorithm_runtime);
   } else {
     // Parse and process the result
-    uint64_t num_nodes = flow_graph_manager_->flow_graph()->NumNodes();
+    uint64_t num_nodes = flow_graph_manager_->flow_graph().NumNodes();
     vector<map<uint64_t, uint64_t> >* extracted_flow =
       ReadFlowGraph(from_solver_, algorithm_runtime, num_nodes);
     task_mappings = GetMappings(extracted_flow,

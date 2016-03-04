@@ -30,10 +30,21 @@ class FlowGraphManagerTest : public ::testing::Test {
   FlowGraphManagerTest() {
     // You can do set-up work for each test here.
     FLAGS_v = 2;
+    resource_map_ = shared_ptr<ResourceMap_t>(new ResourceMap_t);
+    task_map_ = shared_ptr<TaskMap_t>(new TaskMap_t);
+    leaf_res_ids_ =
+      new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
+    tg_ = new TraceGenerator(&wall_time_);
+    graph_manager_ = new FlowGraphManager(
+        new TrivialCostModel(resource_map_, task_map_, leaf_res_ids_),
+        leaf_res_ids_, &wall_time_, tg_, &dimacs_stats_);
   }
 
   virtual ~FlowGraphManagerTest() {
     // You can do clean-up work that doesn't throw exceptions here.
+    delete leaf_res_ids_;
+    delete tg_;
+    delete graph_manager_;
   }
 
   // If the constructor and destructor are not enough for setting up
@@ -66,23 +77,20 @@ class FlowGraphManagerTest : public ::testing::Test {
     rtn_c2->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
     rtn_c2->set_parent_id(root_id);
   }
+
+  shared_ptr<ResourceMap_t> resource_map_;
+  shared_ptr<TaskMap_t> task_map_;
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
+  DIMACSChangeStats dimacs_stats_;
+  WallTime wall_time_;
+  TraceGenerator* tg_;
+  FlowGraphManager* graph_manager_;
 };
 
 TEST_F(FlowGraphManagerTest, AddOrUpdateJobNodes) {
-  shared_ptr<ResourceMap_t> resource_map =
-    shared_ptr<ResourceMap_t>(new ResourceMap_t);
-  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
-    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-  DIMACSChangeStats dimacs_stats;
-  WallTime wall_time;
-  TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(
-      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
-      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  graph_manager.AddResourceTopology(&rtn_root);
+  graph_manager_->AddResourceTopology(&rtn_root);
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;
@@ -91,24 +99,24 @@ TEST_F(FlowGraphManagerTest, AddOrUpdateJobNodes) {
   rt->set_state(TaskDescriptor::RUNNABLE);
   rt->set_uid(GenerateRootTaskID(test_job));
   rt->set_job_id(test_job.uuid());
-  CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
-  uint32_t num_changes = graph_manager.graph_changes_.size();
+  CHECK(InsertIfNotPresent(task_map_.get(), rt->uid(), rt));
+  uint32_t num_changes = graph_manager_->graph_changes_.size();
   vector<JobDescriptor*> jd_ptr_vect;
   jd_ptr_vect.push_back(&test_job);
-  graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
+  graph_manager_->AddOrUpdateJobNodes(jd_ptr_vect);
   // This should add one new node for the agg, one arc change from agg to
   // sink, one new node for the root task, one new node for the
   // equivalence class and one new node for the cluster equiv class.
-  CHECK_EQ(graph_manager.graph_changes_.size(), num_changes + 6);
+  CHECK_EQ(graph_manager_->graph_changes_.size(), num_changes + 6);
   DIMACSAddNode* unsched_agg =
-    static_cast<DIMACSAddNode*>(graph_manager.graph_changes_[num_changes]);
+    static_cast<DIMACSAddNode*>(graph_manager_->graph_changes_[num_changes]);
   DIMACSChangeArc* arc_to_sink =
     static_cast<DIMACSChangeArc*>(
-      graph_manager.graph_changes_[num_changes + 1]);
+      graph_manager_->graph_changes_[num_changes + 1]);
   DIMACSAddNode* root_task =
-    static_cast<DIMACSAddNode*>(graph_manager.graph_changes_[num_changes + 2]);
+    static_cast<DIMACSAddNode*>(graph_manager_->graph_changes_[num_changes + 2]);
   DIMACSAddNode* equiv_class =
-    static_cast<DIMACSAddNode*>(graph_manager.graph_changes_[num_changes + 3]);
+    static_cast<DIMACSAddNode*>(graph_manager_->graph_changes_[num_changes + 3]);
 
   CHECK_EQ(arc_to_sink->cap_upper_bound_, 1);
   // Arc to sink.
@@ -120,55 +128,33 @@ TEST_F(FlowGraphManagerTest, AddOrUpdateJobNodes) {
 }
 
 TEST_F(FlowGraphManagerTest, AddOrUpdateResourceNode) {
-  shared_ptr<ResourceMap_t> resource_map =
-    shared_ptr<ResourceMap_t>(new ResourceMap_t);
-  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
-    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-  DIMACSChangeStats dimacs_stats;
-  WallTime wall_time;
-  TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(
-      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
-      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  graph_manager.AddResourceTopology(&rtn_root);
+  graph_manager_->AddResourceTopology(&rtn_root);
   string root_id = rtn_root.mutable_resource_desc()->uuid();
-  uint32_t num_changes = graph_manager.graph_changes_.size();
+  uint32_t num_changes = graph_manager_->graph_changes_.size();
   // Add a new core node.
   ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
   string core_uid = to_string(GenerateResourceID());
   core_node->mutable_resource_desc()->set_uuid(core_uid);
   core_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   core_node->set_parent_id(root_id);
-  graph_manager.AddOrUpdateResourceNode(core_node);
+  graph_manager_->AddOrUpdateResourceNode(core_node);
   // Check if the number of changes is correct. One change for adding the new
   // node, another change for adding an arc from the node to the sink and
   // another change for update the arc from the parent to the core.
-  CHECK_EQ(graph_manager.graph_changes_.size(), num_changes + 3);
+  CHECK_EQ(graph_manager_->graph_changes_.size(), num_changes + 3);
 }
 
 TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob) {
   // We have to set the solver not to be cs2 so that we actually adjust
   // NumNodes when we delete a node.
   FLAGS_flow_scheduling_solver = "flowlessly";
-  shared_ptr<ResourceMap_t> resource_map =
-    shared_ptr<ResourceMap_t>(new ResourceMap_t);
-  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
-    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-  DIMACSChangeStats dimacs_stats;
-  WallTime wall_time;
-  TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(
-      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
-      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  uint64_t num_nodes = graph_manager.flow_graph()->NumNodes();
-  uint64_t num_arcs = graph_manager.flow_graph()->NumArcs();
-  graph_manager.AddResourceTopology(&rtn_root);
+  uint64_t num_nodes = graph_manager_->flow_graph().NumNodes();
+  uint64_t num_arcs = graph_manager_->flow_graph().NumArcs();
+  graph_manager_->AddResourceTopology(&rtn_root);
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;
@@ -177,64 +163,53 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob) {
   rt->set_state(TaskDescriptor::RUNNABLE);
   rt->set_uid(GenerateRootTaskID(test_job));
   rt->set_job_id(test_job.uuid());
-  CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
+  CHECK(InsertIfNotPresent(task_map_.get(), rt->uid(), rt));
   vector<JobDescriptor*> jd_ptr_vect;
   jd_ptr_vect.push_back(&test_job);
-  graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
+  graph_manager_->AddOrUpdateJobNodes(jd_ptr_vect);
   // Three resource nodes, plus one task, plus unsched aggregator,
   // plus cluster aggregator EC, plus task EC
-  CHECK_EQ(graph_manager.flow_graph()->NumNodes(), num_nodes + 7);
+  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 7);
   // Two internal to topology, two to sink, one from cluster agg EC to
   // root resource, one from task to cluster agg, one from task to
   // preferred ec, one from prefered ec to resource, one from task to
   // unscheduled aggregator, one from unscheduled aggregator to sink
-  CHECK_EQ(graph_manager.flow_graph()->NumArcs(), num_arcs + 10);
+  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 10);
   // Job "finishes"
   rt->set_state(TaskDescriptor::COMPLETED);
-  graph_manager.JobCompleted(jid);
+  graph_manager_->JobCompleted(jid);
   // Three resource nodes (cluster agg EC has been deleted, as it no longer
   // has any outgoing arcs).
-  CHECK_EQ(graph_manager.flow_graph()->NumNodes(), num_nodes + 3);
+  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 3);
   // Two internal to topology, two to sink
-  CHECK_EQ(graph_manager.flow_graph()->NumArcs(), num_arcs + 4);
+  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 4);
   for (auto it = rtn_root.mutable_children()->begin();
        it != rtn_root.mutable_children()->end();
        ++it) {
     FlowGraphNode* n =
-      graph_manager.NodeForResourceID(
+      graph_manager_->NodeForResourceID(
           ResourceIDFromString(it->resource_desc().uuid()));
-    graph_manager.DeleteResourceNode(n);
+    graph_manager_->DeleteResourceNode(n);
   }
   FlowGraphNode* n =
-    graph_manager.NodeForResourceID(
+    graph_manager_->NodeForResourceID(
         ResourceIDFromString(rtn_root.resource_desc().uuid()));
-  graph_manager.DeleteResourceNode(n);
+  graph_manager_->DeleteResourceNode(n);
   // Everything should be as in the beginning
-  CHECK_EQ(graph_manager.flow_graph()->NumNodes(), num_nodes);
-  CHECK_EQ(graph_manager.flow_graph()->NumArcs(), num_arcs);
-  graph_manager.AddResourceTopology(&rtn_root);
+  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes);
+  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs);
+  graph_manager_->AddResourceTopology(&rtn_root);
   // Three resource nodes, plus cluster aggregator EC
-  CHECK_EQ(graph_manager.flow_graph()->NumNodes(), num_nodes + 4);
+  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 4);
   // Two internal to topology, two to sink, one from cluster agg EC to
   // root resource
-  CHECK_EQ(graph_manager.flow_graph()->NumArcs(), num_arcs + 5);
+  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 5);
 }
 
 TEST_F(FlowGraphManagerTest, DeleteResourceNode) {
-  shared_ptr<ResourceMap_t> resource_map =
-    shared_ptr<ResourceMap_t>(new ResourceMap_t);
-  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
-    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-  DIMACSChangeStats dimacs_stats;
-  WallTime wall_time;
-  TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(
-      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
-      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  graph_manager.AddResourceTopology(&rtn_root);
+  graph_manager_->AddResourceTopology(&rtn_root);
   string root_id = rtn_root.mutable_resource_desc()->uuid();
   // Add a new core node.
   ResourceTopologyNodeDescriptor* core_node = rtn_root.add_children();
@@ -242,98 +217,64 @@ TEST_F(FlowGraphManagerTest, DeleteResourceNode) {
   core_node->mutable_resource_desc()->set_uuid(core_uid);
   core_node->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   core_node->set_parent_id(root_id);
-  graph_manager.AddOrUpdateResourceNode(core_node);
-  uint32_t num_changes = graph_manager.graph_changes_.size();
+  graph_manager_->AddOrUpdateResourceNode(core_node);
+  uint32_t num_changes = graph_manager_->graph_changes_.size();
   // Delete the core node.
-  graph_manager.DeleteResourceNode(graph_manager.NodeForResourceID(
+  graph_manager_->DeleteResourceNode(graph_manager_->NodeForResourceID(
        ResourceIDFromString(core_node->resource_desc().uuid())));
-  CHECK_EQ(graph_manager.graph_changes_.size(), num_changes + 1);
+  CHECK_EQ(graph_manager_->graph_changes_.size(), num_changes + 1);
 }
 
 TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopo) {
   // We have to set the solver not to be cs2 so that we actually adjust
   // NumNodes when we delete a node.
-  shared_ptr<ResourceMap_t> resource_map =
-    shared_ptr<ResourceMap_t>(new ResourceMap_t);
-  FLAGS_flow_scheduling_solver = "flowlessly";
-  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
-    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-  DIMACSChangeStats dimacs_stats;
-  WallTime wall_time;
-  TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(
-      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
-      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  uint64_t num_nodes = graph_manager.flow_graph()->NumNodes();
-  uint64_t num_arcs = graph_manager.flow_graph()->NumArcs();
-  graph_manager.AddResourceTopology(&rtn_root);
+  uint64_t num_nodes = graph_manager_->flow_graph().NumNodes();
+  uint64_t num_arcs = graph_manager_->flow_graph().NumArcs();
+  graph_manager_->AddResourceTopology(&rtn_root);
   // Three resource nodes, plus cluster aggregator EC
-  CHECK_EQ(graph_manager.flow_graph()->NumNodes(), num_nodes + 4);
+  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 4);
   // Two internal to topology, two to sink, one from cluster agg EC to
   // root resource
-  CHECK_EQ(graph_manager.flow_graph()->NumArcs(), num_arcs + 5);
+  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 5);
   for (auto it = rtn_root.mutable_children()->begin();
        it != rtn_root.mutable_children()->end();
        ++it) {
     FlowGraphNode* n =
-      graph_manager.NodeForResourceID(
+      graph_manager_->NodeForResourceID(
           ResourceIDFromString(it->resource_desc().uuid()));
-    graph_manager.DeleteResourceNode(n);
+    graph_manager_->DeleteResourceNode(n);
   }
   // Still have cluster agg and topology root here
-  CHECK_EQ(graph_manager.flow_graph()->NumNodes(), num_nodes + 2);
-  CHECK_EQ(graph_manager.flow_graph()->NumArcs(), num_arcs + 1);
+  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 2);
+  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 1);
   FlowGraphNode* n =
-    graph_manager.NodeForResourceID(
+    graph_manager_->NodeForResourceID(
         ResourceIDFromString(rtn_root.resource_desc().uuid()));
-  graph_manager.DeleteResourceNode(n);
-  CHECK_EQ(graph_manager.flow_graph()->NumNodes(), num_nodes);
-  CHECK_EQ(graph_manager.flow_graph()->NumArcs(), num_arcs);
-  graph_manager.AddResourceTopology(&rtn_root);
+  graph_manager_->DeleteResourceNode(n);
+  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes);
+  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs);
+  graph_manager_->AddResourceTopology(&rtn_root);
   // Three resource nodes, plus cluster aggregator EC
-  CHECK_EQ(graph_manager.flow_graph()->NumNodes(), num_nodes + 4);
+  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 4);
   // Two internal to topology, two to sink, one from cluster agg EC to
   // root resource
-  CHECK_EQ(graph_manager.flow_graph()->NumArcs(), num_arcs + 5);
+  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 5);
 }
 
 // Add simple resource topology to graph
 TEST_F(FlowGraphManagerTest, SimpleResourceTopo) {
-  shared_ptr<ResourceMap_t> resource_map =
-    shared_ptr<ResourceMap_t>(new ResourceMap_t);
-  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
-    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-  DIMACSChangeStats dimacs_stats;
-  WallTime wall_time;
-  TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(
-      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
-      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  graph_manager.AddResourceTopology(&rtn_root);
+  graph_manager_->AddResourceTopology(&rtn_root);
 }
 
 // Test correct increment/decrement of unscheduled aggregator capacities.
 TEST_F(FlowGraphManagerTest, UnschedAggCapacityAdjustment) {
-  shared_ptr<ResourceMap_t> resource_map =
-    shared_ptr<ResourceMap_t>(new ResourceMap_t);
-  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids =
-    new unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>;
-  DIMACSChangeStats dimacs_stats;
-  WallTime wall_time;
-  TraceGenerator tg(&wall_time);
-  FlowGraphManager graph_manager(
-      new TrivialCostModel(resource_map, task_map, leaf_res_ids),
-      leaf_res_ids, &wall_time, &tg, &dimacs_stats);
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  graph_manager.AddResourceTopology(&rtn_root);
+  graph_manager_->AddResourceTopology(&rtn_root);
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
   JobDescriptor test_job;
@@ -342,29 +283,29 @@ TEST_F(FlowGraphManagerTest, UnschedAggCapacityAdjustment) {
   rt->set_state(TaskDescriptor::RUNNABLE);
   rt->set_uid(GenerateRootTaskID(test_job));
   rt->set_job_id(test_job.uuid());
-  CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
+  CHECK(InsertIfNotPresent(task_map_.get(), rt->uid(), rt));
   vector<JobDescriptor*> jd_ptr_vect;
   jd_ptr_vect.push_back(&test_job);
-  graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
+  graph_manager_->AddOrUpdateJobNodes(jd_ptr_vect);
   // Grab the unscheduled aggregator for the new job
   FlowGraphNode* unsched_agg_node =
-    FindPtrOrNull(graph_manager.job_unsched_to_node_, jid);
+    FindPtrOrNull(graph_manager_->job_unsched_to_node_, jid);
   CHECK_NOTNULL(unsched_agg_node);
   FlowGraphArc* unsched_agg_to_sink_arc = FindPtrOrNull(
       unsched_agg_node->outgoing_arc_map_,
-      graph_manager.sink_node_->id_);
+      graph_manager_->sink_node_->id_);
   CHECK_NOTNULL(unsched_agg_to_sink_arc);
   CHECK_EQ(unsched_agg_to_sink_arc->cap_upper_bound_, 1);
   // Now pin the root task to the first resource leaf
   FlowGraphNode* root_task_node =
-      FindPtrOrNull(graph_manager.task_to_node_map_,
+      FindPtrOrNull(graph_manager_->task_to_node_map_,
                     test_job.root_task().uid());
   CHECK_NOTNULL(root_task_node);
   FlowGraphNode* resource_node =
-      FindPtrOrNull(graph_manager.resource_to_node_map_, ResourceIDFromString(
+      FindPtrOrNull(graph_manager_->resource_to_node_map_, ResourceIDFromString(
           rtn_root.mutable_children()->Get(0).resource_desc().uuid()));
   CHECK_NOTNULL(resource_node);
-  graph_manager.PinTaskToNode(root_task_node, resource_node);
+  graph_manager_->PinTaskToNode(root_task_node, resource_node);
   // The unscheduled aggregator's outbound capacity should have been
   // decremented.
   CHECK_EQ(unsched_agg_to_sink_arc->cap_upper_bound_, 0);

@@ -78,8 +78,8 @@ class FlowGraphManager {
   void UpdateTimeDependentCosts(const vector<JobDescriptor*>& jd_ptr_vec);
   void UpdateUnscheduledAggArcCosts();
   // Simple accessor methods
-  inline FlowGraph* flow_graph() {
-    return flow_graph_;
+  inline const FlowGraph& flow_graph() {
+    return *flow_graph_;
   }
   inline vector<DIMACSChange*>& graph_changes() {
     return graph_changes_;
