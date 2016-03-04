@@ -143,7 +143,6 @@ class FlowGraphManager {
   void SetResourceNodeType(FlowGraphNode* res_node,
                            const ResourceDescriptor& rd);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
-  void UpdateArcsForEvictedTask(TaskID_t task_id, ResourceID_t res_id);
   void UpdateArcsFromEquivClasses(unordered_set<EquivClass_t>* ecs_to_update);
   /**
    * Updates all the outgoing arcs from one or more tasks.
