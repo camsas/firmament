@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_202c6a99",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-05T23:34:12Z",
+      "side": 1,
+      "message": "typo, changes",
+      "range": {
+        "startLine": 11,
+        "startChar": 7,
+        "endLine": 11,
+        "endChar": 13
+      },
+      "revId": "b1b4610ee82e6609e47b161b32936368fc7b46fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_a065bae2",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-05T23:34:12Z",
+      "side": 1,
+      "message": "Should we have both ChangeArc and a more specific ChangeArcCost? It seems to me that we want either ChangeArc, or ChangeArcCost/ChangeArcCapacity, or implement the former in terms of the latter.",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 72
+      },
+      "revId": "b1b4610ee82e6609e47b161b32936368fc7b46fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_c062b6d7",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-05T23:34:12Z",
+      "side": 1,
+      "message": "We\u0027ll presumably have to use a different data structure here later (e.g., something indexed by the affected node/arc, or similar).",
+      "revId": "b1b4610ee82e6609e47b161b32936368fc7b46fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
