@@ -38,7 +38,7 @@ struct FlowGraphNode {
   explicit FlowGraphNode(uint64_t id);
   FlowGraphNode(uint64_t id, uint64_t excess);
   void AddArc(FlowGraphArc* arc);
-  bool IsResourceNode() {
+  bool IsResourceNode() const {
     return type_ == FlowNodeType::COORDINATOR ||
       type_ == FlowNodeType::MACHINE ||
       type_ == FlowNodeType::NUMA_NODE ||
@@ -47,7 +47,7 @@ struct FlowGraphNode {
       type_ == FlowNodeType::CORE ||
       type_ == FlowNodeType::PU;
   };
-  bool IsTaskNode() {
+  bool IsTaskNode() const {
     return type_ == FlowNodeType::ROOT_TASK ||
       type_ == FlowNodeType::SCHEDULED_TASK ||
       type_ == FlowNodeType::UNSCHEDULED_TASK;

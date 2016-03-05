@@ -513,7 +513,7 @@ void FlowGraphManager::AddTaskEquivClasses(FlowGraphNode* task_node) {
     }
     // Add arc to EC if we don't already have one: we might, as the act of
     // adding the EC may already have created the arc.
-    if (!FlowGraph::GetArc(task_node, ec_node_ptr)) {
+    if (!flow_graph_->GetArc(task_node, ec_node_ptr)) {
       VLOG(2) << "AddTaskEquivClasses adding arc from task " << task_node->id_
               << " to EC " << ec_node_ptr->id_;
       FlowGraphArc* ec_arc =
@@ -1323,6 +1323,38 @@ void FlowGraphManager::ResetChanges() {
     delete *it_tmp;
   }
   graph_changes_.clear();
+}
+
+void FlowGraphManager::UpdateArc(FlowGraphNode* src_node,
+                                 FlowGraphNode* dst_node) {
+  FlowGraphArc* arc = flow_graph_->GetArc(src_node, dst_node);
+  uint64_t new_cost;
+  uint64_t new_cap = arc->cap_upper_bound_;
+  if (src_node->type_ == FlowNodeType::EQUIVALENCE_CLASS &&
+      dst_node->IsResourceNode()) {
+    auto new_cost_cap =
+      cost_model_->EquivClassToResourceNode(src_node->ec_id_,
+                                            dst_node->resource_id_);
+    new_cost = new_cost_cap.first;
+    new_cap = new_cost_cap.second;
+  } else if (src_node->IsResourceNode() &&
+             dst_node->IsResourceNode()) {
+    new_cost = cost_model_->ResourceNodeToResourceNodeCost(*src_node->rd_ptr_,
+                                                           *dst_node->rd_ptr_);
+  } else {
+    LOG(FATAL) << "UpdateArc used with unsupported types: " << src_node->type_
+               << " " << dst_node->type_;
+  }
+  if (arc->cost_ != new_cost || arc->cap_upper_bound_ != new_cap) {
+    uint64_t old_cost = arc->cost_;
+    arc->cost_ = new_cost;
+    arc->cap_upper_bound_ = new_cap;
+    DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
+    chg->set_comment("UpdateArc");
+    dimacs_stats_->UpdateStats(CHG_ARC_BETWEEN_RES);
+    AddGraphChange(chg);
+  }
+
 }
 
 void FlowGraphManager::UpdateArcTaskToEquivClass(FlowGraphNode* task_node,
