@@ -137,22 +137,9 @@ void VoidCostModel::RemoveTask(TaskID_t task_id) {
 
 FlowGraphNode* VoidCostModel::GatherStats(FlowGraphNode* accumulator,
                                           FlowGraphNode* other) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK ||
-      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+  if (!accumulator->IsResourceNode()) {
     return accumulator;
   }
-
-  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
-        accumulator->type_ == FlowNodeType::MACHINE ||
-        accumulator->type_ == FlowNodeType::NUMA_NODE ||
-        accumulator->type_ == FlowNodeType::SOCKET ||
-        accumulator->type_ == FlowNodeType::CACHE ||
-        accumulator->type_ == FlowNodeType::CORE ||
-        accumulator->type_ == FlowNodeType::PU);
 
   if (other->resource_id_.is_nil()) {
     // The other node is not a resource node.
@@ -179,22 +166,9 @@ FlowGraphNode* VoidCostModel::GatherStats(FlowGraphNode* accumulator,
 }
 
 void VoidCostModel::PrepareStats(FlowGraphNode* accumulator) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK ||
-      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-    // The node is not a resource.
+  if (!accumulator->IsResourceNode()) {
     return;
   }
-  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
-        accumulator->type_ == FlowNodeType::MACHINE ||
-        accumulator->type_ == FlowNodeType::NUMA_NODE ||
-        accumulator->type_ == FlowNodeType::SOCKET ||
-        accumulator->type_ == FlowNodeType::CACHE ||
-        accumulator->type_ == FlowNodeType::CORE ||
-        accumulator->type_ == FlowNodeType::PU);
   CHECK_NOTNULL(accumulator->rd_ptr_);
   accumulator->rd_ptr_->clear_num_running_tasks_below();
   accumulator->rd_ptr_->clear_num_slots_below();

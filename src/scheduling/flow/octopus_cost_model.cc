@@ -149,24 +149,9 @@ void OctopusCostModel::RemoveTask(TaskID_t task_id) {
 
 FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
                                              FlowGraphNode* other) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK ||
-      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-    // Node is neither part of the topology or an equivalence class.
-    // We don't have to accumulate any state.
+  if (!accumulator->IsResourceNode()) {
     return accumulator;
   }
-
-  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
-        accumulator->type_ == FlowNodeType::MACHINE ||
-        accumulator->type_ == FlowNodeType::NUMA_NODE ||
-        accumulator->type_ == FlowNodeType::SOCKET ||
-        accumulator->type_ == FlowNodeType::CACHE ||
-        accumulator->type_ == FlowNodeType::CORE ||
-        accumulator->type_ == FlowNodeType::PU);
 
   if (other->resource_id_.is_nil()) {
     if (accumulator->type_ == FlowNodeType::PU) {
@@ -196,22 +181,9 @@ FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
 }
 
 void OctopusCostModel::PrepareStats(FlowGraphNode* accumulator) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK ||
-      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-    // The node is not a resource.
+  if (!accumulator->IsResourceNode()) {
     return;
   }
-  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
-        accumulator->type_ == FlowNodeType::MACHINE ||
-        accumulator->type_ == FlowNodeType::NUMA_NODE ||
-        accumulator->type_ == FlowNodeType::SOCKET ||
-        accumulator->type_ == FlowNodeType::CACHE ||
-        accumulator->type_ == FlowNodeType::CORE ||
-        accumulator->type_ == FlowNodeType::PU);
   CHECK_NOTNULL(accumulator->rd_ptr_);
   accumulator->rd_ptr_->clear_num_running_tasks_below();
   accumulator->rd_ptr_->clear_num_slots_below();
@@ -219,22 +191,9 @@ void OctopusCostModel::PrepareStats(FlowGraphNode* accumulator) {
 
 FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
                                              FlowGraphNode* other) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK ||
-      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+  if (!accumulator->IsResourceNode()) {
     return accumulator;
   }
-
-  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
-        accumulator->type_ == FlowNodeType::MACHINE ||
-        accumulator->type_ == FlowNodeType::NUMA_NODE ||
-        accumulator->type_ == FlowNodeType::SOCKET ||
-        accumulator->type_ == FlowNodeType::CACHE ||
-        accumulator->type_ == FlowNodeType::CORE ||
-        accumulator->type_ == FlowNodeType::PU);
 
   if (other->resource_id_.is_nil()) {
     return accumulator;

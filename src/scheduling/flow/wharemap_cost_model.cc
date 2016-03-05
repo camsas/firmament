@@ -666,15 +666,7 @@ void WhareMapCostModel::ComputeMachineTypeHash(
 
 FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
                                               FlowGraphNode* other) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK) {
-    // Node is neither part of the topology or an equivalence class.
-    // We don't have to accumulate any state.
-    // Cases: 1) TASK -> EQUIV
-    //        2) TASK -> RESOURCE
+  if (!accumulator->IsResourceNode()) {
     return accumulator;
   }
 
@@ -713,22 +705,6 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
     }
     return accumulator;
   }
-  if (accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-    if (!other->resource_id_.is_nil() &&
-        other->type_ == FlowNodeType::MACHINE) {
-      // Case: (EQUIV -> MACHINE).
-      // We don't have to do anything.
-    } else if (other->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-      // Case: (EQUIV -> EQUIV).
-      // We don't have to do anything.
-    } else {
-      LOG(FATAL) << "Unexpected preference arc from node " << accumulator->id_
-                 << " of type " << accumulator->type_ << " to " << other->id_
-                 << " of type " << other->type_;
-    }
-    // TODO(ionel): Update knowledge base.
-    return accumulator;
-  }
   // Case: (RESOURCE -> RESOURCE)
   CHECK_NOTNULL(other->rd_ptr_);
   accumulator->rd_ptr_->set_num_running_tasks_below(
@@ -750,22 +726,9 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
 }
 
 void WhareMapCostModel::PrepareStats(FlowGraphNode* accumulator) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK ||
-      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-    // The node is not a resource.
+  if (!accumulator->IsResourceNode()) {
     return;
   }
-  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
-        accumulator->type_ == FlowNodeType::MACHINE ||
-        accumulator->type_ == FlowNodeType::NUMA_NODE ||
-        accumulator->type_ == FlowNodeType::SOCKET ||
-        accumulator->type_ == FlowNodeType::CACHE ||
-        accumulator->type_ == FlowNodeType::CORE ||
-        accumulator->type_ == FlowNodeType::PU);
   CHECK_NOTNULL(accumulator->rd_ptr_);
   accumulator->rd_ptr_->clear_num_running_tasks_below();
   accumulator->rd_ptr_->clear_num_slots_below();
@@ -773,31 +736,13 @@ void WhareMapCostModel::PrepareStats(FlowGraphNode* accumulator) {
 
 FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
                                               FlowGraphNode* other) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK) {
-    // Node is neither part of the topology or an equivalence class.
-    // We don't have to accumulate any state.
-    // Cases: 1) TASK -> EQUIV
-    //        2) TASK -> RESOURCE
+  if (!accumulator->IsResourceNode()) {
     return accumulator;
   }
   if (other->resource_id_.is_nil()) {
     if (accumulator->type_ == FlowNodeType::PU) {
       // Base case: (PU -> SINK)
       // We don't have to do anything.
-    }
-    return accumulator;
-  }
-  if (accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-    if (other->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-      // Case: EQUIV -> EQUIV
-    } else if (other->type_ == FlowNodeType::MACHINE) {
-      // Case: EQUIV -> MACHINE
-    } else {
-      LOG(FATAL) << "Unexpected preference arc";
     }
     return accumulator;
   }
