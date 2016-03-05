@@ -38,6 +38,20 @@ struct FlowGraphNode {
   explicit FlowGraphNode(uint64_t id);
   FlowGraphNode(uint64_t id, uint64_t excess);
   void AddArc(FlowGraphArc* arc);
+  bool IsResourceNode() {
+    return type_ == FlowNodeType::COORDINATOR ||
+      type_ == FlowNodeType::MACHINE ||
+      type_ == FlowNodeType::NUMA_NODE ||
+      type_ == FlowNodeType::SOCKET ||
+      type_ == FlowNodeType::CACHE ||
+      type_ == FlowNodeType::CORE ||
+      type_ == FlowNodeType::PU;
+  };
+  bool IsTaskNode() {
+    return type_ == FlowNodeType::ROOT_TASK ||
+      type_ == FlowNodeType::SCHEDULED_TASK ||
+      type_ == FlowNodeType::UNSCHEDULED_TASK;
+  };
 
   uint64_t id_;
   int64_t excess_;

@@ -788,12 +788,7 @@ void CocoCostModel::RemoveTask(TaskID_t task_id) {
 
 FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
                                           FlowGraphNode* other) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK ||
-      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
+  if (!accumulator->IsResourceNode()) {
     // Node is neither part of the topology or an equivalence class.
     // We don't have to accumulate any state.
     // Cases: 1) TASK -> EQUIV
@@ -806,13 +801,6 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
     // There's no point to update its state.
     return accumulator;
   }
-
-  CHECK(accumulator->type_ == FlowNodeType::MACHINE ||
-        accumulator->type_ == FlowNodeType::NUMA_NODE ||
-        accumulator->type_ == FlowNodeType::SOCKET ||
-        accumulator->type_ == FlowNodeType::CACHE ||
-        accumulator->type_ == FlowNodeType::CORE ||
-        accumulator->type_ == FlowNodeType::PU);
 
   // Case: (RESOURCE -> RESOURCE)
   // We're inside the resource topology
@@ -989,22 +977,9 @@ CocoCostModel::CompareResourceVectors(
 }
 
 void CocoCostModel::PrepareStats(FlowGraphNode* accumulator) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK ||
-      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-    // The node is not a resource.
+  if (!accumulator->IsResourceNode()) {
     return;
   }
-  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
-        accumulator->type_ == FlowNodeType::MACHINE ||
-        accumulator->type_ == FlowNodeType::NUMA_NODE ||
-        accumulator->type_ == FlowNodeType::SOCKET ||
-        accumulator->type_ == FlowNodeType::CACHE ||
-        accumulator->type_ == FlowNodeType::PU ||
-        accumulator->type_ == FlowNodeType::CORE);
   ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
   CHECK_NOTNULL(rd_ptr);
   rd_ptr->clear_available_resources();
@@ -1091,26 +1066,14 @@ CocoCostModel::TaskFitsUnderResourceAggregate(
 
 FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
                                           FlowGraphNode* other) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK) {
+  if (!accumulator->IsResourceNode() &&
+      accumulator->type_ != FlowNodeType::EQUIVALENCE_CLASS) {
     // Node is neither part of the topology or an equivalence class.
     // We don't have to accumulate any state.
     // Cases: 1) TASK -> EQUIV
     //        2) TASK -> RESOURCE
     return accumulator;
   }
-
-  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
-        accumulator->type_ == FlowNodeType::MACHINE ||
-        accumulator->type_ == FlowNodeType::NUMA_NODE ||
-        accumulator->type_ == FlowNodeType::SOCKET ||
-        accumulator->type_ == FlowNodeType::CACHE ||
-        accumulator->type_ == FlowNodeType::CORE ||
-        accumulator->type_ == FlowNodeType::PU ||
-        accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS);
 
   if (other->resource_id_.is_nil()) {
     if (accumulator->type_ == FlowNodeType::PU) {

@@ -666,11 +666,8 @@ void WhareMapCostModel::ComputeMachineTypeHash(
 
 FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
                                               FlowGraphNode* other) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK) {
+  if (!accumulator->IsResourceNode() &&
+      accumulator->type_ != FlowNodeType::EQUIVALENCE_CLASS) {
     // Node is neither part of the topology or an equivalence class.
     // We don't have to accumulate any state.
     // Cases: 1) TASK -> EQUIV
@@ -750,22 +747,9 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
 }
 
 void WhareMapCostModel::PrepareStats(FlowGraphNode* accumulator) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK ||
-      accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-    // The node is not a resource.
+  if (!accumulator->IsResourceNode()) {
     return;
   }
-  CHECK(accumulator->type_ == FlowNodeType::COORDINATOR ||
-        accumulator->type_ == FlowNodeType::MACHINE ||
-        accumulator->type_ == FlowNodeType::NUMA_NODE ||
-        accumulator->type_ == FlowNodeType::SOCKET ||
-        accumulator->type_ == FlowNodeType::CACHE ||
-        accumulator->type_ == FlowNodeType::CORE ||
-        accumulator->type_ == FlowNodeType::PU);
   CHECK_NOTNULL(accumulator->rd_ptr_);
   accumulator->rd_ptr_->clear_num_running_tasks_below();
   accumulator->rd_ptr_->clear_num_slots_below();
@@ -773,11 +757,8 @@ void WhareMapCostModel::PrepareStats(FlowGraphNode* accumulator) {
 
 FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
                                               FlowGraphNode* other) {
-  if (accumulator->type_ == FlowNodeType::ROOT_TASK ||
-      accumulator->type_ == FlowNodeType::SCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-      accumulator->type_ == FlowNodeType::JOB_AGGREGATOR ||
-      accumulator->type_ == FlowNodeType::SINK) {
+  if (!accumulator->IsResourceNode() &&
+      accumulator->type_ != FlowNodeType::EQUIVALENCE_CLASS) {
     // Node is neither part of the topology or an equivalence class.
     // We don't have to accumulate any state.
     // Cases: 1) TASK -> EQUIV
