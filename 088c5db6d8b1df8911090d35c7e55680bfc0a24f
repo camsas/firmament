@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_fa184386",
+        "filename": "src/scheduling/CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-05T00:03:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_da7e27ae",
+      "revId": "088c5db6d8b1df8911090d35c7e55680bfc0a24f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_1a50bf31",
         "filename": "src/scheduling/flow/dimacs_exporter.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2016-03-04T23:14:04Z",
       "side": 1,
       "message": "Will this print a blank comment line if the node does not have a comment?",
+      "revId": "088c5db6d8b1df8911090d35c7e55680bfc0a24f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_1a37df00",
+        "filename": "src/scheduling/flow/dimacs_exporter.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-05T00:03:02Z",
+      "side": 1,
+      "message": "Fixed.",
+      "parentUuid": "5a72e520_1a50bf31",
       "revId": "088c5db6d8b1df8911090d35c7e55680bfc0a24f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_5a415759",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-05T00:03:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_3a457b70",
+      "range": {
+        "startLine": 54,
+        "startChar": 7,
+        "endLine": 54,
+        "endChar": 35
+      },
+      "revId": "088c5db6d8b1df8911090d35c7e55680bfc0a24f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_5a4a3781",
         "filename": "src/scheduling/flow/flow_graph_node.h",
         "patchSetId": 1
@@ -70,6 +130,24 @@
       "writtenOn": "2016-03-04T23:14:04Z",
       "side": 1,
       "message": "Hmm. I wonder if we should turn this struct into a class, and have getter/setter methods, so that we can do NULL checks for the pointer fields. Currently, we use td_ptr without NULL checks in many places in the code.",
+      "revId": "088c5db6d8b1df8911090d35c7e55680bfc0a24f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_5a187781",
+        "filename": "src/scheduling/flow/flow_graph_node.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-05T00:03:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_5a4a3781",
       "revId": "088c5db6d8b1df8911090d35c7e55680bfc0a24f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
