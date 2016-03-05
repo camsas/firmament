@@ -13,6 +13,7 @@ set(SCHEDULING_SRC
   scheduling/flow/dimacs_remove_node.cc
   scheduling/flow/flow_graph.cc
   scheduling/flow/flow_graph_arc.cc
+  scheduling/flow/flow_graph_change_manager.cc
   scheduling/flow/flow_graph_manager.cc
   scheduling/flow/flow_graph_node.cc
   scheduling/flow/flow_scheduler.cc
