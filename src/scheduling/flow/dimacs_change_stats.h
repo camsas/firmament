@@ -17,7 +17,7 @@ namespace firmament {
 // instance itself
 class DIMACSChange;
 
-enum ChangeType {
+enum DIMACSChangeType {
   ADD_TASK_NODE = 0,
   ADD_RESOURCE_NODE = 1,
   ADD_EQUIV_CLASS_NODE = 2,
@@ -61,7 +61,7 @@ struct DIMACSChangeStats {
   ~DIMACSChangeStats();
   string GetStatsString() const;
   void ResetStats();
-  void UpdateStats(ChangeType change_type);
+  void UpdateStats(DIMACSChangeType change_type);
 };
 
 } // namespace firmament

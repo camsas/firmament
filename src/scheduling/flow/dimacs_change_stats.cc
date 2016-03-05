@@ -46,7 +46,7 @@ void DIMACSChangeStats::ResetStats() {
   }
 }
 
-void DIMACSChangeStats::UpdateStats(ChangeType change_type) {
+void DIMACSChangeStats::UpdateStats(DIMACSChangeType change_type) {
   num_changes_of_type_[change_type]++;
   if (change_type == ADD_TASK_NODE || change_type == ADD_RESOURCE_NODE ||
       change_type == ADD_EQUIV_CLASS_NODE ||
