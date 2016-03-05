@@ -131,7 +131,6 @@ uint64_t FlowGraph::NextId() {
     } else {
       uint64_t new_id = unused_ids_.front();
       unused_ids_.pop();
-      CHECK_EQ(Node(new_id), static_cast<FlowGraphNode*>(NULL));
       return new_id;
     }
   }

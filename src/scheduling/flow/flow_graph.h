@@ -32,9 +32,10 @@ class FlowGraph {
   inline const unordered_map<uint64_t, FlowGraphNode*>& Nodes() const {
     return node_map_;
   }
-  inline FlowGraphNode* Node(uint64_t id) {
-    FlowGraphNode* const* npp = FindOrNull(node_map_, id);
-    return (npp ? *npp : NULL);
+  inline const FlowGraphNode& Node(uint64_t id) const {
+    FlowGraphNode* node = FindPtrOrNull(node_map_, id);
+    CHECK_NOTNULL(node);
+    return *node;
   }
   inline uint64_t NumArcs() const { return arc_set_.size(); }
   inline uint64_t NumNodes() const {

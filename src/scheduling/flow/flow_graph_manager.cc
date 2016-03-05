@@ -579,8 +579,7 @@ uint64_t FlowGraphManager::CapacityBetweenECNodes(const FlowGraphNode& src,
 }
 
 bool FlowGraphManager::CheckNodeType(uint64_t node, FlowNodeType type) {
-  FlowNodeType node_type = flow_graph_->Node(node)->type_;
-  return (node_type == type);
+  return flow_graph_->Node(node).type_ == type;
 }
 
 void FlowGraphManager::ComputeTopologyStatistics(
@@ -859,17 +858,15 @@ void FlowGraphManager::NodeBindingToSchedulingDeltas(
     uint64_t task_node_id, uint64_t res_node_id,
     unordered_map<TaskID_t, ResourceID_t>* task_bindings,
     vector<SchedulingDelta*>* deltas) {
-  FlowGraphNode* task_node = flow_graph_->Node(task_node_id);
-  CHECK(task_node->type_ == FlowNodeType::SCHEDULED_TASK ||
-        task_node->type_ == FlowNodeType::UNSCHEDULED_TASK ||
-        task_node->type_ == FlowNodeType::ROOT_TASK);
+  const FlowGraphNode& task_node = flow_graph_->Node(task_node_id);
+  CHECK(task_node.IsTaskNode());
   // Destination must be a PU node
-  FlowGraphNode* res_node = flow_graph_->Node(res_node_id);
-  CHECK(res_node->type_ == FlowNodeType::PU);
-  CHECK_NOTNULL(task_node->td_ptr_);
-  const TaskDescriptor& task = *task_node->td_ptr_;
-  CHECK_NOTNULL(res_node->rd_ptr_);
-  const ResourceDescriptor& res = *res_node->rd_ptr_;
+  const FlowGraphNode& res_node = flow_graph_->Node(res_node_id);
+  CHECK(res_node.type_ == FlowNodeType::PU);
+  CHECK_NOTNULL(task_node.td_ptr_);
+  const TaskDescriptor& task = *task_node.td_ptr_;
+  CHECK_NOTNULL(res_node.rd_ptr_);
+  const ResourceDescriptor& res = *res_node.rd_ptr_;
   // Is the source (task) already placed elsewhere?
   ResourceID_t* bound_res = FindOrNull(*task_bindings, task.uid());
   // Does the destination (resource) already have a task bound?
