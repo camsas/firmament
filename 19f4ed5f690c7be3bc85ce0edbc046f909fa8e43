@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_9dad8934",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1070,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-05T18:40:35Z",
+      "side": 1,
+      "message": "Add a TODO here to say that we need this because of the arc cost update below",
+      "revId": "19f4ed5f690c7be3bc85ce0edbc046f909fa8e43",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_dda7014e",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 761,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-05T18:40:35Z",
+      "side": 1,
+      "message": "See CoCo -- add TODO explaining why we need this",
+      "revId": "19f4ed5f690c7be3bc85ce0edbc046f909fa8e43",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
