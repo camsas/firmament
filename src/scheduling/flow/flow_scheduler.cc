@@ -128,7 +128,7 @@ FlowScheduler::FlowScheduler(
   cost_model_->SetFlowGraphManager(flow_graph_manager_);
 
   // Set up the initial flow graph
-  UpdateResourceTopology(resource_topology);
+  flow_graph_manager_->AddResourceTopology(resource_topology);
   // Set up the dispatcher, which starts the flow solver
   solver_dispatcher_ = new SolverDispatcher(flow_graph_manager_, false);
 }
@@ -366,8 +366,7 @@ void FlowScheduler::RegisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr,
                                      bool simulated) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::RegisterResource(rtnd_ptr, local, simulated);
-  // Update the flow graph
-  UpdateResourceTopology(rtnd_ptr);
+  flow_graph_manager_->AddMachine(rtnd_ptr);
 }
 
 uint64_t FlowScheduler::RunSchedulingIteration(
@@ -479,17 +478,6 @@ void FlowScheduler::UpdateCostModelResourceStats() {
       boost::bind(&CostModelInterface::PrepareStats, cost_model_, _1),
       boost::bind(&CostModelInterface::GatherStats, cost_model_, _1, _2),
       boost::bind(&CostModelInterface::UpdateStats, cost_model_, _1, _2));
-}
-
-void FlowScheduler::UpdateResourceTopology(
-    ResourceTopologyNodeDescriptor* rtnd_ptr) {
-  // Run a topology refresh (somewhat expensive!); if only two nodes exist, the
-  // flow graph is empty apart from cluster aggregator and sink.
-  if (flow_graph_manager_->flow_graph().NumNodes() == 1) {
-    flow_graph_manager_->AddResourceTopology(rtnd_ptr);
-  } else {
-    flow_graph_manager_->AddMachine(rtnd_ptr);
-  }
 }
 
 }  // namespace scheduler
