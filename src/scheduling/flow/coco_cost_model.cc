@@ -1070,7 +1070,7 @@ FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
   // we update the arcs from ECs to Resources. Remove the condition one
   // the update arc code is moved to the FlowGraphManager.
   if (!accumulator->IsResourceNode() &&
-      accumulator->type_ != FlowNodeType::EQUIVALENCE_CLASS) {
+      !accumulator->IsEquivalenceClassNode()) {
     // Node is neither part of the topology or an equivalence class.
     // We don't have to accumulate any state.
     // Cases: 1) TASK -> EQUIV
@@ -1086,31 +1086,7 @@ FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
     return accumulator;
   }
 
-  FlowGraphArc* arc = FlowGraph::GetArc(accumulator, other);
-  uint64_t new_cost;
-  int64_t new_cap = arc->cap_upper_bound_;
-  CHECK_NE(other->type_, FlowNodeType::EQUIVALENCE_CLASS);
-  if (accumulator->type_ == FlowNodeType::EQUIVALENCE_CLASS) {
-    // Case: EQUIV -> RESOURCE
-    auto new_cost_cap =
-      EquivClassToResourceNode(accumulator->ec_id_, other->resource_id_);
-    new_cost = new_cost_cap.first;
-    new_cap = new_cost_cap.second;
-  } else {
-    // Case: RESOURCE -> RESOURCE
-    new_cost =
-      ResourceNodeToResourceNodeCost(*accumulator->rd_ptr_, *other->rd_ptr_);
-  }
-  if (arc->cost_ != new_cost) {
-    uint64_t old_cost = arc->cost_;
-    arc->cost_ = new_cost;
-    arc->cap_upper_bound_ = new_cap;
-    DIMACSChange *chg = new DIMACSChangeArc(*arc, old_cost);
-    chg->set_comment("CoCo/UpdateStats");
-    dimacs_stats_->UpdateStats(CHG_ARC_BETWEEN_RES);
-    flow_graph_manager_->AddGraphChange(chg);
-  }
-
+  flow_graph_manager_->UpdateArc(accumulator, other);
   return accumulator;
 }
 

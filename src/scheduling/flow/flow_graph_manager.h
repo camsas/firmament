@@ -75,6 +75,7 @@ class FlowGraphManager {
   void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
   void UpdateResourceTopology(
       ResourceTopologyNodeDescriptor* resource_tree);
+  void UpdateArc(FlowGraphNode* src_node, FlowGraphNode* dst_node);
   void UpdateTimeDependentCosts(const vector<JobDescriptor*>& jd_ptr_vec);
   void UpdateUnscheduledAggArcCosts();
   // Simple accessor methods
