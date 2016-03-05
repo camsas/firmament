@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_7d3a8dce",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-05T00:27:45Z",
+      "side": 1,
+      "message": "Add something like \"The indirection of UpdateResourceTopology wasn\u0027t necessary, because it merely disambiguated the two control flow paths that would lead to the method being called. However, we should look at renaming AddMachine with a more descriptive name, since it also updates resource information.\"",
+      "revId": "40da96c24f538ba4c50f1cea20e96c923c88d29c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
