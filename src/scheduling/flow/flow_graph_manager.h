@@ -19,8 +19,8 @@
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/dimacs_change.h"
 #include "scheduling/flow/dimacs_change_stats.h"
-#include "scheduling/flow/flow_graph.h"
 #include "scheduling/flow/flow_graph_arc.h"
+#include "scheduling/flow/flow_graph_change_manager.h"
 #include "scheduling/flow/flow_graph_node.h"
 #include "scheduling/flow/scheduling_delta.pb.h"
 
@@ -39,7 +39,6 @@ class FlowGraphManager {
                             DIMACSChangeStats* dimacs_stats);
   virtual ~FlowGraphManager();
   // Public API
-  void AddGraphChange(DIMACSChange* change);
   void AddMachine(ResourceTopologyNodeDescriptor* root);
   void AddOrUpdateJobNodes(const vector<JobDescriptor*>& jd_ptr_vect);
   void AddResourceTopology(
@@ -58,7 +57,6 @@ class FlowGraphManager {
   FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
   FlowGraphNode* NodeForTaskID(TaskID_t task_id);
   void RemoveMachine(const ResourceDescriptor& rd, set<uint64_t>* pus_removed);
-  void ResetChanges();
 
   /**
    * Called when a task changes its state to COMPLETED.
@@ -79,8 +77,8 @@ class FlowGraphManager {
   void UpdateTimeDependentCosts(const vector<JobDescriptor*>& jd_ptr_vec);
   void UpdateUnscheduledAggArcCosts();
   // Simple accessor methods
-  inline const FlowGraph& flow_graph() {
-    return *flow_graph_;
+  inline FlowGraphChangeManager* flow_graph_change_manager() {
+    return graph_change_manager_;
   }
   inline vector<DIMACSChange*>& graph_changes() {
     return graph_changes_;
@@ -95,6 +93,7 @@ class FlowGraphManager {
  protected:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
   FRIEND_TEST(DIMACSExporterTest, ScalabilityTestGraphs);
+  FRIEND_TEST(DIMACSExporterTest, SimpleGraphOutput);
   FRIEND_TEST(FlowGraphManagerTest, AddOrUpdateJobNodes);
   FRIEND_TEST(FlowGraphManagerTest, AddOrUpdateResourceNode);
   FRIEND_TEST(FlowGraphManagerTest, DeleteTaskNode);
@@ -102,17 +101,15 @@ class FlowGraphManager {
   FRIEND_TEST(FlowGraphManagerTest, UnschedAggCapacityAdjustment);
   FRIEND_TEST(FlowGraphManagerTest, DeleteReAddResourceTopo);
   FRIEND_TEST(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob);
-  void AddArcsForTask(FlowGraphNode* task_node, FlowGraphNode* unsched_agg_node,
-                      vector<FlowGraphArc*>* task_arcs);
+  void AddArcsForTask(FlowGraphNode* task_node,
+                      FlowGraphNode* unsched_agg_node);
   void AddArcFromParentToResource(const FlowGraphNode& res_node,
-                                  ResourceID_t parent_res_id,
-                                  vector<FlowGraphArc*>* arcs);
+                                  ResourceID_t parent_res_id);
   void AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
                                     FlowGraphNode* ec_node);
   FlowGraphNode* AddEquivClassNode(EquivClass_t ec);
   FlowGraphNode* AddNewResourceNode(ResourceTopologyNodeDescriptor* rtnd_ptr);
-  void AddOrUpdateEquivClassPrefArcs(EquivClass_t ec,
-                                     vector<FlowGraphArc*>* ec_arcs);
+  void AddOrUpdateEquivClassPrefArcs(EquivClass_t ec);
   FlowGraphNode* AddOrUpdateJobUnscheduledAgg(JobID_t job_id);
   void AddResourceEquivClasses(FlowGraphNode* res_node);
   void AddOrUpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
@@ -139,6 +136,7 @@ class FlowGraphManager {
                                        const char *comment = NULL);
   void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
                                        const char *comment = NULL);
+  FlowNodeType GetResourceNodeType(const ResourceDescriptor& rd);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
   void RemoveInvalidECToECArcs(const FlowGraphNode& ec_node,
                                const vector<EquivClass_t>& ec_to_ec_arcs);
@@ -146,8 +144,6 @@ class FlowGraphManager {
                                    const vector<ResourceID_t>& res_pref_arcs);
   void RemoveMachineSubTree(FlowGraphNode* res_node,
                             set<uint64_t>* pus_removed);
-  void SetResourceNodeType(FlowGraphNode* res_node,
-                           const ResourceDescriptor& rd);
   void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
   void UpdateArcsFromEquivClasses(unordered_set<EquivClass_t>* ecs_to_update);
   /**
@@ -168,12 +164,12 @@ class FlowGraphManager {
   void UpdateResourceBelowStats(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
   void UpdateRunningTaskArcs(FlowGraphNode* task_node);
-  void UpdateUnscheduledAggToSinkCapacity(JobID_t job, int64_t delta);
+  void UpdateUnscheduledAggToSink(JobID_t job_id, int64_t capacity_delta);
 
   // Flow scheduling cost model used
   CostModelInterface* cost_model_;
 
-  FlowGraph* flow_graph_;
+  FlowGraphChangeManager* graph_change_manager_;
 
   FlowGraphNode* sink_node_;
   // Resource and task mappings

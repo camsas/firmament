@@ -87,7 +87,8 @@ SolverDispatcher::~SolverDispatcher() {
 }
 
 void SolverDispatcher::ExportJSON(string* output) const {
-  return json_exporter_.Export(flow_graph_manager_->flow_graph(), output);
+  return json_exporter_.Export(
+      flow_graph_manager_->flow_graph_change_manager()->flow_graph(), output);
 }
 
 void *ExportToSolver(void *x) {
@@ -122,16 +123,18 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
 
   if (solver_ran_once_ && FLAGS_incremental_flow) {
     dimacs_exporter_.Reset();
-    dimacs_exporter_.ExportIncremental(flow_graph_manager_->graph_changes());
-    flow_graph_manager_->ResetChanges();
+    dimacs_exporter_.ExportIncremental(
+        flow_graph_manager_->flow_graph_change_manager()->graph_changes());
+    flow_graph_manager_->flow_graph_change_manager()->ResetChanges();
   }
 
   if (!solver_ran_once_ || !FLAGS_incremental_flow) {
     // Always export full flow graph when running first time. If algorithm
     // is non-incremental, must do it for subsequent iterations too.
     dimacs_exporter_.Reset();
-    dimacs_exporter_.Export(flow_graph_manager_->flow_graph());
-    flow_graph_manager_->ResetChanges();
+    dimacs_exporter_.Export(
+        flow_graph_manager_->flow_graph_change_manager()->flow_graph());
+    flow_graph_manager_->flow_graph_change_manager()->ResetChanges();
   }
 
   // Note dimacs_exporter_ is the full graph iff solver is running for the first
@@ -312,12 +315,12 @@ uint64_t SolverDispatcher::AssignNode(
   for (map_it = (*extracted_flow)[node].begin();
        map_it != (*extracted_flow)[node].end(); map_it++) {
     // Check if node = root or node = task
-    if (flow_graph_manager_->CheckNodeType(map_it->first,
-                                           FlowNodeType::ROOT_TASK) ||
-        flow_graph_manager_->CheckNodeType(map_it->first,
-                                           FlowNodeType::UNSCHEDULED_TASK) ||
-        flow_graph_manager_->CheckNodeType(map_it->first,
-                                           FlowNodeType::SCHEDULED_TASK)) {
+    if (flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
+            map_it->first, FlowNodeType::ROOT_TASK) ||
+        flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
+            map_it->first, FlowNodeType::UNSCHEDULED_TASK) ||
+        flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
+            map_it->first, FlowNodeType::SCHEDULED_TASK)) {
       // Shouldn't really modify the collection in the iterator loop.
       // However, we don't use the iterator after modification.
       uint64_t flow = map_it->second;
@@ -401,7 +404,8 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(
     task_mappings = ReadTaskMappingChanges(from_solver_, algorithm_runtime);
   } else {
     // Parse and process the result
-    uint64_t num_nodes = flow_graph_manager_->flow_graph().NumNodes();
+    uint64_t num_nodes =
+      flow_graph_manager_->flow_graph_change_manager()->flow_graph().NumNodes();
     vector<map<uint64_t, uint64_t> >* extracted_flow =
       ReadFlowGraph(from_solver_, algorithm_runtime, num_nodes);
     task_mappings = GetMappings(extracted_flow,

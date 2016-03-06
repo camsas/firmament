@@ -1,5 +1,13 @@
 // The Firmament project
 // Copyright (c) 2016 Ionel Gog <ionel.gog@cl.cam.ac.uk>
+//
+// The FlowGraphChangeManager bridges FlowGraphManager and FlowGraph. Every
+// graph change done by the FlowGraphManager should be conducted via
+// FlowGraphChangeManager's methods.
+// The class stores all the changes conducted in-between two scheduling rounds.
+// Moreover, FlowGraphChangeManager applies various algorithms to reduce
+// the number of changes (e.g., merges idempotent changes, removes superfluous
+// changes).
 
 #ifndef FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_CHANGE_MANAGER_H
 #define FIRMAMENT_SCHEDULING_FLOW_FLOW_GRAPH_CHANGE_MANAGER_H
@@ -30,8 +38,7 @@ class FlowGraphChangeManager {
                        FlowGraphArcType arc_type,
                        DIMACSChangeType change_type,
                        const char* comment);
-  FlowGraphNode* AddNode(const vector<FlowGraphArc*>& arcs,
-                         FlowNodeType node_type,
+  FlowGraphNode* AddNode(FlowNodeType node_type,
                          DIMACSChangeType change_type,
                          const char* comment);
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
@@ -44,6 +51,18 @@ class FlowGraphChangeManager {
   void DeleteNode(FlowGraphNode* node, DIMACSChangeType change_type,
                   const char* comment);
   void ResetChanges();
+  inline bool CheckNodeType(uint64_t node_id, FlowNodeType type) {
+    return flow_graph_->Node(node_id).type_ == type;
+  }
+  inline const FlowGraph& flow_graph() {
+    return *flow_graph_;
+  }
+  inline const vector<DIMACSChange*> graph_changes() {
+    return graph_changes_;
+  }
+  inline const FlowGraphNode& Node(uint64_t node_id) {
+    return flow_graph_->Node(node_id);
+  }
 
  private:
   void AddGraphChange(DIMACSChange* change);
