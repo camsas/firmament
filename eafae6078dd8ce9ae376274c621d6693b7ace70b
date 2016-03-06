@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_e0e4123d",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-06T04:28:36Z",
+      "side": 1,
+      "message": "Is it okay to pass a temporary variable (the vector) by const ref here? Won\u0027t it go out of scope at the end of AddNode?",
+      "revId": "eafae6078dd8ce9ae376274c621d6693b7ace70b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_c0e7163f",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-06T04:28:36Z",
+      "side": 1,
+      "message": "Please add a top-level comment explaining that the FGCM is the owner of (and only holder of write access to) the FG as well as the collection of DIMACS changes.",
+      "revId": "eafae6078dd8ce9ae376274c621d6693b7ace70b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_40cb26a5",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-06T04:28:36Z",
+      "side": 1,
+      "message": "Should the XXX comment be moved to FGCM (who is now responsible for deleting the FG)?",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 71
+      },
+      "revId": "eafae6078dd8ce9ae376274c621d6693b7ace70b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_20d62a50",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-06T04:28:36Z",
+      "side": 1,
+      "message": "Does this need to happen via a mutable FGCM pointer, or could we add another (const\u0026) accessor method to FGCM for this read-only access?",
+      "revId": "eafae6078dd8ce9ae376274c621d6693b7ace70b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
