@@ -152,8 +152,10 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob) {
   FLAGS_flow_scheduling_solver = "flowlessly";
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  uint64_t num_nodes = graph_manager_->flow_graph().NumNodes();
-  uint64_t num_arcs = graph_manager_->flow_graph().NumArcs();
+  uint64_t num_nodes =
+    graph_manager_->graph_change_manager_->flow_graph().NumNodes();
+  uint64_t num_arcs =
+    graph_manager_->graph_change_manager_->flow_graph().NumArcs();
   graph_manager_->AddResourceTopology(&rtn_root);
   // Now generate a job and add it
   JobID_t jid = GenerateJobID();
@@ -169,20 +171,24 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob) {
   graph_manager_->AddOrUpdateJobNodes(jd_ptr_vect);
   // Three resource nodes, plus one task, plus unsched aggregator,
   // plus cluster aggregator EC, plus task EC
-  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 7);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumNodes(),
+           num_nodes + 7);
   // Two internal to topology, two to sink, one from cluster agg EC to
   // root resource, one from task to cluster agg, one from task to
   // preferred ec, one from prefered ec to resource, one from task to
   // unscheduled aggregator, one from unscheduled aggregator to sink
-  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 10);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumArcs(),
+           num_arcs + 10);
   // Job "finishes"
   rt->set_state(TaskDescriptor::COMPLETED);
   graph_manager_->JobCompleted(jid);
   // Three resource nodes (cluster agg EC has been deleted, as it no longer
   // has any outgoing arcs).
-  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 3);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumNodes(),
+           num_nodes + 3);
   // Two internal to topology, two to sink
-  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 4);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumArcs(),
+           num_arcs + 4);
   for (auto it = rtn_root.mutable_children()->begin();
        it != rtn_root.mutable_children()->end();
        ++it) {
@@ -196,14 +202,18 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob) {
         ResourceIDFromString(rtn_root.resource_desc().uuid()));
   graph_manager_->DeleteResourceNode(n);
   // Everything should be as in the beginning
-  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes);
-  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumNodes(),
+           num_nodes);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumArcs(),
+           num_arcs);
   graph_manager_->AddResourceTopology(&rtn_root);
   // Three resource nodes, plus cluster aggregator EC
-  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 4);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumNodes(),
+           num_nodes + 4);
   // Two internal to topology, two to sink, one from cluster agg EC to
   // root resource
-  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 5);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumArcs(),
+           num_arcs + 5);
 }
 
 TEST_F(FlowGraphManagerTest, DeleteResourceNode) {
@@ -230,14 +240,18 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopo) {
   // NumNodes when we delete a node.
   ResourceTopologyNodeDescriptor rtn_root;
   CreateSimpleResourceTopo(&rtn_root);
-  uint64_t num_nodes = graph_manager_->flow_graph().NumNodes();
-  uint64_t num_arcs = graph_manager_->flow_graph().NumArcs();
+  uint64_t num_nodes =
+    graph_manager_->graph_change_manager_->flow_graph().NumNodes();
+  uint64_t num_arcs =
+    graph_manager_->graph_change_manager_->flow_graph().NumArcs();
   graph_manager_->AddResourceTopology(&rtn_root);
   // Three resource nodes, plus cluster aggregator EC
-  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 4);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumNodes(),
+           num_nodes + 4);
   // Two internal to topology, two to sink, one from cluster agg EC to
   // root resource
-  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 5);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumArcs(),
+           num_arcs + 5);
   for (auto it = rtn_root.mutable_children()->begin();
        it != rtn_root.mutable_children()->end();
        ++it) {
@@ -247,20 +261,26 @@ TEST_F(FlowGraphManagerTest, DeleteReAddResourceTopo) {
     graph_manager_->DeleteResourceNode(n);
   }
   // Still have cluster agg and topology root here
-  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 2);
-  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 1);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumNodes(),
+           num_nodes + 2);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumArcs(),
+           num_arcs + 1);
   FlowGraphNode* n =
     graph_manager_->NodeForResourceID(
         ResourceIDFromString(rtn_root.resource_desc().uuid()));
   graph_manager_->DeleteResourceNode(n);
-  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes);
-  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumNodes(),
+           num_nodes);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumArcs(),
+           num_arcs);
   graph_manager_->AddResourceTopology(&rtn_root);
   // Three resource nodes, plus cluster aggregator EC
-  CHECK_EQ(graph_manager_->flow_graph().NumNodes(), num_nodes + 4);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumNodes(),
+           num_nodes + 4);
   // Two internal to topology, two to sink, one from cluster agg EC to
   // root resource
-  CHECK_EQ(graph_manager_->flow_graph().NumArcs(), num_arcs + 5);
+  CHECK_EQ(graph_manager_->graph_change_manager_->flow_graph().NumArcs(),
+           num_arcs + 5);
 }
 
 // Add simple resource topology to graph

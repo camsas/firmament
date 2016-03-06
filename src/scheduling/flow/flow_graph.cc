@@ -54,7 +54,6 @@ FlowGraphNode* FlowGraph::AddNode() {
 
 void FlowGraph::ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
                           uint64_t cap_upper_bound, uint64_t cost) {
-  CHECK_GE(cap_upper_bound, 1);
   arc->cap_lower_bound_ = cap_lower_bound;
   arc->cap_upper_bound_ = cap_upper_bound;
   arc->cost_ = cost;
