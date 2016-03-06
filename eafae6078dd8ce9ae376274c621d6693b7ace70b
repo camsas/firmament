@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_a0869ab7",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-06T17:42:01Z",
+      "side": 1,
+      "message": "In this case it\u0027s ok because DIMACSAddNode copies the arcs in the constructor. It copies them because we want to make sure the FlowGraphArcs don\u0027t change before we export them to the solver.",
+      "parentUuid": "5a72e520_e0e4123d",
+      "revId": "eafae6078dd8ce9ae376274c621d6693b7ace70b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_c0e7163f",
         "filename": "src/scheduling/flow/flow_graph_change_manager.h",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2016-03-06T04:28:36Z",
       "side": 1,
       "message": "Please add a top-level comment explaining that the FGCM is the owner of (and only holder of write access to) the FG as well as the collection of DIMACS changes.",
+      "revId": "eafae6078dd8ce9ae376274c621d6693b7ace70b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_80899ecc",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-06T17:42:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_c0e7163f",
       "revId": "eafae6078dd8ce9ae376274c621d6693b7ace70b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_40a08643",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-06T17:42:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_40cb26a5",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 71
+      },
+      "revId": "eafae6078dd8ce9ae376274c621d6693b7ace70b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_20d62a50",
         "filename": "src/scheduling/flow/solver_dispatcher.cc",
         "patchSetId": 1
@@ -70,6 +130,24 @@
       "writtenOn": "2016-03-06T04:28:36Z",
       "side": 1,
       "message": "Does this need to happen via a mutable FGCM pointer, or could we add another (const\u0026) accessor method to FGCM for this read-only access?",
+      "revId": "eafae6078dd8ce9ae376274c621d6693b7ace70b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_209b8a19",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-06T17:42:01Z",
+      "side": 1,
+      "message": "This particular call doesn\u0027t need a FGCM pointer. However, we make several calls to ResetChanges() which required a mutable pointer.\n\nLet\u0027s not change this for now because it\u0027s temporary code. I want to update the code to only use FGCM. The dispatcher should only need access to the changes/graph. It should not need the flow_graph_manager.",
+      "parentUuid": "5a72e520_20d62a50",
       "revId": "eafae6078dd8ce9ae376274c621d6693b7ace70b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
