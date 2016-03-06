@@ -73,7 +73,8 @@ void DIMACSChangeStats::UpdateStats(DIMACSChangeType change_type) {
   if (change_type == DEL_ARC_EQUIV_CLASS_TO_RES ||
       change_type == DEL_ARC_RUNNING_TASK ||
       change_type == DEL_ARC_EVICTED_TASK ||
-      change_type == DEL_ARC_BETWEEN_EQUIV_CLASS) {
+      change_type == DEL_ARC_BETWEEN_EQUIV_CLASS ||
+      change_type == DEL_ARC_BETWEEN_RES) {
     arcs_removed_++;
     return;
   }

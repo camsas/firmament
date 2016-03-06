@@ -61,13 +61,12 @@ void FlowGraphChangeManager::AddGraphChange(DIMACSChange* change) {
 }
 
 FlowGraphNode* FlowGraphChangeManager::AddNode(
-    const vector<FlowGraphArc*>& arcs,
     FlowNodeType node_type,
     DIMACSChangeType change_type,
     const char* comment) {
   FlowGraphNode* node = flow_graph_->AddNode();
   node->type_ = node_type;
-  DIMACSChange* chg = new DIMACSAddNode(*node, arcs);
+  DIMACSChange* chg = new DIMACSAddNode(*node, vector<FlowGraphArc*>());
   chg->set_comment(comment);
   dimacs_stats_->UpdateStats(change_type);
   AddGraphChange(chg);

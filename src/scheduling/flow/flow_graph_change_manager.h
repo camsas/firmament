@@ -30,8 +30,7 @@ class FlowGraphChangeManager {
                        FlowGraphArcType arc_type,
                        DIMACSChangeType change_type,
                        const char* comment);
-  FlowGraphNode* AddNode(const vector<FlowGraphArc*>& arcs,
-                         FlowNodeType node_type,
+  FlowGraphNode* AddNode(FlowNodeType node_type,
                          DIMACSChangeType change_type,
                          const char* comment);
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
@@ -44,6 +43,18 @@ class FlowGraphChangeManager {
   void DeleteNode(FlowGraphNode* node, DIMACSChangeType change_type,
                   const char* comment);
   void ResetChanges();
+  inline bool CheckNodeType(uint64_t node_id, FlowNodeType type) {
+    return flow_graph_->Node(node_id).type_ == type;
+  }
+  inline const FlowGraph& flow_graph() {
+    return *flow_graph_;
+  }
+  inline const vector<DIMACSChange*> graph_changes() {
+    return graph_changes_;
+  }
+  inline const FlowGraphNode& Node(uint64_t node_id) {
+    return flow_graph_->Node(node_id);
+  }
 
  private:
   void AddGraphChange(DIMACSChange* change);
