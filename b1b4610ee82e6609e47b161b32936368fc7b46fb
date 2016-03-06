@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_2088ea70",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-06T00:55:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_202c6a99",
+      "range": {
+        "startLine": 11,
+        "startChar": 7,
+        "endLine": 11,
+        "endChar": 13
+      },
+      "revId": "b1b4610ee82e6609e47b161b32936368fc7b46fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_a065bae2",
         "filename": "src/scheduling/flow/flow_graph_change_manager.h",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_e0b6d23c",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-06T00:55:33Z",
+      "side": 1,
+      "message": "I think there\u0027s only one case when we just change the capacity and we handle it with ChangeArc().",
+      "parentUuid": "5a72e520_a065bae2",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 72
+      },
+      "revId": "b1b4610ee82e6609e47b161b32936368fc7b46fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_c062b6d7",
         "filename": "src/scheduling/flow/flow_graph_change_manager.h",
         "patchSetId": 1
@@ -59,6 +107,24 @@
       "writtenOn": "2016-03-05T23:34:12Z",
       "side": 1,
       "message": "We\u0027ll presumably have to use a different data structure here later (e.g., something indexed by the affected node/arc, or similar).",
+      "revId": "b1b4610ee82e6609e47b161b32936368fc7b46fb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_c0b9d62f",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-06T00:55:33Z",
+      "side": 1,
+      "message": "Yes, I will change to a different data structure, but in a different diff.",
+      "parentUuid": "5a72e520_c062b6d7",
       "revId": "b1b4610ee82e6609e47b161b32936368fc7b46fb",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
