@@ -747,7 +747,6 @@ FlowGraphNode* WhareMapCostModel::UpdateStats(FlowGraphNode* accumulator,
     return accumulator;
   }
   // Case: RESOURCE -> RESOURCE
-  flow_graph_manager_->UpdateArc(accumulator, other);
   return accumulator;
 }
 

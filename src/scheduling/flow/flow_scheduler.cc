@@ -175,8 +175,11 @@ void FlowScheduler::DeregisterResource(ResourceID_t res_id) {
   ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs_ptr);
   if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_MACHINE) {
-    flow_graph_manager_->RemoveMachine(rs_ptr->descriptor(),
-                                       &pus_removed_during_solver_run_);
+    // TODO(ionel): If DeregisterResource is called on a machine's parent then
+    // we end up not removing anything from the flow graph
+    trace_generator_->RemoveMachine(rs_ptr->descriptor());
+    flow_graph_manager_->RemoveResourceTopology(
+        rs_ptr->descriptor(), &pus_removed_during_solver_run_);
   }
   if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_PU) {
     EventDrivenScheduler::DeregisterResource(res_id);
@@ -366,7 +369,7 @@ void FlowScheduler::RegisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr,
                                      bool simulated) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::RegisterResource(rtnd_ptr, local, simulated);
-  flow_graph_manager_->AddMachine(rtnd_ptr);
+  flow_graph_manager_->AddResourceTopology(rtnd_ptr);
 }
 
 uint64_t FlowScheduler::RunSchedulingIteration(
