@@ -27,4 +27,32 @@ namespace firmament {
                              arc->src_, arc));
   }
 
+  FlowNodeType FlowGraphNode::TransformToResourceNodeType(
+      const ResourceDescriptor& rd) {
+    if (rd.type() == ResourceDescriptor::RESOURCE_PU) {
+      return FlowNodeType::PU;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_CORE) {
+      return FlowNodeType::CORE;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_CACHE) {
+      return FlowNodeType::CACHE;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_NIC) {
+      LOG(FATAL) << "Node type not supported yet: " << rd.type();
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_DISK) {
+      LOG(FATAL) << "Node type not supported yet: " << rd.type();
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_SSD) {
+      LOG(FATAL) << "Node type not supported yet: " << rd.type();
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_MACHINE) {
+      return FlowNodeType::MACHINE;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_LOGICAL) {
+      LOG(FATAL) << "Node type not supported yet: " << rd.type();
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_NUMA_NODE) {
+      return FlowNodeType::NUMA_NODE;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_SOCKET) {
+      return FlowNodeType::SOCKET;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_COORDINATOR) {
+      return FlowNodeType::COORDINATOR;
+    }
+    LOG(FATAL) << "Unknown node type: " << rd.type();
+  }
+
 } // namespace firmament

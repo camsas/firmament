@@ -82,6 +82,7 @@ void FlowGraphChangeManager::ChangeArc(FlowGraphArc* arc,
                                        uint64_t cost,
                                        DIMACSChangeType change_type,
                                        const char* comment) {
+  CHECK_NOTNULL(arc);
   uint64_t old_cost = arc->cost_;
   if (old_cost != cost ||
       arc->cap_lower_bound_ != cap_lower_bound ||
@@ -94,10 +95,26 @@ void FlowGraphChangeManager::ChangeArc(FlowGraphArc* arc,
   }
 }
 
+void FlowGraphChangeManager::ChangeArcCapacity(FlowGraphArc* arc,
+                                               uint64_t capacity,
+                                               DIMACSChangeType change_type,
+                                               const char* comment) {
+  CHECK_NOTNULL(arc);
+  uint64_t old_capacity = arc->cap_upper_bound_;
+  if (old_capacity != capacity) {
+    flow_graph_->ChangeArc(arc, arc->cap_lower_bound_, capacity, arc->cost_);
+    DIMACSChange* chg = new DIMACSChangeArc(*arc, arc->cost_);
+    chg->set_comment(comment);
+    dimacs_stats_->UpdateStats(change_type);
+    AddGraphChange(chg);
+  }
+}
+
 void FlowGraphChangeManager::ChangeArcCost(FlowGraphArc* arc,
                                            uint64_t cost,
                                            DIMACSChangeType change_type,
                                            const char* comment) {
+  CHECK_NOTNULL(arc);
   uint64_t old_cost = arc->cost_;
   if (old_cost != cost) {
     flow_graph_->ChangeArcCost(arc, cost);
