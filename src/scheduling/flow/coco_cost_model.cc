@@ -1085,8 +1085,6 @@ FlowGraphNode* CocoCostModel::UpdateStats(FlowGraphNode* accumulator,
     }
     return accumulator;
   }
-
-  flow_graph_manager_->UpdateArc(accumulator, other);
   return accumulator;
 }
 
