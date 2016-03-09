@@ -50,6 +50,11 @@ class FlowGraph {
   }
 
  private:
+  FRIEND_TEST(FlowGraphManagerTest, RemoveEquivClassNode);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveResourceNode);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveTaskNode);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveUnscheduledAggNode);
+
   uint64_t NextId();
   void PopulateUnusedIds(uint64_t new_current_id);
 

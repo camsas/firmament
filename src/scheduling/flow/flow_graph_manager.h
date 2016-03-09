@@ -29,6 +29,16 @@ DECLARE_string(flow_scheduling_solver);
 
 namespace firmament {
 
+struct TDOrNodeWrapper {
+  TDOrNodeWrapper(TaskDescriptor* td_ptr) : node_(NULL), td_ptr_(td_ptr) {
+  }
+  TDOrNodeWrapper(FlowGraphNode* node,
+                  TaskDescriptor* td_ptr) : node_(node), td_ptr_(td_ptr) {
+  }
+  FlowGraphNode* node_;
+  TaskDescriptor* td_ptr_;
+};
+
 class FlowGraphManager {
  public:
   explicit FlowGraphManager(CostModelInterface* cost_model,
@@ -38,31 +48,36 @@ class FlowGraphManager {
                             TraceGenerator* trace_generator,
                             DIMACSChangeStats* dimacs_stats);
   virtual ~FlowGraphManager();
-  // Public API
-  void AddMachine(ResourceTopologyNodeDescriptor* root);
   void AddOrUpdateJobNodes(const vector<JobDescriptor*>& jd_ptr_vect);
-  void AddResourceTopology(
-      ResourceTopologyNodeDescriptor* resource_tree);
-  bool CheckNodeType(uint64_t node, FlowNodeType type);
+
+  /**
+   * Adds the entire resource topology tree rooted at rtnd_ptr. The method
+   * also updates the statistics of the nodes up to the root resource.
+   * @param rtnd_ptr the topology descriptor of the root resource from which to
+   * start adding nodes
+   */
+  void AddResourceTopology(ResourceTopologyNodeDescriptor* rtnd_ptr);
+
   void ComputeTopologyStatistics(
-    FlowGraphNode* node,
-    boost::function<void(FlowGraphNode*)> prepare,
-    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather,
-    boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> update);
+      FlowGraphNode* node,
+      boost::function<void(FlowGraphNode*)> prepare,
+      boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather,
+      boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> update);
   void JobCompleted(JobID_t job_id);
   void NodeBindingToSchedulingDeltas(
       uint64_t task_node_id, uint64_t resource_node_id,
       unordered_map<TaskID_t, ResourceID_t>* task_bindings,
       vector<SchedulingDelta*>* deltas);
-  FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id);
-  FlowGraphNode* NodeForTaskID(TaskID_t task_id);
-  void RemoveMachine(const ResourceDescriptor& rd, set<uint64_t>* pus_removed);
-
   /**
-   * Called when a task changes its state to COMPLETED.
-   * @param task_id the id of the task
-   * @return the graph node id of the task
+   * Removes the entire resource topology tree rooted at rd. The method also
+   * updates the statistics of the nodes up to the root resource.
+   * @param rd the descriptor of the root resource from which to start removing
+   * nodes
+   * @param pus_removed set to which to append the IDs of the removed PUs
    */
+  void RemoveResourceTopology(const ResourceDescriptor& rd,
+                              set<uint64_t>* pus_removed);
+
   uint64_t TaskCompleted(TaskID_t task_id);
   void TaskEvicted(TaskID_t task_id, ResourceID_t res_id);
   void TaskFailed(TaskID_t task_id);
@@ -71,17 +86,19 @@ class FlowGraphManager {
                     ResourceID_t old_res_id,
                     ResourceID_t new_res_id);
   void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
-  void UpdateResourceTopology(
-      ResourceTopologyNodeDescriptor* resource_tree);
-  void UpdateArc(FlowGraphNode* src_node, FlowGraphNode* dst_node);
+
+  /**
+   * Update each task's arc to its unscheduled aggregator. Moreover, for
+   * running tasks we update their continuation costs.
+   */
+  void UpdateAllCostsToUnscheduledAggs();
+
+  void UpdateResourceTopology(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void UpdateTimeDependentCosts(const vector<JobDescriptor*>& jd_ptr_vec);
-  void UpdateUnscheduledAggArcCosts();
+
   // Simple accessor methods
   inline FlowGraphChangeManager* flow_graph_change_manager() {
     return graph_change_manager_;
-  }
-  inline vector<DIMACSChange*>& graph_changes() {
-    return graph_changes_;
   }
   inline const unordered_set<uint64_t>& leaf_node_ids() const {
     return leaf_nodes_;
@@ -90,7 +107,7 @@ class FlowGraphManager {
     return sink_node_;
   }
 
- protected:
+ private:
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
   FRIEND_TEST(DIMACSExporterTest, ScalabilityTestGraphs);
   FRIEND_TEST(DIMACSExporterTest, SimpleGraphOutput);
@@ -101,99 +118,228 @@ class FlowGraphManager {
   FRIEND_TEST(FlowGraphManagerTest, UnschedAggCapacityAdjustment);
   FRIEND_TEST(FlowGraphManagerTest, DeleteReAddResourceTopo);
   FRIEND_TEST(FlowGraphManagerTest, DeleteReAddResourceTopoAndJob);
-  void AddArcsForTask(FlowGraphNode* task_node,
-                      FlowGraphNode* unsched_agg_node);
-  void AddArcFromParentToResource(const FlowGraphNode& res_node,
-                                  ResourceID_t parent_res_id);
-  void AddArcsFromToOtherEquivNodes(EquivClass_t equiv_class,
-                                    FlowGraphNode* ec_node);
+
+
+  FRIEND_TEST(FlowGraphManagerTest, AddEquivClassNode);
+  FRIEND_TEST(FlowGraphManagerTest, AddResourceNode);
+  FRIEND_TEST(FlowGraphManagerTest, AddTaskNode);
+  FRIEND_TEST(FlowGraphManagerTest, AddUnscheduledAggNode);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveEquivClassNode);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveInvalidECPrefArcs);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveInvalidPrefResArcs);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveResourceNode);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveTaskNode);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveUnscheduledAggNode);
+  FRIEND_TEST(FlowGraphManagerTest, UpdateTaskToUnscheduledAggArc);
+  FRIEND_TEST(FlowGraphManagerTest, UpdateUnscheduledAggNode);
+
+
+  FRIEND_TEST(FlowGraphManagerTest, UpdateEquivClassNode);
+  FRIEND_TEST(FlowGraphManagerTest, UpdateResourceNode);
+  FRIEND_TEST(FlowGraphManagerTest, UpdateTaskNode);
+
   FlowGraphNode* AddEquivClassNode(EquivClass_t ec);
-  FlowGraphNode* AddNewResourceNode(ResourceTopologyNodeDescriptor* rtnd_ptr);
-  void AddOrUpdateEquivClassPrefArcs(EquivClass_t ec);
-  FlowGraphNode* AddOrUpdateJobUnscheduledAgg(JobID_t job_id);
-  void AddResourceEquivClasses(FlowGraphNode* res_node);
-  void AddOrUpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
-  void AddSpecialNodes();
-  void AddTaskEquivClasses(FlowGraphNode* task_node);
+  FlowGraphNode* AddResourceNode(ResourceDescriptor* rd_ptr);
+
+  /**
+   * Adds to the graph all the node from the subtree rooted at rtnd_ptr.
+   * The method also correctly computes statistics for every new node (e.g.,
+   * num slots, num running tasks)
+   * @param rtnd_ptr the topology descriptor of the root node
+   * @return the arc capacity that should be used to connect rtnd_ptr to its
+   * parent if it has one
+   */
+  uint64_t AddResourceTopologyDFS(ResourceTopologyNodeDescriptor* rtnd_ptr);
+
   FlowGraphNode* AddTaskNode(JobID_t job_id, TaskDescriptor* td_ptr);
+  FlowGraphNode* AddUnscheduledAggNode(JobID_t job_id);
   uint64_t CapacityBetweenECNodes(const FlowGraphNode& src,
                                   const FlowGraphNode& dst);
-  void ConfigureResourceNodeECs(ResourceTopologyNodeDescriptor* rtnd);
-  void ConfigureResourceBranchNode(const ResourceTopologyNodeDescriptor& rtnd,
-                                   FlowGraphNode* new_node);
-  void ConfigureResourceLeafNode(const ResourceTopologyNodeDescriptor& rtnd,
-                                 FlowGraphNode* new_node);
-  void DeleteResourceNode(FlowGraphNode* res_node, const char *comment = NULL);
-
-  /**
-   * Deletes a task node from the graph.
-   * @param task_id the id of the task
-   * @param comment to be printed with the DIMACS change
-   * @return the graph node id of the task
-   */
-  uint64_t DeleteTaskNode(TaskID_t task_id, const char *comment = NULL);
-  void DeleteOrUpdateIncomingEquivNode(EquivClass_t task_equiv,
-                                       const char *comment = NULL);
-  void DeleteOrUpdateOutgoingEquivNode(EquivClass_t task_equiv,
-                                       const char *comment = NULL);
-  FlowNodeType GetResourceNodeType(const ResourceDescriptor& rd);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
-  void RemoveInvalidECToECArcs(const FlowGraphNode& ec_node,
-                               const vector<EquivClass_t>& ec_to_ec_arcs);
-  void RemoveInvalidPreferenceArcs(const FlowGraphNode& ec_node,
-                                   const vector<ResourceID_t>& res_pref_arcs);
-  void RemoveMachineSubTree(FlowGraphNode* res_node,
-                            set<uint64_t>* pus_removed);
-  void UpdateArcsForBoundTask(TaskID_t tid, ResourceID_t res_id);
-  void UpdateArcsFromEquivClasses(unordered_set<EquivClass_t>* ecs_to_update);
+  void RemoveEquivClassNode(FlowGraphNode* ec_node);
+  void RemoveInvalidECPrefArcs(const FlowGraphNode& ec_node,
+                               const vector<EquivClass_t>& pref_ecs,
+                               DIMACSChangeType change_type);
+  void RemoveInvalidPrefResArcs(const FlowGraphNode& ec_node,
+                                const vector<ResourceID_t>& pref_resources,
+                                DIMACSChangeType change_type);
+  void RemoveResourceNode(FlowGraphNode* res_node);
+  uint64_t RemoveTaskNode(FlowGraphNode* task_node);
+  void RemoveUnscheduledAggNode(JobID_t job_id);
+
   /**
-   * Updates all the outgoing arcs from one or more tasks.
-   * @param tasks_to_update queue with the tasks to update
-   * @param ecs_to_update set to be populated with the ECs that are reachable
-   * from the updated tasks. These ECs must be updated as well.
+   * Remove the resource topology rooted at res_node.
+   * @param res_node the root of the topology tree to remove
+   * @param pus_removed set that gets updated whenever we remove a PU
    */
-  void UpdateArcsFromTasks(queue<TaskDescriptor*>* tasks_to_update,
-                           unordered_set<EquivClass_t>* ecs_to_update);
-  void UpdateArcsFromTaskToEquivClasses(
-      FlowGraphNode* task_node,
-      unordered_set<EquivClass_t>* ecs_to_update);
-  void UpdateArcsFromTaskToResources(FlowGraphNode* task_node);
-  void UpdateArcTaskToEquivClass(FlowGraphNode* task_node,
-                                 FlowGraphNode* ec_node);
-  void UpdateArcToUnscheduledAgg(FlowGraphNode* task_node);
-  void UpdateResourceBelowStats(ResourceTopologyNodeDescriptor* rtnd_ptr);
-  void UpdateResourceNode(ResourceTopologyNodeDescriptor* rtnd);
-  void UpdateRunningTaskArcs(FlowGraphNode* task_node);
-  void UpdateUnscheduledAggToSink(JobID_t job_id, int64_t capacity_delta);
+  void TraverseAndRemoveTopology(FlowGraphNode* res_node,
+                                 set<uint64_t>* pus_removed);
 
-  // Flow scheduling cost model used
-  CostModelInterface* cost_model_;
+  /**
+   * Updates the arc of a newly scheduled task.
+   * If we're running with preemption enabled then the method just adds/changes
+   * an arc to the resource node and updates the arc to the unscheduled agg to
+   * have the premeption cost.
+   * If we're not running with preemption enabled then the method deletes the
+   * task's arcs and only adds a running arc.
+   * @param task_node the node of the task recently scheduled
+   * @param res_node the node of the resource to which the task has been
+   * scheduled
+   */
+  void UpdateArcsForScheduledTask(FlowGraphNode* task_node,
+                                  FlowGraphNode* res_node);
 
-  FlowGraphChangeManager* graph_change_manager_;
+  /**
+   * Adds the children tasks of the nodeless current task to the node queue.
+   * If a children tasks doesn't need to have a graph node (e.g., task is not
+   * RUNNABLE, RUNNING or ASSIGNED) then its TDOrNodeWrapper will only contain
+   * a pointer to its task descriptor.
+   */
+  void UpdateChildrenTasks(TaskDescriptor* td_ptr,
+                           queue<TDOrNodeWrapper*>* node_queue,
+                           unordered_set<uint64_t>* marked_nodes);
 
-  FlowGraphNode* sink_node_;
+  void UpdateEquivClassNode(FlowGraphNode* ec_node,
+                            queue<TDOrNodeWrapper*>* node_queue,
+                            unordered_set<uint64_t>* marked_nodes);
+
+  /**
+   * Updates an EC's outgoing arcs to other ECs. If the EC has new outgoing arcs
+   * to new EC nodes then the method appends them to the node_queue. Similarly,
+   * EC nodes that have not yet been marked are appended to the queue.
+   */
+  void UpdateEquivToEquivArcs(FlowGraphNode* ec_node,
+                              queue<TDOrNodeWrapper*>* node_queue,
+                              unordered_set<uint64_t>* marked_nodes);
+
+  /**
+   * Updates the resource preference arcs an equivalence class has.
+   * @param ec_node node for which to update its preferences
+   */
+  void UpdateEquivToResArcs(FlowGraphNode* ec_node,
+                            queue<TDOrNodeWrapper*>* node_queue,
+                            unordered_set<uint64_t>* marked_nodes);
+
+  void UpdateFlowGraph(queue<TDOrNodeWrapper*>* node_queue,
+                       unordered_set<uint64_t>* marked_nodes);
+
+  void UpdateResourceNode(FlowGraphNode* res_node,
+                          queue<TDOrNodeWrapper*>* node_queue,
+                          unordered_set<uint64_t>* marked_nodes);
+
+  /**
+   * Update resource related stats (e.g., arc capacities, num slots,
+   * num running tasks) on every arc/node up to the root resource.
+   */
+  void UpdateResourceStatsUpToRoot(FlowGraphNode* cur_node,
+                                   int64_t cap_delta,
+                                   int64_t slots_delta,
+                                   int64_t running_tasks_delta);
+
+  void UpdateResOutgoingArcs(FlowGraphNode* res_node,
+                             queue<TDOrNodeWrapper*>* node_queue,
+                             unordered_set<uint64_t>* marked_nodes);
+
+  /**
+   * Updates the arc connecting a resource to the sink. It requires the resource
+   * to be a PU.
+   * @param res_node the resource node for which to update its arc to the sink
+   */
+  void UpdateResToSinkArc(FlowGraphNode* res_node);
+
+  /**
+   * Updates the cost on running arc of the task. If preemption is enabled then
+   * the method also updates the preemption cost on the arc to the unscheduled
+   * aggregator.
+   * NOTE: This method doesn't update the task's preference arcs if preemption
+   * is enabled.
+   * @param task_node the node for which to update the arcs
+   */
+  void UpdateRunningTaskNode(FlowGraphNode* task_node);
+
+  /**
+   * Updates the cost of the arc connecting a running task with its unscheduled
+   * aggregator.
+   * NOTE: This method should only be called when preemption is enabled.
+   * @param task_node the node for which to update the arc
+   */
+  void UpdateRunningTaskToUnscheduledAggArc(FlowGraphNode* task_node);
+
+  void UpdateTaskNode(FlowGraphNode* task_node,
+                      queue<TDOrNodeWrapper*>* node_queue,
+                      unordered_set<uint64_t>* marked_nodes);
+
+  /**
+   * Updates a task's outgoing arcs to ECs. If the task has new outgoing arcs
+   * to new EC nodes then the method appends them to the node_queue. Similarly,
+   * EC nodes that have not yet been marked are appended to the queue.
+   */
+  void UpdateTaskToEquivArcs(FlowGraphNode* task_node,
+                             queue<TDOrNodeWrapper*>* node_queue,
+                             unordered_set<uint64_t>* marked_nodes);
+
+  /**
+   * Updates a task's preferences to resources.
+   * @param task_node node for which to update its preferences
+   */
+  void UpdateTaskToResArcs(FlowGraphNode* task_node,
+                           queue<TDOrNodeWrapper*>* node_queue,
+                           unordered_set<uint64_t>* marked_nodes);
+
+  /**
+   * Updates the arc from a task to its unscheduled aggregator. The method
+   * adds the unscheduled if it doesn't already exist.
+   * @param task_node the node for which to update the arc
+   * @return the unscheduled aggregator node
+   */
+  FlowGraphNode* UpdateTaskToUnscheduledAggArc(FlowGraphNode* task_node);
+
+  /**
+   * Adjusts the capacity of the arc connecting the unscheduled agg to the sink
+   * by cap_delta. The method also updates the cost if need be.
+   * @param unsched_agg_node the unscheduled aggregator node
+   * @param cap_delta the delta by which to change the capacity
+   */
+  void UpdateUnscheduledAggNode(FlowGraphNode* unsched_agg_node,
+                                int64_t cap_delta);
+
+  inline FlowGraphNode* NodeForEquivClass(const EquivClass_t& ec) {
+    return FindPtrOrNull(tec_to_node_map_, ec);
+  }
+  inline FlowGraphNode* NodeForResourceID(const ResourceID_t& res_id) {
+    return FindPtrOrNull(resource_to_node_map_, res_id);
+  }
+  inline FlowGraphNode* NodeForTaskID(TaskID_t task_id) {
+    return FindPtrOrNull(task_to_node_map_, task_id);
+  }
+  inline bool TaskMustHaveNode(const TaskDescriptor& td) {
+    return td.state() == TaskDescriptor::RUNNABLE ||
+      td.state() == TaskDescriptor::RUNNING ||
+      td.state() == TaskDescriptor::ASSIGNED;
+  }
+  inline FlowGraphNode* UnschedAggNodeForJobID(JobID_t job_id) {
+    return FindPtrOrNull(job_unsched_to_node_, job_id);
+  }
+
   // Resource and task mappings
   unordered_map<TaskID_t, FlowGraphNode*> task_to_node_map_;
   unordered_map<ResourceID_t, FlowGraphNode*,
       boost::hash<boost::uuids::uuid> > resource_to_node_map_;
-  // Hacky solution for retrieval of the parent of any particular resource
-  // (needed to assign capacities properly by back-tracking).
-  unordered_map<ResourceID_t, ResourceID_t,
-      boost::hash<boost::uuids::uuid> > resource_to_parent_map_;
-  // The "node ID" for the job is currently the ID of the job's unscheduled node
+  // Mapping storing flow graph nodes for each task equivalence class.
+  unordered_map<EquivClass_t, FlowGraphNode*> tec_to_node_map_;
+  // Mapping storing flow graph nodes for each unscheduled aggregator.
   unordered_map<JobID_t, FlowGraphNode*,
       boost::hash<boost::uuids::uuid> > job_unsched_to_node_;
+
+  // The "node ID" for the job is currently the ID of the job's unscheduled node
   unordered_set<uint64_t> leaf_nodes_;
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
-
-  // Mapping storing flow graph nodes for each task equivalence class.
-  unordered_map<EquivClass_t, FlowGraphNode*> tec_to_node_;
-
   // Map storing the running arc for every task that is running.
   unordered_map<TaskID_t, FlowGraphArc*> task_to_running_arc_;
-
-  // Vector storing the graph changes occured since the last scheduling round.
-  vector<DIMACSChange*> graph_changes_;
+  unordered_map<FlowGraphNode*, FlowGraphNode*> node_to_parent_node_map_;
+  FlowGraphNode* sink_node_;
+  CostModelInterface* cost_model_;
+  FlowGraphChangeManager* graph_change_manager_;
+  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   TraceGenerator* trace_generator_;
   DIMACSChangeStats* dimacs_stats_;
   // Counter updated whenever we compute topology statistics. The counter is

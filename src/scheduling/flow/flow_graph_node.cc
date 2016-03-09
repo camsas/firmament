@@ -14,7 +14,7 @@ namespace firmament {
         ec_id_(0), visited_(0) {
   }
 
-  FlowGraphNode::FlowGraphNode(uint64_t id, uint64_t excess)
+  FlowGraphNode::FlowGraphNode(uint64_t id, int64_t excess)
       : id_(id), excess_(excess), job_id_(boost::uuids::nil_uuid()),
         resource_id_(boost::uuids::nil_uuid()), rd_ptr_(NULL), td_ptr_(NULL),
         ec_id_(0), visited_(0) {
@@ -25,6 +25,34 @@ namespace firmament {
     CHECK(InsertIfNotPresent(&outgoing_arc_map_, arc->dst_, arc));
     CHECK(InsertIfNotPresent(&(arc->dst_node_->incoming_arc_map_),
                              arc->src_, arc));
+  }
+
+  FlowNodeType FlowGraphNode::TransformToResourceNodeType(
+      const ResourceDescriptor& rd) {
+    if (rd.type() == ResourceDescriptor::RESOURCE_PU) {
+      return FlowNodeType::PU;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_CORE) {
+      return FlowNodeType::CORE;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_CACHE) {
+      return FlowNodeType::CACHE;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_NIC) {
+      LOG(FATAL) << "Node type not supported yet: " << rd.type();
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_DISK) {
+      LOG(FATAL) << "Node type not supported yet: " << rd.type();
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_SSD) {
+      LOG(FATAL) << "Node type not supported yet: " << rd.type();
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_MACHINE) {
+      return FlowNodeType::MACHINE;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_LOGICAL) {
+      LOG(FATAL) << "Node type not supported yet: " << rd.type();
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_NUMA_NODE) {
+      return FlowNodeType::NUMA_NODE;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_SOCKET) {
+      return FlowNodeType::SOCKET;
+    } else if (rd.type() == ResourceDescriptor::RESOURCE_COORDINATOR) {
+      return FlowNodeType::COORDINATOR;
+    }
+    LOG(FATAL) << "Unknown node type: " << rd.type();
   }
 
 } // namespace firmament
