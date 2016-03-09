@@ -118,7 +118,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     SchedulerStats* scheduler_stats) {
   // Adjusts the costs on the arcs from tasks to unsched aggs.
   if (solver_ran_once_) {
-    flow_graph_manager_->UpdateUnscheduledAggArcCosts();
+    flow_graph_manager_->UpdateAllCostsToUnscheduledAggs();
   }
 
   if (solver_ran_once_ && FLAGS_incremental_flow) {
