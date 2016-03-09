@@ -66,7 +66,8 @@ foreach(T IN ITEMS ${SCHEDULING_TESTS})
     $<TARGET_OBJECTS:sim_dfs>
     $<TARGET_OBJECTS:storage>)
   target_link_libraries(${TEST_NAME}
-    ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
-    ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc protobuf)
+    ${spooky-hash_BINARY} ${gmock_LIBRARY} ${gmock_MAIN_LIBRARY}
+    ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY} ${Firmament_SHARED_LIBRARIES}
+    ctemplate glog gflags hwloc protobuf)
   add_test(${TEST_NAME} ${TEST_NAME})
 endforeach(T)

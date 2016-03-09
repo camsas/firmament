@@ -198,8 +198,6 @@ FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
     return accumulator;
   }
 
-  flow_graph_manager_->UpdateArc(accumulator, other);
-
   // Reset the state.
   if (!other->rd_ptr_)
     return accumulator;
