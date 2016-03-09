@@ -36,7 +36,7 @@ enum FlowNodeType {
 
 struct FlowGraphNode {
   explicit FlowGraphNode(uint64_t id);
-  FlowGraphNode(uint64_t id, uint64_t excess);
+  FlowGraphNode(uint64_t id, int64_t excess);
   void AddArc(FlowGraphArc* arc);
   bool IsEquivalenceClassNode() const {
     return type_ == FlowNodeType::EQUIVALENCE_CLASS;
@@ -55,6 +55,12 @@ struct FlowGraphNode {
       type_ == FlowNodeType::SCHEDULED_TASK ||
       type_ == FlowNodeType::UNSCHEDULED_TASK;
   };
+  bool IsTaskAssignedOrRunning() const {
+    CHECK_NOTNULL(td_ptr_);
+    return td_ptr_->state() == TaskDescriptor::ASSIGNED ||
+      td_ptr_->state() == TaskDescriptor::RUNNING;
+  }
+  static FlowNodeType TransformToResourceNodeType(const ResourceDescriptor& rd);
 
   uint64_t id_;
   int64_t excess_;
