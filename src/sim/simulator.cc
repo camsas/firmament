@@ -157,7 +157,7 @@ void Simulator::Run() {
   } else if (!FLAGS_solver.compare("cs2")) {
     FLAGS_incremental_flow = false;
     FLAGS_only_read_assignment_changes = false;
-    FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2/src/cs2/cs2";
+    FLAGS_flow_scheduling_binary = SOLVER_DIR "/cs2/src/cs2/cs2.exe";
   } else if (!FLAGS_solver.compare("custom")) {
   }
 
