@@ -11,7 +11,7 @@ before_install:
   - if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get -y update; fi
   - if [ $TRAVIS_OS_NAME == linux ]; then source include/pkglist.Ubuntu-14.04; sudo apt-get -y install ${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS} ${HDFS_PKGS}; fi
 
-before_script: cmake . -DCMAKE_CXX_COMPILER=$COMPILER
+before_script: mkdir build && cd build && cmake .. -DCMAKE_CXX_COMPILER=$COMPILER
 
 script: make
 
