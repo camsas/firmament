@@ -24,18 +24,18 @@ void TerminationCleanup() {
 }
 
 // Sets up and runs a TaskLib monitor in the current thread.
-void LaunchTasklib() {
+void LaunchTasklib(int argc, char** argv) {
   sleep(1);
 
-  string sargs = "--logtostderr";
-  string progargs = "task_lib";
+  // Ensure that we get log output from TaskLib
+  setenv("GLOG_logtostderr", "1", 1);
+
+  string prog = "task_lib";
   boost::thread::id task_thread_id = boost::this_thread::get_id();
 
-  char* argv[2];
-  argv[0] = const_cast<char*>(progargs.c_str());
+  argv[0] = const_cast<char*>(prog.c_str());
 
-  argv[1] = const_cast<char*>(sargs.c_str());
-  firmament::common::InitFirmament(2, argv);
+  firmament::common::InitFirmament(argc, argv);
 
   task_lib_->RunMonitor(task_thread_id);
 }
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 
   task_lib_ = new firmament::TaskLib();
 
-  boost::thread t1(&LaunchTasklib);
+  boost::thread t1(&LaunchTasklib, argc, argv);
 
   vector<char*> args;
   for (int64_t i = 1; i < argc; ++i) {

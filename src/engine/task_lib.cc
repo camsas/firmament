@@ -54,8 +54,8 @@ TaskLib::TaskLib()
   : m_adapter_(new StreamSocketsAdapter<BaseMessage>()),
     chan_(new StreamSocketsChannel<BaseMessage>(
         StreamSocketsChannel<BaseMessage>::SS_TCP)),
-    coordinator_uri_(getenv("FLAGS_coordinator_uri")),
-    resource_id_(ResourceIDFromString(getenv("FLAGS_resource_id"))),
+    coordinator_uri_(""),
+    resource_id_(GenerateResourceID()),
     pid_(getpid()),
     task_running_(false),
     heartbeat_seq_number_(0),
@@ -63,18 +63,27 @@ TaskLib::TaskLib()
     internal_completed_(false),
     completed_(0),
     task_perf_monitor_(1000000) {
-  const char* task_id_env = getenv("FLAGS_task_id");
-
   hostname_ = boost::asio::ip::host_name();
+
+  char* coord_uri_env = getenv("FLAGS_coordinator_uri");
+  if (coord_uri_env)
+    coordinator_uri_ = coord_uri_env;
+  else
+    LOG(ERROR) << "No coordinator_uri environment variable!";
 
   if (!FLAGS_completion_filename.empty()) {
     // Open a completion file if the flag is set.
     completion_file_.reset(fopen(FLAGS_completion_filename.c_str(), "r"));
   }
 
+  const char* task_id_env = getenv("FLAGS_task_id");
   VLOG(1) << "Task ID is " << task_id_env;
   CHECK_NOTNULL(task_id_env);
   task_id_ = TaskIDFromString(task_id_env);
+
+  char* res_id_env = getenv("FLAGS_resource_id");
+  if (res_id_env)
+    resource_id_ = ResourceIDFromString(res_id_env);
 
   stringstream ss;
   ss << "/tmp/" << task_id_env << ".pid";
@@ -112,9 +121,14 @@ void TaskLib::Stop(bool success) {
     //   //message.
     //}
     sleep(1);
-    LOG(INFO) << "Sending finalize message to coordinator...";
-    SendFinalizeMessage(success);
-    LOG(INFO) << "Finalise message sent";
+    if (chan_) {
+      LOG(INFO) << "Sending finalize message to coordinator...";
+      SendFinalizeMessage(success);
+      LOG(INFO) << "Finalise message sent";
+    } else {
+      LOG(ERROR) << "Task exited before a channel to the coordinator could be "
+                 << "established!";
+    }
     fflush(stdout);
     fflush(stderr);
     // Remove PID file
@@ -284,8 +298,12 @@ bool TaskLib::PullTaskInformationFromCoordinator(TaskID_t task_id,
 
 void TaskLib::RunMonitor(boost::thread::id main_thread_id) {
   FLAGS_logtostderr = true;
-  LOG(INFO) << "Connecting to coordinator at " << FLAGS_coordinator_uri;
+  if (coordinator_uri_.empty())
+    coordinator_uri_ = FLAGS_coordinator_uri;
+
+  LOG(INFO) << "Connecting to coordinator at " << coordinator_uri_;
   CHECK(ConnectToCoordinator(coordinator_uri_));
+
   m_adapter_->RegisterAsyncMessageReceiptCallback(
       boost::bind(&TaskLib::HandleIncomingMessage, this, _1, _2));
   //m_adapter_->RegisterAsyncErrorPathCallback(
