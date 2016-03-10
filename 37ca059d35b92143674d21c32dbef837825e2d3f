@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_0405f6c1",
+        "filename": "src/engine/task_lib.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-10T02:53:05Z",
+      "side": 1,
+      "message": "Shouldn\u0027t you log something here if the chan_ is NULL?",
+      "revId": "37ca059d35b92143674d21c32dbef837825e2d3f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
