@@ -18,6 +18,7 @@ class URITools {
   static string GetHostnameFromURI(const string& uri) {
     boost::regex e(NETWORKED_REGEX);
     boost::smatch m;
+    CHECK(!uri.empty());
     // Try to match the appropriate regular expression, and find the hostname
     // component.
     if (boost::regex_match(uri, m, e, boost::match_extra)
@@ -34,6 +35,7 @@ class URITools {
   static string GetPortFromURI(const string& uri) {
     boost::regex e(NETWORKED_REGEX);
     boost::smatch m;
+    CHECK(!uri.empty());
     // Magic
     if (boost::regex_match(uri, m, e, boost::match_extra)
         && m.size() == 4) {
