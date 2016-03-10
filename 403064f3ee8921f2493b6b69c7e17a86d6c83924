@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_045ed6e9",
+        "filename": "src/misc/uri_tools.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-10T02:47:58Z",
+      "side": 1,
+      "message": "Can you add an error message? (e.g., \u003c\u003c \"Please provide URI\").",
+      "revId": "403064f3ee8921f2493b6b69c7e17a86d6c83924",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_2463d2b2",
+        "filename": "src/misc/uri_tools.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-10T02:47:58Z",
+      "side": 1,
+      "message": "As above.",
+      "revId": "403064f3ee8921f2493b6b69c7e17a86d6c83924",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
