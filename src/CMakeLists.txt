@@ -3,6 +3,7 @@ set(Firmament_SHARED_LIBRARIES ${Boost_LIBRARIES} crypto pthread ssl)
 
 include(base/CMakeLists.txt)
 include(engine/CMakeLists.txt)
+include(examples/CMakeLists.txt)
 include(messages/CMakeLists.txt)
 include(misc/CMakeLists.txt)
 include(platforms/CMakeLists.txt)

@@ -1,0 +1,37 @@
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/examples)
+
+set(EXAMPLES_HELLO_WORLD_SRC
+  examples/hello_world/hello_world.cc
+  )
+
+set(EXAMPLES_TIMESPIN_SRC
+  examples/timespin/timespin.cc
+  )
+
+add_executable(examples/hello_world ${EXAMPLES_HELLO_WORLD_SRC}
+  ${TASK_LIB_SRC}
+  $<TARGET_OBJECTS:base>
+  $<TARGET_OBJECTS:messages>
+  $<TARGET_OBJECTS:misc>
+  $<TARGET_OBJECTS:platforms_unix>
+  $<TARGET_OBJECTS:storage>
+  )
+
+add_dependencies(examples/hello_world gtest spooky-hash thread-safe-stl-containers)
+
+target_link_libraries(examples/hello_world LINK_PUBLIC ${spooky-hash_BINARY}
+  ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)
+
+add_executable(examples/timespin ${EXAMPLES_TIMESPIN_SRC}
+  ${TASK_LIB_SRC}
+  $<TARGET_OBJECTS:base>
+  $<TARGET_OBJECTS:messages>
+  $<TARGET_OBJECTS:misc>
+  $<TARGET_OBJECTS:platforms_unix>
+  $<TARGET_OBJECTS:storage>
+  )
+
+add_dependencies(examples/timespin gtest spooky-hash thread-safe-stl-containers)
+
+target_link_libraries(examples/timespin LINK_PUBLIC ${spooky-hash_BINARY}
+  ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)
