@@ -130,7 +130,6 @@ void Simulator::ReplaySimulation() {
       // to make sure that it's at run_scheduler_at so that all the events
       // that happen during scheduling have a timestamp >= run_scheduler_at.
       simulated_time_.UpdateCurrentTimestamp(run_scheduler_at);
-      uint64_t old_run_scheduler_at = run_scheduler_at;
       // Run the scheduler and update the time to run the scheduler at.
       run_scheduler_at = ScheduleJobsHelper(run_scheduler_at);
       // We don't have to set the time to the previous value because

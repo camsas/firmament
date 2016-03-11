@@ -679,7 +679,10 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
   // XXX(malte): HACK to plot flow graph.
   string cmd;
   spf(&cmd, "bash scripts/plot_flow_graph.sh %s", iter_id.c_str());
-  system(cmd.c_str());
+  int64_t ret = system(cmd.c_str());
+  if (ret != 0) {
+    LOG(WARNING) << "Failed command: " << cmd;
+  }
   // End plotting hack.
   string action = http_request->get_query("a");
   string graph_filename = FLAGS_debug_output_dir;
