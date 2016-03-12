@@ -1,0 +1,243 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_c122e500",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(node) after",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_e11fe1b5",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "Can we make this method name more descriptive or add a comment? What is an ECPrefArc?",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_011dddbd",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "Can we make this method name more descriptive or add a comment? Also, PrefResArcs vs. ECPrefArcs is inconsistent naming.",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_2179f9fc",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "What\u0027s the difference between this and the public RemoveResourceTopology?",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_417ef5e5",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "Typo: \"If a child task doesn\u0027t\"",
+      "range": {
+        "startLine": 198,
+        "startChar": 5,
+        "endLine": 198,
+        "endChar": 33
+      },
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_6183f1cc",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "What sort of updates does this make? (Stats? Arcs?)",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_8188ede8",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "I presume the marked_nodes set is an auxiliary data structure that acts as a scratchpad to remember the ECs that we\u0027ve already visited, so that we don\u0027t process any EC twice?",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_a16c0938",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "Will it print an error or CHECK-fail if it\u0027s called w/o preemption enabled?",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_c1690527",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "Strange method name: it\u0027s not like it fails when it doesn\u0027t! Better maybe: \"bool TaskHasNode(td)\"",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_e1760106",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "Typo: nodes -\u003e node",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_0174fdfb",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "Typo: nodes -\u003e node",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_21601935",
+        "filename": "src/scheduling/flow/flow_graph_node.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "A switch statement might be more elegant here, because you don\u0027t need \"break\" (return breaks):\n\nswitch (rd.type()) {\n  case ResourceDescriptor::RESOURCE_PU: return FlowNodeType::PU;\n  case ResourceDescriptor::RESOURCE_CORE: return FlowNodeType::CORE;\n\n... etc.",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 5
+      },
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_41651544",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-12T20:16:14Z",
+      "side": 1,
+      "message": "Doesn\u0027t RemoveMachine check that the argument RD is actually of machine type?",
+      "range": {
+        "startLine": 178,
+        "startChar": 0,
+        "endLine": 180,
+        "endChar": 58
+      },
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
