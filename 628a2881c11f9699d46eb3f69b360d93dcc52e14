@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_2ebc886c",
+        "filename": "README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-12T04:18:00Z",
+      "side": 1,
+      "message": "Please remove whitespace.",
+      "revId": "628a2881c11f9699d46eb3f69b360d93dcc52e14",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
