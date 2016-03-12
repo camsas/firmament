@@ -129,16 +129,17 @@ void TraceGenerator::SchedulerRun(
                    << " of tasks are unscheduled";
     }
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
-    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju,%s,%ju,%ju\n",
+    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju,%ju,%ju,%s\n",
             timestamp, scheduler_stats.scheduler_runtime,
             scheduler_stats.algorithm_runtime, scheduler_stats.total_runtime,
             unscheduled_tasks_cnt_, evicted_tasks_cnt_,
             unscheduled_tasks_cnt_ + running_tasks_cnt_,
-            dimacs_stats.GetStatsString().c_str(),
-            task_events_cnt_per_round_, machine_events_cnt_per_round_);
+            task_events_cnt_per_round_, machine_events_cnt_per_round_,
+            dimacs_stats.GetStatsString().c_str());
     evicted_tasks_cnt_ = 0;
     task_events_cnt_per_round_ = 0;
     machine_events_cnt_per_round_ = 0;
+    fflush(scheduler_events_);
   }
 }
 
