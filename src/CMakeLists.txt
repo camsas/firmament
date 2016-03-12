@@ -76,7 +76,7 @@ add_executable(coordinator ${COORDINATOR_SRCS}
   $<TARGET_OBJECTS:storage>
   )
 
-add_dependencies(coordinator gtest pb2json pion spooky-hash
+add_dependencies(coordinator gtest pb2json pion scripts_job spooky-hash
   thread-safe-stl-containers)
 
 # XXX(malte): remove this

@@ -32,6 +32,7 @@ include(DockerTargets)
 enable_testing()
 set(GTEST_ROOT ${gtest_BINARY_DIR})
 
+# Helper scripts that depend on protobufs
+subdirs(scripts/job)
 # The "src" subdir has all source code
 subdirs(src)
-subdirs(scripts/job)
