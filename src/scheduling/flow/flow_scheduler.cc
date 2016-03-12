@@ -277,16 +277,6 @@ void FlowScheduler::LogDebugCostModel() {
 void FlowScheduler::PopulateSchedulerResourceUI(
     ResourceID_t res_id,
     TemplateDictionary* dict) const {
-  vector<EquivClass_t>* equiv_classes =
-      cost_model_->GetResourceEquivClasses(res_id);
-  if (equiv_classes) {
-    for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
-         it != equiv_classes->end(); ++it) {
-      TemplateDictionary* tec_dict = dict->AddSectionDictionary("RES_RECS");
-      tec_dict->SetFormattedValue("RES_REC", "%ju", *it);
-    }
-  }
-  delete equiv_classes;
 }
 
 void FlowScheduler::PopulateSchedulerTaskUI(TaskID_t task_id,

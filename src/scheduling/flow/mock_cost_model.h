@@ -30,8 +30,6 @@ class MockCostModel : public CostModelInterface {
   MOCK_METHOD2(EquivClassToEquivClass,
                Cost_t(EquivClass_t ec1, EquivClass_t ec2));
   MOCK_METHOD1(GetTaskEquivClasses, vector<EquivClass_t>*(TaskID_t task_id));
-  MOCK_METHOD1(GetResourceEquivClasses,
-               vector<EquivClass_t>*(ResourceID_t res_id));
   MOCK_METHOD1(GetOutgoingEquivClassPrefArcs,
                vector<ResourceID_t>*(EquivClass_t ec));
   MOCK_METHOD1(GetTaskPreferenceArcs, vector<ResourceID_t>*(TaskID_t task_id));

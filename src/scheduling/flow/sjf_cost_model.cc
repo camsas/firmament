@@ -141,14 +141,6 @@ vector<EquivClass_t>* SJFCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   return equiv_classes;
 }
 
-vector<EquivClass_t>* SJFCostModel::GetResourceEquivClasses(
-    ResourceID_t res_id) {
-  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
-  // Only the cluster aggregator for the trivial cost model
-  equiv_classes->push_back(cluster_aggregator_ec_);
-  return equiv_classes;
-}
-
 vector<ResourceID_t>* SJFCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t ec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();

@@ -99,14 +99,6 @@ class CostModelInterface {
   virtual vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id) = 0;
 
   /**
-   * Get the equivalence classes for a resource.
-   * @param res_id the resource id for which to get the equivalence classes
-   * @return a vector containing the resource's equivalence classes
-   */
-  virtual vector<EquivClass_t>* GetResourceEquivClasses(
-      ResourceID_t res_id) = 0;
-
-  /**
    * Get the resource ids to which an equivalence class has arcs.
    * @param tec the equivalence class for which to get the resource ids
    */
