@@ -71,7 +71,6 @@ jobs are submitted to the web UI port, and NOT the internal listen port!
 
 ```console
 $ cd scripts/job/
-$ make
 $ python job_submit.py <host> <webUI port (8080)> <binary>
 ```
 
@@ -81,10 +80,10 @@ Example for the last line:
 $ python job_submit.py localhost 8080 /bin/sleep 60
 ```
 
-(Note that you may need to run `make` in the script directory since the script
-depends on some protocol buffer data structures that need to be compiled. If
-you have run `make all`, all script dependencies should automatically have been
-built, though.)
+(Note that you may need to run `make scripts_job` in the build directory since 
+the script depends on some protocol buffer data structures that need to be
+compiled. If you have built the `coordinator` target (part of the defaults),
+all script dependencies should automatically have been built, though.)
 
 If this all works, you should see the new job on the web UI.
 
