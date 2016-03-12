@@ -116,14 +116,6 @@ vector<EquivClass_t>* RandomCostModel::GetTaskEquivClasses(
   return equiv_classes;
 }
 
-vector<EquivClass_t>* RandomCostModel::GetResourceEquivClasses(
-    ResourceID_t res_id) {
-  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
-  // Every machine is in the special cluster aggregator EC
-  equiv_classes->push_back(cluster_aggregator_ec_);
-  return equiv_classes;
-}
-
 vector<ResourceID_t>* RandomCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t ec) {
   vector<ResourceID_t>* arc_destinations = new vector<ResourceID_t>();

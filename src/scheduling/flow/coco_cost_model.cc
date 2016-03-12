@@ -368,12 +368,6 @@ vector<EquivClass_t>* CocoCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   return equiv_classes;
 }
 
-vector<EquivClass_t>* CocoCostModel::GetResourceEquivClasses(
-    ResourceID_t res_id) {
-  // Not implemented.
-  return NULL;
-}
-
 vector<ResourceID_t>* CocoCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t ec) {
   // TODO(ionel): This method may end up adding many preference arcs.

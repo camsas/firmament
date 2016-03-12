@@ -55,7 +55,6 @@ class WhareMapCostModel : public CostModelInterface {
   Cost_t EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
   // Get the type of equiv class.
   vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
-  vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
   vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(EquivClass_t tec);
   vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
   vector<EquivClass_t>* GetEquivClassToEquivClassesArcs(EquivClass_t tec);
@@ -80,6 +79,7 @@ class WhareMapCostModel : public CostModelInterface {
   const TaskDescriptor& GetTask(TaskID_t task_id);
   void ComputeMachineTypeHash(const ResourceTopologyNodeDescriptor* rtnd_ptr,
                               size_t* hash);
+  vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
   ResourceID_t MachineResIDForResource(ResourceID_t res_id);
   Cost_t MaxFromVec(const vector<uint64_t>& vec) const;
   Cost_t MinFromVec(const vector<uint64_t>& vec) const;

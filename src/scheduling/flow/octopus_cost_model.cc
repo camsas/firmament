@@ -92,14 +92,6 @@ vector<EquivClass_t>* OctopusCostModel::GetTaskEquivClasses(
   return equiv_classes;
 }
 
-vector<EquivClass_t>* OctopusCostModel::GetResourceEquivClasses(
-    ResourceID_t res_id) {
-  vector<EquivClass_t>* equiv_classes = new vector<EquivClass_t>();
-  // Only the cluster aggregator for the Octopus cost model
-  equiv_classes->push_back(cluster_aggregator_ec_);
-  return equiv_classes;
-}
-
 vector<ResourceID_t>* OctopusCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t ec) {
   vector<ResourceID_t>* arc_destinations = new vector<ResourceID_t>();

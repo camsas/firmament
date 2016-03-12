@@ -93,11 +93,6 @@ vector<EquivClass_t>* VoidCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   return equiv_classes;
 }
 
-vector<EquivClass_t>* VoidCostModel::GetResourceEquivClasses(
-    ResourceID_t res_id) {
-  return NULL;
-}
-
 vector<ResourceID_t>* VoidCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();

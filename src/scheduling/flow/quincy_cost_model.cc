@@ -122,11 +122,6 @@ vector<EquivClass_t>* QuincyCostModel::GetTaskEquivClasses(
   return equiv_classes;
 }
 
-vector<EquivClass_t>* QuincyCostModel::GetResourceEquivClasses(
-    ResourceID_t res_id) {
-  return NULL;
-}
-
 vector<ResourceID_t>* QuincyCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t tec) {
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
