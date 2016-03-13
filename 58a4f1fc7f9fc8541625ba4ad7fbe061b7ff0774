@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "3a6ff13c_2474a79b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:06:28Z",
+      "side": 1,
+      "message": "I think there might be a little more to say about this re-write ;-)",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_e1e441ae",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 7
@@ -684,6 +701,46 @@
       "writtenOn": "2016-03-13T00:00:08Z",
       "side": 1,
       "message": "Why is there still an AddOrUpdate cruising here? I thought we wanted to get rid of all of them :)",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_4479a392",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:06:28Z",
+      "side": 1,
+      "message": "Can a test continue even after an EXPECT_DEATH? (i.e., do the following lines ever execute?)",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_646e9fcb",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 1174,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:06:28Z",
+      "side": 1,
+      "message": "1. Why is this commented out?\n2. There\u0027s another (empty) AddOrUpdateJobNodes test somewhere further up. Why is it duplicated?",
+      "range": {
+        "startLine": 1136,
+        "startChar": 0,
+        "endLine": 1174,
+        "endChar": 4
+      },
       "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
