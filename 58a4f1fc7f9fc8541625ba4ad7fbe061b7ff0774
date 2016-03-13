@@ -1,0 +1,692 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_e1e441ae",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "This will presumably fail hard if we try to add a node for an EC that already has one? (I think we should have a general policy to deal with this sort of thing: silently accept it and return the existing EC node, or crash hard.)",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_c173c5e5",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "add: \"... so we will never return to it.\"",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_e180c18d",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Add a comment here to state that ownership of the node_queue entries passes to UpdateFlowGraph, which is responsible for freeing them.",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_017ebdae",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Do we have to pass a mutable RTND here? I think the method only ever reads from it, although I suppose stats updates may end up modifying it or some of its nested RDs, and that\u0027s why?",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_214ad983",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(rtnd_ptr) prior to this\nand\nCHECK_NOTNULL(rd_ptr) after",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_414fd592",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Move above prior line to make semantics clearer",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_6144d174",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Add Github issue and reference it here",
+      "range": {
+        "startLine": 142,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 39
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_8149cd8d",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Can we externalize this into a helper method?",
+      "range": {
+        "startLine": 149,
+        "startChar": 0,
+        "endLine": 162,
+        "endChar": 3
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_a15de94a",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(rtnd_ptr) before this",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_c15ae54f",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(rd_ptr)",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_e157e124",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(td_ptr)",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_0155dd1c",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Why the semantic change from max() to min()? Was max() incorrect?",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_2131f90b",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Is this all we need to do? Maybe add a comment saying that we don\u0027t need to do anything else because all tasks have already finished (and their nodes been removed), and because EC nodes remove themselves when orphaned?",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_8140ed57",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Should there be a CHECK on UnschedAggNodeForJobID prior to this call to ensure that the unscheduled aggregator exists?",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_a12409c7",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(pus_removed)",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_c12105b6",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Does this fail silently if the node is not a leaf? Should we wrap this in an if statement and use CHECK_EQ(... , 1)?",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_012cfdaa",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 513,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Should we do a CHECK on UnschedAggNodeForJobID()\u0027s return before passing it on?",
+      "range": {
+        "startLine": 510,
+        "startChar": 0,
+        "endLine": 513,
+        "endChar": 77
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_21181984",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 534,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Why would TaskEvicted() get called if preemption is disabled? Machine failures, I presume?",
+      "range": {
+        "startLine": 531,
+        "startChar": 0,
+        "endLine": 534,
+        "endChar": 19
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_61121164",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 538,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Add a comment along the lines of \"Increment capacity from unscheduled agg to sink\", since it\u0027s not intuitively obvious what the \"1\" argument achieves here (and elsewhere where we call UpdateUnscheduledAggNode).",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_411d1573",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 553,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Should we remove the task node if the task failed? Or should we try to reschedule it? I suppose this depends on the retry policy and we currently don\u0027t retry, so this is fine.",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_81170d51",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 612,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Why is this funky increment business required?",
+      "range": {
+        "startLine": 611,
+        "startChar": 0,
+        "endLine": 612,
+        "endChar": 42
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_a10b292a",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 630,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Typo: no comma",
+      "range": {
+        "startLine": 630,
+        "startChar": 44,
+        "endLine": 630,
+        "endChar": 47
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_c1082530",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 664,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Also CHECK the other two pointer arguments",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_01031d10",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 675,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Comment re what this does",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_24ff4703",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 694,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Also CHECK the other pointer arguments",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_44044315",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 703,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Also CHECK other pointer arguments",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_442b6382",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 737,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Is this an empty dummy vector? Is it required for RemoveInvalidECPrefArcs to copy its argument vectors or can we make it such that RemoveInvalidECPrefArcs accepts NULL?",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_64205f9c",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 781,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Is this an empty dummy vector? Is it required for RemoveInvalidECPrefArcs to copy its argument vectors or can we make it such that RemoveInvalidECPrefArcs accepts NULL?",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_84255bad",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 789,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL on pointer arguments",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_c43673e7",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 824,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Does this currently get called anywhere? Should have a LOG(FATAL) \u003c\u003c \"Unimplemented!\" in here?",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_e4336ff4",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 829,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL on pointer arguments",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_04316bec",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 856,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL on pointer arguments",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_44528314",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 904,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(task_node)",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_64577f03",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 938,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "I suppose our current approach of not updating them only makes sense if we remove the preference arcs (i.e., all arcs apart from the arc to the unscheduled aggregator and the running arc), because the preference arcs will be stale and thus useless in many cost models.",
+      "range": {
+        "startLine": 937,
+        "startChar": 0,
+        "endLine": 938,
+        "endChar": 67
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_845c7b27",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 951,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL on pointer arguments",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_a4409736",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 987,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "See earlier comment re dummy vectors",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_c43d93bd",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 997,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL pointer arguments",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_e44a8f54",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 1061,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T00:00:08Z",
+      "side": 1,
+      "message": "Why is there still an AddOrUpdate cruising here? I thought we wanted to get rid of all of them :)",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
