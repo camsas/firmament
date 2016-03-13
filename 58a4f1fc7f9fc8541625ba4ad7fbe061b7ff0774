@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_9fcf64b0",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_8449db8d",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_c173c5e5",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 7
@@ -171,6 +189,24 @@
       "side": 1,
       "message": "Exactly, we need to get the mutable resource descriptor in order to update its state.",
       "parentUuid": "3a6ff13c_017ebdae",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_bfc34089",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_e457ef24",
       "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -481,6 +517,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_dfc0fc7e",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_df647ce7",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_2131f90b",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 7
@@ -516,6 +570,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_ffbdb803",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_9f73e4b0",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_8140ed57",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 7
@@ -545,6 +617,24 @@
       "side": 1,
       "message": "We don\u0027t need a check here because we already check if the node exist on UpdateUnscheduledAggNode\u0027s first line.",
       "parentUuid": "3a6ff13c_8140ed57",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_1fbb740f",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_042c0bab",
       "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -621,6 +711,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_3f3750b2",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Ok; can you add a comment saying \"No need to check result here, as this may not delete anything if the resource is not a leaf\"?",
+      "parentUuid": "3a6ff13c_24182784",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_012cfdaa",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 7
@@ -668,6 +776,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_5f3c0c94",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 513,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_441d2373",
+      "range": {
+        "startLine": 510,
+        "startChar": 0,
+        "endLine": 513,
+        "endChar": 77
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_21181984",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 7
@@ -703,6 +835,30 @@
       "side": 1,
       "message": "Exactly, machine failures.",
       "parentUuid": "3a6ff13c_21181984",
+      "range": {
+        "startLine": 531,
+        "startChar": 0,
+        "endLine": 534,
+        "endChar": 19
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_7f41c80a",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 534,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_a476d7d6",
       "range": {
         "startLine": 531,
         "startChar": 0,
@@ -785,6 +941,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_9f468422",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 553,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_8472bbe3",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_81170d51",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 7
@@ -820,6 +994,30 @@
       "side": 1,
       "message": "I think this is a left-over from the previous implementation in which nodes could randomly be deleted.",
       "parentUuid": "3a6ff13c_81170d51",
+      "range": {
+        "startLine": 611,
+        "startChar": 0,
+        "endLine": 612,
+        "endChar": 42
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_bf4a6025",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 612,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_1f48d45a",
       "range": {
         "startLine": 611,
         "startChar": 0,
@@ -1054,6 +1252,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_df471c1c",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 737,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_bf40a036",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_64205f9c",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 7
@@ -1083,6 +1299,24 @@
       "side": 1,
       "message": "RemoveInvalid* receives a vector of current preferences. First, it build a set out of the vector. Second, it iterates over the node\u0027s outgoing arcs and for each arc destination it checks if its in the preference set. If the destination is not then it can remove the arc.\n\nI could update the method to be able to receive NULL, but then I would have to make sure I don\u0027t populate the set if I pass NULL. Moreover, I would have to pass a pointer rather than a const reference.",
       "parentUuid": "3a6ff13c_64205f9c",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_ff54d8cb",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 781,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_9f5cc427",
       "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -1153,6 +1387,24 @@
       "side": 1,
       "message": "It doesn\u0027t get called from anywhere. I\u0027ve added a LOG(FATAL).",
       "parentUuid": "3a6ff13c_c43673e7",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_1f5294dd",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 824,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_c4acb338",
       "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -1311,6 +1563,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_3f5e70ea",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 938,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Ok, let\u0027s remember to come back to this, because it will affect simulation fidelity (preemptions happen for real in the sims).\n\nDone.",
+      "parentUuid": "3a6ff13c_bf3980da",
+      "range": {
+        "startLine": 937,
+        "startChar": 0,
+        "endLine": 938,
+        "endChar": 67
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_845c7b27",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 7
@@ -1375,6 +1651,24 @@
       "side": 1,
       "message": "See above",
       "parentUuid": "3a6ff13c_a4409736",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_5f632cb1",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 987,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_7f7c6873",
       "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -1451,6 +1745,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_7f58e8fa",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 1061,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_df0f1c2d",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_4479a392",
         "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
         "patchSetId": 7
@@ -1480,6 +1792,24 @@
       "side": 1,
       "message": "Yes, it does. However, the methods called until the crash happen should not have any side-effects. Otherwise, we might end up in a inconsistent state.",
       "parentUuid": "3a6ff13c_4479a392",
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_9f5da4ec",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_e4b8cf2c",
       "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -1521,6 +1851,30 @@
       "side": 1,
       "message": "1. I\u0027ve removed it now. It was the old AddOrUpdateJobNodes test.\n\n2. The new AddOrUpdateJobNodes is not yet implemented because I haven\u0027t gone around do it. I can do it in the future when I\u0027ll be waiting for some experiments to run.",
       "parentUuid": "3a6ff13c_646e9fcb",
+      "range": {
+        "startLine": 1136,
+        "startChar": 0,
+        "endLine": 1174,
+        "endChar": 4
+      },
+      "revId": "58a4f1fc7f9fc8541625ba4ad7fbe061b7ff0774",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_bf718079",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 1174,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-13T21:37:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_c4abd3d4",
       "range": {
         "startLine": 1136,
         "startChar": 0,
