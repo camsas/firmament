@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_61d131cd",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "We\u0027re already checking for null in AddNode.",
+      "parentUuid": "3a6ff13c_c122e500",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_e11fe1b5",
         "filename": "src/scheduling/flow/flow_graph_manager.h",
         "patchSetId": 5
@@ -30,6 +48,24 @@
       "writtenOn": "2016-03-12T20:16:14Z",
       "side": 1,
       "message": "Can we make this method name more descriptive or add a comment? What is an ECPrefArc?",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_84aabbd2",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_e11fe1b5",
       "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_a4aed7e5",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_011dddbd",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_2179f9fc",
         "filename": "src/scheduling/flow/flow_graph_manager.h",
         "patchSetId": 5
@@ -64,6 +118,24 @@
       "writtenOn": "2016-03-12T20:16:14Z",
       "side": 1,
       "message": "What\u0027s the difference between this and the public RemoveResourceTopology?",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_41f35573",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "RemoveResourceTopology consists of two parts:\n1) traversing and removing all the resources in the sub-tree\n2) updating the stats up to the root\n\nThis method implements the first part.",
+      "parentUuid": "3a6ff13c_2179f9fc",
       "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -93,6 +165,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_e461afd4",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_417ef5e5",
+      "range": {
+        "startLine": 198,
+        "startChar": 5,
+        "endLine": 198,
+        "endChar": 33
+      },
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_6183f1cc",
         "filename": "src/scheduling/flow/flow_graph_manager.h",
         "patchSetId": 5
@@ -104,6 +200,24 @@
       "writtenOn": "2016-03-12T20:16:14Z",
       "side": 1,
       "message": "What sort of updates does this make? (Stats? Arcs?)",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_21ee598c",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "UpdateTask/EquivClass/ResourceNode updates the node and its arcs.",
+      "parentUuid": "3a6ff13c_6183f1cc",
       "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -127,6 +241,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_01e23d9f",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "Exactly. It\u0027s a set in which we put it all the nodes that we\u0027ve already visited or are already in the queue. In this way we avoid visiting resources/ecs/tasks twice.",
+      "parentUuid": "3a6ff13c_8188ede8",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_a16c0938",
         "filename": "src/scheduling/flow/flow_graph_manager.h",
         "patchSetId": 5
@@ -138,6 +270,24 @@
       "writtenOn": "2016-03-12T20:16:14Z",
       "side": 1,
       "message": "Will it print an error or CHECK-fail if it\u0027s called w/o preemption enabled?",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_a1da49e7",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "Yes. It has a CHECK.",
+      "parentUuid": "3a6ff13c_a16c0938",
       "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -161,6 +311,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_c1d745be",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "TaskHasNode is definitely not a good name because this method is used to check if we need to add a node for the task. That\u0027s why it\u0027s called TaskMustHaveNode if it returns true then we add the node.",
+      "parentUuid": "3a6ff13c_c1690527",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_e1760106",
         "filename": "src/scheduling/flow/flow_graph_manager.h",
         "patchSetId": 5
@@ -172,6 +340,24 @@
       "writtenOn": "2016-03-12T20:16:14Z",
       "side": 1,
       "message": "Typo: nodes -\u003e node",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_045fab0f",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_e1760106",
       "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -195,6 +381,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_249bc7ca",
+        "filename": "src/scheduling/flow/flow_graph_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_0174fdfb",
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_21601935",
         "filename": "src/scheduling/flow/flow_graph_node.cc",
         "patchSetId": 5
@@ -206,6 +410,30 @@
       "writtenOn": "2016-03-12T20:16:14Z",
       "side": 1,
       "message": "A switch statement might be more elegant here, because you don\u0027t need \"break\" (return breaks):\n\nswitch (rd.type()) {\n  case ResourceDescriptor::RESOURCE_PU: return FlowNodeType::PU;\n  case ResourceDescriptor::RESOURCE_CORE: return FlowNodeType::CORE;\n\n... etc.",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 5
+      },
+      "revId": "b2fe144b6ddc73e6a8f1ac657c5b47865f27a6a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_c464b3e7",
+        "filename": "src/scheduling/flow/flow_graph_node.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_21601935",
       "range": {
         "startLine": 32,
         "startChar": 1,

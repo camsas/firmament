@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_41cc3536",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 1089,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 0,
+      "message": "Yes.",
+      "parentUuid": "3a6ff13c_2e63a81b",
+      "revId": "2eeeab84e5fe4cd9a088c65e42f6952ab9b249f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_615a1185",
         "filename": "src/scheduling/flow/wharemap_cost_model.cc",
         "patchSetId": 5
@@ -30,6 +48,24 @@
       "writtenOn": "2016-03-12T20:16:14Z",
       "side": 0,
       "message": "See earlier comment, presumably this is now handled somewhere else?",
+      "revId": "2eeeab84e5fe4cd9a088c65e42f6952ab9b249f7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_81d62dc4",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 750,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-13T21:14:40Z",
+      "side": 0,
+      "message": "Yes, in FGM.",
+      "parentUuid": "3a6ff13c_615a1185",
       "revId": "2eeeab84e5fe4cd9a088c65e42f6952ab9b249f7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
