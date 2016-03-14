@@ -53,15 +53,19 @@ class FlowGraphChangeManager {
                  const char* comment);
   void DeleteNode(FlowGraphNode* node, DIMACSChangeType change_type,
                   const char* comment);
+  const vector<DIMACSChange*>& GetGraphChanges() {
+    return graph_changes_;
+  }
+  const vector<DIMACSChange*>& GetOptimizedGraphChanges() {
+    OptimizeChanges();
+    return graph_changes_;
+  }
   void ResetChanges();
   inline bool CheckNodeType(uint64_t node_id, FlowNodeType type) {
     return flow_graph_->Node(node_id).type_ == type;
   }
   inline const FlowGraph& flow_graph() {
     return *flow_graph_;
-  }
-  inline const vector<DIMACSChange*> graph_changes() {
-    return graph_changes_;
   }
   inline FlowGraph* mutable_flow_graph() {
     return flow_graph_;
@@ -71,7 +75,51 @@ class FlowGraphChangeManager {
   }
 
  private:
+  FRIEND_TEST(FlowGraphChangeManagerTest, MergeChangesToSameArc);
+  FRIEND_TEST(FlowGraphChangeManagerTest, PurgeChangesBeforeNodeRemoval);
+  FRIEND_TEST(FlowGraphChangeManagerTest, RemoveDuplicateChanges);
+
   void AddGraphChange(DIMACSChange* change);
+  void OptimizeChanges();
+  void MergeChangesToSameArc();
+  /**
+   * Checks if there's already a change for the (src_id, dst_id) arc.
+   * If there's no change then it adds one to the state, otherwise
+   * it updates the existing change.
+   */
+  void MergeChangesToSameArcHelper(
+      uint64_t src_id, uint64_t dst_id, uint64_t cap_lower_bound,
+      uint64_t cap_upper_bound, uint64_t cost, FlowGraphArcType type,
+      DIMACSChange* change, vector<DIMACSChange*>* new_graph_changes,
+      unordered_map<uint64_t, unordered_map<uint64_t, DIMACSChange*>>*
+      arcs_src_changes,
+      unordered_map<uint64_t, unordered_map<uint64_t, DIMACSChange*>>*
+      arcs_dst_changes);
+  void PurgeChangesBeforeNodeRemoval();
+  void RemoveDuplicateChanges();
+  /**
+   * Checks if there's already an identical change for the (src_id, dst_id) arc.
+   * If there's no change the it updates the state, otherwise it just ignores
+   * the change we're currently processing because it's duplicate.
+   */
+  void RemoveDuplicateChangesHelper(
+      uint64_t src_id, uint64_t dst_id, DIMACSChange* change,
+      vector<DIMACSChange*>* new_graph_changes,
+      unordered_map<uint64_t, unordered_map<string, DIMACSChange*>>*
+      node_to_change);
+  bool RemoveDuplicateChangesUpdateState(
+      uint64_t node_id, DIMACSChange* change,
+      unordered_map<uint64_t, unordered_map<string, DIMACSChange*>>*
+      node_to_change);
+  /**
+   * Method to be called upon node addition. This method makes sure that the
+   * state is cleaned when we re-use a node id.
+   */
+  void RemoveDuplicateCleanState(
+      uint64_t new_node_id, uint64_t src, uint64_t dst,
+      const string& change_desc,
+      unordered_map<uint64_t, unordered_map<string, DIMACSChange*>>*
+      node_to_change);
 
   FlowGraph* flow_graph_;
   // Vector storing the graph changes occured since the last scheduling round.

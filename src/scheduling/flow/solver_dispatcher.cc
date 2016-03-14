@@ -124,7 +124,8 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   if (solver_ran_once_ && FLAGS_incremental_flow) {
     dimacs_exporter_.Reset();
     dimacs_exporter_.ExportIncremental(
-        flow_graph_manager_->flow_graph_change_manager()->graph_changes());
+        flow_graph_manager_->flow_graph_change_manager()->
+        GetOptimizedGraphChanges());
     flow_graph_manager_->flow_graph_change_manager()->ResetChanges();
   }
 
