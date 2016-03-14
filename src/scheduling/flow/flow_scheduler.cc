@@ -17,6 +17,7 @@
 #include "base/types.h"
 #include "base/units.h"
 #include "misc/map-util.h"
+#include "misc/pb_utils.h"
 #include "misc/utils.h"
 #include "misc/string_utils.h"
 #include "storage/object_store_interface.h"
@@ -170,21 +171,27 @@ uint64_t FlowScheduler::ApplySchedulingDeltas(
   return num_scheduled;
 }
 
-void FlowScheduler::DeregisterResource(ResourceID_t res_id) {
+void FlowScheduler::DeregisterResource(
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
-  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
-  CHECK_NOTNULL(rs_ptr);
-  if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_MACHINE) {
-    // TODO(ionel): If DeregisterResource is called on a machine's parent then
-    // we end up not removing anything from the flow graph
-    trace_generator_->RemoveMachine(rs_ptr->descriptor());
-    flow_graph_manager_->RemoveResourceTopology(
-        rs_ptr->descriptor(), &pus_removed_during_solver_run_);
+  // Traverse the resource topology tree in order to evict tasks.
+  DFSTraversePostOrderResourceProtobufTreeReturnRTND(
+      rtnd_ptr,
+      boost::bind(&FlowScheduler::EvictTasksFromResource, this, _1));
+  flow_graph_manager_->RemoveResourceTopology(
+      rtnd_ptr->resource_desc(), &pus_removed_during_solver_run_);
+  EventDrivenScheduler::DeregisterResource(rtnd_ptr);
+}
+
+void FlowScheduler::EvictTasksFromResource(
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
+  vector<TaskID_t> tasks = BoundTasksForResource(res_id);
+  ResourceDescriptor* rd_ptr = rtnd_ptr->mutable_resource_desc();
+  for (auto& task_id : tasks) {
+    TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
+    HandleTaskEviction(td_ptr, rd_ptr);
   }
-  if (rs_ptr->descriptor().type() == ResourceDescriptor::RESOURCE_PU) {
-    EventDrivenScheduler::DeregisterResource(res_id);
-  }
-  // We don't have to do anything if the resource is not a PU or a MACHINE.
 }
 
 void FlowScheduler::HandleJobCompletion(JobID_t job_id) {

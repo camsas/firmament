@@ -185,20 +185,6 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   JobDescriptor* PopulateJob(uint64_t job_id);
 
   /**
-   * Removes the simulator state for a resource and evicts all the tasks
-   * running on it or any of its children nodes.
-   * @param rtnd the resource to be removed
-   */
-  void RemoveResource(ResourceTopologyNodeDescriptor* rtnd);
-
-  /**
-   * Removes a resource from its parent's children list.
-   * @param rtnd the resource node to remove
-   */
-  void RemoveResourceNodeFromParentChildrenList(
-      const ResourceTopologyNodeDescriptor& rtnd);
-
-  /**
    * Removes a spawned task from the job's spanwed list.
    * @param jd_ptr the descriptor of the job
    * @param td_to_remove the descriptor of the task to be removed

@@ -48,7 +48,7 @@ class FlowScheduler : public EventDrivenScheduler {
                 const string& coordinator_uri,
                 TimeInterface* time_manager);
   ~FlowScheduler();
-  virtual void DeregisterResource(ResourceID_t res_id);
+  virtual void DeregisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr);
   virtual void HandleJobCompletion(JobID_t job_id);
   virtual void HandleTaskCompletion(TaskDescriptor* td_ptr,
                                     TaskFinalReport* report);
@@ -91,6 +91,7 @@ class FlowScheduler : public EventDrivenScheduler {
 
  private:
   uint64_t ApplySchedulingDeltas(const vector<SchedulingDelta*>& deltas);
+  void EvictTasksFromResource(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void LogDebugCostModel();
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   void RegisterLocalResource(ResourceID_t res_id);

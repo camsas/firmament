@@ -446,9 +446,13 @@ void FlowGraphManager::RemoveResourceTopology(const ResourceDescriptor& rd,
   FlowGraphNode* res_node = NodeForResourceID(res_id);
   CHECK_NOTNULL(res_node);
   int64_t cap_delta = 0;
-  // Delete the children nodes.
-  for (auto& dst_id_arc : res_node->outgoing_arc_map_) {
-    FlowGraphArc* arc = dst_id_arc.second;
+  // Delete the children nodes. We use an iterator because we change the
+  // collection while we iterate over it.
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator
+         it = res_node->outgoing_arc_map_.begin();
+       it != res_node->outgoing_arc_map_.end();) {
+    FlowGraphArc* arc = it->second;
+    ++it;
     cap_delta -=  arc->cap_upper_bound_;
     if (!arc->dst_node_->resource_id_.is_nil()) {
       TraverseAndRemoveTopology(arc->dst_node_, pus_removed);
@@ -587,8 +591,13 @@ void FlowGraphManager::TaskScheduled(TaskID_t task_id, ResourceID_t res_id) {
 
 void FlowGraphManager::TraverseAndRemoveTopology(FlowGraphNode* res_node,
                                                  set<uint64_t>* pus_removed) {
-  for (auto& dst_id_arc : res_node->outgoing_arc_map_) {
-    FlowGraphArc* arc = dst_id_arc.second;
+  // We use an iterator because we change the collection while we iterate over
+  // it.
+  for (unordered_map<uint64_t, FlowGraphArc*>::iterator
+         it = res_node->outgoing_arc_map_.begin();
+       it != res_node->outgoing_arc_map_.end();) {
+    FlowGraphArc* arc = it->second;
+    ++it;
     if (!arc->dst_node_->resource_id_.is_nil()) {
       // The arc is pointing to a resource node.
       TraverseAndRemoveTopology(arc->dst_node_, pus_removed);

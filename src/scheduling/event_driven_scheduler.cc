@@ -134,6 +134,30 @@ void EventDrivenScheduler::CheckRunningTasksHealth() {
   }
 }
 
+void EventDrivenScheduler::CleanStateDeregisteredResource(
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  const ResourceDescriptor& rd = rtnd_ptr->resource_desc();
+  ResourceID_t res_id = ResourceIDFromString(rd.uuid());
+  VLOG(2) << "Removing executor for resource " << res_id
+          << " which is now deregistered from this scheduler.";
+  if (rd.type() == ResourceDescriptor::RESOURCE_PU) {
+    ExecutorInterface* exec = FindPtrOrNull(executors_, res_id);
+    CHECK_NOTNULL(exec);
+    // TODO(ionel): Terminate the tasks running on res_id or any of
+    // its sub-resources. Make sure the tasks get re-scheduled.
+    // exec->TerminateAllTasks();
+    CHECK(executors_.erase(res_id));
+    delete exec;
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_MACHINE) {
+    trace_generator_->RemoveMachine(rd);
+  }
+  resource_bindings_.erase(res_id);
+  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs_ptr);
+  resource_map_->erase(res_id);
+  delete rs_ptr;
+}
+
 void EventDrivenScheduler::DebugPrintRunnableTasks() {
   for (auto& runnable_tasks_per_job : runnable_tasks_) {
     for (auto& task : runnable_tasks_per_job.second) {
@@ -142,19 +166,19 @@ void EventDrivenScheduler::DebugPrintRunnableTasks() {
   }
 }
 
-void EventDrivenScheduler::DeregisterResource(ResourceID_t res_id) {
-  VLOG(2) << "Removing executor for resource " << res_id
-          << " which is now deregistered from this scheduler.";
-  ExecutorInterface* exec = FindPtrOrNull(executors_, res_id);
-  CHECK_NOTNULL(exec);
-  // Terminate any running tasks on the resource.
-  // TODO(ionel): Terminate the tasks running on res_id or any of
-  // its sub-resources. Make sure the tasks get re-scheduled.
-  // exec->TerminateAllTasks();
-  // Remove the executor for the resource.
-  CHECK(executors_.erase(res_id));
-  delete exec;
-  resource_bindings_.erase(res_id);
+void EventDrivenScheduler::DeregisterResource(
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  DFSTraversePostOrderResourceProtobufTreeReturnRTND(
+      rtnd_ptr,
+      boost::bind(&EventDrivenScheduler::CleanStateDeregisteredResource,
+                  this, _1));
+  // We've finished using ResourceTopologyNodeDescriptor. We can now deconnect
+  // it from its parent.
+  if (rtnd_ptr->has_parent_id()) {
+    RemoveResourceNodeFromParentChildrenList(rtnd_ptr);
+  } else {
+    LOG(WARNING) << "Deregistered node without a parent";
+  }
 }
 
 void EventDrivenScheduler::ExecuteTask(TaskDescriptor* td_ptr,
@@ -669,6 +693,36 @@ void EventDrivenScheduler::RegisterSimulatedResource(ResourceID_t res_id) {
   VLOG(1) << "Adding executor for simulated resource " << res_id;
   SimulatedExecutor* exec = new SimulatedExecutor(res_id, coordinator_uri_);
   CHECK(InsertIfNotPresent(&executors_, res_id, exec));
+}
+
+void EventDrivenScheduler::RemoveResourceNodeFromParentChildrenList(
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  ResourceStatus* parent_rs_ptr =
+    FindPtrOrNull(*resource_map_, ResourceIDFromString(rtnd_ptr->parent_id()));
+  CHECK_NOTNULL(parent_rs_ptr);
+  // The parent of the node is the topology root.
+  RepeatedPtrField<ResourceTopologyNodeDescriptor>* parent_children =
+    parent_rs_ptr->mutable_topology_node()->mutable_children();
+  int32_t index = 0;
+  // Find the node in the parent's children list.
+  for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator it =
+         parent_children->begin(); it != parent_children->end();
+       ++it, ++index) {
+    if (it->resource_desc().uuid()
+        .compare(rtnd_ptr->resource_desc().uuid()) == 0) {
+      break;
+    }
+  }
+  if (index < parent_children->size()) {
+    // Found the node.
+    if (index < parent_children->size() - 1) {
+      // The node is not the last one.
+      parent_children->SwapElements(index, parent_children->size() - 1);
+    }
+    parent_children->RemoveLast();
+  } else {
+    LOG(FATAL) << "Could not found the resource in the parent's list";
+  }
 }
 
 const set<TaskID_t>& EventDrivenScheduler::ComputeRunnableTasksForJob(
