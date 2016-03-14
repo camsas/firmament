@@ -8,6 +8,14 @@
 #include "scheduling/flow/dimacs_new_arc.h"
 #include "scheduling/flow/dimacs_remove_node.h"
 
+DEFINE_bool(remove_duplicate_changes, true,
+            "True if duplicare DIMACS changes should be removed");
+DEFINE_bool(merge_changes_to_same_arc, true,
+            "True if changes on the same arc should be merged");
+DEFINE_bool(purge_changes_before_node_removal, true,
+            "True if changes on incoming/outgoing arcs of a node that is going "
+            "to be removed should be purged");
+
 namespace firmament {
 
 FlowGraphChangeManager::FlowGraphChangeManager(
@@ -148,6 +156,277 @@ void FlowGraphChangeManager::DeleteNode(FlowGraphNode* node,
   dimacs_stats_->UpdateStats(change_type);
   AddGraphChange(chg);
   flow_graph_->DeleteNode(node);
+}
+
+void FlowGraphChangeManager::MergeChangesToSameArcHelper(
+    uint64_t src_id, uint64_t dst_id, uint64_t cap_lower_bound,
+    uint64_t cap_upper_bound, uint64_t cost, FlowGraphArcType type,
+    DIMACSChange* change, vector<DIMACSChange*>* new_graph_changes,
+    unordered_map<uint64_t, unordered_map<uint64_t, DIMACSChange*>>*
+    arcs_src_changes,
+    unordered_map<uint64_t, unordered_map<uint64_t, DIMACSChange*>>*
+    arcs_dst_changes) {
+  CHECK_NOTNULL(change);
+  unordered_map<uint64_t, DIMACSChange*>* dst_to_change =
+    FindOrNull(*arcs_src_changes, src_id);
+  if (dst_to_change) {
+    // We already have at least one arc starting at src.
+    DIMACSChange* chg = FindPtrOrNull(*dst_to_change, dst_id);
+    if (chg) {
+      // Update the existing entry.
+      if (DIMACSChangeArc* chg_arc = dynamic_cast<DIMACSChangeArc*>(chg)) {
+        chg_arc->cap_lower_bound_ = cap_lower_bound;
+        chg_arc->cap_upper_bound_ = cap_upper_bound;
+        chg_arc->cost_ = cost;
+        chg_arc->type_ = type;
+        // We don't update the old_cost on a merge because we want to keep the
+        // first recorded old cost value which is the value that the solver
+        // currently has for the arc.
+      } else if (DIMACSNewArc* new_arc = dynamic_cast<DIMACSNewArc*>(chg)) {
+        new_arc->cap_lower_bound_ = cap_lower_bound;
+        new_arc->cap_upper_bound_ = cap_upper_bound;
+        new_arc->cost_ = cost;
+        new_arc->type_ = type;
+      } else {
+        LOG(FATAL) << "Unexpected type of change";
+      }
+    } else {
+      // We don't have an entry for the arc.
+      CHECK(InsertIfNotPresent(dst_to_change, dst_id, change));
+      new_graph_changes->push_back(change);
+    }
+  } else {
+    // No arc starting at source has been changed.
+    unordered_map<uint64_t, DIMACSChange*> new_dst_to_change;
+    InsertIfNotPresent(&new_dst_to_change, dst_id, change);
+    InsertIfNotPresent(arcs_src_changes, src_id, new_dst_to_change);
+    // Append the change to the change list because it's the first time we
+    // update this arc.
+    new_graph_changes->push_back(change);
+  }
+  unordered_map<uint64_t, DIMACSChange*>* src_to_change =
+    FindOrNull(*arcs_dst_changes, dst_id);
+  if (src_to_change) {
+    // Only insert the change if we don't already have one for the arc.
+    InsertIfNotPresent(src_to_change, src_id, change);
+  } else {
+    unordered_map<uint64_t, DIMACSChange*> new_src_to_change;
+    InsertIfNotPresent(&new_src_to_change, src_id, change);
+    InsertIfNotPresent(arcs_dst_changes, dst_id, new_src_to_change);
+  }
+}
+
+void FlowGraphChangeManager::MergeChangesToSameArc() {
+  vector<DIMACSChange*> new_graph_changes;
+  // For each arc change we have an entry in arcs_src_changes and one in
+  // arcs_dst_changes. arcs_src_changes is indexed by src_id and then by
+  // dst_id. arcs_dst_changes is indexed by dst_id and then by src_id.
+  // These two maps allow us to get all the arcs that have a particular
+  // node as a source or destination.
+  unordered_map<uint64_t, unordered_map<uint64_t, DIMACSChange*>>
+    arcs_src_changes;
+  unordered_map<uint64_t, unordered_map<uint64_t, DIMACSChange*>>
+    arcs_dst_changes;
+  for (auto& change : graph_changes_) {
+    if (DIMACSChangeArc* chg_arc = dynamic_cast<DIMACSChangeArc*>(change)) {
+      // Check if we can merge the arc change.
+      MergeChangesToSameArcHelper(
+          chg_arc->src_, chg_arc->dst_, chg_arc->cap_lower_bound_,
+          chg_arc->cap_upper_bound_, chg_arc->cost_, chg_arc->type_, change,
+          &new_graph_changes, &arcs_src_changes, &arcs_dst_changes);
+    } else if (DIMACSNewArc* new_arc = dynamic_cast<DIMACSNewArc*>(change)) {
+      // Check if we can merge the arc change.
+      MergeChangesToSameArcHelper(
+          new_arc->src_, new_arc->dst_, new_arc->cap_lower_bound_,
+          new_arc->cap_upper_bound_, new_arc->cost_, new_arc->type_, change,
+          &new_graph_changes, &arcs_src_changes, &arcs_dst_changes);
+    } else if (DIMACSAddNode* new_node = dynamic_cast<DIMACSAddNode*>(change)) {
+      // Remove all the arcs that have new_node->id_ as source or destination.
+      unordered_map<uint64_t, DIMACSChange*>* dst_to_change =
+        FindOrNull(arcs_src_changes, new_node->id_);
+      if (dst_to_change) {
+        for (auto& dst_change : *dst_to_change) {
+          unordered_map<uint64_t, DIMACSChange*>* src_to_change =
+            FindOrNull(arcs_dst_changes, dst_change.first);
+          CHECK_NOTNULL(src_to_change);
+          src_to_change->erase(new_node->id_);
+        }
+      }
+      arcs_src_changes.erase(new_node->id_);
+      arcs_dst_changes.erase(new_node->id_);
+      new_graph_changes.push_back(change);
+    } else if (dynamic_cast<DIMACSRemoveNode*>(change)) {
+      new_graph_changes.push_back(change);
+    } else {
+      LOG(FATAL) << "Unexpected type of change";
+    }
+  }
+  graph_changes_.clear();
+  graph_changes_.insert(graph_changes_.begin(), new_graph_changes.begin(),
+                        new_graph_changes.end());
+}
+
+void FlowGraphChangeManager::OptimizeChanges() {
+  if (FLAGS_remove_duplicate_changes) {
+    RemoveDuplicateChanges();
+  }
+  if (FLAGS_merge_changes_to_same_arc) {
+    MergeChangesToSameArc();
+  }
+  if (FLAGS_purge_changes_before_node_removal) {
+    PurgeChangesBeforeNodeRemoval();
+  }
+}
+
+void FlowGraphChangeManager::PurgeChangesBeforeNodeRemoval() {
+  // Set in which we store the ids of the nodes that are removed. We process
+  // the changes from the last to the first one. Whenever we encounter a
+  // remove node change we put its node id to the set. Similalry, whenever
+  // we encounter an add node change we remove its node id from the set.
+  // In this way we make sure we handle the case when ids are re-used upon
+  // node addition.
+  unordered_set<uint64_t> nodes_removed;
+  list<DIMACSChange*> new_graph_changes;
+  for (vector<DIMACSChange*>::reverse_iterator rev_it = graph_changes_.rbegin();
+       rev_it != graph_changes_.rend(); ++rev_it) {
+    if (DIMACSRemoveNode* rem_node =
+        dynamic_cast<DIMACSRemoveNode*>(*rev_it)) {
+      if (nodes_removed.insert(rem_node->node_id_).second) {
+        // Only add the change if the node has not already been removed.
+        new_graph_changes.push_front(rem_node);
+      }
+    } else if (DIMACSAddNode* new_node =
+               dynamic_cast<DIMACSAddNode*>(*rev_it)) {
+      nodes_removed.erase(new_node->id_);
+      new_graph_changes.push_front(new_node);
+    } else if (DIMACSNewArc* new_arc =
+               dynamic_cast<DIMACSNewArc*>(*rev_it)) {
+      if (nodes_removed.find(new_arc->src_) == nodes_removed.end() &&
+          nodes_removed.find(new_arc->dst_) == nodes_removed.end()) {
+        // Only add the change if neither of its arc source or destination
+        // nodes are going to be removed.
+        new_graph_changes.push_front(new_arc);
+      }
+    } else if (DIMACSChangeArc* chg_arc =
+               dynamic_cast<DIMACSChangeArc*>(*rev_it)) {
+      if (nodes_removed.find(new_arc->src_) == nodes_removed.end() &&
+          nodes_removed.find(new_arc->dst_) == nodes_removed.end()) {
+        // Only add the change if neither of its arc source or destination
+        // nodes are going to be removed.
+        new_graph_changes.push_front(chg_arc);
+      }
+    } else {
+      LOG(FATAL) << "Unexpected type of change";
+    }
+  }
+  graph_changes_.clear();
+  graph_changes_.insert(graph_changes_.begin(), new_graph_changes.begin(),
+                        new_graph_changes.end());
+}
+
+void FlowGraphChangeManager::RemoveDuplicateChanges() {
+  vector<DIMACSChange*> new_graph_changes;
+  // For each arc change we have two entries in node_to_change. One entry
+  // which is indexed by src_id and another one with is indexed by dst_id.
+  // Thus, whenever we re-use a node id we can make sure to remove from the
+  // state all the arcs that connect the previously removed node that was
+  // using the same id.
+  unordered_map<uint64_t, unordered_map<string, DIMACSChange*>> node_to_change;
+  for (auto& change : graph_changes_) {
+    if (DIMACSChangeArc* chg_arc = dynamic_cast<DIMACSChangeArc*>(change)) {
+      RemoveDuplicateChangesHelper(chg_arc->src_, chg_arc->dst_, change,
+                                   &new_graph_changes, &node_to_change);
+    } else if (DIMACSNewArc* new_arc = dynamic_cast<DIMACSNewArc*>(change)) {
+      RemoveDuplicateChangesHelper(new_arc->src_, new_arc->dst_, change,
+                                   &new_graph_changes, &node_to_change);
+    } else if (DIMACSAddNode* new_node = dynamic_cast<DIMACSAddNode*>(change)) {
+      // Remove from the state the arcs that previously connected a node with
+      // the same id.
+      unordered_map<string, DIMACSChange*>* desc_to_change =
+        FindOrNull(node_to_change, new_node->id_);
+      if (desc_to_change) {
+        for (auto& desc_change : *desc_to_change) {
+          if (DIMACSNewArc* new_arc =
+              dynamic_cast<DIMACSNewArc*>(desc_change.second)) {
+            RemoveDuplicateCleanState(new_node->id_, new_arc->src_,
+                                      new_arc->dst_, desc_change.first,
+                                      &node_to_change);
+          } else if (DIMACSChangeArc* chg_arc =
+                     dynamic_cast<DIMACSChangeArc*>(desc_change.second)) {
+            RemoveDuplicateCleanState(new_node->id_, chg_arc->src_,
+                                      chg_arc->dst_, desc_change.first,
+                                      &node_to_change);
+          } else {
+            LOG(FATAL) << "Unexpected change type";
+          }
+        }
+      }
+      node_to_change.erase(new_node->id_);
+      new_graph_changes.push_back(change);
+    } else if (dynamic_cast<DIMACSRemoveNode*>(change)) {
+      new_graph_changes.push_back(change);
+    }
+  }
+  graph_changes_.clear();
+  graph_changes_.insert(graph_changes_.begin(), new_graph_changes.begin(),
+                        new_graph_changes.end());
+}
+
+void FlowGraphChangeManager::RemoveDuplicateChangesHelper(
+    uint64_t src_id, uint64_t dst_id, DIMACSChange* change,
+    vector<DIMACSChange*>* new_graph_changes,
+    unordered_map<uint64_t, unordered_map<string, DIMACSChange*>>*
+    node_to_change) {
+  bool new_change = true;
+  string change_desc = change->GenerateChange();
+  unordered_map<string, DIMACSChange*>* src_changes =
+    FindOrNull(*node_to_change, src_id);
+  if (src_changes) {
+    if (!InsertIfNotPresent(src_changes, change_desc, change)) {
+      // The change is already in the map.
+      new_change = false;
+    }
+  } else {
+    unordered_map<string, DIMACSChange*> new_src_changes;
+    InsertIfNotPresent(&new_src_changes, change_desc, change);
+    InsertIfNotPresent(node_to_change, src_id, new_src_changes);
+  }
+  unordered_map<string, DIMACSChange*>* dst_changes =
+    FindOrNull(*node_to_change, dst_id);
+  if (dst_changes) {
+    if (!InsertIfNotPresent(dst_changes, change_desc, change)) {
+      // The change is already in the map.
+      new_change = false;
+    }
+  } else {
+    unordered_map<string, DIMACSChange*> new_dst_changes;
+    InsertIfNotPresent(&new_dst_changes, change_desc, change);
+    InsertIfNotPresent(node_to_change, dst_id, new_dst_changes);
+  }
+  if (new_change) {
+    new_graph_changes->push_back(change);
+  }
+}
+
+void FlowGraphChangeManager::RemoveDuplicateCleanState(
+    uint64_t new_node_id, uint64_t src, uint64_t dst, const string& change_desc,
+    unordered_map<uint64_t, unordered_map<string, DIMACSChange*>>*
+    node_to_change) {
+  if (new_node_id == src) {
+    auto dst_change_map = FindOrNull(*node_to_change, dst);
+    CHECK_NOTNULL(dst_change_map);
+    dst_change_map->erase(change_desc);
+    if (dst_change_map->size() == 0) {
+      node_to_change->erase(dst);
+    }
+  } else {
+    auto src_change_map = FindOrNull(*node_to_change, src);
+    CHECK_NOTNULL(src_change_map);
+    src_change_map->erase(change_desc);
+    if (src_change_map->size() == 0) {
+      node_to_change->erase(src);
+    }
+  }
 }
 
 void FlowGraphChangeManager::ResetChanges() {

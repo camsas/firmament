@@ -16,18 +16,8 @@ namespace firmament {
 class DIMACSChangeArc : public DIMACSChange {
  public:
   explicit DIMACSChangeArc(const FlowGraphArc& arc, uint64_t old_cost);
-
   const string GenerateChange() const;
 
- protected:
-  uint64_t upper_bound() {
-    return cap_upper_bound_;
-  }
-
- private:
-  FRIEND_TEST(FlowGraphManagerTest, AddOrUpdateResourceNode);
-  FRIEND_TEST(FlowGraphManagerTest, AddOrUpdateJobNodes);
-  FRIEND_TEST(FlowGraphManagerTest, ChangeArc);
   uint64_t src_;
   uint64_t dst_;
   uint64_t cap_lower_bound_;

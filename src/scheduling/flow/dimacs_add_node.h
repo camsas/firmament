@@ -20,13 +20,8 @@ class DIMACSAddNode : public DIMACSChange {
  public:
   DIMACSAddNode(const FlowGraphNode& node, const vector<FlowGraphArc*>& arcs);
   ~DIMACSAddNode() {}
-
   const string GenerateChange() const;
-
- private:
   uint32_t GetNodeType() const;
-  FRIEND_TEST(FlowGraphManagerTest, AddOrUpdateResourceNode);
-  FRIEND_TEST(FlowGraphManagerTest, AddOrUpdateJobNodes);
   const uint64_t id_;
   const uint64_t excess_;
   const FlowNodeType type_;
