@@ -29,6 +29,9 @@
 #include "scheduling/flow/dimacs_remove_node.h"
 
 DEFINE_bool(preemption, false, "Enable preemption and migration of tasks");
+DEFINE_bool(update_preferences_running_task, false,
+            "True if the preferences of a running task should be updated before"
+            " each scheduling round");
 
 namespace firmament {
 
@@ -428,7 +431,8 @@ void FlowGraphManager::RemoveInvalidPrefResArcs(
     // Remove if the pref node is a resource node and it's not in the
     // preferences set.
     if (!pref_rid.is_nil() &&
-        res_preferences.find(pref_rid) == res_preferences.end()) {
+        res_preferences.find(pref_rid) == res_preferences.end() &&
+        dst_arc.second->type_ != FlowGraphArcType::RUNNING) {
       to_delete.insert(dst_arc.second);
       VLOG(2) << "Deleting no-longer-current arc to resource " << pref_rid;
     }
@@ -610,7 +614,7 @@ void FlowGraphManager::UpdateAllCostsToUnscheduledAggs() {
       FlowGraphNode* task_node = dst_arc.second->src_node_;
       CHECK_NOTNULL(task_node->td_ptr_);
       if (task_node->IsTaskAssignedOrRunning()) {
-        UpdateRunningTaskNode(task_node);
+        UpdateRunningTaskNode(task_node, false, NULL, NULL);
       } else {
         UpdateTaskToUnscheduledAggArc(task_node);
       }
@@ -912,7 +916,11 @@ void FlowGraphManager::UpdateResToSinkArc(FlowGraphNode* res_node) {
   }
 }
 
-void FlowGraphManager::UpdateRunningTaskNode(FlowGraphNode* task_node) {
+void FlowGraphManager::UpdateRunningTaskNode(
+    FlowGraphNode* task_node,
+    bool update_preferences,
+    queue<TDOrNodeWrapper*>* node_queue,
+    unordered_set<uint64_t>* marked_nodes) {
   CHECK_NOTNULL(task_node);
   FlowGraphArc* running_arc = FindPtrOrNull(task_to_running_arc_,
                                             task_node->td_ptr_->uid());
@@ -924,6 +932,12 @@ void FlowGraphManager::UpdateRunningTaskNode(FlowGraphNode* task_node) {
       "UpdateRunningTaskNode: continuation cost");
   if (FLAGS_preemption) {
     UpdateRunningTaskToUnscheduledAggArc(task_node);
+    if (update_preferences) {
+      CHECK_NOTNULL(node_queue);
+      CHECK_NOTNULL(marked_nodes);
+      UpdateTaskToResArcs(task_node, node_queue, marked_nodes);
+      UpdateTaskToEquivArcs(task_node, node_queue, marked_nodes);
+    }
   }
 }
 
@@ -947,9 +961,8 @@ void FlowGraphManager::UpdateTaskNode(FlowGraphNode* task_node,
                                       unordered_set<uint64_t>* marked_nodes) {
   CHECK_NOTNULL(task_node);
   if (task_node->IsTaskAssignedOrRunning()) {
-    // TODO(ionel): This method doesn't update task's preference arcs. Extend it
-    // in order to update preference arcs of preemptable running tasks.
-    UpdateRunningTaskNode(task_node);
+    UpdateRunningTaskNode(task_node, FLAGS_update_preferences_running_task,
+                          node_queue, marked_nodes);
   } else {
     UpdateTaskToUnscheduledAggArc(task_node);
     UpdateTaskToEquivArcs(task_node, node_queue, marked_nodes);
@@ -1031,7 +1044,10 @@ void FlowGraphManager::UpdateTaskToResArcs(
         graph_change_manager_->AddArc(
             task_node, pref_res_node, 0, 1, new_cost, OTHER,
             ADD_ARC_TASK_TO_RES, "UpdateTaskToResArcs");
-      } else {
+      } else if (pref_res_arc->type_ != FlowGraphArcType::RUNNING) {
+        // We don't change the cost of the arc if it's a running arc because
+        // the arc is updated somewhere else. Moreover, the cost of running
+        // arcs is returned by TaskContinuationCost.
         graph_change_manager_->ChangeArcCost(pref_res_arc, new_cost,
                                              CHG_ARC_TASK_TO_RES,
                                              "UpdateTaskToResArcs");

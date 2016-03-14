@@ -862,7 +862,8 @@ TEST_F(FlowGraphManagerTest, UpdateRunningTaskNode) {
   FlowGraphNode* task_node = graph_manager->AddTaskNode(job_id, td_ptr);
   task_node->td_ptr_->set_state(TaskDescriptor::RUNNING);
   // No running arc for the task.
-  EXPECT_DEATH(graph_manager->UpdateRunningTaskNode(task_node), "");
+  EXPECT_DEATH(
+      graph_manager->UpdateRunningTaskNode(task_node, false, NULL, NULL), "");
   EXPECT_CALL(mock_cost_model, TaskToUnscheduledAggCost(_)).Times(1);
   EXPECT_CALL(mock_cost_model, TaskPreemptionCost(_)).Times(1);
   // Add an unscheduled aggregator.
@@ -880,7 +881,7 @@ TEST_F(FlowGraphManagerTest, UpdateRunningTaskNode) {
   CHECK(InsertIfNotPresent(&graph_manager->task_to_running_arc_,
                            task_node->td_ptr_->uid(), arc_to_res));
   EXPECT_CALL(mock_cost_model, TaskContinuationCost(_)).Times(1);
-  graph_manager->UpdateRunningTaskNode(task_node);
+  graph_manager->UpdateRunningTaskNode(task_node, false, NULL, NULL);
 }
 
 TEST_F(FlowGraphManagerTest, UpdateRunningTaskToUnscheduledAggArc) {
