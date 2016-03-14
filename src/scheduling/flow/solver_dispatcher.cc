@@ -66,7 +66,8 @@ SolverDispatcher::SolverDispatcher(
     // Delete any existing debug output in the directory
     string cmd;
     spf(&cmd, "rm %s/*", FLAGS_debug_output_dir.c_str());
-    CHECK_EQ(system(cmd.c_str()), 0);
+    int64_t ret = system(cmd.c_str());
+    CHECK(WIFEXITED(ret));
   }
 }
 

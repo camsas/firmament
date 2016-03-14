@@ -680,7 +680,7 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
   string cmd;
   spf(&cmd, "bash scripts/plot_flow_graph.sh %s", iter_id.c_str());
   int64_t ret = system(cmd.c_str());
-  if (ret != 0) {
+  if (!WIFEXITED(ret)) {
     LOG(WARNING) << "Failed command: " << cmd;
   }
   // End plotting hack.
