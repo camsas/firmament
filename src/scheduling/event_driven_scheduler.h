@@ -50,7 +50,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   ResourceID_t* BoundResourceForTask(TaskID_t task_id);
   vector<TaskID_t> BoundTasksForResource(ResourceID_t res_id);
   void CheckRunningTasksHealth();
-  virtual void DeregisterResource(ResourceID_t res_id);
+  virtual void DeregisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr);
   virtual void HandleJobCompletion(JobID_t job_id);
   virtual void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                           const ReferenceInterface& new_ref,
@@ -84,6 +84,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   FRIEND_TEST(SimpleSchedulerTest, FindRunnableTasksForComplexJob);
   FRIEND_TEST(SimpleSchedulerTest, FindRunnableTasksForComplexJob2);
   void BindTaskToResource(TaskDescriptor* td_ptr, ResourceDescriptor* rd_ptr);
+  void CleanStateForDeregisteredResource(
+      ResourceTopologyNodeDescriptor* rtnd_ptr);
   void DebugPrintRunnableTasks();
   void ExecuteTask(TaskDescriptor* td_ptr, ResourceDescriptor* rd_ptr);
   virtual void HandleTaskMigration(TaskDescriptor* td_ptr,
@@ -100,6 +102,14 @@ class EventDrivenScheduler : public SchedulerInterface {
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
   void RegisterSimulatedResource(ResourceID_t res_id);
+
+  /**
+   * Removes a resource from its parent's children list.
+   * @param rtnd_ptr the resource node to remove
+   */
+  void RemoveResourceNodeFromParentChildrenList(
+      ResourceTopologyNodeDescriptor* rtnd_ptr);
+
   const set<TaskID_t>& ComputeRunnableTasksForJob(JobDescriptor* job_desc);
   void SetupPUs(ResourceTopologyNodeDescriptor* rtnd_ptr,
                 bool local,
