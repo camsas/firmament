@@ -461,68 +461,9 @@ void SimulatorBridge::RemoveMachine(uint64_t machine_id) {
   CHECK_NOTNULL(rtnd_ptr);
   ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
   machine_res_id_pus_.erase(res_id);
-  // Traverse the resource topology tree in order to evict tasks and
-  // remove resources from resource_map.
-  DFSTraversePostOrderResourceProtobufTreeReturnRTND(
-      rtnd_ptr, boost::bind(&SimulatorBridge::RemoveResource, this, _1));
-  if (rtnd_ptr->has_parent_id()) {
-    if (rtnd_ptr->parent_id().compare(rtn_root_.resource_desc().uuid()) == 0) {
-      RemoveResourceNodeFromParentChildrenList(*rtnd_ptr);
-    } else {
-      LOG(ERROR) << "Machine " << machine_id
-                 << " is not direclty connected to the root";
-    }
-  } else {
-    LOG(ERROR) << "Machine " << machine_id << " doesn't have a parent";
-  }
+  scheduler_->DeregisterResource(rtnd_ptr);
   trace_machine_id_to_rtnd_.erase(machine_id);
   // We only free the ResourceTopologyNodeDescriptor in the destructor.
-}
-
-void SimulatorBridge::RemoveResource(
-    ResourceTopologyNodeDescriptor* rtnd_ptr) {
-  // TODO(ionel): Move logic to event_driven_scheduler once DeregisterResource
-  // has support for task termination.
-  ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
-  // First we need to evict the tasks.
-  vector<TaskID_t> tasks = scheduler_->BoundTasksForResource(res_id);
-  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
-  CHECK_NOTNULL(rs_ptr);
-  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
-  for (auto& task_id : tasks) {
-    TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
-    scheduler_->HandleTaskEviction(td_ptr, rd_ptr);
-  }
-  scheduler_->DeregisterResource(res_id);
-  resource_map_->erase(res_id);
-  delete rs_ptr;
-}
-
-void SimulatorBridge::RemoveResourceNodeFromParentChildrenList(
-    const ResourceTopologyNodeDescriptor& rtnd) {
-  // The parent of the node is the topology root.
-  RepeatedPtrField<ResourceTopologyNodeDescriptor>* parent_children =
-    rtn_root_.mutable_children();
-  int32_t index = 0;
-  // Find the node in the parent's children list.
-  for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::iterator it =
-         parent_children->begin(); it != parent_children->end();
-       ++it, ++index) {
-    if (it->resource_desc().uuid()
-        .compare(rtnd.resource_desc().uuid()) == 0) {
-      break;
-    }
-  }
-  if (index < parent_children->size()) {
-    // Found the node.
-    if (index < parent_children->size() - 1) {
-      // The node is not the last one.
-      parent_children->SwapElements(index, parent_children->size() - 1);
-    }
-    parent_children->RemoveLast();
-  } else {
-    LOG(FATAL) << "Could not found the machine in the parent's list";
-  }
 }
 
 void SimulatorBridge::RemoveTaskFromSpawned(

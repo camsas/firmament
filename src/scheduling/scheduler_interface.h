@@ -89,9 +89,10 @@ class SchedulerInterface : public PrintableInterface {
   /**
    * Unregisters a resource ID from the scheduler. No-op if the resource ID is
    * not actually registered with it.
-   * @param res_id the id of the resource to de-register
+   * @param rtnd_ptr point to the resource topology node descriptor of the
+   * resource to deregister
    */
-  virtual void DeregisterResource(ResourceID_t res_id) = 0;
+  virtual void DeregisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr) = 0;
 
   // TODO(malte): comment
   virtual void HandleReferenceStateChange(const ReferenceInterface& old_ref,
