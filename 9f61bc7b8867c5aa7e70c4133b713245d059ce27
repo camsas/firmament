@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_9935bd48",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-14T22:50:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_99e77de4",
+      "range": {
+        "startLine": 137,
+        "startChar": 27,
+        "endLine": 137,
+        "endChar": 57
+      },
+      "revId": "9f61bc7b8867c5aa7e70c4133b713245d059ce27",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_d9d015fa",
         "filename": "src/scheduling/event_driven_scheduler.cc",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2016-03-14T22:38:56Z",
       "side": 1,
       "message": "I think this should probably conceptually happen outside the scheduler, as this is a bit of an \"upcall\". Instead, we could check here if there are any running tasks and emit an error message if there are?",
+      "revId": "9f61bc7b8867c5aa7e70c4133b713245d059ce27",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_39ef69b2",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-14T22:50:05Z",
+      "side": 1,
+      "message": "We\u0027ve discussed about it offline.",
+      "parentUuid": "3a6ff13c_d9d015fa",
       "revId": "9f61bc7b8867c5aa7e70c4133b713245d059ce27",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_79300157",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-14T22:50:05Z",
+      "side": 1,
+      "message": "We\u0027ve discussed offline.",
+      "parentUuid": "3a6ff13c_b9035972",
+      "range": {
+        "startLine": 717,
+        "startChar": 0,
+        "endLine": 722,
+        "endChar": 34
+      },
+      "revId": "9f61bc7b8867c5aa7e70c4133b713245d059ce27",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_5904257e",
         "filename": "src/scheduling/event_driven_scheduler.cc",
         "patchSetId": 1
@@ -76,6 +142,30 @@
       "writtenOn": "2016-03-14T22:38:56Z",
       "side": 1,
       "message": "Typo: find",
+      "range": {
+        "startLine": 724,
+        "startChar": 29,
+        "endLine": 724,
+        "endChar": 34
+      },
+      "revId": "9f61bc7b8867c5aa7e70c4133b713245d059ce27",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_592b45eb",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 724,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-14T22:50:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_5904257e",
       "range": {
         "startLine": 724,
         "startChar": 29,
