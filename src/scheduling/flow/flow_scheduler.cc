@@ -37,6 +37,8 @@ DEFINE_int64(time_dependent_cost_update_frequency, 10000000ULL,
              "Update frequency for time-dependent costs, in microseconds.");
 DEFINE_bool(debug_cost_model, false,
             "Store cost model debug info in CSV files.");
+DEFINE_uint64(purge_unconnected_ec_frequency, 10, "Frequency in solver runs "
+              "at which to purge unconnected EC nodes");
 
 namespace firmament {
 namespace scheduler {
@@ -67,7 +69,7 @@ FlowScheduler::FlowScheduler(
       leaf_res_ids_(new unordered_set<ResourceID_t,
                       boost::hash<boost::uuids::uuid>>),
       dimacs_stats_(new DIMACSChangeStats),
-      first_solver_run_(true) {
+      solver_run_cnt_(0) {
   // Select the cost model to use
   VLOG(1) << "Set cost model to use in flow graph to \""
           << FLAGS_flow_scheduling_cost_model << "\"";
@@ -396,21 +398,24 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     flow_graph_manager_->UpdateTimeDependentCosts(job_vec);
     last_updated_time_dependent_costs_ = cur_time;
   }
+  if (solver_run_cnt_ % FLAGS_purge_unconnected_ec_frequency == 0) {
+    flow_graph_manager_->PurgeUnconnectedEquivClassNodes();
+  }
   pus_removed_during_solver_run_.clear();
   tasks_completed_during_solver_run_.clear();
   uint64_t scheduler_start_timestamp = time_manager_->GetCurrentTimestamp();
   // Run the flow solver! This is where all the juicy goodness happens :)
   multimap<uint64_t, uint64_t>* task_mappings =
     solver_dispatcher_->Run(scheduler_stats);
+  solver_run_cnt_++;
   CHECK_LE(scheduler_stats->scheduler_runtime, FLAGS_max_solver_runtime)
     << "Solver took longer than limit of "
     << scheduler_stats->scheduler_runtime;
   // Play all the simulation events that happened while the solver was running.
   if (event_notifier_) {
-    if (first_solver_run_) {
+    if (solver_run_cnt_ == 1) {
       event_notifier_->OnSchedulingDecisionsCompletion(
          scheduler_start_timestamp);
-      first_solver_run_ = false;
     } else {
       event_notifier_->OnSchedulingDecisionsCompletion(
           scheduler_start_timestamp + scheduler_stats->scheduler_runtime);

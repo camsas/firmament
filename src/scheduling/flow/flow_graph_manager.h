@@ -68,6 +68,16 @@ class FlowGraphManager {
       uint64_t task_node_id, uint64_t resource_node_id,
       unordered_map<TaskID_t, ResourceID_t>* task_bindings,
       vector<SchedulingDelta*>* deltas);
+
+  /**
+   * As a result of task state change, preferences change or
+   * resource removal we may end up with unconnected equivalence
+   * class nodes. This method makes sure they are removed.
+   * We cannot end up with unconnected unscheduled agg nodes,
+   * task or resource nodes.
+   */
+  void PurgeUnconnectedEquivClassNodes();
+
   /**
    * Removes the entire resource topology tree rooted at rd. The method also
    * updates the statistics of the nodes up to the root resource.
