@@ -274,8 +274,13 @@ class FlowGraphManager {
    * NOTE: This method doesn't update the task's preference arcs if preemption
    * is enabled.
    * @param task_node the node for which to update the arcs
+   * @param update_preferences true if the method should update the resource and
+   * equivalence preferences
    */
-  void UpdateRunningTaskNode(FlowGraphNode* task_node);
+  void UpdateRunningTaskNode(FlowGraphNode* task_node,
+                             bool update_preferences,
+                             queue<TDOrNodeWrapper*>* node_queue,
+                             unordered_set<uint64_t>* marked_nodes);
 
   /**
    * Updates the cost of the arc connecting a running task with its unscheduled
