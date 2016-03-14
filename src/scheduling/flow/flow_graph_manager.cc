@@ -391,6 +391,22 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
   }
 }
 
+void FlowGraphManager::PurgeUnconnectedEquivClassNodes() {
+  // NOTE: we could have a subgraph consisting of equiv class nodes.
+  // They would likely not end up being removed in a single
+  // PurgeUnconnectedEquivClassNodes call. However, this is fine
+  // because we will finish removing all of them in future calls.
+  for (unordered_map<EquivClass_t, FlowGraphNode*>::iterator
+         it = tec_to_node_map_.begin();
+       it != tec_to_node_map_.end(); ) {
+    FlowGraphNode* ec_node = it->second;
+    ++it;
+    if (ec_node->incoming_arc_map_.size() == 0) {
+      RemoveEquivClassNode(ec_node);
+    }
+  }
+}
+
 void FlowGraphManager::RemoveEquivClassNode(FlowGraphNode* ec_node) {
   CHECK_NOTNULL(ec_node);
   tec_to_node_map_.erase(ec_node->ec_id_);
