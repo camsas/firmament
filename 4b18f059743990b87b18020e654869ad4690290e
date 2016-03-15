@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_10db5a1c",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_791721a4",
+      "range": {
+        "startLine": 12,
+        "startChar": 21,
+        "endLine": 12,
+        "endChar": 30
+      },
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_b91199ae",
         "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2016-03-15T18:35:43Z",
       "side": 1,
       "message": "\"changes to the same arc in the flow graph\"",
+      "range": {
+        "startLine": 14,
+        "startChar": 21,
+        "endLine": 14,
+        "endChar": 44
+      },
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_30d8561d",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_b91199ae",
       "range": {
         "startLine": 14,
         "startChar": 21,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_d0f7028b",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "They are not. I would have to cast the change to NewArc or ChangeArc and only then access them. Hence, if I pass src_id and dst_id then it is easier to implement the functionality.",
+      "parentUuid": "3a6ff13c_90202a9d",
+      "range": {
+        "startLine": 161,
+        "startChar": 0,
+        "endLine": 164,
+        "endChar": 67
+      },
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_459b56c9",
         "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
         "patchSetId": 1
@@ -82,6 +154,30 @@
       "writtenOn": "2016-03-15T18:35:43Z",
       "side": 1,
       "message": "How does this work? According to the documentation, dynamic_cast raises a bad_cast exception when it fails. Surely it will sometimes fail?",
+      "range": {
+        "startLine": 231,
+        "startChar": 8,
+        "endLine": 231,
+        "endChar": 73
+      },
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_f03b1e36",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "If the cast fails then it will return null pointer. Here\u0027s an extract from the documentation:\n\"If the cast fails and new_type is a pointer type, it returns a null pointer of that type.\"",
+      "parentUuid": "3a6ff13c_459b56c9",
       "range": {
         "startLine": 231,
         "startChar": 8,
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_70172ea4",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_30e4d63a",
+      "range": {
+        "startLine": 284,
+        "startChar": 55,
+        "endLine": 284,
+        "endChar": 64
+      },
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_90410a0e",
         "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
         "patchSetId": 1
@@ -134,6 +254,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_b0ed268e",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_90410a0e",
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_f06ebe95",
         "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
         "patchSetId": 1
@@ -145,6 +283,30 @@
       "writtenOn": "2016-03-15T18:35:43Z",
       "side": 1,
       "message": "Code duplication: a single conditional with an OR clause would be better here",
+      "range": {
+        "startLine": 336,
+        "startChar": 0,
+        "endLine": 341,
+        "endChar": 72
+      },
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_707e4ee6",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "You can\u0027t do that because you can\u0027t access src_ or dst_ from the base class.",
+      "parentUuid": "3a6ff13c_f06ebe95",
       "range": {
         "startLine": 336,
         "startChar": 0,
@@ -180,6 +342,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_d001c23a",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_50887222",
+      "range": {
+        "startLine": 343,
+        "startChar": 0,
+        "endLine": 344,
+        "endChar": 21
+      },
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_309cd669",
         "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
         "patchSetId": 1
@@ -191,6 +377,30 @@
       "writtenOn": "2016-03-15T18:35:43Z",
       "side": 1,
       "message": "Code duplication",
+      "range": {
+        "startLine": 349,
+        "startChar": 0,
+        "endLine": 358,
+        "endChar": 55
+      },
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_d06c6239",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "As above.",
+      "parentUuid": "3a6ff13c_309cd669",
       "range": {
         "startLine": 349,
         "startChar": 0,
@@ -226,6 +436,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_b0d606c4",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_9082eafe",
+      "range": {
+        "startLine": 394,
+        "startChar": 0,
+        "endLine": 408,
+        "endChar": 3
+      },
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_b0b9a6eb",
         "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
         "patchSetId": 1
@@ -243,6 +477,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_304bf6b1",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 422,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_b0b9a6eb",
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_f664fee6",
         "filename": "src/scheduling/flow/flow_graph_change_manager.h",
         "patchSetId": 1
@@ -254,6 +506,30 @@
       "writtenOn": "2016-03-15T18:35:43Z",
       "side": 1,
       "message": "Hmm, it\u0027s a little annoying that this side-effect-y method gets called implicitly. Wouldn\u0027t it be better if either the user had to call it, or if we had a GetOptimizedGraphChanges() call as well as a plain GetGraphChanges() call?",
+      "range": {
+        "startLine": 57,
+        "startChar": 0,
+        "endLine": 58,
+        "endChar": 26
+      },
+      "revId": "4b18f059743990b87b18020e654869ad4690290e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_b0ec46c9",
+        "filename": "src/scheduling/flow/flow_graph_change_manager.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T19:25:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_f664fee6",
       "range": {
         "startLine": 57,
         "startChar": 0,
