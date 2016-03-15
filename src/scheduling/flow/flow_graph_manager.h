@@ -160,15 +160,14 @@ class FlowGraphManager {
    * The method also correctly computes statistics for every new node (e.g.,
    * num slots, num running tasks)
    * @param rtnd_ptr the topology descriptor of the root node
-   * @return the arc capacity that should be used to connect rtnd_ptr to its
-   * parent if it has one
    */
-  uint64_t AddResourceTopologyDFS(ResourceTopologyNodeDescriptor* rtnd_ptr);
+  void AddResourceTopologyDFS(ResourceTopologyNodeDescriptor* rtnd_ptr);
 
   FlowGraphNode* AddTaskNode(JobID_t job_id, TaskDescriptor* td_ptr);
   FlowGraphNode* AddUnscheduledAggNode(JobID_t job_id);
   uint64_t CapacityBetweenECNodes(const FlowGraphNode& src,
                                   const FlowGraphNode& dst);
+  uint64_t CapacityFromResNodeToParent(const ResourceDescriptor& rd);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
   void RemoveEquivClassNode(FlowGraphNode* ec_node);
 
@@ -338,7 +337,7 @@ class FlowGraphManager {
   void UpdateUnscheduledAggNode(FlowGraphNode* unsched_agg_node,
                                 int64_t cap_delta);
 
-  uint64_t VisitTopologyChildren(ResourceTopologyNodeDescriptor* rtnd_ptr);
+  void VisitTopologyChildren(ResourceTopologyNodeDescriptor* rtnd_ptr);
 
   inline FlowGraphNode* NodeForEquivClass(const EquivClass_t& ec) {
     return FindPtrOrNull(tec_to_node_map_, ec);
