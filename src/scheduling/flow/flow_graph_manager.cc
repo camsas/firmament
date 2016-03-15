@@ -113,7 +113,7 @@ void FlowGraphManager::AddOrUpdateJobNodes(
   UpdateFlowGraph(&node_queue, &marked_nodes);
 }
 
-uint64_t FlowGraphManager::AddResourceTopologyDFS(
+void FlowGraphManager::AddResourceTopologyDFS(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   // Steps:
   // 1) Add new resource node and connect it to the sink if the new node is a
@@ -142,11 +142,17 @@ uint64_t FlowGraphManager::AddResourceTopologyDFS(
           }
         }
       }
-    } else if (res_node->type_ == FlowNodeType::MACHINE) {
-      trace_generator_->AddMachine(*rd_ptr);
-      cost_model_->AddMachine(rtnd_ptr);
+    } else {
+      if (res_node->type_ == FlowNodeType::MACHINE) {
+        trace_generator_->AddMachine(*rd_ptr);
+        cost_model_->AddMachine(rtnd_ptr);
+      }
+      rd_ptr->set_num_slots_below(0);
+      rd_ptr->set_num_running_tasks_below(0);
     }
   } else {
+    rd_ptr->set_num_slots_below(0);
+    rd_ptr->set_num_running_tasks_below(0);
     // TODO(ionel): The method continues even if we already had a node for the
     // "new" resources. This is because the coordinator ends up calling twice
     // RegisterResource for the same resource. Uncomment the LOG(FATAL) once
@@ -155,7 +161,7 @@ uint64_t FlowGraphManager::AddResourceTopologyDFS(
     // LOG(FATAL) << "Resource node for resource: " << res_id
     //            << " already exists";
   }
-  uint64_t outgoing_capacity = VisitTopologyChildren(rtnd_ptr);
+  VisitTopologyChildren(rtnd_ptr);
   if (!rtnd_ptr->has_parent_id()) {
     CHECK_EQ(rtnd_ptr->resource_desc().type(),
              ResourceDescriptor::RESOURCE_COORDINATOR)
@@ -167,18 +173,18 @@ uint64_t FlowGraphManager::AddResourceTopologyDFS(
     CHECK_NOTNULL(parent_node);
     CHECK(InsertIfNotPresent(&node_to_parent_node_map_, res_node, parent_node));
     graph_change_manager_->AddArc(
-        parent_node, res_node, 0, outgoing_capacity,
+        parent_node, res_node, 0,
+        CapacityFromResNodeToParent(rtnd_ptr->resource_desc()),
         cost_model_->ResourceNodeToResourceNodeCost(*parent_node->rd_ptr_,
                                                     *rd_ptr),
         OTHER, ADD_ARC_BETWEEN_RES, "AddResourceTopologyDFS");
   }
-  return outgoing_capacity;
 }
 
 void FlowGraphManager::AddResourceTopology(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   CHECK_NOTNULL(rtnd_ptr);
-  uint64_t capacity_delta = AddResourceTopologyDFS(rtnd_ptr);
+  AddResourceTopologyDFS(rtnd_ptr);
   // Progapate the capacity increase to the root of the topology.
   if (rtnd_ptr->has_parent_id()) {
     // We start from rtnd_ptr's parent because in AddResourceTopologyDFS we
@@ -186,7 +192,7 @@ void FlowGraphManager::AddResourceTopology(
     FlowGraphNode* cur_node =
       NodeForResourceID(ResourceIDFromString(rtnd_ptr->parent_id()));
     UpdateResourceStatsUpToRoot(
-        cur_node, capacity_delta,
+        cur_node, CapacityFromResNodeToParent(rtnd_ptr->resource_desc()),
         rtnd_ptr->resource_desc().num_slots_below(),
         rtnd_ptr->resource_desc().num_running_tasks_below());
   }
@@ -251,6 +257,15 @@ uint64_t FlowGraphManager::CapacityBetweenECNodes(const FlowGraphNode& src,
     out_sum += outgoing_arc.second->cap_upper_bound_;
   }
   return min(in_sum, out_sum);
+}
+
+uint64_t FlowGraphManager::CapacityFromResNodeToParent(
+    const ResourceDescriptor& rd) {
+  if (FLAGS_preemption) {
+    return rd.num_slots_below();
+  } else {
+    return rd.num_slots_below() - rd.num_running_tasks_below();
+  }
 }
 
 void FlowGraphManager::ComputeTopologyStatistics(
@@ -1126,17 +1141,15 @@ void FlowGraphManager::UpdateUnscheduledAggNode(
   }
 }
 
-uint64_t FlowGraphManager::VisitTopologyChildren(
+void FlowGraphManager::VisitTopologyChildren(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   CHECK_NOTNULL(rtnd_ptr);
   ResourceDescriptor* rd_ptr = rtnd_ptr->mutable_resource_desc();
-  uint64_t outgoing_capacity =
-    rd_ptr->num_slots_below() - rd_ptr->num_running_tasks_below();
   for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::pointer_iterator
          child_iter = rtnd_ptr->mutable_children()->pointer_begin();
        child_iter != rtnd_ptr->mutable_children()->pointer_end();
        ++child_iter) {
-    outgoing_capacity += AddResourceTopologyDFS(*child_iter);
+    AddResourceTopologyDFS(*child_iter);
     rd_ptr->set_num_slots_below(
          rd_ptr->num_slots_below() +
          (*child_iter)->resource_desc().num_slots_below());
@@ -1144,7 +1157,6 @@ uint64_t FlowGraphManager::VisitTopologyChildren(
          rd_ptr->num_running_tasks_below() +
          (*child_iter)->resource_desc().num_running_tasks_below());
   }
-  return outgoing_capacity;
 }
 
 }  // namespace firmament
