@@ -17,13 +17,9 @@ namespace firmament {
 class DIMACSRemoveNode : public DIMACSChange {
  public:
   explicit DIMACSRemoveNode(const FlowGraphNode& node);
-
   const string GenerateChange() const;
 
- private:
-  FRIEND_TEST(FlowGraphTest, DeleteResourceNode);
-  FRIEND_TEST(FlowGraphTest, DeleteNodesForJob);
-  uint64_t node_id_;
+  const uint64_t node_id_;
 };
 
 } // namespace firmament

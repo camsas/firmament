@@ -17,13 +17,12 @@ class DIMACSNewArc : public DIMACSChange {
   explicit DIMACSNewArc(const FlowGraphArc& arc);
   const string GenerateChange() const;
 
- private:
-  FRIEND_TEST(FlowGraphTest, AddOrUpdateResourceNode);
   uint64_t src_;
   uint64_t dst_;
   uint64_t cap_lower_bound_;
   uint64_t cap_upper_bound_;
   uint64_t cost_;
+  FlowGraphArcType type_;
 };
 
 } // namespace firmament
