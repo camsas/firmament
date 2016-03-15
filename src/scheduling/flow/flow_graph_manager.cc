@@ -855,9 +855,74 @@ void FlowGraphManager::UpdateResourceNode(
 
 void FlowGraphManager::UpdateResourceTopology(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
-  // TODO(ionel): This method should be implemented so that we handle the case
-  // when a resource's parent changes.
-  LOG(FATAL) << "Not implemented";
+  // TODO(ionel): We don't currently update the arc costs. Moreover, we should
+  // handle the case when a resource's parent changes.
+  const ResourceDescriptor& rd = rtnd_ptr->resource_desc();
+  uint64_t old_capacity = CapacityFromResNodeToParent(rd);
+  uint64_t old_num_slots = rd.num_slots_below();
+  uint64_t old_num_running_tasks = rd.num_running_tasks_below();
+  UpdateResourceTopologyDFS(rtnd_ptr);
+  if (rtnd_ptr->has_parent_id()) {
+    // We start from rtnd_ptr's parent because in UpdateResourceTopologyDFS
+    // we already update the arc between rtnd_ptr and its parent.
+    FlowGraphNode* cur_node =
+      NodeForResourceID(ResourceIDFromString(rtnd_ptr->parent_id()));
+    int64_t cap_delta =
+      static_cast<int64_t>(CapacityFromResNodeToParent(rd)) - old_capacity;
+    int64_t num_slots_delta =
+      static_cast<int64_t>(rd.num_slots_below()) - old_num_slots;
+    int64_t num_running_tasks_delta =
+      static_cast<int64_t>(rd.num_running_tasks_below()) -
+      old_num_running_tasks;
+    UpdateResourceStatsUpToRoot(cur_node, cap_delta, num_slots_delta,
+                                num_running_tasks_delta);
+  }
+}
+
+void FlowGraphManager::UpdateResourceTopologyDFS(
+    ResourceTopologyNodeDescriptor* rtnd_ptr) {
+  CHECK_NOTNULL(rtnd_ptr);
+  ResourceDescriptor* rd_ptr = rtnd_ptr->mutable_resource_desc();
+  if (rd_ptr->type() == ResourceDescriptor::RESOURCE_PU) {
+    // Base case.
+    // XXX(ionel): No PU sharing.
+    rd_ptr->set_num_slots_below(1);
+    if (rd_ptr->has_current_running_task()) {
+      rd_ptr->set_num_running_tasks_below(1);
+    } else {
+      rd_ptr->set_num_running_tasks_below(0);
+    }
+  } else {
+    rd_ptr->set_num_slots_below(0);
+    rd_ptr->set_num_running_tasks_below(0);
+  }
+  for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::pointer_iterator
+         child_iter = rtnd_ptr->mutable_children()->pointer_begin();
+       child_iter != rtnd_ptr->mutable_children()->pointer_end();
+       ++child_iter) {
+    UpdateResourceTopologyDFS(*child_iter);
+    rd_ptr->set_num_slots_below(
+         rd_ptr->num_slots_below() +
+         (*child_iter)->resource_desc().num_slots_below());
+    rd_ptr->set_num_running_tasks_below(
+         rd_ptr->num_running_tasks_below() +
+         (*child_iter)->resource_desc().num_running_tasks_below());
+  }
+  if (rtnd_ptr->has_parent_id()) {
+    // Update the arc to the parent.
+    FlowGraphNode* cur_node =
+      NodeForResourceID(ResourceIDFromString(rd_ptr->uuid()));
+    CHECK_NOTNULL(cur_node);
+    FlowGraphNode* parent_node =
+      FindPtrOrNull(node_to_parent_node_map_, cur_node);
+    CHECK_NOTNULL(parent_node);
+    FlowGraphArc* parent_arc =
+      graph_change_manager_->mutable_flow_graph()->GetArc(parent_node,
+                                                          cur_node);
+    graph_change_manager_->ChangeArcCapacity(
+        parent_arc, CapacityFromResNodeToParent(*rd_ptr), CHG_ARC_BETWEEN_RES,
+        "UpdateResourceTopologyDFS");
+  }
 }
 
 void FlowGraphManager::UpdateResourceStatsUpToRoot(
