@@ -55,8 +55,8 @@ WhareMapCostModel::~WhareMapCostModel() {
 
 Cost_t WhareMapCostModel::AverageFromVec(const vector<uint64_t>& vec) const {
   uint64_t acc = 0ULL;
-  for (auto it = vec.begin(); it != vec.end(); ++it) {
-    acc += *it;
+  for (auto& val : vec) {
+    acc += val;
   }
   return (acc / vec.size());
 }
@@ -112,16 +112,16 @@ const TaskDescriptor& WhareMapCostModel::GetTask(TaskID_t task_id) {
 
 Cost_t WhareMapCostModel::MaxFromVec(const vector<uint64_t>& vec) const {
   uint64_t cur_max = 0ULL;
-  for (auto it = vec.begin(); it != vec.end(); ++it) {
-    cur_max = max(cur_max, *it);
+  for (auto& val : vec) {
+    cur_max = max(cur_max, val);
   }
   return cur_max;
 }
 
 Cost_t WhareMapCostModel::MinFromVec(const vector<uint64_t>& vec) const {
   uint64_t cur_min = FLAGS_flow_max_arc_cost;
-  for (auto it = vec.begin(); it != vec.end(); ++it) {
-    cur_min = min(cur_min, *it);
+  for (auto& val : vec) {
+    cur_min = min(cur_min, val);
   }
   return cur_min;
 }
@@ -292,11 +292,32 @@ pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToEquivClass(
     CHECK_NOTNULL(best_avg_pspi);
     // Average PsPI for tasks in ec1 on machine of type ec2
     uint64_t avg_for_ec = AverageFromVec(*pspi_vec);
-    // TODO(ionel): Update the code to correctly compute the capacity of the
-    // arcs connecting two ECs.
-    return pair<Cost_t, uint64_t>((avg_for_ec * 100) / *best_avg_pspi, 0);
+    return pair<Cost_t, uint64_t>((avg_for_ec * 100) / *best_avg_pspi,
+                                  GetECOutgoingCapacity(ec2));
   }
   return pair<Cost_t, uint64_t>(0LL, 0ULL);
+}
+
+uint64_t WhareMapCostModel::GetECOutgoingCapacity(EquivClass_t ec) {
+  if (ec == cluster_aggregator_ec_) {
+    LOG(FATAL) << "Method called with unexpected type of EC";
+  } else if (machine_aggs_.find(ec) != machine_aggs_.end()) {
+    multimap<EquivClass_t, ResourceID_t>::iterator it =
+      machine_ec_to_res_id_.find(ec);
+    multimap<EquivClass_t, ResourceID_t>::iterator it_to =
+      machine_ec_to_res_id_.upper_bound(ec);
+    uint64_t outgoing_cap = 0;
+    for (; it != it_to; ++it) {
+      ResourceStatus* rs = FindPtrOrNull(*resource_map_, it->second);
+      CHECK_NOTNULL(rs);
+      outgoing_cap += rs->descriptor().num_slots_below();
+    }
+    return outgoing_cap;
+  } else if (task_aggs_.find(ec) != task_aggs_.end()) {
+    LOG(FATAL) << "Method called with unexpected type of EC";
+  } else {
+    LOG(FATAL) << "Method called with unexpected type of EC";
+  }
 }
 
 vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(

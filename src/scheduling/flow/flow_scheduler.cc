@@ -213,6 +213,9 @@ void FlowScheduler::HandleJobCompletion(JobID_t job_id) {
 void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                          TaskFinalReport* report) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  // We first call into the superclass handler because it populates
+  // the task report. The report might be used by the cost models.
+  EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   // We don't need to do any flow graph stuff for delegated tasks as
   // they are not currently represented in the flow graph.
   // Otherwise, we need to remove nodes, etc.
@@ -220,8 +223,6 @@ void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
     uint64_t task_node_id = flow_graph_manager_->TaskCompleted(td_ptr->uid());
     tasks_completed_during_solver_run_.insert(task_node_id);
   }
-  // Call into superclass handler
-  EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
 }
 
 void FlowScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
