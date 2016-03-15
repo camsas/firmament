@@ -39,6 +39,9 @@ DEFINE_bool(debug_cost_model, false,
             "Store cost model debug info in CSV files.");
 DEFINE_uint64(purge_unconnected_ec_frequency, 10, "Frequency in solver runs "
               "at which to purge unconnected EC nodes");
+DEFINE_bool(update_resource_topology, false,
+            "True if the arc capacities of the resource topology should be "
+            "updated after every scheduling round");
 
 namespace firmament {
 namespace scheduler {
@@ -182,6 +185,9 @@ void FlowScheduler::DeregisterResource(
       boost::bind(&FlowScheduler::EvictTasksFromResource, this, _1));
   flow_graph_manager_->RemoveResourceTopology(
       rtnd_ptr->resource_desc(), &pus_removed_during_solver_run_);
+  if (!rtnd_ptr->has_parent_id()) {
+    resource_roots_.erase(rtnd_ptr);
+  }
   EventDrivenScheduler::DeregisterResource(rtnd_ptr);
 }
 
@@ -369,6 +375,9 @@ void FlowScheduler::RegisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr,
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::RegisterResource(rtnd_ptr, local, simulated);
   flow_graph_manager_->AddResourceTopology(rtnd_ptr);
+  if (!rtnd_ptr->has_parent_id()) {
+    resource_roots_.insert(rtnd_ptr);
+  }
 }
 
 uint64_t FlowScheduler::RunSchedulingIteration(
@@ -473,7 +482,11 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     for (auto it = deltas.begin(); it != deltas.end(); ++it)
       LOG(WARNING) << " * " << (*it)->DebugString();
   }
-
+  if (FLAGS_update_resource_topology) {
+    for (auto& rtnd_ptr : resource_roots_) {
+      flow_graph_manager_->UpdateResourceTopology(rtnd_ptr);
+    }
+  }
   return num_scheduled;
 }
 

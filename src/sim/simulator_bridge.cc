@@ -70,6 +70,7 @@ SimulatorBridge::SimulatorBridge(EventManager* event_manager,
   }
   // Import a fictional machine resource topology
   LoadMachineTemplate(&machine_tmpl_);
+  scheduler_->RegisterResource(&rtn_root_, false, true);
 }
 
 SimulatorBridge::~SimulatorBridge() {
