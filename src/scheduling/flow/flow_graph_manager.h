@@ -265,6 +265,7 @@ class FlowGraphManager {
                                    int64_t slots_delta,
                                    int64_t running_tasks_delta);
 
+  void UpdateResourceTopologyDFS(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void UpdateResOutgoingArcs(FlowGraphNode* res_node,
                              queue<TDOrNodeWrapper*>* node_queue,
                              unordered_set<uint64_t>* marked_nodes);
