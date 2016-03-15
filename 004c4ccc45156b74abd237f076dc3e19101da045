@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_65793293",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T14:43:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_251ada6e",
+      "range": {
+        "startLine": 12,
+        "startChar": 29,
+        "endLine": 12,
+        "endChar": 43
+      },
+      "revId": "004c4ccc45156b74abd237f076dc3e19101da045",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_4526f6bb",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2016-03-15T14:32:40Z",
       "side": 1,
       "message": "Why reset them here, if the res_node already exists? Doesn\u0027t this blow away the correct values?",
+      "range": {
+        "startLine": 154,
+        "startChar": 0,
+        "endLine": 155,
+        "endChar": 43
+      },
+      "revId": "004c4ccc45156b74abd237f076dc3e19101da045",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_e53d22bd",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-15T14:43:27Z",
+      "side": 1,
+      "message": "We reset them because they\u0027re going to be recomputed in VisitedTopologyCHildren. Otherwise, we would end up children\u0027s current number of slots on top of rd_ptr\u0027s number of slots.",
+      "parentUuid": "3a6ff13c_4526f6bb",
       "range": {
         "startLine": 154,
         "startChar": 0,
