@@ -30,8 +30,8 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
     double delta_preferred_machine, double delta_preferred_rack,
     Cost_t core_transfer_cost, Cost_t tor_transfer_cost,
     uint32_t percent_block_tolerance, uint64_t machines_per_rack) :
-  resource_map_(resource_map), job_map_(job_map), task_map_(task_map),
-  knowledge_base_(knowledge_base),
+  QuincyCostModel(resource_map, job_map, task_map, leaf_res_ids,
+                  knowledge_base),
   proportion_machine_preferred_(delta_preferred_machine),
   proportion_rack_preferred_(delta_preferred_rack),
   core_transfer_cost_(core_transfer_cost),
@@ -40,9 +40,6 @@ SimulatedQuincyCostModel::SimulatedQuincyCostModel(
   machines_per_rack_(machines_per_rack), filesystem_(dfs),
   runtime_distribution_(runtime_distribution),
   block_distribution_(block_distribution) {
-  // Shut up unused warnings for now
-  CHECK_NOTNULL(leaf_res_ids);
-
   // initialise to a single, empty rack
   rack_to_machine_map_.assign(1, list<ResourceID_t>());
 }
@@ -52,21 +49,6 @@ SimulatedQuincyCostModel::~SimulatedQuincyCostModel() {
     ResourceCostMap_t *map = mapping.second;
     delete map;
   }
-}
-
-// The cost of leaving a task unscheduled should be higher than the cost of
-// scheduling it.
-Cost_t SimulatedQuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  // TODO(adam): time dependent cost;
-  return 10000;
-}
-
-// The cost from the unscheduled to the sink is 0. Setting it to a value greater
-// than zero affects all the unscheduled tasks. It is better to affect the cost
-// of not running a task through the cost from the task to the unscheduled
-// aggregator.
-Cost_t SimulatedQuincyCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
-  return 0ULL;
 }
 
 // The cost from the task to the cluster aggregator models how expensive is a
@@ -80,19 +62,6 @@ Cost_t SimulatedQuincyCostModel::TaskToResourceNodeCost(
     TaskID_t task_id, ResourceID_t resource_id) {
   ResourceCostMap_t *cost_map = preferred_machine_map_[task_id];
   return (*cost_map)[resource_id];
-}
-
-// Cost from machines to cores, always 0.
-Cost_t SimulatedQuincyCostModel::ResourceNodeToResourceNodeCost(
-    const ResourceDescriptor& source,
-    const ResourceDescriptor& destination) {
-  return 0ULL;
-}
-
-// The cost from the resource leaf to the sink is 0.
-Cost_t SimulatedQuincyCostModel::LeafResourceNodeToSinkCost(
-    ResourceID_t resource_id) {
-  return 0ULL;
 }
 
 Cost_t SimulatedQuincyCostModel::TaskContinuationCost(TaskID_t task_id) {
@@ -111,27 +80,6 @@ Cost_t SimulatedQuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   return preferred_rack_map_[task_id][tec];
 }
 
-pair<Cost_t, uint64_t> SimulatedQuincyCostModel::EquivClassToResourceNode(
-    EquivClass_t tec,
-    ResourceID_t res_id) {
-  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
-  CHECK_NOTNULL(rs);
-  uint64_t num_free_slots = rs->descriptor().num_slots_below() -
-    rs->descriptor().num_running_tasks_below();
-  // cost of arcs from rack aggregators are always zero
-  // (costs are instead encoded in arc from task to aggregator)
-  return pair<Cost_t, uint64_t>(0LL, num_free_slots);
-}
-
-pair<Cost_t, uint64_t> SimulatedQuincyCostModel::EquivClassToEquivClass(
-    EquivClass_t tec1,
-    EquivClass_t tec2) {
-  // this shouldn't be called; the only arcs are from cluster aggregator to rack
-  // aggregator, but Firmament considers cluster aggregator to be a special case
-  CHECK(false);
-  return pair<Cost_t, uint64_t>(0LL, 0ULL);
-}
-
 // The equivalence classes for a task are those corresponding to its
 // preferred rack.
 // TODO(malte): This is a bit of a hack, maybe we should revisit it.
@@ -147,12 +95,6 @@ vector<EquivClass_t>* SimulatedQuincyCostModel::GetTaskEquivClasses(
   return preferred_res;
 }
 
-vector<ResourceID_t>* SimulatedQuincyCostModel::GetOutgoingEquivClassPrefArcs(
-    EquivClass_t tec) {
-  vector<ResourceID_t>* res = new vector<ResourceID_t>();
-  return res;
-}
-
 vector<ResourceID_t>* SimulatedQuincyCostModel::GetTaskPreferenceArcs(
     TaskID_t task_id) {
   vector<ResourceID_t>* preferred_res = new vector<ResourceID_t>();
@@ -164,11 +106,6 @@ vector<ResourceID_t>* SimulatedQuincyCostModel::GetTaskPreferenceArcs(
             << machine;
   }
   return preferred_res;
-}
-
-vector<EquivClass_t>* SimulatedQuincyCostModel::GetEquivClassToEquivClassesArcs(
-    EquivClass_t tec) {
-  return NULL;
 }
 
 void SimulatedQuincyCostModel::AddMachine(
@@ -330,50 +267,6 @@ void SimulatedQuincyCostModel::RemoveTask(TaskID_t task_id) {
   preferred_machine_map_.erase(task_id);
   preferred_rack_map_.erase(task_id);
   cluster_aggregator_cost_.erase(task_id);
-}
-
-FlowGraphNode* SimulatedQuincyCostModel::GatherStats(FlowGraphNode* accumulator,
-                                                     FlowGraphNode* other) {
-  if (!accumulator->IsResourceNode()) {
-    return accumulator;
-  }
-
-  if (other->resource_id_.is_nil()) {
-    // The other node is not a resource node.
-    if (other->type_ == FlowNodeType::SINK) {
-      // TODO(ionel): This code assumes that only one task can run on a PU.
-      if (accumulator->rd_ptr_->has_current_running_task()) {
-        accumulator->rd_ptr_->set_num_running_tasks_below(1);
-      } else {
-        accumulator->rd_ptr_->set_num_running_tasks_below(0);
-      }
-      accumulator->rd_ptr_->set_num_slots_below(1);
-    }
-    return accumulator;
-  }
-
-  CHECK_NOTNULL(other->rd_ptr_);
-  accumulator->rd_ptr_->set_num_running_tasks_below(
-      accumulator->rd_ptr_->num_running_tasks_below() +
-      other->rd_ptr_->num_running_tasks_below());
-  accumulator->rd_ptr_->set_num_slots_below(
-      accumulator->rd_ptr_->num_slots_below() +
-      other->rd_ptr_->num_slots_below());
-  return accumulator;
-}
-
-void SimulatedQuincyCostModel::PrepareStats(FlowGraphNode* accumulator) {
-  if (!accumulator->IsResourceNode()) {
-    return;
-  }
-  CHECK_NOTNULL(accumulator->rd_ptr_);
-  accumulator->rd_ptr_->clear_num_running_tasks_below();
-  accumulator->rd_ptr_->clear_num_slots_below();
-}
-
-FlowGraphNode* SimulatedQuincyCostModel::UpdateStats(FlowGraphNode* accumulator,
-                                                     FlowGraphNode* other) {
-  return accumulator;
 }
 
 } // namespace scheduler

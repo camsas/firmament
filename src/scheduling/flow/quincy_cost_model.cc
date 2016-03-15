@@ -23,29 +23,25 @@ QuincyCostModel::QuincyCostModel(
     shared_ptr<ResourceMap_t> resource_map,
     shared_ptr<JobMap_t> job_map,
     shared_ptr<TaskMap_t> task_map,
-    unordered_map<TaskID_t, ResourceID_t> *task_bindings,
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids,
     shared_ptr<KnowledgeBase> knowledge_base)
   : resource_map_(resource_map),
     job_map_(job_map),
     task_map_(task_map),
-    task_bindings_(task_bindings),
     leaf_res_ids_(leaf_res_ids),
     knowledge_base_(knowledge_base) {
   //application_stats_ = knowledge_base_->AppStats();
-  CHECK_NOTNULL(task_bindings_);
 }
 
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  int64_t half_max_arc_cost = FLAGS_flow_max_arc_cost / 2;
-  return half_max_arc_cost + rand_r(&rand_seed_) % half_max_arc_cost + 1;
-  //  return 5ULL;
+  // TODO(ionel): Time dependent cost.
+  return 10000;
 }
 
-// The costfrom the unscheduled to the sink is 0. Setting it to a value greater
+// The cost from the unscheduled to the sink is 0. Setting it to a value greater
 // than zero affects all the unscheduled tasks. It is better to affect the cost
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
@@ -74,7 +70,8 @@ Cost_t QuincyCostModel::TaskToResourceNodeCost(TaskID_t task_id,
 Cost_t QuincyCostModel::ResourceNodeToResourceNodeCost(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
-  return rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 4) + 1;
+  // Cost between resource nodes is always 0.
+  return 0ULL;
 }
 
 // The cost from the resource leaf to the sink is 0.
@@ -102,13 +99,14 @@ pair<Cost_t, uint64_t> QuincyCostModel::EquivClassToResourceNode(
   CHECK_NOTNULL(rs);
   uint64_t num_free_slots = rs->descriptor().num_slots_below() -
     rs->descriptor().num_running_tasks_below();
-  Cost_t cost = rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 2) + 1;
-  return pair<Cost_t, uint64_t>(cost , num_free_slots);
+  // Cost of arcs from rack aggregators are always zero.
+  return pair<Cost_t, uint64_t>(0 , num_free_slots);
 }
 
 pair<Cost_t, uint64_t> QuincyCostModel::EquivClassToEquivClass(
     EquivClass_t tec1,
     EquivClass_t tec2) {
+  LOG(FATAL) << "Not implemented";
   return pair<Cost_t, uint64_t>(0LL, 0ULL);
 }
 
@@ -125,13 +123,7 @@ vector<EquivClass_t>* QuincyCostModel::GetTaskEquivClasses(
 
 vector<ResourceID_t>* QuincyCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t tec) {
-  vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
-  CHECK_GE(leaf_res_ids_->size(), FLAGS_num_pref_arcs_task_to_res);
-  for (uint32_t num_arc = 0; num_arc < FLAGS_num_pref_arcs_task_to_res;
-       ++num_arc) {
-    prefered_res->push_back(PickRandomResourceID(*leaf_res_ids_));
-  }
-  return prefered_res;
+  return NULL;
 }
 
 vector<ResourceID_t>* QuincyCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
