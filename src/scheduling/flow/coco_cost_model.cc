@@ -661,10 +661,11 @@ pair<Cost_t, uint64_t> CocoCostModel::EquivClassToResourceNode(
   }
 }
 
-Cost_t CocoCostModel::EquivClassToEquivClass(EquivClass_t tec1,
-                                             EquivClass_t tec2) {
+pair<Cost_t, uint64_t> CocoCostModel::EquivClassToEquivClass(
+    EquivClass_t tec1,
+    EquivClass_t tec2) {
   LOG(ERROR) << "Arcs from equiv class to equiv class should not be present";
-  return 0LL;
+  return pair<Cost_t, uint64_t>(0LL, 0ULL);
 }
 
 ResourceID_t CocoCostModel::MachineResIDForResource(ResourceID_t res_id) {

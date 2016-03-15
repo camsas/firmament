@@ -87,9 +87,10 @@ pair<Cost_t, uint64_t> RandomCostModel::EquivClassToResourceNode(
   return pair<Cost_t, uint64_t>(cost, num_free_slots);
 }
 
-Cost_t RandomCostModel::EquivClassToEquivClass(EquivClass_t ec1,
-                                               EquivClass_t ec2) {
-  return 0LL;
+pair<Cost_t, uint64_t> RandomCostModel::EquivClassToEquivClass(
+    EquivClass_t ec1,
+    EquivClass_t ec2) {
+  return pair<Cost_t, uint64_t>(0LL, 0ULL);
 }
 
 vector<EquivClass_t>* RandomCostModel::GetTaskEquivClasses(

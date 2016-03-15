@@ -78,9 +78,10 @@ pair<Cost_t, uint64_t> OctopusCostModel::EquivClassToResourceNode(
   return pair<Cost_t, uint64_t>(0LL, num_free_slots);
 }
 
-Cost_t OctopusCostModel::EquivClassToEquivClass(EquivClass_t ec1,
-                                                EquivClass_t ec2) {
-  return 0LL;
+pair<Cost_t, uint64_t> OctopusCostModel::EquivClassToEquivClass(
+    EquivClass_t ec1,
+    EquivClass_t ec2) {
+  return pair<Cost_t, uint64_t>(0LL, 0ULL);
 }
 
 vector<EquivClass_t>* OctopusCostModel::GetTaskEquivClasses(

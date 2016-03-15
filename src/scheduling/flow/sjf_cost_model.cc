@@ -124,9 +124,9 @@ pair<Cost_t, uint64_t> SJFCostModel::EquivClassToResourceNode(
   return pair<Cost_t, uint64_t>(0LL, num_free_slots);
 }
 
-Cost_t SJFCostModel::EquivClassToEquivClass(EquivClass_t tec1,
-                                            EquivClass_t tec2) {
-  return 0LL;
+pair<Cost_t, uint64_t> SJFCostModel::EquivClassToEquivClass(EquivClass_t tec1,
+                                                            EquivClass_t tec2) {
+  return pair<Cost_t, uint64_t>(0LL, 0ULL);
 }
 
 vector<EquivClass_t>* SJFCostModel::GetTaskEquivClasses(TaskID_t task_id) {

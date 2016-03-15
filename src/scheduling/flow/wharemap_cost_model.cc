@@ -280,8 +280,9 @@ pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToResourceNode(
   return pair<Cost_t, uint64_t>(FLAGS_flow_max_arc_cost, num_free_slots);
 }
 
-Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,
-                                                 EquivClass_t ec2) {
+pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToEquivClass(
+    EquivClass_t ec1,
+    EquivClass_t ec2) {
   pair<EquivClass_t, EquivClass_t> ec_pair(ec1, ec2);
   vector<uint64_t>* pspi_vec = FindPtrOrNull(psi_map_, ec_pair);
   if (pspi_vec) {
@@ -291,9 +292,11 @@ Cost_t WhareMapCostModel::EquivClassToEquivClass(EquivClass_t ec1,
     CHECK_NOTNULL(best_avg_pspi);
     // Average PsPI for tasks in ec1 on machine of type ec2
     uint64_t avg_for_ec = AverageFromVec(*pspi_vec);
-    return (avg_for_ec * 100) / *best_avg_pspi;
+    // TODO(ionel): Update the code to correctly compute the capacity of the
+    // arcs connecting two ECs.
+    return pair<Cost_t, uint64_t>((avg_for_ec * 100) / *best_avg_pspi, 0);
   }
-  return 0LL;
+  return pair<Cost_t, uint64_t>(0LL, 0ULL);
 }
 
 vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(

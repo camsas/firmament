@@ -120,15 +120,16 @@ pair<Cost_t, uint64_t> SimulatedQuincyCostModel::EquivClassToResourceNode(
     rs->descriptor().num_running_tasks_below();
   // cost of arcs from rack aggregators are always zero
   // (costs are instead encoded in arc from task to aggregator)
-  return pair<Cost_t, uint64_t>(0ULL, num_free_slots);
+  return pair<Cost_t, uint64_t>(0LL, num_free_slots);
 }
 
-Cost_t SimulatedQuincyCostModel::EquivClassToEquivClass(EquivClass_t tec1,
-                                                        EquivClass_t tec2) {
+pair<Cost_t, uint64_t> SimulatedQuincyCostModel::EquivClassToEquivClass(
+    EquivClass_t tec1,
+    EquivClass_t tec2) {
   // this shouldn't be called; the only arcs are from cluster aggregator to rack
   // aggregator, but Firmament considers cluster aggregator to be a special case
   CHECK(false);
-  return 0LL;
+  return pair<Cost_t, uint64_t>(0LL, 0ULL);
 }
 
 // The equivalence classes for a task are those corresponding to its
