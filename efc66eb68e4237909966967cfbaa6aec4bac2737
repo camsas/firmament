@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_b0e28601",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 882,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-15T18:27:28Z",
+      "side": 1,
+      "message": "Does this code ever update the capacity between rtnd_ptr\u0027s parent and rtnd_ptr? It looks like UpdateResourceStatsUpToRoot() starts from the parent, and UpdateResourceTopologyDFS does not cover the parent -\u003e rtnd_ptr arc...",
+      "range": {
+        "startLine": 881,
+        "startChar": 0,
+        "endLine": 882,
+        "endChar": 60
+      },
+      "revId": "efc66eb68e4237909966967cfbaa6aec4bac2737",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_70d80e54",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 903,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-15T18:27:28Z",
+      "side": 1,
+      "message": "Add TODO re PU sharing",
+      "revId": "efc66eb68e4237909966967cfbaa6aec4bac2737",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_300056aa",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-15T18:27:28Z",
+      "side": 1,
+      "message": "Should this flag be called \"update_resource_topology_capacities\" instead, given that it just handles capacity updates? Or should the description be more general?",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 52
+      },
+      "revId": "efc66eb68e4237909966967cfbaa6aec4bac2737",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
