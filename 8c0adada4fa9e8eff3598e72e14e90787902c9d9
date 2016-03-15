@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_90090a2f",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-15T17:23:22Z",
+      "side": 1,
+      "message": "This is more like an XXX :)",
+      "revId": "8c0adada4fa9e8eff3598e72e14e90787902c9d9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
