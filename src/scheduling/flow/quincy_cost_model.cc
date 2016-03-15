@@ -106,9 +106,10 @@ pair<Cost_t, uint64_t> QuincyCostModel::EquivClassToResourceNode(
   return pair<Cost_t, uint64_t>(cost , num_free_slots);
 }
 
-Cost_t QuincyCostModel::EquivClassToEquivClass(EquivClass_t tec1,
-                                               EquivClass_t tec2) {
-  return 0LL;
+pair<Cost_t, uint64_t> QuincyCostModel::EquivClassToEquivClass(
+    EquivClass_t tec1,
+    EquivClass_t tec2) {
+  return pair<Cost_t, uint64_t>(0LL, 0ULL);
 }
 
 vector<EquivClass_t>* QuincyCostModel::GetTaskEquivClasses(

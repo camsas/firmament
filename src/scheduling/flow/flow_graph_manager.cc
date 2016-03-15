@@ -244,21 +244,6 @@ FlowGraphNode* FlowGraphManager::AddUnscheduledAggNode(JobID_t job_id) {
   return unsched_agg_node;
 }
 
-uint64_t FlowGraphManager::CapacityBetweenECNodes(const FlowGraphNode& src,
-                                                  const FlowGraphNode& dst) {
-  // Compute sum of incoming capacities at src
-  uint64_t in_sum = 0;
-  for (auto& incoming_arc : src.incoming_arc_map_) {
-    in_sum += incoming_arc.second->cap_upper_bound_;
-  }
-  // Compute sum of incoming capacities at dst
-  uint64_t out_sum = 0;
-  for (auto& outgoing_arc : dst.outgoing_arc_map_) {
-    out_sum += outgoing_arc.second->cap_upper_bound_;
-  }
-  return min(in_sum, out_sum);
-}
-
 uint64_t FlowGraphManager::CapacityFromResNodeToParent(
     const ResourceDescriptor& rd) {
   if (FLAGS_preemption) {
@@ -756,20 +741,20 @@ void FlowGraphManager::UpdateEquivToEquivArcs(
       if (!pref_ec_node) {
         pref_ec_node = AddEquivClassNode(pref_ec_id);
       }
-      Cost_t new_cost =
+      pair<Cost_t, uint64_t> cost_and_cap =
         cost_model_->EquivClassToEquivClass(ec_node->ec_id_, pref_ec_id);
-      uint64_t new_capacity = CapacityBetweenECNodes(*ec_node, *pref_ec_node);
       FlowGraphArc* pref_ec_arc =
         graph_change_manager_->mutable_flow_graph()->GetArc(ec_node,
                                                             pref_ec_node);
       if (!pref_ec_arc) {
         graph_change_manager_->AddArc(
-            ec_node, pref_ec_node, 0, new_capacity, new_cost, OTHER,
-            ADD_ARC_BETWEEN_EQUIV_CLASS, "UpdateEquivClassNode");
+            ec_node, pref_ec_node, 0, cost_and_cap.second, cost_and_cap.first,
+            OTHER, ADD_ARC_BETWEEN_EQUIV_CLASS, "UpdateEquivClassNode");
       } else {
         graph_change_manager_->ChangeArc(
-            pref_ec_arc, pref_ec_arc->cap_lower_bound_, new_capacity, new_cost,
-            CHG_ARC_BETWEEN_EQUIV_CLASS, "UpdateEquivClassNode");
+            pref_ec_arc, pref_ec_arc->cap_lower_bound_, cost_and_cap.second,
+            cost_and_cap.first, CHG_ARC_BETWEEN_EQUIV_CLASS,
+            "UpdateEquivClassNode");
       }
       if (marked_nodes->find(pref_ec_node->id_) == marked_nodes->end()) {
         // Add the EC node to the queue if it hasn't been marked yet.

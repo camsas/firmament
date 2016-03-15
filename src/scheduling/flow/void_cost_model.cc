@@ -73,9 +73,10 @@ pair<Cost_t, uint64_t> VoidCostModel::EquivClassToResourceNode(
   return pair<Cost_t, uint64_t>(0LL, num_free_slots);
 }
 
-Cost_t VoidCostModel::EquivClassToEquivClass(EquivClass_t tec1,
-                                             EquivClass_t tec2) {
-  return 0LL;
+pair<Cost_t, uint64_t> VoidCostModel::EquivClassToEquivClass(
+    EquivClass_t tec1,
+    EquivClass_t tec2) {
+  return pair<Cost_t, uint64_t>(0LL, 0ULL);
 }
 
 vector<EquivClass_t>* VoidCostModel::GetTaskEquivClasses(TaskID_t task_id) {

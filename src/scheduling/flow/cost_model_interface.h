@@ -84,13 +84,13 @@ class CostModelInterface {
       EquivClass_t tec,
       ResourceID_t res_id) = 0;
   /**
-   * Get the cost of an arc from an equivalence class node to another
-   * equivalence class node.
+   * Get the cost and the capacity of an arc from an equivalence class node to
+   * another equivalence class node.
    * @param tec1 the source equivalence class
    * @param tec2 the destination equivalence class
    */
-  virtual Cost_t EquivClassToEquivClass(EquivClass_t tec1,
-                                        EquivClass_t tec2) = 0;
+  virtual pair<Cost_t, uint64_t> EquivClassToEquivClass(EquivClass_t tec1,
+                                                        EquivClass_t tec2) = 0;
   /**
    * Get the equivalence classes of a task.
    * @param task_id the task id for which to get the equivalence classes

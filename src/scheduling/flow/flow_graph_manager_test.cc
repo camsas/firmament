@@ -272,10 +272,6 @@ TEST_F(FlowGraphManagerTest, AddResourceTopologyDFS) {
             0);
 }
 
-TEST_F(FlowGraphManagerTest, CapacityBetweenECNodes) {
-  // TODO(ionel): The method and the way we use it is incorrect.
-}
-
 TEST_F(FlowGraphManagerTest, PinTaskToNode) {
   MockCostModel mock_cost_model;
   FlowGraphManager* graph_manager =

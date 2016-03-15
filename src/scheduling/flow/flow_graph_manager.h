@@ -126,7 +126,6 @@ class FlowGraphManager {
   FRIEND_TEST(FlowGraphManagerTest, AddResourceTopologyDFS);
   FRIEND_TEST(FlowGraphManagerTest, AddTaskNode);
   FRIEND_TEST(FlowGraphManagerTest, AddUnscheduledAggNode);
-  FRIEND_TEST(FlowGraphManagerTest, CapacityBetweenECNodes);
   FRIEND_TEST(FlowGraphManagerTest, PinTaskToNode);
   FRIEND_TEST(FlowGraphManagerTest, RemoveEquivClassNode);
   FRIEND_TEST(FlowGraphManagerTest, RemoveInvalidECPrefArcs);
@@ -165,8 +164,6 @@ class FlowGraphManager {
 
   FlowGraphNode* AddTaskNode(JobID_t job_id, TaskDescriptor* td_ptr);
   FlowGraphNode* AddUnscheduledAggNode(JobID_t job_id);
-  uint64_t CapacityBetweenECNodes(const FlowGraphNode& src,
-                                  const FlowGraphNode& dst);
   uint64_t CapacityFromResNodeToParent(const ResourceDescriptor& rd);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
   void RemoveEquivClassNode(FlowGraphNode* ec_node);
