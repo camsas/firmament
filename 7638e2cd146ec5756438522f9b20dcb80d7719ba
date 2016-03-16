@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_d67297e4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-16T19:26:32Z",
+      "side": 1,
+      "message": "I initially wanted this diff to only add libhdfs3, but then I would have to link it all the place because previously we were linking storage in many places.",
+      "parentUuid": "3a6ff13c_16ad0f32",
+      "range": {
+        "startLine": 11,
+        "startChar": 37,
+        "endLine": 12,
+        "endChar": 43
+      },
+      "revId": "7638e2cd146ec5756438522f9b20dcb80d7719ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_76bc836d",
         "filename": "src/CMakeLists.txt",
         "patchSetId": 1
