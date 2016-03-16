@@ -45,6 +45,30 @@
       "revId": "7638e2cd146ec5756438522f9b20dcb80d7719ba",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_7663a31a",
+        "filename": "src/CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-16T19:25:27Z",
+      "side": 1,
+      "message": "It\u0027s because the simulator links storage. It links it because it has to create a SimpleObjectStore to pass it to the FlowScheduler.",
+      "parentUuid": "3a6ff13c_76bc836d",
+      "range": {
+        "startLine": 155,
+        "startChar": 0,
+        "endLine": 157,
+        "endChar": 22
+      },
+      "revId": "7638e2cd146ec5756438522f9b20dcb80d7719ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
