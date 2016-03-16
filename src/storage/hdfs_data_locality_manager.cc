@@ -1,10 +1,9 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#include "hdfs/hdfs.h"
+#include "storage/hdfs_data_locality_manager.h"
 
-#include "storage/hdfs_bridge.h"
-
+#include <hdfs.h>
 #include <string>
 #include <vector>
 
@@ -16,7 +15,7 @@ DEFINE_int32(hdfs_name_node_port, 8020,
 namespace firmament {
 namespace store {
 
-HdfsBridge::HdfsBridge() {
+HdfsDataLocalityManager::HdfsDataLocalityManager() {
   struct hdfsBuilder* hdfs_builder = hdfsNewBuilder();
   if (!hdfs_builder) {
     LOG(FATAL) << "Could not create HDFS builder";
@@ -30,12 +29,13 @@ HdfsBridge::HdfsBridge() {
   }
 }
 
-HdfsBridge::~HdfsBridge() {
+HdfsDataLocalityManager::~HdfsDataLocalityManager() {
   hdfsDisconnect(fs_);
 }
 
-vector<string> HdfsBridge::GetBlockLocations(const string& filename,
-                                             int32_t block_index) {
+vector<string> HdfsDataLocalityManager::GetBlockLocations(
+    const string& filename,
+    int32_t block_index) {
   hdfsFileInfo* file_stat = hdfsGetPathInfo(fs_, filename.c_str());
   if (!file_stat) {
     LOG(ERROR) << "Could not get HDFS file info for: " << filename;
@@ -64,7 +64,7 @@ vector<string> HdfsBridge::GetBlockLocations(const string& filename,
   return locations;
 }
 
-vector<vector<string> > HdfsBridge::GetFileBlockLocations(
+vector<vector<string> > HdfsDataLocalityManager::GetFileBlockLocations(
     const string& filename) {
   hdfsFileInfo* file_stat = hdfsGetPathInfo(fs_, filename.c_str());
   if (!file_stat) {
@@ -93,7 +93,7 @@ vector<vector<string> > HdfsBridge::GetFileBlockLocations(
   return locations;
 }
 
-uint32_t HdfsBridge::GetNumberOfBlocks(const string& filename) {
+uint32_t HdfsDataLocalityManager::GetNumberOfBlocks(const string& filename) {
   hdfsFileInfo* file_stat = hdfsGetPathInfo(fs_, filename.c_str());
   if (!file_stat) {
     LOG(ERROR) << "Could not get HDFS file info for: " << filename;

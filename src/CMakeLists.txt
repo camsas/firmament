@@ -81,6 +81,9 @@ target_link_libraries(coordinator LINK_PUBLIC
   ${pb2json_LIBRARY} ${pion_LIBRARY} ${spooky-hash_BINARY}
   ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc jansson
   protobuf)
+if (${ENABLE_HDFS})
+  target_link_libraries(coordinator ${libhdfs3_LIBRARY})
+endif (${ENABLE_HDFS})
 
 ###############################################################################
 # Google trace data extractor
@@ -109,8 +112,7 @@ add_library(firmament_scheduling SHARED
   ${EXECUTOR_SRC}
   ${MESSAGES_PROTOBUF_SRCS} ${MISC_SRC}
   ${MISC_TRACE_GENERATOR_SRC}
-  ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS}
-  ${STORAGE_SRC})
+  ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS})
 
 add_dependencies(firmament_scheduling glog gflags gtest pb2json pion spooky-hash
   thread-safe-stl-containers)
@@ -150,6 +152,9 @@ target_compile_definitions(simulator PRIVATE
 
 target_link_libraries(simulator LINK_PUBLIC ${spooky-hash_BINARY}
   ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc jansson protobuf)
+if (${ENABLE_HDFS})
+  target_link_libraries(simulator ${libhdfs3_LIBRARY})
+endif (${ENABLE_HDFS})
 
 ###############################################################################
 # TaskLib
@@ -162,7 +167,6 @@ set(TASK_LIB_SRCS
   ${MESSAGES_PROTOBUF_SRCS}
   ${MISC_SRC}
   ${PLATFORMS_UNIX_SRC}
-  ${STORAGE_SRC}
   ${TASK_LIB_SRC}
   )
 
@@ -189,7 +193,6 @@ add_executable(worker ${WORKER_SRCS}
   $<TARGET_OBJECTS:messages>
   $<TARGET_OBJECTS:misc>
   $<TARGET_OBJECTS:platforms_unix>
-  $<TARGET_OBJECTS:storage>
   )
 
 add_dependencies(worker gtest spooky-hash thread-safe-stl-containers)

@@ -24,8 +24,7 @@ foreach(T IN ITEMS ${MISC_TESTS})
   add_executable(${TEST_NAME} ${T}
     $<TARGET_OBJECTS:base>
     $<TARGET_OBJECTS:messages>
-    $<TARGET_OBJECTS:misc>
-    $<TARGET_OBJECTS:storage>)
+    $<TARGET_OBJECTS:misc>)
   target_link_libraries(${TEST_NAME}
     ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
     ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)

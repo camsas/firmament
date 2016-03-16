@@ -14,7 +14,6 @@
 #include "base/types.h"
 #include "engine/task_lib.h"
 #include "misc/printable_interface.h"
-#include "storage/types.h"
 
 namespace firmament {
 

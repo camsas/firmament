@@ -99,7 +99,24 @@ find_package(Hwloc REQUIRED)
 if (${ENABLE_HDFS})
   # libHDFS requires libxml2
   find_package(LibXml2)
-  # XXX(malte): add libhdfs3
+  ExternalProject_Add(
+      libhdfs3
+      GIT_REPOSITORY https://github.com/PivotalRD/libhdfs3.git
+      GIT_TAG v2.2.31
+      TIMEOUT 10
+      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/libhdfs3
+      # no install required, we link the library from the build tree
+      INSTALL_COMMAND ""
+      # Wrap download, configure and build steps in a script to log output
+      LOG_DOWNLOAD ON
+      LOG_BUILD ON)
+  ExternalProject_Get_Property(libhdfs3 BINARY_DIR)
+  ExternalProject_Get_Property(libhdfs3 SOURCE_DIR)
+  set(libhdfs3_BINARY_DIR ${BINARY_DIR})
+  set(libhdfs3_SOURCE_DIR ${SOURCE_DIR})
+  set(libhdfs3_INCLUDE_DIR ${libhdfs3_SOURCE_DIR}/src/client)
+  include_directories(${libhdfs3_INCLUDE_DIR})
+  set(libhdfs3_LIBRARY ${libhdfs3_BINARY_DIR}/src/libhdfs3.so)
 endif (${ENABLE_HDFS})
 
 ###############################################################################

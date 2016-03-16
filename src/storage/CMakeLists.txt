@@ -5,7 +5,15 @@ set(STORAGE_SRC
   storage/stub_object_store.cc
   )
 
+if (${ENABLE_HDFS})
+  set(STORAGE_SRC
+    ${STORAGE_SRC}
+    storage/hdfs_data_locality_manager.cc
+    )
+endif (${ENABLE_HDFS})
+
 set(STORAGE_TESTS
+  storage/references_test.cc
   storage/stub_object_store_test.cc
 )
 
@@ -20,6 +28,9 @@ foreach(T IN ITEMS ${STORAGE_TESTS})
     $<TARGET_OBJECTS:storage>)
   target_link_libraries(${TEST_NAME}
     ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
-    ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)
+    ${libhdfs3_LIBRARY} ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)
+  if (${ENABLE_HDFS})
+    target_link_libraries(${TEST_NAME} ${libhdfs3_LIBRARY})
+  endif (${ENABLE_HDFS})
   add_test(${TEST_NAME} ${TEST_NAME})
 endforeach(T)

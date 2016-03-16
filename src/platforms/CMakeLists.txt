@@ -30,8 +30,7 @@ foreach(T IN ITEMS ${PLATFORMS_UNIX_TESTS})
     $<TARGET_OBJECTS:base>
     $<TARGET_OBJECTS:messages>
     $<TARGET_OBJECTS:misc>
-    $<TARGET_OBJECTS:platforms_unix>
-    $<TARGET_OBJECTS:storage>)
+    $<TARGET_OBJECTS:platforms_unix>)
   target_link_libraries(${TEST_NAME}
     ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
     ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)

@@ -14,7 +14,6 @@ add_executable(examples/hello_world ${EXAMPLES_HELLO_WORLD_SRC}
   $<TARGET_OBJECTS:messages>
   $<TARGET_OBJECTS:misc>
   $<TARGET_OBJECTS:platforms_unix>
-  $<TARGET_OBJECTS:storage>
   )
 
 add_dependencies(examples/hello_world gtest spooky-hash thread-safe-stl-containers)
@@ -28,7 +27,6 @@ add_executable(examples/timespin ${EXAMPLES_TIMESPIN_SRC}
   $<TARGET_OBJECTS:messages>
   $<TARGET_OBJECTS:misc>
   $<TARGET_OBJECTS:platforms_unix>
-  $<TARGET_OBJECTS:storage>
   )
 
 add_dependencies(examples/timespin gtest spooky-hash thread-safe-stl-containers)

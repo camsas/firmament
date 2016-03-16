@@ -1,21 +1,23 @@
 // The Firmament project
 // Copyright (c) 2015 Ionel Gog <ionel.gog@cl.cam.ac.uk>
 
-#ifndef FIRMAMENT_STORAGE_HDFS_BRIDGE_H
-#define FIRMAMENT_STORAGE_HDFS_BRIDGE_H
+#ifndef FIRMAMENT_STORAGE_HDFS_DATA_LOCALITY_MANAGER_H
+#define FIRMAMENT_STORAGE_HDFS_DATA_LOCALITY_MANAGER_H
 
+#include <hdfs.h>
 #include <string>
 #include <vector>
 
 #include "base/common.h"
+#include "scheduling/data_layer_manager_interface.h"
 
 namespace firmament {
 namespace store {
 
-class HdfsBridge {
+class HdfsDataLocalityManager : public DataLayerManagerInterface {
  public:
-  HdfsBridge();
-  virtual ~HdfsBridge();
+  HdfsDataLocalityManager();
+  virtual ~HdfsDataLocalityManager();
 
   /**
    * Returns the locations of a block.
@@ -46,4 +48,4 @@ class HdfsBridge {
 } // namespace store
 } // namespace firmament
 
-#endif  // FIRMAMENT_STORAGE_HDFS_BRIDGE_H
+#endif  // FIRMAMENT_STORAGE_HDFS_DATA_LOCALITY_MANAGER_H

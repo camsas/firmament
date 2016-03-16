@@ -55,5 +55,8 @@ foreach(T IN ITEMS ${SIM_TESTS})
   target_link_libraries(${TEST_NAME}
     ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
     ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc protobuf)
+  if (${ENABLE_HDFS})
+    target_link_libraries(${TEST_NAME} ${libhdfs3_LIBRARY})
+  endif (${ENABLE_HDFS})
   add_test(${TEST_NAME} ${TEST_NAME})
 endforeach(T)

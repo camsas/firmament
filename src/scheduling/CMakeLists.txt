@@ -61,8 +61,7 @@ foreach(T IN ITEMS ${SCHEDULING_TESTS})
     $<TARGET_OBJECTS:misc>
     $<TARGET_OBJECTS:misc_trace_generator>
     $<TARGET_OBJECTS:platforms_unix>
-    $<TARGET_OBJECTS:scheduling>
-    $<TARGET_OBJECTS:storage>)
+    $<TARGET_OBJECTS:scheduling>)
   target_link_libraries(${TEST_NAME}
     ${spooky-hash_BINARY} ${gmock_LIBRARY} ${gmock_MAIN_LIBRARY}
     ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY} ${Firmament_SHARED_LIBRARIES}
