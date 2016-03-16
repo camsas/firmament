@@ -8,7 +8,6 @@
 
 namespace firmament {
 namespace sim {
-namespace dfs {
 
 class GoogleBlockDistribution {
  public:
@@ -22,7 +21,6 @@ class GoogleBlockDistribution {
   uint64_t min_blocks_;
 };
 
-} // namespace dfs
 } // namespace sim
 } // namespace firmament
 

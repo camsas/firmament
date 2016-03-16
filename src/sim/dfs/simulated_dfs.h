@@ -19,7 +19,6 @@
 
 namespace firmament {
 namespace sim {
-namespace dfs {
 
 typedef unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid> >
         ResourceSet_t;
@@ -64,7 +63,6 @@ class SimulatedDFS {
   uniform_real_distribution<double> uniform_distribution_;
 };
 
-} // namespace dfs
 } // namespace sim
 } // namespace firmament
 

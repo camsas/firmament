@@ -10,7 +10,6 @@
 
 namespace firmament {
 namespace sim {
-namespace dfs {
 
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
@@ -110,6 +109,5 @@ unordered_set<SimulatedDFS::FileID_t> SimulatedDFS::SampleFiles(
   return sampled_files;
 }
 
-} // namespace dfs
 } // namespace sim
 } // namespace firmament

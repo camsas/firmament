@@ -6,6 +6,7 @@
 
 #include "scheduling/knowledge_base.h"
 
+#include "scheduling/data_layer_manager_interface.h"
 #include "sim/trace_utils.h"
 
 namespace firmament {
@@ -14,6 +15,7 @@ namespace sim {
 class KnowledgeBaseSimulator : public KnowledgeBase {
  public:
   KnowledgeBaseSimulator();
+  KnowledgeBaseSimulator(DataLayerManagerInterface* data_layer_manager);
 
   void AddMachineSample(
       uint64_t current_simulation_time,

@@ -1,6 +1,7 @@
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/sim)
 
 set(SIM_DFS_SRC
+  sim/dfs/simulated_data_layer_manager.cc
   sim/dfs/google_block_distribution.cc
   sim/dfs/simulated_dfs.cc
   )
@@ -11,6 +12,7 @@ set(SIM_GOOGLE_TRACE_PROCESSOR_SRCS
 
 set(SIM_SRC
   sim/event_manager.cc
+  sim/google_runtime_distribution.cc
   sim/google_trace_loader.cc
   sim/knowledge_base_simulator.cc
   sim/simulated_wall_time.cc

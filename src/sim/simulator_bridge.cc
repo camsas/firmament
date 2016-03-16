@@ -16,6 +16,7 @@
 #include "misc/utils.h"
 #include "scheduling/flow/flow_scheduler.h"
 #include "scheduling/simple/simple_scheduler.h"
+#include "sim/dfs/simulated_data_layer_manager.h"
 #include "sim/knowledge_base_simulator.h"
 #include "sim/trace_loader.h"
 #include "storage/simple_object_store.h"
@@ -33,9 +34,12 @@ namespace sim {
 SimulatorBridge::SimulatorBridge(EventManager* event_manager,
                                  SimulatedWallTime* simulated_time)
     : event_manager_(event_manager), simulated_time_(simulated_time),
-    job_map_(new JobMap_t), knowledge_base_(new KnowledgeBaseSimulator),
+    job_map_(new JobMap_t),
     resource_map_(new ResourceMap_t), task_map_(new TaskMap_t),
     num_duplicate_task_ids_(0) {
+  data_layer_manager_ = new SimulatedDataLayerManager();
+  knowledge_base_ = shared_ptr<KnowledgeBaseSimulator>(
+      new KnowledgeBaseSimulator(data_layer_manager_));
   ResourceID_t root_uuid = GenerateRootResourceID("XXXsimulatorXXX");
   ResourceDescriptor* rd_ptr = rtn_root_.mutable_resource_desc();
   rd_ptr->set_uuid(to_string(root_uuid));
@@ -88,6 +92,7 @@ SimulatorBridge::~SimulatorBridge() {
   // when job_map_ is freed.
   delete scheduler_;
   delete messaging_adapter_;
+  delete data_layer_manager_;
 }
 
 ResourceDescriptor* SimulatorBridge::AddMachine(

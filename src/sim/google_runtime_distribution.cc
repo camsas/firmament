@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#include "scheduling/flow/sim/google_runtime_distribution.h"
+#include "sim/google_runtime_distribution.h"
 
 #include <algorithm>
 #include <cmath>
@@ -9,7 +9,7 @@
 #include "base/units.h"
 
 namespace firmament {
-namespace scheduler {
+namespace sim {
 
 // Assumptions from Reiss, et al paper
 // Figure 2, log-log scale of inverted CDF of job durations
@@ -41,5 +41,5 @@ double GoogleRuntimeDistribution::Distribution(double runtime) {
   return std::min(y, 1.0);
 }
 
-} // namespace scheduler
+} // namespace sim
 } // namespace firmament

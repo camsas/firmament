@@ -24,13 +24,11 @@
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_models.h"
 #include "scheduling/flow/cost_model_interface.h"
-#include "scheduling/flow/sim/simulated_quincy_factory.h"
 
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, "
-             "8 = SIMULATED QUINCY");
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID");
 DEFINE_uint64(max_solver_runtime, 100000000,
               "Maximum runtime of the solver in u-sec");
 DEFINE_int64(time_dependent_cost_update_frequency, 10000000ULL,
@@ -115,12 +113,6 @@ FlowScheduler::FlowScheduler(
     case CostModelType::COST_MODEL_VOID:
       cost_model_ = new VoidCostModel(resource_map, task_map);
       VLOG(1) << "Using the void cost model";
-      break;
-    case CostModelType::COST_MODEL_SIMULATED_QUINCY:
-      cost_model_ = SetupSimulatedQuincyCostModel(resource_map, job_map,
-                                                  task_map, knowledge_base_,
-                                                  leaf_res_ids_);
-      VLOG(1) << "Using the simulated Quincy cost model";
       break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "

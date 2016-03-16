@@ -31,6 +31,11 @@ DEFINE_int64(max_sample_queue_size, 100,
 namespace firmament {
 
 KnowledgeBase::KnowledgeBase() {
+  KnowledgeBase(NULL);
+}
+
+KnowledgeBase::KnowledgeBase(DataLayerManagerInterface* data_layer_manager)
+  : data_layer_manager_(data_layer_manager) {
   if (FLAGS_serialize_knowledge_base) {
     serial_machine_samples_.open(FLAGS_serial_machine_samples.c_str(),
                                  ios::out | ios::trunc | ios::binary);
@@ -61,6 +66,8 @@ KnowledgeBase::~KnowledgeBase() {
     delete raw_task_output_;
     serial_task_samples_.close();
   }
+  // We don't have to delete data_layer_manager because it's not owned by
+  // the KnowledgeBase.
 }
 
 void KnowledgeBase::AddMachineSample(

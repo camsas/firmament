@@ -47,9 +47,6 @@ add_library(sim OBJECT ${SIM_SRC} ${SIM_DFS_SRC} ${SIM_PROTOBUF_SRCS}
 target_compile_definitions(sim PRIVATE
   -DSOLVER_DIR="${Firmament_BINARY_DIR}/third_party")
 add_dependencies(sim gtest spooky-hash thread-safe-stl-containers)
-add_library(sim_dfs OBJECT ${SIM_DFS_SRC} ${SIM_PROTOBUF_SRCS}
-  ${BASE_PROTOBUF_HDRS})
-add_dependencies(sim_dfs gtest spooky-hash thread-safe-stl-containers)
 add_library(storage OBJECT ${STORAGE_SRC} ${BASE_PROTOBUF_HDRS}
   ${MESSAGES_PROTOBUF_HDRS})
 add_dependencies(storage gtest spooky-hash thread-safe-stl-containers)
@@ -71,8 +68,6 @@ add_executable(coordinator ${COORDINATOR_SRCS}
   $<TARGET_OBJECTS:misc_trace_generator>
   $<TARGET_OBJECTS:platforms_unix>
   $<TARGET_OBJECTS:scheduling>
-  # XXX(malte): shouldn't need to link simulation stuff with coordinator
-  $<TARGET_OBJECTS:sim_dfs>
   $<TARGET_OBJECTS:storage>
   )
 
@@ -115,7 +110,7 @@ add_library(firmament_scheduling SHARED
   ${MESSAGES_PROTOBUF_SRCS} ${MISC_SRC}
   ${MISC_TRACE_GENERATOR_SRC}
   ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS}
-  ${SIM_DFS_SRC} ${STORAGE_SRC})
+  ${STORAGE_SRC})
 
 add_dependencies(firmament_scheduling glog gflags gtest pb2json pion spooky-hash
   thread-safe-stl-containers)

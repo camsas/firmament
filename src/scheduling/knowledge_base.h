@@ -24,12 +24,14 @@
 #include "base/machine_perf_statistics_sample.pb.h"
 #include "base/task_perf_statistics_sample.pb.h"
 #include "base/task_final_report.pb.h"
+#include "scheduling/data_layer_manager_interface.h"
 
 namespace firmament {
 
 class KnowledgeBase {
  public:
   KnowledgeBase();
+  KnowledgeBase(DataLayerManagerInterface* data_layer_manager);
   virtual ~KnowledgeBase();
   void AddMachineSample(const MachinePerfStatisticsSample& sample);
   void AddTaskSample(const TaskPerfStatisticsSample& sample);
@@ -49,6 +51,10 @@ class KnowledgeBase {
   void LoadKnowledgeBaseFromFile();
   void ProcessTaskFinalReport(const vector<EquivClass_t>& equiv_classes,
                               const TaskFinalReport& report);
+  inline const DataLayerManagerInterface& data_layer_manager() {
+    CHECK_NOTNULL(data_layer_manager_);
+    return *data_layer_manager_;
+  }
 
  protected:
   unordered_map<ResourceID_t, deque<MachinePerfStatisticsSample>,
@@ -66,6 +72,7 @@ class KnowledgeBase {
   ::google::protobuf::io::CodedOutputStream* coded_machine_output_;
   ::google::protobuf::io::ZeroCopyOutputStream* raw_task_output_;
   ::google::protobuf::io::CodedOutputStream* coded_task_output_;
+  DataLayerManagerInterface* data_layer_manager_;
 };
 
 }  // namespace firmament

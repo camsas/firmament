@@ -96,11 +96,11 @@ find_package(Hwloc REQUIRED)
 
 ###############################################################################
 # libhdfs3
-if (${SHUTTLE_ENABLE_HDFS})
+if (${ENABLE_HDFS})
   # libHDFS requires libxml2
   find_package(LibXml2)
   # XXX(malte): add libhdfs3
-endif (${SHUTTLE_ENABLE_HDFS})
+endif (${ENABLE_HDFS})
 
 ###############################################################################
 # pb2json

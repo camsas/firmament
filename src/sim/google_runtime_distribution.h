@@ -1,10 +1,10 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
-#ifndef FIRMAMENT_SCHEDULING_FLOW_SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
-#define FIRMAMENT_SCHEDULING_FLOW_SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
+#ifndef FIRMAMENT_SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
+#define FIRMAMENT_SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
 
 namespace firmament {
-namespace scheduler {
+namespace sim {
 
 class GoogleRuntimeDistribution {
  public:
@@ -20,7 +20,7 @@ class GoogleRuntimeDistribution {
   double power_;
 };
 
-} // namespace scheduler
+} // namespace sim
 } // namespace firmament
 
-#endif // FIRMAMENT_SCHEDULING_FLOW_SIM_GOOGLE_RUNTIME_DISTRIBUTION_H
+#endif // FIRMAMENT_SIM_GOOGLE_RUNTIME_DISTRIBUTION_H

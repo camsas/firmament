@@ -53,7 +53,6 @@ foreach(T IN ITEMS ${ENGINE_TESTS})
     $<TARGET_OBJECTS:misc_trace_generator>
     $<TARGET_OBJECTS:platforms_unix>
     $<TARGET_OBJECTS:scheduling>
-    $<TARGET_OBJECTS:sim_dfs>
     $<TARGET_OBJECTS:storage>)
   target_link_libraries(${TEST_NAME}
     ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}

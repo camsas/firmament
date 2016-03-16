@@ -12,8 +12,8 @@ option(BUILD_TASKLIB "Builds the TaskLib shared library for use with Shuttle." O
 option(ENABLE_CS2 "Downloads, compiles and enables the cs2 solver (academic license only)." ON)
 option(ENABLE_FLOWLESSLY "Downloads, compiles and enables the Flowlessly solver." OFF)
 
-# Shuttle options
-option(SHUTTLE_ENABLE_HDFS "Support HDFS-based locality information in Shuttle." ON)
+# Coordinator options
+option(ENABLE_HDFS "Support HDFS-based locality information in Coordinator." ON)
 
 # The VERBOSE flag controls build system verbosity
 set(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})

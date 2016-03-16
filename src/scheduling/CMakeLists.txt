@@ -27,8 +27,6 @@ set(SCHEDULING_SRC
   scheduling/flow/void_cost_model.cc
   scheduling/flow/wharemap_cost_model.cc
   # XXX(malte): shouldn't always be included
-  scheduling/flow/sim/google_runtime_distribution.cc
-  scheduling/flow/sim/simulated_quincy_cost_model.cc
   scheduling/simple/simple_scheduler.cc
   )
 
@@ -64,7 +62,6 @@ foreach(T IN ITEMS ${SCHEDULING_TESTS})
     $<TARGET_OBJECTS:misc_trace_generator>
     $<TARGET_OBJECTS:platforms_unix>
     $<TARGET_OBJECTS:scheduling>
-    $<TARGET_OBJECTS:sim_dfs>
     $<TARGET_OBJECTS:storage>)
   target_link_libraries(${TEST_NAME}
     ${spooky-hash_BINARY} ${gmock_LIBRARY} ${gmock_MAIN_LIBRARY}

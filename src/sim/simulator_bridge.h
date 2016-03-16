@@ -15,6 +15,7 @@
 #include "platforms/sim/simulated_messaging_adapter.h"
 #include "scheduling/scheduler_interface.h"
 #include "scheduling/scheduling_event_notifier_interface.h"
+#include "sim/dfs/simulated_data_layer_manager.h"
 #include "sim/event_manager.h"
 #include "sim/knowledge_base_simulator.h"
 #include "sim/simulated_wall_time.h"
@@ -218,6 +219,8 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
 
   // Map holding the number of tasks for each job.
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
+
+  SimulatedDataLayerManager* data_layer_manager_;
 
   shared_ptr<KnowledgeBaseSimulator> knowledge_base_;
 
