@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_16ad0f32",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-16T19:22:16Z",
+      "side": 1,
+      "message": "Fine here as the change was already underway, but we should try to contain these sorts of things in their own CLs ideally.",
+      "range": {
+        "startLine": 11,
+        "startChar": 37,
+        "endLine": 12,
+        "endChar": 43
+      },
+      "revId": "7638e2cd146ec5756438522f9b20dcb80d7719ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_76bc836d",
+        "filename": "src/CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-16T19:22:16Z",
+      "side": 1,
+      "message": "Why does the simulator need libhdfs3? Surely it\u0027s using the simulated DFS instead?",
+      "range": {
+        "startLine": 155,
+        "startChar": 0,
+        "endLine": 157,
+        "endChar": 22
+      },
+      "revId": "7638e2cd146ec5756438522f9b20dcb80d7719ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
