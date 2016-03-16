@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_b69fdb02",
+        "filename": "src/scheduling/CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-16T19:18:15Z",
+      "side": 0,
+      "message": "I think this XXX line can go, too? It doesn\u0027t apply to simple_scheduler",
+      "revId": "2e68a3563c65405f7c2212b23de9a226d3141a7d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
