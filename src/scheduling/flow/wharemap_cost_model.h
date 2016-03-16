@@ -80,6 +80,7 @@ class WhareMapCostModel : public CostModelInterface {
   const TaskDescriptor& GetTask(TaskID_t task_id);
   void ComputeMachineTypeHash(const ResourceTopologyNodeDescriptor* rtnd_ptr,
                               size_t* hash);
+  uint64_t GetECOutgoingCapacity(EquivClass_t ec);
   vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
   ResourceID_t MachineResIDForResource(ResourceID_t res_id);
   Cost_t MaxFromVec(const vector<uint64_t>& vec) const;
