@@ -100,25 +100,7 @@ vector<ResourceID_t>* SimulatedQuincyCostModel::GetTaskPreferenceArcs(
 
 void SimulatedQuincyCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
-  // we use ResourceID_t to identify machines
-  ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
-  // 'replicate' blocks
   filesystem_->AddMachine(res_id);
-  // bin it into a rack
-  EquivClass_t current_rack = rack_to_machine_map_.size() - 1;
-  // TODO(malte): N.B.: this currently just sequentially fills up racks of
-  // machines, but if machines are removed, we don't keep track of the empty
-  // slots and bring machines back into them. We should change this in the
-  // future.
-  if (rack_to_machine_map_[current_rack].size() >= machines_per_rack_) {
-    // currrent rack is full
-    current_rack++;
-    rack_to_machine_map_.resize(current_rack + 1);
-    rack_to_machine_map_[current_rack] = list<ResourceID_t>();
-  }
-  rack_to_machine_map_[current_rack].push_back(res_id);
-  machine_to_rack_map_[res_id] = current_rack;
-  VLOG(1) << "Added machine " << res_id << " to rack " << current_rack;
 }
 
 void SimulatedQuincyCostModel::RemoveMachine(ResourceID_t res_id) {
@@ -131,35 +113,13 @@ void SimulatedQuincyCostModel::RemoveMachine(ResourceID_t res_id) {
   }
   // TODO(adam): should really recompute preferences, may lose preference
   // arc to the rack the machine is in; but remove machine events very rare
-  EquivClass_t rack = machine_to_rack_map_[res_id];
-  rack_to_machine_map_[rack].remove(res_id);
-  machine_to_rack_map_.erase(res_id);
 }
 
 void SimulatedQuincyCostModel::BuildTaskFileSet(TaskID_t task_id) {
   file_map_[task_id] = unordered_set<SimulatedDFS::FileID_t>();
   unordered_set<SimulatedDFS::FileID_t>& file_set = file_map_[task_id];
 
-  // Get runtime
-  // XXX(adam): This is a giant hack. Knowledge base stores runtime by
-  // task equivalence classes. Simulator assumes one equivalence class per task.
-  // We DON't do this. But let's pretend we do here.
-  EquivClass_t bogus_equivalence_class = (EquivClass_t)task_id;
-  double avg_runtime =
-    knowledge_base_->GetAvgRuntimeForTEC(bogus_equivalence_class);
-  VLOG(1) << "Task " << task_id << " has runtime " << avg_runtime;
-
-  // Estimate how many blocks input the task has
-  double cumulative_probability =
-    runtime_distribution_->Distribution(avg_runtime);
-  VLOG(2) << "Which has probability " << cumulative_probability;
-  uint64_t num_blocks = block_distribution_->Inverse(cumulative_probability);
-  VLOG(2) << "Giving " << num_blocks << " blocks";
-
-  // Finally, select some files. Sample to get approximately the right number
-  // of blocks.
   file_set = filesystem_->SampleFiles(num_blocks, percent_block_tolerance_);
-  VLOG(1) << "Task " << task_id << " has " << file_set.size() << " inputs.";
 }
 
 void SimulatedQuincyCostModel::ComputeCostsAndPreferredSet(TaskID_t task_id) {
