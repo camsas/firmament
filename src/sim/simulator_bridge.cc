@@ -277,6 +277,8 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr,
   }
   new_task->set_state(TaskDescriptor::CREATED);
   new_task->set_job_id(jd_ptr->uuid());
+  // Set the submission timestamp for the task.
+  new_task->set_submit_time(simulated_time_->GetCurrentTimestamp());
   return new_task;
 }
 

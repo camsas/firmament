@@ -29,6 +29,7 @@ extern "C" {
 #include <SpookyV2.h>
 
 #include "misc/utils.h"
+#include "misc/map-util.h"
 
 DEFINE_string(debug_output_dir, "/tmp/firmament-debug",
               "The directory to write debug output to.");
@@ -233,6 +234,22 @@ JobID_t JobIDFromString(const string& str) {
   string job_uuid = str;
 #endif
   return job_uuid;
+}
+
+
+ResourceID_t MachineResIDForResource(shared_ptr<ResourceMap_t> resource_map,
+                                     ResourceID_t res_id) {
+  ResourceStatus* rs = FindPtrOrNull(*resource_map, res_id);
+  CHECK_NOTNULL(rs);
+  ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
+  while (rtnd->resource_desc().type() != ResourceDescriptor::RESOURCE_MACHINE) {
+    CHECK(rtnd->has_parent_id())
+      << "Non-machine resource " << rtnd->resource_desc().uuid()
+      << " has no parent!";
+    rs = FindPtrOrNull(*resource_map, ResourceIDFromString(rtnd->parent_id()));
+    rtnd = rs->mutable_topology_node();
+  }
+  return ResourceIDFromString(rtnd->resource_desc().uuid());
 }
 
 ResourceID_t ResourceIDFromString(const string& str) {
