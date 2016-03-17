@@ -21,7 +21,7 @@ struct DataLocation {
 
 class DataLayerManagerInterface {
  public:
-  virtual list<DataLocation> GetFileLocations() = 0;
+  virtual list<DataLocation> GetFileLocations(const string& file_path) = 0;
 };
 
 } // namespace firmament

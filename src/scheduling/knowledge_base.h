@@ -55,6 +55,10 @@ class KnowledgeBase {
     CHECK_NOTNULL(data_layer_manager_);
     return *data_layer_manager_;
   }
+  inline DataLayerManagerInterface* mutable_data_layer_manager() {
+    CHECK_NOTNULL(data_layer_manager_);
+    return data_layer_manager_;
+  }
 
  protected:
   unordered_map<ResourceID_t, deque<MachinePerfStatisticsSample>,

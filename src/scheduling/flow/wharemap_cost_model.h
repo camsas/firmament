@@ -82,7 +82,6 @@ class WhareMapCostModel : public CostModelInterface {
                               size_t* hash);
   uint64_t GetECOutgoingCapacity(EquivClass_t ec);
   vector<EquivClass_t>* GetResourceEquivClasses(ResourceID_t res_id);
-  ResourceID_t MachineResIDForResource(ResourceID_t res_id);
   Cost_t MaxFromVec(const vector<uint64_t>& vec) const;
   Cost_t MinFromVec(const vector<uint64_t>& vec) const;
   // Cost to cluster aggregator EC
