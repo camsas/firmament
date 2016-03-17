@@ -114,7 +114,7 @@ add_library(firmament_scheduling SHARED
   ${MISC_TRACE_GENERATOR_SRC}
   ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS})
 
-add_dependencies(firmament_scheduling glog gflags gtest pb2json pion spooky-hash
+add_dependencies(firmament_scheduling gtest pb2json pion spooky-hash
   thread-safe-stl-containers)
 
 target_link_libraries(firmament_scheduling LINK_PUBLIC ${spooky-hash_BINARY}
@@ -172,8 +172,7 @@ set(TASK_LIB_SRCS
 
 add_library(task_lib_inject SHARED ${TASK_LIB_SRCS})
 
-add_dependencies(task_lib_inject glog gflags gtest spooky-hash
-  thread-safe-stl-containers)
+add_dependencies(task_lib_inject gtest spooky-hash thread-safe-stl-containers)
 
 target_link_libraries(task_lib_inject LINK_PUBLIC ${spooky-hash_BINARY}
   ${Firmament_SHARED_LIBRARIES} glog gflags hwloc protobuf)
