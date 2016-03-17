@@ -15,12 +15,12 @@ include(CheckCXXSourceCompiles)
 
 # Compiler configuration
 include(Config)
+# Build options
+include(Options)
 # Third-party dependencies and libraries
 include(ExternalDependencies)
 # Protocol buffer code generation
 include(ProtobufCompile)
-# Build options
-include(Options)
 
 # Linting targets
 include(LintTargets)
