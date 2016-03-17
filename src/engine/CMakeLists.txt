@@ -55,11 +55,9 @@ foreach(T IN ITEMS ${ENGINE_TESTS})
     $<TARGET_OBJECTS:scheduling>
     $<TARGET_OBJECTS:storage>)
   target_link_libraries(${TEST_NAME}
+    ${Firmament_SHARED_LIBRARIES}
     ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
-    ${Firmament_SHARED_LIBRARIES} ${pb2json_LIBRARY} ${pion_LIBRARY} ctemplate
+    ${libhdfs3_LIBRARY} ${pb2json_LIBRARY} ${pion_LIBRARY} ctemplate
     glog gflags hwloc jansson protobuf)
-  if (${ENABLE_HDFS})
-    target_link_libraries(${TEST_NAME} ${libhdfs3_LIBRARY})
-  endif (${ENABLE_HDFS})
   add_test(${TEST_NAME} ${TEST_NAME})
 endforeach(T)
