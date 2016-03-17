@@ -50,6 +50,9 @@ add_dependencies(sim gtest spooky-hash thread-safe-stl-containers)
 add_library(storage OBJECT ${STORAGE_SRC} ${BASE_PROTOBUF_HDRS}
   ${MESSAGES_PROTOBUF_HDRS})
 add_dependencies(storage gtest spooky-hash thread-safe-stl-containers)
+if (${ENABLE_HDFS})
+  add_dependencies(storage libhdfs3)
+endif (${ENABLE_HDFS})
 
 ###############################################################################
 # Coordinator
