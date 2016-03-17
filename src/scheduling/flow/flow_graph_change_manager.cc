@@ -312,8 +312,8 @@ void FlowGraphChangeManager::PurgeChangesBeforeNodeRemoval() {
       }
     } else if (DIMACSChangeArc* chg_arc =
                dynamic_cast<DIMACSChangeArc*>(*rev_it)) {
-      if (nodes_removed.find(new_arc->src_) == nodes_removed.end() &&
-          nodes_removed.find(new_arc->dst_) == nodes_removed.end()) {
+      if (nodes_removed.find(chg_arc->src_) == nodes_removed.end() &&
+          nodes_removed.find(chg_arc->dst_) == nodes_removed.end()) {
         // Only add the change if neither of its arc source or destination
         // nodes are going to be removed.
         new_graph_changes.push_front(chg_arc);
