@@ -80,13 +80,11 @@ add_dependencies(coordinator gtest pb2json pion scripts_job spooky-hash
 # XXX(malte): remove this
 target_compile_definitions(coordinator PRIVATE -D__HTTP_UI__)
 
+# N.B.: ${libhdfs3_LIBRARY} is empty if !${ENABLE_HDFS}
 target_link_libraries(coordinator LINK_PUBLIC
   ${pb2json_LIBRARY} ${pion_LIBRARY} ${spooky-hash_BINARY}
-  ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc jansson
-  protobuf)
-if (${ENABLE_HDFS})
-  target_link_libraries(coordinator ${libhdfs3_LIBRARY})
-endif (${ENABLE_HDFS})
+  ${libhdfs3_LIBRARY} ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc
+  jansson protobuf)
 
 ###############################################################################
 # Google trace data extractor
@@ -154,10 +152,8 @@ target_compile_definitions(simulator PRIVATE
   -DSOLVER_DIR="${Firmament_BINARY_DIR}/third_party")
 
 target_link_libraries(simulator LINK_PUBLIC ${spooky-hash_BINARY}
-  ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc jansson protobuf)
-if (${ENABLE_HDFS})
-  target_link_libraries(simulator ${libhdfs3_LIBRARY})
-endif (${ENABLE_HDFS})
+  ${Firmament_SHARED_LIBRARIES} ${libhdfs3_LIBRARY}
+  ctemplate glog gflags hwloc jansson protobuf)
 
 ###############################################################################
 # TaskLib
