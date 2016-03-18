@@ -8,8 +8,9 @@
 #include <string>
 #include <vector>
 
-#include "base/common.h"
 #include "scheduling/data_layer_manager_interface.h"
+
+#include "base/common.h"
 
 namespace firmament {
 namespace store {
@@ -19,6 +20,9 @@ class HdfsDataLocalityManager : public DataLayerManagerInterface {
   HdfsDataLocalityManager();
   virtual ~HdfsDataLocalityManager();
 
+  list<DataLocation> GetFileLocations();
+
+ private:
   /**
    * Returns the locations of a block.
    * @param filename the file of which the block is part of

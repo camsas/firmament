@@ -11,6 +11,10 @@ include(scheduling/CMakeLists.txt)
 include(sim/CMakeLists.txt)
 include(storage/CMakeLists.txt)
 
+if (${ENABLE_HDFS})
+  add_definitions(-DENABLE_HDFS)
+endif (${ENABLE_HDFS})
+
 # XXX(malte): drop this
 add_definitions(-D__PLATFORM_HAS_BOOST__)
 
