@@ -379,6 +379,27 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
   return -1;
 }
 
+uint64_t UpdateTaskTotalRunTime(const TaskDescriptor& td) {
+  if (td.has_total_run_time()) {
+    return td.total_run_time() + td.finish_time() - td.start_time();
+  } else {
+    return td.finish_time() - td.start_time();
+  }
+}
+
+uint64_t UpdateTaskTotalUnscheduledTime(const TaskDescriptor& td) {
+  uint64_t total_unscheduled_time = 0;
+  if (td.has_total_unscheduled_time()) {
+    total_unscheduled_time = td.total_unscheduled_time();
+  }
+  if (td.has_finish_time()) {
+    total_unscheduled_time += td.start_time() - td.finish_time();
+  } else {
+    total_unscheduled_time += td.start_time() - td.submit_time();
+  }
+  return total_unscheduled_time;
+}
+
 int32_t WaitForFinish(pid_t pid) {
   // Wait for task to terminate
   int status;

@@ -62,12 +62,8 @@ QuincyCostModel::~QuincyCostModel() {
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  // TODO(ionel): Currently, we only consider the time from the last time
-  // the task was submitted. We should get the aggregated unscheduled time.
   const TaskDescriptor& td = GetTask(task_id);
-  int64_t task_unscheduled_for =
-    time_manager_->GetCurrentTimestamp() - td.submit_time();
-  return task_unscheduled_for * FLAGS_quincy_wait_time_factor /
+  return td.total_unscheduled_time() * FLAGS_quincy_wait_time_factor /
     MICROSECONDS_IN_SECOND;
 }
 
@@ -102,17 +98,13 @@ Cost_t QuincyCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
 
 Cost_t QuincyCostModel::TaskContinuationCost(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
-  // TODO(ionel): Currently, we only consider the runtime from the last time
-  // the task was started. We should get the total runtime across all attempts.
-  int64_t total_running_time =
-    time_manager_->GetCurrentTimestamp() - td.start_time();
   ResourceID_t pu_res_id = ResourceIDFromString(td.scheduled_to_resource());
   ResourceID_t machine_res_id =
     MachineResIDForResource(resource_map_, pu_res_id);
   Cost_t cost_to_resource = TaskToResourceNodeCost(task_id, machine_res_id);
   // cost_to_resource corresponds to d* and total_running_time corresponds
   // to p* in the Quincy paper.
-  return cost_to_resource - total_running_time;
+  return cost_to_resource - td.total_run_time();
 }
 
 Cost_t QuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {

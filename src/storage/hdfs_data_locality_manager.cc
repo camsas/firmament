@@ -93,7 +93,8 @@ vector<vector<string> > HdfsDataLocalityManager::GetFileBlockLocations(
   return locations;
 }
 
-list<DataLocation> HdfsDataLocalityManager::GetFileLocations() {
+list<DataLocation> HdfsDataLocalityManager::GetFileLocations(
+    const string& file_path) {
   // TODO(ionel): Implement!
   list<DataLocation> locations;
   return locations;

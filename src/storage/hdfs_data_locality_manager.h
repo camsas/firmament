@@ -20,7 +20,7 @@ class HdfsDataLocalityManager : public DataLayerManagerInterface {
   HdfsDataLocalityManager();
   virtual ~HdfsDataLocalityManager();
 
-  list<DataLocation> GetFileLocations();
+  list<DataLocation> GetFileLocations(const string& file_path);
 
  private:
   /**
