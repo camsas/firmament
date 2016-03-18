@@ -8,7 +8,6 @@
 
 #include "misc/utils.h"
 #include "misc/map-util.h"
-#include "scheduling/flow/dimacs_change_arc.h"
 #include "scheduling/flow/flow_graph_manager.h"
 
 DECLARE_bool(preemption);
@@ -16,11 +15,9 @@ DECLARE_bool(preemption);
 namespace firmament {
 
 OctopusCostModel::OctopusCostModel(shared_ptr<ResourceMap_t> resource_map,
-                                   shared_ptr<TaskMap_t> task_map,
-                                   DIMACSChangeStats* dimacs_stats)
+                                   shared_ptr<TaskMap_t> task_map)
   : resource_map_(resource_map),
-    task_map_(task_map),
-    dimacs_stats_(dimacs_stats) {
+    task_map_(task_map) {
   // Create the cluster aggregator EC, which all machines are members of.
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
   VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;

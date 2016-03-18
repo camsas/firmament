@@ -87,7 +87,7 @@ FlowScheduler::FlowScheduler(
     case CostModelType::COST_MODEL_COCO:
       cost_model_ = new CocoCostModel(resource_map, *resource_topology,
                                       task_map, leaf_res_ids_, knowledge_base_,
-                                      time_manager_, dimacs_stats_);
+                                      time_manager_);
       VLOG(1) << "Using the coco cost model";
       break;
     case CostModelType::COST_MODEL_SJF:
@@ -102,12 +102,11 @@ FlowScheduler::FlowScheduler(
       break;
     case CostModelType::COST_MODEL_WHARE:
       cost_model_ = new WhareMapCostModel(resource_map, task_map,
-                                          knowledge_base_, time_manager_,
-                                          dimacs_stats_);
+                                          knowledge_base_, time_manager_);
       VLOG(1) << "Using the Whare-Map cost model";
       break;
     case CostModelType::COST_MODEL_OCTOPUS:
-      cost_model_ = new OctopusCostModel(resource_map, task_map, dimacs_stats_);
+      cost_model_ = new OctopusCostModel(resource_map, task_map);
       VLOG(1) << "Using the octopus cost model";
       break;
     case CostModelType::COST_MODEL_VOID:

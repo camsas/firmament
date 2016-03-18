@@ -147,7 +147,7 @@ class CostModelInterface {
    * The default Prepare action is a no-op. Cost models can override this if
    * they need to perform preparation actions before GatherStats is invoked.
    */
-  virtual void PrepareStats(FlowGraphNode* accumulator) { }
+  virtual void PrepareStats(FlowGraphNode* accumulator) = 0;
 
   /**
    * Generates updates for arc costs in the resource topology.

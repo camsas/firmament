@@ -20,7 +20,6 @@
 #include "misc/utils.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
-#include "scheduling/flow/dimacs_change_arc.h"
 #include "scheduling/flow/flow_graph_manager.h"
 
 DECLARE_bool(preemption);
@@ -30,13 +29,11 @@ namespace firmament {
 WhareMapCostModel::WhareMapCostModel(shared_ptr<ResourceMap_t> resource_map,
                                      shared_ptr<TaskMap_t> task_map,
                                      shared_ptr<KnowledgeBase> knowledge_base,
-                                     TimeInterface* time_manager,
-                                     DIMACSChangeStats* dimacs_stats)
+                                     TimeInterface* time_manager)
   : resource_map_(resource_map),
     task_map_(task_map),
     knowledge_base_(knowledge_base),
-    time_manager_(time_manager),
-    dimacs_stats_(dimacs_stats) {
+    time_manager_(time_manager) {
   // Create the cluster aggregator EC, which all machines are members of.
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
   VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;

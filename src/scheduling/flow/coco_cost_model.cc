@@ -20,7 +20,6 @@
 #include "misc/map-util.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
-#include "scheduling/flow/dimacs_change_arc.h"
 #include "scheduling/flow/flow_graph_manager.h"
 
 DECLARE_bool(preemption);
@@ -34,15 +33,13 @@ CocoCostModel::CocoCostModel(
     unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>* leaf_res_ids,
     shared_ptr<KnowledgeBase> knowledge_base,
-    TimeInterface* time_manager,
-    DIMACSChangeStats* dimacs_stats)
+    TimeInterface* time_manager)
   : resource_map_(resource_map),
     resource_topology_(resource_topology),
     task_map_(task_map),
     leaf_res_ids_(leaf_res_ids),
     knowledge_base_(knowledge_base),
-    time_manager_(time_manager),
-    dimacs_stats_(dimacs_stats) {
+    time_manager_(time_manager) {
   // Set an initial value for infinity -- this overshoots a bit; would be nice
   // to have a tighter bound based on actual costs observed
   infinity_ = omega_ * (CostVector_t::dimensions_ - 1) +
