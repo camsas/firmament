@@ -177,6 +177,7 @@ void LocalExecutor::HandleTaskCompletion(TaskDescriptor* td,
                                          TaskFinalReport* report) {
   uint64_t end_time = time_manager_->GetCurrentTimestamp();
   td->set_finish_time(end_time);
+  td->set_total_run_time(UpdateTaskTotalRunTime(*td));
   uint64_t start_time = td->start_time();
   report->set_task_id(td->uid());
   report->set_start_time(start_time);
@@ -221,11 +222,14 @@ void LocalExecutor::HandleTaskCompletion(TaskDescriptor* td,
 }
 
 void LocalExecutor::HandleTaskEviction(TaskDescriptor* td) {
+  td->set_finish_time(time_manager_->GetCurrentTimestamp());
+  td->set_total_run_time(UpdateTaskTotalRunTime(*td));
   // TODO(ionel): Implement.
 }
 
 void LocalExecutor::HandleTaskFailure(TaskDescriptor* td) {
   td->set_finish_time(time_manager_->GetCurrentTimestamp());
+  td->set_total_run_time(UpdateTaskTotalRunTime(*td));
   // Nothing to be done other than cleaning up; there is no final
   // report for failed task at this time.
   CleanUpCompletedTask(*td);
@@ -238,6 +242,7 @@ void LocalExecutor::RunTask(TaskDescriptor* td,
   uint64_t start_time = time_manager_->GetCurrentTimestamp();
   // Mark the start time of the task.
   td->set_start_time(start_time);
+  td->set_total_unscheduled_time(UpdateTaskTotalUnscheduledTime(*td));
   // XXX(malte): Move this over to use RunProcessAsync, instead of custom thread
   // spawning.
   boost::unique_lock<boost::mutex> exec_lock(exec_mutex_);

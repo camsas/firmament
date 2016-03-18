@@ -203,6 +203,13 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
                     uint64_t trace_machine_id,
                     const string& root_uuid,
                     ResourceID_t machine_res_id);
+  /**
+   * Computes the new total run time of a task.
+   * NOTE: This method differs from the method with the same name in utils
+   * because it uses simulated_time rather than task_finish_time. This
+   * method should only be used in the simulator.
+   */
+  uint64_t UpdateTaskTotalRunTime(const TaskDescriptor& td);
 
   EventManager* event_manager_;
   SimulatedWallTime* simulated_time_;
