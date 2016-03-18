@@ -44,16 +44,19 @@ void RemoteExecutor::HandleTaskCompletion(TaskDescriptor* td,
                                           TaskFinalReport* report) {
   // All of the actual cleanup is done at the remote coordinator's
   // executor, so here we only update bookkeeping information.
-  uint64_t end_time = time_manager_->GetCurrentTimestamp();
-  td->set_finish_time(end_time);
+  td->set_finish_time(time_manager_->GetCurrentTimestamp());
+  UpdateTaskTotalRunTime(td);
 }
 
 void RemoteExecutor::HandleTaskEviction(TaskDescriptor* td) {
+  td->set_finish_time(time_manager_->GetCurrentTimestamp());
+  UpdateTaskTotalRunTime(td);
   // TODO(ionel): Implement.
 }
 
 void RemoteExecutor::HandleTaskFailure(TaskDescriptor* td) {
   td->set_finish_time(time_manager_->GetCurrentTimestamp());
+  UpdateTaskTotalRunTime(td);
 }
 
 void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
@@ -70,6 +73,7 @@ void RemoteExecutor::RunTask(TaskDescriptor* td, bool firmament_binary) {
   // is some time between now and when we receive the delegation response.
   // This may be unset again later if the delegation failed.
   td->set_start_time(time_manager_->GetCurrentTimestamp());
+  UpdateTaskTotalUnscheduledTime(td);
 }
 
 MessagingChannelInterface<BaseMessage>* RemoteExecutor::GetChannel() {

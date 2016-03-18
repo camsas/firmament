@@ -379,6 +379,28 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
   return -1;
 }
 
+void UpdateTaskTotalRunTime(TaskDescriptor* td_ptr) {
+  if (td_ptr->has_total_run_time()) {
+    td_ptr->set_total_run_time(td_ptr->total_run_time() +
+                               td_ptr->finish_time() - td_ptr->start_time());
+  } else {
+    td_ptr->set_total_run_time(td_ptr->finish_time() - td_ptr->start_time());
+  }
+}
+
+void UpdateTaskTotalUnscheduledTime(TaskDescriptor* td_ptr) {
+  uint64_t total_unscheduled_time = 0;
+  if (td_ptr->has_total_unscheduled_time()) {
+    total_unscheduled_time = td_ptr->total_unscheduled_time();
+  }
+  if (td_ptr->has_finish_time()) {
+    total_unscheduled_time += td_ptr->start_time() - td_ptr->finish_time();
+  } else {
+    total_unscheduled_time += td_ptr->start_time() - td_ptr->submit_time();
+  }
+  td_ptr->set_total_unscheduled_time(total_unscheduled_time);
+}
+
 int32_t WaitForFinish(pid_t pid) {
   // Wait for task to terminate
   int status;

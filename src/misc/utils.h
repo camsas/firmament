@@ -67,6 +67,8 @@ ResourceID_t MachineResIDForResource(shared_ptr<ResourceMap_t> resource_map,
                                      ResourceID_t res_id);
 ResourceID_t ResourceIDFromString(const string& str);
 JobID_t JobIDFromString(const string& str);
+void UpdateTaskTotalRunTime(TaskDescriptor* td_ptr);
+void UpdateTaskTotalUnscheduledTime(TaskDescriptor* td_ptr);
 void SetupResourceID(boost::mt19937 *resource_id, const char *hostname);
 TaskID_t TaskIDFromString(const string& str);
 

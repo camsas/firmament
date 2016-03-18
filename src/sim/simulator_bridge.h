@@ -203,6 +203,7 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
                     uint64_t trace_machine_id,
                     const string& root_uuid,
                     ResourceID_t machine_res_id);
+  void UpdateTaskTotalRunTime(TaskDescriptor* td_ptr);
 
   EventManager* event_manager_;
   SimulatedWallTime* simulated_time_;
