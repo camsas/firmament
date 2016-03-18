@@ -147,7 +147,7 @@ set(pb2json_LIBRARY ${pb2json_SOURCE_DIR}/libpb2json.a)
 ExternalProject_Add(
     pion
     GIT_REPOSITORY https://github.com/splunk/pion.git
-    GIT_TAG 5.0.7
+    GIT_TAG develop
     TIMEOUT 10
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/pion
     BUILD_IN_SOURCE OFF
