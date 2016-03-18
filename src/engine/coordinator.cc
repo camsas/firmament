@@ -33,6 +33,10 @@
 #include "scheduling/simple/simple_scheduler.h"
 #include "storage/simple_object_store.h"
 
+#ifdef ENABLE_HDFS
+#include "storage/hdfs_data_locality_manager.h"
+#endif
+
 // It is necessary to declare listen_uri here, since "node.o" comes after
 // "coordinator.o" in linking order (I *think*).
 DECLARE_uint64(heartbeat_interval);
@@ -73,8 +77,12 @@ Coordinator::Coordinator()
   //resource_desc_.set_storage_engine(object_store_->get_listening_interface());
   local_resource_topology_->mutable_resource_desc()->CopyFrom(
       resource_desc_);
-
+#ifdef ENABLE_HDFS
+  shared_ptr<KnowledgeBase> knowledge_base(new KnowledgeBase(
+      new store::HdfsDataLocalityManager()));
+#else
   shared_ptr<KnowledgeBase> knowledge_base(new KnowledgeBase());
+#endif
   // Set up the scheduler
   if (FLAGS_scheduler == "simple") {
     // Simple random first-available scheduler
