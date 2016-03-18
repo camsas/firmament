@@ -98,8 +98,8 @@ void CoordinatorHTTPUI::AddFooterToTemplate(TemplateDictionary* dict) {
 }
 
 void CoordinatorHTTPUI::HandleCollectlGraphsURI(
-    http::request_ptr& http_request, // NOLINT
-    tcp::connection_ptr& tcp_conn) {  // NOLINT
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Kick off collectl graph generation
@@ -128,12 +128,13 @@ void CoordinatorHTTPUI::HandleCollectlGraphsURI(
 }
 
 void CoordinatorHTTPUI::HandleCollectlRawURI(
-    http::request_ptr& http_request, // NOLINT
-    tcp::connection_ptr& tcp_conn) {  // NOLINT
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
 }
 
-void CoordinatorHTTPUI::HandleJobSubmitURI(http::request_ptr& http_request,  // NOLINT
-                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleJobSubmitURI(
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   // Check if we have a JobDescriptor as part of the POST parameters
   string job_descriptor_param = http_request->get_query("test");
@@ -155,8 +156,8 @@ void CoordinatorHTTPUI::HandleJobSubmitURI(http::request_ptr& http_request,  // 
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLINT
-                                      tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleRootURI(const http::request_ptr& http_request,
+                                      const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Individual to this request
@@ -214,15 +215,15 @@ void CoordinatorHTTPUI::HandleRootURI(http::request_ptr& http_request,  // NOLIN
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleFaviconURI(http::request_ptr& http_request,  // NOLINT
-                                         tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleFaviconURI(const http::request_ptr& http_request,
+                                         const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   ErrorResponse(http::types::RESPONSE_CODE_NOT_FOUND, http_request, tcp_conn);
 }
 
-void CoordinatorHTTPUI::HandleJobsListURI(http::request_ptr& http_request,  // NOLINT
-                                          tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleJobsListURI(const http::request_ptr& http_request,
+                                          const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get job list from coordinator
@@ -259,8 +260,8 @@ void CoordinatorHTTPUI::HandleJobsListURI(http::request_ptr& http_request,  // N
 }
 
 void CoordinatorHTTPUI::HandleJobCompletionURI(
-    http::request_ptr& http_request,  // NOLINT
-    tcp::connection_ptr& tcp_conn) {  // NOLINT
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -299,8 +300,8 @@ void CoordinatorHTTPUI::HandleJobCompletionURI(
 }
 
 
-void CoordinatorHTTPUI::HandleJobURI(http::request_ptr& http_request,  // NOLINT
-                                     tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleJobURI(const http::request_ptr& http_request,
+                                     const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -360,8 +361,9 @@ void CoordinatorHTTPUI::HandleJobURI(http::request_ptr& http_request,  // NOLINT
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleECDetailsURI(http::request_ptr& http_request,  // NOLINT
-                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleECDetailsURI(
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   string ec_id = http_request->get_query("id");
@@ -381,8 +383,9 @@ void CoordinatorHTTPUI::HandleECDetailsURI(http::request_ptr& http_request,  // 
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleReferencesListURI(http::request_ptr& http_request,  // NOLINT
-                                                tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleReferencesListURI(
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get reference list from coordinator's object store
@@ -422,8 +425,9 @@ void CoordinatorHTTPUI::HandleReferencesListURI(http::request_ptr& http_request,
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleResourcesListURI(http::request_ptr& http_request,  // NOLINT
-                                               tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleResourcesListURI(
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -458,8 +462,8 @@ void CoordinatorHTTPUI::HandleResourcesListURI(http::request_ptr& http_request, 
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // NOLINT
-                                          tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleResourceURI(const http::request_ptr& http_request,
+                                          const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -514,8 +518,8 @@ void CoordinatorHTTPUI::HandleResourceURI(http::request_ptr& http_request,  // N
 }
 
 void CoordinatorHTTPUI::HandleResourcesTopologyURI(
-    http::request_ptr& http_request,  // NOLINT
-    tcp::connection_ptr& tcp_conn) {  // NOLINT
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   // Get resource topology from coordinator
   const ResourceTopologyNodeDescriptor& root_rtnd =
@@ -528,8 +532,8 @@ void CoordinatorHTTPUI::HandleResourcesTopologyURI(
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleInjectURI(http::request_ptr& http_request,  // NOLINT
-                                        tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleInjectURI(const http::request_ptr& http_request,
+                                        const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Individual to this request
@@ -542,8 +546,9 @@ void CoordinatorHTTPUI::HandleInjectURI(http::request_ptr& http_request,  // NOL
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleJobStatusURI(http::request_ptr& http_request,  // NOLINT
-                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleJobStatusURI(
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   string job_id = http_request->get_query("id");
@@ -567,8 +572,8 @@ void CoordinatorHTTPUI::HandleJobStatusURI(http::request_ptr& http_request,  // 
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleJobDTGURI(http::request_ptr& http_request,  // NOLINT
-                                        tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleJobDTGURI(const http::request_ptr& http_request,
+                                        const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
 
   string job_id = http_request->get_query("id");
@@ -595,8 +600,8 @@ void CoordinatorHTTPUI::HandleJobDTGURI(http::request_ptr& http_request,  // NOL
   }
 }
 
-void CoordinatorHTTPUI::HandleLogURI(http::request_ptr& http_request,  // NOLINT
-                                     tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleLogURI(const http::request_ptr& http_request,
+                                     const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -617,8 +622,9 @@ void CoordinatorHTTPUI::HandleLogURI(http::request_ptr& http_request,  // NOLINT
   }
 }
 
-void CoordinatorHTTPUI::HandleReferenceURI(http::request_ptr& http_request,  // NOLINT
-                                           tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleReferenceURI(
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -665,8 +671,8 @@ void CoordinatorHTTPUI::HandleReferenceURI(http::request_ptr& http_request,  // 
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLINT
-                                       tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleSchedURI(const http::request_ptr& http_request,
+                                       const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -718,8 +724,9 @@ void CoordinatorHTTPUI::HandleSchedURI(http::request_ptr& http_request,  // NOLI
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleSchedCostModelURI(http::request_ptr& http_request,  // NOLINT
-                                                tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleSchedCostModelURI(
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -737,8 +744,9 @@ void CoordinatorHTTPUI::HandleSchedCostModelURI(http::request_ptr& http_request,
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleSchedFlowGraphURI(http::request_ptr& http_request,  // NOLINT
-                                                tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleSchedFlowGraphURI(
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -766,8 +774,9 @@ void CoordinatorHTTPUI::HandleSchedFlowGraphURI(http::request_ptr& http_request,
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  // NOLINT
-                                            tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleStatisticsURI(
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -877,8 +886,8 @@ void CoordinatorHTTPUI::HandleStatisticsURI(http::request_ptr& http_request,  //
 }
 
 void CoordinatorHTTPUI::HandleTasksListURI(
-    http::request_ptr& http_request,  // NOLINT
-    tcp::connection_ptr& tcp_conn) {  // NOLINT
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get task list from coordinator
@@ -910,8 +919,8 @@ void CoordinatorHTTPUI::HandleTasksListURI(
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLINT
-                                      tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleTaskURI(const http::request_ptr& http_request,
+                                      const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -1065,8 +1074,8 @@ void CoordinatorHTTPUI::HandleTaskURI(http::request_ptr& http_request,  // NOLIN
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NOLINT
-                                         tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleTaskLogURI(const http::request_ptr& http_request,
+                                         const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get resource information from coordinator
@@ -1108,8 +1117,8 @@ void CoordinatorHTTPUI::HandleTaskLogURI(http::request_ptr& http_request,  // NO
   FinishOkResponse(writer);
 }
 
-void CoordinatorHTTPUI::HandleShutdownURI(http::request_ptr& http_request,  // NOLINT
-                                          tcp::connection_ptr& tcp_conn) {  // NOLINT
+void CoordinatorHTTPUI::HandleShutdownURI(const http::request_ptr& http_request,
+                                          const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   string reason = "HTTP request from " + tcp_conn->get_remote_ip().to_string();
@@ -1125,8 +1134,8 @@ void CoordinatorHTTPUI::HandleShutdownURI(http::request_ptr& http_request,  // N
 }
 
 http::response_writer_ptr CoordinatorHTTPUI::InitOkResponse(
-    http::request_ptr http_request,
-    tcp::connection_ptr tcp_conn) {
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   http::response_writer_ptr writer = http::response_writer::create(
       tcp_conn, *http_request, boost::bind(&tcp::connection::finish,
                                            tcp_conn));
@@ -1140,8 +1149,8 @@ http::response_writer_ptr CoordinatorHTTPUI::InitOkResponse(
 
 void CoordinatorHTTPUI::ErrorResponse(
     const unsigned int error_code,
-    http::request_ptr http_request,
-    tcp::connection_ptr tcp_conn) {
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn) {
   http::response_writer_ptr writer = http::response_writer::create(
       tcp_conn, *http_request, boost::bind(&tcp::connection::finish,
                                            tcp_conn));
@@ -1152,8 +1161,8 @@ void CoordinatorHTTPUI::ErrorResponse(
 }
 
 void CoordinatorHTTPUI::RedirectResponse(
-    http::request_ptr http_request,
-    tcp::connection_ptr tcp_conn,
+    const http::request_ptr& http_request,
+    const tcp::connection_ptr& tcp_conn,
     const string& location) {
   http::response_writer_ptr writer = http::response_writer::create(
       tcp_conn, *http_request, boost::bind(&tcp::connection::finish,
@@ -1164,7 +1173,8 @@ void CoordinatorHTTPUI::RedirectResponse(
   writer->send();
 }
 
-void CoordinatorHTTPUI::FinishOkResponse(http::response_writer_ptr writer) {
+void CoordinatorHTTPUI::FinishOkResponse(
+    const http::response_writer_ptr& writer) {
   writer->send();
 }
 
@@ -1272,8 +1282,8 @@ void __attribute__((no_sanitize_address)) CoordinatorHTTPUI::Init(
 }
 
 void CoordinatorHTTPUI::ServeFile(const string& filename,
-                                  tcp::connection_ptr& tcp_conn,
-                                  http::request_ptr& http_request,
+                                  const tcp::connection_ptr& tcp_conn,
+                                  const http::request_ptr& http_request,
                                   http::response_writer_ptr writer) {
   int fd = open(filename.c_str(), O_RDONLY);
   if (fd < 0) {

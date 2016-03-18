@@ -36,70 +36,71 @@ class CoordinatorHTTPUI {
   explicit CoordinatorHTTPUI(shared_ptr<Coordinator> coordinator);
   virtual ~CoordinatorHTTPUI();
   void ErrorResponse(const unsigned int error_code,
-                     http::request_ptr http_request,
-                     tcp::connection_ptr tcp_conn);
-  void FinishOkResponse(http::response_writer_ptr writer);
+                     const http::request_ptr& http_request,
+                     const tcp::connection_ptr& tcp_conn);
+  void FinishOkResponse(const http::response_writer_ptr& writer);
   void Init(uint16_t port);
-  http::response_writer_ptr InitOkResponse(http::request_ptr http_request,
-                                       tcp::connection_ptr tcp_conn);
+  http::response_writer_ptr InitOkResponse(
+      const http::request_ptr& http_request,
+      const tcp::connection_ptr& tcp_conn);
   void LogRequest(const http::request_ptr& http_request);
-  void HandleFaviconURI(http::request_ptr& http_request,  // NOLINT
-                        tcp::connection_ptr& tcp_conn); // NOLINT
-  void HandleCollectlGraphsURI(http::request_ptr& http_request, // NOLINT
-                               tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleCollectlRawURI(http::request_ptr& http_request, // NOLINT
-                            tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleJobCompletionURI(http::request_ptr& http_request, // NOLINT
-                              tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleJobURI(http::request_ptr& http_request, // NOLINT
-                    tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleJobSubmitURI(http::request_ptr& http_request, // NOLINT
-                          tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleJobsListURI(http::request_ptr& http_request, // NOLINT
-                         tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleJobStatusURI(http::request_ptr& http_request, // NOLINT
-                          tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleJobDTGURI(http::request_ptr& http_request, // NOLINT
-                       tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleECDetailsURI(http::request_ptr& http_request, // NOLINT
-                          tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleLogURI(http::request_ptr& http_request, // NOLINT
-                    tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleRootURI(http::request_ptr& http_request, // NOLINT
-                     tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleResourcesListURI(http::request_ptr& http_request, // NOLINT
-                              tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleResourcesTopologyURI(http::request_ptr& http_request, // NOLINT
-                                  tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleResourceURI(http::request_ptr& http_request, // NOLINT
-                         tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleInjectURI(http::request_ptr& http_request, // NOLINT
-                       tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleReferenceURI(http::request_ptr& http_request, // NOLINT
-                          tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleReferencesListURI(http::request_ptr& http_request, // NOLINT
-                               tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleSchedURI(http::request_ptr& http_request, // NOLINT
-                      tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleSchedCostModelURI(http::request_ptr& http_request, // NOLINT
-                               tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleSchedFlowGraphURI(http::request_ptr& http_request, // NOLINT
-                               tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleStatisticsURI(http::request_ptr& http_request, // NOLINT
-                           tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleTasksListURI(http::request_ptr& http_request, // NOLINT
-                          tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleTaskURI(http::request_ptr& http_request, // NOLINT
-                     tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleTaskLogURI(http::request_ptr& http_request, // NOLINT
-                        tcp::connection_ptr& tcp_conn);  // NOLINT
-  void HandleShutdownURI(http::request_ptr& http_request, // NOLINT
-                         tcp::connection_ptr& tcp_conn);  // NOLINT
-  void RedirectResponse(http::request_ptr http_request,  // NOLINT
-                        tcp::connection_ptr tcp_conn,  // NOLINT
+  void HandleFaviconURI(const http::request_ptr& http_request,
+                        const tcp::connection_ptr& tcp_conn);
+  void HandleCollectlGraphsURI(const http::request_ptr& http_request,
+                               const tcp::connection_ptr& tcp_conn);
+  void HandleCollectlRawURI(const http::request_ptr& http_request,
+                            const tcp::connection_ptr& tcp_conn);
+  void HandleJobCompletionURI(const http::request_ptr& http_request,
+                              const tcp::connection_ptr& tcp_conn);
+  void HandleJobURI(const http::request_ptr& http_request,
+                    const tcp::connection_ptr& tcp_conn);
+  void HandleJobSubmitURI(const http::request_ptr& http_request,
+                          const tcp::connection_ptr& tcp_conn);
+  void HandleJobsListURI(const http::request_ptr& http_request,
+                         const tcp::connection_ptr& tcp_conn);
+  void HandleJobStatusURI(const http::request_ptr& http_request,
+                          const tcp::connection_ptr& tcp_conn);
+  void HandleJobDTGURI(const http::request_ptr& http_request,
+                       const tcp::connection_ptr& tcp_conn);
+  void HandleECDetailsURI(const http::request_ptr& http_request,
+                          const tcp::connection_ptr& tcp_conn);
+  void HandleLogURI(const http::request_ptr& http_request,
+                    const tcp::connection_ptr& tcp_conn);
+  void HandleRootURI(const http::request_ptr& http_request,
+                     const tcp::connection_ptr& tcp_conn);
+  void HandleResourcesListURI(const http::request_ptr& http_request,
+                              const tcp::connection_ptr& tcp_conn);
+  void HandleResourcesTopologyURI(const http::request_ptr& http_request,
+                                  const tcp::connection_ptr& tcp_conn);
+  void HandleResourceURI(const http::request_ptr& http_request,
+                         const tcp::connection_ptr& tcp_conn);
+  void HandleInjectURI(const http::request_ptr& http_request,
+                       const tcp::connection_ptr& tcp_conn);
+  void HandleReferenceURI(const http::request_ptr& http_request,
+                          const tcp::connection_ptr& tcp_conn);
+  void HandleReferencesListURI(const http::request_ptr& http_request,
+                               const tcp::connection_ptr& tcp_conn);
+  void HandleSchedURI(const http::request_ptr& http_request,
+                      const tcp::connection_ptr& tcp_conn);
+  void HandleSchedCostModelURI(const http::request_ptr& http_request,
+                               const tcp::connection_ptr& tcp_conn);
+  void HandleSchedFlowGraphURI(const http::request_ptr& http_request,
+                               const tcp::connection_ptr& tcp_conn);
+  void HandleStatisticsURI(const http::request_ptr& http_request,
+                           const tcp::connection_ptr& tcp_conn);
+  void HandleTasksListURI(const http::request_ptr& http_request,
+                          const tcp::connection_ptr& tcp_conn);
+  void HandleTaskURI(const http::request_ptr& http_request,
+                     const tcp::connection_ptr& tcp_conn);
+  void HandleTaskLogURI(const http::request_ptr& http_request,
+                        const tcp::connection_ptr& tcp_conn);
+  void HandleShutdownURI(const http::request_ptr& http_request,
+                         const tcp::connection_ptr& tcp_conn);
+  void RedirectResponse(const http::request_ptr& http_request,
+                        const tcp::connection_ptr& tcp_conn,
                         const string& location);
-  void ServeFile(const string& filename, tcp::connection_ptr& tcp_conn, // NOLINT
-                 http::request_ptr& http_request, // NOLINT
+  void ServeFile(const string& filename, const tcp::connection_ptr& tcp_conn,
+                 const http::request_ptr& http_request,
                  http::response_writer_ptr writer);
   void Shutdown(bool block);
 
