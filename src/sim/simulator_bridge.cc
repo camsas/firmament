@@ -378,6 +378,7 @@ void SimulatorBridge::OnSchedulingDecisionsCompletion(uint64_t timestamp) {
 void SimulatorBridge::OnTaskCompletion(TaskDescriptor* td_ptr,
                                        ResourceDescriptor* rd_ptr) {
   TaskID_t task_id = td_ptr->uid();
+  td_ptr->set_total_run_time(UpdateTaskTotalRunTime(*td_ptr));
   TraceTaskIdentifier* ti_ptr = FindOrNull(task_id_to_identifier_, task_id);
   CHECK_NOTNULL(ti_ptr);
   trace_task_id_to_td_.erase(*ti_ptr);
@@ -402,6 +403,7 @@ void SimulatorBridge::OnTaskEviction(TaskDescriptor* td_ptr,
   uint64_t task_end_time = td_ptr->finish_time();
   uint64_t task_executed_for =
     simulated_time_->GetCurrentTimestamp() - td_ptr->start_time();
+  td_ptr->set_total_run_time(UpdateTaskTotalRunTime(*td_ptr));
   uint64_t* runtime_ptr = FindOrNull(task_runtime_, *ti_ptr);
   if (runtime_ptr != NULL) {
     // NOTE: We assume that the work conducted by a task until eviction is
@@ -411,6 +413,7 @@ void SimulatorBridge::OnTaskEviction(TaskDescriptor* td_ptr,
     // The task didn't finish in the trace.
   }
   td_ptr->set_start_time(0);
+  td_ptr->set_submit_time(simulated_time_->GetCurrentTimestamp());
   event_manager_->RemoveTaskEndRuntimeEvent(*ti_ptr, task_end_time);
 }
 
@@ -439,6 +442,7 @@ void SimulatorBridge::OnTaskPlacement(TaskDescriptor* td_ptr,
     FindOrNull(task_id_to_identifier_, td_ptr->uid());
   CHECK_NOTNULL(ti_ptr);
   td_ptr->set_start_time(simulated_time_->GetCurrentTimestamp());
+  td_ptr->set_total_unscheduled_time(UpdateTaskTotalUnscheduledTime(*td_ptr));
   AddTaskEndEvent(*ti_ptr, td_ptr);
 }
 
@@ -548,6 +552,16 @@ void SimulatorBridge::SetupMachine(
 
 void SimulatorBridge::ScheduleJobs(SchedulerStats* scheduler_stats) {
   scheduler_->ScheduleAllJobs(scheduler_stats);
+}
+
+uint64_t SimulatorBridge::UpdateTaskTotalRunTime(const TaskDescriptor& td) {
+  uint64_t task_executed_for =
+    simulated_time_->GetCurrentTimestamp() - td.start_time();
+  if (td.has_total_run_time()) {
+    return td.total_run_time() + task_executed_for;
+  } else {
+    return task_executed_for;
+  }
 }
 
 } // namespace sim
