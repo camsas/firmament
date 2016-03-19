@@ -12,10 +12,12 @@
 namespace firmament {
 
 struct DataLocation {
-  DataLocation(ResourceID_t machine_res_id, uint64_t size_bytes)
-    : machine_res_id_(machine_res_id), size_bytes_(size_bytes) {
+  DataLocation(ResourceID_t machine_res_id, uint64_t block_id,
+               uint64_t size_bytes) : machine_res_id_(machine_res_id),
+    block_id_(block_id), size_bytes_(size_bytes) {
   }
   ResourceID_t machine_res_id_;
+  uint64_t block_id_;
   uint64_t size_bytes_;
 };
 
