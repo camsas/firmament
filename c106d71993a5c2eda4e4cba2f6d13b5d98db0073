@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_57e4da0c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T22:15:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_7cb9bd2d",
+      "revId": "c106d71993a5c2eda4e4cba2f6d13b5d98db0073",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_3caf45e5",
         "filename": "src/CMakeLists.txt",
         "patchSetId": 1
