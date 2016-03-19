@@ -522,19 +522,6 @@ void WhareMapCostModel::AddTask(TaskID_t task_id) {
   // No-op in the WhareMap cost model
 }
 
-ResourceID_t WhareMapCostModel::MachineResIDForResource(ResourceID_t res_id) {
-  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
-  CHECK_NOTNULL(rs);
-  ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
-  while (rtnd->resource_desc().type() != ResourceDescriptor::RESOURCE_MACHINE) {
-    CHECK(rtnd->has_parent_id()) << "Non-machine resource "
-      << rtnd->resource_desc().uuid() << " has no parent!";
-    rs = FindPtrOrNull(*resource_map_, ResourceIDFromString(rtnd->parent_id()));
-    rtnd = rs->mutable_topology_node();
-  }
-  return ResourceIDFromString(rtnd->resource_desc().uuid());
-}
-
 void WhareMapCostModel::RecordMECtoPsPIMapping(
     pair<EquivClass_t, EquivClass_t> ec_pair,
     const TaskFinalReport& task_report) {
@@ -647,7 +634,8 @@ void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
     const TaskDescriptor& td = GetTask(task_id);
     CHECK(td.has_scheduled_to_resource());
     ResourceID_t res_id = ResourceIDFromString(td.scheduled_to_resource());
-    ResourceID_t machine_res_id = MachineResIDForResource(res_id);
+    ResourceID_t machine_res_id =
+      MachineResIDForResource(resource_map_, res_id);
     EquivClass_t* mec = FindOrNull(machine_to_ec_, machine_res_id);
     CHECK_NOTNULL(mec);
     // Add the Whare-M information to the psi_map_

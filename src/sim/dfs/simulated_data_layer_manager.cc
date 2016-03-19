@@ -27,6 +27,8 @@ DEFINE_double(simulated_quincy_runtime_factor, 0.298,
 DEFINE_double(simulated_quincy_runtime_power, -0.2627,
               "Runtime power law distribution: factor parameter.");
 // Input size distribution. See Evaluation Plan for derivation of defaults.
+DEFINE_uint64(simulated_quincy_input_percent_over_tolerance, 50,
+              "Percentage # of blocks allowed to exceed the value predicted.");
 DEFINE_uint64(simulated_quincy_input_percent_min, 50,
               "Percentage of input files which are minimum # of blocks.");
 DEFINE_double(simulated_quincy_input_min_blocks, 1,
@@ -65,10 +67,34 @@ SimulatedDataLayerManager::~SimulatedDataLayerManager() {
   delete dfs_;
 }
 
-list<DataLocation> SimulatedDataLayerManager::GetFileLocations() {
+void SimulatedDataLayerManager::AddMachine(ResourceID_t machine_res_id) {
+  // TODO(ionel): Implement!
+  dfs_->AddMachine(machine_res_id);
+}
+
+list<DataLocation> SimulatedDataLayerManager::GetFileLocations(
+    const string& file_path) {
   // TODO(ionel): Implement!
   list<DataLocation> test;
   return test;
+}
+
+void SimulatedDataLayerManager::RemoveMachine(ResourceID_t machine_res_id) {
+  // TODO(ionel): Implement!
+  dfs_->RemoveMachine(machine_res_id);
+}
+
+void SimulatedDataLayerManager::AddFilesForTask(TaskID_t task_id,
+                                                double avg_runtime) {
+  double cumulative_probability = runtime_dist_->Distribution(avg_runtime);
+  uint64_t num_blocks = file_block_dist_->Inverse(cumulative_probability);
+  // Finally, select some files. Sample to get approximately the right number
+  // of blocks.
+  dfs_->SampleFiles(num_blocks,
+                    FLAGS_simulated_quincy_input_percent_over_tolerance);
+}
+
+void SimulatedDataLayerManager::RemoveFilesForTask(TaskID_t task_id) {
 }
 
 } // namespace sim
