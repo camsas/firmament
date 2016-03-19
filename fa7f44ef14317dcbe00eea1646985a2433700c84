@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_9c5f590e",
+        "filename": "src/engine/executors/local_executor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-19T00:07:41Z",
+      "side": 1,
+      "message": "Should this be set to the total runtime?",
+      "range": {
+        "startLine": 217,
+        "startChar": 0,
+        "endLine": 218,
+        "endChar": 62
+      },
+      "revId": "fa7f44ef14317dcbe00eea1646985a2433700c84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_bc9b35c8",
+        "filename": "src/misc/utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-19T00:07:41Z",
+      "side": 1,
+      "message": "Hmm, I\u0027m not a super huge fan of this interface. Maybe we can instead return a uint64_t, and compute the new value and return it? That way it becomes clear at the call site what part of the TD changes (and we better match the protobuf API)\n\nIndeed, if we changed this, we could pass the TD by const ref.",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 71,
+        "endChar": 60
+      },
+      "revId": "fa7f44ef14317dcbe00eea1646985a2433700c84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_dca0f1f6",
+        "filename": "src/sim/simulator_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-19T00:07:41Z",
+      "side": 1,
+      "message": "See comments on interface in utils.h.\n\nWhy do we need to redefine this here -- can we not just use the implementation from utils.h?",
+      "revId": "fa7f44ef14317dcbe00eea1646985a2433700c84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
