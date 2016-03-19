@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_d7bfeace",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T22:28:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_dc79d194",
+      "revId": "149b2016112a90cc94416eda8becc99fd5ad697a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_5c3ec1b9",
         "filename": "src/scheduling/flow/quincy_cost_model.h",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2016-03-19T04:16:07Z",
       "side": 1,
       "message": "Why do we need to store this in the struct? Is it expensive to compute or unavailable as a function of the data_size_?",
+      "revId": "149b2016112a90cc94416eda8becc99fd5ad697a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_f7b4e6f3",
+        "filename": "src/scheduling/flow/quincy_cost_model.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T22:28:33Z",
+      "side": 1,
+      "message": "Computing the cost can be pretty expensive for racks (we would have to compute the cost for every machine in the rack) or the cluster aggregator (every machine in the cluster).\nHowever, I think with the latest design I don\u0027t need the data_size_, so I may be able to get rid of the struct. I\u0027ll try to do that once we push the diff related to updating the costs.",
+      "parentUuid": "3a6ff13c_5c3ec1b9",
       "revId": "149b2016112a90cc94416eda8becc99fd5ad697a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_37ce7e84",
+        "filename": "src/scheduling/flow/quincy_cost_model.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T22:28:33Z",
+      "side": 1,
+      "message": "Yes, they compute the information from scratch and the data_on_machines is expected to be an empty map.",
+      "parentUuid": "3a6ff13c_7c4b7d59",
+      "revId": "149b2016112a90cc94416eda8becc99fd5ad697a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_9c48395d",
         "filename": "src/scheduling/flow/quincy_cost_model.h",
         "patchSetId": 2
@@ -64,6 +118,30 @@
       "writtenOn": "2016-03-19T04:16:07Z",
       "side": 1,
       "message": "no space",
+      "range": {
+        "startLine": 106,
+        "startChar": 40,
+        "endLine": 106,
+        "endChar": 41
+      },
+      "revId": "149b2016112a90cc94416eda8becc99fd5ad697a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_17ba62de",
+        "filename": "src/scheduling/flow/quincy_cost_model.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T22:28:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_9c48395d",
       "range": {
         "startLine": 106,
         "startChar": 40,
@@ -99,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_57cbfa71",
+        "filename": "src/scheduling/flow/quincy_cost_model.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T22:28:33Z",
+      "side": 1,
+      "message": "Because at the moment we bin machines into racks in the cost model. We can change the code in the future so that the DLM has a method GetRackForMachine.",
+      "parentUuid": "3a6ff13c_bc74159d",
+      "range": {
+        "startLine": 141,
+        "startChar": 0,
+        "endLine": 142,
+        "endChar": 54
+      },
+      "revId": "149b2016112a90cc94416eda8becc99fd5ad697a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_dc6391af",
         "filename": "src/sim/dfs/simulated_data_layer_manager.h",
         "patchSetId": 2
@@ -110,6 +212,24 @@
       "writtenOn": "2016-03-19T04:16:07Z",
       "side": 1,
       "message": "Why does the DLM need to know the average runtime?",
+      "revId": "149b2016112a90cc94416eda8becc99fd5ad697a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_b7ba6edf",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T22:28:33Z",
+      "side": 1,
+      "message": "This is leftover from the old simulated Quincy cost model. I\u0027ve just left it in so that I could copy some code from there and still make it compile.\nI will fix it in an upcoming diff.",
+      "parentUuid": "3a6ff13c_dc6391af",
       "revId": "149b2016112a90cc94416eda8becc99fd5ad697a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
