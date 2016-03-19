@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_97d8121f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T23:37:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_17b182f8",
+      "range": {
+        "startLine": 11,
+        "startChar": 15,
+        "endLine": 11,
+        "endChar": 20
+      },
+      "revId": "b89e973ecd6dce794d69f39600d7521b36fa9419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_97c1f230",
         "filename": "src/scheduling/flow/quincy_cost_model.cc",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2016-03-19T23:31:32Z",
       "side": 1,
       "message": "Why is this TODO here? We set the cluster cost below.",
+      "revId": "b89e973ecd6dce794d69f39600d7521b36fa9419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_57ce9a5b",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 505,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T23:37:59Z",
+      "side": 1,
+      "message": "Leftover. I\u0027ve removed it now.",
+      "parentUuid": "3a6ff13c_97c1f230",
       "revId": "b89e973ecd6dce794d69f39600d7521b36fa9419",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_37d11efc",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 524,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T23:37:59Z",
+      "side": 1,
+      "message": "Because GetFileLocations is not yet a constant method. I can revisit this code once I implement GetFileLocations.",
+      "parentUuid": "3a6ff13c_b7dd0e17",
+      "range": {
+        "startLine": 523,
+        "startChar": 0,
+        "endLine": 524,
+        "endChar": 46
+      },
+      "revId": "b89e973ecd6dce794d69f39600d7521b36fa9419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_f7ab0687",
         "filename": "src/scheduling/flow/quincy_cost_model.h",
         "patchSetId": 1
@@ -76,6 +142,30 @@
       "writtenOn": "2016-03-19T23:31:32Z",
       "side": 1,
       "message": "I presume the return value is not a copy of task_pref_machines, but just a pointer to it?",
+      "range": {
+        "startLine": 129,
+        "startChar": 0,
+        "endLine": 130,
+        "endChar": 68
+      },
+      "revId": "b89e973ecd6dce794d69f39600d7521b36fa9419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_17ed02c4",
+        "filename": "src/scheduling/flow/quincy_cost_model.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T23:37:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_f7ab0687",
       "range": {
         "startLine": 129,
         "startChar": 0,
