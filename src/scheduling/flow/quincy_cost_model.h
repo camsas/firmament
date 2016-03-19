@@ -82,20 +82,11 @@ class QuincyCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
-  uint64_t ComputeDataOnMachines(
+  uint64_t ComputeDataStatistics(
       const TaskDescriptor& td,
       unordered_map<ResourceID_t, uint64_t,
-        boost::hash<boost::uuids::uuid>>* data_on_machines);
-  void ComputeDataOnRacks(
-      const TaskDescriptor& td,
-      const unordered_map<ResourceID_t, uint64_t,
-        boost::hash<boost::uuids::uuid>>& data_on_machines,
+        boost::hash<boost::uuids::uuid>>* data_on_machines,
       unordered_map<EquivClass_t, uint64_t>* data_on_racks);
-  int64_t ComputeTransferCostToMachine(
-      ResourceID_t res_id,
-      uint64_t input_size,
-      uint64_t data_on_machine,
-      const unordered_map<EquivClass_t, uint64_t>& data_on_racks);
   int64_t ComputeTransferCostToMachine(uint64_t remote_data,
                                        uint64_t data_on_rack);
   int64_t ComputeTransferCostToRack(
@@ -105,9 +96,51 @@ class QuincyCostModel : public CostModelInterface {
       const unordered_map<ResourceID_t, uint64_t,
         boost::hash<boost::uuids::uuid>>& data_on_machines);
   void ConstructTaskPreferedSet(TaskID_t task_id);
-  void RemoveMachineFromRack(ResourceID_t res_id, EquivClass_t rack_ec);
+  void RemoveMachineFromRack(ResourceID_t res_id, EquivClass_t rack_ec,
+                             bool* rack_removed);
   void RemovePreferencesToMachine(ResourceID_t res_id);
   void RemovePreferencesToRack(EquivClass_t ec);
+  void UpdateMachineBlocks(
+      const DataLocation& location,
+      unordered_map<ResourceID_t, unordered_map<uint64_t, uint64_t>,
+        boost::hash<boost::uuids::uuid>>* data_on_machines);
+  void UpdateRackBlocks(
+      const DataLocation& location,
+      unordered_map<EquivClass_t,
+        unordered_map<uint64_t, uint64_t>>* data_on_racks);
+  /**
+   * Updates a task's cached DataCosts structs that have been affected by a
+   * change (e.g., machine addition or removal) in a rack.
+   * @param td the descriptor of the task
+   * @param ec_changed the rack in which the machines changed
+   */
+  void UpdateTaskDataCosts(const TaskDescriptor& td, EquivClass_t ec_changed);
+  void UpdateTaskDataCostForRack(const TaskDescriptor& td,
+                                 EquivClass_t rack_ec);
+
+  /**
+   * Depending on how much data the machine has, the method adds, updates
+   * or removes the machine from the prefered set.
+   * @param input_size the total input of the task
+   * @param machine_res_id the resource descriptor of the machine
+   * @param data_on_machine the amount of task's data (in bytes) the machine
+   * stores
+   * @param transfer_cost the cost to transfer the non-local data
+   * @param task_pref_machines the map storing the task's machine preferences
+   * @return an updated version of the task's machine preference map
+   */
+  unordered_map<ResourceID_t, DataCost, boost::hash<boost::uuids::uuid>>*
+    UpdateTaskPreferedMachineList(
+      TaskID_t task_id,
+      uint64_t input_size,
+      ResourceID_t machine_res_id,
+      uint64_t data_on_machine,
+      int64_t transfer_cost,
+      unordered_map<ResourceID_t, DataCost, boost::hash<boost::uuids::uuid>>*
+      task_pref_machines);
+  void UpdateTaskPreferedRacksList(
+      TaskID_t task_id, uint64_t input_size, uint64_t data_on_rack,
+      int64_t worst_rack_cost, EquivClass_t rack_ec);
   inline uint64_t GetNumSchedulableSlots(ResourceID_t res_id) {
     ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
     CHECK_NOTNULL(rs);
