@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_d78d2a33",
+        "filename": "src/engine/executors/local_executor.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T22:50:15Z",
+      "side": 1,
+      "message": "No.",
+      "parentUuid": "3a6ff13c_9c5f590e",
+      "range": {
+        "startLine": 217,
+        "startChar": 0,
+        "endLine": 218,
+        "endChar": 62
+      },
+      "revId": "fa7f44ef14317dcbe00eea1646985a2433700c84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_bc9b35c8",
         "filename": "src/misc/utils.h",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_d7a60ac1",
+        "filename": "src/misc/utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T22:50:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_bc9b35c8",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 71,
+        "endChar": 60
+      },
+      "revId": "fa7f44ef14317dcbe00eea1646985a2433700c84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_dca0f1f6",
         "filename": "src/sim/simulator_bridge.h",
         "patchSetId": 1
@@ -59,6 +107,24 @@
       "writtenOn": "2016-03-19T00:07:41Z",
       "side": 1,
       "message": "See comments on interface in utils.h.\n\nWhy do we need to redefine this here -- can we not just use the implementation from utils.h?",
+      "revId": "fa7f44ef14317dcbe00eea1646985a2433700c84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_37959e40",
+        "filename": "src/sim/simulator_bridge.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-19T22:50:15Z",
+      "side": 1,
+      "message": "The method from utils.h make use of the finish_time. However, in the simulator we can\u0027t use finish_time because finish_time is used as a marker for a task finish event. At the point this method is called we haven\u0027t yet removed the finish event for the task so we can\u0027t reset the finish_time to the current time.",
+      "parentUuid": "3a6ff13c_dca0f1f6",
       "revId": "fa7f44ef14317dcbe00eea1646985a2433700c84",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
