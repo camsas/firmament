@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_7cb9bd2d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-19T00:16:06Z",
+      "side": 1,
+      "message": "Mention interface fix in data locality manager in commit message",
+      "revId": "c106d71993a5c2eda4e4cba2f6d13b5d98db0073",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_3caf45e5",
+        "filename": "src/CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-19T00:16:06Z",
+      "side": 1,
+      "message": "This is fine for now. There is a more principled way to do this in CMake via a generated header file (see https://cmake.org/cmake-tutorial/).",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 22
+      },
+      "revId": "c106d71993a5c2eda4e4cba2f6d13b5d98db0073",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
