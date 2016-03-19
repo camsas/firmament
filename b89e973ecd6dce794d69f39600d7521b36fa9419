@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_17b182f8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-19T23:31:32Z",
+      "side": 1,
+      "message": "was",
+      "range": {
+        "startLine": 11,
+        "startChar": 15,
+        "endLine": 11,
+        "endChar": 20
+      },
+      "revId": "b89e973ecd6dce794d69f39600d7521b36fa9419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_97c1f230",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 505,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-19T23:31:32Z",
+      "side": 1,
+      "message": "Why is this TODO here? We set the cluster cost below.",
+      "revId": "b89e973ecd6dce794d69f39600d7521b36fa9419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_b7dd0e17",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 524,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-19T23:31:32Z",
+      "side": 1,
+      "message": "Why does this read-only access require a mutable DLM?",
+      "range": {
+        "startLine": 523,
+        "startChar": 0,
+        "endLine": 524,
+        "endChar": 46
+      },
+      "revId": "b89e973ecd6dce794d69f39600d7521b36fa9419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_f7ab0687",
+        "filename": "src/scheduling/flow/quincy_cost_model.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-19T23:31:32Z",
+      "side": 1,
+      "message": "I presume the return value is not a copy of task_pref_machines, but just a pointer to it?",
+      "range": {
+        "startLine": 129,
+        "startChar": 0,
+        "endLine": 130,
+        "endChar": 68
+      },
+      "revId": "b89e973ecd6dce794d69f39600d7521b36fa9419",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
