@@ -93,6 +93,12 @@ vector<vector<string> > HdfsDataLocalityManager::GetFileBlockLocations(
   return locations;
 }
 
+list<DataLocation> HdfsDataLocalityManager::GetFileLocations() {
+  // TODO(ionel): Implement!
+  list<DataLocation> locations;
+  return locations;
+}
+
 uint32_t HdfsDataLocalityManager::GetNumberOfBlocks(const string& filename) {
   hdfsFileInfo* file_stat = hdfsGetPathInfo(fs_, filename.c_str());
   if (!file_stat) {
