@@ -23,7 +23,10 @@ struct DataLocation {
 
 class DataLayerManagerInterface {
  public:
-  virtual list<DataLocation> GetFileLocations(const string& file_path) = 0;
+  virtual void AddMachine(const string& hostname, ResourceID_t res_id) = 0;
+  virtual void GetFileLocations(const string& file_path,
+                                list<DataLocation>* locations) = 0;
+  virtual void RemoveMachine(const string& hostname) = 0;
 };
 
 } // namespace firmament

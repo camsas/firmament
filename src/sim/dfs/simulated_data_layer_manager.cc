@@ -67,21 +67,20 @@ SimulatedDataLayerManager::~SimulatedDataLayerManager() {
   delete dfs_;
 }
 
-void SimulatedDataLayerManager::AddMachine(ResourceID_t machine_res_id) {
+void SimulatedDataLayerManager::AddMachine(const string& hostname,
+                                           ResourceID_t machine_res_id) {
   // TODO(ionel): Implement!
   dfs_->AddMachine(machine_res_id);
 }
 
-list<DataLocation> SimulatedDataLayerManager::GetFileLocations(
-    const string& file_path) {
+void SimulatedDataLayerManager::GetFileLocations(
+    const string& file_path, list<DataLocation>* locations) {
   // TODO(ionel): Implement!
-  list<DataLocation> test;
-  return test;
 }
 
-void SimulatedDataLayerManager::RemoveMachine(ResourceID_t machine_res_id) {
+void SimulatedDataLayerManager::RemoveMachine(const string& hostname) {
   // TODO(ionel): Implement!
-  dfs_->RemoveMachine(machine_res_id);
+  //  dfs_->RemoveMachine(machine_res_id);
 }
 
 void SimulatedDataLayerManager::AddFilesForTask(TaskID_t task_id,

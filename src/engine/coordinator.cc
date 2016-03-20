@@ -70,7 +70,7 @@ Coordinator::Coordinator()
     hostname_(boost::asio::ip::host_name()),
     time_manager_(new WallTime) {
   // Start up a coordinator according to the platform parameter
-  string desc_name = "Coordinator on " + hostname_;
+  string desc_name = hostname_;
   resource_desc_.set_uuid(to_string(uuid_));
   resource_desc_.set_friendly_name(desc_name);
   resource_desc_.set_type(ResourceDescriptor::RESOURCE_COORDINATOR);
