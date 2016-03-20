@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_3ddd7f71",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-20T21:58:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_9d3113ef",
+      "range": {
+        "startLine": 10,
+        "startChar": 4,
+        "endLine": 10,
+        "endChar": 29
+      },
+      "revId": "69f19b0adb19e0e5001a13c2afbf637c9a35ff6f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_bd4def74",
         "filename": "src/scheduling/data_layer_manager_interface.h",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2016-03-20T20:17:56Z",
       "side": 1,
       "message": "Won\u0027t it make more sense to pass a pointer to a caller-allocated list structure and insert into it?",
+      "revId": "69f19b0adb19e0e5001a13c2afbf637c9a35ff6f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_bde96f1c",
+        "filename": "src/scheduling/data_layer_manager_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-20T21:58:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_bd4def74",
       "revId": "69f19b0adb19e0e5001a13c2afbf637c9a35ff6f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_fdf3e707",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-20T21:58:54Z",
+      "side": 1,
+      "message": "I use it in different methods. We would have to have a dlm field in the QuincyCostModel. I would keep the code as it is for now because we only use it in three places. If we start using it more then I can add the field.",
+      "parentUuid": "3a6ff13c_fd576700",
+      "revId": "69f19b0adb19e0e5001a13c2afbf637c9a35ff6f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_dd52ab12",
         "filename": "src/scheduling/flow/quincy_cost_model.cc",
         "patchSetId": 1
@@ -70,6 +130,24 @@
       "writtenOn": "2016-03-20T20:17:56Z",
       "side": 1,
       "message": "Add comment: // N.B.: this assumes that the friendly_name field of the RD contains the hostname for machine-type RDs",
+      "revId": "69f19b0adb19e0e5001a13c2afbf637c9a35ff6f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_ddee2b22",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-20T21:58:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_dd52ab12",
       "revId": "69f19b0adb19e0e5001a13c2afbf637c9a35ff6f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
