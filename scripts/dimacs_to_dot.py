@@ -104,7 +104,7 @@ for line in open(inputfile).readlines():
 try:
   for line in open(flowinputfile).readlines():
     fields = re.findall(r"[\w']+", line)
-    if fields[0] == 'c':
+    if fields == None or len(fields) == 0 or fields[0] == 'c':
       # skip comments
       continue
     if fields[0] == 's':
