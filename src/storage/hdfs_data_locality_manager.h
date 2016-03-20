@@ -20,9 +20,17 @@ class HdfsDataLocalityManager : public DataLayerManagerInterface {
   HdfsDataLocalityManager();
   virtual ~HdfsDataLocalityManager();
 
-  list<DataLocation> GetFileLocations(const string& file_path);
+  void AddMachine(const string& hostname, ResourceID_t res_id);
+  /**
+   * Returns the locations of all the blocks of a file.
+   * @param filename the file for which to return locations
+   * @param a pointer to a list to which the locations should be added
+   */
+  void GetFileLocations(const string& file_path, list<DataLocation>* locations);
+  void RemoveMachine(const string& hostname);
 
  private:
+  uint64_t GenerateBlockID(const string& file_path, int32_t block_index);
   /**
    * Returns the locations of a block.
    * @param filename the file of which the block is part of
@@ -32,21 +40,16 @@ class HdfsDataLocalityManager : public DataLayerManagerInterface {
   vector<string> GetBlockLocations(const string& filename, int32_t block_index);
 
   /**
-   * Returns the locations of all the blocks of a file.
-   * @param filename the file for which to return locations
-   * @return a containing a vector of locations for every block
-   */
-  vector<vector<string> > GetFileBlockLocations(const string& filename);
-
-  /**
    * Returns the number of blocks a file has.
    * @param filename the file for which to return the number of blocks
    * @return number of blocks
    */
   uint32_t GetNumberOfBlocks(const string& filename);
+  ResourceID_t HostToResourceID(const string& hostname);
 
  private:
   hdfsFS fs_;
+  unordered_map<string, ResourceID_t> hostname_to_res_id_;
 };
 
 } // namespace store

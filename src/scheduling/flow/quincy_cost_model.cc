@@ -193,6 +193,10 @@ vector<EquivClass_t>* QuincyCostModel::GetEquivClassToEquivClassesArcs(
 void QuincyCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
+  // N.B.: this assumes that the friendly_name field of the RD contains the
+  // hostname for machine-type RDs.
+  knowledge_base_->mutable_data_layer_manager()->AddMachine(
+      rtnd_ptr->resource_desc().friendly_name(), res_id);
   EquivClass_t rack_ec;
   if (racks_with_spare_links_.size() > 0) {
     // Assign the machine to a rack that has spare links.
@@ -241,6 +245,10 @@ void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
       UpdateTaskCosts(*(id_td.second), *ec_ptr);
     }
   }
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  knowledge_base_->mutable_data_layer_manager()->RemoveMachine(
+      rs->topology_node().resource_desc().friendly_name());
 }
 
 void QuincyCostModel::RemovePreferencesToMachine(ResourceID_t res_id) {
@@ -343,8 +351,8 @@ uint64_t QuincyCostModel::ComputeDataStatistics(
   uint64_t input_size = 0;
   for (auto& dependency : td.dependencies()) {
     input_size += dependency.size();
-    list<DataLocation> locations =
-      data_layer->GetFileLocations(dependency.location());
+    list<DataLocation> locations;
+    data_layer->GetFileLocations(dependency.location(), &locations);
     for (auto& location : locations) {
       UpdateMachineBlocks(location, &blocks_on_machines);
       UpdateRackBlocks(location, &blocks_on_racks);
@@ -509,9 +517,9 @@ void QuincyCostModel::UpdateTaskCostForRack(const TaskDescriptor& td,
   uint64_t input_size = 0;
   for (auto& dependency : td.dependencies()) {
     input_size += dependency.size();
-    list<DataLocation> file_locations =
-      knowledge_base_->mutable_data_layer_manager()->
-      GetFileLocations(dependency.location());
+    list<DataLocation> file_locations;
+    knowledge_base_->mutable_data_layer_manager()->
+      GetFileLocations(dependency.location(), &file_locations);
     for (auto& data_location : file_locations) {
       // Only consider the blocks that are on a machine from the rack we're
       // updating.
