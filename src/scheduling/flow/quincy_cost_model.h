@@ -26,26 +26,12 @@ DECLARE_bool(preemption);
 
 namespace firmament {
 
-struct DataCost {
-  DataCost(uint64_t data_size, uint64_t transfer_cost)
-    : data_size_(data_size), transfer_cost_(transfer_cost) {
-  }
-  // The amount of data stored under the entity (e.g. rack, machine).
-  uint64_t data_size_;
-  // The cost the task would have to pay to transfer the data that is
-  // located somewhere else in the cluster.
-  int64_t transfer_cost_;
-};
-
 class QuincyCostModel : public CostModelInterface {
  public:
   QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
                   shared_ptr<JobMap_t> job_map,
                   shared_ptr<TaskMap_t> task_map,
-                  unordered_set<ResourceID_t,
-                    boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-                  shared_ptr<KnowledgeBase> knowledge_base,
-                  TimeInterface* time_manager);
+                  shared_ptr<KnowledgeBase> knowledge_base);
   ~QuincyCostModel();
 
   // Costs pertaining to leaving tasks unscheduled
@@ -109,14 +95,13 @@ class QuincyCostModel : public CostModelInterface {
       unordered_map<EquivClass_t,
         unordered_map<uint64_t, uint64_t>>* data_on_racks);
   /**
-   * Updates a task's cached DataCosts structs that have been affected by a
+   * Updates a task's cached transfer costs that have been affected by a
    * change (e.g., machine addition or removal) in a rack.
    * @param td the descriptor of the task
    * @param ec_changed the rack in which the machines changed
    */
-  void UpdateTaskDataCosts(const TaskDescriptor& td, EquivClass_t ec_changed);
-  void UpdateTaskDataCostForRack(const TaskDescriptor& td,
-                                 EquivClass_t rack_ec);
+  void UpdateTaskCosts(const TaskDescriptor& td, EquivClass_t ec_changed);
+  void UpdateTaskCostForRack(const TaskDescriptor& td, EquivClass_t rack_ec);
 
   /**
    * Depending on how much data the machine has, the method adds, updates
@@ -130,14 +115,14 @@ class QuincyCostModel : public CostModelInterface {
    * @return an updated version of the task's machine preference map. If the
    * passed task_pref_machines is NULL the method may return a new pointer
    */
-  unordered_map<ResourceID_t, DataCost, boost::hash<boost::uuids::uuid>>*
+  unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>*
     UpdateTaskPreferedMachineList(
       TaskID_t task_id,
       uint64_t input_size,
       ResourceID_t machine_res_id,
       uint64_t data_on_machine,
       int64_t transfer_cost,
-      unordered_map<ResourceID_t, DataCost, boost::hash<boost::uuids::uuid>>*
+      unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>*
       task_pref_machines);
   void UpdateTaskPreferedRacksList(
       TaskID_t task_id, uint64_t input_size, uint64_t data_on_rack,
@@ -163,7 +148,6 @@ class QuincyCostModel : public CostModelInterface {
   // Information regarding jobs and tasks.
   shared_ptr<JobMap_t> job_map_;
   shared_ptr<TaskMap_t> task_map_;
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>* leaf_res_ids_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   shared_ptr<KnowledgeBase> knowledge_base_;
   // EC corresponding to the cluster aggregator node.
@@ -178,14 +162,12 @@ class QuincyCostModel : public CostModelInterface {
   unordered_map<ResourceID_t, EquivClass_t, boost::hash<boost::uuids::uuid>>
     machine_to_rack_ec_;
   // Map storing the EC preference list for each task.
-  unordered_map<TaskID_t, unordered_map<EquivClass_t, DataCost>>
+  unordered_map<TaskID_t, unordered_map<EquivClass_t, int64_t>>
     task_prefered_ecs_;
   // Map storing the machine preference list for each task.
   unordered_map<TaskID_t,
-    unordered_map<ResourceID_t, DataCost, boost::hash<boost::uuids::uuid>>>
+    unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>>
     task_prefered_machines_;
-  // Interface used to get the current time.
-  TimeInterface* time_manager_;
 };
 
 }  // namespace firmament

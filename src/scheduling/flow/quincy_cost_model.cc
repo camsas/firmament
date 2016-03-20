@@ -43,22 +43,15 @@ QuincyCostModel::QuincyCostModel(
     shared_ptr<ResourceMap_t> resource_map,
     shared_ptr<JobMap_t> job_map,
     shared_ptr<TaskMap_t> task_map,
-    unordered_set<ResourceID_t,
-      boost::hash<boost::uuids::uuid>>* leaf_res_ids,
-    shared_ptr<KnowledgeBase> knowledge_base,
-    TimeInterface* time_manager)
+    shared_ptr<KnowledgeBase> knowledge_base)
   : resource_map_(resource_map),
     job_map_(job_map),
     task_map_(task_map),
-    leaf_res_ids_(leaf_res_ids),
-    knowledge_base_(knowledge_base),
-    time_manager_(time_manager) {
+    knowledge_base_(knowledge_base) {
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
 }
 
 QuincyCostModel::~QuincyCostModel() {
-  // We don't have to delete leaf_res_ids and time_manager because they are
-  // not owned by the cost model.
 }
 
 // The cost of leaving a task unscheduled should be higher than the cost of
@@ -81,9 +74,9 @@ Cost_t QuincyCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                                ResourceID_t resource_id) {
   auto machines_data = FindOrNull(task_prefered_machines_, task_id);
   CHECK_NOTNULL(machines_data);
-  DataCost* data_on_machine = FindOrNull(*machines_data, resource_id);
-  CHECK_NOTNULL(data_on_machine);
-  return data_on_machine->transfer_cost_;
+  int64_t* transfer_cost = FindOrNull(*machines_data, resource_id);
+  CHECK_NOTNULL(transfer_cost);
+  return *transfer_cost;
 }
 
 Cost_t QuincyCostModel::ResourceNodeToResourceNodeCost(
@@ -117,9 +110,9 @@ Cost_t QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
                                                    EquivClass_t ec) {
   auto ec_costs = FindOrNull(task_prefered_ecs_, task_id);
   CHECK_NOTNULL(ec_costs);
-  DataCost* data_on_ec = FindOrNull(*ec_costs, ec);
-  CHECK_NOTNULL(data_on_ec);
-  return data_on_ec->transfer_cost_;
+  int64_t* transfer_cost = FindOrNull(*ec_costs, ec);
+  CHECK_NOTNULL(transfer_cost);
+  return *transfer_cost;
 }
 
 pair<Cost_t, uint64_t> QuincyCostModel::EquivClassToResourceNode(
@@ -222,18 +215,18 @@ void QuincyCostModel::AddMachine(
   CHECK(InsertIfNotPresent(&machine_to_rack_ec_, res_id, rack_ec));
   if (FLAGS_quincy_update_costs_upon_machine_change) {
     for (auto& id_td : *task_map_) {
-      UpdateTaskDataCosts(*(id_td.second), rack_ec);
+      UpdateTaskCosts(*(id_td.second), rack_ec);
     }
   }
 }
 
 void QuincyCostModel::AddTask(TaskID_t task_id) {
   CHECK(InsertIfNotPresent(
-      &task_prefered_ecs_, task_id, unordered_map<EquivClass_t, DataCost>()));
+      &task_prefered_ecs_, task_id, unordered_map<EquivClass_t, int64_t>()));
   CHECK(InsertIfNotPresent(
       &task_prefered_machines_, task_id,
       unordered_map<ResourceID_t,
-        DataCost, boost::hash<boost::uuids::uuid>>()));
+        int64_t, boost::hash<boost::uuids::uuid>>()));
   ConstructTaskPreferedSet(task_id);
 }
 
@@ -245,7 +238,7 @@ void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
   RemoveMachineFromRack(res_id, *ec_ptr, &rack_removed);
   if (!rack_removed && FLAGS_quincy_update_costs_upon_machine_change) {
     for (auto& id_td : *task_map_) {
-      UpdateTaskDataCosts(*(id_td.second), *ec_ptr);
+      UpdateTaskCosts(*(id_td.second), *ec_ptr);
     }
   }
 }
@@ -429,9 +422,8 @@ void QuincyCostModel::ConstructTaskPreferedSet(TaskID_t task_id) {
       int64_t transfer_cost =
         ComputeTransferCostToMachine(input_size - data_on_machine,
                                      *data_on_rack - data_on_machine);
-      DataCost data_cost(data_on_machine, transfer_cost);
       CHECK(InsertIfNotPresent(prefered_machines, machine_data.first,
-                               data_cost));
+                               transfer_cost));
     }
   }
   int64_t worst_cluster_cost = 0;
@@ -448,13 +440,12 @@ void QuincyCostModel::ConstructTaskPreferedSet(TaskID_t task_id) {
         ComputeTransferCostToRack(rack_data.first, input_size, rack_data.second,
                                   data_on_machines);
       worst_cluster_cost = max(worst_cluster_cost, transfer_cost);
-      DataCost data_cost(rack_data.second, transfer_cost);
-      CHECK(InsertIfNotPresent(prefered_ecs, rack_data.first, data_cost));
+      CHECK(InsertIfNotPresent(prefered_ecs, rack_data.first, transfer_cost));
     }
   }
   // Add transfer cost to the cluster aggregator.
-  DataCost data_cost(input_size, worst_cluster_cost);
-  CHECK(InsertIfNotPresent(prefered_ecs, cluster_aggregator_ec_, data_cost));
+  CHECK(InsertIfNotPresent(prefered_ecs, cluster_aggregator_ec_,
+                           worst_cluster_cost));
 }
 
 void QuincyCostModel::UpdateMachineBlocks(
@@ -492,27 +483,25 @@ void QuincyCostModel::UpdateRackBlocks(
   }
 }
 
-void QuincyCostModel::UpdateTaskDataCosts(const TaskDescriptor& td,
-                                          EquivClass_t ec_changed) {
-  auto preferred_ecs = FindOrNull(task_prefered_ecs_, td.uid());
+void QuincyCostModel::UpdateTaskCosts(const TaskDescriptor& td,
+                                      EquivClass_t ec_changed) {
+  auto prefered_ecs = FindOrNull(task_prefered_ecs_, td.uid());
   int64_t cost_worst_machine = 0;
   // Get the worst cost to the racks that haven't changed.
-  for (auto& ec_to_cost : *preferred_ecs) {
+  for (auto& ec_to_cost : *prefered_ecs) {
     if (ec_to_cost.first != cluster_aggregator_ec_ &&
         ec_to_cost.first != ec_changed) {
       cost_worst_machine =
-        max(cost_worst_machine, ec_to_cost.second.transfer_cost_);
+        max(cost_worst_machine, ec_to_cost.second);
     }
   }
-  UpdateTaskDataCostForRack(td, ec_changed);
+  UpdateTaskCostForRack(td, ec_changed);
   // Update cluster aggregator's cost.
-  DataCost* cluster_data_cost =
-    FindOrNull(*preferred_ecs, cluster_aggregator_ec_);
-  cluster_data_cost->transfer_cost_ = cost_worst_machine;
+  InsertOrUpdate(prefered_ecs, cluster_aggregator_ec_, cost_worst_machine);
 }
 
-void QuincyCostModel::UpdateTaskDataCostForRack(const TaskDescriptor& td,
-                                                EquivClass_t rack_ec) {
+void QuincyCostModel::UpdateTaskCostForRack(const TaskDescriptor& td,
+                                            EquivClass_t rack_ec) {
   unordered_map<ResourceID_t, unordered_map<uint64_t, uint64_t>,
                 boost::hash<boost::uuids::uuid>> machines_blocks;
   unordered_map<uint64_t, uint64_t> rack_blocks;
@@ -579,23 +568,23 @@ void QuincyCostModel::UpdateTaskDataCostForRack(const TaskDescriptor& td,
                               worst_rack_cost, rack_ec);
 }
 
-unordered_map<ResourceID_t, DataCost, boost::hash<boost::uuids::uuid>>*
+unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>*
   QuincyCostModel::UpdateTaskPreferedMachineList(
     TaskID_t task_id,
     uint64_t input_size,
     ResourceID_t machine_res_id,
     uint64_t data_on_machine,
     int64_t transfer_cost,
-    unordered_map<ResourceID_t, DataCost, boost::hash<boost::uuids::uuid>>*
+    unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>*
     task_pref_machines) {
   if (task_pref_machines) {
     // The task has preferences.
-    DataCost* machine_data_cost =
+    int64_t* machine_transfer_cost =
       FindOrNull(*task_pref_machines, machine_res_id);
-    if (machine_data_cost) {
+    if (machine_transfer_cost) {
       // The machine is already a prefered one.
       if (data_on_machine >= input_size * FLAGS_quincy_wait_time_factor) {
-        machine_data_cost->transfer_cost_ = transfer_cost;
+        *machine_transfer_cost = transfer_cost;
       } else {
         // The machine is not prefered anymore.
         task_pref_machines->erase(machine_res_id);
@@ -604,20 +593,18 @@ unordered_map<ResourceID_t, DataCost, boost::hash<boost::uuids::uuid>>*
                input_size * FLAGS_quincy_wait_time_factor) {
       // The machine has more data than the threshold => add it to the prefered
       // set.
-      DataCost new_data_cost(data_on_machine, transfer_cost);
-      InsertIfNotPresent(task_pref_machines, machine_res_id, new_data_cost);
+      InsertIfNotPresent(task_pref_machines, machine_res_id, transfer_cost);
     }
   } else if (data_on_machine >=
              input_size * FLAGS_quincy_wait_time_factor) {
     // The machine has more data than the threshold => create prefered set for
     // the task and add the machine to it.
-    unordered_map<ResourceID_t, DataCost, boost::hash<boost::uuids::uuid>>
+    unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>
       new_pref_machines;
-    DataCost new_data_cost(data_on_machine, transfer_cost);
     CHECK(InsertIfNotPresent(&task_prefered_machines_, task_id,
                              new_pref_machines));
     task_pref_machines = FindOrNull(task_prefered_machines_, task_id);
-    InsertIfNotPresent(task_pref_machines, machine_res_id, new_data_cost);
+    InsertIfNotPresent(task_pref_machines, machine_res_id, transfer_cost);
   }
   return task_pref_machines;
 }
@@ -627,13 +614,12 @@ void QuincyCostModel::UpdateTaskPreferedRacksList(
     int64_t worst_rack_cost, EquivClass_t rack_ec) {
   auto pref_ecs = FindOrNull(task_prefered_ecs_, task_id);
   if (pref_ecs) {
-    DataCost* rack_data_cost = FindOrNull(*pref_ecs, rack_ec);
-    if (rack_data_cost) {
+    int64_t* rack_cost = FindOrNull(*pref_ecs, rack_ec);
+    if (rack_cost) {
       if (data_on_rack >=
           input_size * FLAGS_quincy_prefered_rack_data_fraction) {
-        // The rack keeps on being prefered. Update its DataCost.
-        rack_data_cost->data_size_ = data_on_rack;
-        rack_data_cost->transfer_cost_ = worst_rack_cost;
+        // The rack keeps on being prefered. Update its transfer cost.
+        *rack_cost = worst_rack_cost;
       } else {
         // The rack is no longer a prefered one.
         pref_ecs->erase(rack_ec);
@@ -642,15 +628,13 @@ void QuincyCostModel::UpdateTaskPreferedRacksList(
       if (data_on_rack >=
           input_size * FLAGS_quincy_prefered_rack_data_fraction) {
         // The rack must be added to the prefered list.
-        DataCost data_cost(data_on_rack, worst_rack_cost);
-        InsertIfNotPresent(pref_ecs, rack_ec, data_cost);
+        InsertIfNotPresent(pref_ecs, rack_ec, worst_rack_cost);
       }
     }
   } else {
     if (data_on_rack >= input_size * FLAGS_quincy_prefered_rack_data_fraction) {
-      unordered_map<EquivClass_t, DataCost> new_pref_ecs;
-      DataCost data_cost(data_on_rack, worst_rack_cost);
-      InsertIfNotPresent(&new_pref_ecs, rack_ec, data_cost);
+      unordered_map<EquivClass_t, int64_t> new_pref_ecs;
+      InsertIfNotPresent(&new_pref_ecs, rack_ec, worst_rack_cost);
       InsertIfNotPresent(&task_prefered_ecs_, task_id, new_pref_ecs);
     }
   }
