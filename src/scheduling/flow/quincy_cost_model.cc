@@ -193,6 +193,8 @@ vector<EquivClass_t>* QuincyCostModel::GetEquivClassToEquivClassesArcs(
 void QuincyCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
+  knowledge_base_->mutable_data_layer_manager()->AddMachine(
+      rtnd_ptr->resource_desc().friendly_name(), res_id);
   EquivClass_t rack_ec;
   if (racks_with_spare_links_.size() > 0) {
     // Assign the machine to a rack that has spare links.
@@ -241,6 +243,10 @@ void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
       UpdateTaskCosts(*(id_td.second), *ec_ptr);
     }
   }
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  knowledge_base_->mutable_data_layer_manager()->RemoveMachine(
+      rs->topology_node().resource_desc().friendly_name());
 }
 
 void QuincyCostModel::RemovePreferencesToMachine(ResourceID_t res_id) {
