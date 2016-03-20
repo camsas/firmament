@@ -221,9 +221,9 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   }
 
   if (scheduler_stats != NULL) {
-    scheduler_stats->scheduler_runtime = flowsolver_timer.elapsed().wall /
+    scheduler_stats->scheduler_runtime_ = flowsolver_timer.elapsed().wall /
       NANOSECONDS_IN_MICROSECOND;
-    scheduler_stats->algorithm_runtime = algorithm_runtime;
+    scheduler_stats->algorithm_runtime_ = algorithm_runtime;
   }
 
   if (!FLAGS_incremental_flow) {

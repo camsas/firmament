@@ -353,7 +353,7 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
     // from now on are going to be included in the next scheduler run.
     DIMACSChangeStats current_run_dimacs_stats = *dimacs_stats_;
     dimacs_stats_->ResetStats();
-    scheduler_stats->total_runtime = total_scheduler_timer.elapsed().wall /
+    scheduler_stats->total_runtime_ = total_scheduler_timer.elapsed().wall /
       NANOSECONDS_IN_MICROSECOND;
     trace_generator_->SchedulerRun(*scheduler_stats, current_run_dimacs_stats);
   }
@@ -409,9 +409,9 @@ uint64_t FlowScheduler::RunSchedulingIteration(
   multimap<uint64_t, uint64_t>* task_mappings =
     solver_dispatcher_->Run(scheduler_stats);
   solver_run_cnt_++;
-  CHECK_LE(scheduler_stats->scheduler_runtime, FLAGS_max_solver_runtime)
+  CHECK_LE(scheduler_stats->scheduler_runtime_, FLAGS_max_solver_runtime)
     << "Solver took longer than limit of "
-    << scheduler_stats->scheduler_runtime;
+    << scheduler_stats->scheduler_runtime_;
   // Play all the simulation events that happened while the solver was running.
   if (event_notifier_) {
     if (solver_run_cnt_ == 1) {
@@ -419,7 +419,7 @@ uint64_t FlowScheduler::RunSchedulingIteration(
          scheduler_start_timestamp);
     } else {
       event_notifier_->OnSchedulingDecisionsCompletion(
-          scheduler_start_timestamp + scheduler_stats->scheduler_runtime);
+          scheduler_start_timestamp + scheduler_stats->scheduler_runtime_);
     }
   }
   // Solver's done, let's post-process the results.
@@ -455,7 +455,7 @@ uint64_t FlowScheduler::RunSchedulingIteration(
   // round. Thus, we make sure that all the changes applied as a result of
   // scheduling have a timestamp equal to the end of the scheduling iteration.
   time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp +
-                                        scheduler_stats->scheduler_runtime);
+                                        scheduler_stats->scheduler_runtime_);
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
   time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp);
   // Drop all deltas that were actioned

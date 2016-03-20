@@ -32,18 +32,18 @@ using store::DataObjectMap_t;
 using store::ObjectStoreInterface;
 
 struct SchedulerStats {
-  SchedulerStats() : algorithm_runtime(numeric_limits<uint64_t>::max()),
-    scheduler_runtime(0), total_runtime(0) {
+  SchedulerStats() : algorithm_runtime_(numeric_limits<uint64_t>::max()),
+    scheduler_runtime_(0ULL), total_runtime_(0ULL) {
   }
   // Accounts only the algorithmic part of the scheduler (in u-sec).
-  uint64_t algorithm_runtime;
+  uint64_t algorithm_runtime_;
   // Accounts the entire solver scheduling time in u-sec (i.e. DIMACS write,
   // solver runtime, DIMACS read).
-  uint64_t scheduler_runtime;
+  uint64_t scheduler_runtime_;
   // Accounts for the entire scheduling runtime including updating the graph,
   // writing it, running the solver, reading the output and updating again
   // the graph.
-  uint64_t total_runtime;
+  uint64_t total_runtime_;
 };
 
 class SchedulerInterface : public PrintableInterface {

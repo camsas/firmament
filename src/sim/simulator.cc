@@ -180,7 +180,7 @@ uint64_t Simulator::ScheduleJobsHelper(uint64_t run_scheduler_at) {
     return run_scheduler_at;
   } else {
     return event_manager_->GetTimeOfNextSchedulerRun(
-        run_scheduler_at, scheduler_stats.scheduler_runtime);
+        run_scheduler_at, scheduler_stats.scheduler_runtime_);
   }
 }
 
