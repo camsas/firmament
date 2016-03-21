@@ -11,8 +11,8 @@ DEFINE_uint64(synthetic_machine_failure_rate, 1,
               "Number of machine failures per hour");
 DEFINE_uint64(synthetic_machine_failure_duration, 60,
               "Duration (in seconds) of a machine failure");
-DEFINE_uint64(synthetic_jobs_per_second, 1,
-              "Number of jobs to schedule per second");
+DEFINE_uint64(synthetic_job_interarrival_time, 1000000,
+              "Number of microseconds in between job arrivals");
 DEFINE_uint64(synthetic_tasks_per_job, 2,
               "Number of tasks per job");
 DEFINE_uint64(synthetic_task_duration, 10 * firmament::SECONDS_TO_MICROSECONDS,
@@ -33,10 +33,9 @@ SyntheticTraceLoader::SyntheticTraceLoader(EventManager* event_manager)
 
 void SyntheticTraceLoader::LoadJobsNumTasks(
     unordered_map<uint64_t, uint64_t>* job_num_tasks) {
-  uint64_t usec_between_jobs =
-    MICROSECONDS_IN_SECOND / FLAGS_synthetic_jobs_per_second;
+  uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
   uint64_t job_id = 1;
-  for (uint64_t timestamp = usec_between_jobs; timestamp <= FLAGS_runtime;
+  for (uint64_t timestamp = 0; timestamp <= FLAGS_runtime;
        timestamp += usec_between_jobs, ++job_id) {
     CHECK(InsertIfNotPresent(job_num_tasks, job_id,
                              FLAGS_synthetic_tasks_per_job));
@@ -90,13 +89,14 @@ void SyntheticTraceLoader::LoadMachineEvents(
 bool SyntheticTraceLoader::LoadTaskEvents(
     uint64_t events_up_to_time,
     unordered_map<uint64_t, uint64_t>* job_num_tasks) {
-  uint64_t usec_between_jobs =
-    MICROSECONDS_IN_SECOND / FLAGS_synthetic_jobs_per_second;
-  uint64_t last_timestamp = last_generated_job_id_ * usec_between_jobs;
+  uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
+  uint64_t last_timestamp = 0;
+  if (last_generated_job_id_ > 0)
+    last_timestamp = (last_generated_job_id_ - 1) * usec_between_jobs;
   if (last_timestamp > events_up_to_time) {
     return true;
   }
-  for (uint64_t timestamp = (last_generated_job_id_ + 1) * usec_between_jobs; ;
+  for (uint64_t timestamp = last_generated_job_id_ * usec_between_jobs; ;
        timestamp += usec_between_jobs) {
     last_generated_job_id_++;
     for (uint64_t task_index = 1; task_index <= FLAGS_synthetic_tasks_per_job;
@@ -118,8 +118,7 @@ bool SyntheticTraceLoader::LoadTaskEvents(
 void SyntheticTraceLoader::LoadTaskUtilizationStats(
     unordered_map<TraceTaskIdentifier, TraceTaskStats,
                   TraceTaskIdentifierHasher>* task_id_to_stats) {
-  uint64_t usec_between_jobs =
-    MICROSECONDS_IN_SECOND / FLAGS_synthetic_jobs_per_second;
+  uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
   TraceTaskStats task_stats;
   task_stats.avg_mean_cpu_usage_ = 0.5;
   task_stats.avg_canonical_mem_usage_ = 0.2;
@@ -127,7 +126,7 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
   task_stats.avg_unmapped_page_cache_ = 0.2;
   task_stats.avg_total_page_cache_ = 0.2;
   uint64_t job_id = 1;
-  for (uint64_t timestamp = usec_between_jobs; timestamp <= FLAGS_runtime;
+  for (uint64_t timestamp = 0; timestamp <= FLAGS_runtime;
        timestamp += usec_between_jobs, ++job_id) {
     TraceTaskIdentifier task_identifier;
     task_identifier.job_id = job_id;
@@ -142,10 +141,9 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
 void SyntheticTraceLoader::LoadTasksRunningTime(
     unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
       task_runtime) {
-  uint64_t usec_between_jobs =
-    MICROSECONDS_IN_SECOND / FLAGS_synthetic_jobs_per_second;
+  uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
   uint64_t job_id = 1;
-  for (uint64_t timestamp = usec_between_jobs; timestamp <= FLAGS_runtime;
+  for (uint64_t timestamp = 0; timestamp <= FLAGS_runtime;
        timestamp += usec_between_jobs, ++job_id) {
     TraceTaskIdentifier task_identifier;
     task_identifier.job_id = job_id;
