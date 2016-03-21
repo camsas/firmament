@@ -22,6 +22,30 @@
       "revId": "c83e340033257ff482c0b9c5677418a081e7a5ad",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1a6ced46_ec199f7a",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-21T23:25:03Z",
+      "side": 0,
+      "message": "simulated_quincy_file_* flags were used to create a GoogleBlockDistribution that was not used anywhere in the code.\n\nI\u0027ve moved simulated_quincy_blocks_per_machine and simulated_quincy_replication_facto the the simulated_dfs. They should be in that file because they\u0027re related to the DFS and are only used there.",
+      "parentUuid": "1a6ced46_09bc2d6c",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 46
+      },
+      "revId": "c83e340033257ff482c0b9c5677418a081e7a5ad",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
