@@ -17,6 +17,7 @@
 #include "scheduling/flow/flow_scheduler.h"
 #include "scheduling/simple/simple_scheduler.h"
 #include "sim/dfs/simulated_data_layer_manager.h"
+#include "sim/dfs/void_data_layer_manager.h"
 #include "sim/knowledge_base_simulator.h"
 #include "sim/trace_loader.h"
 #include "storage/simple_object_store.h"
@@ -27,6 +28,7 @@ using boost::hash;
 DECLARE_uint64(runtime);
 DECLARE_string(scheduler);
 DECLARE_int64(sim_machine_max_ram);
+DECLARE_int32(flow_scheduling_cost_model);
 
 namespace firmament {
 namespace sim {
@@ -37,7 +39,12 @@ SimulatorBridge::SimulatorBridge(EventManager* event_manager,
     job_map_(new JobMap_t),
     resource_map_(new ResourceMap_t), task_map_(new TaskMap_t),
     num_duplicate_task_ids_(0) {
-  data_layer_manager_ = new SimulatedDataLayerManager();
+  if (FLAGS_flow_scheduling_cost_model == 3) {
+    // We're running Quincy => simulate the DFS.
+    data_layer_manager_ = new SimulatedDataLayerManager();
+  } else {
+    data_layer_manager_ = new VoidDataLayerManager();
+  }
   knowledge_base_ = shared_ptr<KnowledgeBaseSimulator>(
       new KnowledgeBaseSimulator(data_layer_manager_));
   ResourceID_t root_uuid = GenerateRootResourceID("XXXsimulatorXXX");
@@ -118,6 +125,7 @@ ResourceDescriptor* SimulatorBridge::AddMachine(
                                root_uuid, res_id));
   CHECK(InsertIfNotPresent(&trace_machine_id_to_rtnd_, machine_id,
                            new_machine));
+  data_layer_manager_->AddMachine(hostname, res_id);
   scheduler_->RegisterResource(new_machine, false, true);
   return rd_ptr;
 }
@@ -175,13 +183,7 @@ bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier,
     CHECK_NOTNULL(jd_ptr);
   }
 
-  TaskDescriptor* td_ptr = AddTaskToJob(jd_ptr, task_identifier.task_index);
-  td_ptr->set_trace_job_id(task_identifier.job_id);
-  td_ptr->set_trace_task_id(task_identifier.task_index);
-  // The task binary is used by GenerateRootTaskID to generate a unique
-  // root task identifier. Hence, we set it to the trace job id which
-  // is unique.
-  td_ptr->set_binary(lexical_cast<string>(task_identifier.job_id));
+  TaskDescriptor* td_ptr = AddTaskToJob(jd_ptr, task_identifier);
   td_ptr->mutable_resource_request()->set_cpu_cores(requested_cpu_cores);
   td_ptr->mutable_resource_request()->set_ram_cap(requested_ram_mb);
   if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
@@ -262,8 +264,9 @@ void SimulatorBridge::AddTaskStats(
   trace_task_id_to_stats_.erase(trace_task_identifier);
 }
 
-TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr,
-                                              uint64_t trace_task_id) {
+TaskDescriptor* SimulatorBridge::AddTaskToJob(
+    JobDescriptor* jd_ptr,
+    const TraceTaskIdentifier& task_identifier) {
   CHECK_NOTNULL(jd_ptr);
   TaskDescriptor* root_task = jd_ptr->mutable_root_task();
   TaskDescriptor* new_task;
@@ -279,6 +282,29 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(JobDescriptor* jd_ptr,
   new_task->set_job_id(jd_ptr->uuid());
   // Set the submission timestamp for the task.
   new_task->set_submit_time(simulated_time_->GetCurrentTimestamp());
+  new_task->set_trace_job_id(task_identifier.job_id);
+  new_task->set_trace_task_id(task_identifier.task_index);
+  // The task binary is used by GenerateRootTaskID to generate a unique
+  // root task identifier. Hence, we set it to the trace job id which
+  // is unique.
+  new_task->set_binary(lexical_cast<string>(task_identifier.job_id));
+  // Add a dependency for the task.
+  ReferenceDescriptor* dependency =  new_task->add_dependencies();
+  string task_id_string = to_string(new_task->uid());
+  uint64_t avg_runtime = 0;
+  uint64_t* runtime_ptr = FindOrNull(task_runtime_, task_identifier);
+  if (runtime_ptr) {
+    avg_runtime = *runtime_ptr;
+  } else {
+    // The task didn't finish in the trace. Set the task runtime to 1 u-sec to
+    // that the task has tiny inputs.
+    avg_runtime = 1;
+  }
+  uint64_t input_size =
+    data_layer_manager_->AddFilesForTask(new_task->uid(), avg_runtime);
+  dependency->set_type(ReferenceDescriptor::CONCRETE);
+  dependency->set_size(input_size);
+  dependency->set_location(task_id_string);
   return new_task;
 }
 
@@ -338,6 +364,7 @@ void SimulatorBridge::TaskCompleted(
   scheduler_->HandleTaskCompletion(td_ptr, &report);
   knowledge_base_->PopulateTaskFinalReport(td_ptr, &report);
   scheduler_->HandleTaskFinalReport(report, td_ptr);
+  data_layer_manager_->RemoveFilesForTask(td_ptr->uid());
   JobDescriptor* jd_ptr =
     FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
   // Don't delete the root task so that tasks can still be appended to the job.
@@ -473,6 +500,7 @@ void SimulatorBridge::RemoveMachine(uint64_t machine_id) {
   CHECK_NOTNULL(rtnd_ptr);
   ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
   machine_res_id_pus_.erase(res_id);
+  data_layer_manager_->RemoveMachine(rtnd_ptr->resource_desc().friendly_name());
   scheduler_->DeregisterResource(rtnd_ptr);
   trace_machine_id_to_rtnd_.erase(machine_id);
   // We only free the ResourceTopologyNodeDescriptor in the destructor.
