@@ -4,6 +4,7 @@ set(SIM_DFS_SRC
   sim/dfs/simulated_data_layer_manager.cc
   sim/dfs/google_block_distribution.cc
   sim/dfs/simulated_dfs.cc
+  sim/dfs/void_data_layer_manager.cc
   )
 
 set(SIM_GOOGLE_TRACE_PROCESSOR_SRCS
