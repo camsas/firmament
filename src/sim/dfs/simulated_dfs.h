@@ -15,52 +15,62 @@
 #include "base/common.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "base/types.h"
+#include "scheduling/data_layer_manager_interface.h"
 #include "sim/dfs/google_block_distribution.h"
 
 namespace firmament {
 namespace sim {
 
-typedef unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid> >
-        ResourceSet_t;
-
 class SimulatedDFS {
  public:
-  typedef uint64_t FileID_t;
-  typedef uint32_t NumBlocks_t;
+  SimulatedDFS();
 
-  SimulatedDFS(GoogleBlockDistribution* blocks_file_distribution,
-               NumBlocks_t blocks_per_machine,
-               uint32_t replication_factor,
-               uint64_t random_seed);
-
-  void AddMachine(ResourceID_t machine);
-  void RemoveMachine(ResourceID_t machine);
-
-  NumBlocks_t GetNumBlocks(FileID_t file) const {
-    return files_[file];
-  }
-  const ResourceSet_t GetMachines(FileID_t file) const;
   /**
-   * Returns a set of files that have uniformly been sampled. The files
-   * have consist of num_blocks +- tolerance.
-   * @param num_blocks the number of blocks the files are expected to have
-   * @param tolerance the tolerance (in percentage)
+   * Add num_blocks for a new task.
+   * @param task_id the id of the new task
+   * @param num_blocks the number of blocks to add
    */
-  unordered_set<FileID_t> SampleFiles(NumBlocks_t num_blocks,
-                                      uint32_t tolerance) const;
+  void AddBlocksForTask(TaskID_t task_id, uint64_t num_blocks);
+
+  /**
+   * Add a new machine to the DFS.
+   * @param machine_res_id the resource id of the new machine
+   */
+  void AddMachine(ResourceID_t machine_res_id);
+  void GetFileLocations(const string& file_path, list<DataLocation>* locations);
+
+  /**
+   * Remove all the blocks of a task.
+   * @param task_id the id of the task for which to remove the blocks
+   */
+  void RemoveBlocksForTask(TaskID_t task_id);
+
+  /**
+   * Remove a machine from the DFS. This method also removes all the blocks from
+   * the machine and makes sure they're again
+   * FLAGS_simulated_dfs_replication_factor replicated.
+   * @param machine_res_id the resource id of the machine to be removed
+   */
+  void RemoveMachine(ResourceID_t machine_res_id);
 
  private:
-  uint32_t NumBlocksInFile();
+  uint64_t GenerateBlockID(TaskID_t task_id, uint64_t block_index);
+  void PlaceBlockOnMachines(TaskID_t task_id, uint64_t block_id);
+  /**
+   * Randomly places a block on a machine which has enough free space to
+   * store the block.
+   * @return the resource id of the machine on which the block was placed
+   */
+  ResourceID_t PlaceBlockOnRandomMachine();
 
-  GoogleBlockDistribution* blocks_file_distribution_;
-  NumBlocks_t blocks_per_machine_;
-  vector<NumBlocks_t> files_;
-  mutable default_random_engine generator_;
-  vector<ResourceID_t> machines_;
-  uint64_t num_blocks_in_use_;
-  uint32_t replication_factor_;
-  NumBlocks_t total_block_capacity_;
-  uniform_real_distribution<double> uniform_distribution_;
+  // Map storing the number of available blocks each machine has.
+  unordered_map<ResourceID_t, uint64_t, boost::hash<boost::uuids::uuid>>
+    machine_num_free_blocks_;
+  // Mapping from machines to the tasks that have blocks on the machine.
+  unordered_map<ResourceID_t, unordered_set<TaskID_t>,
+    boost::hash<boost::uuids::uuid>> tasks_on_machine_;
+  // Mapping storing the block locations for every task.
+  multimap<TaskID_t, DataLocation> task_to_data_locations_;
 };
 
 } // namespace sim
