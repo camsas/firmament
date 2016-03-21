@@ -33,11 +33,11 @@ GoogleRuntimeDistribution::GoogleRuntimeDistribution(double factor,
   factor_(factor), power_(power) {
 }
 
-double GoogleRuntimeDistribution::Distribution(double runtime) {
+double GoogleRuntimeDistribution::ProportionShorterTasks(uint64_t runtime) {
   // x is in milliseconds, but distribution was specified in hours
-  runtime /= MILLISECONDS_IN_SECOND;
-  runtime /= SECONDS_IN_HOUR;
-  double y = 1 - factor_ * pow(runtime, power_);
+  double runtime_us = runtime / MICROSECONDS_IN_SECOND;
+  runtime_us /= SECONDS_IN_HOUR;
+  double y = 1 - factor_ * pow(runtime_us, power_);
   return std::min(y, 1.0);
 }
 

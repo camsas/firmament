@@ -14,7 +14,6 @@ class GoogleBlockDistribution {
   GoogleBlockDistribution(uint64_t percent_min, uint64_t min_blocks,
                           uint64_t max_blocks);
   uint64_t Inverse(double y);
-  double Mean();
  private:
   double percent_min_;
   double coef_;
