@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a6ced46_09bc2d6c",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-21T23:14:52Z",
+      "side": 0,
+      "message": "Why do we no longer need these flags? They seem useful.",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 46
+      },
+      "revId": "c83e340033257ff482c0b9c5677418a081e7a5ad",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

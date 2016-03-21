@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a6ced46_4c09d32b",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-21T23:14:52Z",
+      "side": 1,
+      "message": "Make this a #define or static constant",
+      "range": {
+        "startLine": 71,
+        "startChar": 22,
+        "endLine": 71,
+        "endChar": 24
+      },
+      "revId": "fae88d9f1f607cd7c4e147d264584d264d1417b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1a6ced46_6c0e8f36",
+        "filename": "src/sim/dfs/simulated_dfs.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-21T23:14:52Z",
+      "side": 1,
+      "message": "Magic number, use #define or constant",
+      "range": {
+        "startLine": 104,
+        "startChar": 57,
+        "endLine": 104,
+        "endChar": 59
+      },
+      "revId": "fae88d9f1f607cd7c4e147d264584d264d1417b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1a6ced46_ac0fa72d",
+        "filename": "src/sim/dfs/simulated_dfs.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-21T23:14:52Z",
+      "side": 1,
+      "message": "Is this actually used for anything? I only saw it being referenced in RemoveMachine()",
+      "range": {
+        "startLine": 66,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 29
+      },
+      "revId": "fae88d9f1f607cd7c4e147d264584d264d1417b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1a6ced46_8c12eb56",
+        "filename": "src/sim/google_runtime_distribution.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-21T23:14:52Z",
+      "side": 1,
+      "message": "Is it potentially dangerous to use µs here? I wonder if the number could get huge and overflow",
+      "revId": "fae88d9f1f607cd7c4e147d264584d264d1417b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
