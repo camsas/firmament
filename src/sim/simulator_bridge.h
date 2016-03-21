@@ -72,9 +72,11 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
    * the flow_scheduler).
    * This method is to be used to apply the simulation changes that happen
    * while the scheduler is deciding where to place tasks.
-   * @param timestamp the timestamp when the scheduler finished making decisions
+   * @param scheduler_start_time the timestamp when the scheduler started
+   * @param scheduler_runtime the time it took for the scheduler to complete
    */
-  void OnSchedulingDecisionsCompletion(uint64_t timestamp);
+  void OnSchedulingDecisionsCompletion(uint64_t scheduler_start_time,
+                                       uint64_t scheduler_runtime);
 
   /**
    * Event called by the event driven scheduler upon task completion.
