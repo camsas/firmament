@@ -176,9 +176,11 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   /**
    * Creates a new task for a job.
    * @param jd_ptr the job descriptor of the job for which to create a new task
+   * @param task_identifier the trace identifier of the task
    * @return a pointer to the task descriptor of the new task
    */
-  TaskDescriptor* AddTaskToJob(JobDescriptor* jd_ptr, uint64_t trace_task_id);
+  TaskDescriptor* AddTaskToJob(JobDescriptor* jd_ptr,
+                               const TraceTaskIdentifier& task_identifier);
 
   /**
    * Create and populate a new job.
