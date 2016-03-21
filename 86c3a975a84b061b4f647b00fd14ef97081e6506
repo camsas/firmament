@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a6ced46_2c2bb783",
+        "filename": "src/sim/dfs/void_data_layer_manager.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-21T23:21:47Z",
+      "side": 1,
+      "message": "Do we really need this? Can we not just set data_layer_manager_ to NULL in the simulator and wrap all accesses to it into a conditional?",
+      "revId": "86c3a975a84b061b4f647b00fd14ef97081e6506",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
