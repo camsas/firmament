@@ -37,15 +37,5 @@ uint64_t GoogleBlockDistribution::Inverse(double y) {
   }
 }
 
-double GoogleBlockDistribution::Mean() {
-  double mean = 0;
-  mean += percent_min_ * min_blocks_;
-  // estimate for rest of tail
-  for (double y = percent_min_ + STEP; y <= 1.0; y += STEP) {
-    mean += STEP * Inverse(y);
-  }
-  return mean;
-}
-
 } // namespace sim
 } // namespace firmament

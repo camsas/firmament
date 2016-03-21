@@ -4,40 +4,24 @@
 
 #include "sim/dfs/simulated_data_layer_manager.h"
 
+#include "base/units.h"
+#include "misc/map-util.h"
 #include "sim/dfs/google_block_distribution.h"
 #include "sim/dfs/simulated_dfs.h"
 #include "sim/google_runtime_distribution.h"
 
-// Distributed filesystem options
-DEFINE_uint64(simulated_quincy_blocks_per_machine, 98304,
-              "Number of 64 MB blocks each machine stores. "
-              "Defaults to 98304, i.e. 6 TB.");
-DEFINE_uint64(simulated_quincy_replication_factor, 3,
-              "The number of times each block should be replicated.");
-// File size distribution. See Evaluation Plan for derivation of defaults.
-DEFINE_uint64(simulated_quincy_file_percent_min, 20,
-              "Percentage of files which are minimum # of blocks.");
-DEFINE_double(simulated_quincy_file_min_blocks, 1,
-              "Minimum # of blocks in file.");
-DEFINE_double(simulated_quincy_file_max_blocks, 160,
-              "Maximum # of blocks in file.");
 // See google_runtime_distribution.h for explanation of these defaults
 DEFINE_double(simulated_quincy_runtime_factor, 0.298,
               "Runtime power law distribution: factor parameter.");
 DEFINE_double(simulated_quincy_runtime_power, -0.2627,
-              "Runtime power law distribution: factor parameter.");
+              "Runtime power law distribution: power parameter.");
 // Input size distribution. See Evaluation Plan for derivation of defaults.
-DEFINE_uint64(simulated_quincy_input_percent_over_tolerance, 50,
-              "Percentage # of blocks allowed to exceed the value predicted.");
 DEFINE_uint64(simulated_quincy_input_percent_min, 50,
               "Percentage of input files which are minimum # of blocks.");
 DEFINE_double(simulated_quincy_input_min_blocks, 1,
               "Minimum # of blocks in input file.");
 DEFINE_double(simulated_quincy_input_max_blocks, 320,
               "Maximum # of blocks in input file.");
-
-// Random seed
-DEFINE_uint64(simulated_quincy_random_seed, 42, "Seed for random generators.");
 
 namespace firmament {
 namespace sim {
@@ -50,50 +34,45 @@ SimulatedDataLayerManager::SimulatedDataLayerManager() {
   runtime_dist_ =
     new GoogleRuntimeDistribution(FLAGS_simulated_quincy_runtime_factor,
                                   FLAGS_simulated_quincy_runtime_power);
-  file_block_dist_ =
-    new GoogleBlockDistribution(FLAGS_simulated_quincy_file_percent_min,
-                                FLAGS_simulated_quincy_file_min_blocks,
-                                FLAGS_simulated_quincy_file_max_blocks);
-  dfs_ = new SimulatedDFS(file_block_dist_,
-                          FLAGS_simulated_quincy_blocks_per_machine,
-                          FLAGS_simulated_quincy_replication_factor,
-                          FLAGS_simulated_quincy_random_seed);
+  dfs_ = new SimulatedDFS();
 }
 
 SimulatedDataLayerManager::~SimulatedDataLayerManager() {
   delete input_block_dist_;
   delete runtime_dist_;
-  delete file_block_dist_;
   delete dfs_;
 }
 
 void SimulatedDataLayerManager::AddMachine(const string& hostname,
                                            ResourceID_t machine_res_id) {
-  // TODO(ionel): Implement!
+  CHECK(InsertIfNotPresent(&hostname_to_res_id_, hostname, machine_res_id));
   dfs_->AddMachine(machine_res_id);
 }
 
 void SimulatedDataLayerManager::GetFileLocations(
     const string& file_path, list<DataLocation>* locations) {
-  // TODO(ionel): Implement!
+  CHECK_NOTNULL(locations);
+  dfs_->GetFileLocations(file_path, locations);
 }
 
 void SimulatedDataLayerManager::RemoveMachine(const string& hostname) {
-  // TODO(ionel): Implement!
-  //  dfs_->RemoveMachine(machine_res_id);
+  ResourceID_t* machine_res_id = FindOrNull(hostname_to_res_id_, hostname);
+  CHECK_NOTNULL(machine_res_id);
+  dfs_->RemoveMachine(*machine_res_id);
+  hostname_to_res_id_.erase(hostname);
 }
 
-void SimulatedDataLayerManager::AddFilesForTask(TaskID_t task_id,
-                                                double avg_runtime) {
-  double cumulative_probability = runtime_dist_->Distribution(avg_runtime);
-  uint64_t num_blocks = file_block_dist_->Inverse(cumulative_probability);
-  // Finally, select some files. Sample to get approximately the right number
-  // of blocks.
-  dfs_->SampleFiles(num_blocks,
-                    FLAGS_simulated_quincy_input_percent_over_tolerance);
+uint64_t SimulatedDataLayerManager::AddFilesForTask(TaskID_t task_id,
+                                                    uint64_t avg_runtime) {
+  double cumulative_probability =
+    runtime_dist_->ProportionShorterTasks(avg_runtime);
+  uint64_t num_blocks = input_block_dist_->Inverse(cumulative_probability);
+  dfs_->AddBlocksForTask(task_id, num_blocks);
+  return num_blocks * 64 * MB_TO_BYTES;
 }
 
 void SimulatedDataLayerManager::RemoveFilesForTask(TaskID_t task_id) {
+  dfs_->RemoveBlocksForTask(task_id);
 }
 
 } // namespace sim
