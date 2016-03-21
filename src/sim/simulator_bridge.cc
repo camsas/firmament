@@ -371,8 +371,14 @@ void SimulatorBridge::OnJobCompletion(JobID_t job_id) {
   job_id_to_trace_job_id_.erase(job_id);
 }
 
-void SimulatorBridge::OnSchedulingDecisionsCompletion(uint64_t timestamp) {
-  ProcessSimulatorEvents(timestamp);
+void SimulatorBridge::OnSchedulingDecisionsCompletion(
+    uint64_t scheduler_start_time, uint64_t scheduler_runtime) {
+  // We only need to process the simulator events that happened while the
+  // scheduler was running when we're in online mode. In batch mode, we assume
+  // that the scheduler runs in "no time" in order to avoid it overtaking the
+  // batch steps.
+  if (FLAGS_batch_step == 0)
+    ProcessSimulatorEvents(scheduler_start_time + scheduler_runtime);
 }
 
 void SimulatorBridge::OnTaskCompletion(TaskDescriptor* td_ptr,

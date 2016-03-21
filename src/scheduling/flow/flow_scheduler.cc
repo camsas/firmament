@@ -22,6 +22,7 @@
 #include "misc/string_utils.h"
 #include "storage/object_store_interface.h"
 #include "scheduling/knowledge_base.h"
+#include "scheduling/scheduling_event_notifier_interface.h"
 #include "scheduling/flow/cost_models.h"
 #include "scheduling/flow/cost_model_interface.h"
 
@@ -415,11 +416,15 @@ uint64_t FlowScheduler::RunSchedulingIteration(
   // Play all the simulation events that happened while the solver was running.
   if (event_notifier_) {
     if (solver_run_cnt_ == 1) {
+      // On the first run, we pretend that the solver took no time. This is in
+      // order to avoid a long initial run that sets up the cluster state
+      // from having a knock-on effect on subsequent runs.
+      // (This matters most for simulation mode.)
       event_notifier_->OnSchedulingDecisionsCompletion(
-         scheduler_start_timestamp);
+         scheduler_start_timestamp, 0);
     } else {
       event_notifier_->OnSchedulingDecisionsCompletion(
-          scheduler_start_timestamp + scheduler_stats->scheduler_runtime_);
+          scheduler_start_timestamp, scheduler_stats->scheduler_runtime_);
     }
   }
   // Solver's done, let's post-process the results.
