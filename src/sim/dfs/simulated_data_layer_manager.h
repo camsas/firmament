@@ -19,17 +19,18 @@ class SimulatedDataLayerManager : public DataLayerManagerInterface {
   SimulatedDataLayerManager();
   virtual ~SimulatedDataLayerManager();
 
-  void AddFilesForTask(TaskID_t task_id, double avg_runtime);
-  void AddMachine(const string& hostname, ResourceID_t machine_res_id);
-  void GetFileLocations(const string& file_path, list<DataLocation>* locations);
-  void RemoveFilesForTask(TaskID_t task_id);
-  void RemoveMachine(const string& hostname);
+  virtual uint64_t AddFilesForTask(TaskID_t task_id, uint64_t avg_runtime);
+  virtual void AddMachine(const string& hostname, ResourceID_t machine_res_id);
+  virtual void GetFileLocations(const string& file_path,
+                                list<DataLocation>* locations);
+  virtual void RemoveFilesForTask(TaskID_t task_id);
+  virtual void RemoveMachine(const string& hostname);
 
  private:
   GoogleBlockDistribution* input_block_dist_;
-  GoogleBlockDistribution* file_block_dist_;
   GoogleRuntimeDistribution* runtime_dist_;
   SimulatedDFS* dfs_;
+  unordered_map<string, ResourceID_t> hostname_to_res_id_;
 };
 
 } // namespace sim

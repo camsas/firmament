@@ -4,109 +4,150 @@
 #include "sim/dfs/simulated_dfs.h"
 
 #include <algorithm>
+#include <boost/lexical_cast.hpp>
 #include <SpookyV2.h>
 
 #include "base/common.h"
+#include "base/units.h"
+#include "misc/map-util.h"
+
+#define MAX_MACHINE_TO_SAMPLE_FOR_BLOCK_PLACEMENT 1000
+#define SEED 42
+
+// Distributed filesystem options
+DEFINE_uint64(simulated_dfs_blocks_per_machine, 98304,
+              "Number of 64 MB blocks each machine stores. "
+              "Defaults to 98304, i.e. 6 TB.");
+DEFINE_uint64(simulated_dfs_replication_factor, 3,
+              "The number of times each block should be replicated.");
+
+DECLARE_uint64(simulated_quincy_block_size);
 
 namespace firmament {
 namespace sim {
 
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
-SimulatedDFS::SimulatedDFS(GoogleBlockDistribution* blocks_file_distribution,
-                           NumBlocks_t blocks_per_machine,
-                           uint32_t replication_factor,
-                           uint64_t random_seed) :
-  blocks_file_distribution_(blocks_file_distribution),
-  blocks_per_machine_(blocks_per_machine),
-  generator_(random_seed),
-  num_blocks_in_use_(0),
-  replication_factor_(replication_factor),
-  total_block_capacity_(0),
-  uniform_distribution_(0.0, 1.0) {
-  CHECK_NOTNULL(blocks_file_distribution_);
+SimulatedDFS::SimulatedDFS() {
 }
 
-void SimulatedDFS::AddMachine(ResourceID_t machine) {
-  total_block_capacity_ += blocks_per_machine_;
-  while (num_blocks_in_use_ < total_block_capacity_) {
-    uint32_t file_num_blocks = NumBlocksInFile();
-    if (num_blocks_in_use_ + file_num_blocks * replication_factor_ <=
-        total_block_capacity_) {
-      num_blocks_in_use_ += file_num_blocks * replication_factor_;
-      files_.push_back(file_num_blocks);
-    } else {
-      break;
+void SimulatedDFS::AddBlocksForTask(TaskID_t task_id, uint64_t num_blocks) {
+  for (uint64_t block_index = 0; block_index < num_blocks; ++block_index) {
+    uint64_t block_id = GenerateBlockID(task_id, block_index);
+    PlaceBlockOnMachines(task_id, block_id);
+  }
+}
+
+void SimulatedDFS::AddMachine(ResourceID_t machine_res_id) {
+  CHECK(InsertIfNotPresent(&machine_num_free_blocks_, machine_res_id,
+                           FLAGS_simulated_dfs_blocks_per_machine));
+  CHECK(InsertIfNotPresent(&tasks_on_machine_, machine_res_id,
+                           unordered_set<TaskID_t>()));
+}
+
+uint64_t SimulatedDFS::GenerateBlockID(TaskID_t task_id, uint64_t block_index) {
+  uint64_t hash = SpookyHash::Hash64(&task_id, sizeof(task_id), SEED);
+  boost::hash_combine(hash, block_index);
+  return hash;
+}
+
+void SimulatedDFS::GetFileLocations(const string& file_path,
+                                    list<DataLocation>* locations) {
+  CHECK_NOTNULL(locations);
+  // NOTE: we assume that each task has one input file whose path is equal
+  // to the task id.
+  TaskID_t task_id = boost::lexical_cast<TaskID_t>(file_path);
+  pair<multimap<TaskID_t, DataLocation>::iterator,
+       multimap<TaskID_t, DataLocation>::iterator> range_it =
+    task_to_data_locations_.equal_range(task_id);
+  for (; range_it.first != range_it.second; range_it.first++) {
+    locations->push_back(range_it.first->second);
+  }
+}
+
+ResourceID_t SimulatedDFS::PlaceBlockOnRandomMachine() {
+  uint32_t rand_seed = 0;
+  ResourceID_t machine_res_id;
+  uint64_t* num_free_blocks;
+  // Get a machine on which to place the block. The machine must have
+  // free space.
+  uint64_t num_machines_selected = 0;
+  do {
+    size_t bucket_index = 0;
+    size_t bucket_size = 0;
+    while (bucket_size == 0) {
+      bucket_index =
+        rand_r(&rand_seed) % machine_num_free_blocks_.bucket_count();
+      bucket_size = machine_num_free_blocks_.bucket_size(bucket_index);
     }
+    size_t index_within_bucket = rand_r(&rand_seed) % bucket_size;
+    auto it = machine_num_free_blocks_.begin(bucket_index);
+    advance(it, index_within_bucket);
+    machine_res_id = it->first;
+    num_free_blocks = &(it->second);
+    ++num_machines_selected;
+    if (num_machines_selected > MAX_MACHINE_TO_SAMPLE_FOR_BLOCK_PLACEMENT) {
+      LOG(FATAL) << "There's not enough free space on the DFS";
+    }
+  } while (*num_free_blocks == 0);
+  *num_free_blocks = *num_free_blocks - 1;
+  return machine_res_id;
+}
+
+void SimulatedDFS::PlaceBlockOnMachines(TaskID_t task_id, uint64_t block_id) {
+  for (uint64_t replica_index = 0;
+       replica_index < FLAGS_simulated_dfs_replication_factor;
+       replica_index++) {
+    ResourceID_t machine_res_id = PlaceBlockOnRandomMachine();
+    unordered_set<TaskID_t>* tasks_machine =
+      FindOrNull(tasks_on_machine_, machine_res_id);
+    CHECK_NOTNULL(tasks_machine);
+    tasks_machine->insert(task_id);
+    DataLocation data_location(machine_res_id, block_id,
+                               FLAGS_simulated_quincy_block_size * MB_TO_BYTES);
+    task_to_data_locations_.insert(pair<TaskID_t, DataLocation>(task_id,
+                                                                data_location));
   }
-  machines_.push_back(machine);
 }
 
-const ResourceSet_t SimulatedDFS::GetMachines(FileID_t file) const {
-  ResourceSet_t res;
-  uint32_t num_machines = machines_.size();
-  for (uint32_t i = 0; i < replication_factor_; i++) {
-    uint64_t machine_id = SpookyHash::Hash32(&file, sizeof(file), i);
-    machine_id *= num_machines; // 32-bit*32-bit fits in 64-bits
-    // always produces an answer in range [0,num_machines-1]
-    machine_id /= (uint64_t)UINT32_MAX + 1;
-    res.insert(machines_[machine_id]);
+void SimulatedDFS::RemoveBlocksForTask(TaskID_t task_id) {
+  pair<multimap<TaskID_t, DataLocation>::iterator,
+       multimap<TaskID_t, DataLocation>::iterator> range_it =
+    task_to_data_locations_.equal_range(task_id);
+  for (; range_it.first != range_it.second; range_it.first++) {
+    const DataLocation& data_location = range_it.first->second;
+    uint64_t* num_free_blocks =
+      FindOrNull(machine_num_free_blocks_, data_location.machine_res_id_);
+    CHECK_NOTNULL(num_free_blocks);
+    *num_free_blocks = *num_free_blocks + 1;
+    unordered_set<TaskID_t>* tasks =
+      FindOrNull(tasks_on_machine_, data_location.machine_res_id_);
+    CHECK_NOTNULL(tasks);
+    tasks->erase(task_id);
   }
-  return res;
+  task_to_data_locations_.erase(task_id);
 }
 
-uint32_t SimulatedDFS::NumBlocksInFile() {
-  double r = uniform_distribution_(generator_);
-  return blocks_file_distribution_->Inverse(r);
-}
-
-void SimulatedDFS::RemoveMachine(ResourceID_t machine) {
-  for (auto it = machines_.begin(); it != machines_.end(); ++it) {
-    if (*it == machine) {
-      machines_.erase(it);
-      total_block_capacity_ -= blocks_per_machine_;
-      // Delete files until we fit within the capacity.
-      while (num_blocks_in_use_ > total_block_capacity_) {
-        num_blocks_in_use_ -= files_.back() * replication_factor_;
-        files_.pop_back();
+void SimulatedDFS::RemoveMachine(ResourceID_t machine_res_id) {
+  ResourceID_t res_tmp = machine_res_id;
+  // Remove the machine from the map of machines with storage space.
+  machine_num_free_blocks_.erase(res_tmp);
+  unordered_set<TaskID_t>* tasks =
+    FindOrNull(tasks_on_machine_, machine_res_id);
+  CHECK_NOTNULL(tasks);
+  for (auto& task_id : *tasks) {
+    pair<multimap<TaskID_t, DataLocation>::iterator,
+         multimap<TaskID_t, DataLocation>::iterator> range_it =
+      task_to_data_locations_.equal_range(task_id);
+    for (; range_it.first != range_it.second; range_it.first++) {
+      if (range_it.first->second.machine_res_id_ == machine_res_id) {
+        // Move the block to another random machine.
+        range_it.first->second.machine_res_id_ = PlaceBlockOnRandomMachine();
       }
-      return;
     }
   }
-  LOG(FATAL) << "Machine is not in list of machines";
-}
-
-unordered_set<SimulatedDFS::FileID_t> SimulatedDFS::SampleFiles(
-    NumBlocks_t target_blocks, uint32_t tolerance) const {
-  CHECK_LE(target_blocks, num_blocks_in_use_);
-  NumBlocks_t min_blocks_to_sample = (target_blocks * (100 - tolerance)) / 100;
-  min_blocks_to_sample = max(min_blocks_to_sample, (NumBlocks_t)1);
-  NumBlocks_t max_blocks_to_sample = (target_blocks * (100 + tolerance)) / 100;
-
-  unordered_set<SimulatedDFS::FileID_t> sampled_files;
-
-  uniform_int_distribution<size_t> distn(0, files_.size() - 1);
-  NumBlocks_t blocks_sampled = 0;
-  while (blocks_sampled < min_blocks_to_sample) {
-    size_t index = distn(generator_);
-    NumBlocks_t blocks_in_file = files_[index];
-
-    if (sampled_files.count(index) > 0) {
-      // already sampled once
-      continue;
-    }
-    if (blocks_sampled + blocks_in_file > max_blocks_to_sample) {
-      // file too big
-      continue;
-    }
-    sampled_files.insert(index);
-    blocks_sampled += blocks_in_file;
-
-    VLOG(2) << "Sampled file " << index << " with " << blocks_in_file
-            << " blocks";
-  }
-
-  return sampled_files;
+  // There are no more tasks with blocks on this machine.
+  tasks_on_machine_.erase(machine_res_id);
 }
 
 } // namespace sim
