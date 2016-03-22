@@ -34,6 +34,9 @@ DECLARE_string(debug_output_dir);
 DECLARE_int32(flow_scheduling_cost_model);
 DECLARE_bool(debug_flow_graph);
 
+DEFINE_string(http_ui_template_dir, "src/webui",
+              "Path to the directory where the web UI templates are located.");
+
 namespace firmament {
 namespace webui {
 
@@ -66,11 +69,12 @@ void CoordinatorHTTPUI::AddHeaderToTemplate(TemplateDictionary* dict,
   dict->SetIntValue("WEBUI_PORT", port_);
   // HTML header
   TemplateDictionary* header_sub_dict = dict->AddIncludeDictionary("HEADER");
-  header_sub_dict->SetFilename("src/webui/header.tpl");
+  header_sub_dict->SetFilename(FLAGS_http_ui_template_dir + "/header.tpl");
   // Page header
   TemplateDictionary* pgheader_sub_dict =
       dict->AddIncludeDictionary("PAGE_HEADER");
-  pgheader_sub_dict->SetFilename("src/webui/page_header.tpl");
+  pgheader_sub_dict->SetFilename(
+      FLAGS_http_ui_template_dir + "/page_header.tpl");
   pgheader_sub_dict->SetValue("RESOURCE_ID", to_string(uuid));
   pgheader_sub_dict->SetValue("RESOURCE_HOST", coordinator_->hostname());
   // Statistics for page header
@@ -94,7 +98,8 @@ void CoordinatorHTTPUI::AddFooterToTemplate(TemplateDictionary* dict) {
   // Page footer
   TemplateDictionary* pgheader_sub_dict =
       dict->AddIncludeDictionary("PAGE_FOOTER");
-  pgheader_sub_dict->SetFilename("src/webui/page_footer.tpl");
+  pgheader_sub_dict->SetFilename(
+      FLAGS_http_ui_template_dir + "/page_footer.tpl");
 }
 
 void CoordinatorHTTPUI::HandleCollectlGraphsURI(
@@ -210,7 +215,8 @@ void CoordinatorHTTPUI::HandleRootURI(const http::request_ptr& http_request,
   }
   AddFooterToTemplate(&dict);
   string output;
-  ExpandTemplate("src/webui/main.tpl", ctemplate::DO_NOT_STRIP, &dict, &output);
+  ExpandTemplate(FLAGS_http_ui_template_dir + "/main.tpl",
+                 ctemplate::DO_NOT_STRIP, &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -249,11 +255,11 @@ void CoordinatorHTTPUI::HandleJobsListURI(const http::request_ptr& http_request,
   }
   string output;
   if (!http_request->get_query("json").empty()) {
-    ExpandTemplate("src/webui/json_jobs_list.tpl", ctemplate::DO_NOT_STRIP,
-                   &dict, &output);
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/json_jobs_list.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
   } else {
-    ExpandTemplate("src/webui/jobs_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
-                   &output);
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/jobs_list.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
   }
   writer->write(output);
   FinishOkResponse(writer);
@@ -289,11 +295,11 @@ void CoordinatorHTTPUI::HandleJobCompletionURI(
   AddFooterToTemplate(&dict);
   string output;
   if (!http_request->get_query("json").empty()) {
-    ExpandTemplate("src/webui/json_job_completion.tpl", ctemplate::DO_NOT_STRIP,
-                   &dict, &output);
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/json_job_completion.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
   } else {
-    ExpandTemplate("src/webui/job_completion.tpl", ctemplate::DO_NOT_STRIP,
-                   &dict, &output);
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/job_completion.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
   }
   writer->write(output);
   FinishOkResponse(writer);
@@ -355,8 +361,8 @@ void CoordinatorHTTPUI::HandleJobURI(const http::request_ptr& http_request,
   }
   AddFooterToTemplate(&dict);
   string output;
-  ExpandTemplate("src/webui/job_status.tpl", ctemplate::DO_NOT_STRIP,
-                 &dict, &output);
+  ExpandTemplate(FLAGS_http_ui_template_dir + "/job_status.tpl",
+                 ctemplate::DO_NOT_STRIP, &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -377,8 +383,8 @@ void CoordinatorHTTPUI::HandleECDetailsURI(
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
   string output;
-  ExpandTemplate("src/webui/ec_details.tpl", ctemplate::DO_NOT_STRIP,
-                 &dict, &output);
+  ExpandTemplate(FLAGS_http_ui_template_dir + "/ec_details.tpl",
+                 ctemplate::DO_NOT_STRIP, &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -419,8 +425,8 @@ void CoordinatorHTTPUI::HandleReferencesListURI(
     }
   }
   string output;
-  ExpandTemplate("src/webui/refs_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
-                 &output);
+  ExpandTemplate(FLAGS_http_ui_template_dir + "/refs_list.tpl",
+                 ctemplate::DO_NOT_STRIP, &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -456,8 +462,8 @@ void CoordinatorHTTPUI::HandleResourcesListURI(
     ++i;
   }
   string output;
-  ExpandTemplate("src/webui/resources_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
-                 &output);
+  ExpandTemplate(FLAGS_http_ui_template_dir + "/resources_list.tpl",
+                 ctemplate::DO_NOT_STRIP, &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -511,8 +517,8 @@ void CoordinatorHTTPUI::HandleResourceURI(const http::request_ptr& http_request,
   }
   AddFooterToTemplate(&dict);
   string output;
-  ExpandTemplate("src/webui/resource_status.tpl", ctemplate::DO_NOT_STRIP,
-                 &dict, &output);
+  ExpandTemplate(FLAGS_http_ui_template_dir + "/resource_status.tpl",
+                 ctemplate::DO_NOT_STRIP, &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -563,8 +569,8 @@ void CoordinatorHTTPUI::HandleJobStatusURI(
   string output;
   if (!job_id.empty()) {
     dict.SetValue("JOB_ID", job_id);
-    ExpandTemplate("src/webui/job_dtg.tpl", ctemplate::DO_NOT_STRIP, &dict,
-                   &output);
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/job_dtg.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
   } else {
     output = "Please specify a job ID parameter.";
   }
@@ -665,8 +671,8 @@ void CoordinatorHTTPUI::HandleReferenceURI(
   }
   AddFooterToTemplate(&dict);
   string output;
-  ExpandTemplate("src/webui/reference_view.tpl", ctemplate::DO_NOT_STRIP,
-                 &dict, &output);
+  ExpandTemplate(FLAGS_http_ui_template_dir + "/reference_view.tpl",
+                 ctemplate::DO_NOT_STRIP, &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -709,8 +715,8 @@ void CoordinatorHTTPUI::HandleSchedURI(const http::request_ptr& http_request,
       AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
       AddFooterToTemplate(&dict);
       string output;
-      ExpandTemplate("src/webui/flow_graph.tpl", ctemplate::DO_NOT_STRIP,
-                     &dict, &output);
+      ExpandTemplate(FLAGS_http_ui_template_dir + "/flow_graph.tpl",
+                     ctemplate::DO_NOT_STRIP, &dict, &output);
       writer->write(output);
       FinishOkResponse(writer);
       return;
@@ -738,8 +744,8 @@ void CoordinatorHTTPUI::HandleSchedCostModelURI(
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
   string output;
-  ExpandTemplate("src/webui/sched_costmodel.tpl", ctemplate::DO_NOT_STRIP,
-                 &dict, &output);
+  ExpandTemplate(FLAGS_http_ui_template_dir + "/sched_costmodel.tpl",
+                 ctemplate::DO_NOT_STRIP, &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -767,8 +773,8 @@ void CoordinatorHTTPUI::HandleSchedFlowGraphURI(
     AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
     AddFooterToTemplate(&dict);
     string output;
-    ExpandTemplate("src/webui/flow_graph.tpl", ctemplate::DO_NOT_STRIP,
-                   &dict, &output);
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/flow_graph.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
     writer->write(output);
   }
   FinishOkResponse(writer);
@@ -909,11 +915,11 @@ void CoordinatorHTTPUI::HandleTasksListURI(
   }
   string output;
   if (!http_request->get_query("json").empty()) {
-    ExpandTemplate("src/webui/json_tasks_list.tpl", ctemplate::DO_NOT_STRIP,
-                   &dict, &output);
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/json_tasks_list.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
   } else {
-    ExpandTemplate("src/webui/tasks_list.tpl", ctemplate::DO_NOT_STRIP, &dict,
-                   &output);
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/tasks_list.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
   }
   writer->write(output);
   FinishOkResponse(writer);
@@ -1068,8 +1074,8 @@ void CoordinatorHTTPUI::HandleTaskURI(const http::request_ptr& http_request,
   }
   AddFooterToTemplate(&dict);
   string output;
-  ExpandTemplate("src/webui/task_status.tpl", ctemplate::DO_NOT_STRIP,
-                 &dict, &output);
+  ExpandTemplate(FLAGS_http_ui_template_dir + "/task_status.tpl",
+                 ctemplate::DO_NOT_STRIP, &dict, &output);
   writer->write(output);
   FinishOkResponse(writer);
 }
