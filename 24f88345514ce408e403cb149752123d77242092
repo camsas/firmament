@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_646f6493",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-22T22:17:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_24bb9c10",
+      "range": {
+        "startLine": 16,
+        "startChar": 19,
+        "endLine": 16,
+        "endChar": 28
+      },
+      "revId": "24f88345514ce408e403cb149752123d77242092",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_64c1a480",
         "filename": "src/scheduling/flow/quincy_cost_model.cc",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2016-03-22T21:50:41Z",
       "side": 1,
       "message": "typo. preferred",
+      "range": {
+        "startLine": 591,
+        "startChar": 16,
+        "endLine": 591,
+        "endChar": 28
+      },
+      "revId": "24f88345514ce408e403cb149752123d77242092",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_445580c4",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 591,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-22T22:17:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_64c1a480",
       "range": {
         "startLine": 591,
         "startChar": 16,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_045e58e9",
+        "filename": "src/scheduling/flow/quincy_cost_model.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-22T22:17:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_e4d49448",
+      "range": {
+        "startLine": 80,
+        "startChar": 19,
+        "endLine": 80,
+        "endChar": 21
+      },
+      "revId": "24f88345514ce408e403cb149752123d77242092",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_c4c990ae",
         "filename": "src/scheduling/flow/quincy_cost_model.h",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_e46254ad",
+        "filename": "src/scheduling/flow/quincy_cost_model.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-22T22:17:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_c4c990ae",
+      "range": {
+        "startLine": 99,
+        "startChar": 53,
+        "endLine": 99,
+        "endChar": 61
+      },
+      "revId": "24f88345514ce408e403cb149752123d77242092",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_84c4a892",
         "filename": "src/scheduling/flow/quincy_cost_model.h",
         "patchSetId": 3
@@ -105,6 +201,30 @@
       "writtenOn": "2016-03-22T21:50:41Z",
       "side": 1,
       "message": "Why do we need NotPrefered in the name? Isn\u0027t GetTransferCostToResource sufficient, and if the resource is preferred, we return the preferred cost?\n\nAlso: typo in method name, should be \"Preferred\"",
+      "range": {
+        "startLine": 104,
+        "startChar": 11,
+        "endLine": 104,
+        "endChar": 42
+      },
+      "revId": "24f88345514ce408e403cb149752123d77242092",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_8472687b",
+        "filename": "src/scheduling/flow/quincy_cost_model.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-22T22:17:22Z",
+      "side": 1,
+      "message": "To discourage us to use it in the cases when we already have the cached cost. We should only call this method in the cases when the resource is not a preferred one.",
+      "parentUuid": "da9b358b_84c4a892",
       "range": {
         "startLine": 104,
         "startChar": 11,
