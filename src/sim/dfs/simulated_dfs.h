@@ -71,6 +71,7 @@ class SimulatedDFS {
     boost::hash<boost::uuids::uuid>> tasks_on_machine_;
   // Mapping storing the block locations for every task.
   multimap<TaskID_t, DataLocation> task_to_data_locations_;
+  uint32_t rand_seed_;
 };
 
 } // namespace sim

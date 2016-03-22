@@ -28,7 +28,7 @@ namespace sim {
 
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
-SimulatedDFS::SimulatedDFS() {
+SimulatedDFS::SimulatedDFS() : rand_seed_(42) {
 }
 
 void SimulatedDFS::AddBlocksForTask(TaskID_t task_id, uint64_t num_blocks) {
@@ -66,7 +66,6 @@ void SimulatedDFS::GetFileLocations(const string& file_path,
 }
 
 ResourceID_t SimulatedDFS::PlaceBlockOnRandomMachine() {
-  uint32_t rand_seed = 0;
   ResourceID_t machine_res_id;
   uint64_t* num_free_blocks;
   // Get a machine on which to place the block. The machine must have
@@ -77,10 +76,10 @@ ResourceID_t SimulatedDFS::PlaceBlockOnRandomMachine() {
     size_t bucket_size = 0;
     while (bucket_size == 0) {
       bucket_index =
-        rand_r(&rand_seed) % machine_num_free_blocks_.bucket_count();
+        rand_r(&rand_seed_) % machine_num_free_blocks_.bucket_count();
       bucket_size = machine_num_free_blocks_.bucket_size(bucket_index);
     }
-    size_t index_within_bucket = rand_r(&rand_seed) % bucket_size;
+    size_t index_within_bucket = rand_r(&rand_seed_) % bucket_size;
     auto it = machine_num_free_blocks_.begin(bucket_index);
     advance(it, index_within_bucket);
     machine_res_id = it->first;
