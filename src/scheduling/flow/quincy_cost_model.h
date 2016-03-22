@@ -68,11 +68,24 @@ class QuincyCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
-  uint64_t ComputeDataStatistics(
+  uint64_t ComputeClusterDataStatistics(
       const TaskDescriptor& td,
       unordered_map<ResourceID_t, uint64_t,
         boost::hash<boost::uuids::uuid>>* data_on_machines,
       unordered_map<EquivClass_t, uint64_t>* data_on_racks);
+  /**
+   * Compute the amount of data the task has on the machine given as argument.
+   * @param td the descriptor of the task for which to compute statistics
+   * @param machine_res_id resource id of the machine we're computing stats for
+   * @param data_on rack the amount of unique data the task has on the
+   * machine's rack
+   * @param data_on_machine the amount of unique data the task has on the
+   * machine
+   * @return the total task input size
+   */
+  uint64_t ComputeDataStatsForMachine(
+      const TaskDescriptor& td, ResourceID_t machine_res_id,
+      uint64_t* data_on_rack, uint64_t* data_on_machine);
   int64_t ComputeTransferCostToMachine(uint64_t remote_data,
                                        uint64_t data_on_rack);
   int64_t ComputeTransferCostToRack(
@@ -82,6 +95,14 @@ class QuincyCostModel : public CostModelInterface {
       const unordered_map<ResourceID_t, uint64_t,
         boost::hash<boost::uuids::uuid>>& data_on_machines);
   void ConstructTaskPreferedSet(TaskID_t task_id);
+  /**
+   * Get the transfer cost to a resource that is not prefered and on which
+   * the task is currently running.
+   * @param task_id the id of the task
+   * @param res_id the id of the resource on which the task is running
+   */
+  uint64_t GetTransferCostToNotPreferedRes(TaskID_t task_id,
+                                           ResourceID_t res_id);
   void RemoveMachineFromRack(ResourceID_t res_id, EquivClass_t rack_ec,
                              bool* rack_removed);
   void RemovePreferencesToMachine(ResourceID_t res_id);
@@ -99,8 +120,10 @@ class QuincyCostModel : public CostModelInterface {
    * change (e.g., machine addition or removal) in a rack.
    * @param td the descriptor of the task
    * @param ec_changed the rack in which the machines changed
+   * @param rack_removed true if the rack has already been removed
    */
-  void UpdateTaskCosts(const TaskDescriptor& td, EquivClass_t ec_changed);
+  void UpdateTaskCosts(const TaskDescriptor& td, EquivClass_t ec_changed,
+                       bool rack_removed);
   void UpdateTaskCostForRack(const TaskDescriptor& td, EquivClass_t rack_ec);
 
   /**
@@ -168,6 +191,8 @@ class QuincyCostModel : public CostModelInterface {
   unordered_map<TaskID_t,
     unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>>
     task_prefered_machines_;
+  // Map storing the data transfer cost and the resource for each running task.
+  unordered_map<TaskID_t, pair<ResourceID_t, int64_t>> task_running_arcs_;
 };
 
 }  // namespace firmament

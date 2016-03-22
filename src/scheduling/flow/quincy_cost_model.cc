@@ -73,10 +73,45 @@ Cost_t QuincyCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 Cost_t QuincyCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                                ResourceID_t resource_id) {
   auto machines_data = FindOrNull(task_prefered_machines_, task_id);
-  CHECK_NOTNULL(machines_data);
-  int64_t* transfer_cost = FindOrNull(*machines_data, resource_id);
-  CHECK_NOTNULL(transfer_cost);
-  return *transfer_cost;
+  if (machines_data) {
+    int64_t* transfer_cost = FindOrNull(*machines_data, resource_id);
+    if (transfer_cost) {
+      return *transfer_cost;
+    } else {
+      // The machine is not a prefered one.
+      return GetTransferCostToNotPreferedRes(task_id, resource_id);
+    }
+  } else {
+    // The task doesn't have any prefered machines.
+    return GetTransferCostToNotPreferedRes(task_id, resource_id);
+  }
+}
+
+uint64_t QuincyCostModel::GetTransferCostToNotPreferedRes(TaskID_t task_id,
+                                                          ResourceID_t res_id) {
+  pair<ResourceID_t, int64_t>* machine_transfer_cost =
+    FindOrNull(task_running_arcs_, task_id);
+  if (!machine_transfer_cost || machine_transfer_cost->first != res_id) {
+    // The running arc did not exist previously or was pointing to a
+    // different resource.
+    const TaskDescriptor& td = GetTask(task_id);
+    ResourceID_t machine_res_id =
+      MachineResIDForResource(resource_map_, res_id);
+    uint64_t data_on_rack = 0;
+    uint64_t data_on_machine = 0;
+    uint64_t input_size =
+      ComputeDataStatsForMachine(td, machine_res_id, &data_on_rack,
+                                 &data_on_machine);
+    int64_t transfer_cost =
+      ComputeTransferCostToMachine(input_size - data_on_machine,
+                                   data_on_rack - data_on_machine);
+    // Cache the transfer cost.
+    InsertOrUpdate(&task_running_arcs_, task_id,
+                   pair<ResourceID_t, int64_t>(res_id, transfer_cost));
+    return transfer_cost;
+  } else {
+    return machine_transfer_cost->second;
+  }
 }
 
 Cost_t QuincyCostModel::ResourceNodeToResourceNodeCost(
@@ -219,7 +254,7 @@ void QuincyCostModel::AddMachine(
   CHECK(InsertIfNotPresent(&machine_to_rack_ec_, res_id, rack_ec));
   if (FLAGS_quincy_update_costs_upon_machine_change) {
     for (auto& id_td : *task_map_) {
-      UpdateTaskCosts(*(id_td.second), rack_ec);
+      UpdateTaskCosts(*(id_td.second), rack_ec, false);
     }
   }
 }
@@ -237,12 +272,13 @@ void QuincyCostModel::AddTask(TaskID_t task_id) {
 void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
   EquivClass_t* ec_ptr = FindOrNull(machine_to_rack_ec_, res_id);
   CHECK_NOTNULL(ec_ptr);
+  EquivClass_t ec = *ec_ptr;
   RemovePreferencesToMachine(res_id);
   bool rack_removed = false;
-  RemoveMachineFromRack(res_id, *ec_ptr, &rack_removed);
-  if (!rack_removed && FLAGS_quincy_update_costs_upon_machine_change) {
+  RemoveMachineFromRack(res_id, ec, &rack_removed);
+  if (FLAGS_quincy_update_costs_upon_machine_change) {
     for (auto& id_td : *task_map_) {
-      UpdateTaskCosts(*(id_td.second), *ec_ptr);
+      UpdateTaskCosts(*(id_td.second), ec, rack_removed);
     }
   }
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
@@ -287,6 +323,7 @@ void QuincyCostModel::RemoveMachineFromRack(ResourceID_t res_id,
 }
 
 void QuincyCostModel::RemoveTask(TaskID_t task_id) {
+  task_running_arcs_.erase(task_id);
   task_prefered_ecs_.erase(task_id);
   task_prefered_machines_.erase(task_id);
 }
@@ -335,7 +372,7 @@ FlowGraphNode* QuincyCostModel::UpdateStats(FlowGraphNode* accumulator,
   return accumulator;
 }
 
-uint64_t QuincyCostModel::ComputeDataStatistics(
+uint64_t QuincyCostModel::ComputeClusterDataStatistics(
     const TaskDescriptor& td,
     unordered_map<ResourceID_t, uint64_t,
       boost::hash<boost::uuids::uuid>>* data_on_machines,
@@ -375,6 +412,41 @@ uint64_t QuincyCostModel::ComputeDataStatistics(
   return input_size;
 }
 
+uint64_t QuincyCostModel::ComputeDataStatsForMachine(
+    const TaskDescriptor& td, ResourceID_t machine_res_id,
+    uint64_t* data_on_rack, uint64_t* data_on_machine) {
+  unordered_set<uint64_t> machine_block_ids;
+  unordered_set<uint64_t> rack_block_ids;
+  EquivClass_t* ec_ptr = FindOrNull(machine_to_rack_ec_, machine_res_id);
+  CHECK_NOTNULL(ec_ptr);
+  DataLayerManagerInterface* data_layer =
+    knowledge_base_->mutable_data_layer_manager();
+  uint64_t input_size = 0;
+  for (auto& dependency : td.dependencies()) {
+    input_size += dependency.size();
+    list<DataLocation> locations;
+    data_layer->GetFileLocations(dependency.location(), &locations);
+    for (auto& location : locations) {
+      if (machine_res_id == location.machine_res_id_ &&
+          machine_block_ids.find(location.block_id_) ==
+          machine_block_ids.end()) {
+        machine_block_ids.insert(location.block_id_);
+        *data_on_machine = *data_on_machine + location.size_bytes_;
+      }
+      EquivClass_t* machine_rack_ec_ptr =
+        FindOrNull(machine_to_rack_ec_, location.machine_res_id_);
+      CHECK_NOTNULL(machine_rack_ec_ptr);
+      if (*ec_ptr == *machine_rack_ec_ptr &&
+          rack_block_ids.find(location.block_id_) ==
+          rack_block_ids.end()) {
+        rack_block_ids.insert(location.block_id_);
+        *data_on_rack = *data_on_rack + location.size_bytes_;
+      }
+    }
+  }
+  return input_size;
+}
+
 int64_t QuincyCostModel::ComputeTransferCostToMachine(uint64_t remote_data,
                                                       uint64_t data_on_rack) {
   return (FLAGS_quincy_tor_transfer_cost * data_on_rack +
@@ -391,12 +463,15 @@ int64_t QuincyCostModel::ComputeTransferCostToRack(
   auto machines_in_rack = FindOrNull(rack_to_machine_res_, ec);
   int64_t cost_worst_machine = 0;
   for (auto& machine_res_id : *machines_in_rack) {
-    const uint64_t* data_on_machine =
+    const uint64_t* data_on_machine_ptr =
       FindOrNull(data_on_machines, machine_res_id);
-    CHECK_NOTNULL(data_on_machine);
+    uint64_t data_on_machine = 0;
+    if (data_on_machine_ptr) {
+      data_on_machine = *data_on_machine_ptr;
+    }
     int64_t cost_to_machine =
-      ComputeTransferCostToMachine(input_size - *data_on_machine,
-                                   data_on_rack - *data_on_machine);
+      ComputeTransferCostToMachine(input_size - data_on_machine,
+                                   data_on_rack - data_on_machine);
     cost_worst_machine = max(cost_worst_machine, cost_to_machine);
   }
   return cost_worst_machine;
@@ -409,7 +484,7 @@ void QuincyCostModel::ConstructTaskPreferedSet(TaskID_t task_id) {
                 boost::hash<boost::uuids::uuid>> data_on_machines;
   // Compute the amount of data the task has on every machine and rack.
   uint64_t input_size =
-    ComputeDataStatistics(td, &data_on_machines, &data_on_ecs);
+    ComputeClusterDataStatistics(td, &data_on_machines, &data_on_ecs);
 
   auto prefered_ecs = FindOrNull(task_prefered_ecs_, task_id);
   CHECK_NOTNULL(prefered_ecs);
@@ -492,7 +567,8 @@ void QuincyCostModel::UpdateRackBlocks(
 }
 
 void QuincyCostModel::UpdateTaskCosts(const TaskDescriptor& td,
-                                      EquivClass_t ec_changed) {
+                                      EquivClass_t ec_changed,
+                                      bool rack_removed) {
   auto prefered_ecs = FindOrNull(task_prefered_ecs_, td.uid());
   int64_t cost_worst_machine = 0;
   // Get the worst cost to the racks that haven't changed.
@@ -503,7 +579,11 @@ void QuincyCostModel::UpdateTaskCosts(const TaskDescriptor& td,
         max(cost_worst_machine, ec_to_cost.second);
     }
   }
-  UpdateTaskCostForRack(td, ec_changed);
+  if (!rack_removed) {
+    UpdateTaskCostForRack(td, ec_changed);
+  } else {
+    prefered_ecs->erase(ec_changed);
+  }
   // Update cluster aggregator's cost.
   InsertOrUpdate(prefered_ecs, cluster_aggregator_ec_, cost_worst_machine);
 }
