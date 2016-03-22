@@ -94,7 +94,7 @@ class QuincyCostModel : public CostModelInterface {
       uint64_t data_on_rack,
       const unordered_map<ResourceID_t, uint64_t,
         boost::hash<boost::uuids::uuid>>& data_on_machines);
-  void ConstructTaskPreferedSet(TaskID_t task_id);
+  void ConstructTaskPreferredSet(TaskID_t task_id);
   /**
    * Get the transfer cost to a resource that is not preferred and on which
    * the task is currently running.
@@ -128,7 +128,7 @@ class QuincyCostModel : public CostModelInterface {
 
   /**
    * Depending on how much data the machine has, the method adds, updates
-   * or removes the machine from the prefered set.
+   * or removes the machine from the preferred set.
    * @param input_size the total input of the task
    * @param machine_res_id the resource descriptor of the machine
    * @param data_on_machine the amount of task's data (in bytes) the machine
@@ -139,7 +139,7 @@ class QuincyCostModel : public CostModelInterface {
    * passed task_pref_machines is NULL the method may return a new pointer
    */
   unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>*
-    UpdateTaskPreferedMachineList(
+    UpdateTaskPreferredMachineList(
       TaskID_t task_id,
       uint64_t input_size,
       ResourceID_t machine_res_id,
@@ -147,7 +147,7 @@ class QuincyCostModel : public CostModelInterface {
       int64_t transfer_cost,
       unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>*
       task_pref_machines);
-  void UpdateTaskPreferedRacksList(
+  void UpdateTaskPreferredRacksList(
       TaskID_t task_id, uint64_t input_size, uint64_t data_on_rack,
       int64_t worst_rack_cost, EquivClass_t rack_ec);
   inline uint64_t GetNumSchedulableSlots(ResourceID_t res_id) {
@@ -186,11 +186,11 @@ class QuincyCostModel : public CostModelInterface {
     machine_to_rack_ec_;
   // Map storing the EC preference list for each task.
   unordered_map<TaskID_t, unordered_map<EquivClass_t, int64_t>>
-    task_prefered_ecs_;
+    task_preferred_ecs_;
   // Map storing the machine preference list for each task.
   unordered_map<TaskID_t,
     unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>>
-    task_prefered_machines_;
+    task_preferred_machines_;
   // Map storing the data transfer cost and the resource for each running task.
   unordered_map<TaskID_t, pair<ResourceID_t, int64_t>> task_running_arcs_;
 };

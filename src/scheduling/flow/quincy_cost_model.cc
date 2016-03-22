@@ -22,10 +22,10 @@
 // Racks contain "between 29 and 31 computers" in Quincy test setup
 DEFINE_uint64(quincy_machines_per_rack, 30, "Number of machines per rack");
 DEFINE_double(quincy_wait_time_factor, 0.5, "The Quincy wait time factor");
-DEFINE_double(quincy_prefered_machine_data_fraction, 0.1,
+DEFINE_double(quincy_preferred_machine_data_fraction, 0.1,
               "Threshold of proportion of data stored on machine for it to be "
               "on preferred list.");
-DEFINE_double(quincy_prefered_rack_data_fraction, 0.1,
+DEFINE_double(quincy_preferred_rack_data_fraction, 0.1,
               "Threshold of proportion of data stored on rack for it to be on "
               "preferred list.");
 DEFINE_uint64(quincy_tor_transfer_cost, 1,
@@ -72,17 +72,17 @@ Cost_t QuincyCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 
 Cost_t QuincyCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                                ResourceID_t resource_id) {
-  auto machines_data = FindOrNull(task_prefered_machines_, task_id);
+  auto machines_data = FindOrNull(task_preferred_machines_, task_id);
   if (machines_data) {
     int64_t* transfer_cost = FindOrNull(*machines_data, resource_id);
     if (transfer_cost) {
       return *transfer_cost;
     } else {
-      // The machine is not a prefered one.
+      // The machine is not a preferred one.
       return GetTransferCostToNotPreferredRes(task_id, resource_id);
     }
   } else {
-    // The task doesn't have any prefered machines.
+    // The task doesn't have any preferred machines.
     return GetTransferCostToNotPreferredRes(task_id, resource_id);
   }
 }
@@ -144,7 +144,7 @@ Cost_t QuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {
 
 Cost_t QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
                                                    EquivClass_t ec) {
-  auto ec_costs = FindOrNull(task_prefered_ecs_, task_id);
+  auto ec_costs = FindOrNull(task_preferred_ecs_, task_id);
   CHECK_NOTNULL(ec_costs);
   int64_t* transfer_cost = FindOrNull(*ec_costs, ec);
   CHECK_NOTNULL(transfer_cost);
@@ -178,7 +178,7 @@ pair<Cost_t, uint64_t> QuincyCostModel::EquivClassToEquivClass(
 }
 
 vector<EquivClass_t>* QuincyCostModel::GetTaskEquivClasses(TaskID_t task_id) {
-  auto ecs_data = FindOrNull(task_prefered_ecs_, task_id);
+  auto ecs_data = FindOrNull(task_preferred_ecs_, task_id);
   CHECK_NOTNULL(ecs_data);
   vector<EquivClass_t>* task_ecs = new vector<EquivClass_t>();
   for (auto& ec_data : *ecs_data) {
@@ -203,13 +203,13 @@ vector<ResourceID_t>* QuincyCostModel::GetOutgoingEquivClassPrefArcs(
 }
 
 vector<ResourceID_t>* QuincyCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
-  auto machines_data = FindOrNull(task_prefered_machines_, task_id);
+  auto machines_data = FindOrNull(task_preferred_machines_, task_id);
   CHECK_NOTNULL(machines_data);
-  vector<ResourceID_t>* prefered_machines = new vector<ResourceID_t>();
+  vector<ResourceID_t>* preferred_machines = new vector<ResourceID_t>();
   for (auto& machine_data : *machines_data) {
-    prefered_machines->push_back(machine_data.first);
+    preferred_machines->push_back(machine_data.first);
   }
-  return prefered_machines;
+  return preferred_machines;
 }
 
 vector<EquivClass_t>* QuincyCostModel::GetEquivClassToEquivClassesArcs(
@@ -258,9 +258,9 @@ void QuincyCostModel::AddMachine(
       // NOTE: task_map_ may contain tasks that have already been removed from
       // the cost model. We only call UpdateTaskCosts for tasks that haven't
       // been removed. We can check if a task has been removed by checking it
-      // still exists in the task_prefered_ecs_.
-      auto prefered_ecs = FindOrNull(task_prefered_ecs_, id_td.second->uid());
-      if (prefered_ecs) {
+      // still exists in the task_preferred_ecs_.
+      auto preferred_ecs = FindOrNull(task_preferred_ecs_, id_td.second->uid());
+      if (preferred_ecs) {
         UpdateTaskCosts(*(id_td.second), rack_ec, false);
       }
     }
@@ -269,12 +269,12 @@ void QuincyCostModel::AddMachine(
 
 void QuincyCostModel::AddTask(TaskID_t task_id) {
   CHECK(InsertIfNotPresent(
-      &task_prefered_ecs_, task_id, unordered_map<EquivClass_t, int64_t>()));
+      &task_preferred_ecs_, task_id, unordered_map<EquivClass_t, int64_t>()));
   CHECK(InsertIfNotPresent(
-      &task_prefered_machines_, task_id,
+      &task_preferred_machines_, task_id,
       unordered_map<ResourceID_t,
         int64_t, boost::hash<boost::uuids::uuid>>()));
-  ConstructTaskPreferedSet(task_id);
+  ConstructTaskPreferredSet(task_id);
 }
 
 void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
@@ -289,9 +289,9 @@ void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
       // NOTE: task_map_ may contain tasks that have already been removed from
       // the cost model. We only call UpdateTaskCosts for tasks that haven't
       // been removed. We can check if a task has been removed by checking it
-      // still exists in the task_prefered_ecs_.
-      auto prefered_ecs = FindOrNull(task_prefered_ecs_, id_td.second->uid());
-      if (prefered_ecs) {
+      // still exists in the task_preferred_ecs_.
+      auto preferred_ecs = FindOrNull(task_preferred_ecs_, id_td.second->uid());
+      if (preferred_ecs) {
         UpdateTaskCosts(*(id_td.second), ec, rack_removed);
       }
     }
@@ -303,14 +303,14 @@ void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
 void QuincyCostModel::RemovePreferencesToMachine(ResourceID_t res_id) {
-  for (auto& task_to_machines : task_prefered_machines_) {
+  for (auto& task_to_machines : task_preferred_machines_) {
     ResourceID_t res_id_tmp = res_id;
     task_to_machines.second.erase(res_id_tmp);
   }
 }
 
 void QuincyCostModel::RemovePreferencesToRack(EquivClass_t ec) {
-  for (auto& task_to_racks : task_prefered_ecs_) {
+  for (auto& task_to_racks : task_preferred_ecs_) {
     task_to_racks.second.erase(ec);
   }
 }
@@ -339,8 +339,8 @@ void QuincyCostModel::RemoveMachineFromRack(ResourceID_t res_id,
 
 void QuincyCostModel::RemoveTask(TaskID_t task_id) {
   task_running_arcs_.erase(task_id);
-  task_prefered_ecs_.erase(task_id);
-  task_prefered_machines_.erase(task_id);
+  task_preferred_ecs_.erase(task_id);
+  task_preferred_machines_.erase(task_id);
 }
 
 void QuincyCostModel::PrepareStats(FlowGraphNode* accumulator) {
@@ -492,7 +492,7 @@ int64_t QuincyCostModel::ComputeTransferCostToRack(
   return cost_worst_machine;
 }
 
-void QuincyCostModel::ConstructTaskPreferedSet(TaskID_t task_id) {
+void QuincyCostModel::ConstructTaskPreferredSet(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
   unordered_map<EquivClass_t, uint64_t> data_on_ecs;
   unordered_map<ResourceID_t, uint64_t,
@@ -501,17 +501,17 @@ void QuincyCostModel::ConstructTaskPreferedSet(TaskID_t task_id) {
   uint64_t input_size =
     ComputeClusterDataStatistics(td, &data_on_machines, &data_on_ecs);
 
-  auto prefered_ecs = FindOrNull(task_prefered_ecs_, task_id);
-  CHECK_NOTNULL(prefered_ecs);
-  auto prefered_machines = FindOrNull(task_prefered_machines_, task_id);
-  CHECK_NOTNULL(prefered_machines);
+  auto preferred_ecs = FindOrNull(task_preferred_ecs_, task_id);
+  CHECK_NOTNULL(preferred_ecs);
+  auto preferred_machines = FindOrNull(task_preferred_machines_, task_id);
+  CHECK_NOTNULL(preferred_machines);
 
   for (auto& machine_data : data_on_machines) {
     uint64_t data_on_machine = machine_data.second;
     if (data_on_machine >=
-        input_size * FLAGS_quincy_prefered_machine_data_fraction) {
+        input_size * FLAGS_quincy_preferred_machine_data_fraction) {
       // Machine has more data than the required threshold => add it to
-      // the prefered list.
+      // the preferred list.
       EquivClass_t* rack_ec =
         FindOrNull(machine_to_rack_ec_, machine_data.first);
       CHECK_NOTNULL(rack_ec);
@@ -520,7 +520,7 @@ void QuincyCostModel::ConstructTaskPreferedSet(TaskID_t task_id) {
       int64_t transfer_cost =
         ComputeTransferCostToMachine(input_size - data_on_machine,
                                      *data_on_rack - data_on_machine);
-      CHECK(InsertIfNotPresent(prefered_machines, machine_data.first,
+      CHECK(InsertIfNotPresent(preferred_machines, machine_data.first,
                                transfer_cost));
     }
   }
@@ -531,18 +531,18 @@ void QuincyCostModel::ConstructTaskPreferedSet(TaskID_t task_id) {
   }
   for (auto& rack_data : data_on_ecs) {
     if (rack_data.second >=
-        input_size * FLAGS_quincy_prefered_rack_data_fraction) {
+        input_size * FLAGS_quincy_preferred_rack_data_fraction) {
       // Rack has more data than the required threshold => add it to
-      // the prefered list.
+      // the preferred list.
       int64_t transfer_cost =
         ComputeTransferCostToRack(rack_data.first, input_size, rack_data.second,
                                   data_on_machines);
       worst_cluster_cost = max(worst_cluster_cost, transfer_cost);
-      CHECK(InsertIfNotPresent(prefered_ecs, rack_data.first, transfer_cost));
+      CHECK(InsertIfNotPresent(preferred_ecs, rack_data.first, transfer_cost));
     }
   }
   // Add transfer cost to the cluster aggregator.
-  CHECK(InsertIfNotPresent(prefered_ecs, cluster_aggregator_ec_,
+  CHECK(InsertIfNotPresent(preferred_ecs, cluster_aggregator_ec_,
                            worst_cluster_cost));
 }
 
@@ -656,7 +656,7 @@ int64_t QuincyCostModel::UpdateTaskCostForRack(const TaskDescriptor& td,
     data_on_rack += block_size.second;
   }
   // Update the cost for each machine in the rack.
-  auto task_pref_machines = FindOrNull(task_prefered_machines_, td.uid());
+  auto task_pref_machines = FindOrNull(task_preferred_machines_, td.uid());
   uint64_t worst_rack_cost = 0;
   for (auto& machine_res_id : *machines_in_rack) {
     auto machine_blocks = FindOrNull(machines_blocks, machine_res_id);
@@ -670,22 +670,22 @@ int64_t QuincyCostModel::UpdateTaskCostForRack(const TaskDescriptor& td,
         ComputeTransferCostToMachine(input_size - data_on_machine,
                                      data_on_rack - data_on_machine);
       task_pref_machines =
-        UpdateTaskPreferedMachineList(td.uid(), input_size, machine_res_id,
-                                      data_on_machine, transfer_cost,
-                                      task_pref_machines);
+        UpdateTaskPreferredMachineList(td.uid(), input_size, machine_res_id,
+                                       data_on_machine, transfer_cost,
+                                       task_pref_machines);
       worst_rack_cost = max(worst_rack_cost, transfer_cost);
     } else {
       // No blocks on the machine.
       worst_rack_cost = ComputeTransferCostToMachine(input_size, data_on_rack);
     }
   }
-  UpdateTaskPreferedRacksList(td.uid(), input_size, data_on_rack,
-                              worst_rack_cost, rack_ec);
+  UpdateTaskPreferredRacksList(td.uid(), input_size, data_on_rack,
+                               worst_rack_cost, rack_ec);
   return worst_rack_cost;
 }
 
 unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>*
-  QuincyCostModel::UpdateTaskPreferedMachineList(
+  QuincyCostModel::UpdateTaskPreferredMachineList(
     TaskID_t task_id,
     uint64_t input_size,
     ResourceID_t machine_res_id,
@@ -698,34 +698,34 @@ unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>*
     int64_t* machine_transfer_cost =
       FindOrNull(*task_pref_machines, machine_res_id);
     if (machine_transfer_cost) {
-      // The machine is already a prefered one.
+      // The machine is already a preferred one.
       if (data_on_machine >= input_size * FLAGS_quincy_wait_time_factor) {
         *machine_transfer_cost = transfer_cost;
       } else {
-        // The machine is not prefered anymore.
+        // The machine is not preferred anymore.
         task_pref_machines->erase(machine_res_id);
       }
     } else if (data_on_machine >=
                input_size * FLAGS_quincy_wait_time_factor) {
-      // The machine has more data than the threshold => add it to the prefered
+      // The machine has more data than the threshold => add it to the preferred
       // set.
       InsertIfNotPresent(task_pref_machines, machine_res_id, transfer_cost);
     }
   } else if (data_on_machine >=
              input_size * FLAGS_quincy_wait_time_factor) {
-    // The machine has more data than the threshold => create prefered set for
+    // The machine has more data than the threshold => create preferred set for
     // the task and add the machine to it.
     unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>
       new_pref_machines;
-    CHECK(InsertIfNotPresent(&task_prefered_machines_, task_id,
+    CHECK(InsertIfNotPresent(&task_preferred_machines_, task_id,
                              new_pref_machines));
-    task_pref_machines = FindOrNull(task_prefered_machines_, task_id);
+    task_pref_machines = FindOrNull(task_preferred_machines_, task_id);
     InsertIfNotPresent(task_pref_machines, machine_res_id, transfer_cost);
   }
   return task_pref_machines;
 }
 
-void QuincyCostModel::UpdateTaskPreferedRacksList(
+void QuincyCostModel::UpdateTaskPreferredRacksList(
     TaskID_t task_id, uint64_t input_size, uint64_t data_on_rack,
     int64_t worst_rack_cost, EquivClass_t rack_ec) {
   auto pref_ecs = FindOrNull(task_preferred_ecs_, task_id);
@@ -733,22 +733,23 @@ void QuincyCostModel::UpdateTaskPreferedRacksList(
     int64_t* rack_cost = FindOrNull(*pref_ecs, rack_ec);
     if (rack_cost) {
       if (data_on_rack >=
-          input_size * FLAGS_quincy_prefered_rack_data_fraction) {
-        // The rack keeps on being prefered. Update its transfer cost.
+          input_size * FLAGS_quincy_preferred_rack_data_fraction) {
+        // The rack keeps on being preferred. Update its transfer cost.
         *rack_cost = worst_rack_cost;
       } else {
-        // The rack is no longer a prefered one.
+        // The rack is no longer a preferred one.
         pref_ecs->erase(rack_ec);
       }
     } else {
       if (data_on_rack >=
-          input_size * FLAGS_quincy_prefered_rack_data_fraction) {
-        // The rack must be added to the prefered list.
+          input_size * FLAGS_quincy_preferred_rack_data_fraction) {
+        // The rack must be added to the preferred list.
         InsertIfNotPresent(pref_ecs, rack_ec, worst_rack_cost);
       }
     }
   } else {
-    if (data_on_rack >= input_size * FLAGS_quincy_prefered_rack_data_fraction) {
+    if (data_on_rack >=
+        input_size * FLAGS_quincy_preferred_rack_data_fraction) {
       unordered_map<EquivClass_t, int64_t> new_pref_ecs;
       InsertIfNotPresent(&new_pref_ecs, rack_ec, worst_rack_cost);
       InsertIfNotPresent(&task_preferred_ecs_, task_id, new_pref_ecs);
