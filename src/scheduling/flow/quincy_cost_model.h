@@ -99,8 +99,10 @@ class QuincyCostModel : public CostModelInterface {
    * change (e.g., machine addition or removal) in a rack.
    * @param td the descriptor of the task
    * @param ec_changed the rack in which the machines changed
+   * @param rack_removed true if the rack has already been removed
    */
-  void UpdateTaskCosts(const TaskDescriptor& td, EquivClass_t ec_changed);
+  void UpdateTaskCosts(const TaskDescriptor& td, EquivClass_t ec_changed,
+                       bool rack_removed);
   void UpdateTaskCostForRack(const TaskDescriptor& td, EquivClass_t rack_ec);
 
   /**

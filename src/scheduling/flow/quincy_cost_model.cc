@@ -73,10 +73,20 @@ Cost_t QuincyCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 Cost_t QuincyCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                                ResourceID_t resource_id) {
   auto machines_data = FindOrNull(task_prefered_machines_, task_id);
-  CHECK_NOTNULL(machines_data);
-  int64_t* transfer_cost = FindOrNull(*machines_data, resource_id);
-  CHECK_NOTNULL(transfer_cost);
-  return *transfer_cost;
+  if (machines_data) {
+    int64_t* transfer_cost = FindOrNull(*machines_data, resource_id);
+    if (transfer_cost) {
+      return *transfer_cost;
+    } else {
+      // The machine is not a prefered one.
+      // TODO(ionel): Compute the cost to resource_id.
+      return 0;
+    }
+  } else {
+    // The task doesn't have any prefered machines.
+    // TODO(ionel): Compute the cost to resource_id.
+    return 0;
+  }
 }
 
 Cost_t QuincyCostModel::ResourceNodeToResourceNodeCost(
@@ -219,7 +229,7 @@ void QuincyCostModel::AddMachine(
   CHECK(InsertIfNotPresent(&machine_to_rack_ec_, res_id, rack_ec));
   if (FLAGS_quincy_update_costs_upon_machine_change) {
     for (auto& id_td : *task_map_) {
-      UpdateTaskCosts(*(id_td.second), rack_ec);
+      UpdateTaskCosts(*(id_td.second), rack_ec, false);
     }
   }
 }
@@ -237,12 +247,13 @@ void QuincyCostModel::AddTask(TaskID_t task_id) {
 void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
   EquivClass_t* ec_ptr = FindOrNull(machine_to_rack_ec_, res_id);
   CHECK_NOTNULL(ec_ptr);
+  EquivClass_t ec = *ec_ptr;
   RemovePreferencesToMachine(res_id);
   bool rack_removed = false;
-  RemoveMachineFromRack(res_id, *ec_ptr, &rack_removed);
-  if (!rack_removed && FLAGS_quincy_update_costs_upon_machine_change) {
+  RemoveMachineFromRack(res_id, ec, &rack_removed);
+  if (FLAGS_quincy_update_costs_upon_machine_change) {
     for (auto& id_td : *task_map_) {
-      UpdateTaskCosts(*(id_td.second), *ec_ptr);
+      UpdateTaskCosts(*(id_td.second), ec, rack_removed);
     }
   }
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
@@ -391,12 +402,15 @@ int64_t QuincyCostModel::ComputeTransferCostToRack(
   auto machines_in_rack = FindOrNull(rack_to_machine_res_, ec);
   int64_t cost_worst_machine = 0;
   for (auto& machine_res_id : *machines_in_rack) {
-    const uint64_t* data_on_machine =
+    const uint64_t* data_on_machine_ptr =
       FindOrNull(data_on_machines, machine_res_id);
-    CHECK_NOTNULL(data_on_machine);
+    uint64_t data_on_machine = 0;
+    if (data_on_machine_ptr) {
+      data_on_machine = *data_on_machine_ptr;
+    }
     int64_t cost_to_machine =
-      ComputeTransferCostToMachine(input_size - *data_on_machine,
-                                   data_on_rack - *data_on_machine);
+      ComputeTransferCostToMachine(input_size - data_on_machine,
+                                   data_on_rack - data_on_machine);
     cost_worst_machine = max(cost_worst_machine, cost_to_machine);
   }
   return cost_worst_machine;
@@ -492,7 +506,8 @@ void QuincyCostModel::UpdateRackBlocks(
 }
 
 void QuincyCostModel::UpdateTaskCosts(const TaskDescriptor& td,
-                                      EquivClass_t ec_changed) {
+                                      EquivClass_t ec_changed,
+                                      bool rack_removed) {
   auto prefered_ecs = FindOrNull(task_prefered_ecs_, td.uid());
   int64_t cost_worst_machine = 0;
   // Get the worst cost to the racks that haven't changed.
@@ -503,7 +518,11 @@ void QuincyCostModel::UpdateTaskCosts(const TaskDescriptor& td,
         max(cost_worst_machine, ec_to_cost.second);
     }
   }
-  UpdateTaskCostForRack(td, ec_changed);
+  if (!rack_removed) {
+    UpdateTaskCostForRack(td, ec_changed);
+  } else {
+    prefered_ecs->erase(ec_changed);
+  }
   // Update cluster aggregator's cost.
   InsertOrUpdate(prefered_ecs, cluster_aggregator_ec_, cost_worst_machine);
 }

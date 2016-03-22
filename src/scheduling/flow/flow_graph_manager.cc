@@ -539,7 +539,8 @@ uint64_t FlowGraphManager::TaskCompleted(TaskID_t task_id) {
   }
   task_to_running_arc_.erase(task_id);
   uint64_t task_node_id = RemoveTaskNode(task_node);
-  cost_model_->RemoveTask(task_id);
+  // NOTE: We do not remove the task from the cost_model because
+  // HandleTaskFinalReport still needs to get the task's  equivalence classes.
   return task_node_id;
 }
 
