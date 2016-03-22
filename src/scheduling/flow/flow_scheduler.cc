@@ -238,6 +238,10 @@ void FlowScheduler::HandleTaskFinalReport(const TaskFinalReport& report,
     cost_model_->GetTaskEquivClasses(task_id);
   knowledge_base_->ProcessTaskFinalReport(*equiv_classes, report);
   delete equiv_classes;
+  // NOTE: We should remove the task from the cost model in TaskCompleted.
+  // However, we cannot do that because in this method we need the
+  // task's equivalence classes.
+  cost_model_->RemoveTask(task_id);
   EventDrivenScheduler::HandleTaskFinalReport(report, td_ptr);
 }
 
@@ -258,6 +262,7 @@ void FlowScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
 void FlowScheduler::HandleTaskPlacement(TaskDescriptor* td_ptr,
                                         ResourceDescriptor* rd_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  td_ptr->set_scheduled_to_resource(rd_ptr->uuid());
   flow_graph_manager_->TaskScheduled(td_ptr->uid(),
                                      ResourceIDFromString(rd_ptr->uuid()));
   EventDrivenScheduler::HandleTaskPlacement(td_ptr, rd_ptr);
