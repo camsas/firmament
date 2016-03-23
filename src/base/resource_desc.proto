@@ -39,7 +39,7 @@ message ResourceDescriptor {
   optional uint64 last_heartbeat = 6;
   optional ResourceType type = 7;
   optional bool schedulable = 8 [default = false];
-  optional uint64 current_running_task = 9;
+  repeated uint64 current_running_tasks = 9;
   // Stores the number of running tasks on the resources that
   // are below this node,
   optional uint64 num_running_tasks_below = 10 [default = 0];

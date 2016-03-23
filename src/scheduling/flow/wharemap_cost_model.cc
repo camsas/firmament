@@ -23,6 +23,7 @@
 #include "scheduling/flow/flow_graph_manager.h"
 
 DECLARE_bool(preemption);
+DECLARE_uint64(max_tasks_per_pu);
 
 namespace firmament {
 
@@ -686,31 +687,32 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
       if (!rd_ptr)
         return accumulator;
       CHECK_EQ(other->type_, FlowNodeType::SINK);
-      if (rd_ptr->has_current_running_task()) {
-        accumulator->rd_ptr_->set_num_running_tasks_below(1);
-        TaskDescriptor* td_ptr =
-          FindPtrOrNull(*task_map_, rd_ptr->current_running_task());
+      rd_ptr->set_num_slots_below(FLAGS_max_tasks_per_pu);
+      rd_ptr->set_num_running_tasks_below(rd_ptr->current_running_tasks_size());
+      WhareMapStats* wms_ptr = rd_ptr->mutable_whare_map_stats();
+      wms_ptr->set_num_devils(0);
+      wms_ptr->set_num_rabbits(0);
+      wms_ptr->set_num_sheep(0);
+      wms_ptr->set_num_turtles(0);
+      RepeatedField<uint64_t> running_tasks;
+      for (auto& task_id : running_tasks) {
+        TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
         if (td_ptr->has_task_type()) {
-          // TODO(ionel): Gather the statistics.
-          WhareMapStats* wms_ptr = rd_ptr->mutable_whare_map_stats();
           if (td_ptr->task_type() == TaskDescriptor::DEVIL) {
-            wms_ptr->set_num_devils(1);
+            wms_ptr->set_num_devils(wms_ptr->num_devils() + 1);
           } else if (td_ptr->task_type() == TaskDescriptor::RABBIT) {
-            wms_ptr->set_num_rabbits(1);
+            wms_ptr->set_num_rabbits(wms_ptr->num_rabbits() + 1);
           } else if (td_ptr->task_type() == TaskDescriptor::SHEEP) {
-            wms_ptr->set_num_sheep(1);
+            wms_ptr->set_num_sheep(wms_ptr->num_sheep() + 1);
           } else if (td_ptr->task_type() == TaskDescriptor::TURTLE) {
-            wms_ptr->set_num_turtles(1);
+            wms_ptr->set_num_turtles(wms_ptr->num_turtles() + 1);
           } else {
             LOG(FATAL) << "Unexpected task type";
           }
         } else {
           LOG(WARNING) << "Task " << td_ptr->uid() << " does not have a type";
         }
-      } else {
-        accumulator->rd_ptr_->set_num_running_tasks_below(0);
       }
-      accumulator->rd_ptr_->set_num_slots_below(1);
     }
     return accumulator;
   }

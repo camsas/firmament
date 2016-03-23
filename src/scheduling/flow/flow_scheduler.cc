@@ -40,6 +40,8 @@ DEFINE_uint64(purge_unconnected_ec_frequency, 10, "Frequency in solver runs "
 DEFINE_bool(update_resource_topology_capacities, false,
             "True if the arc capacities of the resource topology should be "
             "updated after every scheduling round");
+DEFINE_uint64(max_tasks_per_pu, 1,
+              "The maximum number of tasks we can schedule per PU");
 
 namespace firmament {
 namespace scheduler {
@@ -425,6 +427,13 @@ uint64_t FlowScheduler::RunSchedulingIteration(
   // Solver's done, let's post-process the results.
   multimap<uint64_t, uint64_t>::iterator it;
   vector<SchedulingDelta*> deltas;
+  // We first generate the deltas for the preempted tasks in a separate step.
+  // Otherwise, we would have to maintain for every ResourceDescriptor the
+  // current_running_tasks field which would be expensive because
+  // RepeatedFields don't have any efficient remove element method.
+  flow_graph_manager_->SchedulingDeltasForPreemptedTasks(*task_mappings,
+                                                         resource_map_,
+                                                         &deltas);
   for (it = task_mappings->begin(); it != task_mappings->end(); it++) {
     if (tasks_completed_during_solver_run_.find(it->first) !=
         tasks_completed_during_solver_run_.end()) {

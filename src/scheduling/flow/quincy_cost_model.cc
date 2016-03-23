@@ -37,6 +37,8 @@ DEFINE_bool(quincy_update_costs_upon_machine_change, true,
             "True if the costs should be updated if a machine is added or "
             "removed");
 
+DECLARE_uint64(max_tasks_per_pu);
+
 namespace firmament {
 
 QuincyCostModel::QuincyCostModel(
@@ -309,13 +311,9 @@ FlowGraphNode* QuincyCostModel::GatherStats(FlowGraphNode* accumulator,
   if (other->resource_id_.is_nil()) {
     // The other node is not a resource node.
     if (other->type_ == FlowNodeType::SINK) {
-      // TODO(ionel): This code assumes that only one task can run on a PU.
-      if (accumulator->rd_ptr_->has_current_running_task()) {
-        accumulator->rd_ptr_->set_num_running_tasks_below(1);
-      } else {
-        accumulator->rd_ptr_->set_num_running_tasks_below(0);
-      }
-      accumulator->rd_ptr_->set_num_slots_below(1);
+      accumulator->rd_ptr_->set_num_running_tasks_below(
+          accumulator->rd_ptr_->current_running_tasks_size());
+      accumulator->rd_ptr_->set_num_slots_below(FLAGS_max_tasks_per_pu);
     }
     return accumulator;
   }

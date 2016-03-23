@@ -12,6 +12,8 @@
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
 
+DECLARE_uint64(max_tasks_per_pu);
+
 namespace firmament {
 
 VoidCostModel::VoidCostModel(shared_ptr<ResourceMap_t> resource_map,
@@ -140,13 +142,9 @@ FlowGraphNode* VoidCostModel::GatherStats(FlowGraphNode* accumulator,
   if (other->resource_id_.is_nil()) {
     // The other node is not a resource node.
     if (other->type_ == FlowNodeType::SINK) {
-      // TODO(ionel): This code assumes that only one task can run on a PU.
-      if (accumulator->rd_ptr_->has_current_running_task()) {
-        accumulator->rd_ptr_->set_num_running_tasks_below(1);
-      } else {
-        accumulator->rd_ptr_->set_num_running_tasks_below(0);
-      }
-      accumulator->rd_ptr_->set_num_slots_below(1);
+      accumulator->rd_ptr_->set_num_running_tasks_below(
+          accumulator->rd_ptr_->current_running_tasks_size());
+      accumulator->rd_ptr_->set_num_slots_below(FLAGS_max_tasks_per_pu);
     }
     return accumulator;
   }
