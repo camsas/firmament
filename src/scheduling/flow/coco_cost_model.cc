@@ -23,6 +23,7 @@
 #include "scheduling/flow/flow_graph_manager.h"
 
 DECLARE_bool(preemption);
+DECLARE_uint64(max_tasks_per_pu);
 
 namespace firmament {
 
@@ -154,16 +155,16 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
   if (num_total_slots_below == 0) {
     // Slots haven't been initialised yet
     return 0;
-  } else if (num_total_slots_below == 1 &&
-             rd.type() == ResourceDescriptor::RESOURCE_PU) {
+  } else if (rd.type() == ResourceDescriptor::RESOURCE_PU) {
     // Base case, we're at a PU
-    if (rd.has_current_running_task()) {
+    uint64_t interference_score = 0;
+    RepeatedField<uint64_t> running_tasks = rd.current_running_tasks();
+    for (auto& task_id : running_tasks) {
       CoCoInterferenceScores iv;
-      GetInterferenceScoreForTask(rd.current_running_task(), &iv);
-      return FlattenInterferenceScore(iv);
-    } else {
-      return 0;
+      GetInterferenceScoreForTask(task_id, &iv);
+      interference_score += FlattenInterferenceScore(iv);
     }
+    return interference_score;
   } else {
     // Recursively compute the score
     double num_siblings = 1.0;
@@ -313,35 +314,64 @@ void CocoCostModel::GetInterferenceScoreForTask(
     TaskID_t task_id,
     CoCoInterferenceScores* interference_vector) {
   const TaskDescriptor& td = GetTask(task_id);
+  if (!interference_vector->has_turtle_penalty()) {
+    interference_vector->set_turtle_penalty(0);
+  }
+  if (!interference_vector->has_sheep_penalty()) {
+    interference_vector->set_sheep_penalty(0);
+  }
+  if (!interference_vector->has_rabbit_penalty()) {
+    interference_vector->set_rabbit_penalty(0);
+  }
+  if (!interference_vector->has_devil_penalty()) {
+    interference_vector->set_devil_penalty(0);
+  }
+
   if (td.task_type() == TaskDescriptor::TURTLE) {
     // Turtles don't care about devils, or indeed anything else
     // TOTAL: 20
-    interference_vector->set_turtle_penalty(50);
-    interference_vector->set_sheep_penalty(50);
-    interference_vector->set_rabbit_penalty(50);
-    interference_vector->set_devil_penalty(50);
+    interference_vector->set_turtle_penalty(
+        interference_vector->turtle_penalty() + 50);
+    interference_vector->set_sheep_penalty(
+        interference_vector->sheep_penalty() + 50);
+    interference_vector->set_rabbit_penalty(
+        interference_vector->rabbit_penalty() + 50);
+    interference_vector->set_devil_penalty(
+        interference_vector->devil_penalty() + 50);
   } else if (td.task_type() == TaskDescriptor::SHEEP) {
     // Sheep love turtles and rabbits, but dislike devils
     // TOTAL: 36
-    interference_vector->set_turtle_penalty(10);
-    interference_vector->set_sheep_penalty(50);
-    interference_vector->set_rabbit_penalty(100);
-    interference_vector->set_devil_penalty(200);
+    interference_vector->set_turtle_penalty(
+        interference_vector->turtle_penalty() + 10);
+    interference_vector->set_sheep_penalty(
+        interference_vector->sheep_penalty() + 50);
+    interference_vector->set_rabbit_penalty(
+        interference_vector->rabbit_penalty() + 100);
+    interference_vector->set_devil_penalty(
+        interference_vector->devil_penalty() + 200);
   } else if (td.task_type() == TaskDescriptor::RABBIT) {
     // Rabbits love turtles and sheep, but hate devils and dislike other
     // rabbits
     // TOTAL: 126
-    interference_vector->set_turtle_penalty(10);
-    interference_vector->set_sheep_penalty(50);
-    interference_vector->set_rabbit_penalty(200);
-    interference_vector->set_devil_penalty(1000);
+    interference_vector->set_turtle_penalty(
+        interference_vector->turtle_penalty() + 10);
+    interference_vector->set_sheep_penalty(
+        interference_vector->sheep_penalty() + 50);
+    interference_vector->set_rabbit_penalty(
+        interference_vector->rabbit_penalty() + 200);
+    interference_vector->set_devil_penalty(
+        interference_vector->devil_penalty() + 1000);
   } else if (td.task_type() == TaskDescriptor::DEVIL) {
     // Devils like turtles, hate rabbits, dislike sheep and other devils
     // TOTAL: 140
-    interference_vector->set_turtle_penalty(10);
-    interference_vector->set_sheep_penalty(200);
-    interference_vector->set_rabbit_penalty(1000);
-    interference_vector->set_devil_penalty(200);
+    interference_vector->set_turtle_penalty(
+        interference_vector->turtle_penalty() + 10);
+    interference_vector->set_sheep_penalty(
+        interference_vector->sheep_penalty() + 200);
+    interference_vector->set_rabbit_penalty(
+        interference_vector->rabbit_penalty() + 1000);
+    interference_vector->set_devil_penalty(
+        interference_vector->devil_penalty() + 200);
   }
 }
 
@@ -839,25 +869,37 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
       rd_ptr->mutable_min_available_resources_below()->set_ram_cap(
           (latest_stats.free_ram() / BYTES_TO_MB));
       // Running/idle task count
-      if (rd_ptr->has_current_running_task()) {
-        rd_ptr->set_num_running_tasks_below(1);
-      } else {
-        rd_ptr->set_num_running_tasks_below(0);
-      }
-      rd_ptr->set_num_slots_below(1);
+      rd_ptr->set_num_running_tasks_below(rd_ptr->current_running_tasks_size());
       // Interference score vectors and resource reservations are accumulated if
       // we have a running task here.
-      if (rd_ptr->has_current_running_task()) {
+      RepeatedField<uint64_t> running_tasks = rd_ptr->current_running_tasks();
+      for (auto& task_id : running_tasks) {
         GetInterferenceScoreForTask(
-            rd_ptr->current_running_task(),
+            task_id,
             rd_ptr->mutable_coco_interference_scores());
         // Get TD for running tasks for reservation
-        const TaskDescriptor& td = GetTask(rd_ptr->current_running_task());
+        const TaskDescriptor& td = GetTask(task_id);
         ResourceVector* reserved = rd_ptr->mutable_reserved_resources();
-        reserved->set_cpu_cores(td.resource_request().cpu_cores());
-        reserved->set_ram_cap(td.resource_request().ram_cap());
-        reserved->set_disk_bw(td.resource_request().disk_bw());
-        reserved->set_net_bw(td.resource_request().net_bw());
+        if (!reserved->has_cpu_cores()) {
+          reserved->set_cpu_cores(0);
+        }
+        if (!reserved->has_ram_cap()) {
+          reserved->set_ram_cap(0);
+        }
+        if (!reserved->has_disk_bw()) {
+          reserved->set_disk_bw(0);
+        }
+        if (!reserved->has_net_bw()) {
+          reserved->set_net_bw(0);
+        }
+        reserved->set_cpu_cores(reserved->cpu_cores() +
+                                td.resource_request().cpu_cores());
+        reserved->set_ram_cap(reserved->ram_cap() +
+                              td.resource_request().ram_cap());
+        reserved->set_disk_bw(reserved->disk_bw() +
+                              td.resource_request().disk_bw());
+        reserved->set_net_bw(reserved->net_bw() +
+                             td.resource_request().net_bw());
       }
     }
     return accumulator;

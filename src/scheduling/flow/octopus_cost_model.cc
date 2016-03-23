@@ -11,6 +11,7 @@
 #include "scheduling/flow/flow_graph_manager.h"
 
 DECLARE_bool(preemption);
+DECLARE_uint64(max_tasks_per_pu);
 
 namespace firmament {
 
@@ -148,14 +149,10 @@ FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
       // Base case. We are at a PU and we gather the statistics.
       if (!accumulator->rd_ptr_)
         return accumulator;
-      // TODO(ionel): This code assumes that only one task can run on a PU.
       CHECK_EQ(other->type_, FlowNodeType::SINK);
-      if (accumulator->rd_ptr_->has_current_running_task()) {
-        accumulator->rd_ptr_->set_num_running_tasks_below(1);
-      } else {
-        accumulator->rd_ptr_->set_num_running_tasks_below(0);
-      }
-      accumulator->rd_ptr_->set_num_slots_below(1);
+      accumulator->rd_ptr_->set_num_running_tasks_below(
+          accumulator->rd_ptr_->current_running_tasks_size());
+      accumulator->rd_ptr_->set_num_slots_below(FLAGS_max_tasks_per_pu);
     }
     return accumulator;
   }

@@ -87,7 +87,10 @@ class FlowGraphManager {
    */
   void RemoveResourceTopology(const ResourceDescriptor& rd,
                               set<uint64_t>* pus_removed);
-
+  void SchedulingDeltasForPreemptedTasks(
+      const multimap<uint64_t, uint64_t>& task_mappings,
+      shared_ptr<ResourceMap_t> resource_map,
+      vector<SchedulingDelta*>* deltas);
   uint64_t TaskCompleted(TaskID_t task_id);
   void TaskEvicted(TaskID_t task_id, ResourceID_t res_id);
   void TaskFailed(TaskID_t task_id);

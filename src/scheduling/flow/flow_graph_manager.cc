@@ -33,6 +33,8 @@ DEFINE_bool(update_preferences_running_task, false,
             "True if the preferences of a running task should be updated before"
             " each scheduling round");
 
+DECLARE_uint64(max_tasks_per_pu);
+
 namespace firmament {
 
 FlowGraphManager::FlowGraphManager(
@@ -132,14 +134,10 @@ void FlowGraphManager::AddResourceTopologyDFS(
     if (res_node->type_ == FlowNodeType::PU) {
       UpdateResToSinkArc(res_node);
       if (!rd_ptr->has_num_slots_below()) {
-        // XXX(ionel): Assumes no PU sharing.
-        rd_ptr->set_num_slots_below(1);
+        rd_ptr->set_num_slots_below(FLAGS_max_tasks_per_pu);
         if (!rd_ptr->has_num_running_tasks_below()) {
-          if (rd_ptr->has_current_running_task()) {
-            rd_ptr->set_num_running_tasks_below(1);
-          } else {
-            rd_ptr->set_num_running_tasks_below(0);
-          }
+          rd_ptr->set_num_running_tasks_below(
+              rd_ptr->current_running_tasks_size());
         }
       }
     } else {
@@ -297,6 +295,42 @@ void FlowGraphManager::JobCompleted(JobID_t job_id) {
   // removed.
 }
 
+void FlowGraphManager::SchedulingDeltasForPreemptedTasks(
+    const multimap<uint64_t, uint64_t>& task_mappings,
+    shared_ptr<ResourceMap_t> resource_map,
+    vector<SchedulingDelta*>* deltas) {
+  for (auto& res_id_status : *resource_map) {
+    ResourceDescriptor* rd_ptr = res_id_status.second->mutable_descriptor();
+    RepeatedField<uint64_t> running_tasks = rd_ptr->current_running_tasks();
+    for (auto& task_id : running_tasks) {
+      FlowGraphNode* task_node = NodeForTaskID(task_id);
+      if (!task_node) {
+        // There's no node for the task => we don't need to generate
+        // a PREEMPT delta because the task has finished.
+        continue;
+      }
+      const uint64_t* res_node_id = FindOrNull(task_mappings, task_node->id_);
+      if (!res_node_id) {
+        // The task doesn't exist in the mappings => the task has been
+        // preempted.
+        VLOG(2) << "PREEMPTION: take " << task_id << " off "
+                << res_id_status.first;
+        SchedulingDelta* preempt_delta = new SchedulingDelta;
+        preempt_delta->set_type(SchedulingDelta::PREEMPT);
+        preempt_delta->set_task_id(task_id);
+        preempt_delta->set_resource_id(rd_ptr->uuid());
+        deltas->push_back(preempt_delta);
+      }
+    }
+    // We clear all the running tasks on the machine. The list is going to be
+    // populated again in NodeBindingToSchedulingDeltas and
+    // EventDrivenScheduler.
+    // It is easier and less expensive to clear it and populate it back again
+    // than making sure the preempted tasks are removed.
+    rd_ptr->clear_current_running_tasks();
+  }
+}
+
 void FlowGraphManager::NodeBindingToSchedulingDeltas(
     uint64_t task_node_id, uint64_t res_node_id,
     unordered_map<TaskID_t, ResourceID_t>* task_bindings,
@@ -312,8 +346,6 @@ void FlowGraphManager::NodeBindingToSchedulingDeltas(
   const ResourceDescriptor& res = *res_node.rd_ptr_;
   // Is the source (task) already placed elsewhere?
   ResourceID_t* bound_res = FindOrNull(*task_bindings, task.uid());
-  // Does the destination (resource) already have a task bound?
-  TaskID_t current_bound_task_id = res.current_running_task();
   if (bound_res) {
     // Task already running somewhere.
     if (*bound_res != ResourceIDFromString(res.uuid())) {
@@ -327,19 +359,11 @@ void FlowGraphManager::NodeBindingToSchedulingDeltas(
       delta->set_resource_id(res.uuid());
       deltas->push_back(delta);
     } else {
-      // We were already scheduled here. No-op, so insert no delta.
+      // We were already scheduled here. Add back the task_id to the resource's
+      // running tasks list.
+      res_node.rd_ptr_->add_current_running_tasks(task.uid());
     }
   } else {
-    if (current_bound_task_id && current_bound_task_id != task.uid()) {
-      // Resource is not idle => preempt the task that is currently running.
-      VLOG(2) << "PREEMPTION: take " << current_bound_task_id << " off "
-              << res.uuid() << " and replace it with " << task.uid();
-      SchedulingDelta* preempt_delta = new SchedulingDelta;
-      preempt_delta->set_type(SchedulingDelta::PREEMPT);
-      preempt_delta->set_task_id(current_bound_task_id);
-      preempt_delta->set_resource_id(res.uuid());
-      deltas->push_back(preempt_delta);
-    }
     // Place the task.
     VLOG(2) << "SCHEDULING: place " << task.uid() << " on " << res.uuid();
     SchedulingDelta* place_delta = new SchedulingDelta;
@@ -886,13 +910,8 @@ void FlowGraphManager::UpdateResourceTopologyDFS(
   ResourceDescriptor* rd_ptr = rtnd_ptr->mutable_resource_desc();
   if (rd_ptr->type() == ResourceDescriptor::RESOURCE_PU) {
     // Base case.
-    // XXX(ionel): No PU sharing.
-    rd_ptr->set_num_slots_below(1);
-    if (rd_ptr->has_current_running_task()) {
-      rd_ptr->set_num_running_tasks_below(1);
-    } else {
-      rd_ptr->set_num_running_tasks_below(0);
-    }
+    rd_ptr->set_num_slots_below(FLAGS_max_tasks_per_pu);
+    rd_ptr->set_num_running_tasks_below(rd_ptr->current_running_tasks_size());
   } else {
     rd_ptr->set_num_slots_below(0);
     rd_ptr->set_num_running_tasks_below(0);
@@ -990,9 +1009,8 @@ void FlowGraphManager::UpdateResToSinkArc(FlowGraphNode* res_node) {
     FlowGraphArc* res_arc_sink =
       graph_change_manager_->mutable_flow_graph()->GetArc(res_node, sink_node_);
     if (!res_arc_sink) {
-      // XXX(ionel): This doesn't allow PU sharing.
       graph_change_manager_->AddArc(
-          res_node, sink_node_, 0, 1,
+          res_node, sink_node_, 0, FLAGS_max_tasks_per_pu,
           cost_model_->LeafResourceNodeToSinkCost(res_node->resource_id_),
           OTHER, ADD_ARC_RES_TO_SINK, "UpdateResToSinkArc");
 
@@ -1083,7 +1101,6 @@ void FlowGraphManager::UpdateTaskToEquivArcs(
         graph_change_manager_->mutable_flow_graph()->GetArc(task_node,
                                                             pref_ec_node);
       if (!pref_ec_arc) {
-        // XXX(ionel): Increase the capacity if we want to allow for PU sharing.
         graph_change_manager_->AddArc(
           task_node, pref_ec_node, 0, 1, new_cost, OTHER,
           ADD_ARC_TASK_TO_EQUIV_CLASS, "UpdateTaskToEquivArcs");

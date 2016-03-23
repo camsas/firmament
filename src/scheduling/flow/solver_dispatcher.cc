@@ -373,7 +373,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::GetMappings(
       // per leaf node.
       VLOG(2) << "Have flow from PU node " << *set_it << " to sink: "
               << *flow;
-      CHECK_EQ(*flow, 1);
+      CHECK_GE(*flow, 1);
       for (uint64_t flow_used = 1;  flow_used <= *flow; ++flow_used) {
         uint64_t task = AssignNode(extracted_flow, *set_it);
         // Arc back to a task, so we have a scheduling assignment
