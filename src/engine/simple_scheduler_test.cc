@@ -58,7 +58,7 @@ class SimpleSchedulerTest : public ::testing::Test {
                                      shared_ptr<KnowledgeBase>(),
                                      shared_ptr<TopologyManager>(), NULL, NULL,
                                      GenerateResourceID(), "test",
-                                     &wall_time));
+                                     &wall_time, NULL));
   }
 
   virtual void TearDown() {

@@ -63,9 +63,8 @@ EventDrivenScheduler::EventDrivenScheduler(
 }
 
 EventDrivenScheduler::~EventDrivenScheduler() {
-  // time_manager_ is not owned by the EventDrivenScheduler. We don't have to
-  // delete it.
-  delete trace_generator_;
+  // time_manager_ and trace_generator are not owned by the
+  // EventDrivenScheduler. We don't have to delete them.
   for (map<ResourceID_t, ExecutorInterface*>::const_iterator
        exec_iter = executors_.begin();
        exec_iter != executors_.end();

@@ -12,6 +12,7 @@
 
 #include "base/common.h"
 #include "messages/base_message.pb.h"
+#include "misc/trace_generator.h"
 #include "platforms/sim/simulated_messaging_adapter.h"
 #include "scheduling/scheduler_interface.h"
 #include "scheduling/scheduling_event_notifier_interface.h"
@@ -281,6 +282,7 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   ResourceTopologyNodeDescriptor machine_tmpl_;
   // Counter used to store the number of duplicate task ids seed in the trace.
   uint64_t num_duplicate_task_ids_;
+  TraceGenerator* trace_generator_;
 };
 
 }  // namespace sim

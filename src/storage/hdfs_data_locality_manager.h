@@ -11,13 +11,14 @@
 #include "scheduling/data_layer_manager_interface.h"
 
 #include "base/common.h"
+#include "misc/trace_generator.h"
 
 namespace firmament {
 namespace store {
 
 class HdfsDataLocalityManager : public DataLayerManagerInterface {
  public:
-  HdfsDataLocalityManager();
+  HdfsDataLocalityManager(TraceGenerator* trace_generator);
   virtual ~HdfsDataLocalityManager();
 
   void AddMachine(const string& hostname, ResourceID_t res_id);
@@ -50,6 +51,7 @@ class HdfsDataLocalityManager : public DataLayerManagerInterface {
  private:
   hdfsFS fs_;
   unordered_map<string, ResourceID_t> hostname_to_res_id_;
+  TraceGenerator* trace_generator_;
 };
 
 } // namespace store

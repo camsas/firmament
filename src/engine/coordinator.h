@@ -42,6 +42,7 @@
 #include "messages/task_state_message.pb.h"
 #include "messages/storage_message.pb.h"
 #include "misc/messaging_interface.h"
+#include "misc/trace_generator.h"
 #include "misc/wall_time.h"
 #include "platforms/common.h"
 #include "platforms/unix/signal_handler.h"
@@ -302,6 +303,7 @@ class Coordinator : public Node,
   const string hostname_;
   // Object that must be used to get the current time.
   WallTime* time_manager_;
+  TraceGenerator* trace_generator_;
 };
 
 }  // namespace firmament

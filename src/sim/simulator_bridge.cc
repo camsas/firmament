@@ -38,9 +38,10 @@ SimulatorBridge::SimulatorBridge(EventManager* event_manager,
     job_map_(new JobMap_t),
     resource_map_(new ResourceMap_t), task_map_(new TaskMap_t),
     num_duplicate_task_ids_(0) {
+  trace_generator_ = new TraceGenerator(simulated_time_);
   if (FLAGS_flow_scheduling_cost_model == 3) {
     // We're running Quincy => simulate the DFS.
-    data_layer_manager_ = new SimulatedDataLayerManager();
+    data_layer_manager_ = new SimulatedDataLayerManager(trace_generator_);
   } else {
     data_layer_manager_ = NULL;
   }
@@ -66,7 +67,7 @@ SimulatorBridge::SimulatorBridge(EventManager* event_manager,
         shared_ptr<machine::topology::TopologyManager>(
             new machine::topology::TopologyManager),
         messaging_adapter_, this, root_uuid, "http://localhost",
-        simulated_time_);
+        simulated_time_, trace_generator_);
   } else {
     scheduler_ = new scheduler::SimpleScheduler(
         job_map_, resource_map_, &rtn_root_,
@@ -76,7 +77,7 @@ SimulatorBridge::SimulatorBridge(EventManager* event_manager,
         shared_ptr<machine::topology::TopologyManager>(
             new machine::topology::TopologyManager),
         messaging_adapter_, this, root_uuid, "http://localhost",
-        simulated_time_);
+        simulated_time_, trace_generator_);
   }
   // Import a fictional machine resource topology
   LoadMachineTemplate(&machine_tmpl_);
@@ -84,6 +85,7 @@ SimulatorBridge::SimulatorBridge(EventManager* event_manager,
 }
 
 SimulatorBridge::~SimulatorBridge() {
+  delete trace_generator_;
   while (rtn_root_.children_size() > 0) {
     rtn_root_.mutable_children()->RemoveLast();
   }

@@ -46,7 +46,8 @@ class FlowScheduler : public EventDrivenScheduler {
                 SchedulingEventNotifierInterface* event_notifier,
                 ResourceID_t coordinator_res_id,
                 const string& coordinator_uri,
-                TimeInterface* time_manager);
+                TimeInterface* time_manager,
+                TraceGenerator* trace_generator);
   ~FlowScheduler();
   virtual void DeregisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr);
   virtual void HandleJobCompletion(JobID_t job_id);
