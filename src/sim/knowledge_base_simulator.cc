@@ -12,6 +12,7 @@
 #include "base/common.h"
 #include "base/units.h"
 #include "misc/map-util.h"
+#include "misc/utils.h"
 
 #define SIMULATED_CPU_FREQUENCY 2200000000 // 2.2 Ghz
 
@@ -95,9 +96,9 @@ void KnowledgeBaseSimulator::EraseTraceTaskStats(TaskID_t task_id) {
 void KnowledgeBaseSimulator::PopulateTaskFinalReport(TaskDescriptor* td_ptr,
                                                      TaskFinalReport* report) {
   TraceTaskStats* task_stats = FindOrNull(task_stats_, td_ptr->uid());
-  if (task_stats && task_stats->avg_cpi_ > 0) {
-    double instructions = (td_ptr->finish_time() - td_ptr->start_time()) *
-      SIMULATED_CPU_FREQUENCY / task_stats->avg_cpi_;
+  if (task_stats && task_stats->avg_cpi_ > COMPARE_EPS) {
+    double instructions = (td_ptr->finish_time() - td_ptr->start_time()) /
+      task_stats->avg_cpi_ * SIMULATED_CPU_FREQUENCY;
     report->set_instructions(instructions);
     report->set_cycles(instructions * task_stats->avg_cpi_);
   } else {
