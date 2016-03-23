@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_fb354ff7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-23T22:59:28Z",
+      "side": 1,
+      "message": "typo: below",
+      "range": {
+        "startLine": 11,
+        "startChar": 64,
+        "endLine": 11,
+        "endChar": 70
+      },
+      "revId": "5b702ad0104dd6af0fd53824a6d9900eac79ce13",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_bb3fc7d5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-23T22:59:28Z",
+      "side": 1,
+      "message": "I think they have some kind of \"pop from end\" method, though? (Could be wrong)",
+      "range": {
+        "startLine": 20,
+        "startChar": 28,
+        "endLine": 21,
+        "endChar": 31
+      },
+      "revId": "5b702ad0104dd6af0fd53824a6d9900eac79ce13",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_db3a8be7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-23T22:59:28Z",
+      "side": 1,
+      "message": "kinds",
+      "range": {
+        "startLine": 23,
+        "startChar": 24,
+        "endLine": 23,
+        "endChar": 30
+      },
+      "revId": "5b702ad0104dd6af0fd53824a6d9900eac79ce13",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_7b225fbb",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-23T22:59:28Z",
+      "side": 1,
+      "message": "Is this true? It doesn\u0027t seem like the code in HandleTaskMigration calls either UnbindTaskFromResource or BindTaskFromResource, but mucks with the data structures directly (possibly because we\u0027ve never really exercised this code path, and hence didn\u0027t care about it.) Let\u0027s discuss this.",
+      "range": {
+        "startLine": 391,
+        "startChar": 0,
+        "endLine": 392,
+        "endChar": 36
+      },
+      "revId": "5b702ad0104dd6af0fd53824a6d9900eac79ce13",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_3b2cd7aa",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 873,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-23T22:59:28Z",
+      "side": 1,
+      "message": "Technically, we don\u0027t have to set this every time, but can rely on it being set initially when the machine is added, right?",
+      "range": {
+        "startLine": 873,
+        "startChar": 0,
+        "endLine": 873,
+        "endChar": 58
+      },
+      "revId": "5b702ad0104dd6af0fd53824a6d9900eac79ce13",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_9b0c0344",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-23T22:59:28Z",
+      "side": 1,
+      "message": "This iterates over the entire resource map on every scheduling iteration, correct? That seems like it might be costly. Let\u0027s discuss.",
+      "range": {
+        "startLine": 302,
+        "startChar": 0,
+        "endLine": 302,
+        "endChar": 45
+      },
+      "revId": "5b702ad0104dd6af0fd53824a6d9900eac79ce13",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_fb1c2f79",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 907,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-23T22:59:28Z",
+      "side": 1,
+      "message": "We also do this in the cost model. If we do it here (and it doesn\u0027t change dynamically), that seems unnecessary?",
+      "range": {
+        "startLine": 907,
+        "startChar": 0,
+        "endLine": 907,
+        "endChar": 56
+      },
+      "revId": "5b702ad0104dd6af0fd53824a6d9900eac79ce13",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
