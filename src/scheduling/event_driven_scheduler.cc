@@ -87,7 +87,7 @@ void EventDrivenScheduler::BindTaskToResource(TaskDescriptor* td_ptr,
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
   // Mark resource as busy and record task binding
   rd_ptr->set_state(ResourceDescriptor::RESOURCE_BUSY);
-  rd_ptr->set_current_running_task(task_id);
+  rd_ptr->add_current_running_tasks(task_id);
   CHECK(InsertIfNotPresent(&task_bindings_, task_id, res_id));
   resource_bindings_.insert(pair<ResourceID_t, TaskID_t>(res_id, task_id));
 }
@@ -384,12 +384,15 @@ void EventDrivenScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
   TaskID_t task_id = td_ptr->uid();
   ResourceID_t* old_res_id_ptr = FindOrNull(task_bindings_, task_id);
   CHECK_NOTNULL(old_res_id_ptr);
-  // XXX(ionel): Assumes only one task per resource.
   ResourceStatus* old_rs = FindPtrOrNull(*resource_map_, *old_res_id_ptr);
   CHECK_NOTNULL(old_rs);
   ResourceDescriptor* old_rd = old_rs->mutable_descriptor();
-  old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
-  rd_ptr->set_current_running_task(task_id);
+  // We don't have to remove the task from rd_ptr's running tasks because
+  // we've already cleared the list.
+  if (old_rd->current_running_tasks_size() == 0) {
+    old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  }
+  rd_ptr->add_current_running_tasks(task_id);
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
   InsertOrUpdate(&task_bindings_, task_id, res_id);
   trace_generator_->TaskMigrated(td_ptr, *old_rd, *rd_ptr);
@@ -773,9 +776,12 @@ bool EventDrivenScheduler::UnbindTaskFromResource(TaskDescriptor* td_ptr,
   // Set the bound resource idle again.
   ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs_ptr);
-  // XXX(ionel): Assumes only one task is running per resource.
-  rs_ptr->mutable_descriptor()->set_state(ResourceDescriptor::RESOURCE_IDLE);
-  rs_ptr->mutable_descriptor()->clear_current_running_task();
+  ResourceDescriptor* rd_ptr = rs_ptr->mutable_descriptor();
+  // We don't have to remove the task from rd_ptr's running tasks because
+  // we've already cleared the list.
+  if (rd_ptr->current_running_tasks_size() == 0) {
+    rd_ptr->set_state(ResourceDescriptor::RESOURCE_IDLE);
+  }
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
   if (res_id_ptr) {
     pair<multimap<ResourceID_t, TaskID_t>::iterator,
