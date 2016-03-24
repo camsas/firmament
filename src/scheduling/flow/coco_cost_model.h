@@ -151,7 +151,7 @@ class CocoCostModel : public CostModelInterface {
   shared_ptr<KnowledgeBase> knowledge_base_;
 
   // Mapping between task equiv classes and connected tasks.
-  unordered_map<EquivClass_t, set<TaskID_t> > task_ec_to_set_task_id_;
+  unordered_map<EquivClass_t, unordered_set<TaskID_t> > task_ec_to_set_task_id_;
   unordered_map<EquivClass_t, ResourceVector> task_ec_to_resource_request_;
   // Track equivalence class aggregators present
   unordered_set<EquivClass_t> task_aggs_;

@@ -28,10 +28,11 @@ class ObjectStoreInterface : public PrintableInterface {
   virtual ostream& ToString(ostream* stream) const = 0;
   bool AddReference(const DataObjectID_t& id, ReferenceDescriptor* rd) {
     // Check if we have an entry for this reference already
-    set<ReferenceInterface*>* held_set = FindOrNull(*object_table_, id);
+    unordered_set<ReferenceInterface*>* held_set =
+      FindOrNull(*object_table_, id);
     if (!held_set) {
       // New reference -- insert a new set
-      set<ReferenceInterface*> set;
+      unordered_set<ReferenceInterface*> set;
       CHECK(InsertIfNotPresent(object_table_.get(), id, set));
       held_set = FindOrNull(*object_table_, id);
     }
@@ -39,8 +40,8 @@ class ObjectStoreInterface : public PrintableInterface {
     bool ret = held_set->insert(ref).second;
     return !ret;
   }
-  set<ReferenceInterface*>* GetReferences(const DataObjectID_t& id) {
-    set<ReferenceInterface*>* rd = FindOrNull(*object_table_, id);
+  unordered_set<ReferenceInterface*>* GetReferences(const DataObjectID_t& id) {
+    unordered_set<ReferenceInterface*>* rd = FindOrNull(*object_table_, id);
     if (rd!= NULL)
       return rd;
     else
@@ -56,7 +57,7 @@ class ObjectStoreInterface : public PrintableInterface {
          it != object_table_->end();
          ++it) {
       VLOG(1) << it->first << ": " << it->second.size() << " refs";
-      for (set<ReferenceInterface*>::const_iterator rd_iter =
+      for (unordered_set<ReferenceInterface*>::const_iterator rd_iter =
            it->second.begin();
            rd_iter != it->second.end();
            ++rd_iter)

@@ -408,7 +408,7 @@ void CoordinatorHTTPUI::HandleReferencesListURI(
        ++r_iter) {
     TemplateDictionary* sect_dict = dict.AddSectionDictionary("OBJ_DATA");
     sect_dict->SetValue("OBJ_ID", r_iter->first.name_printable_string());
-    for (set<ReferenceInterface*>::const_iterator ref_iter =
+    for (unordered_set<ReferenceInterface*>::const_iterator ref_iter =
          r_iter->second.begin();
          ref_iter != r_iter->second.end();
          ++ref_iter) {
@@ -640,13 +640,14 @@ void CoordinatorHTTPUI::HandleReferenceURI(
                   tcp_conn);
     return;
   }
-  set<ReferenceInterface*>* refs =
+  unordered_set<ReferenceInterface*>* refs =
       coordinator_->get_object_store()->GetReferences(
           DataObjectIDFromString(ref_id));
   TemplateDictionary dict("reference_view");
   if (refs && refs->size() > 0) {
     dict.SetValue("OBJ_ID", ref_id);
-    for (set<ReferenceInterface*>::const_iterator ref_iter = refs->begin();
+    for (unordered_set<ReferenceInterface*>::const_iterator
+           ref_iter = refs->begin();
          ref_iter != refs->end();
          ++ref_iter) {
       TemplateDictionary* sect_dict = dict.AddSectionDictionary("REF_DATA");

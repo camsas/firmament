@@ -312,7 +312,7 @@ void SolverDispatcher::SolverConfiguration(const string& solver,
 // graph.
 // NOTE: The extracted_flow is changed by the method.
 uint64_t SolverDispatcher::AssignNode(
-    vector< map< uint64_t, uint64_t > >* extracted_flow, uint64_t node) {
+    vector<map<uint64_t, uint64_t>>* extracted_flow, uint64_t node) {
   map<uint64_t, uint64_t>::iterator map_it;
   for (map_it = (*extracted_flow)[node].begin();
        map_it != (*extracted_flow)[node].end(); map_it++) {
@@ -359,7 +359,7 @@ uint64_t SolverDispatcher::AssignNode(
 // Maps worker|root tasks to leaves. It expects a extracted_flow containing
 // only the arcs with positive flow (i.e. what ReadFlowGraph returns).
 multimap<uint64_t, uint64_t>* SolverDispatcher::GetMappings(
-    vector< map< uint64_t, uint64_t > >* extracted_flow,
+    vector<map<uint64_t, uint64_t>>* extracted_flow,
     unordered_set<uint64_t> leaves, uint64_t sink) {
   multimap<uint64_t, uint64_t>* task_node =
     new multimap<uint64_t, uint64_t>();
@@ -418,9 +418,9 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(
   return task_mappings;
 }
 
-vector<map< uint64_t, uint64_t> >* SolverDispatcher::ReadFlowGraph(
+vector<map<uint64_t, uint64_t>>* SolverDispatcher::ReadFlowGraph(
     FILE* fptr, uint64_t* algorithm_runtime, uint64_t num_vertices) {
-  vector<map< uint64_t, uint64_t > >* adj_list =
+  vector<map<uint64_t, uint64_t>>* adj_list =
     new vector<map<uint64_t, uint64_t> >(num_vertices + 1);
   // The cost is not returned.
   uint64_t cost;

@@ -333,12 +333,12 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
     static_cast<EquivClass_t>(HashCommandLine(*td_ptr));
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);
-  unordered_map<EquivClass_t, set<TaskID_t> >::iterator task_ec_it =
+  unordered_map<EquivClass_t, unordered_set<TaskID_t> >::iterator task_ec_it =
     task_ec_to_set_task_id_.find(task_agg);
   if (task_ec_it != task_ec_to_set_task_id_.end()) {
     task_ec_it->second.insert(task_id);
   } else {
-    set<TaskID_t> task_set;
+    unordered_set<TaskID_t> task_set;
     task_set.insert(task_id);
     CHECK(InsertIfNotPresent(&task_ec_to_set_task_id_, task_agg, task_set));
   }
@@ -654,7 +654,7 @@ void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
   // Now remove the state we keep for this task
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
-    unordered_map<EquivClass_t, set<TaskID_t> >::iterator set_it =
+    unordered_map<EquivClass_t, unordered_set<TaskID_t> >::iterator set_it =
       task_ec_to_set_task_id_.find(*it);
     if (set_it != task_ec_to_set_task_id_.end()) {
       // Remove the task's ID from the set of tasks in the EC

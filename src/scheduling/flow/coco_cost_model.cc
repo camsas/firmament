@@ -383,12 +383,12 @@ vector<EquivClass_t>* CocoCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   EquivClass_t task_agg = static_cast<EquivClass_t>(HashJobID(td));
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);
-  unordered_map<EquivClass_t, set<TaskID_t> >::iterator task_ec_it =
+  unordered_map<EquivClass_t, unordered_set<TaskID_t> >::iterator task_ec_it =
     task_ec_to_set_task_id_.find(task_agg);
   if (task_ec_it != task_ec_to_set_task_id_.end()) {
     task_ec_it->second.insert(task_id);
   } else {
-    set<TaskID_t> task_set;
+    unordered_set<TaskID_t> task_set;
     task_set.insert(task_id);
     CHECK(InsertIfNotPresent(&task_ec_to_set_task_id_, task_agg, task_set));
   }
@@ -657,7 +657,7 @@ pair<Cost_t, uint64_t> CocoCostModel::EquivClassToResourceNode(
     const ResourceVector& res_avail = rd.available_resources();
     uint64_t num_tasks_that_fit = TaskFitCount(*res_request, res_avail);
     // Get the interference score for the task
-    set<TaskID_t>* task_set = FindOrNull(task_ec_to_set_task_id_, ec);
+    unordered_set<TaskID_t>* task_set = FindOrNull(task_ec_to_set_task_id_, ec);
     uint32_t score = 0;
     if (task_set && task_set->size() > 0) {
       // N.B.: This assumes that all tasks in an EC are of the same type.
@@ -794,7 +794,7 @@ void CocoCostModel::RemoveMachine(ResourceID_t res_id) {
 void CocoCostModel::RemoveTask(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   for (auto& equiv_class : *equiv_classes) {
-    unordered_map<EquivClass_t, set<TaskID_t> >::iterator set_it =
+    unordered_map<EquivClass_t, unordered_set<TaskID_t> >::iterator set_it =
       task_ec_to_set_task_id_.find(equiv_class);
     if (set_it != task_ec_to_set_task_id_.end()) {
       set_it->second.erase(task_id);

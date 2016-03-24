@@ -104,7 +104,7 @@ TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   rtp->set_uid(GenerateRootTaskID(*test_job));
   rtp->set_state(TaskDescriptor::CREATED);
   rtp->set_job_id(to_string(job_id));
-  set<DataObjectID_t*> output_ids(DataObjectIDsFromProtobuf(
+  unordered_set<DataObjectID_t*> output_ids(DataObjectIDsFromProtobuf(
       test_job->output_ids()));
   AddTaskToTaskMap(rtp);
   sched_->LazyGraphReduction(output_ids, rtp, job_id);
@@ -126,7 +126,8 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForJob) {
   rtp->set_state(TaskDescriptor::CREATED);
   rtp->set_job_id(to_string(job_id));
   AddJobsTasksToTaskMap(test_job);
-  set<TaskID_t> runnable_tasks = sched_->ComputeRunnableTasksForJob(test_job);
+  unordered_set<TaskID_t> runnable_tasks =
+    sched_->ComputeRunnableTasksForJob(test_job);
   // The root task should be runnable
   EXPECT_EQ(runnable_tasks.size(), 1UL);
   delete test_job;
@@ -139,7 +140,7 @@ TEST_F(SimpleSchedulerTest, ObjectIDToReferenceDescLookup) {
   rd.set_type(ReferenceDescriptor::CONCRETE);
   DataObjectID_t doid(DataObjectIDFromProtobuf(rd.id()));
   CHECK(!obj_store_->AddReference(doid, &rd));
-  set<ReferenceInterface*> refs = sched_->ReferencesForID(doid);
+  unordered_set<ReferenceInterface*> refs = sched_->ReferencesForID(doid);
   EXPECT_EQ(*(*refs.begin())->id().name_str(), rd.id());
 }
 
@@ -156,7 +157,7 @@ TEST_F(SimpleSchedulerTest, ProducingTaskLookup) {
   rd.set_producing_task(1);
   DataObjectID_t doid(DataObjectIDFromProtobuf(rd.id()));
   CHECK(!obj_store_->AddReference(doid, &rd));
-  set<TaskDescriptor*> tdps =
+  unordered_set<TaskDescriptor*> tdps =
       sched_->ProducingTasksForDataObjectID(doid, job_id);
   CHECK_EQ(tdps.size(), 1);
   VLOG(1) << (*tdps.begin())->DebugString();
@@ -201,7 +202,8 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   CHECK(!obj_store_->AddReference(d0_td2_id, d0_td2));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
-  set<TaskID_t> runnable_tasks = sched_->ComputeRunnableTasksForJob(test_job);
+  unordered_set<TaskID_t> runnable_tasks =
+    sched_->ComputeRunnableTasksForJob(test_job);
   // Three tasks should be runnable: those spawned by the root task, and the
   // root task itself.
   EXPECT_EQ(runnable_tasks.size(), 3UL);
@@ -244,7 +246,8 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   CHECK(!obj_store_->AddReference(d0_td1_id, d0_td1));
   VLOG(1) << "got here, job is: " << test_job->DebugString();
   AddJobsTasksToTaskMap(test_job);
-  set<TaskID_t> runnable_tasks = sched_->ComputeRunnableTasksForJob(test_job);
+  unordered_set<TaskID_t> runnable_tasks =
+    sched_->ComputeRunnableTasksForJob(test_job);
   // Two tasks should be runnable: those spawned by the root task.
   EXPECT_EQ(runnable_tasks.size(), 2UL);
   delete test_job;
