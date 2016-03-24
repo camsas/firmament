@@ -9,12 +9,12 @@ import "base/task_desc.proto";
 
 message TaskDelegationRequestMessage {
   required TaskDescriptor task_descriptor = 2;
-  optional string target_resource_id = 1;
-  optional string delegating_resource_id = 3;
+  optional bytes target_resource_id = 1;
+  optional bytes delegating_resource_id = 3;
 }
 
 message TaskDelegationResponseMessage {
   required uint64 task_id = 1;
   required bool success = 2;
-  optional string target_resource_id = 3;
+  optional bytes target_resource_id = 3;
 }

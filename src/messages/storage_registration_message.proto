@@ -6,8 +6,8 @@
 package firmament;
 
 message StorageRegistrationMessage {
-  required string uuid = 1; //Resource ID
+  required bytes uuid = 1; //Resource ID
   required string storage_interface = 2;
-  optional string coordinator_uuid = 3 ; // Useful to have an indication of which coordinator this object store belongs to.
+  optional bytes coordinator_uuid = 3 ; // Useful to have an indication of which coordinator this object store belongs to.
   optional bool peer = 4 ; // Hint for the storage engine whether should be added as a peer or not.
 }
