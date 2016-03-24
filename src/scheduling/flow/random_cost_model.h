@@ -65,7 +65,7 @@ class RandomCostModel : public CostModelInterface {
   // Set of task ECs
   unordered_set<EquivClass_t> task_aggs_;
   // Mapping between task equiv classes and connected tasks.
-  unordered_map<EquivClass_t, set<TaskID_t> > task_ec_to_set_task_id_;
+  unordered_map<EquivClass_t, unordered_set<TaskID_t> > task_ec_to_set_task_id_;
   // The task map used in the rest of the system
   shared_ptr<TaskMap_t> task_map_;
   // Leaf resource's resource IDs

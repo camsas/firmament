@@ -65,7 +65,7 @@ EventDrivenScheduler::EventDrivenScheduler(
 EventDrivenScheduler::~EventDrivenScheduler() {
   // time_manager_ and trace_generator are not owned by the
   // EventDrivenScheduler. We don't have to delete them.
-  for (map<ResourceID_t, ExecutorInterface*>::const_iterator
+  for (unordered_map<ResourceID_t, ExecutorInterface*>::const_iterator
        exec_iter = executors_.begin();
        exec_iter != executors_.end();
        ++exec_iter) {
@@ -100,8 +100,10 @@ ResourceID_t* EventDrivenScheduler::BoundResourceForTask(TaskID_t task_id) {
 vector<TaskID_t> EventDrivenScheduler::BoundTasksForResource(
   ResourceID_t res_id) {
   vector<TaskID_t> tasks;
-  pair<multimap<ResourceID_t, TaskID_t>::iterator,
-       multimap<ResourceID_t, TaskID_t>::iterator> range_it =
+  pair<unordered_multimap<ResourceID_t, TaskID_t,
+                          boost::hash<boost::uuids::uuid>>::iterator,
+       unordered_multimap<ResourceID_t, TaskID_t,
+                          boost::hash<boost::uuids::uuid>>::iterator> range_it =
     resource_bindings_.equal_range(res_id);
   for (; range_it.first != range_it.second; range_it.first++) {
     tasks.push_back(range_it.first->second);
@@ -225,8 +227,8 @@ void EventDrivenScheduler::HandleReferenceStateChange(
   } else if (!old_ref.Consumable() && new_ref.Consumable()) {
     boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
     // something became available, unblock the waiting tasks
-    set<TaskDescriptor*>* tasks = FindOrNull(reference_subscriptions_,
-                                             old_ref.id());
+    unordered_set<TaskDescriptor*>* tasks = FindOrNull(reference_subscriptions_,
+                                                       old_ref.id());
     if (!tasks) {
       // Nobody cares about this ref, so we don't do anything
       return;
@@ -238,7 +240,7 @@ void EventDrivenScheduler::HandleReferenceStateChange(
           task->state() == TaskDescriptor::RUNNING)
         continue;
       for (auto& dependency : task->dependencies()) {
-        set<ReferenceInterface*>* deps = object_store_->GetReferences(
+        unordered_set<ReferenceInterface*>* deps = object_store_->GetReferences(
             DataObjectIDFromProtobuf(dependency.id()));
         for (auto& dep : *deps) {
           if (!dep->Consumable())
@@ -454,9 +456,10 @@ void EventDrivenScheduler::KillRunningTask(
 
 void EventDrivenScheduler::InsertTaskIntoRunnables(JobID_t job_id,
                                                    TaskID_t task_id) {
-  set<TaskID_t>* runnable_tasks_for_job = FindOrNull(runnable_tasks_, job_id);
+  unordered_set<TaskID_t>* runnable_tasks_for_job =
+    FindOrNull(runnable_tasks_, job_id);
   if (runnable_tasks_for_job == NULL) {
-    set<TaskID_t> new_runnable_tasks_for_job;
+    unordered_set<TaskID_t> new_runnable_tasks_for_job;
     new_runnable_tasks_for_job.insert(task_id);
     InsertOrUpdate(&runnable_tasks_, job_id, new_runnable_tasks_for_job);
   } else {
@@ -467,7 +470,7 @@ void EventDrivenScheduler::InsertTaskIntoRunnables(JobID_t job_id,
 // Implementation of lazy graph reduction algorithm, as per p58, fig. 3.5 in
 // Derek Murray's thesis on CIEL.
 void EventDrivenScheduler::LazyGraphReduction(
-    const set<DataObjectID_t*>& output_ids,
+    const unordered_set<DataObjectID_t*>& output_ids,
     TaskDescriptor* root_task,
     const JobID_t& job_id) {
   VLOG(2) << "Performing lazy graph reduction";
@@ -477,7 +480,7 @@ void EventDrivenScheduler::LazyGraphReduction(
   // not already concrete.
   VLOG(2) << "for a job with " << output_ids.size() << " outputs";
   for (auto& output_id : output_ids) {
-    set<ReferenceInterface*> refs = ReferencesForID(*output_id);
+    unordered_set<ReferenceInterface*> refs = ReferencesForID(*output_id);
     if (!refs.empty()) {
       for (auto& ref : refs) {
         // TODO(malte): this logic is very simple-minded; sometimes, it may be
@@ -492,7 +495,7 @@ void EventDrivenScheduler::LazyGraphReduction(
     // it is not already scheduled.
     // N.B.: by this point, we know that no concrete reference exists in the set
     // of references available.
-    set<TaskDescriptor*> tasks =
+    unordered_set<TaskDescriptor*> tasks =
         ProducingTasksForDataObjectID(*output_id, job_id);
     CHECK_GT(tasks.size(), 0) << "Could not find task producing output ID "
                               << *output_id;
@@ -527,11 +530,11 @@ void EventDrivenScheduler::LazyGraphReduction(
       // Note that we subscribe even tasks whose dependencies are concrete, as
       // they may later disappear and failures will be handled via the
       // subscription relationship.
-      set<TaskDescriptor*>* subscribers = FindOrNull(
+      unordered_set<TaskDescriptor*>* subscribers = FindOrNull(
           reference_subscriptions_, ref->id());
       if (!subscribers) {
         InsertIfNotPresent(&reference_subscriptions_,
-                           ref->id(), set<TaskDescriptor*>());
+                           ref->id(), unordered_set<TaskDescriptor*>());
         subscribers = FindOrNull(reference_subscriptions_, ref->id());
       }
       subscribers->insert(current_task);
@@ -548,7 +551,7 @@ void EventDrivenScheduler::LazyGraphReduction(
                 << " is blocking on reference " << *ref;
         will_block = true;
         // Look at predecessor task (producing this reference)
-        set<TaskDescriptor*> producing_tasks =
+        unordered_set<TaskDescriptor*> producing_tasks =
             ProducingTasksForDataObjectID(ref->id(), job_id);
         if (producing_tasks.size() == 0) {
           LOG(ERROR) << "Failed to find producing task for ref " << ref
@@ -610,13 +613,14 @@ bool EventDrivenScheduler::PlaceDelegatedTask(TaskDescriptor* td,
   return true;
 }
 
-set<TaskDescriptor*> EventDrivenScheduler::ProducingTasksForDataObjectID(
+unordered_set<TaskDescriptor*>
+EventDrivenScheduler::ProducingTasksForDataObjectID(
     const DataObjectID_t& id, const JobID_t& cur_job) {
   // Find all producing tasks for an object ID, as indicated by the references
   // stored locally.
-  set<TaskDescriptor*> producing_tasks;
+  unordered_set<TaskDescriptor*> producing_tasks;
   VLOG(2) << "Looking up producing task for object " << id;
-  set<ReferenceInterface*>* refs = object_store_->GetReferences(id);
+  unordered_set<ReferenceInterface*>* refs = object_store_->GetReferences(id);
   if (!refs)
     return producing_tasks;
   for (auto& ref : *refs) {
@@ -645,14 +649,15 @@ set<TaskDescriptor*> EventDrivenScheduler::ProducingTasksForDataObjectID(
   return producing_tasks;
 }
 
-const set<ReferenceInterface*> EventDrivenScheduler::ReferencesForID(
+const unordered_set<ReferenceInterface*> EventDrivenScheduler::ReferencesForID(
     const DataObjectID_t& id) {
   // Find all locally known references for a specific object
   VLOG(2) << "Looking up object " << id;
-  set<ReferenceInterface*>* ref_set = object_store_->GetReferences(id);
+  unordered_set<ReferenceInterface*>* ref_set =
+    object_store_->GetReferences(id);
   if (!ref_set) {
     VLOG(2) << "... NOT FOUND";
-    set<ReferenceInterface*> es;  // empty set
+    unordered_set<ReferenceInterface*> es;  // empty set
     return es;
   } else {
     VLOG(2) << " ... FOUND, " << ref_set->size() << " references.";
@@ -727,19 +732,20 @@ void EventDrivenScheduler::RemoveResourceNodeFromParentChildrenList(
   }
 }
 
-const set<TaskID_t>& EventDrivenScheduler::ComputeRunnableTasksForJob(
+const unordered_set<TaskID_t>& EventDrivenScheduler::ComputeRunnableTasksForJob(
     JobDescriptor* job_desc) {
   // TODO(malte): check if this is broken
-  set<DataObjectID_t*> outputs =
+  unordered_set<DataObjectID_t*> outputs =
       DataObjectIDsFromProtobuf(job_desc->output_ids());
   TaskDescriptor* rtp = job_desc->mutable_root_task();
   LazyGraphReduction(outputs, rtp, JobIDFromString(job_desc->uuid()));
   JobID_t job_id = JobIDFromString(job_desc->uuid());
-  set<TaskID_t>* runnable_tasks_for_job = FindOrNull(runnable_tasks_, job_id);
+  unordered_set<TaskID_t>* runnable_tasks_for_job =
+    FindOrNull(runnable_tasks_, job_id);
   if (runnable_tasks_for_job != NULL) {
     return *runnable_tasks_for_job;
   } else {
-    set<TaskID_t> new_runnable_tasks_for_job;
+    unordered_set<TaskID_t> new_runnable_tasks_for_job;
     InsertOrUpdate(&runnable_tasks_, job_id, new_runnable_tasks_for_job);
     return runnable_tasks_[job_id];
   }
@@ -784,9 +790,11 @@ bool EventDrivenScheduler::UnbindTaskFromResource(TaskDescriptor* td_ptr,
   }
   ResourceID_t* res_id_ptr = FindOrNull(task_bindings_, task_id);
   if (res_id_ptr) {
-    pair<multimap<ResourceID_t, TaskID_t>::iterator,
-         multimap<ResourceID_t, TaskID_t>::iterator> range_it =
-      resource_bindings_.equal_range(*res_id_ptr);
+    pair<unordered_multimap<ResourceID_t, TaskID_t,
+                            boost::hash<boost::uuids::uuid>>::iterator,
+         unordered_multimap<ResourceID_t, TaskID_t,
+                            boost::hash<boost::uuids::uuid>>::iterator>
+      range_it = resource_bindings_.equal_range(*res_id_ptr);
     for (; range_it.first != range_it.second; range_it.first++) {
       if (range_it.first->second == task_id) {
         // We've found the element.

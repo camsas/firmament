@@ -20,7 +20,7 @@
 namespace firmament {
 namespace store {
 
-typedef thread_safe::map<DataObjectID_t, set<ReferenceInterface*> >
+typedef thread_safe::map<DataObjectID_t, unordered_set<ReferenceInterface*> >
     DataObjectMap_t;
 
 }  // namespace store

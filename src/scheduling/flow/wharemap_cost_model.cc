@@ -300,13 +300,13 @@ uint64_t WhareMapCostModel::GetECOutgoingCapacity(EquivClass_t ec) {
   if (ec == cluster_aggregator_ec_) {
     LOG(FATAL) << "Method called with unexpected type of EC";
   } else if (machine_aggs_.find(ec) != machine_aggs_.end()) {
-    multimap<EquivClass_t, ResourceID_t>::iterator it =
-      machine_ec_to_res_id_.find(ec);
-    multimap<EquivClass_t, ResourceID_t>::iterator it_to =
-      machine_ec_to_res_id_.upper_bound(ec);
+    pair<unordered_multimap<EquivClass_t, ResourceID_t>::iterator,
+         unordered_multimap<EquivClass_t, ResourceID_t>::iterator> range_it =
+      machine_ec_to_res_id_.equal_range(ec);
     uint64_t outgoing_cap = 0;
-    for (; it != it_to; ++it) {
-      ResourceStatus* rs = FindPtrOrNull(*resource_map_, it->second);
+    for (; range_it.first != range_it.second; range_it.first++) {
+      ResourceStatus* rs =
+        FindPtrOrNull(*resource_map_, range_it.first->second);
       CHECK_NOTNULL(rs);
       outgoing_cap += rs->descriptor().num_slots_below();
     }
@@ -333,12 +333,12 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
     static_cast<EquivClass_t>(HashCommandLine(*td_ptr));
   equiv_classes->push_back(task_agg);
   task_aggs_.insert(task_agg);
-  unordered_map<EquivClass_t, set<TaskID_t> >::iterator task_ec_it =
+  unordered_map<EquivClass_t, unordered_set<TaskID_t> >::iterator task_ec_it =
     task_ec_to_set_task_id_.find(task_agg);
   if (task_ec_it != task_ec_to_set_task_id_.end()) {
     task_ec_it->second.insert(task_id);
   } else {
-    set<TaskID_t> task_set;
+    unordered_set<TaskID_t> task_set;
     task_set.insert(task_id);
     CHECK(InsertIfNotPresent(&task_ec_to_set_task_id_, task_agg, task_set));
   }
@@ -430,12 +430,11 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
     }
   } else if (machine_aggs_.find(ec) != machine_aggs_.end()) {
     // ec is a machine aggregator.
-    multimap<EquivClass_t, ResourceID_t>::iterator it =
-      machine_ec_to_res_id_.find(ec);
-    multimap<EquivClass_t, ResourceID_t>::iterator it_to =
-      machine_ec_to_res_id_.upper_bound(ec);
-    for (; it != it_to; ++it) {
-      prefered_res->push_back(it->second);
+    pair<unordered_multimap<EquivClass_t, ResourceID_t>::iterator,
+         unordered_multimap<EquivClass_t, ResourceID_t>::iterator> range_it =
+      machine_ec_to_res_id_.equal_range(ec);
+    for (; range_it.first != range_it.second; range_it.first++) {
+      prefered_res->push_back(range_it.first->second);
     }
   } else {
     VLOG(1) << "Ignored unhandled type of equivalence aggregator "
@@ -495,21 +494,21 @@ void WhareMapCostModel::RemoveMachine(ResourceID_t res_id) {
   EquivClass_t* machine_ec = FindOrNull(machine_to_ec_, res_id);
   CHECK_NOTNULL(machine_ec);
   // Remove the machine from the machine ec map.
-  multimap<EquivClass_t, ResourceID_t>::iterator it =
-    machine_ec_to_res_id_.find(*machine_ec);
-  multimap<EquivClass_t, ResourceID_t>::iterator it_to =
-    machine_ec_to_res_id_.upper_bound(*machine_ec);
+  pair<unordered_multimap<EquivClass_t, ResourceID_t>::iterator,
+       unordered_multimap<EquivClass_t, ResourceID_t>::iterator> range_it =
+    machine_ec_to_res_id_.equal_range(*machine_ec);
   uint32_t num_machines_per_ec = 0;
-  for (; it != it_to; it++, num_machines_per_ec++) {
-    if (it->second == res_id) {
+  for (; range_it.first != range_it.second;
+       range_it.first++, num_machines_per_ec++) {
+    if (range_it.first->second == res_id) {
       break;
     }
   }
   // Check we actually found the machine.
-  if (it == it_to) {
+  if (range_it.first == range_it.second) {
     LOG(FATAL) << "Could not find the machine";
   }
-  machine_ec_to_res_id_.erase(it);
+  machine_ec_to_res_id_.erase(range_it.first);
   machine_to_rtnd_.erase(res_id);
   machine_to_ec_.erase(res_id);
   // Remove the machine ec from the agg set if we removed the
@@ -654,7 +653,7 @@ void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
   // Now remove the state we keep for this task
   for (vector<EquivClass_t>::iterator it = equiv_classes->begin();
        it != equiv_classes->end(); ++it) {
-    unordered_map<EquivClass_t, set<TaskID_t> >::iterator set_it =
+    unordered_map<EquivClass_t, unordered_set<TaskID_t> >::iterator set_it =
       task_ec_to_set_task_id_.find(*it);
     if (set_it != task_ec_to_set_task_id_.end()) {
       // Remove the task's ID from the set of tasks in the EC

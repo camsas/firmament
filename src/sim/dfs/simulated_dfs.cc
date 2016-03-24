@@ -57,8 +57,8 @@ void SimulatedDFS::GetFileLocations(const string& file_path,
   // NOTE: we assume that each task has one input file whose path is equal
   // to the task id.
   TaskID_t task_id = boost::lexical_cast<TaskID_t>(file_path);
-  pair<multimap<TaskID_t, DataLocation>::iterator,
-       multimap<TaskID_t, DataLocation>::iterator> range_it =
+  pair<unordered_multimap<TaskID_t, DataLocation>::iterator,
+       unordered_multimap<TaskID_t, DataLocation>::iterator> range_it =
     task_to_data_locations_.equal_range(task_id);
   for (; range_it.first != range_it.second; range_it.first++) {
     locations->push_back(range_it.first->second);
@@ -110,8 +110,8 @@ void SimulatedDFS::PlaceBlockOnMachines(TaskID_t task_id, uint64_t block_id) {
 }
 
 void SimulatedDFS::RemoveBlocksForTask(TaskID_t task_id) {
-  pair<multimap<TaskID_t, DataLocation>::iterator,
-       multimap<TaskID_t, DataLocation>::iterator> range_it =
+  pair<unordered_multimap<TaskID_t, DataLocation>::iterator,
+       unordered_multimap<TaskID_t, DataLocation>::iterator> range_it =
     task_to_data_locations_.equal_range(task_id);
   for (; range_it.first != range_it.second; range_it.first++) {
     const DataLocation& data_location = range_it.first->second;
@@ -135,8 +135,8 @@ void SimulatedDFS::RemoveMachine(ResourceID_t machine_res_id) {
     FindOrNull(tasks_on_machine_, machine_res_id);
   CHECK_NOTNULL(tasks);
   for (auto& task_id : *tasks) {
-    pair<multimap<TaskID_t, DataLocation>::iterator,
-         multimap<TaskID_t, DataLocation>::iterator> range_it =
+    pair<unordered_multimap<TaskID_t, DataLocation>::iterator,
+         unordered_multimap<TaskID_t, DataLocation>::iterator> range_it =
       task_to_data_locations_.equal_range(task_id);
     for (; range_it.first != range_it.second; range_it.first++) {
       if (range_it.first->second.machine_res_id_ == machine_res_id) {
