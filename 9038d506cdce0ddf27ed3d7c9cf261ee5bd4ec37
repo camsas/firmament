@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_c3861d13",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-24T20:39:31Z",
+      "side": 1,
+      "message": "Maybe also point out that this was deleted because the code deleting deltas from the vector was silly and had massive performance implications ;)",
+      "revId": "9038d506cdce0ddf27ed3d7c9cf261ee5bd4ec37",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
