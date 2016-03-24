@@ -164,7 +164,6 @@ uint64_t FlowScheduler::ApplySchedulingDeltas(
     } else {
       LOG(FATAL) << "Unhandled scheduling delta case";
     }
-    delta->set_actioned(true);
   }
   return num_scheduled;
 }
@@ -476,22 +475,9 @@ uint64_t FlowScheduler::RunSchedulingIteration(
   time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp +
                                         scheduler_stats->scheduler_runtime_);
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
+  // Makes sure the deltas get correctly freed.
+  deltas.clear();
   time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp);
-  // Drop all deltas that were actioned
-  for (vector<SchedulingDelta*>::iterator it = deltas.begin();
-       it != deltas.end(); ) {
-    if ((*it)->actioned()) {
-      it = deltas.erase(it);
-    } else {
-      it++;
-    }
-  }
-  if (deltas.size() > 0) {
-    LOG(WARNING) << "Not all deltas were processed, " << deltas.size()
-                 << " remain: ";
-    for (auto it = deltas.begin(); it != deltas.end(); ++it)
-      LOG(WARNING) << " * " << (*it)->DebugString();
-  }
   if (FLAGS_update_resource_topology_capacities) {
     for (auto& rtnd_ptr : resource_roots_) {
       flow_graph_manager_->UpdateResourceTopology(rtnd_ptr);
