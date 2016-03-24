@@ -80,9 +80,9 @@ uint8_t* SHA256Hash(uint8_t* bytes, uint64_t len);
 
 string CoarseTimestampToHumanReadble(const time_t rawtime);
 
-set<DataObjectID_t*> DataObjectIDsFromProtobuf(
+unordered_set<DataObjectID_t*> DataObjectIDsFromProtobuf(
     const RepeatedPtrField<string>& pb_field);
-set<DataObjectID_t*> DataObjectIDsFromProtobuf(
+unordered_set<DataObjectID_t*> DataObjectIDsFromProtobuf(
     const RepeatedPtrField<ReferenceDescriptor>& pb_field);
 
 /**

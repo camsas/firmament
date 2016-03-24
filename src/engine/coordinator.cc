@@ -449,10 +449,10 @@ void Coordinator::HandleIONotification(const BaseMessage& bm,
   if (bm.has_end_write_notification()) {
     const EndWriteNotification msg = bm.end_write_notification();
     DataObjectID_t id = DataObjectIDFromProtobuf(msg.reference().id());
-    set<ReferenceInterface*>* refs = object_store_->GetReferences(id);
+    unordered_set<ReferenceInterface*>* refs = object_store_->GetReferences(id);
     vector<ReferenceInterface*> remove;
     vector<ConcreteReference*> add;
-    for (set<ReferenceInterface*>::iterator it = refs->begin();
+    for (unordered_set<ReferenceInterface*>::iterator it = refs->begin();
          it != refs->end();
          ++it) {
       if ((*it)->desc().type() == ReferenceDescriptor::FUTURE &&
@@ -490,12 +490,13 @@ void Coordinator::HandleLookupRequest(const LookupRequest& msg,
   // reference descriptors for it if so.
   // XXX(malte): This currently returns a single reference; we should return
   // multiple if they exist.
-  set<ReferenceInterface*>* refs = object_store_->GetReferences(
+  unordered_set<ReferenceInterface*>* refs = object_store_->GetReferences(
       DataObjectIDFromProtobuf(msg.name()));
   // Manufacture and send a response
   BaseMessage resp_msg;
   if (refs && refs->size() > 0) {
-    for (set<ReferenceInterface*>::const_iterator ref_iter = refs->begin();
+    for (unordered_set<ReferenceInterface*>::const_iterator
+           ref_iter = refs->begin();
          ref_iter != refs->end();
          ++ref_iter) {
       ReferenceDescriptor* resp_rd =
@@ -658,9 +659,9 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
        msg.spawned_task_desc().outputs().begin();
        o_iter != msg.spawned_task_desc().outputs().end();
        ++o_iter) {
-    set<ReferenceInterface*>* refs =
+    unordered_set<ReferenceInterface*>* refs =
         object_store_->GetReferences(DataObjectIDFromProtobuf(o_iter->id()));
-    for (set<ReferenceInterface*>::iterator r_iter = refs->begin();
+    for (unordered_set<ReferenceInterface*>::iterator r_iter = refs->begin();
          r_iter != refs->end();
          ++r_iter) {
       if ((*r_iter)->desc().producing_task() == (*spawner)->uid())
@@ -892,7 +893,8 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
               << "local object table. Not adding again.";
     }
     // Check that the object was actually stored
-    set<ReferenceInterface*>* refs = object_store_->GetReferences(output_id);
+    unordered_set<ReferenceInterface*>* refs =
+      object_store_->GetReferences(output_id);
     if (refs && refs->size() > 0)
       VLOG(3) << "Object is indeed in object store";
     else
@@ -972,7 +974,8 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
     // should all be in the object table now.
     DataObjectID_t output_id(DataObjectIDFromProtobuf(*output_iter));
     VLOG(1) << "Considering job output " << output_id;
-    set<ReferenceInterface*>* refs = object_store_->GetReferences(output_id);
+    unordered_set<ReferenceInterface*>* refs =
+      object_store_->GetReferences(output_id);
     CHECK(refs && refs->size() > 0)
         << "Could not find reference to data object ID " << output_id
         << ", which we just added!";
