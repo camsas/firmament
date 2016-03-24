@@ -337,7 +337,8 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
   vector<JobDescriptor*> jds_with_runnables;
   for (auto& jd_ptr : jd_ptr_vect) {
     // Check if we have any runnable tasks in this job
-    const set<TaskID_t> runnable_tasks = ComputeRunnableTasksForJob(jd_ptr);
+    const unordered_set<TaskID_t> runnable_tasks =
+      ComputeRunnableTasksForJob(jd_ptr);
     if (runnable_tasks.size() > 0) {
       jds_with_runnables.push_back(jd_ptr);
     }

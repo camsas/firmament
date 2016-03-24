@@ -312,8 +312,8 @@ void SolverDispatcher::SolverConfiguration(const string& solver,
 // graph.
 // NOTE: The extracted_flow is changed by the method.
 uint64_t SolverDispatcher::AssignNode(
-    vector< map< uint64_t, uint64_t > >* extracted_flow, uint64_t node) {
-  map<uint64_t, uint64_t>::iterator map_it;
+    vector<unordered_map<uint64_t, uint64_t>>* extracted_flow, uint64_t node) {
+  unordered_map<uint64_t, uint64_t>::iterator map_it;
   for (map_it = (*extracted_flow)[node].begin();
        map_it != (*extracted_flow)[node].end(); map_it++) {
     // Check if node = root or node = task
@@ -359,7 +359,7 @@ uint64_t SolverDispatcher::AssignNode(
 // Maps worker|root tasks to leaves. It expects a extracted_flow containing
 // only the arcs with positive flow (i.e. what ReadFlowGraph returns).
 multimap<uint64_t, uint64_t>* SolverDispatcher::GetMappings(
-    vector< map< uint64_t, uint64_t > >* extracted_flow,
+    vector<unordered_map<uint64_t, uint64_t>>* extracted_flow,
     unordered_set<uint64_t> leaves, uint64_t sink) {
   multimap<uint64_t, uint64_t>* task_node =
     new multimap<uint64_t, uint64_t>();
@@ -408,7 +408,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(
     // Parse and process the result
     uint64_t num_nodes =
       flow_graph_manager_->flow_graph_change_manager()->flow_graph().NumNodes();
-    vector<map<uint64_t, uint64_t> >* extracted_flow =
+    vector<unordered_map<uint64_t, uint64_t> >* extracted_flow =
       ReadFlowGraph(from_solver_, algorithm_runtime, num_nodes);
     task_mappings = GetMappings(extracted_flow,
                                 flow_graph_manager_->leaf_node_ids(),
@@ -418,10 +418,10 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(
   return task_mappings;
 }
 
-vector<map< uint64_t, uint64_t> >* SolverDispatcher::ReadFlowGraph(
+vector<unordered_map<uint64_t, uint64_t>>* SolverDispatcher::ReadFlowGraph(
     FILE* fptr, uint64_t* algorithm_runtime, uint64_t num_vertices) {
-  vector<map< uint64_t, uint64_t > >* adj_list =
-    new vector<map<uint64_t, uint64_t> >(num_vertices + 1);
+  vector<unordered_map<uint64_t, uint64_t>>* adj_list =
+    new vector<unordered_map<uint64_t, uint64_t> >(num_vertices + 1);
   // The cost is not returned.
   uint64_t cost;
   char line[100];

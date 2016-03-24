@@ -93,12 +93,14 @@ class EventDrivenScheduler : public SchedulerInterface {
   virtual void HandleTaskPlacement(TaskDescriptor* td_ptr,
                                    ResourceDescriptor* rd_ptr);
   void InsertTaskIntoRunnables(JobID_t job_id, TaskID_t task_id);
-  void LazyGraphReduction(const set<DataObjectID_t*>& output_ids,
+  void LazyGraphReduction(const unordered_set<DataObjectID_t*>& output_ids,
                           TaskDescriptor* root_task,
                           const JobID_t& job_id);
-  set<TaskDescriptor*> ProducingTasksForDataObjectID(const DataObjectID_t& id,
-                                                     const JobID_t& cur_job);
-  const set<ReferenceInterface*> ReferencesForID(const DataObjectID_t& id);
+  unordered_set<TaskDescriptor*> ProducingTasksForDataObjectID(
+      const DataObjectID_t& id,
+      const JobID_t& cur_job);
+  const unordered_set<ReferenceInterface*> ReferencesForID(
+      const DataObjectID_t& id);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
   void RegisterSimulatedResource(ResourceID_t res_id);
@@ -110,7 +112,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   void RemoveResourceNodeFromParentChildrenList(
       ResourceTopologyNodeDescriptor* rtnd_ptr);
 
-  const set<TaskID_t>& ComputeRunnableTasksForJob(JobDescriptor* job_desc);
+  const unordered_set<TaskID_t>& ComputeRunnableTasksForJob(
+      JobDescriptor* job_desc);
   void SetupPUs(ResourceTopologyNodeDescriptor* rtnd_ptr,
                 bool local,
                 bool simulated);
@@ -119,7 +122,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   // Cached sets of runnable and blocked tasks; these are updated on each
   // execution of LazyGraphReduction. Note that this set includes tasks from all
   // jobs.
-  unordered_map<JobID_t, set<TaskID_t>,
+  unordered_map<JobID_t, unordered_set<TaskID_t>,
     boost::hash<boost::uuids::uuid>> runnable_tasks_;
   // Initialized to hold the URI of the (currently unique) coordinator this
   // scheduler is associated with. This is passed down to the executor and to
@@ -132,7 +135,8 @@ class EventDrivenScheduler : public SchedulerInterface {
   SchedulingEventNotifierInterface* event_notifier_;
   // A map holding pointers to all executors known to this scheduler. This
   // includes both executors for local and for remote resources.
-  map<ResourceID_t, ExecutorInterface*> executors_;
+  unordered_map<ResourceID_t, ExecutorInterface*,
+    boost::hash<boost::uuids::uuid>> executors_;
   // A vector holding descriptors of the jobs to be scheduled in the next
   // scheduling round.
   unordered_map<JobID_t, JobDescriptor*,
@@ -144,7 +148,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   // in the process of making scheduling decisions.
   boost::recursive_mutex scheduling_lock_;
   // Map of reference subscriptions
-  map<DataObjectID_t, set<TaskDescriptor*> > reference_subscriptions_;
+  map<DataObjectID_t, unordered_set<TaskDescriptor*>> reference_subscriptions_;
   // The current resource to task bindings managed by this scheduler.
   multimap<ResourceID_t, TaskID_t> resource_bindings_;
   // The current task bindings managed by this scheduler.

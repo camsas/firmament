@@ -433,9 +433,9 @@ uint8_t* SHA256Hash(uint8_t* bytes, uint64_t len) {
 // Helper function to convert a repeated bytes field to a set of
 // DataObjectID_t.
 // This method copies the input collection, so it is O(N) in time and space.
-set<DataObjectID_t*> DataObjectIDsFromProtobuf(
+unordered_set<DataObjectID_t*> DataObjectIDsFromProtobuf(
     const RepeatedPtrField<string>& pb_field) {
-  set<DataObjectID_t*> return_set;
+  unordered_set<DataObjectID_t*> return_set;
   // N.B.: using GNU-style RTTI (typeof)
   for (__typeof__(pb_field.begin()) iter = pb_field.begin();
        iter != pb_field.end();
@@ -447,9 +447,9 @@ set<DataObjectID_t*> DataObjectIDsFromProtobuf(
 // Helper function to convert a repeated bytes field to a set of
 // DataObjectID_t.
 // This method copies the input collection, so it is O(N) in time and space.
-set<DataObjectID_t*> DataObjectIDsFromProtobuf(
+unordered_set<DataObjectID_t*> DataObjectIDsFromProtobuf(
     const RepeatedPtrField<ReferenceDescriptor>& pb_field) {
-  set<DataObjectID_t*> return_set;
+  unordered_set<DataObjectID_t*> return_set;
   // N.B.: using GNU-style RTTI (typeof)
   for (__typeof__(pb_field.begin()) iter = pb_field.begin();
        iter != pb_field.end();
