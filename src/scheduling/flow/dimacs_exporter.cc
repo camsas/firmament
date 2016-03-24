@@ -19,49 +19,13 @@ DIMACSExporter::DIMACSExporter()
 }
 
 void DIMACSExporter::Export(const FlowGraph& graph) {
-  // Problem header
   output_ += GenerateHeader(graph.NumNodes(), graph.NumArcs());
-  // ----------------------------
-  // Supply nodes
-  // ----------------------------
-  // Task nodes
-  //output_ += GenerateComment("Task nodes");
-  // for ...
-  // output_ += GenerateNode();
-  // Unscheduled aggregator nodes
-  //output_ += GenerateComment("Unscheduled agg nodes");
-  // for ...
-  // output_ += GenerateNode();
-  // Resource nodes (implicit)
-  //output_ += GenerateComment("(Other nodes are implicit)");
-  // XXX(malte): above comments are meaningless; currently all nodes are just
-  // dumped in one go.
   output_ += GenerateComment("=== ALL NODES FOLLOW ===");
   for (unordered_map<uint64_t, FlowGraphNode*>::const_iterator n_iter =
        graph.Nodes().begin();
        n_iter != graph.Nodes().end();
        ++n_iter)
     output_ += GenerateNode(*n_iter->second);
-
-  // ----------------------------
-  // Demand nodes
-  // ----------------------------
-  // Sink node
-  //output_ += GenerateComment("Sink node");
-  //output_ += GenerateNode(graph.sink_node());
-  // ----------------------------
-  // Arcs
-  // ----------------------------
-  // Task -> resource prefs
-  //output_ += GenerateComment("Task preference arcs");
-  // Unscheduled aggregator nodes -> sink
-  //output_ += GenerateComment("Unscheduled agg nodes -> sink");
-  // Cluster aggregator -> res topology
-  //output_ += GenerateComment("Cluster agg node (X) -> resource topo");
-  // Resource topology
-  //output_ += GenerateComment("Resource topology (internal arcs)");
-  // XXX(malte): above comments are meaningless; currently all arcs are just
-  // dumped in one go.
   output_ += GenerateComment("=== ALL ARCS FOLLOW ===");
   for (unordered_set<FlowGraphArc*>::const_iterator a_iter =
        graph.Arcs().begin();
