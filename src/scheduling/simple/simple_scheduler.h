@@ -37,7 +37,8 @@ class SimpleScheduler : public EventDrivenScheduler {
                   SchedulingEventNotifierInterface* event_notifier,
                   ResourceID_t coordinator_res_id,
                   const string& coordinator_uri,
-                  TimeInterface* time_manager);
+                  TimeInterface* time_manager,
+                  TraceGenerator* trace_generator);
   ~SimpleScheduler();
   void HandleTaskFinalReport(const TaskFinalReport& report,
                              TaskDescriptor* td_ptr);

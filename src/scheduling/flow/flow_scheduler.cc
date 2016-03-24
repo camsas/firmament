@@ -60,12 +60,12 @@ FlowScheduler::FlowScheduler(
     SchedulingEventNotifierInterface* event_notifier,
     ResourceID_t coordinator_res_id,
     const string& coordinator_uri,
-    TimeInterface* time_manager)
+    TimeInterface* time_manager,
+    TraceGenerator* trace_generator)
     : EventDrivenScheduler(job_map, resource_map, resource_topology,
                            object_store, task_map, knowledge_base, topo_mgr,
                            m_adapter, event_notifier, coordinator_res_id,
-                           coordinator_uri, time_manager,
-                           new TraceGenerator(time_manager)),
+                           coordinator_uri, time_manager, trace_generator),
       topology_manager_(topo_mgr),
       last_updated_time_dependent_costs_(0ULL),
       leaf_res_ids_(new unordered_set<ResourceID_t,

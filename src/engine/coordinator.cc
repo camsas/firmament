@@ -69,6 +69,7 @@ Coordinator::Coordinator()
     parent_chan_(NULL),
     hostname_(boost::asio::ip::host_name()),
     time_manager_(new WallTime) {
+  trace_generator_ = new TraceGenerator(time_manager_);
   // Start up a coordinator according to the platform parameter
   string desc_name = hostname_;
   resource_desc_.set_uuid(to_string(uuid_));
@@ -77,9 +78,10 @@ Coordinator::Coordinator()
   //resource_desc_.set_storage_engine(object_store_->get_listening_interface());
   local_resource_topology_->mutable_resource_desc()->CopyFrom(
       resource_desc_);
+
 #ifdef ENABLE_HDFS
   shared_ptr<KnowledgeBase> knowledge_base(new KnowledgeBase(
-      new store::HdfsDataLocalityManager()));
+      new store::HdfsDataLocalityManager(trace_generator_)));
 #else
   shared_ptr<KnowledgeBase> knowledge_base(new KnowledgeBase());
 #endif
@@ -90,14 +92,16 @@ Coordinator::Coordinator()
     scheduler_ = new SimpleScheduler(
         job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, knowledge_base, topology_manager_,
-        m_adapter_, NULL, uuid_, FLAGS_listen_uri, time_manager_);
+        m_adapter_, NULL, uuid_, FLAGS_listen_uri, time_manager_,
+        trace_generator_);
   } else if (FLAGS_scheduler == "flow") {
     // Quincy-style flow-based scheduling
     LOG(INFO) << "Using Quincy-style min cost flow-based scheduler.";
     scheduler_ = new FlowScheduler(
         job_table_, associated_resources_, local_resource_topology_,
         object_store_, task_table_, knowledge_base, topology_manager_,
-        m_adapter_, NULL, uuid_, FLAGS_listen_uri, time_manager_);
+        m_adapter_, NULL, uuid_, FLAGS_listen_uri, time_manager_,
+        trace_generator_);
   } else {
     // Unknown scheduler specified, error.
     LOG(FATAL) << "Unknown or unrecognized scheduler '" << FLAGS_scheduler
@@ -119,6 +123,7 @@ Coordinator::Coordinator()
 }
 
 Coordinator::~Coordinator() {
+  delete trace_generator_;
   delete time_manager_;
   // TODO(malte): check destruction order in C++; c_http_ui_ may already
   // have been destructed when we get here.

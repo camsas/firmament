@@ -27,7 +27,8 @@ DEFINE_uint64(simulated_quincy_block_size, 64, "The size of a DFS block in MB");
 namespace firmament {
 namespace sim {
 
-SimulatedDataLayerManager::SimulatedDataLayerManager() {
+SimulatedDataLayerManager::SimulatedDataLayerManager(
+    TraceGenerator* trace_generator) : trace_generator_(trace_generator) {
   input_block_dist_ =
     new GoogleBlockDistribution(FLAGS_simulated_quincy_input_percent_min,
                                 FLAGS_simulated_quincy_input_min_blocks,
@@ -39,6 +40,7 @@ SimulatedDataLayerManager::SimulatedDataLayerManager() {
 }
 
 SimulatedDataLayerManager::~SimulatedDataLayerManager() {
+  // trace_generator_ is not owned by SimulatedDataLayerManager.
   delete input_block_dist_;
   delete runtime_dist_;
   delete dfs_;

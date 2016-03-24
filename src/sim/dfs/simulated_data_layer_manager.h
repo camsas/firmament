@@ -7,6 +7,7 @@
 
 #include "scheduling/data_layer_manager_interface.h"
 
+#include "misc/trace_generator.h"
 #include "sim/dfs/google_block_distribution.h"
 #include "sim/dfs/simulated_dfs.h"
 #include "sim/google_runtime_distribution.h"
@@ -16,7 +17,7 @@ namespace sim {
 
 class SimulatedDataLayerManager : public DataLayerManagerInterface {
  public:
-  SimulatedDataLayerManager();
+  SimulatedDataLayerManager(TraceGenerator* trace_generator);
   virtual ~SimulatedDataLayerManager();
 
   uint64_t AddFilesForTask(TaskID_t task_id, uint64_t avg_runtime);
@@ -31,6 +32,7 @@ class SimulatedDataLayerManager : public DataLayerManagerInterface {
   GoogleRuntimeDistribution* runtime_dist_;
   SimulatedDFS* dfs_;
   unordered_map<string, ResourceID_t> hostname_to_res_id_;
+  TraceGenerator* trace_generator_;
 };
 
 } // namespace sim

@@ -18,7 +18,8 @@ DEFINE_int32(hdfs_name_node_port, 8020,
 namespace firmament {
 namespace store {
 
-HdfsDataLocalityManager::HdfsDataLocalityManager() {
+HdfsDataLocalityManager::HdfsDataLocalityManager(
+    TraceGenerator* trace_generator) : trace_generator_(trace_generator) {
   struct hdfsBuilder* hdfs_builder = hdfsNewBuilder();
   if (!hdfs_builder) {
     LOG(FATAL) << "Could not create HDFS builder";
@@ -33,6 +34,7 @@ HdfsDataLocalityManager::HdfsDataLocalityManager() {
 }
 
 HdfsDataLocalityManager::~HdfsDataLocalityManager() {
+  // trace_generator_ is not owned by HdfsDataLocalityManager.
   hdfsDisconnect(fs_);
 }
 
