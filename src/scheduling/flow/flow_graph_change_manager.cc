@@ -16,6 +16,8 @@ DEFINE_bool(purge_changes_before_node_removal, true,
             "True if changes on incoming/outgoing arcs of a node that is going "
             "to be removed should be purged");
 
+DECLARE_bool(incremental_flow);
+
 namespace firmament {
 
 FlowGraphChangeManager::FlowGraphChangeManager(
@@ -56,10 +58,12 @@ FlowGraphArc* FlowGraphChangeManager::AddArc(uint64_t src_node_id,
   arc->cap_upper_bound_ = cap_upper_bound;
   arc->cost_ = cost;
   arc->type_ = arc_type;
-  DIMACSChange* chg = new DIMACSNewArc(*arc);
-  chg->set_comment(comment);
+  if (FLAGS_incremental_flow) {
+    DIMACSChange* chg = new DIMACSNewArc(*arc);
+    chg->set_comment(comment);
+    AddGraphChange(chg);
+  }
   dimacs_stats_->UpdateStats(change_type);
-  AddGraphChange(chg);
   return arc;
 }
 
@@ -79,10 +83,12 @@ FlowGraphNode* FlowGraphChangeManager::AddNode(
   node->type_ = node_type;
   node->excess_ = excess;
   node->comment_ = comment;
-  DIMACSChange* chg = new DIMACSAddNode(*node, vector<FlowGraphArc*>());
-  chg->set_comment(comment);
+  if (FLAGS_incremental_flow) {
+    DIMACSChange* chg = new DIMACSAddNode(*node, vector<FlowGraphArc*>());
+    chg->set_comment(comment);
+    AddGraphChange(chg);
+  }
   dimacs_stats_->UpdateStats(change_type);
-  AddGraphChange(chg);
   return node;
 }
 
@@ -99,10 +105,12 @@ void FlowGraphChangeManager::ChangeArc(FlowGraphArc* arc,
       arc->cap_lower_bound_ != cap_lower_bound ||
       arc->cap_upper_bound_ != cap_upper_bound) {
     flow_graph_->ChangeArc(arc, cap_lower_bound, cap_upper_bound, cost);
-    DIMACSChange* chg = new DIMACSChangeArc(*arc, old_cost);
-    chg->set_comment(comment);
+    if (FLAGS_incremental_flow) {
+      DIMACSChange* chg = new DIMACSChangeArc(*arc, old_cost);
+      chg->set_comment(comment);
+      AddGraphChange(chg);
+    }
     dimacs_stats_->UpdateStats(change_type);
-    AddGraphChange(chg);
   }
 }
 
@@ -114,10 +122,12 @@ void FlowGraphChangeManager::ChangeArcCapacity(FlowGraphArc* arc,
   uint64_t old_capacity = arc->cap_upper_bound_;
   if (old_capacity != capacity) {
     flow_graph_->ChangeArc(arc, arc->cap_lower_bound_, capacity, arc->cost_);
-    DIMACSChange* chg = new DIMACSChangeArc(*arc, arc->cost_);
-    chg->set_comment(comment);
+    if (FLAGS_incremental_flow) {
+      DIMACSChange* chg = new DIMACSChangeArc(*arc, arc->cost_);
+      chg->set_comment(comment);
+      AddGraphChange(chg);
+    }
     dimacs_stats_->UpdateStats(change_type);
-    AddGraphChange(chg);
   }
 }
 
@@ -129,10 +139,12 @@ void FlowGraphChangeManager::ChangeArcCost(FlowGraphArc* arc,
   uint64_t old_cost = arc->cost_;
   if (old_cost != cost) {
     flow_graph_->ChangeArcCost(arc, cost);
-    DIMACSChange* chg = new DIMACSChangeArc(*arc, old_cost);
-    chg->set_comment(comment);
+    if (FLAGS_incremental_flow) {
+      DIMACSChange* chg = new DIMACSChangeArc(*arc, old_cost);
+      chg->set_comment(comment);
+      AddGraphChange(chg);
+    }
     dimacs_stats_->UpdateStats(change_type);
-    AddGraphChange(chg);
   }
 }
 
@@ -141,20 +153,24 @@ void FlowGraphChangeManager::DeleteArc(FlowGraphArc* arc,
                                        const char* comment) {
   arc->cap_lower_bound_ = 0;
   arc->cap_upper_bound_ = 0;
-  DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
-  chg->set_comment(comment);
+  if (FLAGS_incremental_flow) {
+    DIMACSChange *chg = new DIMACSChangeArc(*arc, arc->cost_);
+    chg->set_comment(comment);
+    AddGraphChange(chg);
+  }
   dimacs_stats_->UpdateStats(change_type);
-  AddGraphChange(chg);
   flow_graph_->DeleteArc(arc);
 }
 
 void FlowGraphChangeManager::DeleteNode(FlowGraphNode* node,
                                         DIMACSChangeType change_type,
                                         const char* comment) {
-  DIMACSChange *chg = new DIMACSRemoveNode(*node);
-  chg->set_comment(comment);
+  if (FLAGS_incremental_flow) {
+    DIMACSChange *chg = new DIMACSRemoveNode(*node);
+    chg->set_comment(comment);
+    AddGraphChange(chg);
+  }
   dimacs_stats_->UpdateStats(change_type);
-  AddGraphChange(chg);
   flow_graph_->DeleteNode(node);
 }
 
