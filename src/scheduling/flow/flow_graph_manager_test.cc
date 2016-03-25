@@ -81,15 +81,15 @@ class FlowGraphManagerTest : public ::testing::Test {
                                     string machine_name) {
     ResourceID_t res_id = GenerateResourceID(machine_name);
     ResourceDescriptor* rd_ptr = rtnd_ptr->mutable_resource_desc();
-    rd_ptr->set_uuid(to_string(res_id));
+    rd_ptr->set_uuid(ResourceIDAsBytes(res_id), sizeof(ResourceID_t));
     rd_ptr->set_type(ResourceDescriptor::RESOURCE_MACHINE);
     return rd_ptr;
   }
 
   TaskDescriptor* CreateTask(JobDescriptor* jd_ptr, uint64_t job_id_seed) {
     JobID_t job_id = GenerateJobID(job_id_seed);
-    jd_ptr->set_uuid(to_string(job_id));
-    jd_ptr->set_name(to_string(job_id));
+    jd_ptr->set_uuid(JobIDAsBytes(job_id), sizeof(JobID_t));
+    jd_ptr->set_name(JobIDAsBytes(job_id), sizeof(JobID_t));
     TaskDescriptor* td_ptr = jd_ptr->mutable_root_task();
     td_ptr->set_uid(GenerateRootTaskID(*jd_ptr));
     td_ptr->set_job_id(jd_ptr->uuid());
@@ -136,7 +136,7 @@ TEST_F(FlowGraphManagerTest, AddResourceNode) {
   ResourceID_t res_id = GenerateResourceID("test");
   ResourceTopologyNodeDescriptor rtnd;
   ResourceDescriptor* rd_ptr = rtnd.mutable_resource_desc();
-  rd_ptr->set_uuid(to_string(res_id));
+  rd_ptr->set_uuid(ResourceIDAsBytes(res_id), sizeof(ResourceID_t));
   rd_ptr->set_type(ResourceDescriptor::RESOURCE_MACHINE);
   FlowGraphNode* res_node = graph_manager->AddResourceNode(rd_ptr);
   CHECK_NOTNULL(res_node);
@@ -155,7 +155,7 @@ TEST_F(FlowGraphManagerTest, AddResourceNode) {
   ResourceTopologyNodeDescriptor* rtnd_child_ptr = rtnd.add_children();
   ResourceDescriptor* rd_child_ptr = rtnd_child_ptr->mutable_resource_desc();
   ResourceID_t res_child_id = GenerateResourceID("test-child");
-  rd_child_ptr->set_uuid(to_string(res_child_id));
+  rd_child_ptr->set_uuid(ResourceIDAsBytes(res_child_id), sizeof(ResourceID_t));
   rd_child_ptr->set_type(ResourceDescriptor::RESOURCE_PU);
   FlowGraphNode* res_child_node = graph_manager->AddResourceNode(rd_child_ptr);
   CHECK_NOTNULL(res_child_node);
@@ -231,21 +231,25 @@ TEST_F(FlowGraphManagerTest, AddResourceTopologyDFS) {
   // Create simple resource topology.
   ResourceTopologyNodeDescriptor rtnd;
   ResourceID_t root_res_id = GenerateResourceID("test");
-  rtnd.mutable_resource_desc()->set_uuid(to_string(root_res_id));
+  rtnd.mutable_resource_desc()->set_uuid(ResourceIDAsBytes(root_res_id),
+                                         sizeof(ResourceID_t));
   rtnd.mutable_resource_desc()->set_type(
       ResourceDescriptor::RESOURCE_COORDINATOR);
   ResourceTopologyNodeDescriptor* rtn_machine = rtnd.add_children();
   ResourceID_t machine_res_id = GenerateResourceID("machine");
-  rtn_machine->mutable_resource_desc()->set_uuid(to_string(machine_res_id));
+  rtn_machine->mutable_resource_desc()->set_uuid(
+      ResourceIDAsBytes(machine_res_id), sizeof(ResourceID_t));
   rtn_machine->mutable_resource_desc()->set_type(
       ResourceDescriptor::RESOURCE_MACHINE);
-  rtn_machine->set_parent_id(to_string(root_res_id));
+  rtn_machine->set_parent_id(ResourceIDAsBytes(root_res_id),
+                             sizeof(ResourceID_t));
   ResourceTopologyNodeDescriptor* rtn_core = rtnd.add_children();
   ResourceID_t core_res_id = GenerateResourceID("test-core");
-  rtn_core->mutable_resource_desc()->set_uuid(to_string(core_res_id));
+  rtn_core->mutable_resource_desc()->set_uuid(
+      ResourceIDAsBytes(core_res_id), sizeof(ResourceID_t));
   rtn_core->mutable_resource_desc()->set_type(
       ResourceDescriptor::RESOURCE_PU);
-  rtn_core->set_parent_id(to_string(root_res_id));
+  rtn_core->set_parent_id(ResourceIDAsBytes(root_res_id), sizeof(ResourceID_t));
 
   EXPECT_EQ(flow_graph.NumArcs(), 0);
   EXPECT_CALL(mock_cost_model, AddMachine(_)).Times(1);
@@ -378,7 +382,7 @@ TEST_F(FlowGraphManagerTest, RemoveInvalidECPrefArcs) {
   ResourceID_t res_id = GenerateResourceID("test");
   ResourceTopologyNodeDescriptor rtnd;
   ResourceDescriptor* rd_ptr = rtnd.mutable_resource_desc();
-  rd_ptr->set_uuid(to_string(res_id));
+  rd_ptr->set_uuid(ResourceIDAsBytes(res_id), sizeof(ResourceID_t));
   rd_ptr->set_type(ResourceDescriptor::RESOURCE_MACHINE);
   FlowGraphNode* res_node = graph_manager->AddResourceNode(rd_ptr);
   CHECK_NOTNULL(res_node);
@@ -631,11 +635,11 @@ TEST_F(FlowGraphManagerTest, UpdateChildrenTasks) {
   // Add children tasks.
   TaskDescriptor* failed_child_td_ptr = root_td_ptr->add_spawned();
   failed_child_td_ptr->set_uid(GenerateTaskID(*root_td_ptr));
-  failed_child_td_ptr->set_job_id(to_string(job_id));
+  failed_child_td_ptr->set_job_id(JobIDAsBytes(job_id), sizeof(JobID_t));
   failed_child_td_ptr->set_state(TaskDescriptor::FAILED);
   TaskDescriptor* runnable_child_td_ptr = root_td_ptr->add_spawned();
   runnable_child_td_ptr->set_uid(GenerateTaskID(*root_td_ptr));
-  runnable_child_td_ptr->set_job_id(to_string(job_id));
+  runnable_child_td_ptr->set_job_id(JobIDAsBytes(job_id), sizeof(JobID_t));
   runnable_child_td_ptr->set_state(TaskDescriptor::RUNNABLE);
   CHECK_EQ(flow_graph.NumNodes(), num_nodes + 2);
   graph_manager->UpdateChildrenTasks(root_td_ptr, &node_queue, &marked_nodes);

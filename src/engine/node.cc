@@ -38,7 +38,7 @@ Node::Node(ResourceID_t uuid)
   : node_uri_(FLAGS_listen_uri),
     uuid_(uuid) {
   // Set up the node's resource descriptor
-  resource_desc_.set_uuid(to_string(uuid_));
+  resource_desc_.set_uuid(ResourceIDAsBytes(uuid_), sizeof(ResourceID_t));
 
   // Set up a message adapter for control messages.
   m_adapter_ = new platform_unix::streamsockets::

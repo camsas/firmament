@@ -72,7 +72,7 @@ Coordinator::Coordinator()
   trace_generator_ = new TraceGenerator(time_manager_);
   // Start up a coordinator according to the platform parameter
   string desc_name = hostname_;
-  resource_desc_.set_uuid(to_string(uuid_));
+  resource_desc_.set_uuid(ResourceIDAsBytes(uuid_), sizeof(ResourceID_t));
   resource_desc_.set_friendly_name(desc_name);
   resource_desc_.set_type(ResourceDescriptor::RESOURCE_COORDINATOR);
   //resource_desc_.set_storage_engine(object_store_->get_listening_interface());
@@ -141,7 +141,7 @@ bool Coordinator::RegisterWithCoordinator(
   ResourceTopologyNodeDescriptor* rtnd =
       bm.mutable_registration()->mutable_rtn_desc();
   rtnd->CopyFrom(*local_resource_topology_);
-  SUBMSG_WRITE(bm, registration, uuid, to_string(uuid_));
+  SUBMSG_WRITE_UUID(bm, registration, uuid, uuid_);
   SUBMSG_WRITE(bm, registration, location, chan->LocalEndpointString());
   // wrap in envelope
   VLOG(2) << "Sending registration message...";
@@ -161,7 +161,7 @@ void Coordinator::DetectLocalResources() {
   ResourceTopologyNodeDescriptor* root_node =
       local_resource_topology_->add_children();
   topology_manager_->AsProtobuf(root_node);
-  root_node->set_parent_id(to_string(uuid_));
+  root_node->set_parent_id(ResourceIDAsBytes(uuid_), sizeof(ResourceID_t));
   BFSTraverseResourceProtobufTreeReturnRTND(
       local_resource_topology_,
       boost::bind(&Coordinator::AddResource, this, _1, node_uri_, true));
@@ -247,7 +247,8 @@ void Coordinator::Run() {
     if (cur_time - last_heartbeat_time > FLAGS_heartbeat_interval) {
       MachinePerfStatisticsSample stats;
       stats.set_timestamp(cur_time);
-      stats.set_resource_id(to_string(machine_uuid_));
+      stats.set_resource_id(ResourceIDAsBytes(machine_uuid_),
+                            sizeof(ResourceID_t));
       machine_monitor_.CreateStatistics(&stats);
       // Record this sample locally
       scheduler_->knowledge_base()->AddMachineSample(stats);
@@ -863,7 +864,7 @@ bool Coordinator::KillRunningTask(TaskID_t task_id,
 void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
   // Set job ID field on task. We do this here since we've only just generated
   // the job ID in the job submission, which passes it in.
-  td->set_job_id(to_string(job_id));
+  td->set_job_id(JobIDAsBytes(job_id), sizeof(JobID_t));
   // Set the submission timestamp for the task.
   td->set_submit_time(time_manager_->GetCurrentTimestamp());
   // Insert task into task table
@@ -918,7 +919,7 @@ void Coordinator::SendHeartbeatToParent(
   BaseMessage bm;
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
-  SUBMSG_WRITE(bm, heartbeat, uuid, to_string(uuid_));
+  SUBMSG_WRITE_UUID(bm, heartbeat, uuid, uuid_);
   SUBMSG_WRITE(bm, heartbeat, location, node_uri_);
   SUBMSG_WRITE(bm, heartbeat, capacity,
                topology_manager_->NumProcessingUnits());
@@ -946,7 +947,7 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   // The pointer to the JD has now changed, so reassign it
   new_jd = FindOrNull(*job_table_, new_job_id);
   // Clone the JD and update it with some information
-  new_jd->set_uuid(to_string(new_job_id));
+  new_jd->set_uuid(JobIDAsBytes(new_job_id), sizeof(JobID_t));
 
   // Set the root task ID (which is 0 or unset on submission)
   TaskDescriptor *root_task = new_jd->mutable_root_task();
@@ -984,7 +985,7 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
                             &scheduler_stats);
   LOG(INFO) << "Attempted to schedule job " << new_job_id << ", successfully "
             << "scheduled " << num_scheduled << " tasks.";
-  // Finally, return the new job's ID
+  // Finally, return the new job's ID as a string
   return to_string(new_job_id);
 }
 

@@ -42,7 +42,7 @@ Worker::Worker()
   VLOG(1) << "Worker starting on host " << hostname;
 
   // TODO(malte): fix this!
-  resource_desc_.set_uuid(boost::uuids::to_string(uuid_));
+  resource_desc_.set_uuid(ResourceIDAsBytes(uuid_), sizeof(ResourceID_t));
   resource_desc_.set_schedulable(true);
   resource_desc_.set_state(ResourceDescriptor::RESOURCE_IDLE);
 
@@ -70,7 +70,7 @@ bool Worker::RegisterWithCoordinator() {
   BaseMessage bm;
   ResourceDescriptor* rd = bm.mutable_registration()->mutable_res_desc();
   *rd = resource_desc_;  // copies current local RD!
-  SUBMSG_WRITE(bm, registration, uuid, to_string(uuid_));
+  SUBMSG_WRITE_UUID(bm, registration, uuid, uuid_);
   // wrap in envelope
   VLOG(2) << "Sending registration message...";
   // send heartbeat message
@@ -79,7 +79,7 @@ bool Worker::RegisterWithCoordinator() {
 
 void Worker::SendHeartbeat() {
   BaseMessage bm;
-  SUBMSG_WRITE(bm, registration, uuid, to_string(uuid_));
+  SUBMSG_WRITE_UUID(bm, registration, uuid, uuid_);
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
   SUBMSG_WRITE(bm, heartbeat, location, chan_->LocalEndpointString());

@@ -99,11 +99,11 @@ TEST_F(SimpleSchedulerTest, LazyGraphReductionTest) {
   // Simple, plain, 1-task job (base case)
   JobDescriptor* test_job = new JobDescriptor;
   JobID_t job_id = GenerateJobID();
-  test_job->set_uuid(to_string(job_id));
+  test_job->set_uuid(JobIDAsBytes(job_id), sizeof(JobID_t));
   TaskDescriptor* rtp = test_job->mutable_root_task();
   rtp->set_uid(GenerateRootTaskID(*test_job));
   rtp->set_state(TaskDescriptor::CREATED);
-  rtp->set_job_id(to_string(job_id));
+  rtp->set_job_id(JobIDAsBytes(job_id), sizeof(JobID_t));
   set<DataObjectID_t*> output_ids(DataObjectIDsFromProtobuf(
       test_job->output_ids()));
   AddTaskToTaskMap(rtp);
@@ -120,11 +120,11 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForJob) {
   // Simple, plain, 1-task job (base case)
   JobDescriptor* test_job = new JobDescriptor;
   JobID_t job_id = GenerateJobID();
-  test_job->set_uuid(to_string(job_id));
+  test_job->set_uuid(JobIDAsBytes(job_id), sizeof(JobID_t));
   TaskDescriptor* rtp = test_job->mutable_root_task();
   rtp->set_uid(GenerateRootTaskID(*test_job));
   rtp->set_state(TaskDescriptor::CREATED);
-  rtp->set_job_id(to_string(job_id));
+  rtp->set_job_id(JobIDAsBytes(job_id), sizeof(JobID_t));
   AddJobsTasksToTaskMap(test_job);
   set<TaskID_t> runnable_tasks = sched_->ComputeRunnableTasksForJob(test_job);
   // The root task should be runnable
@@ -148,7 +148,7 @@ TEST_F(SimpleSchedulerTest, ProducingTaskLookup) {
   JobID_t job_id = GenerateJobID();
   TaskDescriptor td;
   td.set_uid(1);
-  td.set_job_id(to_string(job_id));
+  td.set_job_id(JobIDAsBytes(job_id), sizeof(JobID_t));
   AddTaskToTaskMap(&td);
   ReferenceDescriptor rd;
   rd.set_id("feedcafedeadbeeffeedcafedeadbeef");
@@ -168,15 +168,15 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   // Somewhat more complex job with 3 tasks.
   JobDescriptor* test_job = new JobDescriptor;
   JobID_t job_id = GenerateJobID();
-  test_job->set_uuid(to_string(job_id));
+  test_job->set_uuid(JobIDAsBytes(job_id), sizeof(JobID_t));
   TaskDescriptor* rtp = test_job->mutable_root_task();
   rtp->set_uid(GenerateRootTaskID(*test_job));
   rtp->set_state(TaskDescriptor::CREATED);
-  rtp->set_job_id(to_string(job_id));
+  rtp->set_job_id(JobIDAsBytes(job_id), sizeof(JobID_t));
   // add spawned task #1
   TaskDescriptor* td1 = test_job->mutable_root_task()->add_spawned();
   td1->set_uid(GenerateTaskID(test_job->root_task()));
-  td1->set_job_id(to_string(job_id));
+  td1->set_job_id(JobIDAsBytes(job_id), sizeof(JobID_t));
   ReferenceDescriptor* d0_td1 = td1->add_outputs();
   DataObjectID_t d0_td1_o1 = GenerateDataObjectID(*td1);
   d0_td1->set_id(d0_td1_o1.name_bytes(), DIOS_NAME_BYTES);
@@ -185,7 +185,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob) {
   // add spawned task #2
   TaskDescriptor* td2 = test_job->mutable_root_task()->add_spawned();
   td2->set_uid(GenerateTaskID(test_job->root_task()));
-  td2->set_job_id(to_string(job_id));
+  td2->set_job_id(JobIDAsBytes(job_id), sizeof(JobID_t));
   ReferenceDescriptor* d0_td2 = td2->add_outputs();
   DataObjectID_t d0_td2_o1 = GenerateDataObjectID(*td2);
   d0_td2->set_id(d0_td2_o1.name_bytes(), DIOS_NAME_BYTES);
@@ -213,10 +213,11 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   // Somewhat more complex job with 3 tasks.
   JobDescriptor* test_job = new JobDescriptor;
   JobID_t job_id = GenerateJobID();
-  test_job->set_uuid(to_string(job_id));
+  test_job->set_uuid(JobIDAsBytes(job_id), sizeof(JobID_t));
   test_job->mutable_root_task()->set_uid(0);
   test_job->mutable_root_task()->set_name("root_task");
-  test_job->mutable_root_task()->set_job_id(to_string(job_id));
+  test_job->mutable_root_task()->set_job_id(
+      JobIDAsBytes(job_id), sizeof(JobID_t));
   ReferenceDescriptor* o0_rt = test_job->mutable_root_task()->add_outputs();
   o0_rt->set_id(GenerateDataObjectID(test_job->root_task()).name_bytes(),
                 DIOS_NAME_BYTES);
@@ -225,7 +226,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   // add spawned task #1
   TaskDescriptor* td1 = test_job->mutable_root_task()->add_spawned();
   td1->set_uid(GenerateTaskID(test_job->root_task()));
-  td1->set_job_id(to_string(job_id));
+  td1->set_job_id(JobIDAsBytes(job_id), sizeof(JobID_t));
   ReferenceDescriptor* o0_td1 = td1->add_outputs();
   o0_td1->set_id(GenerateDataObjectID(*td1).name_bytes(), DIOS_NAME_BYTES);
   o0_td1->set_type(ReferenceDescriptor::FUTURE);

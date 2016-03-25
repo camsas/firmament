@@ -93,6 +93,13 @@ ResourceID_t PickRandomResourceID(
     const unordered_set<ResourceID_t,
       boost::hash<boost::uuids::uuid>>& leaf_res_ids);
 
+inline const char* ResourceIDAsBytes(const ResourceID_t& res_id) {
+  return (const char*)(&res_id.data[0]);
+}
+inline const char* JobIDAsBytes(const JobID_t& job_id) {
+  return (const char*)(&job_id.data[0]);
+}
+
 }  // namespace firmament
 
 #endif  // FIRMAMENT_MISC_UTILS_H

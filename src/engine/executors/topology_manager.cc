@@ -105,7 +105,7 @@ vector<ResourceDescriptor> TopologyManager::FlatResourceSet() {
   for (uint32_t i = 0; i < NumProcessingUnits(); ++i) {
     ResourceID_t rid = GenerateResourceID();
     ResourceDescriptor rd;
-    rd.set_uuid(to_string(rid));
+    rd.set_uuid(ResourceIDAsBytes(rid), sizeof(ResourceID_t));
     rd.set_state(ResourceDescriptor::RESOURCE_IDLE);
     rd.set_friendly_name("Logical (OS) CPU core " + to_string(i));
     rds.push_back(rd);
@@ -121,18 +121,18 @@ void TopologyManager::MakeProtobufTree(
   char obj_string[128];
   // Add this object
   hwloc_obj_snprintf(obj_string, sizeof(obj_string), topology, node, " #", 0);
-  const ResourceID_t* res_id = FindOrNull(obj_to_resourceID_, node);
-  string obj_id;
-  if (!res_id) {
+  const ResourceID_t* res_id_ptr = FindOrNull(obj_to_resourceID_, node);
+  ResourceID_t res_id;
+  if (!res_id_ptr) {
     // If this object is not already known, we generate a new resource ID.
-    ResourceID_t new_rid = GenerateResourceID();
-    obj_id = to_string(new_rid);
-    InsertIfNotPresent(&obj_to_resourceID_, node, new_rid);
-    InsertIfNotPresent(&resourceID_to_obj_, new_rid, node);
+    res_id = GenerateResourceID();
+    InsertIfNotPresent(&obj_to_resourceID_, node, res_id);
+    InsertIfNotPresent(&resourceID_to_obj_, res_id, node);
   } else {
-    obj_id = to_string(*res_id);
+    res_id = *res_id_ptr;
   }
-  obj_pb->mutable_resource_desc()->set_uuid(to_string(obj_id));
+  obj_pb->mutable_resource_desc()->set_uuid(ResourceIDAsBytes(res_id),
+                                            sizeof(ResourceID_t));
   obj_pb->mutable_resource_desc()->set_type(TranslateHwlocType(node->type));
   obj_pb->mutable_resource_desc()->set_friendly_name(obj_string);
   // If we have a parent_pb, also add this object's ID to the parent object's

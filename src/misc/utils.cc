@@ -223,19 +223,11 @@ DataObjectID_t DataObjectIDFromProtobuf(const ReferenceDescriptor& rd) {
   return object_id;
 }
 
-
-JobID_t JobIDFromString(const string& str) {
-  // XXX(malte): This makes assumptions about JobID_t being a Boost UUID. We
-  // should have a generic "JobID_t-from-string" helper instead.
-#ifdef __PLATFORM_HAS_BOOST__
-  boost::uuids::string_generator gen;
-  boost::uuids::uuid job_uuid = gen(str);
-#else
-  string job_uuid = str;
-#endif
-  return job_uuid;
+JobID_t JobIDFromString(const string& bytes) {
+  boost::uuids::uuid uuid;
+  memcpy(&uuid, bytes.c_str(), sizeof(boost::uuids::uuid));
+  return uuid;
 }
-
 
 ResourceID_t MachineResIDForResource(shared_ptr<ResourceMap_t> resource_map,
                                      ResourceID_t res_id) {
@@ -252,16 +244,10 @@ ResourceID_t MachineResIDForResource(shared_ptr<ResourceMap_t> resource_map,
   return ResourceIDFromString(rtnd->resource_desc().uuid());
 }
 
-ResourceID_t ResourceIDFromString(const string& str) {
-  // XXX(malte): This makes assumptions about ResourceID_t being a Boost UUID.
-  // We should have a generic "JobID_t-from-string" helper instead.
-#ifdef __PLATFORM_HAS_BOOST__
-  boost::uuids::string_generator gen;
-  boost::uuids::uuid res_uuid = gen(str);
-#else
-  string res_uuid = str;
-#endif
-  return res_uuid;
+ResourceID_t ResourceIDFromString(const string& bytes) {
+  boost::uuids::uuid uuid;
+  memcpy(&uuid, bytes.c_str(), sizeof(boost::uuids::uuid));
+  return uuid;
 }
 
 TaskID_t TaskIDFromString(const string& str) {
