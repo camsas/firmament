@@ -56,18 +56,23 @@ class DIMACSExporterTest : public ::testing::Test {
   }
 
   void reset_uuid(ResourceTopologyNodeDescriptor* rtnd) {
-    string old_parent_id = rtnd->parent_id();
-    rtnd->set_parent_id(*FindOrNull(uuid_conversion_map_, rtnd->parent_id()));
-    string new_uuid = to_string(GenerateResourceID());
+    ResourceID_t old_parent_id = ResourceIDFromString(rtnd->parent_id());
+    ResourceID_t* new_parent_id_ptr =
+      FindOrNull(uuid_conversion_map_, old_parent_id);
+    rtnd->set_parent_id(ResourceIDAsBytes(*new_parent_id_ptr),
+                        sizeof(ResourceID_t));
+    ResourceID_t new_uuid = GenerateResourceID();
     VLOG(2) << "Resetting UUID for " << rtnd->resource_desc().uuid()
             << " to " << new_uuid << ", parent is " << rtnd->parent_id()
             << ", was " << old_parent_id;
-    InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(),
+    InsertOrUpdate(&uuid_conversion_map_,
+                   ResourceIDFromString(rtnd->resource_desc().uuid()),
                    new_uuid);
-    rtnd->mutable_resource_desc()->set_uuid(new_uuid);
+    rtnd->mutable_resource_desc()->set_uuid(ResourceIDAsBytes(new_uuid),
+                                            sizeof(ResourceID_t));
   }
   // Objects declared here can be used by all tests.
-  map<string, string> uuid_conversion_map_;
+  map<ResourceID_t, ResourceID_t> uuid_conversion_map_;
   // Enable access from tests
   FRIEND_TEST(DIMACSExporterTest, LargeGraph);
   FRIEND_TEST(DIMACSExporterTest, ScalabilityTestGraphs);
@@ -89,21 +94,26 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
       &wall_time, &trace_generator, &dimacs_stats);
   // Test resource topology
   ResourceTopologyNodeDescriptor rtn_root;
-  string root_id = to_string(GenerateResourceID("test"));
-  rtn_root.mutable_resource_desc()->set_uuid(root_id);
+  ResourceID_t root_id = GenerateResourceID("test");
+  rtn_root.mutable_resource_desc()->set_uuid(ResourceIDAsBytes(root_id),
+                                             sizeof(ResourceID_t));
+  rtn_root.mutable_resource_desc()->set_type(
+      ResourceDescriptor::RESOURCE_COORDINATOR);
   ResourceTopologyNodeDescriptor* rtn_c1 = rtn_root.add_children();
-  string c1_uid = to_string(GenerateResourceID("test-c1"));
-  rtn_c1->mutable_resource_desc()->set_uuid(c1_uid);
-  rtn_c1->set_parent_id(root_id);
+  ResourceID_t c1_uid = GenerateResourceID("test-c1");
+  rtn_c1->mutable_resource_desc()->set_uuid(ResourceIDAsBytes(c1_uid),
+                                            sizeof(ResourceID_t));
+  rtn_c1->set_parent_id(ResourceIDAsBytes(root_id), sizeof(ResourceID_t));
   rtn_c1->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   ResourceTopologyNodeDescriptor* rtn_c2 = rtn_root.add_children();
-  string c2_uid = to_string(GenerateResourceID("test-c2"));
-  rtn_c2->mutable_resource_desc()->set_uuid(c2_uid);
-  rtn_c2->set_parent_id(root_id);
+  ResourceID_t c2_uid = GenerateResourceID("test-c2");
+  rtn_c2->mutable_resource_desc()->set_uuid(ResourceIDAsBytes(c2_uid),
+                                            sizeof(ResourceID_t));
+  rtn_c2->set_parent_id(ResourceIDAsBytes(root_id), sizeof(ResourceID_t));
   rtn_c2->mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_PU);
   // Test job
   JobDescriptor jd;
-  jd.set_uuid(to_string(GenerateJobID()));
+  jd.set_uuid(JobIDAsBytes(GenerateJobID()), sizeof(JobID_t));
   TaskDescriptor* rt = jd.mutable_root_task();
   rt->set_uid(GenerateRootTaskID(jd));
   rt->set_state(TaskDescriptor::RUNNABLE);
@@ -154,9 +164,9 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   uint64_t n = 2500;
   ResourceTopologyNodeDescriptor rtn_root;
   ResourceID_t root_uuid = GenerateResourceID("test");
-  rtn_root.mutable_resource_desc()->set_uuid(to_string(root_uuid));
-  InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
-                     to_string(root_uuid));
+  rtn_root.mutable_resource_desc()->set_uuid(ResourceIDAsBytes(root_uuid),
+                                             sizeof(ResourceID_t));
+  InsertIfNotPresent(&uuid_conversion_map_, root_uuid, root_uuid);
   for (uint64_t i = 0; i < n; ++i) {
     ResourceTopologyNodeDescriptor* child = rtn_root.add_children();
     child->CopyFrom(machine_tmpl);
@@ -175,7 +185,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   unsigned int seed = time(NULL);
   for (uint64_t i = 0; i < j; ++i) {
     JobDescriptor jd;
-    jd.set_uuid(to_string(GenerateJobID()));
+    jd.set_uuid(JobIDAsBytes(GenerateJobID()), sizeof(JobID_t));
     TaskDescriptor* rt = jd.mutable_root_task();
     string bin;
     spf(&bin, "%jd", rand_r(&seed));
@@ -233,9 +243,9 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     uint64_t n = 120;
     ResourceTopologyNodeDescriptor rtn_root;
     ResourceID_t root_uuid = GenerateResourceID("test");
-    rtn_root.mutable_resource_desc()->set_uuid(to_string(root_uuid));
-    InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
-                       to_string(root_uuid));
+    rtn_root.mutable_resource_desc()->set_uuid(ResourceIDAsBytes(root_uuid),
+                                               sizeof(ResourceID_t));
+    InsertIfNotPresent(&uuid_conversion_map_, root_uuid, root_uuid);
     for (uint64_t i = 0; i < n; ++i) {
       ResourceTopologyNodeDescriptor* child = rtn_root.add_children();
       child->CopyFrom(machine_tmpl);
@@ -254,7 +264,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     unsigned int seed = time(NULL);
     for (uint64_t i = 0; i < j; ++i) {
       JobDescriptor jd;
-      jd.set_uuid(to_string(GenerateJobID()));
+      jd.set_uuid(JobIDAsBytes(GenerateJobID()), sizeof(JobID_t));
       TaskDescriptor* rt = jd.mutable_root_task();
       string bin;
       spf(&bin, "%jd", rand_r(&seed));

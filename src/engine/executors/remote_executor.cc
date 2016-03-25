@@ -101,10 +101,10 @@ void RemoteExecutor::SendTaskExecutionMessage(
   msg_td->CopyFrom(*td);
   // Prepare delegation message
   msg_td->set_delegated_from(FLAGS_listen_uri);
-  SUBMSG_WRITE(exec_message, task_delegation_request, target_resource_id,
-               to_string(remote_resource_id_));
-  SUBMSG_WRITE(exec_message, task_delegation_request, delegating_resource_id,
-               to_string(local_resource_id_));
+  SUBMSG_WRITE_UUID(exec_message, task_delegation_request,
+                    target_resource_id, remote_resource_id_);
+  SUBMSG_WRITE_UUID(exec_message, task_delegation_request,
+                    delegating_resource_id, local_resource_id_);
   Envelope<BaseMessage> envelope(&exec_message);
   // Send it to the relevant resource's coordinator
   CHECK(chan->SendS(envelope));

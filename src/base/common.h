@@ -37,6 +37,8 @@ using google::protobuf::RepeatedField;
     obj->submsg().member()
 #define SUBMSG_WRITE_PTR(obj, submsg, member, val) \
     obj->mutable ## _ ## submsg()->set_ ## member(val)
+#define SUBMSG_WRITE_UUID(obj, submsg, member, val) \
+    obj.mutable ## _ ## submsg()->set_ ## member((const char*)&val.data[0], sizeof(boost::uuids::uuid))
 
 // C++11 mode switch macro
 #if __cplusplus >= 201103L

@@ -49,7 +49,7 @@ SimulatorBridge::SimulatorBridge(EventManager* event_manager,
       new KnowledgeBaseSimulator(data_layer_manager_));
   ResourceID_t root_uuid = GenerateRootResourceID("XXXsimulatorXXX");
   ResourceDescriptor* rd_ptr = rtn_root_.mutable_resource_desc();
-  rd_ptr->set_uuid(to_string(root_uuid));
+  rd_ptr->set_uuid(ResourceIDAsBytes(root_uuid), sizeof(ResourceID_t));
   rd_ptr->set_type(ResourceDescriptor::RESOURCE_COORDINATOR);
   CHECK(InsertIfNotPresent(
       resource_map_.get(), root_uuid,
@@ -499,7 +499,7 @@ JobDescriptor* SimulatorBridge::PopulateJob(uint64_t trace_job_id) {
   JobDescriptor* jd_ptr = FindOrNull(*job_map_, new_job_id);
 
   // Maintain a mapping between the trace job_id and the generated job_id.
-  jd_ptr->set_uuid(to_string(new_job_id));
+  jd_ptr->set_uuid(JobIDAsBytes(new_job_id), sizeof(JobID_t));
   jd_ptr->set_name("firmament_simulation_job_" +
                    lexical_cast<string>(trace_job_id));
   if (!InsertIfNotPresent(&trace_job_id_to_jd_, trace_job_id, jd_ptr)) {
@@ -550,30 +550,33 @@ void SimulatorBridge::SetupMachine(
     uint64_t trace_machine_id,
     const string& root_uuid,
     ResourceID_t machine_res_id) {
-  string new_uuid;
+  ResourceID_t new_uuid;
   if (rtnd->has_parent_id()) {
     // This is an intermediate node, so translate the parent UUID via the
     // lookup table
-    const string& old_parent_id = rtnd->parent_id();
-    string* new_parent_id = FindOrNull(uuid_conversion_map_, rtnd->parent_id());
+    ResourceID_t old_parent_id = ResourceIDFromString(rtnd->parent_id());
+    ResourceID_t* new_parent_id =
+      FindOrNull(uuid_conversion_map_, old_parent_id);
     CHECK_NOTNULL(new_parent_id);
     VLOG(3) << "Resetting parent UUID for " << rtnd->resource_desc().uuid()
             << ", parent was " << old_parent_id
             << ", is now " << *new_parent_id;
-    rtnd->set_parent_id(*new_parent_id);
+    rtnd->set_parent_id(ResourceIDAsBytes(*new_parent_id),
+                        sizeof(ResourceID_t));
     // Grab a new UUID for the node itself
-    new_uuid = to_string(GenerateResourceID());
+    new_uuid = GenerateResourceID();
   } else {
     // This is the top of a machine topology, so generate a first UUID for its
     // topology based on its hostname and link it into the root
     rtnd->set_parent_id(root_uuid);
-    new_uuid = to_string(GenerateRootResourceID(hostname));
+    new_uuid = GenerateRootResourceID(hostname);
   }
   VLOG(3) << "Resetting UUID for " << rtnd->resource_desc().uuid() << " to "
           << new_uuid;
-  InsertOrUpdate(&uuid_conversion_map_, rtnd->resource_desc().uuid(), new_uuid);
+  InsertOrUpdate(&uuid_conversion_map_,
+      ResourceIDFromString(rtnd->resource_desc().uuid()), new_uuid);
   ResourceDescriptor* rd = rtnd->mutable_resource_desc();
-  rd->set_uuid(new_uuid);
+  rd->set_uuid(ResourceIDAsBytes(new_uuid), sizeof(ResourceID_t));
   rd->set_trace_machine_id(trace_machine_id);
   // Add the resource node to the map.
   CHECK(InsertIfNotPresent(

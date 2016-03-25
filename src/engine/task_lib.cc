@@ -279,8 +279,8 @@ bool TaskLib::PullTaskInformationFromCoordinator(TaskID_t task_id,
   // Send request for task information to coordinator
   BaseMessage msg;
   SUBMSG_WRITE(msg, task_info_request, task_id, task_id);
-  SUBMSG_WRITE(msg, task_info_request, requesting_resource_id,
-               to_string(resource_id_));
+  SUBMSG_WRITE_UUID(msg, task_info_request, requesting_resource_id,
+                    resource_id_);
   SUBMSG_WRITE(msg, task_info_request, requesting_endpoint,
                chan_->LocalEndpointString());
   Envelope<BaseMessage> envelope(&msg);

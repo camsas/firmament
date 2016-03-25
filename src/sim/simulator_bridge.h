@@ -277,7 +277,8 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
 
   // Map used to convert between the new uuids assigned to the machine nodes and
   // the old uuids read from the machine topology file.
-  unordered_map<string, string> uuid_conversion_map_;
+  unordered_map<ResourceID_t, ResourceID_t,
+    boost::hash<ResourceID_t>> uuid_conversion_map_;
   // The template topology descriptor of the new machine.
   ResourceTopologyNodeDescriptor machine_tmpl_;
   // Counter used to store the number of duplicate task ids seed in the trace.
