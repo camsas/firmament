@@ -29,8 +29,10 @@ include(LintTargets)
 include(DockerTargets)
 
 # Unit tests
-enable_testing()
-set(GTEST_ROOT ${gtest_BINARY_DIR})
+if (BUILD_TESTS)
+  enable_testing()
+  set(GTEST_ROOT ${gtest_BINARY_DIR})
+endif (BUILD_TESTS)
 
 # Helper scripts that depend on protobufs
 subdirs(scripts/job)
