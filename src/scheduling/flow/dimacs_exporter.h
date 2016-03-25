@@ -24,39 +24,12 @@ namespace firmament {
 class DIMACSExporter {
  public:
   DIMACSExporter();
-  void Export(const FlowGraph& graph);
-  void ExportIncremental(const vector<DIMACSChange*>& changes);
-
-  /**
-   * Opens file located at file_path, flushes the graph and closes the flie.
-   * @param file_path the path of the file to which to write the graph
-   */
-  void FlushAndClose(const string& file_path);
-
-  /**
-   * Opens file descriptor, flushes the graph and closes the stream.
-   * @param fd the file descriptor to open
-   */
-  void FlushAndClose(int fd);
-
-  /**
-   * Writes the graph to the stream.
-   * NOTE: The stream is not closed.
-   * @param stream the stream to write the graph to
-   */
-  void Flush(FILE* stream);
-
-  void Reset() { output_ = ""; }
+  void Export(const FlowGraph& graph, FILE* stream);
+  void ExportIncremental(const vector<DIMACSChange*>& changes, FILE* stream);
 
  private:
-  const string GenerateArc(const FlowGraphArc& arc);
-  const string GenerateComment(const string& text);
-  const string GenerateHeader(uint64_t num_nodes, uint64_t num_arcs);
-  const string GenerateNode(const FlowGraphNode& node);
-  const string GenerateTaskNode();
-  void GenerateResourceNode(ResourceDescriptor* rd, string* output);
-
-  string output_;
+  inline void GenerateArc(const FlowGraphArc& arc, FILE* stream);
+  inline void GenerateNode(const FlowGraphNode& node, FILE* stream);
 };
 
 }  // namespace firmament
