@@ -24,15 +24,17 @@ set(PLATFORMS_UNIX_TESTS
 ###############################################################################
 # Unit tests
 
-foreach(T IN ITEMS ${PLATFORMS_UNIX_TESTS})
-  get_filename_component(TEST_NAME ${T} NAME_WE)
-  add_executable(${TEST_NAME} ${T}
-    $<TARGET_OBJECTS:base>
-    $<TARGET_OBJECTS:messages>
-    $<TARGET_OBJECTS:misc>
-    $<TARGET_OBJECTS:platforms_unix>)
-  target_link_libraries(${TEST_NAME}
-    ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
-    ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)
-  add_test(${TEST_NAME} ${TEST_NAME})
-endforeach(T)
+if (BUILD_TESTS)
+  foreach(T IN ITEMS ${PLATFORMS_UNIX_TESTS})
+    get_filename_component(TEST_NAME ${T} NAME_WE)
+    add_executable(${TEST_NAME} ${T}
+      $<TARGET_OBJECTS:base>
+      $<TARGET_OBJECTS:messages>
+      $<TARGET_OBJECTS:misc>
+      $<TARGET_OBJECTS:platforms_unix>)
+    target_link_libraries(${TEST_NAME}
+      ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
+      ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)
+    add_test(${TEST_NAME} ${TEST_NAME})
+  endforeach(T)
+endif (BUILD_TESTS)
