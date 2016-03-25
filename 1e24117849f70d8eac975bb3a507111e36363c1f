@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_2f74889a",
+        "filename": "cmake/Options.cmake",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-25T22:35:14Z",
+      "side": 1,
+      "message": "Please update the message as well.",
+      "revId": "1e24117849f70d8eac975bb3a507111e36363c1f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
