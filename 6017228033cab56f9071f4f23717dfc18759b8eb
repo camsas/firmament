@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_92905c97",
+        "filename": "src/sim/trace_utils.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-26T18:51:02Z",
+      "side": 1,
+      "message": "Where\u0027s this defined? Should we have it in this file?",
+      "range": {
+        "startLine": 24,
+        "startChar": 68,
+        "endLine": 24,
+        "endChar": 72
+      },
+      "revId": "6017228033cab56f9071f4f23717dfc18759b8eb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
