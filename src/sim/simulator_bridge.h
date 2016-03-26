@@ -257,15 +257,13 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   shared_ptr<TaskMap_t> task_map_;
 
   // Map holding the per-task runtime information
-  unordered_map<TraceTaskIdentifier, uint64_t,
-    TraceTaskIdentifierHasher> task_runtime_;
+  unordered_map<TaskID_t, uint64_t> task_runtime_;
 
   // Map from the simulator machine id to the Firmament rtnd.
   unordered_map<uint64_t,
     ResourceTopologyNodeDescriptor*> trace_machine_id_to_rtnd_;
 
-  unordered_map<TraceTaskIdentifier, TraceTaskStats, TraceTaskIdentifierHasher>
-      trace_task_id_to_stats_;
+  unordered_map<TaskID_t, TraceTaskStats> task_id_to_stats_;
 
   // Map used to convert between the simulator task_ids and the Firmament
   // task descriptors.

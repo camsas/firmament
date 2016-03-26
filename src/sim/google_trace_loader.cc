@@ -231,8 +231,7 @@ bool GoogleTraceLoader::LoadTaskEvents(
 }
 
 void GoogleTraceLoader::LoadTaskUtilizationStats(
-    unordered_map<TraceTaskIdentifier, TraceTaskStats,
-      TraceTaskIdentifierHasher>* task_id_to_stats) {
+    unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats) {
   char line[MAX_LINE_LENGTH];
   vector<string> cols;
   FILE* usage_file = NULL;
@@ -249,9 +248,9 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
         LOG(WARNING) << "Malformed task usage, " << cols.size()
                      << " != 38 columns at line " << num_line;
       } else {
-        TraceTaskIdentifier task_id;
-        task_id.job_id = lexical_cast<uint64_t>(cols[0]);
-        task_id.task_index = lexical_cast<uint64_t>(cols[1]);
+        TraceTaskIdentifier ti;
+        ti.job_id = lexical_cast<uint64_t>(cols[0]);
+        ti.task_index = lexical_cast<uint64_t>(cols[1]);
         TraceTaskStats task_stats;
         task_stats.avg_mean_cpu_usage_ = lexical_cast<double>(cols[4]);
         task_stats.avg_canonical_mem_usage_ = lexical_cast<double>(cols[8]);
@@ -263,14 +262,16 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
         task_stats.avg_cpi_ = lexical_cast<double>(cols[32]);
         task_stats.avg_mai_ = lexical_cast<double>(cols[36]);
 
-        if (!InsertIfNotPresent(task_id_to_stats, task_id, task_stats) &&
+        if (!InsertIfNotPresent(task_id_to_stats,
+                                GenerateTaskIDFromTraceIdentifier(ti),
+                                task_stats) &&
             VLOG_IS_ON(1)) {
           LOG(ERROR) << "LoadTaskUtilizationStats: There should not be more "
-                     << "than an entry for job " << task_id.job_id
-                     << ", task " << task_id.task_index;
+                     << "than an entry for job " << ti.job_id
+                     << ", task " << ti.task_index;
         } else {
           VLOG(2) << "Loaded stats for "
-                  << task_id.job_id << "/" << task_id.task_index;
+                  << ti.job_id << "/" << ti.task_index;
         }
 
         // double min_mean_cpu_usage = lexical_cast<double>(cols[2]);
@@ -308,8 +309,7 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
 }
 
 void GoogleTraceLoader::LoadTasksRunningTime(
-    unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
-      task_runtime) {
+    unordered_map<TaskID_t, uint64_t>* task_runtime) {
   char line[MAX_LINE_LENGTH];
   vector<string> cols;
   FILE* tasks_file = NULL;
@@ -327,12 +327,12 @@ void GoogleTraceLoader::LoadTasksRunningTime(
         LOG(ERROR) << "Unexpected structure of task runtime row on line: "
                    << num_line;
       } else {
-        TraceTaskIdentifier task_id;
-        task_id.job_id = lexical_cast<uint64_t>(cols[0]);
-        task_id.task_index = lexical_cast<uint64_t>(cols[1]);
+        TraceTaskIdentifier ti;
+        ti.job_id = lexical_cast<uint64_t>(cols[0]);
+        ti.task_index = lexical_cast<uint64_t>(cols[1]);
 
         // Sub-sample the trace if we only retain < 100% of tasks.
-        if (SpookyHash::Hash64(&task_id, sizeof(task_id), kSeed) >
+        if (SpookyHash::Hash64(&ti, sizeof(ti), kSeed) >
             MaxEventHashToRetain()) {
           // skip event
           continue;
@@ -342,14 +342,16 @@ void GoogleTraceLoader::LoadTasksRunningTime(
         // sure that the task runs for the same amount of time as when
         // it executed in real-world.
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
-        if (!InsertIfNotPresent(task_runtime, task_id, runtime) &&
+        if (!InsertIfNotPresent(task_runtime,
+                                GenerateTaskIDFromTraceIdentifier(ti),
+                                runtime) &&
             VLOG_IS_ON(1)) {
           LOG(ERROR) << "LoadTasksRunningTime: There should not be more than "
-                     << "one entry for job " << task_id.job_id
-                     << ", task " << task_id.task_index;
+                     << "one entry for job " << ti.job_id
+                     << ", task " << ti.task_index;
         } else {
           VLOG(2) << "Loaded runtime for "
-                  << task_id.job_id << "/" << task_id.task_index;
+                  << ti.job_id << "/" << ti.task_index;
         }
       }
     }

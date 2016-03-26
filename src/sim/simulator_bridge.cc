@@ -229,7 +229,7 @@ bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier,
 void SimulatorBridge::AddTaskEndEvent(
     const TraceTaskIdentifier& task_identifier,
     TaskDescriptor* td_ptr) {
-  uint64_t* runtime_ptr = FindOrNull(task_runtime_, task_identifier);
+  uint64_t* runtime_ptr = FindOrNull(task_runtime_, td_ptr->uid());
   EventDescriptor event_desc;
   event_desc.set_job_id(task_identifier.job_id);
   event_desc.set_task_index(task_identifier.task_index);
@@ -251,8 +251,7 @@ void SimulatorBridge::AddTaskEndEvent(
 void SimulatorBridge::AddTaskStats(
     const TraceTaskIdentifier& trace_task_identifier,
     TaskID_t task_id) {
-  TraceTaskStats* task_stats =
-    FindOrNull(trace_task_id_to_stats_, trace_task_identifier);
+  TraceTaskStats* task_stats = FindOrNull(task_id_to_stats_, task_id);
   if (!task_stats) {
     // We have no stats for the task.
     LOG(WARNING) << "No stats for " << trace_task_identifier.job_id << ","
@@ -263,7 +262,7 @@ void SimulatorBridge::AddTaskStats(
   // work without knowing tasks' runtime before their first run. I believe this
   // is the correct way to replay the trace.
   knowledge_base_->SetTraceTaskStats(task_id, *task_stats);
-  trace_task_id_to_stats_.erase(trace_task_identifier);
+  task_id_to_stats_.erase(task_id);
 }
 
 TaskDescriptor* SimulatorBridge::AddTaskToJob(
@@ -274,11 +273,11 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(
   TaskDescriptor* new_task;
   if (root_task->has_uid()) {
     new_task = root_task->add_spawned();
-    new_task->set_uid(GenerateTaskID(*root_task));
+    new_task->set_uid(GenerateTaskIDFromTraceIdentifier(task_identifier));
   } else {
     // This is the first task we add for the job. We add it as the root task.
     new_task = root_task;
-    new_task->set_uid(GenerateRootTaskID(*jd_ptr));
+    new_task->set_uid(GenerateTaskIDFromTraceIdentifier(task_identifier));
   }
   new_task->set_state(TaskDescriptor::CREATED);
   new_task->set_job_id(jd_ptr->uuid());
@@ -295,7 +294,7 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(
   if (data_layer_manager_) {
     ReferenceDescriptor* dependency =  new_task->add_dependencies();
     uint64_t avg_runtime = 0;
-    uint64_t* runtime_ptr = FindOrNull(task_runtime_, task_identifier);
+    uint64_t* runtime_ptr = FindOrNull(task_runtime_, task_id);
     if (runtime_ptr) {
       avg_runtime = *runtime_ptr;
     } else {
@@ -328,7 +327,7 @@ void SimulatorBridge::LoadTraceData(TraceLoader* trace_loader) {
   // Load tasks' runtime.
   trace_loader->LoadTasksRunningTime(&task_runtime_);
   // Populate the knowledge base.
-  trace_loader->LoadTaskUtilizationStats(&trace_task_id_to_stats_);
+  trace_loader->LoadTaskUtilizationStats(&task_id_to_stats_);
 }
 
 void SimulatorBridge::ProcessSimulatorEvents(uint64_t events_up_to_time) {
@@ -425,7 +424,7 @@ void SimulatorBridge::OnTaskCompletion(TaskDescriptor* td_ptr,
   TraceTaskIdentifier* ti_ptr = FindOrNull(task_id_to_identifier_, task_id);
   CHECK_NOTNULL(ti_ptr);
   trace_task_id_to_td_.erase(*ti_ptr);
-  task_runtime_.erase(*ti_ptr);
+  task_runtime_.erase(task_id);
   // Decrease the number of tasks left to complete.
   uint64_t* num_tasks = FindOrNull(job_num_tasks_, ti_ptr->job_id);
   CHECK_NOTNULL(num_tasks);
@@ -440,18 +439,19 @@ void SimulatorBridge::OnTaskCompletion(TaskDescriptor* td_ptr,
 
 void SimulatorBridge::OnTaskEviction(TaskDescriptor* td_ptr,
                                      ResourceDescriptor* rd_ptr) {
+  TaskID_t task_id = td_ptr->uid();
   TraceTaskIdentifier* ti_ptr =
-    FindOrNull(task_id_to_identifier_, td_ptr->uid());
+    FindOrNull(task_id_to_identifier_, task_id);
   CHECK_NOTNULL(ti_ptr);
   uint64_t task_end_time = td_ptr->finish_time();
   uint64_t task_executed_for =
     simulated_time_->GetCurrentTimestamp() - td_ptr->start_time();
   td_ptr->set_total_run_time(UpdateTaskTotalRunTime(*td_ptr));
-  uint64_t* runtime_ptr = FindOrNull(task_runtime_, *ti_ptr);
+  uint64_t* runtime_ptr = FindOrNull(task_runtime_, task_id);
   if (runtime_ptr != NULL) {
     // NOTE: We assume that the work conducted by a task until eviction is
     // saved. Hence, we update the time the task has left to run.
-    InsertOrUpdate(&task_runtime_, *ti_ptr, *runtime_ptr - task_executed_for);
+    InsertOrUpdate(&task_runtime_, task_id, *runtime_ptr - task_executed_for);
   } else {
     // The task didn't finish in the trace.
   }
