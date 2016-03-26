@@ -30,14 +30,12 @@ class SolverDispatcher {
   }
 
  private:
-  uint64_t AssignNode(vector<map<uint64_t, uint64_t>>* extracted_flow,
-                      uint64_t node);
   void ExportGraph(FILE* stream);
   multimap<uint64_t, uint64_t>* GetMappings(
-      vector<map<uint64_t, uint64_t>>* extracted_flow,
+      vector<unordered_map<uint64_t, uint64_t>>* extracted_flow,
       unordered_set<uint64_t> leaves, uint64_t sink);
   multimap<uint64_t, uint64_t>* ReadOutput(uint64_t* algorithm_runtime);
-  vector<map<uint64_t, uint64_t>>* ReadFlowGraph(
+  vector<unordered_map<uint64_t, uint64_t>>* ReadFlowGraph(
       FILE* fptr,
       uint64_t* algorithm_runtime,
       uint64_t num_vertices);
