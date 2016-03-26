@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_cfdbdbec",
+        "filename": "src/scheduling/flow/dimacs_exporter.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-26T15:57:25Z",
+      "side": 1,
+      "message": "Yep, I\u0027ve tested it and it works ok with CS2, Flowlessly and Flowlessly incremental.",
+      "parentUuid": "da9b358b_8f3cb430",
+      "revId": "97cb53137cdc296357c821272cb92387d325981e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_4f46acc0",
         "filename": "src/scheduling/flow/solver_dispatcher.cc",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2016-03-26T02:32:48Z",
       "side": 1,
       "message": "Why are we moving this assignment? This change means that solver_ran_once_ will only be true if the solver succeeds (fair enough, since we probably have bigger problems if it fails). We should be clear about its semantics though -- does it mean that the solver ran (successfully or unsuccessfully), or that it completed successfully?",
+      "revId": "97cb53137cdc296357c821272cb92387d325981e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_efd57fb9",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-26T15:57:25Z",
+      "side": 1,
+      "message": "Previously we were setting this value after we were exporting the graph, but before the solver exporter thread would be created. In the new model, the exporter thread is directly exporting the graph, so now we have to set solver_ran_once after we\u0027ve created the exporter thread.\n\nSolver_ran_once is used by the exporter thread to decide if it needs to export the entire graph or just the incremental changes. Hence, it makes sense to have it after the exporter thread is created.",
+      "parentUuid": "da9b358b_4f46acc0",
       "revId": "97cb53137cdc296357c821272cb92387d325981e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
