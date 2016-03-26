@@ -44,15 +44,13 @@ class TraceLoader {
       unordered_map<uint64_t, uint64_t>* job_num_tasks) = 0;
 
   virtual void LoadTaskUtilizationStats(
-      unordered_map<TraceTaskIdentifier, TraceTaskStats,
-        TraceTaskIdentifierHasher>* task_id_to_stats) = 0;
+      unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats) = 0;
 
   /**
    * Loads all the task runtimes and returns map task_identifier -> runtime.
    */
   virtual void LoadTasksRunningTime(
-      unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
-        task_runtime) = 0;
+      unordered_map<TaskID_t, uint64_t>* task_runtime) = 0;
 
  protected:
   EventManager* event_manager_;

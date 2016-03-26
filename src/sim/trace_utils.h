@@ -48,8 +48,8 @@ struct TraceTaskStats {
   double avg_mai_;
 };
 
+TaskID_t GenerateTaskIDFromTraceIdentifier(const TraceTaskIdentifier& ti);
 void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl);
-
 uint64_t MaxEventIdToRetain();
 
 EventDescriptor_EventType TranslateMachineEvent(int32_t machine_event);

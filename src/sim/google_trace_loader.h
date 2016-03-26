@@ -49,15 +49,13 @@ class GoogleTraceLoader : public TraceLoader {
                       unordered_map<uint64_t, uint64_t>* job_num_tasks);
 
   void LoadTaskUtilizationStats(
-      unordered_map<TraceTaskIdentifier, TraceTaskStats,
-        TraceTaskIdentifierHasher>* task_id_to_stats);
+      unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats);
 
   /**
    * Loads all the task runtimes and returns map task_identifier -> runtime.
    */
   void LoadTasksRunningTime(
-      unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
-        task_runtime);
+      unordered_map<TaskID_t, uint64_t>* task_runtime);
 
  private:
   uint64_t MaxEventHashToRetain();

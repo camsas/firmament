@@ -4,8 +4,8 @@
 #include "sim/trace_utils.h"
 
 #include <fcntl.h>
-
 #include <boost/filesystem.hpp>
+#include <SpookyV2.h>
 
 #include <algorithm>
 
@@ -19,6 +19,12 @@ DEFINE_string(machine_tmpl_file,
 
 namespace firmament {
 namespace sim {
+
+TaskID_t GenerateTaskIDFromTraceIdentifier(const TraceTaskIdentifier& ti) {
+  uint64_t hash = SpookyHash::Hash64(&ti.job_id, sizeof(ti.job_id), SEED);
+  boost::hash_combine(hash, ti.task_index);
+  return static_cast<TaskID_t>(hash);
+}
 
 void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl) {
   boost::filesystem::path machine_tmpl_path(FLAGS_machine_tmpl_file);
