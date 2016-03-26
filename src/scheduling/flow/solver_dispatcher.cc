@@ -93,9 +93,11 @@ void SolverDispatcher::ExportJSON(string* output) const {
 }
 
 void *ExportToSolver(void *x) {
-  SolverDispatcher *solver_dispatcher = reinterpret_cast<SolverDispatcher*>(x);
-  // Write to pipe to solver
-  solver_dispatcher->dimacs_exporter_.Flush(solver_dispatcher->to_solver_);
+  SolverDispatcher* solver_dispatcher = reinterpret_cast<SolverDispatcher*>(x);
+  solver_dispatcher->ExportGraph(solver_dispatcher->to_solver_);
+  if (fflush(solver_dispatcher->to_solver_)) {
+    PLOG(FATAL) << "Error while flushing";
+  }
   if (!FLAGS_incremental_flow) {
     // We need to close the stream because that's what cs expects.
     CHECK_EQ(fclose(solver_dispatcher->to_solver_), 0);
@@ -115,33 +117,31 @@ void *ProcessStderrJustlog(void *x) {
   return NULL;
 }
 
+void SolverDispatcher::ExportGraph(FILE* stream) {
+  // Note dimacs_exporter_ is the full graph iff solver is running for the first
+  // time, or is non-incremental. Otherwise, dimacs_exporter_ is the incremental
+  // delta.
+  FlowGraphChangeManager* change_manager =
+    flow_graph_manager_->flow_graph_change_manager();
+  if (solver_ran_once_ && FLAGS_incremental_flow) {
+    dimacs_exporter_.ExportIncremental(
+        change_manager->GetOptimizedGraphChanges(), stream);
+    change_manager->ResetChanges();
+  }
+  if (!solver_ran_once_ || !FLAGS_incremental_flow) {
+    // Always export full flow graph when running first time. If algorithm
+    // is non-incremental, must do it for subsequent iterations too.
+    dimacs_exporter_.Export(change_manager->flow_graph(), stream);
+    change_manager->ResetChanges();
+  }
+}
+
 multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     SchedulerStats* scheduler_stats) {
   // Adjusts the costs on the arcs from tasks to unsched aggs.
   if (solver_ran_once_) {
     flow_graph_manager_->UpdateAllCostsToUnscheduledAggs();
   }
-
-  if (solver_ran_once_ && FLAGS_incremental_flow) {
-    dimacs_exporter_.Reset();
-    dimacs_exporter_.ExportIncremental(
-        flow_graph_manager_->flow_graph_change_manager()->
-        GetOptimizedGraphChanges());
-    flow_graph_manager_->flow_graph_change_manager()->ResetChanges();
-  }
-
-  if (!solver_ran_once_ || !FLAGS_incremental_flow) {
-    // Always export full flow graph when running first time. If algorithm
-    // is non-incremental, must do it for subsequent iterations too.
-    dimacs_exporter_.Reset();
-    dimacs_exporter_.Export(
-        flow_graph_manager_->flow_graph_change_manager()->flow_graph());
-    flow_graph_manager_->flow_graph_change_manager()->ResetChanges();
-  }
-
-  // Note dimacs_exporter_ is the full graph iff solver is running for the first
-  // time, or is non-incremental. Otherwise, dimacs_exporter_ is the incremental
-  // delta.
 
   // Write debugging copy, of whatever we send to flow solver
   if (FLAGS_debug_flow_graph) {
@@ -151,7 +151,10 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
     spf(&out_file_name, "%s/debug_%ju.dm", FLAGS_debug_output_dir.c_str(),
         debug_seq_num_);
     LOG(INFO) << "Writing flow graph debug info into " << out_file_name;
-    dimacs_exporter_.FlushAndClose(out_file_name);
+    FILE* debug_out_file;
+    CHECK((debug_out_file = fopen(out_file_name.c_str(), "w")) != NULL);
+    ExportGraph(debug_out_file);
+    fclose(debug_out_file);
   }
 
   // Now run the solver
@@ -178,7 +181,6 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
             << ", PARENT_READ_STD: " << outfd_[0]
             << ", PARENT_READ_ERR: " << errfd_[0];
 
-    solver_ran_once_ = true;
     if ((from_solver_stderr_ = fdopen(errfd_[0], "r")) == NULL) {
       LOG(ERROR) << "Failed to open FD for reading solver's output. FD "
                  << errfd_[0];
@@ -219,6 +221,8 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   if (pthread_join(exporter_thread, NULL)) {
     PLOG(FATAL) << "Error joining thread";
   }
+
+  solver_ran_once_ = true;
 
   if (scheduler_stats != NULL) {
     scheduler_stats->scheduler_runtime_ = flowsolver_timer.elapsed().wall /

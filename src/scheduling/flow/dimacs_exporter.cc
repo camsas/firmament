@@ -14,101 +14,52 @@
 
 namespace firmament {
 
-DIMACSExporter::DIMACSExporter()
-    : output_("") {
+DIMACSExporter::DIMACSExporter() {
 }
 
-void DIMACSExporter::Export(const FlowGraph& graph) {
-  output_ += GenerateHeader(graph.NumNodes(), graph.NumArcs());
-  output_ += GenerateComment("=== ALL NODES FOLLOW ===");
-  for (unordered_map<uint64_t, FlowGraphNode*>::const_iterator n_iter =
-       graph.Nodes().begin();
-       n_iter != graph.Nodes().end();
-       ++n_iter)
-    output_ += GenerateNode(*n_iter->second);
-  output_ += GenerateComment("=== ALL ARCS FOLLOW ===");
-  for (unordered_set<FlowGraphArc*>::const_iterator a_iter =
-       graph.Arcs().begin();
-       a_iter != graph.Arcs().end();
-       ++a_iter)
-    output_ += GenerateArc(**a_iter);
-  // Add end of iteration comment.
-  output_ += GenerateComment("EOI");
-}
-
-void DIMACSExporter::ExportIncremental(const vector<DIMACSChange*>& changes) {
-  for (vector<DIMACSChange*>::const_iterator it = changes.begin();
-       it != changes.end(); ++it) {
-    output_ += (*it)->GenerateChange();
+void DIMACSExporter::Export(const FlowGraph& graph, FILE* stream) {
+  fprintf(stream, "c ===========================\n");
+  fprintf(stream, "p min %" PRIu64 " %" PRIu64 "\n",
+          graph.NumNodes(), graph.NumArcs());
+  fprintf(stream, "c ===========================\n");
+  fprintf(stream, "c === ALL NODES FOLLOW ===\n");
+  for (auto& id_node : graph.Nodes()) {
+    GenerateNode(*id_node.second, stream);
+  }
+  fprintf(stream, "c === ALL ARCS FOLLOW ===\n");
+  for (const auto& arc : graph.Arcs()) {
+    GenerateArc(*arc, stream);
   }
   // Add end of iteration comment.
-  output_ += GenerateComment("EOI");
+  fprintf(stream, "c EOI\n");
 }
 
-void DIMACSExporter::FlushAndClose(const string& filename) {
-  // Write the cached DIMACS graph string out to the file
-  FILE* outfd = fopen(filename.c_str(), "w");
-  CHECK(outfd != NULL) << "Failed to open file " << filename
-                       << " to communicate with the solver";
-  fprintf(outfd, "%s", output_.c_str());
-  CHECK_EQ(fclose(outfd), 0);
-}
-
-void DIMACSExporter::FlushAndClose(int fd) {
-  // Write the cached DIMACS graph string out to the file
-  FILE *stream = fdopen(fd, "w");
-  CHECK(stream != NULL) << "Failed to open FD to solver for writing. FD: "
-                        << fd;
-  fprintf(stream, "%s", output_.c_str());
-  if (fflush(stream)) {
-    LOG(FATAL) << "Error while flushing";
+void DIMACSExporter::ExportIncremental(const vector<DIMACSChange*>& changes,
+                                       FILE* stream) {
+  for (const auto& change : changes) {
+    fprintf(stream, "%s", change->GenerateChange().c_str());
   }
-  CHECK_EQ(fclose(stream), 0);
+  // Add end of iteration comment.
+  fprintf(stream, "c EOI\n");
 }
 
-void DIMACSExporter::Flush(FILE* stream) {
-  int result = fputs(output_.c_str(), stream);
-  if (result < 0) {
-    PLOG(FATAL) << "Failed to write " << output_.length()
-                << " bytes to solver.";
-  }
-  if (fflush(stream)) {
-    PLOG(FATAL) << "Error while flushing";
-  }
+inline void DIMACSExporter::GenerateArc(const FlowGraphArc& arc, FILE* stream) {
+  fprintf(stream,
+          "a %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n",
+          arc.src_, arc.dst_, arc.cap_lower_bound_, arc.cap_upper_bound_,
+          arc.cost_);
 }
 
-const string DIMACSExporter::GenerateArc(const FlowGraphArc& arc) {
-  stringstream ss;
-  ss << "a " << arc.src_ << " " << arc.dst_ << " " << arc.cap_lower_bound_
-     << " " << arc.cap_upper_bound_ << " " << arc.cost_ << "\n";
-  return ss.str();
-}
-
-const string DIMACSExporter::GenerateComment(const string& text) {
-  stringstream ss;
-  ss << "c " << text << "\n";
-  return ss.str();
-}
-
-const string DIMACSExporter::GenerateHeader(uint64_t num_nodes,
-                                            uint64_t num_arcs) {
-  stringstream ss;
-  ss << "c ===========================\n";
-  ss << "p min " << num_nodes << " " << num_arcs << "\n";
-  ss << "c ===========================\n";
-  return ss.str();
-}
-
-const string DIMACSExporter::GenerateNode(const FlowGraphNode& node) {
-  stringstream ss;
+inline void DIMACSExporter::GenerateNode(const FlowGraphNode& node,
+                                         FILE* stream) {
   if (node.rd_ptr_) {
-    ss << "c nd Res_" << node.rd_ptr_->uuid() << "\n";
+    fprintf(stream, "c nd Res_%s\n", node.rd_ptr_->uuid().c_str());
   } else if (node.td_ptr_) {
-    ss << "c nd Task_" << node.td_ptr_->uid() << "\n";
+    fprintf(stream, "c nd Task_%" PRIu64 "\n", node.td_ptr_->uid());
   } else if (node.ec_id_) {
-    ss << "c nd EC_" << node.ec_id_ << "\n";
+    fprintf(stream, "c nd EC_%" PRIu64 "\n", node.ec_id_);
   } else if (node.comment_ != "") {
-    ss << "c nd " << node.comment_ << "\n";
+    fprintf(stream, "c nd %s\n", node.comment_.c_str());
   }
 
   uint32_t node_type = 0;
@@ -123,8 +74,8 @@ const string DIMACSExporter::GenerateNode(const FlowGraphNode& node) {
   } else {
     node_type = 0;
   }
-  ss << "n " << node.id_ << " " << node.excess_ << " " << node_type << "\n";
-  return ss.str();
+  fprintf(stream, "n %" PRIu64 " %" PRId64 " %d\n",
+          node.id_, node.excess_, node_type);
 }
 
 }  // namespace firmament

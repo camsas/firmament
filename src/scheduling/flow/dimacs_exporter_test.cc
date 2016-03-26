@@ -123,8 +123,11 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   flow_graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
   // Export
   DIMACSExporter exp;
-  exp.Export(flow_graph_manager.graph_change_manager_->flow_graph());
-  exp.FlushAndClose("test.dm");
+  FILE* debug_out_file;
+  CHECK((debug_out_file = fopen("test.dm", "w")) != NULL);
+  exp.Export(flow_graph_manager.graph_change_manager_->flow_graph(),
+             debug_out_file);
+  fclose(debug_out_file);
   delete leaf_res_ids;
 }
 
@@ -198,10 +201,11 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
           << " tasks each).";
   // Export
   DIMACSExporter exp;
-  exp.Export(flow_graph_manager.graph_change_manager_->flow_graph());
-  string outname = "/tmp/test.dm";
-  VLOG(1) << "Output written to " << outname;
-  exp.FlushAndClose(outname);
+  FILE* debug_out_file;
+  CHECK((debug_out_file = fopen("/tmp/test.dm", "w")) != NULL);
+  exp.Export(flow_graph_manager.graph_change_manager_->flow_graph(),
+             debug_out_file);
+  fclose(debug_out_file);
   delete leaf_res_ids;
 }
 
@@ -275,11 +279,14 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     }
     // Export
     DIMACSExporter exp;
-    exp.Export(flow_graph_manager.graph_change_manager_->flow_graph());
+    FILE* debug_out_file;
     string outname;
     spf(&outname, "/tmp/test%jd.dm", f);
     VLOG(1) << "Output written to " << outname;
-    exp.FlushAndClose(outname);
+    CHECK((debug_out_file = fopen(outname.c_str(), "w")) != NULL);
+    exp.Export(flow_graph_manager.graph_change_manager_->flow_graph(),
+               debug_out_file);
+    fclose(debug_out_file);
     delete leaf_res_ids;
   }
 }
