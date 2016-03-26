@@ -319,7 +319,7 @@ uint64_t SolverDispatcher::AssignNode(
     vector<map<uint64_t, uint64_t>>* extracted_flow, uint64_t node) {
   map<uint64_t, uint64_t>::iterator map_it;
   for (map_it = (*extracted_flow)[node].begin();
-       map_it != (*extracted_flow)[node].end(); map_it++) {
+       map_it != (*extracted_flow)[node].end(); ) {
     // Check if node = root or node = task
     if (flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
             map_it->first, FlowNodeType::ROOT_TASK) ||
@@ -327,27 +327,33 @@ uint64_t SolverDispatcher::AssignNode(
             map_it->first, FlowNodeType::UNSCHEDULED_TASK) ||
         flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
             map_it->first, FlowNodeType::SCHEDULED_TASK)) {
-      // Shouldn't really modify the collection in the iterator loop.
-      // However, we don't use the iterator after modification.
       uint64_t flow = map_it->second;
       uint64_t ret_node = map_it->first;
+      // Make we don't erase using the current iterator.
+      map<uint64_t, uint64_t>::iterator map_it_tmp = map_it;
+      map_it++;
       if (flow == 1) {
-        (*extracted_flow)[node].erase(map_it);
+        (*extracted_flow)[node].erase(map_it_tmp);
       } else {
         InsertOrUpdate(&((*extracted_flow)[node]), ret_node, flow - 1);
       }
       return ret_node;
+    } else {
+      map_it++;
     }
   }
   // If here it means we didn't find any arc with flow to worker or root
   for (map_it = (*extracted_flow)[node].begin();
-       map_it != (*extracted_flow)[node].end(); map_it++) {
+       map_it != (*extracted_flow)[node].end();) {
     VLOG(2) << "Checking indirect edge from " << map_it->second << " back to "
             << map_it->first;
     uint64_t flow = map_it->second;
     uint64_t ret_node = map_it->first;
+    // Make we don't erase using the current iterator.
+    map<uint64_t, uint64_t>::iterator map_it_tmp = map_it;
+    map_it++;
     if (flow == 1) {
-      (*extracted_flow)[node].erase(map_it);
+      (*extracted_flow)[node].erase(map_it_tmp);
     } else {
       InsertOrUpdate(&(*extracted_flow)[node], ret_node, flow - 1);
     }
