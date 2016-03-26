@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_8f3cb430",
+        "filename": "src/scheduling/flow/dimacs_exporter.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-26T02:32:48Z",
+      "side": 1,
+      "message": "We\u0027re changing the interface here in that we now expect users of DIMACSExporter to supply a FILE*, rather than opening an FD inside DIMACSExporter. I think this is fine, however.",
+      "revId": "97cb53137cdc296357c821272cb92387d325981e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_4f46acc0",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-26T02:32:48Z",
+      "side": 1,
+      "message": "Why are we moving this assignment? This change means that solver_ran_once_ will only be true if the solver succeeds (fair enough, since we probably have bigger problems if it fails). We should be clear about its semantics though -- does it mean that the solver ran (successfully or unsuccessfully), or that it completed successfully?",
+      "revId": "97cb53137cdc296357c821272cb92387d325981e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
