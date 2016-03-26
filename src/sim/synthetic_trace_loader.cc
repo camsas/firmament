@@ -119,8 +119,7 @@ bool SyntheticTraceLoader::LoadTaskEvents(
 }
 
 void SyntheticTraceLoader::LoadTaskUtilizationStats(
-    unordered_map<TraceTaskIdentifier, TraceTaskStats,
-                  TraceTaskIdentifierHasher>* task_id_to_stats) {
+    unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats) {
   uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
   TraceTaskStats task_stats;
   task_stats.avg_mean_cpu_usage_ = 0.5;
@@ -137,14 +136,15 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
     for (uint64_t task_index = 1; task_index <= FLAGS_synthetic_tasks_per_job;
          ++task_index) {
       task_identifier.task_index = task_index;
-      CHECK(InsertIfNotPresent(task_id_to_stats, task_identifier, task_stats));
+      CHECK(InsertIfNotPresent(
+          task_id_to_stats, GenerateTaskIDFromTraceIdentifier(task_identifier),
+          task_stats));
     }
   }
 }
 
 void SyntheticTraceLoader::LoadTasksRunningTime(
-    unordered_map<TraceTaskIdentifier, uint64_t, TraceTaskIdentifierHasher>*
-      task_runtime) {
+    unordered_map<TaskID_t, uint64_t>* task_runtime) {
   uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
   uint64_t job_id = 1;
   for (uint64_t timestamp = 0;
@@ -155,8 +155,9 @@ void SyntheticTraceLoader::LoadTasksRunningTime(
     for (uint64_t task_index = 1; task_index <= FLAGS_synthetic_tasks_per_job;
          ++task_index) {
       task_identifier.task_index = task_index;
-      CHECK(InsertIfNotPresent(task_runtime, task_identifier,
-                               FLAGS_synthetic_task_duration));
+      CHECK(InsertIfNotPresent(
+          task_runtime, GenerateTaskIDFromTraceIdentifier(task_identifier),
+          FLAGS_synthetic_task_duration));
     }
   }
 }

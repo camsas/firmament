@@ -117,7 +117,9 @@ TEST_F(SimulatorBridgeTest, OnJobCompletion) {
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
   CHECK(InsertIfNotPresent(&bridge_->job_num_tasks_, trace_task_id.job_id, 1));
-  CHECK(InsertIfNotPresent(&bridge_->task_runtime_, trace_task_id, 10));
+  CHECK(InsertIfNotPresent(&bridge_->task_runtime_,
+                           GenerateTaskIDFromTraceIdentifier(trace_task_id),
+                           10));
   bridge_->OnTaskPlacement(td_ptr, pu_rd_ptr);
   CHECK_EQ(event_manager_->GetTimeOfNextEvent(), 10);
   bridge_->OnTaskCompletion(td_ptr, pu_rd_ptr);
@@ -142,11 +144,14 @@ TEST_F(SimulatorBridgeTest, OnTaskCompletion) {
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
   CHECK(InsertIfNotPresent(&bridge_->job_num_tasks_, trace_task_id.job_id, 1));
-  CHECK(InsertIfNotPresent(&bridge_->task_runtime_, trace_task_id, 10));
+  CHECK(InsertIfNotPresent(&bridge_->task_runtime_,
+                           GenerateTaskIDFromTraceIdentifier(trace_task_id),
+                           10));
   bridge_->OnTaskPlacement(td_ptr, pu_rd_ptr);
   CHECK_EQ(event_manager_->GetTimeOfNextEvent(), 10);
   bridge_->OnTaskCompletion(td_ptr, pu_rd_ptr);
-  CHECK(FindOrNull(bridge_->task_runtime_, trace_task_id) == NULL);
+  CHECK(FindOrNull(bridge_->task_runtime_,
+                   GenerateTaskIDFromTraceIdentifier(trace_task_id)) == NULL);
   CHECK(FindOrNull(bridge_->trace_task_id_to_td_, trace_task_id) == NULL);
   CHECK(FindOrNull(bridge_->task_id_to_identifier_, td_ptr->uid()) == NULL);
   uint64_t* num_tasks =
@@ -166,7 +171,9 @@ TEST_F(SimulatorBridgeTest, OnTaskEviction) {
   TaskDescriptor* td_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
-  CHECK(InsertIfNotPresent(&bridge_->task_runtime_, trace_task_id, 10));
+  CHECK(InsertIfNotPresent(&bridge_->task_runtime_,
+                           GenerateTaskIDFromTraceIdentifier(trace_task_id),
+                           10));
   bridge_->OnTaskPlacement(td_ptr, pu_rd_ptr);
   CHECK_EQ(event_manager_->GetTimeOfNextEvent(), 10);
   bridge_->OnTaskEviction(td_ptr, pu_rd_ptr);
@@ -190,7 +197,9 @@ TEST_F(SimulatorBridgeTest, OnTaskPlacement) {
   TaskDescriptor* td_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
   ResourceDescriptor* pu_rd_ptr = bridge_->machine_res_id_pus_.begin()->second;
-  CHECK(InsertIfNotPresent(&bridge_->task_runtime_, trace_task_id, 10));
+  CHECK(InsertIfNotPresent(&bridge_->task_runtime_,
+                           GenerateTaskIDFromTraceIdentifier(trace_task_id),
+                           10));
   bridge_->OnTaskPlacement(td_ptr, pu_rd_ptr);
   // Check that the end event has been added.
   CHECK_EQ(event_manager_->GetTimeOfNextEvent(), 10);
