@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_8ff5d484",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-26T02:27:13Z",
+      "side": 1,
+      "message": "ResourceID_t?",
+      "range": {
+        "startLine": 104,
+        "startChar": 38,
+        "endLine": 104,
+        "endChar": 57
+      },
+      "revId": "6d3aefdcfc0eaa6a32a0be17d90f6ab8cad82dcc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_6ff2909c",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-26T02:27:13Z",
+      "side": 1,
+      "message": "ResourceID_t?",
+      "range": {
+        "startLine": 106,
+        "startChar": 38,
+        "endLine": 106,
+        "endChar": 56
+      },
+      "revId": "6d3aefdcfc0eaa6a32a0be17d90f6ab8cad82dcc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_4fefccb0",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 794,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-26T02:27:13Z",
+      "side": 1,
+      "message": "ResourceID_t?",
+      "range": {
+        "startLine": 794,
+        "startChar": 40,
+        "endLine": 794,
+        "endChar": 58
+      },
+      "revId": "6d3aefdcfc0eaa6a32a0be17d90f6ab8cad82dcc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_2f2b68ed",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 796,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-26T02:27:13Z",
+      "side": 1,
+      "message": "ResourceID_t?",
+      "range": {
+        "startLine": 796,
+        "startChar": 40,
+        "endLine": 796,
+        "endChar": 58
+      },
+      "revId": "6d3aefdcfc0eaa6a32a0be17d90f6ab8cad82dcc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_effd806f",
+        "filename": "src/scheduling/event_driven_scheduler.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-26T02:27:13Z",
+      "side": 1,
+      "message": "Can alternatively put boost::hash\u003cResourceID_t\u003e here, so that we could in the future transparently change the type of ResourceID_t.",
+      "range": {
+        "startLine": 140,
+        "startChar": 4,
+        "endLine": 140,
+        "endChar": 35
+      },
+      "revId": "6d3aefdcfc0eaa6a32a0be17d90f6ab8cad82dcc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_cf02bc6f",
+        "filename": "src/scheduling/event_driven_scheduler.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-26T02:27:13Z",
+      "side": 1,
+      "message": "See above.",
+      "range": {
+        "startLine": 154,
+        "startChar": 57,
+        "endLine": 154,
+        "endChar": 75
+      },
+      "revId": "6d3aefdcfc0eaa6a32a0be17d90f6ab8cad82dcc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_ef34604b",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-26T02:27:13Z",
+      "side": 1,
+      "message": "Does this termination condition always work? The unordered_multimap documentation says:\n\n \"If k does not match any key in the container, the range returned has unordered_multimap::end as both its lower and upper range bounds.\"\n\nThis suggests that one needs to check for the \"end\" value; however, in practice, checking for equality might be fine, because the range includes only range_it.first and not range_it.second (so equality indicates that there are no elements, or that we\u0027ve reached the end).",
+      "range": {
+        "startLine": 307,
+        "startChar": 11,
+        "endLine": 307,
+        "endChar": 44
+      },
+      "revId": "6d3aefdcfc0eaa6a32a0be17d90f6ab8cad82dcc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
