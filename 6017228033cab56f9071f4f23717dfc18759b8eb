@@ -22,6 +22,30 @@
       "revId": "6017228033cab56f9071f4f23717dfc18759b8eb",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_120face2",
+        "filename": "src/sim/trace_utils.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-26T20:02:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_92905c97",
+      "range": {
+        "startLine": 24,
+        "startChar": 68,
+        "endLine": 24,
+        "endChar": 72
+      },
+      "revId": "6017228033cab56f9071f4f23717dfc18759b8eb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
