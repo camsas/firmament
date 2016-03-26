@@ -311,93 +311,66 @@ void SolverDispatcher::SolverConfiguration(const string& solver,
   }
 }
 
-// Assigns a leaf node to a worker|root task. At each step it checks if there
-// is an arc to a worker|root task, if not then it goes one layer up in the
-// graph.
-// NOTE: The extracted_flow is changed by the method.
-uint64_t SolverDispatcher::AssignNode(
-    vector<map<uint64_t, uint64_t>>* extracted_flow, uint64_t node) {
-  map<uint64_t, uint64_t>::iterator map_it;
-  for (map_it = (*extracted_flow)[node].begin();
-       map_it != (*extracted_flow)[node].end(); ) {
-    // Check if node = root or node = task
-    if (flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
-            map_it->first, FlowNodeType::ROOT_TASK) ||
-        flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
-            map_it->first, FlowNodeType::UNSCHEDULED_TASK) ||
-        flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
-            map_it->first, FlowNodeType::SCHEDULED_TASK)) {
-      uint64_t flow = map_it->second;
-      uint64_t ret_node = map_it->first;
-      // Make we don't erase using the current iterator.
-      map<uint64_t, uint64_t>::iterator map_it_tmp = map_it;
-      map_it++;
-      if (flow == 1) {
-        (*extracted_flow)[node].erase(map_it_tmp);
-      } else {
-        InsertOrUpdate(&((*extracted_flow)[node]), ret_node, flow - 1);
-      }
-      return ret_node;
-    } else {
-      map_it++;
-    }
-  }
-  // If here it means we didn't find any arc with flow to worker or root
-  for (map_it = (*extracted_flow)[node].begin();
-       map_it != (*extracted_flow)[node].end();) {
-    VLOG(2) << "Checking indirect edge from " << map_it->second << " back to "
-            << map_it->first;
-    uint64_t flow = map_it->second;
-    uint64_t ret_node = map_it->first;
-    // Make we don't erase using the current iterator.
-    map<uint64_t, uint64_t>::iterator map_it_tmp = map_it;
-    map_it++;
-    if (flow == 1) {
-      (*extracted_flow)[node].erase(map_it_tmp);
-    } else {
-      InsertOrUpdate(&(*extracted_flow)[node], ret_node, flow - 1);
-    }
-    return AssignNode(extracted_flow, ret_node);
-  }
-  // If here it means that the leaf node will not be assigned.
-  // Should not happen because it initially had flow.
-  VLOG(2) << "Failed to find a task mapping for node " << node
-          << ", which has flow!";
-  return 0;
-}
-
 // Maps worker|root tasks to leaves. It expects a extracted_flow containing
 // only the arcs with positive flow (i.e. what ReadFlowGraph returns).
 multimap<uint64_t, uint64_t>* SolverDispatcher::GetMappings(
-    vector<map<uint64_t, uint64_t>>* extracted_flow,
+    vector<unordered_map<uint64_t, uint64_t>>* extracted_flow,
     unordered_set<uint64_t> leaves, uint64_t sink) {
-  multimap<uint64_t, uint64_t>* task_node =
+  multimap<uint64_t, uint64_t>* task_to_pu =
     new multimap<uint64_t, uint64_t>();
-  unordered_set<uint64_t>::iterator set_it;
-  for (set_it = leaves.begin(); set_it != leaves.end(); set_it++) {
-    uint64_t* flow = FindOrNull((*extracted_flow)[sink], *set_it);
+  const FlowGraph& flow_graph =
+    flow_graph_manager_->flow_graph_change_manager()->flow_graph();
+  vector<vector<uint64_t>> pu_ids(flow_graph.NumNodes() + 1);
+  vector<bool> visited(flow_graph.NumNodes() + 1, false);
+  queue<uint64_t> to_visit;
+  for (auto& leaf_node : leaves) {
+    visited[leaf_node]= true;
+    uint64_t* flow = FindOrNull((*extracted_flow)[sink], leaf_node);
     if (flow != NULL) {
       // Exists flow from node to sink.
-      // This could technically be optimized and done in assign_node.
-      // It's not done like that for now because we're only expecting one task
-      // per leaf node.
-      VLOG(2) << "Have flow from PU node " << *set_it << " to sink: "
-              << *flow;
-      CHECK_GE(*flow, 1);
-      for (uint64_t flow_used = 1;  flow_used <= *flow; ++flow_used) {
-        uint64_t task = AssignNode(extracted_flow, *set_it);
-        // Arc back to a task, so we have a scheduling assignment
-        if (task != 0) {
-          VLOG(2) << "Assigning task node " << task << " to PU node "
-                  << *set_it;
-          task_node->insert(pair<uint64_t, uint64_t>(task, *set_it));
-        } else {
-          // PU left unassigned.
+      pu_ids[leaf_node].push_back(leaf_node);
+      to_visit.push(leaf_node);
+    }
+  }
+  while (!to_visit.empty()) {
+    uint64_t node_id = to_visit.front();
+    to_visit.pop();
+    visited[node_id] = true;
+    if (flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
+            node_id, FlowNodeType::ROOT_TASK) ||
+        flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
+            node_id, FlowNodeType::UNSCHEDULED_TASK) ||
+        flow_graph_manager_->flow_graph_change_manager()->CheckNodeType(
+            node_id, FlowNodeType::SCHEDULED_TASK)) {
+      // It's a task node.
+      for (auto& pu_node_id : pu_ids[node_id]) {
+        task_to_pu->insert(pair<uint64_t, uint64_t>(node_id, pu_node_id));
+      }
+    } else {
+      vector<uint64_t>::iterator pu_it = pu_ids[node_id].begin();
+      for (auto& src_flow : (*extracted_flow)[node_id]) {
+        bool assigned_all_pus = false;
+        while (src_flow.second > 0) {
+          if (pu_it == pu_ids[node_id].end()) {
+            assigned_all_pus = true;
+            // No more PUs left to assign
+            break;
+          }
+          pu_ids[src_flow.first].push_back(*pu_it);
+          pu_it++;
+          src_flow.second--;
+        }
+        if (!visited[src_flow.first]) {
+          to_visit.push(src_flow.first);
+          visited[src_flow.first] = true;
+        }
+        if (assigned_all_pus) {
+          break;
         }
       }
     }
   }
-  return task_node;
+  return task_to_pu;
 }
 
 // Returns a vector containing a nodes arcs with flow > 0.
@@ -406,7 +379,6 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::GetMappings(
 multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(
     uint64_t* algorithm_runtime) {
   multimap<uint64_t, uint64_t>* task_mappings;
-
   // If we read from stdout and stderr, then we must process both
   // in parallel. Otherwise, the buffer on one could get full, and the solver
   // would block. This could result in a situation of deadlock.
@@ -418,7 +390,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(
     // Parse and process the result
     uint64_t num_nodes =
       flow_graph_manager_->flow_graph_change_manager()->flow_graph().NumNodes();
-    vector<map<uint64_t, uint64_t> >* extracted_flow =
+    vector<unordered_map<uint64_t, uint64_t> >* extracted_flow =
       ReadFlowGraph(from_solver_, algorithm_runtime, num_nodes);
     task_mappings = GetMappings(extracted_flow,
                                 flow_graph_manager_->leaf_node_ids(),
@@ -428,10 +400,10 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::ReadOutput(
   return task_mappings;
 }
 
-vector<map<uint64_t, uint64_t>>* SolverDispatcher::ReadFlowGraph(
+vector<unordered_map<uint64_t, uint64_t>>* SolverDispatcher::ReadFlowGraph(
     FILE* fptr, uint64_t* algorithm_runtime, uint64_t num_vertices) {
-  vector<map<uint64_t, uint64_t>>* adj_list =
-    new vector<map<uint64_t, uint64_t> >(num_vertices + 1);
+  vector<unordered_map<uint64_t, uint64_t>>* adj_list =
+    new vector<unordered_map<uint64_t, uint64_t> >(num_vertices + 1);
   // The cost is not returned.
   uint64_t cost;
   char line[100];
