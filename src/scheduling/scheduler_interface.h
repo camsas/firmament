@@ -248,7 +248,7 @@ class SchedulerInterface : public PrintableInterface {
    * global runnable set.
    * @param jd_ptr the descriptor of the job for which to find tasks
    */
-  virtual const set<TaskID_t>& ComputeRunnableTasksForJob(
+  virtual const unordered_set<TaskID_t>& ComputeRunnableTasksForJob(
       JobDescriptor* jd_ptr) = 0;
 
   // Pointers to the associated coordinator's job, resource and object maps

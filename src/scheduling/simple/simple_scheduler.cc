@@ -119,10 +119,10 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
   LOG(INFO) << "START SCHEDULING " << jd_ptr->uuid();
   boost::timer::cpu_timer scheduler_timer;
   // Get the set of runnable tasks for this job
-  set<TaskID_t> runnable_tasks = ComputeRunnableTasksForJob(jd_ptr);
+  unordered_set<TaskID_t> runnable_tasks = ComputeRunnableTasksForJob(jd_ptr);
   VLOG(2) << "Scheduling job " << jd_ptr->uuid() << ", which has "
           << runnable_tasks.size() << " runnable tasks.";
-  for (set<TaskID_t>::const_iterator task_iter =
+  for (unordered_set<TaskID_t>::const_iterator task_iter =
        runnable_tasks.begin();
        task_iter != runnable_tasks.end();
        ++task_iter) {

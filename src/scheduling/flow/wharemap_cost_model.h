@@ -108,7 +108,7 @@ class WhareMapCostModel : public CostModelInterface {
   // EC corresponding to the CLUSTER_AGG node
   EquivClass_t cluster_aggregator_ec_;
   // Mapping between machine equiv classes and machines.
-  multimap<EquivClass_t, ResourceID_t> machine_ec_to_res_id_;
+  unordered_multimap<EquivClass_t, ResourceID_t> machine_ec_to_res_id_;
   // Mapping betweeen machine res id and resource topology node descriptor.
   unordered_map<ResourceID_t, const ResourceTopologyNodeDescriptor*,
     boost::hash<boost::uuids::uuid>> machine_to_rtnd_;
@@ -116,7 +116,7 @@ class WhareMapCostModel : public CostModelInterface {
   unordered_map<ResourceID_t, EquivClass_t,
     boost::hash<boost::uuids::uuid>> machine_to_ec_;
   // Mapping between task equiv classes and connected tasks.
-  unordered_map<EquivClass_t, set<TaskID_t> > task_ec_to_set_task_id_;
+  unordered_map<EquivClass_t, unordered_set<TaskID_t> > task_ec_to_set_task_id_;
   // Set of task ECs
   unordered_set<EquivClass_t> task_aggs_;
   // Set of machine ECs
