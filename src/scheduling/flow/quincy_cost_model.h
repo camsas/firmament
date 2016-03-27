@@ -17,6 +17,7 @@
 #include "base/types.h"
 #include "misc/map-util.h"
 #include "misc/time_interface.h"
+#include "misc/trace_generator.h"
 #include "misc/utils.h"
 #include "scheduling/common.h"
 #include "scheduling/flow/cost_model_interface.h"
@@ -31,7 +32,8 @@ class QuincyCostModel : public CostModelInterface {
   QuincyCostModel(shared_ptr<ResourceMap_t> resource_map,
                   shared_ptr<JobMap_t> job_map,
                   shared_ptr<TaskMap_t> task_map,
-                  shared_ptr<KnowledgeBase> knowledge_base);
+                  shared_ptr<KnowledgeBase> knowledge_base,
+                  TraceGenerator* trace_generator);
   ~QuincyCostModel();
 
   // Costs pertaining to leaving tasks unscheduled
@@ -193,6 +195,7 @@ class QuincyCostModel : public CostModelInterface {
     task_preferred_machines_;
   // Map storing the data transfer cost and the resource for each running task.
   unordered_map<TaskID_t, pair<ResourceID_t, int64_t>> task_running_arcs_;
+  TraceGenerator* trace_generator_;
 };
 
 }  // namespace firmament

@@ -100,7 +100,7 @@ FlowScheduler::FlowScheduler(
       break;
     case CostModelType::COST_MODEL_QUINCY:
       cost_model_ = new QuincyCostModel(resource_map, job_map, task_map,
-                                        knowledge_base_);
+                                        knowledge_base_, trace_generator_);
       VLOG(1) << "Using the Quincy cost model";
       break;
     case CostModelType::COST_MODEL_WHARE:

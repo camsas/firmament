@@ -38,6 +38,7 @@ DEFINE_bool(quincy_update_costs_upon_machine_change, true,
             "removed");
 
 DECLARE_uint64(max_tasks_per_pu);
+DECLARE_bool(generate_quincy_cost_model_trace);
 
 namespace firmament {
 
@@ -45,15 +46,18 @@ QuincyCostModel::QuincyCostModel(
     shared_ptr<ResourceMap_t> resource_map,
     shared_ptr<JobMap_t> job_map,
     shared_ptr<TaskMap_t> task_map,
-    shared_ptr<KnowledgeBase> knowledge_base)
+    shared_ptr<KnowledgeBase> knowledge_base,
+    TraceGenerator* trace_generator)
   : resource_map_(resource_map),
     job_map_(job_map),
     task_map_(task_map),
-    knowledge_base_(knowledge_base) {
+    knowledge_base_(knowledge_base),
+    trace_generator_(trace_generator) {
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
 }
 
 QuincyCostModel::~QuincyCostModel() {
+  // trace_generator_ is not owned by QuincyCostModel.
 }
 
 // The cost of leaving a task unscheduled should be higher than the cost of
@@ -503,7 +507,7 @@ void QuincyCostModel::ConstructTaskPreferredSet(TaskID_t task_id) {
   CHECK_NOTNULL(preferred_ecs);
   auto preferred_machines = FindOrNull(task_preferred_machines_, task_id);
   CHECK_NOTNULL(preferred_machines);
-
+  int64_t best_machine_cost = INT64_MAX;
   for (auto& machine_data : data_on_machines) {
     uint64_t data_on_machine = machine_data.second;
     if (data_on_machine >=
@@ -520,6 +524,7 @@ void QuincyCostModel::ConstructTaskPreferredSet(TaskID_t task_id) {
                                      *data_on_rack - data_on_machine);
       CHECK(InsertIfNotPresent(preferred_machines, machine_data.first,
                                transfer_cost));
+      best_machine_cost = min(best_machine_cost, transfer_cost);
     }
   }
   int64_t worst_cluster_cost = 0;
@@ -527,6 +532,7 @@ void QuincyCostModel::ConstructTaskPreferredSet(TaskID_t task_id) {
     // There are racks on which we have no data.
     worst_cluster_cost = FLAGS_quincy_core_transfer_cost * input_size;
   }
+  int64_t best_rack_cost = INT64_MAX;
   for (auto& rack_data : data_on_ecs) {
     if (rack_data.second >=
         input_size * FLAGS_quincy_preferred_rack_data_fraction) {
@@ -537,11 +543,19 @@ void QuincyCostModel::ConstructTaskPreferredSet(TaskID_t task_id) {
                                   data_on_machines);
       worst_cluster_cost = max(worst_cluster_cost, transfer_cost);
       CHECK(InsertIfNotPresent(preferred_ecs, rack_data.first, transfer_cost));
+      best_rack_cost = min(best_rack_cost, transfer_cost);
     }
   }
   // Add transfer cost to the cluster aggregator.
   CHECK(InsertIfNotPresent(preferred_ecs, cluster_aggregator_ec_,
                            worst_cluster_cost));
+  if (FLAGS_generate_quincy_cost_model_trace) {
+    TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
+    CHECK_NOTNULL(td_ptr);
+    trace_generator_->AddTaskQuincy(*td_ptr, input_size, worst_cluster_cost,
+                                    best_rack_cost, best_machine_cost,
+                                    TaskToUnscheduledAggCost(td_ptr->uid()));
+  }
 }
 
 void QuincyCostModel::UpdateMachineBlocks(
