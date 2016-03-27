@@ -195,6 +195,8 @@ bool GoogleTraceLoader::LoadTaskEvents(
             event_desc.set_type(EventDescriptor::TASK_SUBMIT);
             event_desc.set_job_id(task_id.job_id);
             event_desc.set_task_index(task_id.task_index);
+            event_desc.set_scheduling_class(lexical_cast<uint32_t>(vals[7]));
+            event_desc.set_priority(lexical_cast<uint32_t>(vals[8]));
             try {
               event_desc.set_requested_cpu_cores(lexical_cast<double>(vals[9]) *
                                                  FLAGS_sim_machine_max_cores);

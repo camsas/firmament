@@ -53,11 +53,11 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
   /**
    * Adds a new task to the flow graph. Updates the internal mappings as well.
    * @param task_identifier the simulator task identifier
+   * @param event_desc a descriptor of the event
    * @return true if the task has been added.
    */
   bool AddTask(const TraceTaskIdentifier& task_identifier,
-               double requested_cpu_cores,
-               uint64_t requested_ram_mb);
+               const EventDescriptor& event_desc);
 
   void LoadTraceData(TraceLoader* trace_loader);
 
