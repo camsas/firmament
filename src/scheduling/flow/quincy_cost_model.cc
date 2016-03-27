@@ -47,12 +47,14 @@ QuincyCostModel::QuincyCostModel(
     shared_ptr<JobMap_t> job_map,
     shared_ptr<TaskMap_t> task_map,
     shared_ptr<KnowledgeBase> knowledge_base,
-    TraceGenerator* trace_generator)
+    TraceGenerator* trace_generator,
+    TimeInterface* time_manager)
   : resource_map_(resource_map),
     job_map_(job_map),
     task_map_(task_map),
     knowledge_base_(knowledge_base),
-    trace_generator_(trace_generator) {
+    trace_generator_(trace_generator),
+    time_manager_(time_manager) {
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
 }
 
@@ -64,8 +66,9 @@ QuincyCostModel::~QuincyCostModel() {
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
-  return td.total_unscheduled_time() * FLAGS_quincy_wait_time_factor /
-    MICROSECONDS_IN_SECOND;
+  return (td.total_unscheduled_time() + time_manager_->GetCurrentTimestamp() -
+          td.submit_time()) *
+    FLAGS_quincy_wait_time_factor / MICROSECONDS_IN_SECOND;
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
