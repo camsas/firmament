@@ -28,12 +28,20 @@ namespace sim {
 
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
-SimulatedDFS::SimulatedDFS() : rand_seed_(42) {
+SimulatedDFS::SimulatedDFS(TraceGenerator* trace_generator)
+  : rand_seed_(42), trace_generator_(trace_generator) {
 }
 
-void SimulatedDFS::AddBlocksForTask(TaskID_t task_id, uint64_t num_blocks) {
+SimulatedDFS::~SimulatedDFS() {
+  // trace_generator_ is not owned by SimulatedDFS.
+}
+
+void SimulatedDFS::AddBlocksForTask(const TaskDescriptor& td,
+                                    uint64_t num_blocks) {
+  TaskID_t task_id = td.uid();
   for (uint64_t block_index = 0; block_index < num_blocks; ++block_index) {
     uint64_t block_id = GenerateBlockID(task_id, block_index);
+    trace_generator_->AddTaskInputBlock(td, block_id);
     PlaceBlockOnMachines(task_id, block_id);
   }
 }
@@ -106,6 +114,8 @@ void SimulatedDFS::PlaceBlockOnMachines(TaskID_t task_id, uint64_t block_id) {
                                FLAGS_simulated_quincy_block_size * MB_TO_BYTES);
     task_to_data_locations_.insert(pair<TaskID_t, DataLocation>(task_id,
                                                                 data_location));
+    trace_generator_->AddBlock(machine_res_id, block_id,
+                               data_location.size_bytes_);
   }
 }
 
@@ -140,8 +150,14 @@ void SimulatedDFS::RemoveMachine(ResourceID_t machine_res_id) {
       task_to_data_locations_.equal_range(task_id);
     for (; range_it.first != range_it.second; range_it.first++) {
       if (range_it.first->second.machine_res_id_ == machine_res_id) {
+        trace_generator_->RemoveBlock(range_it.first->second.machine_res_id_,
+                                      range_it.first->second.block_id_,
+                                      range_it.first->second.size_bytes_);
         // Move the block to another random machine.
         range_it.first->second.machine_res_id_ = PlaceBlockOnRandomMachine();
+        trace_generator_->AddBlock(range_it.first->second.machine_res_id_,
+                                   range_it.first->second.block_id_,
+                                   range_it.first->second.size_bytes_);
       }
     }
   }
