@@ -36,7 +36,7 @@ SimulatedDataLayerManager::SimulatedDataLayerManager(
   runtime_dist_ =
     new GoogleRuntimeDistribution(FLAGS_simulated_quincy_runtime_factor,
                                   FLAGS_simulated_quincy_runtime_power);
-  dfs_ = new SimulatedDFS();
+  dfs_ = new SimulatedDFS(trace_generator_);
 }
 
 SimulatedDataLayerManager::~SimulatedDataLayerManager() {
@@ -65,17 +65,17 @@ void SimulatedDataLayerManager::RemoveMachine(const string& hostname) {
   hostname_to_res_id_.erase(hostname);
 }
 
-uint64_t SimulatedDataLayerManager::AddFilesForTask(TaskID_t task_id,
+uint64_t SimulatedDataLayerManager::AddFilesForTask(const TaskDescriptor& td,
                                                     uint64_t avg_runtime) {
   double cumulative_probability =
     runtime_dist_->ProportionShorterTasks(avg_runtime);
   uint64_t num_blocks = input_block_dist_->Inverse(cumulative_probability);
-  dfs_->AddBlocksForTask(task_id, num_blocks);
+  dfs_->AddBlocksForTask(td, num_blocks);
   return num_blocks * FLAGS_simulated_quincy_block_size * MB_TO_BYTES;
 }
 
-void SimulatedDataLayerManager::RemoveFilesForTask(TaskID_t task_id) {
-  dfs_->RemoveBlocksForTask(task_id);
+void SimulatedDataLayerManager::RemoveFilesForTask(const TaskDescriptor& td) {
+  dfs_->RemoveBlocksForTask(td.uid());
 }
 
 } // namespace sim

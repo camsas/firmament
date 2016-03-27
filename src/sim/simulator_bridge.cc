@@ -303,7 +303,7 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(
       avg_runtime = 1;
     }
     uint64_t input_size =
-      data_layer_manager_->AddFilesForTask(task_id, avg_runtime);
+      data_layer_manager_->AddFilesForTask(*new_task, avg_runtime);
     // XXX(ionel): Remove the set_id hack once we get rid of DataObjects.
     char buffer[DIOS_NAME_BYTES] = {0};
     memcpy(&buffer, &task_id, sizeof(task_id));
@@ -372,7 +372,7 @@ void SimulatorBridge::TaskCompleted(
   knowledge_base_->PopulateTaskFinalReport(td_ptr, &report);
   scheduler_->HandleTaskFinalReport(report, td_ptr);
   if (data_layer_manager_) {
-    data_layer_manager_->RemoveFilesForTask(td_ptr->uid());
+    data_layer_manager_->RemoveFilesForTask(*td_ptr);
   }
   JobDescriptor* jd_ptr =
     FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
