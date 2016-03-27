@@ -33,6 +33,8 @@ TraceGenerator::TraceGenerator(TimeInterface* time_manager)
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/task_runtime_events");
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/jobs_num_tasks");
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/task_usage_stat");
+    MkdirIfNotPresent(FLAGS_generated_trace_path + "/dfs_events");
+    MkdirIfNotPresent(FLAGS_generated_trace_path + "/tasks_to_blocks");
     string path =
       FLAGS_generated_trace_path + "machine_events/part-00000-of-00001.csv";
     machine_events_ = fopen(path.c_str(), "w");
@@ -53,6 +55,12 @@ TraceGenerator::TraceGenerator(TimeInterface* time_manager)
     path = FLAGS_generated_trace_path + "task_usage_stat/task_usage_stat.csv";
     task_usage_stat_ = fopen(path.c_str(), "w");
     CHECK(task_usage_stat_ != NULL) << "Failed to open: " << path;
+    path = FLAGS_generated_trace_path + "dfs_events/dfs_events.csv";
+    dfs_events_ = fopen(path.c_str(), "w");
+    CHECK(dfs_events_ != NULL) << "Failed to open: " << path;
+    path = FLAGS_generated_trace_path + "tasks_to_blocks/tasks_to_blocks.csv";
+    tasks_to_blocks_ = fopen(path.c_str(), "w");
+    CHECK(tasks_to_blocks_ != NULL) << "Failed to open: " << path;
   }
 }
 
@@ -86,8 +94,22 @@ TraceGenerator::~TraceGenerator() {
     //           task_to_job.first);
     // }
     fclose(task_usage_stat_);
+    fclose(dfs_events_);
+    fclose(tasks_to_blocks_);
   }
   // time_manager is not owned by this class. We don't have to delete it here.
+}
+
+void TraceGenerator::AddBlock(ResourceID_t machine_res_id,
+                              uint64_t block_id, uint64_t block_size) {
+  if (FLAGS_generate_trace) {
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
+    uint64_t* machine_id =
+      FindOrNull(machine_res_id_to_trace_id_, machine_res_id);
+    CHECK_NOTNULL(machine_id);
+    fprintf(dfs_events_, "%ju,%d,%ju,%ju,%ju\n", timestamp, BLOCK_ADD,
+            *machine_id, block_id, block_size);
+  }
 }
 
 void TraceGenerator::AddMachine(const ResourceDescriptor& rd) {
@@ -95,8 +117,28 @@ void TraceGenerator::AddMachine(const ResourceDescriptor& rd) {
     machine_events_cnt_per_round_++;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t machine_id = GetMachineId(rd);
+    CHECK(InsertIfNotPresent(&machine_res_id_to_trace_id_,
+                             ResourceIDFromString(rd.uuid()),
+                             machine_id));
     fprintf(machine_events_, "%ju,%ju,%d,,,\n",
             timestamp, machine_id, MACHINE_ADD);
+  }
+}
+
+void TraceGenerator::AddTaskInputBlock(const TaskDescriptor& td,
+                                       uint64_t block_id) {
+  if (FLAGS_generate_trace) {
+    uint64_t trace_job_id;
+    uint64_t trace_task_id;
+    if (td.has_trace_job_id()) {
+      trace_job_id = td.trace_job_id();
+      trace_task_id = td.trace_task_id();
+    } else {
+      trace_job_id = HashString(td.job_id());
+      trace_task_id = td.uid();
+    }
+    fprintf(tasks_to_blocks_, "%ju,%ju,%ju\n",
+            trace_job_id, trace_task_id, block_id);
   }
 }
 
@@ -108,11 +150,24 @@ uint64_t TraceGenerator::GetMachineId(const ResourceDescriptor& rd) {
   }
 }
 
+void TraceGenerator::RemoveBlock(ResourceID_t machine_res_id,
+                                 uint64_t block_id, uint64_t block_size) {
+  if (FLAGS_generate_trace) {
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
+    uint64_t* machine_id =
+      FindOrNull(machine_res_id_to_trace_id_, machine_res_id);
+    CHECK_NOTNULL(machine_id);
+    fprintf(dfs_events_, "%ju,%d,%ju,%ju,%ju\n", timestamp, BLOCK_REMOVE,
+            *machine_id, block_id, block_size);
+  }
+}
+
 void TraceGenerator::RemoveMachine(const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {
     machine_events_cnt_per_round_++;
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t machine_id = GetMachineId(rd);
+    machine_res_id_to_trace_id_.erase(ResourceIDFromString(rd.uuid()));
     fprintf(machine_events_, "%ju,%ju,%d,,,\n",
             timestamp, machine_id, MACHINE_REMOVE);
   }

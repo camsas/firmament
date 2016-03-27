@@ -33,6 +33,11 @@ enum TraceMachineEvent {
   MACHINE_UPDATE = 2
 };
 
+enum TraceDFSEvent {
+  BLOCK_ADD = 0,
+  BLOCK_REMOVE = 1
+};
+
 struct TaskRuntime {
   TaskRuntime() : task_id_(0), start_time_(0), num_runs_(0),
     last_schedule_time_(0), total_runtime_(0), runtime_(0),
@@ -61,7 +66,12 @@ class TraceGenerator {
  public:
   explicit TraceGenerator(TimeInterface* time_manager);
   ~TraceGenerator();
+  void AddBlock(ResourceID_t machine_res_id, uint64_t block_id,
+                uint64_t block_size);
   void AddMachine(const ResourceDescriptor& rd);
+  void AddTaskInputBlock(const TaskDescriptor& td, uint64_t block_id);
+  void RemoveBlock(ResourceID_t machine_res_id, uint64_t block_id,
+                   uint64_t block_size);
   void RemoveMachine(const ResourceDescriptor& rd);
   void SchedulerRun(const scheduler::SchedulerStats& scheduler_stats,
                     const DIMACSChangeStats& dimacs_stats);
@@ -86,12 +96,16 @@ class TraceGenerator {
   // ends up consuming too much memory.
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
   unordered_map<TaskID_t, TaskRuntime> task_to_runtime_;
+  unordered_map<ResourceID_t, uint64_t,
+      boost::hash<ResourceID_t>> machine_res_id_to_trace_id_;
   FILE* machine_events_;
   FILE* scheduler_events_;
   FILE* task_events_;
   FILE* task_runtime_events_;
   FILE* jobs_num_tasks_;
   FILE* task_usage_stat_;
+  FILE* dfs_events_;
+  FILE* tasks_to_blocks_;
   uint64_t unscheduled_tasks_cnt_;
   uint64_t running_tasks_cnt_;
   uint64_t evicted_tasks_cnt_;

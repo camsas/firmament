@@ -15,6 +15,7 @@
 #include "base/common.h"
 #include "base/resource_topology_node_desc.pb.h"
 #include "base/types.h"
+#include "misc/trace_generator.h"
 #include "scheduling/data_layer_manager_interface.h"
 #include "sim/dfs/google_block_distribution.h"
 
@@ -23,14 +24,15 @@ namespace sim {
 
 class SimulatedDFS {
  public:
-  SimulatedDFS();
+  SimulatedDFS(TraceGenerator* trace_generator);
+  ~SimulatedDFS();
 
   /**
    * Add num_blocks for a new task.
-   * @param task_id the id of the new task
+   * @param td the descriptor of the new task
    * @param num_blocks the number of blocks to add
    */
-  void AddBlocksForTask(TaskID_t task_id, uint64_t num_blocks);
+  void AddBlocksForTask(const TaskDescriptor& td, uint64_t num_blocks);
 
   /**
    * Add a new machine to the DFS.
@@ -72,6 +74,7 @@ class SimulatedDFS {
   // Mapping storing the block locations for every task.
   unordered_multimap<TaskID_t, DataLocation> task_to_data_locations_;
   uint32_t rand_seed_;
+  TraceGenerator* trace_generator_;
 };
 
 } // namespace sim
