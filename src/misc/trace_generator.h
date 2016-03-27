@@ -70,6 +70,9 @@ class TraceGenerator {
                 uint64_t block_size);
   void AddMachine(const ResourceDescriptor& rd);
   void AddTaskInputBlock(const TaskDescriptor& td, uint64_t block_id);
+  void AddTaskQuincy(const TaskDescriptor& td, uint64_t input_size,
+                     int64_t worst_cluster_cost, int64_t best_rack_cost,
+                     int64_t best_machine_cost, int64_t cost_to_unsched);
   void RemoveBlock(ResourceID_t machine_res_id, uint64_t block_id,
                    uint64_t block_size);
   void RemoveMachine(const ResourceDescriptor& rd);
@@ -106,6 +109,7 @@ class TraceGenerator {
   FILE* task_usage_stat_;
   FILE* dfs_events_;
   FILE* tasks_to_blocks_;
+  FILE* quincy_tasks_;
   uint64_t unscheduled_tasks_cnt_;
   uint64_t running_tasks_cnt_;
   uint64_t evicted_tasks_cnt_;

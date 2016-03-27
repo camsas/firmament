@@ -18,6 +18,8 @@
 DEFINE_bool(generate_trace, false, "Generate Google style trace");
 DEFINE_string(generated_trace_path, "",
               "Path to where the trace will be generated");
+DEFINE_bool(generate_quincy_cost_model_trace, false,
+            "True if a trace should be generated");
 
 namespace firmament {
 
@@ -61,6 +63,12 @@ TraceGenerator::TraceGenerator(TimeInterface* time_manager)
     path = FLAGS_generated_trace_path + "tasks_to_blocks/tasks_to_blocks.csv";
     tasks_to_blocks_ = fopen(path.c_str(), "w");
     CHECK(tasks_to_blocks_ != NULL) << "Failed to open: " << path;
+    if (FLAGS_generate_quincy_cost_model_trace) {
+      MkdirIfNotPresent(FLAGS_generated_trace_path + "/quincy_tasks");
+      path = FLAGS_generated_trace_path + "quincy_tasks/quincy_tasks.csv";
+      quincy_tasks_ = fopen(path.c_str(), "w");
+      CHECK(quincy_tasks_ != NULL) << "Failed to open: " << path;
+    }
   }
 }
 
@@ -96,6 +104,9 @@ TraceGenerator::~TraceGenerator() {
     fclose(task_usage_stat_);
     fclose(dfs_events_);
     fclose(tasks_to_blocks_);
+    if (FLAGS_generate_quincy_cost_model_trace) {
+      fclose(quincy_tasks_);
+    }
   }
   // time_manager is not owned by this class. We don't have to delete it here.
 }
@@ -139,6 +150,28 @@ void TraceGenerator::AddTaskInputBlock(const TaskDescriptor& td,
     }
     fprintf(tasks_to_blocks_, "%ju,%ju,%ju\n",
             trace_job_id, trace_task_id, block_id);
+  }
+}
+
+void TraceGenerator::AddTaskQuincy(
+    const TaskDescriptor& td, uint64_t input_size, int64_t worst_cluster_cost,
+    int64_t best_rack_cost, int64_t best_machine_cost,
+    int64_t cost_to_unsched) {
+  if (FLAGS_generate_trace && FLAGS_generate_quincy_cost_model_trace) {
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
+    uint64_t trace_job_id;
+    uint64_t trace_task_id;
+    if (td.has_trace_job_id()) {
+      trace_job_id = td.trace_job_id();
+      trace_task_id = td.trace_task_id();
+    } else {
+      trace_job_id = HashString(td.job_id());
+      trace_task_id = td.uid();
+    }
+    fprintf(quincy_tasks_, "%ju,%ju,%ju,%ju,%jd,%jd,%jd,%jd\n",
+            timestamp, trace_job_id, trace_task_id, input_size,
+            worst_cluster_cost, best_rack_cost, best_machine_cost,
+            cost_to_unsched);
   }
 }
 
