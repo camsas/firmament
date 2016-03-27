@@ -33,7 +33,8 @@ class QuincyCostModel : public CostModelInterface {
                   shared_ptr<JobMap_t> job_map,
                   shared_ptr<TaskMap_t> task_map,
                   shared_ptr<KnowledgeBase> knowledge_base,
-                  TraceGenerator* trace_generator);
+                  TraceGenerator* trace_generator,
+                  TimeInterface* time_manager);
   ~QuincyCostModel();
 
   // Costs pertaining to leaving tasks unscheduled
@@ -196,6 +197,7 @@ class QuincyCostModel : public CostModelInterface {
   // Map storing the data transfer cost and the resource for each running task.
   unordered_map<TaskID_t, pair<ResourceID_t, int64_t>> task_running_arcs_;
   TraceGenerator* trace_generator_;
+  TimeInterface* time_manager_;
 };
 
 }  // namespace firmament

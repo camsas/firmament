@@ -49,7 +49,10 @@ message TaskDescriptor {
   optional uint64 submit_time = 16;
   optional uint64 start_time = 17;
   optional uint64 finish_time = 18;
+  /* The total time spent unscheduled before previous runs. */
   optional uint64 total_unscheduled_time = 19;
+  /* The total time spent in previous runs. This field only gets updated when
+     the task finishes running. */
   optional uint64 total_run_time = 20;
   /* Deadlines */
   optional uint64 relative_deadline = 21;

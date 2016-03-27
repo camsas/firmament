@@ -224,6 +224,7 @@ void LocalExecutor::HandleTaskCompletion(TaskDescriptor* td,
 void LocalExecutor::HandleTaskEviction(TaskDescriptor* td) {
   td->set_finish_time(time_manager_->GetCurrentTimestamp());
   td->set_total_run_time(UpdateTaskTotalRunTime(*td));
+  td->set_submit_time(time_manager_->GetCurrentTimestamp());
   // TODO(ionel): Implement.
 }
 

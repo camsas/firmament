@@ -72,7 +72,8 @@ class TraceGenerator {
   void AddTaskInputBlock(const TaskDescriptor& td, uint64_t block_id);
   void AddTaskQuincy(const TaskDescriptor& td, uint64_t input_size,
                      int64_t worst_cluster_cost, int64_t best_rack_cost,
-                     int64_t best_machine_cost, int64_t cost_to_unsched);
+                     int64_t best_machine_cost, int64_t cost_to_unsched,
+                     uint64_t num_pref_machines, num_pref_racks);
   void RemoveBlock(ResourceID_t machine_res_id, uint64_t block_id,
                    uint64_t block_size);
   void RemoveMachine(const ResourceDescriptor& rd);
