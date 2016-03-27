@@ -19,7 +19,7 @@ DEFINE_bool(generate_trace, false, "Generate Google style trace");
 DEFINE_string(generated_trace_path, "",
               "Path to where the trace will be generated");
 DEFINE_bool(generate_quincy_cost_model_trace, false,
-            "True if a trace should be generated");
+            "A trace containing information specific to the Quincy cost model");
 
 namespace firmament {
 
@@ -38,34 +38,35 @@ TraceGenerator::TraceGenerator(TimeInterface* time_manager)
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/dfs_events");
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/tasks_to_blocks");
     string path =
-      FLAGS_generated_trace_path + "machine_events/part-00000-of-00001.csv";
+      FLAGS_generated_trace_path + "/machine_events/part-00000-of-00001.csv";
     machine_events_ = fopen(path.c_str(), "w");
     CHECK(machine_events_ != NULL) << "Failed to open: " << path;
-    path = FLAGS_generated_trace_path + "scheduler_events/scheduler_events.csv";
+    path = FLAGS_generated_trace_path +
+      "/scheduler_events/scheduler_events.csv";
     scheduler_events_ = fopen(path.c_str(), "w");
     CHECK(scheduler_events_ != NULL) << "Failed to open: " << path;
-    path = FLAGS_generated_trace_path + "task_events/part-00000-of-00500.csv";
+    path = FLAGS_generated_trace_path + "/task_events/part-00000-of-00500.csv";
     task_events_ = fopen(path.c_str(), "w");
     CHECK(task_events_ != NULL) << "Failed to open: " << path;
     path = FLAGS_generated_trace_path +
-      "task_runtime_events/task_runtime_events.csv";
+      "/task_runtime_events/task_runtime_events.csv";
     task_runtime_events_ = fopen(path.c_str(), "w");
     CHECK(task_runtime_events_ != NULL) << "Failed to open: " << path;
-    path = FLAGS_generated_trace_path + "jobs_num_tasks/jobs_num_tasks.csv";
+    path = FLAGS_generated_trace_path + "/jobs_num_tasks/jobs_num_tasks.csv";
     jobs_num_tasks_ = fopen(path.c_str(), "w");
     CHECK(jobs_num_tasks_ != NULL) << "Failed to open: " << path;
-    path = FLAGS_generated_trace_path + "task_usage_stat/task_usage_stat.csv";
+    path = FLAGS_generated_trace_path + "/task_usage_stat/task_usage_stat.csv";
     task_usage_stat_ = fopen(path.c_str(), "w");
     CHECK(task_usage_stat_ != NULL) << "Failed to open: " << path;
-    path = FLAGS_generated_trace_path + "dfs_events/dfs_events.csv";
+    path = FLAGS_generated_trace_path + "/dfs_events/dfs_events.csv";
     dfs_events_ = fopen(path.c_str(), "w");
     CHECK(dfs_events_ != NULL) << "Failed to open: " << path;
-    path = FLAGS_generated_trace_path + "tasks_to_blocks/tasks_to_blocks.csv";
+    path = FLAGS_generated_trace_path + "/tasks_to_blocks/tasks_to_blocks.csv";
     tasks_to_blocks_ = fopen(path.c_str(), "w");
     CHECK(tasks_to_blocks_ != NULL) << "Failed to open: " << path;
     if (FLAGS_generate_quincy_cost_model_trace) {
       MkdirIfNotPresent(FLAGS_generated_trace_path + "/quincy_tasks");
-      path = FLAGS_generated_trace_path + "quincy_tasks/quincy_tasks.csv";
+      path = FLAGS_generated_trace_path + "/quincy_tasks/quincy_tasks.csv";
       quincy_tasks_ = fopen(path.c_str(), "w");
       CHECK(quincy_tasks_ != NULL) << "Failed to open: " << path;
     }
@@ -156,7 +157,8 @@ void TraceGenerator::AddTaskInputBlock(const TaskDescriptor& td,
 void TraceGenerator::AddTaskQuincy(
     const TaskDescriptor& td, uint64_t input_size, int64_t worst_cluster_cost,
     int64_t best_rack_cost, int64_t best_machine_cost,
-    int64_t cost_to_unsched) {
+    int64_t cost_to_unsched, uint64_t num_pref_machines,
+    uint64_t num_pref_racks) {
   if (FLAGS_generate_trace && FLAGS_generate_quincy_cost_model_trace) {
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t trace_job_id;
@@ -168,10 +170,10 @@ void TraceGenerator::AddTaskQuincy(
       trace_job_id = HashString(td.job_id());
       trace_task_id = td.uid();
     }
-    fprintf(quincy_tasks_, "%ju,%ju,%ju,%ju,%jd,%jd,%jd,%jd\n",
+    fprintf(quincy_tasks_, "%ju,%ju,%ju,%ju,%jd,%jd,%jd,%jd,%ju,%ju\n",
             timestamp, trace_job_id, trace_task_id, input_size,
             worst_cluster_cost, best_rack_cost, best_machine_cost,
-            cost_to_unsched);
+            cost_to_unsched, num_pref_machines, num_pref_racks);
   }
 }
 
