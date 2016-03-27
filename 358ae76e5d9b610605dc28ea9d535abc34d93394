@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_c372947c",
+        "filename": "src/misc/trace_generator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-27T20:22:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_92e5fca9",
+      "revId": "358ae76e5d9b610605dc28ea9d535abc34d93394",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_35797a94",
         "filename": "src/misc/trace_generator.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2016-03-27T04:25:02Z",
       "side": 1,
       "message": "Our path flags generally assume no trailing slash, so there should be one at the start of the file name here (as in the line above)",
+      "revId": "358ae76e5d9b610605dc28ea9d535abc34d93394",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_e35c78ef",
+        "filename": "src/misc/trace_generator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-27T20:22:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_35797a94",
       "revId": "358ae76e5d9b610605dc28ea9d535abc34d93394",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
