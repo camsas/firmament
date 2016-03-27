@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_030f5ce2",
+        "filename": "src/misc/trace_generator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-27T20:25:16Z",
+      "side": 1,
+      "message": "I thought we had a trace_job_id field in the TD?",
+      "revId": "142b0ec6423ca5ed34e5d34040cf312b7fd37f64",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_e313580c",
+        "filename": "src/sim/dfs/simulated_dfs.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-27T20:25:16Z",
+      "side": 1,
+      "message": "store this in a local variable with a descriptive name, as it\u0027s used several times",
+      "range": {
+        "startLine": 153,
+        "startChar": 38,
+        "endLine": 153,
+        "endChar": 60
+      },
+      "revId": "142b0ec6423ca5ed34e5d34040cf312b7fd37f64",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_c3f974ca",
+        "filename": "src/sim/dfs/simulated_dfs.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-27T20:25:16Z",
+      "side": 1,
+      "message": "See above",
+      "range": {
+        "startLine": 158,
+        "startChar": 35,
+        "endLine": 158,
+        "endChar": 49
+      },
+      "revId": "142b0ec6423ca5ed34e5d34040cf312b7fd37f64",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
