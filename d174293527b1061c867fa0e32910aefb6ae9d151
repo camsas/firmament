@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_7274b8fc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-27T20:51:49Z",
+      "side": 1,
+      "message": "propagate ;-)",
+      "range": {
+        "startLine": 11,
+        "startChar": 3,
+        "endLine": 11,
+        "endChar": 13
+      },
+      "revId": "d174293527b1061c867fa0e32910aefb6ae9d151",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_03263c68",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-27T20:51:49Z",
+      "side": 1,
+      "message": "This is a bit of an overapproximation, surely, since not all nodes are PUs?",
+      "revId": "d174293527b1061c867fa0e32910aefb6ae9d151",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_c320544c",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-27T20:51:49Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(extracted_flow) before this",
+      "revId": "d174293527b1061c867fa0e32910aefb6ae9d151",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_e3e11800",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-27T20:51:49Z",
+      "side": 1,
+      "message": "N.B.: as discussed, there may be a bug related to PU sharing here",
+      "revId": "d174293527b1061c867fa0e32910aefb6ae9d151",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_c3e73411",
+        "filename": "src/scheduling/flow/solver_dispatcher.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-27T20:51:49Z",
+      "side": 1,
+      "message": "Some comments would be useful here, since this is tricky code.",
+      "range": {
+        "startLine": 359,
+        "startChar": 0,
+        "endLine": 361,
+        "endChar": 28
+      },
+      "revId": "d174293527b1061c867fa0e32910aefb6ae9d151",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
