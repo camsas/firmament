@@ -158,8 +158,7 @@ void SimulatorBridge::AddMachineSamples(uint64_t current_time) {
 }
 
 bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier,
-                              double requested_cpu_cores,
-                              uint64_t requested_ram_mb) {
+                              const EventDescriptor& event_desc) {
   if (submitted_tasks_.find(task_identifier) != submitted_tasks_.end()) {
     // In the trace, a task is submitted again after a task FAIL, EVICT, KILL
     // or LOST event. We can't exactly replay these events because they depend
@@ -186,8 +185,12 @@ bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier,
   }
 
   TaskDescriptor* td_ptr = AddTaskToJob(jd_ptr, task_identifier);
-  td_ptr->mutable_resource_request()->set_cpu_cores(requested_cpu_cores);
-  td_ptr->mutable_resource_request()->set_ram_cap(requested_ram_mb);
+  td_ptr->mutable_resource_request()->set_cpu_cores(
+      event_desc.requested_cpu_cores());
+  td_ptr->mutable_resource_request()->set_ram_cap(event_desc.requested_ram());
+  if (event_desc.has_priority()) {
+    td_ptr->set_priority(event_desc.priority());
+  }
   if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
     CHECK(InsertIfNotPresent(&task_id_to_identifier_,
                              td_ptr->uid(), task_identifier));
@@ -354,8 +357,7 @@ void SimulatorBridge::ProcessSimulatorEvents(uint64_t events_up_to_time) {
       TraceTaskIdentifier task_identifier;
       task_identifier.task_index = event.second.task_index();
       task_identifier.job_id = event.second.job_id();
-      AddTask(task_identifier, event.second.requested_cpu_cores(),
-              event.second.requested_ram());
+      AddTask(task_identifier, event.second);
     } else {
       LOG(FATAL) << "Unexpected event type " << event.second.type() << " @ "
                  << event.first;
