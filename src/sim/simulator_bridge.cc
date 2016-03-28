@@ -298,15 +298,16 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(
     ReferenceDescriptor* dependency =  new_task->add_dependencies();
     uint64_t avg_runtime = 0;
     uint64_t* runtime_ptr = FindOrNull(task_runtime_, task_id);
+    uint64_t input_size = 0;
     if (runtime_ptr) {
-      avg_runtime = *runtime_ptr;
+      input_size =
+        data_layer_manager_->AddFilesForTask(*new_task, *runtime_ptr, false);
     } else {
-      // The task didn't finish in the trace. Set the task runtime to 1 u-sec to
-      // that the task has tiny inputs.
-      avg_runtime = 1;
+      // The task didn't finish in the trace => it is a long running
+      // service job. Inform the DFS that the task should not have
+      // any input data.
+      input_size = data_layer_manager_->AddFilesForTask(*new_task, 0, true);
     }
-    uint64_t input_size =
-      data_layer_manager_->AddFilesForTask(*new_task, avg_runtime);
     // XXX(ionel): Remove the set_id hack once we get rid of DataObjects.
     char buffer[DIOS_NAME_BYTES] = {0};
     memcpy(&buffer, &task_id, sizeof(task_id));

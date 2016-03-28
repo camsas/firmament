@@ -20,7 +20,8 @@ class SimulatedDataLayerManager : public DataLayerManagerInterface {
   SimulatedDataLayerManager(TraceGenerator* trace_generator);
   virtual ~SimulatedDataLayerManager();
 
-  uint64_t AddFilesForTask(const TaskDescriptor& td, uint64_t avg_runtime);
+  uint64_t AddFilesForTask(const TaskDescriptor& td, uint64_t avg_runtime,
+                           bool long_running_service);
   void AddMachine(const string& hostname, ResourceID_t machine_res_id);
   void GetFileLocations(const string& file_path,
                                 list<DataLocation>* locations);
