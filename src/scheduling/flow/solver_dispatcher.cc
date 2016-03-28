@@ -95,6 +95,8 @@ void SolverDispatcher::ExportJSON(string* output) const {
 void *ExportToSolver(void *x) {
   SolverDispatcher* solver_dispatcher = reinterpret_cast<SolverDispatcher*>(x);
   solver_dispatcher->ExportGraph(solver_dispatcher->to_solver_);
+  solver_dispatcher->flow_graph_manager_->
+    flow_graph_change_manager()->ResetChanges();
   if (fflush(solver_dispatcher->to_solver_)) {
     PLOG(FATAL) << "Error while flushing";
   }
@@ -126,13 +128,11 @@ void SolverDispatcher::ExportGraph(FILE* stream) {
   if (solver_ran_once_ && FLAGS_incremental_flow) {
     dimacs_exporter_.ExportIncremental(
         change_manager->GetOptimizedGraphChanges(), stream);
-    change_manager->ResetChanges();
   }
   if (!solver_ran_once_ || !FLAGS_incremental_flow) {
     // Always export full flow graph when running first time. If algorithm
     // is non-incremental, must do it for subsequent iterations too.
     dimacs_exporter_.Export(change_manager->flow_graph(), stream);
-    change_manager->ResetChanges();
   }
 }
 
