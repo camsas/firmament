@@ -66,12 +66,17 @@ void SimulatedDataLayerManager::RemoveMachine(const string& hostname) {
 }
 
 uint64_t SimulatedDataLayerManager::AddFilesForTask(const TaskDescriptor& td,
-                                                    uint64_t avg_runtime) {
-  double cumulative_probability =
-    runtime_dist_->ProportionShorterTasks(avg_runtime);
-  uint64_t num_blocks = input_block_dist_->Inverse(cumulative_probability);
-  dfs_->AddBlocksForTask(td, num_blocks);
-  return num_blocks * FLAGS_simulated_quincy_block_size * MB_TO_BYTES;
+                                                    uint64_t avg_runtime,
+                                                    bool long_running_service) {
+  if (!long_running_service) {
+    double cumulative_probability =
+      runtime_dist_->ProportionShorterTasks(avg_runtime);
+    uint64_t num_blocks = input_block_dist_->Inverse(cumulative_probability);
+    dfs_->AddBlocksForTask(td, num_blocks);
+    return num_blocks * FLAGS_simulated_quincy_block_size * MB_TO_BYTES;
+  } else {
+    return 0;
+  }
 }
 
 void SimulatedDataLayerManager::RemoveFilesForTask(const TaskDescriptor& td) {
