@@ -107,8 +107,15 @@ void Simulator::ReplaySimulation() {
   uint64_t run_scheduler_at = 0;
   uint64_t current_heartbeat_time = 0;
   uint64_t num_scheduling_rounds = 0;
+  bool load_initial_machines = false;
 
   while (!event_manager_->HasSimulationCompleted(num_scheduling_rounds)) {
+    // Make sure to process all the initial machine additions before we add
+    // tasks.
+    if (!load_initial_machines) {
+      load_initial_machines = true;
+      bridge_->ProcessSimulatorEvents(0);
+    }
     // Load the task events up to the next scheduler run + max_solver_runtime.
     // This assures that we'll have the events ready to be processed when
     // the scheduler will callback to the simulator
