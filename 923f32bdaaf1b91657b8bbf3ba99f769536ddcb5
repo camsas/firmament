@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_07bbdf73",
+        "filename": "src/sim/simulator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-29T23:37:58Z",
+      "side": 1,
+      "message": "loaded_",
+      "range": {
+        "startLine": 110,
+        "startChar": 7,
+        "endLine": 110,
+        "endChar": 12
+      },
+      "revId": "923f32bdaaf1b91657b8bbf3ba99f769536ddcb5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
