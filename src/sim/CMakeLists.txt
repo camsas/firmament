@@ -3,7 +3,8 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/sim)
 set(SIM_DFS_SRC
   sim/dfs/simulated_data_layer_manager.cc
   sim/dfs/google_block_distribution.cc
-  sim/dfs/simulated_dfs.cc
+  sim/dfs/simulated_bounded_dfs.cc
+  sim/dfs/simulated_uniform_dfs.cc
   )
 
 set(SIM_GOOGLE_TRACE_PROCESSOR_SRCS
