@@ -1,8 +1,10 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#ifndef FIRMAMENT_SIM_DFS_SIMULATED_DFS_H
-#define FIRMAMENT_SIM_DFS_SIMULATED_DFS_H
+#ifndef FIRMAMENT_SIM_DFS_SIMULATED_UNIFORM_DFS_H
+#define FIRMAMENT_SIM_DFS_SIMULATED_UNIFORM_DFS_H
+
+#include "sim/dfs/simulated_dfs_interface.h"
 
 #include <list>
 #include <queue>
@@ -22,17 +24,20 @@
 namespace firmament {
 namespace sim {
 
-class SimulatedDFS {
+class SimulatedUniformDFS : public SimulatedDFSInterface {
  public:
-  SimulatedDFS(TraceGenerator* trace_generator);
-  ~SimulatedDFS();
+  SimulatedUniformDFS(TraceGenerator* trace_generator);
+  virtual ~SimulatedUniformDFS();
 
   /**
    * Add num_blocks for a new task.
    * @param td the descriptor of the new task
    * @param num_blocks the number of blocks to add
+   * @param max_machine_spread the maximum number of machine over which
+   * the task's inputs should be spread.
    */
-  void AddBlocksForTask(const TaskDescriptor& td, uint64_t num_blocks);
+  virtual void AddBlocksForTask(const TaskDescriptor& td, uint64_t num_blocks,
+                                uint64_t max_machine_spread);
 
   /**
    * Add a new machine to the DFS.
@@ -55,7 +60,7 @@ class SimulatedDFS {
    */
   void RemoveMachine(ResourceID_t machine_res_id);
 
- private:
+ protected:
   uint64_t GenerateBlockID(TaskID_t task_id, uint64_t block_index);
   void PlaceBlockOnMachines(TaskID_t task_id, uint64_t block_id);
   /**
@@ -80,4 +85,4 @@ class SimulatedDFS {
 } // namespace sim
 } // namespace firmament
 
-#endif // FIRMAMENT_SIM_DFS_SIMULATED_DFS_H
+#endif // FIRMAMENT_SIM_DFS_SIMULATED_UNIFORM_DFS_H
