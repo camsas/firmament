@@ -9,7 +9,7 @@
 
 #include "misc/trace_generator.h"
 #include "sim/dfs/google_block_distribution.h"
-#include "sim/dfs/simulated_dfs.h"
+#include "sim/dfs/simulated_dfs_interface.h"
 #include "sim/google_runtime_distribution.h"
 
 namespace firmament {
@@ -20,8 +20,17 @@ class SimulatedDataLayerManager : public DataLayerManagerInterface {
   SimulatedDataLayerManager(TraceGenerator* trace_generator);
   virtual ~SimulatedDataLayerManager();
 
+  /**
+   * Add files for a given task.
+   * @param td the descriptor of the task
+   * @param avg_runtime the average runtime of the task
+   * @param long_running_service true if the task doesn't finish in the trace
+   * @param max_machine_spread the maximum number of machines over which
+   * the task's inputs should be spread.
+   */
   uint64_t AddFilesForTask(const TaskDescriptor& td, uint64_t avg_runtime,
-                           bool long_running_service);
+                           bool long_running_service,
+                           uint64_t max_machine_spread);
   void AddMachine(const string& hostname, ResourceID_t machine_res_id);
   void GetFileLocations(const string& file_path,
                                 list<DataLocation>* locations);
@@ -31,7 +40,7 @@ class SimulatedDataLayerManager : public DataLayerManagerInterface {
  private:
   GoogleBlockDistribution* input_block_dist_;
   GoogleRuntimeDistribution* runtime_dist_;
-  SimulatedDFS* dfs_;
+  SimulatedDFSInterface* dfs_;
   unordered_map<string, ResourceID_t> hostname_to_res_id_;
   TraceGenerator* trace_generator_;
 };

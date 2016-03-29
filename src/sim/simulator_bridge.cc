@@ -219,6 +219,7 @@ bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier,
       job_map_->erase(job_id);
       trace_job_id_to_jd_.erase(task_identifier.job_id);
       job_num_tasks_.erase(task_identifier.job_id);
+      immutable_job_num_tasks_.erase(task_identifier.job_id);
       job_id_to_trace_job_id_.erase(job_id);
     } else {
       // Remove the task from the job.
@@ -300,13 +301,17 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(
     uint64_t* runtime_ptr = FindOrNull(task_runtime_, task_id);
     uint64_t input_size = 0;
     if (runtime_ptr) {
+      uint64_t* num_tasks =
+        FindOrNull(immutable_job_num_tasks_, task_identifier.job_id);
+      CHECK_NOTNULL(num_tasks);
       input_size =
-        data_layer_manager_->AddFilesForTask(*new_task, *runtime_ptr, false);
+        data_layer_manager_->AddFilesForTask(*new_task, *runtime_ptr, false,
+                                             *num_tasks);
     } else {
       // The task didn't finish in the trace => it is a long running
       // service job. Inform the DFS that the task should not have
       // any input data.
-      input_size = data_layer_manager_->AddFilesForTask(*new_task, 0, true);
+      input_size = data_layer_manager_->AddFilesForTask(*new_task, 0, true, 0);
     }
     // XXX(ionel): Remove the set_id hack once we get rid of DataObjects.
     char buffer[DIOS_NAME_BYTES] = {0};
@@ -328,6 +333,7 @@ void SimulatorBridge::LoadTraceData(TraceLoader* trace_loader) {
   }
   // Populate the job_id to number of tasks mapping.
   trace_loader->LoadJobsNumTasks(&job_num_tasks_);
+  trace_loader->LoadJobsNumTasks(&immutable_job_num_tasks_);
   // Load tasks' runtime.
   trace_loader->LoadTasksRunningTime(&task_runtime_);
   // Populate the knowledge base.
@@ -407,6 +413,7 @@ void SimulatorBridge::OnJobCompletion(JobID_t job_id) {
   job_map_->erase(job_id);
   trace_job_id_to_jd_.erase(*trace_job_id);
   job_num_tasks_.erase(*trace_job_id);
+  immutable_job_num_tasks_.erase(*trace_job_id);
   job_id_to_trace_job_id_.erase(job_id);
 }
 

@@ -231,6 +231,7 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
 
   // Map holding the number of tasks for each job.
   unordered_map<uint64_t, uint64_t> job_num_tasks_;
+  unordered_map<uint64_t, uint64_t> immutable_job_num_tasks_;
 
   SimulatedDataLayerManager* data_layer_manager_;
 

@@ -1,7 +1,7 @@
 // The Firmament project
 // Copyright (c) 2015 Adam Gleave <arg58@cam.ac.uk>
 
-#include "sim/dfs/simulated_dfs.h"
+#include "sim/dfs/simulated_uniform_dfs.h"
 
 #include <algorithm>
 #include <boost/lexical_cast.hpp>
@@ -14,13 +14,8 @@
 #define MAX_MACHINE_TO_SAMPLE_FOR_BLOCK_PLACEMENT 1000
 #define SEED 42
 
-// Distributed filesystem options
-DEFINE_uint64(simulated_dfs_blocks_per_machine, 98304,
-              "Number of 64 MB blocks each machine stores. "
-              "Defaults to 98304, i.e. 6 TB.");
-DEFINE_uint64(simulated_dfs_replication_factor, 3,
-              "The number of times each block should be replicated.");
-
+DECLARE_uint64(simulated_dfs_blocks_per_machine);
+DECLARE_uint64(simulated_dfs_replication_factor);
 DECLARE_uint64(simulated_quincy_block_size);
 
 namespace firmament {
@@ -28,16 +23,17 @@ namespace sim {
 
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
-SimulatedDFS::SimulatedDFS(TraceGenerator* trace_generator)
+SimulatedUniformDFS::SimulatedUniformDFS(TraceGenerator* trace_generator)
   : rand_seed_(42), trace_generator_(trace_generator) {
 }
 
-SimulatedDFS::~SimulatedDFS() {
-  // trace_generator_ is not owned by SimulatedDFS.
+SimulatedUniformDFS::~SimulatedUniformDFS() {
+  // trace_generator_ is not owned by SimulatedUniformDFS.
 }
 
-void SimulatedDFS::AddBlocksForTask(const TaskDescriptor& td,
-                                    uint64_t num_blocks) {
+void SimulatedUniformDFS::AddBlocksForTask(const TaskDescriptor& td,
+                                           uint64_t num_blocks,
+                                           uint64_t max_machine_spread) {
   TaskID_t task_id = td.uid();
   for (uint64_t block_index = 0; block_index < num_blocks; ++block_index) {
     uint64_t block_id = GenerateBlockID(task_id, block_index);
@@ -46,21 +42,23 @@ void SimulatedDFS::AddBlocksForTask(const TaskDescriptor& td,
   }
 }
 
-void SimulatedDFS::AddMachine(ResourceID_t machine_res_id) {
+void SimulatedUniformDFS::AddMachine(ResourceID_t machine_res_id) {
   CHECK(InsertIfNotPresent(&machine_num_free_blocks_, machine_res_id,
                            FLAGS_simulated_dfs_blocks_per_machine));
   CHECK(InsertIfNotPresent(&tasks_on_machine_, machine_res_id,
                            unordered_set<TaskID_t>()));
+  machines_.push_back(machine_res_id);
 }
 
-uint64_t SimulatedDFS::GenerateBlockID(TaskID_t task_id, uint64_t block_index) {
+uint64_t SimulatedUniformDFS::GenerateBlockID(TaskID_t task_id,
+                                              uint64_t block_index) {
   uint64_t hash = SpookyHash::Hash64(&task_id, sizeof(task_id), SEED);
   boost::hash_combine(hash, block_index);
   return hash;
 }
 
-void SimulatedDFS::GetFileLocations(const string& file_path,
-                                    list<DataLocation>* locations) {
+void SimulatedUniformDFS::GetFileLocations(const string& file_path,
+                                           list<DataLocation>* locations) {
   CHECK_NOTNULL(locations);
   // NOTE: we assume that each task has one input file whose path is equal
   // to the task id.
@@ -73,25 +71,17 @@ void SimulatedDFS::GetFileLocations(const string& file_path,
   }
 }
 
-ResourceID_t SimulatedDFS::PlaceBlockOnRandomMachine() {
+ResourceID_t SimulatedUniformDFS::PlaceBlockOnRandomMachine() {
   ResourceID_t machine_res_id;
   uint64_t* num_free_blocks;
   // Get a machine on which to place the block. The machine must have
   // free space.
   uint64_t num_machines_selected = 0;
   do {
-    size_t bucket_index = 0;
-    size_t bucket_size = 0;
-    while (bucket_size == 0) {
-      bucket_index =
-        rand_r(&rand_seed_) % machine_num_free_blocks_.bucket_count();
-      bucket_size = machine_num_free_blocks_.bucket_size(bucket_index);
-    }
-    size_t index_within_bucket = rand_r(&rand_seed_) % bucket_size;
-    auto it = machine_num_free_blocks_.begin(bucket_index);
-    advance(it, index_within_bucket);
-    machine_res_id = it->first;
-    num_free_blocks = &(it->second);
+    uint32_t machine_index = rand_r(&rand_seed_) % machines_.size();
+    machine_res_id = machines_[machine_index];
+    num_free_blocks = FindOrNull(machine_num_free_blocks_, machine_res_id);
+    CHECK_NOTNULL(num_free_blocks);
     ++num_machines_selected;
     if (num_machines_selected > MAX_MACHINE_TO_SAMPLE_FOR_BLOCK_PLACEMENT) {
       LOG(FATAL) << "There's not enough free space on the DFS";
@@ -101,7 +91,8 @@ ResourceID_t SimulatedDFS::PlaceBlockOnRandomMachine() {
   return machine_res_id;
 }
 
-void SimulatedDFS::PlaceBlockOnMachines(TaskID_t task_id, uint64_t block_id) {
+void SimulatedUniformDFS::PlaceBlockOnMachines(TaskID_t task_id,
+                                               uint64_t block_id) {
   for (uint64_t replica_index = 0;
        replica_index < FLAGS_simulated_dfs_replication_factor;
        replica_index++) {
@@ -119,7 +110,7 @@ void SimulatedDFS::PlaceBlockOnMachines(TaskID_t task_id, uint64_t block_id) {
   }
 }
 
-void SimulatedDFS::RemoveBlocksForTask(TaskID_t task_id) {
+void SimulatedUniformDFS::RemoveBlocksForTask(TaskID_t task_id) {
   pair<unordered_multimap<TaskID_t, DataLocation>::iterator,
        unordered_multimap<TaskID_t, DataLocation>::iterator> range_it =
     task_to_data_locations_.equal_range(task_id);
@@ -137,10 +128,20 @@ void SimulatedDFS::RemoveBlocksForTask(TaskID_t task_id) {
   task_to_data_locations_.erase(task_id);
 }
 
-void SimulatedDFS::RemoveMachine(ResourceID_t machine_res_id) {
+void SimulatedUniformDFS::RemoveMachine(ResourceID_t machine_res_id) {
   ResourceID_t res_tmp = machine_res_id;
   // Remove the machine from the map of machines with storage space.
   machine_num_free_blocks_.erase(res_tmp);
+  // Remove the machine from the machines vector.
+  for (vector<ResourceID_t>::iterator it = machines_.begin();
+       it != machines_.end(); ++it) {
+    if (*it == machine_res_id) {
+      // NOTE: It is fine to erase while iterating over the vector because
+      // we're breaking from the iteration just after we erase the element.
+      machines_.erase(it);
+      break;
+    }
+  }
   unordered_set<TaskID_t>* tasks =
     FindOrNull(tasks_on_machine_, machine_res_id);
   CHECK_NOTNULL(tasks);
