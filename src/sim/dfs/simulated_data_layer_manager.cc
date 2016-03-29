@@ -7,7 +7,8 @@
 #include "base/units.h"
 #include "misc/map-util.h"
 #include "sim/dfs/google_block_distribution.h"
-#include "sim/dfs/simulated_dfs.h"
+#include "sim/dfs/simulated_bounded_dfs.h"
+#include "sim/dfs/simulated_uniform_dfs.h"
 #include "sim/google_runtime_distribution.h"
 
 // See google_runtime_distribution.h for explanation of these defaults
@@ -23,6 +24,14 @@ DEFINE_double(simulated_quincy_input_min_blocks, 1,
 DEFINE_double(simulated_quincy_input_max_blocks, 320,
               "Maximum # of blocks in input file.");
 DEFINE_uint64(simulated_quincy_block_size, 64, "The size of a DFS block in MB");
+// Distributed filesystem options
+DEFINE_uint64(simulated_dfs_blocks_per_machine, 98304,
+              "Number of 64 MB blocks each machine stores. "
+              "Defaults to 98304, i.e. 6 TB.");
+DEFINE_uint64(simulated_dfs_replication_factor, 3,
+              "The number of times each block should be replicated.");
+DEFINE_string(simulated_dfs_type, "bounded", "The type of DFS to simulated. "
+              "Options: uniform | bounded");
 
 namespace firmament {
 namespace sim {
@@ -36,7 +45,13 @@ SimulatedDataLayerManager::SimulatedDataLayerManager(
   runtime_dist_ =
     new GoogleRuntimeDistribution(FLAGS_simulated_quincy_runtime_factor,
                                   FLAGS_simulated_quincy_runtime_power);
-  dfs_ = new SimulatedDFS(trace_generator_);
+  if (!FLAGS_simulated_dfs_type.compare("uniform")) {
+    dfs_ = new SimulatedUniformDFS(trace_generator_);
+  } else if (!FLAGS_simulated_dfs_type.compare("bounded")) {
+    dfs_ = new SimulatedBoundedDFS(trace_generator_);
+  } else {
+    LOG(FATAL) << "Unexpected simulated DFS type: " << FLAGS_simulated_dfs_type;
+  }
 }
 
 SimulatedDataLayerManager::~SimulatedDataLayerManager() {
@@ -65,14 +80,16 @@ void SimulatedDataLayerManager::RemoveMachine(const string& hostname) {
   hostname_to_res_id_.erase(hostname);
 }
 
-uint64_t SimulatedDataLayerManager::AddFilesForTask(const TaskDescriptor& td,
-                                                    uint64_t avg_runtime,
-                                                    bool long_running_service) {
+uint64_t SimulatedDataLayerManager::AddFilesForTask(
+    const TaskDescriptor& td,
+    uint64_t avg_runtime,
+    bool long_running_service,
+    uint64_t max_machine_spread) {
   if (!long_running_service) {
     double cumulative_probability =
       runtime_dist_->ProportionShorterTasks(avg_runtime);
     uint64_t num_blocks = input_block_dist_->Inverse(cumulative_probability);
-    dfs_->AddBlocksForTask(td, num_blocks);
+    dfs_->AddBlocksForTask(td, num_blocks, max_machine_spread);
     return num_blocks * FLAGS_simulated_quincy_block_size * MB_TO_BYTES;
   } else {
     return 0;
