@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_1dd20f01",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:28:21Z",
+      "side": 1,
+      "message": "Too long, how about \"Make GoogleBlockDistribution independent of block size\"",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 11
+      },
+      "revId": "bc9cb13edcd769a3836cae8a8f524999dad3b86a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_5de777e4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:28:21Z",
+      "side": 1,
+      "message": "Previously",
+      "range": {
+        "startLine": 10,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 9
+      },
+      "revId": "bc9cb13edcd769a3836cae8a8f524999dad3b86a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_3decb3c6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:28:21Z",
+      "side": 1,
+      "message": "\"the input size of every task\"?",
+      "range": {
+        "startLine": 10,
+        "startChar": 15,
+        "endLine": 10,
+        "endChar": 39
+      },
+      "revId": "bc9cb13edcd769a3836cae8a8f524999dad3b86a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_5dfe576c",
+        "filename": "src/sim/dfs/google_block_distribution.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:28:21Z",
+      "side": 1,
+      "message": "Comment on where this comes from",
+      "revId": "bc9cb13edcd769a3836cae8a8f524999dad3b86a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_bdd8c31e",
+        "filename": "src/sim/dfs/google_block_distribution.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:28:21Z",
+      "side": 1,
+      "message": "Drop eval plan comment, refers to Adam\u0027s dissertation",
+      "revId": "bc9cb13edcd769a3836cae8a8f524999dad3b86a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_fdf52b83",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:28:21Z",
+      "side": 1,
+      "message": "Drop \"quincy\"? The DLM isn\u0027t Quincy-specific",
+      "range": {
+        "startLine": 20,
+        "startChar": 14,
+        "endLine": 20,
+        "endChar": 41
+      },
+      "revId": "bc9cb13edcd769a3836cae8a8f524999dad3b86a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_1df9ef80",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:28:21Z",
+      "side": 1,
+      "message": "This is actually flag-dependent, so I wouldn\u0027t mention this (or clearly mark as an example)",
+      "range": {
+        "startLine": 22,
+        "startChar": 25,
+        "endLine": 22,
+        "endChar": 31
+      },
+      "revId": "bc9cb13edcd769a3836cae8a8f524999dad3b86a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_5d353744",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:28:21Z",
+      "side": 1,
+      "message": "Add comment \"// Need to increase if there was a remainder, since integer division truncates\"",
+      "revId": "bc9cb13edcd769a3836cae8a8f524999dad3b86a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
