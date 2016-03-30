@@ -5,17 +5,25 @@
 
 #include <cmath>
 
+#include "base/common.h"
+#include "base/units.h"
+
+// The size (in bytes) the blocks have in the distribution. This value  is the
+// block size that must be used in order for the generated distribution to
+// match the Facebook input size distribution.
+#define SIZE_OF_BLOCK_IN_DISTRIBUTION 67108864
+
+DEFINE_uint64(simulated_quincy_input_percent_min, 50,
+              "Percentage of input files which are minimum # of blocks.");
+DEFINE_double(simulated_quincy_input_max_blocks, 320,
+              "Maximum # of blocks in input file.");
+
 namespace firmament {
 namespace sim {
 
-const static double STEP = 0.01;
-
-GoogleBlockDistribution::GoogleBlockDistribution(uint64_t percent_min,
-                                                 uint64_t min_blocks,
-                                                 uint64_t max_blocks) {
-  percent_min_ = percent_min / 100.0;
-  min_blocks_ = min_blocks;
-  coef_ = (1 - percent_min_) / log2(max_blocks);
+GoogleBlockDistribution::GoogleBlockDistribution() {
+  percent_min_ = FLAGS_simulated_quincy_input_percent_min / 100.0;
+  coef_ = (1 - percent_min_) / log2(FLAGS_simulated_quincy_input_max_blocks);
 }
 
 uint64_t GoogleBlockDistribution::Inverse(double y) {
@@ -29,11 +37,11 @@ uint64_t GoogleBlockDistribution::Inverse(double y) {
   // inverse of this: x = 2^((y-a)/b)
   // sample from this using standard trick of taking U[0,1] and using inverse
   if (y <= percent_min_) {
-    return min_blocks_;
+    return SIZE_OF_BLOCK_IN_DISTRIBUTION;
   } else {
     double x = (y - percent_min_) / coef_;
     x = exp2(x);
-    return std::round(x);
+    return std::round(x) * SIZE_OF_BLOCK_IN_DISTRIBUTION;
   }
 }
 

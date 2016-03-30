@@ -16,18 +16,11 @@ DEFINE_double(simulated_quincy_runtime_factor, 0.298,
               "Runtime power law distribution: factor parameter.");
 DEFINE_double(simulated_quincy_runtime_power, -0.2627,
               "Runtime power law distribution: power parameter.");
-// Input size distribution. See Evaluation Plan for derivation of defaults.
-DEFINE_uint64(simulated_quincy_input_percent_min, 50,
-              "Percentage of input files which are minimum # of blocks.");
-DEFINE_double(simulated_quincy_input_min_blocks, 1,
-              "Minimum # of blocks in input file.");
-DEFINE_double(simulated_quincy_input_max_blocks, 320,
-              "Maximum # of blocks in input file.");
-DEFINE_uint64(simulated_quincy_block_size, 64, "The size of a DFS block in MB");
 // Distributed filesystem options
-DEFINE_uint64(simulated_dfs_blocks_per_machine, 98304,
-              "Number of 64 MB blocks each machine stores. "
-              "Defaults to 98304, i.e. 6 TB.");
+DEFINE_uint64(simulated_block_size, 512, "The size of a DFS block in MB");
+DEFINE_uint64(simulated_dfs_blocks_per_machine, 12288,
+              "Number of blocks each machine stores. "
+              "Defaults to 12288, i.e. 6 TB for 512MB blocks.");
 DEFINE_uint64(simulated_dfs_replication_factor, 3,
               "The number of times each block should be replicated.");
 DEFINE_string(simulated_dfs_type, "bounded", "The type of DFS to simulated. "
@@ -38,10 +31,7 @@ namespace sim {
 
 SimulatedDataLayerManager::SimulatedDataLayerManager(
     TraceGenerator* trace_generator) : trace_generator_(trace_generator) {
-  input_block_dist_ =
-    new GoogleBlockDistribution(FLAGS_simulated_quincy_input_percent_min,
-                                FLAGS_simulated_quincy_input_min_blocks,
-                                FLAGS_simulated_quincy_input_max_blocks);
+  input_block_dist_ = new GoogleBlockDistribution();
   runtime_dist_ =
     new GoogleRuntimeDistribution(FLAGS_simulated_quincy_runtime_factor,
                                   FLAGS_simulated_quincy_runtime_power);
@@ -88,9 +78,16 @@ uint64_t SimulatedDataLayerManager::AddFilesForTask(
   if (!long_running_service) {
     double cumulative_probability =
       runtime_dist_->ProportionShorterTasks(avg_runtime);
-    uint64_t num_blocks = input_block_dist_->Inverse(cumulative_probability);
+    uint64_t input_size = input_block_dist_->Inverse(cumulative_probability);
+    uint64_t num_blocks =
+      input_size / FLAGS_simulated_block_size / MB_TO_BYTES;
+    // Need to increase if there was a remainder, since integer division
+    // truncates.
+    if ((input_size / MB_TO_BYTES) % FLAGS_simulated_block_size != 0) {
+      num_blocks++;
+    }
     dfs_->AddBlocksForTask(td, num_blocks, max_machine_spread);
-    return num_blocks * FLAGS_simulated_quincy_block_size * MB_TO_BYTES;
+    return input_size;
   } else {
     return 0;
   }

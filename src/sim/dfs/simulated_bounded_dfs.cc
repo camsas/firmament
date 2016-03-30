@@ -12,7 +12,7 @@
 #define MAX_SAMPLE_POOL 3
 
 DECLARE_uint64(simulated_dfs_replication_factor);
-DECLARE_uint64(simulated_quincy_block_size);
+DECLARE_uint64(simulated_block_size);
 
 namespace firmament {
 namespace sim {
@@ -49,8 +49,7 @@ void SimulatedBoundedDFS::AddBlocksForTask(const TaskDescriptor& td,
       CHECK_NOTNULL(tasks_machine);
       tasks_machine->insert(task_id);
       DataLocation data_location(machine_res_id, block_id,
-                                 FLAGS_simulated_quincy_block_size *
-                                 MB_TO_BYTES);
+                                 FLAGS_simulated_block_size * MB_TO_BYTES);
       task_to_data_locations_.insert(
           pair<TaskID_t, DataLocation>(task_id, data_location));
       trace_generator_->AddBlock(machine_res_id, block_id,
