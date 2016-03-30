@@ -1,0 +1,199 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_9dee1f8a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:38:49Z",
+      "side": 1,
+      "message": "bit inconsistent on the underscores here ;)",
+      "range": {
+        "startLine": 10,
+        "startChar": 15,
+        "endLine": 10,
+        "endChar": 38
+      },
+      "revId": "621082daa3740e49fbdf0844ec8f5998ca0e5bda",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_bd7443fd",
+        "filename": "src/sim/dfs/simulated_bounded_dfs.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:38:49Z",
+      "side": 1,
+      "message": "run",
+      "range": {
+        "startLine": 76,
+        "startChar": 60,
+        "endLine": 76,
+        "endChar": 63
+      },
+      "revId": "621082daa3740e49fbdf0844ec8f5998ca0e5bda",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_9d605f37",
+        "filename": "src/sim/dfs/simulated_bounded_dfs.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:38:49Z",
+      "side": 1,
+      "message": "Why do we reset this to zero if we run out of space in the pool? Surely we can still use the space that is available in the pool?",
+      "revId": "621082daa3740e49fbdf0844ec8f5998ca0e5bda",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_7d7ebbe5",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:38:49Z",
+      "side": 1,
+      "message": "mismatch with parameter name",
+      "range": {
+        "startLine": 27,
+        "startChar": 24,
+        "endLine": 27,
+        "endChar": 25
+      },
+      "revId": "621082daa3740e49fbdf0844ec8f5998ca0e5bda",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_dd2027fa",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:38:49Z",
+      "side": 1,
+      "message": "machines",
+      "range": {
+        "startLine": 28,
+        "startChar": 53,
+        "endLine": 28,
+        "endChar": 60
+      },
+      "revId": "621082daa3740e49fbdf0844ec8f5998ca0e5bda",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_dd4ee7c0",
+        "filename": "src/sim/dfs/simulated_dfs_interface.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:38:49Z",
+      "side": 1,
+      "message": "machines",
+      "range": {
+        "startLine": 21,
+        "startChar": 53,
+        "endLine": 21,
+        "endChar": 60
+      },
+      "revId": "621082daa3740e49fbdf0844ec8f5998ca0e5bda",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_fd51ab63",
+        "filename": "src/sim/dfs/simulated_dfs_interface.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:38:49Z",
+      "side": 1,
+      "message": "again what? :)",
+      "range": {
+        "startLine": 43,
+        "startChar": 17,
+        "endLine": 43,
+        "endChar": 45
+      },
+      "revId": "621082daa3740e49fbdf0844ec8f5998ca0e5bda",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_5dd1b7cc",
+        "filename": "src/sim/dfs/simulated_uniform_dfs.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:38:49Z",
+      "side": 1,
+      "message": "Is erasing while iterating fine here? (I think for vectors it\u0027s okay if behind the iterator, but might want to put a comment.)",
+      "revId": "621082daa3740e49fbdf0844ec8f5998ca0e5bda",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_1ddc4fe3",
+        "filename": "src/sim/simulator_bridge.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-30T17:38:49Z",
+      "side": 1,
+      "message": "typo: immutable\n\nAlso, why do we need this?",
+      "range": {
+        "startLine": 234,
+        "startChar": 36,
+        "endLine": 234,
+        "endChar": 59
+      },
+      "revId": "621082daa3740e49fbdf0844ec8f5998ca0e5bda",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
