@@ -11,13 +11,11 @@ namespace sim {
 
 class GoogleBlockDistribution {
  public:
-  GoogleBlockDistribution(uint64_t percent_min, uint64_t min_blocks,
-                          uint64_t max_blocks);
+  GoogleBlockDistribution();
   uint64_t Inverse(double y);
  private:
   double percent_min_;
   double coef_;
-  uint64_t min_blocks_;
 };
 
 } // namespace sim
