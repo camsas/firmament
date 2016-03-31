@@ -533,7 +533,8 @@ void QuincyCostModel::ConstructTaskPreferredSet(TaskID_t task_id) {
   int64_t worst_cluster_cost = 0;
   if (data_on_ecs.size() < rack_to_machine_res_.size()) {
     // There are racks on which we have no data.
-    worst_cluster_cost = FLAGS_quincy_core_transfer_cost * input_size;
+    worst_cluster_cost = FLAGS_quincy_core_transfer_cost * input_size /
+      BYTES_TO_GB;;
   }
   int64_t best_rack_cost = INT64_MAX;
   for (auto& rack_data : data_on_ecs) {
