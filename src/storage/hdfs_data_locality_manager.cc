@@ -100,7 +100,9 @@ void HdfsDataLocalityManager::GetFileLocations(const string& file_path,
           HostToResourceID(block_location[block_index].hosts[repl_index]);
       uint64_t block_id = GenerateBlockID(file_path, block_index);
       int64_t block_size = block_location[block_index].length;
-      DataLocation data_location(machine_res_id, block_id,
+      // TODO(ionel): Make sure DataLocation's rack_id_ is set to a correct
+      // value.
+      DataLocation data_location(machine_res_id, 1, block_id,
                                  static_cast<uint64_t>(block_size));
       locations->push_back(data_location);
     }
@@ -134,13 +136,21 @@ ResourceID_t HdfsDataLocalityManager::HostToResourceID(const string& hostname) {
   return *res_id;
 }
 
-void HdfsDataLocalityManager::AddMachine(const string& hostname,
-                                         ResourceID_t res_id) {
+EquivClass_t HdfsDataLocalityManager::AddMachine(const string& hostname,
+                                                 ResourceID_t res_id) {
   CHECK(InsertIfNotPresent(&hostname_to_res_id_, hostname, res_id));
+  machines_.insert(res_id);
+  // TODO(ionel): Return the correct rack equivalence class.
+  return 1;
 }
 
-void HdfsDataLocalityManager::RemoveMachine(const string& hostname) {
+bool HdfsDataLocalityManager::RemoveMachine(const string& hostname) {
+  ResourceID_t* machine_res_id = FindOrNull(hostname_to_res_id_, hostname);
+  CHECK_NOTNULL(machine_res_id);
+  ResourceID_t res_tmp = *machine_res_id;
+  machines_.erase(res_tmp);
   hostname_to_res_id_.erase(hostname);
+  return machines_.size() > 0 ? true : false;
 }
 
 } // namespace store
