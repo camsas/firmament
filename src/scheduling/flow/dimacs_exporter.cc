@@ -19,28 +19,36 @@ DIMACSExporter::DIMACSExporter() {
 
 void DIMACSExporter::Export(const FlowGraph& graph, FILE* stream) {
   fprintf(stream, "c ===========================\n");
+  fflush(stream);
   fprintf(stream, "p min %" PRIu64 " %" PRIu64 "\n",
           graph.NumNodes(), graph.NumArcs());
+  fflush(stream);
   fprintf(stream, "c ===========================\n");
+  fflush(stream);
   fprintf(stream, "c === ALL NODES FOLLOW ===\n");
+  fflush(stream);
   for (auto& id_node : graph.Nodes()) {
     GenerateNode(*id_node.second, stream);
   }
   fprintf(stream, "c === ALL ARCS FOLLOW ===\n");
+  fflush(stream);
   for (const auto& arc : graph.Arcs()) {
     GenerateArc(*arc, stream);
   }
   // Add end of iteration comment.
   fprintf(stream, "c EOI\n");
+  fflush(stream);
 }
 
 void DIMACSExporter::ExportIncremental(const vector<DIMACSChange*>& changes,
                                        FILE* stream) {
   for (const auto& change : changes) {
     fprintf(stream, "%s", change->GenerateChange().c_str());
+    fflush(stream);
   }
   // Add end of iteration comment.
   fprintf(stream, "c EOI\n");
+  fflush(stream);
 }
 
 inline void DIMACSExporter::GenerateArc(const FlowGraphArc& arc, FILE* stream) {
@@ -48,6 +56,7 @@ inline void DIMACSExporter::GenerateArc(const FlowGraphArc& arc, FILE* stream) {
           "a %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n",
           arc.src_, arc.dst_, arc.cap_lower_bound_, arc.cap_upper_bound_,
           arc.cost_);
+  fflush(stream);
 }
 
 inline void DIMACSExporter::GenerateNode(const FlowGraphNode& node,
@@ -61,7 +70,6 @@ inline void DIMACSExporter::GenerateNode(const FlowGraphNode& node,
   } else if (node.comment_ != "") {
     fprintf(stream, "c nd %s\n", node.comment_.c_str());
   }
-
   uint32_t node_type = 0;
   if (node.type_ == FlowNodeType::PU) {
     node_type = 2;
@@ -76,6 +84,7 @@ inline void DIMACSExporter::GenerateNode(const FlowGraphNode& node,
   }
   fprintf(stream, "n %" PRIu64 " %" PRId64 " %d\n",
           node.id_, node.excess_, node_type);
+  fflush(stream);
 }
 
 }  // namespace firmament
