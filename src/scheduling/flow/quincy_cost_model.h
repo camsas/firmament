@@ -198,6 +198,8 @@ class QuincyCostModel : public CostModelInterface {
   unordered_map<TaskID_t, pair<ResourceID_t, int64_t>> task_running_arcs_;
   TraceGenerator* trace_generator_;
   TimeInterface* time_manager_;
+  // Counter used to generate unique rack ids.
+  EquivClass_t unique_rack_id_;
 };
 
 }  // namespace firmament

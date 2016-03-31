@@ -54,7 +54,8 @@ QuincyCostModel::QuincyCostModel(
     task_map_(task_map),
     knowledge_base_(knowledge_base),
     trace_generator_(trace_generator),
-    time_manager_(time_manager) {
+    time_manager_(time_manager),
+    unique_rack_id_(0) {
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
 }
 
@@ -248,7 +249,8 @@ void QuincyCostModel::AddMachine(
     rack_ec = *(racks_with_spare_links_.begin());
   } else {
     // Add a new rack.
-    rack_ec = rack_to_machine_res_.size();
+    rack_ec = unique_rack_id_;
+    unique_rack_id_++;
     CHECK(InsertIfNotPresent(
         &rack_to_machine_res_, rack_ec,
         unordered_set<ResourceID_t, boost::hash<ResourceID_t>>()));
