@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_5787500f",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 451,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-31T18:59:13Z",
+      "side": 1,
+      "message": "Why do we no longer need to handle the duplication case here?",
+      "revId": "8fcd5b5fa63f79f7b5b48982339932258c3e3031",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_f776643d",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 481,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-03-31T18:59:13Z",
+      "side": 1,
+      "message": "Isn\u0027t this going to be a negative number?",
+      "revId": "8fcd5b5fa63f79f7b5b48982339932258c3e3031",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
