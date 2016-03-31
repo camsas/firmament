@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_b7b69cda",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 451,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-31T19:10:13Z",
+      "side": 1,
+      "message": "We\u0027re still handling it except we do it via insert\u0027s return value. I think it\u0027s slightly more concise and efficient because we only do 1 set query rather than 2.",
+      "parentUuid": "da9b358b_5787500f",
+      "revId": "8fcd5b5fa63f79f7b5b48982339932258c3e3031",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_f776643d",
         "filename": "src/scheduling/flow/quincy_cost_model.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2016-03-31T18:59:13Z",
       "side": 1,
       "message": "Isn\u0027t this going to be a negative number?",
+      "revId": "8fcd5b5fa63f79f7b5b48982339932258c3e3031",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_57b510cb",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 481,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-31T19:10:13Z",
+      "side": 1,
+      "message": "Yes, that should be fine because the cost is int64. Moreover, in an upcoming diff I\u0027ve added some CHECK_GE(cost_worst_machine) which will allow us to detect any anomalies.",
+      "parentUuid": "da9b358b_f776643d",
       "revId": "8fcd5b5fa63f79f7b5b48982339932258c3e3031",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
