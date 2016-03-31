@@ -54,13 +54,13 @@ QuincyCostModel::QuincyCostModel(
     task_map_(task_map),
     knowledge_base_(knowledge_base),
     trace_generator_(trace_generator),
-    time_manager_(time_manager),
-    unique_rack_id_(0) {
+    time_manager_(time_manager) {
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
+  data_layer_manager_ = knowledge_base_->mutable_data_layer_manager();
 }
 
 QuincyCostModel::~QuincyCostModel() {
-  // trace_generator_ is not owned by QuincyCostModel.
+  // trace_generator_ and data_layer_manager_ are not owned by QuincyCostModel.
 }
 
 // The cost of leaving a task unscheduled should be higher than the cost of
@@ -175,10 +175,9 @@ pair<Cost_t, uint64_t> QuincyCostModel::EquivClassToEquivClass(
     EquivClass_t ec2) {
   if (ec1 == cluster_aggregator_ec_) {
     // The other equivalence class must be a rack aggregator.
-    auto machines_res_id = FindOrNull(rack_to_machine_res_, ec2);
-    CHECK_NOTNULL(machines_res_id);
+    const auto machines_res_id = data_layer_manager_->GetMachinesInRack(ec2);
     uint64_t capacity = 0;
-    for (auto& machine_res_id : *machines_res_id) {
+    for (const auto& machine_res_id : machines_res_id) {
       capacity += GetNumSchedulableSlots(machine_res_id);
     }
     return pair<Cost_t, uint64_t>(0LL, capacity);
@@ -203,11 +202,10 @@ vector<ResourceID_t>* QuincyCostModel::GetOutgoingEquivClassPrefArcs(
     // The cluster aggregator is not directly connected to any resource.
     return NULL;
   } else {
-    auto rack_machine_res = FindOrNull(rack_to_machine_res_, ec);
-    CHECK_NOTNULL(rack_machine_res);
+    const auto rack_machine_res = data_layer_manager_->GetMachinesInRack(ec);
     vector<ResourceID_t>* pref_res =
-      new vector<ResourceID_t>(rack_machine_res->begin(),
-                               rack_machine_res->end());
+      new vector<ResourceID_t>(rack_machine_res.begin(),
+                               rack_machine_res.end());
     return pref_res;
   }
 }
@@ -226,10 +224,7 @@ vector<EquivClass_t>* QuincyCostModel::GetEquivClassToEquivClassesArcs(
     EquivClass_t ec) {
   if (ec == cluster_aggregator_ec_) {
     vector<EquivClass_t>* outgoing_ec = new vector<EquivClass_t>();
-    // Connect the cluster aggregator to every rack aggregator.
-    for (auto& rack_machines : rack_to_machine_res_) {
-      outgoing_ec->push_back(rack_machines.first);
-    }
+    data_layer_manager_->GetRackIDs(outgoing_ec);
     return outgoing_ec;
   }
   // The rack aggregators are only connected to resources.
@@ -241,29 +236,8 @@ void QuincyCostModel::AddMachine(
   ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
   // N.B.: this assumes that the friendly_name field of the RD contains the
   // hostname for machine-type RDs.
-  knowledge_base_->mutable_data_layer_manager()->AddMachine(
-      rtnd_ptr->resource_desc().friendly_name(), res_id);
-  EquivClass_t rack_ec;
-  if (racks_with_spare_links_.size() > 0) {
-    // Assign the machine to a rack that has spare links.
-    rack_ec = *(racks_with_spare_links_.begin());
-  } else {
-    // Add a new rack.
-    rack_ec = unique_rack_id_;
-    unique_rack_id_++;
-    CHECK(InsertIfNotPresent(
-        &rack_to_machine_res_, rack_ec,
-        unordered_set<ResourceID_t, boost::hash<ResourceID_t>>()));
-    racks_with_spare_links_.insert(rack_ec);
-  }
-  auto machines_in_rack = FindOrNull(rack_to_machine_res_, rack_ec);
-  CHECK_NOTNULL(machines_in_rack);
-  machines_in_rack->insert(res_id);
-  // Erase the rack from the spare_links set if the rack is now full.
-  if (machines_in_rack->size() == FLAGS_quincy_machines_per_rack) {
-    racks_with_spare_links_.erase(rack_ec);
-  }
-  CHECK(InsertIfNotPresent(&machine_to_rack_ec_, res_id, rack_ec));
+  EquivClass_t rack_ec = data_layer_manager_->AddMachine(
+     rtnd_ptr->resource_desc().friendly_name(), res_id);
   if (FLAGS_quincy_update_costs_upon_machine_change) {
     for (auto& id_td : *task_map_) {
       // NOTE: task_map_ may contain tasks that have already been removed from
@@ -288,12 +262,15 @@ void QuincyCostModel::AddTask(TaskID_t task_id) {
 }
 
 void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
-  EquivClass_t* ec_ptr = FindOrNull(machine_to_rack_ec_, res_id);
-  CHECK_NOTNULL(ec_ptr);
-  EquivClass_t ec = *ec_ptr;
+  EquivClass_t rack_ec = data_layer_manager_->GetRackForMachine(res_id);
   RemovePreferencesToMachine(res_id);
-  bool rack_removed = false;
-  RemoveMachineFromRack(res_id, ec, &rack_removed);
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  bool rack_removed = data_layer_manager_->RemoveMachine(
+      rs->topology_node().resource_desc().friendly_name());
+  if (rack_removed) {
+    RemovePreferencesToRack(rack_ec);
+  }
   if (FLAGS_quincy_update_costs_upon_machine_change) {
     for (auto& id_td : *task_map_) {
       // NOTE: task_map_ may contain tasks that have already been removed from
@@ -302,14 +279,10 @@ void QuincyCostModel::RemoveMachine(ResourceID_t res_id) {
       // still exists in the task_preferred_ecs_.
       auto preferred_ecs = FindOrNull(task_preferred_ecs_, id_td.second->uid());
       if (preferred_ecs) {
-        UpdateTaskCosts(*(id_td.second), ec, rack_removed);
+        UpdateTaskCosts(*(id_td.second), rack_ec, rack_removed);
       }
     }
   }
-  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
-  CHECK_NOTNULL(rs);
-  knowledge_base_->mutable_data_layer_manager()->RemoveMachine(
-      rs->topology_node().resource_desc().friendly_name());
 }
 
 void QuincyCostModel::RemovePreferencesToMachine(ResourceID_t res_id) {
@@ -323,28 +296,6 @@ void QuincyCostModel::RemovePreferencesToRack(EquivClass_t ec) {
   for (auto& task_to_racks : task_preferred_ecs_) {
     task_to_racks.second.erase(ec);
   }
-}
-
-void QuincyCostModel::RemoveMachineFromRack(ResourceID_t res_id,
-                                            EquivClass_t rack_ec,
-                                            bool* rack_removed) {
-  auto machines_in_rack = FindOrNull(rack_to_machine_res_, rack_ec);
-  CHECK_NOTNULL(machines_in_rack);
-  ResourceID_t res_id_tmp = res_id;
-  machines_in_rack->erase(res_id_tmp);
-  if (machines_in_rack->size() == 0) {
-    // The rack doesn't have any machines left. Delete it!
-    // We have to delete empty racks because we're using the number
-    // of racks to efficiently find if there's a rack on which a task has no
-    // data.
-    rack_to_machine_res_.erase(rack_ec);
-    RemovePreferencesToRack(rack_ec);
-    *rack_removed = true;
-  } else {
-    racks_with_spare_links_.insert(rack_ec);
-    *rack_removed = false;
-  }
-  machine_to_rack_ec_.erase(res_id);
 }
 
 void QuincyCostModel::RemoveTask(TaskID_t task_id) {
@@ -404,13 +355,11 @@ uint64_t QuincyCostModel::ComputeClusterDataStatistics(
                 boost::hash<ResourceID_t>> blocks_on_machines;
   unordered_map<EquivClass_t,
                 unordered_map<uint64_t, uint64_t>> blocks_on_racks;
-  DataLayerManagerInterface* data_layer =
-    knowledge_base_->mutable_data_layer_manager();
   uint64_t input_size = 0;
   for (auto& dependency : td.dependencies()) {
     input_size += dependency.size();
     list<DataLocation> locations;
-    data_layer->GetFileLocations(dependency.location(), &locations);
+    data_layer_manager_->GetFileLocations(dependency.location(), &locations);
     for (auto& location : locations) {
       UpdateMachineBlocks(location, &blocks_on_machines);
       UpdateRackBlocks(location, &blocks_on_racks);
@@ -438,24 +387,18 @@ uint64_t QuincyCostModel::ComputeDataStatsForMachine(
     uint64_t* data_on_rack, uint64_t* data_on_machine) {
   unordered_set<uint64_t> machine_block_ids;
   unordered_set<uint64_t> rack_block_ids;
-  EquivClass_t* ec_ptr = FindOrNull(machine_to_rack_ec_, machine_res_id);
-  CHECK_NOTNULL(ec_ptr);
-  DataLayerManagerInterface* data_layer =
-    knowledge_base_->mutable_data_layer_manager();
+  EquivClass_t rack_ec = data_layer_manager_->GetRackForMachine(machine_res_id);
   uint64_t input_size = 0;
   for (auto& dependency : td.dependencies()) {
     input_size += dependency.size();
     list<DataLocation> locations;
-    data_layer->GetFileLocations(dependency.location(), &locations);
+    data_layer_manager_->GetFileLocations(dependency.location(), &locations);
     for (auto& location : locations) {
       if (machine_res_id == location.machine_res_id_ &&
           machine_block_ids.insert(location.block_id_).second) {
         *data_on_machine = *data_on_machine + location.size_bytes_;
       }
-      EquivClass_t* machine_rack_ec_ptr =
-        FindOrNull(machine_to_rack_ec_, location.machine_res_id_);
-      CHECK_NOTNULL(machine_rack_ec_ptr);
-      if (*ec_ptr == *machine_rack_ec_ptr &&
+      if (rack_ec == location.rack_id_ &&
           rack_block_ids.insert(location.block_id_).second) {
         *data_on_rack = *data_on_rack + location.size_bytes_;
       }
@@ -478,9 +421,9 @@ int64_t QuincyCostModel::ComputeTransferCostToRack(
     uint64_t data_on_rack,
     const unordered_map<ResourceID_t, uint64_t,
       boost::hash<ResourceID_t>>& data_on_machines) {
-  auto machines_in_rack = FindOrNull(rack_to_machine_res_, ec);
+  const auto machines_in_rack = data_layer_manager_->GetMachinesInRack(ec);
   int64_t cost_worst_machine = INT64_MIN;
-  for (auto& machine_res_id : *machines_in_rack) {
+  for (const auto& machine_res_id : machines_in_rack) {
     const uint64_t* data_on_machine_ptr =
       FindOrNull(data_on_machines, machine_res_id);
     uint64_t data_on_machine = 0;
@@ -516,10 +459,9 @@ void QuincyCostModel::ConstructTaskPreferredSet(TaskID_t task_id) {
         input_size * FLAGS_quincy_preferred_machine_data_fraction) {
       // Machine has more data than the required threshold => add it to
       // the preferred list.
-      EquivClass_t* rack_ec =
-        FindOrNull(machine_to_rack_ec_, machine_data.first);
-      CHECK_NOTNULL(rack_ec);
-      const uint64_t* data_on_rack = FindOrNull(data_on_ecs, *rack_ec);
+      EquivClass_t rack_ec =
+        data_layer_manager_->GetRackForMachine(machine_data.first);
+      const uint64_t* data_on_rack = FindOrNull(data_on_ecs, rack_ec);
       CHECK_NOTNULL(data_on_rack);
       int64_t transfer_cost =
         ComputeTransferCostToMachine(input_size - data_on_machine,
@@ -530,7 +472,7 @@ void QuincyCostModel::ConstructTaskPreferredSet(TaskID_t task_id) {
     }
   }
   int64_t worst_cluster_cost = INT64_MIN;
-  if (data_on_ecs.size() < rack_to_machine_res_.size()) {
+  if (data_on_ecs.size() < data_layer_manager_->GetNumRacks()) {
     // There are racks on which we have no data.
     worst_cluster_cost = FLAGS_quincy_core_transfer_cost * input_size /
       BYTES_TO_GB;
@@ -586,17 +528,15 @@ void QuincyCostModel::UpdateRackBlocks(
     unordered_map<EquivClass_t,
       unordered_map<uint64_t, uint64_t>>* data_on_racks) {
   CHECK_NOTNULL(data_on_racks);
-  EquivClass_t* rack_ec =
-    FindOrNull(machine_to_rack_ec_, location.machine_res_id_);
   auto rack_blocks =
-    FindOrNull(*data_on_racks, *rack_ec);
+    FindOrNull(*data_on_racks, location.rack_id_);
   if (rack_blocks) {
     InsertOrUpdate(rack_blocks, location.block_id_, location.size_bytes_);
   } else {
     unordered_map<uint64_t, uint64_t> new_rack_blocks;
     InsertIfNotPresent(&new_rack_blocks, location.block_id_,
                        location.size_bytes_);
-    InsertIfNotPresent(data_on_racks, *rack_ec, new_rack_blocks);
+    InsertIfNotPresent(data_on_racks, location.rack_id_, new_rack_blocks);
   }
 }
 
@@ -638,18 +578,18 @@ int64_t QuincyCostModel::UpdateTaskCostForRack(const TaskDescriptor& td,
   unordered_map<ResourceID_t, unordered_map<uint64_t, uint64_t>,
                 boost::hash<ResourceID_t>> machines_blocks;
   unordered_map<uint64_t, uint64_t> rack_blocks;
-  auto machines_in_rack = FindOrNull(rack_to_machine_res_, rack_ec);
+  const auto machines_in_rack = data_layer_manager_->GetMachinesInRack(rack_ec);
   uint64_t input_size = 0;
   for (auto& dependency : td.dependencies()) {
     input_size += dependency.size();
     list<DataLocation> file_locations;
-    knowledge_base_->mutable_data_layer_manager()->
-      GetFileLocations(dependency.location(), &file_locations);
+    data_layer_manager_->GetFileLocations(dependency.location(),
+                                          &file_locations);
     for (auto& data_location : file_locations) {
       // Only consider the blocks that are on a machine from the rack we're
       // updating.
-      if (machines_in_rack->find(data_location.machine_res_id_) !=
-          machines_in_rack->end()) {
+      if (machines_in_rack.find(data_location.machine_res_id_) !=
+          machines_in_rack.end()) {
         InsertOrUpdate(&rack_blocks, data_location.block_id_,
                        data_location.size_bytes_);
         auto machine_blocks =
@@ -676,7 +616,7 @@ int64_t QuincyCostModel::UpdateTaskCostForRack(const TaskDescriptor& td,
   // Update the cost for each machine in the rack.
   auto task_pref_machines = FindOrNull(task_preferred_machines_, td.uid());
   uint64_t worst_rack_cost = INT64_MIN;
-  for (auto& machine_res_id : *machines_in_rack) {
+  for (const auto& machine_res_id : machines_in_rack) {
     auto machine_blocks = FindOrNull(machines_blocks, machine_res_id);
     if (machine_blocks) {
       // Compute the amount of data the task has on the machine.

@@ -74,7 +74,7 @@ class QuincyCostModel : public CostModelInterface {
   uint64_t ComputeClusterDataStatistics(
       const TaskDescriptor& td,
       unordered_map<ResourceID_t, uint64_t,
-        boost::hash<boost::uuids::uuid>>* data_on_machines,
+        boost::hash<ResourceID_t>>* data_on_machines,
       unordered_map<EquivClass_t, uint64_t>* data_on_racks);
   /**
    * Compute the amount of data the task has on the machine given as argument.
@@ -96,7 +96,7 @@ class QuincyCostModel : public CostModelInterface {
       uint64_t input_size,
       uint64_t data_on_rack,
       const unordered_map<ResourceID_t, uint64_t,
-        boost::hash<boost::uuids::uuid>>& data_on_machines);
+        boost::hash<ResourceID_t>>& data_on_machines);
   void ConstructTaskPreferredSet(TaskID_t task_id);
   /**
    * Get the transfer cost to a resource that is not preferred and on which
@@ -106,14 +106,12 @@ class QuincyCostModel : public CostModelInterface {
    */
   uint64_t GetTransferCostToNotPreferredRes(TaskID_t task_id,
                                             ResourceID_t res_id);
-  void RemoveMachineFromRack(ResourceID_t res_id, EquivClass_t rack_ec,
-                             bool* rack_removed);
   void RemovePreferencesToMachine(ResourceID_t res_id);
   void RemovePreferencesToRack(EquivClass_t ec);
   void UpdateMachineBlocks(
       const DataLocation& location,
       unordered_map<ResourceID_t, unordered_map<uint64_t, uint64_t>,
-        boost::hash<boost::uuids::uuid>>* data_on_machines);
+        boost::hash<ResourceID_t>>* data_on_machines);
   void UpdateRackBlocks(
       const DataLocation& location,
       unordered_map<EquivClass_t,
@@ -141,14 +139,14 @@ class QuincyCostModel : public CostModelInterface {
    * @return an updated version of the task's machine preference map. If the
    * passed task_pref_machines is NULL the method may return a new pointer
    */
-  unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>*
+  unordered_map<ResourceID_t, int64_t, boost::hash<ResourceID_t>>*
     UpdateTaskPreferredMachineList(
       TaskID_t task_id,
       uint64_t input_size,
       ResourceID_t machine_res_id,
       uint64_t data_on_machine,
       int64_t transfer_cost,
-      unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>*
+      unordered_map<ResourceID_t, int64_t, boost::hash<ResourceID_t>>*
       task_pref_machines);
   void UpdateTaskPreferredRacksList(
       TaskID_t task_id, uint64_t input_size, uint64_t data_on_rack,
@@ -178,15 +176,6 @@ class QuincyCostModel : public CostModelInterface {
   shared_ptr<KnowledgeBase> knowledge_base_;
   // EC corresponding to the cluster aggregator node.
   EquivClass_t cluster_aggregator_ec_;
-  // Map storing the machine resource ids associated with each rack.
-  unordered_map<EquivClass_t,
-    unordered_set<ResourceID_t, boost::hash<ResourceID_t>>>
-    rack_to_machine_res_;
-  // Set storing the racks to which we can still connect machines.
-  unordered_set<EquivClass_t> racks_with_spare_links_;
-  // Map storing the rack EC associated with each machine.
-  unordered_map<ResourceID_t, EquivClass_t, boost::hash<ResourceID_t>>
-    machine_to_rack_ec_;
   // Map storing the EC preference list for each task.
   unordered_map<TaskID_t, unordered_map<EquivClass_t, int64_t>>
     task_preferred_ecs_;
@@ -198,8 +187,7 @@ class QuincyCostModel : public CostModelInterface {
   unordered_map<TaskID_t, pair<ResourceID_t, int64_t>> task_running_arcs_;
   TraceGenerator* trace_generator_;
   TimeInterface* time_manager_;
-  // Counter used to generate unique rack ids.
-  EquivClass_t unique_rack_id_;
+  DataLayerManagerInterface* data_layer_manager_;
 };
 
 }  // namespace firmament

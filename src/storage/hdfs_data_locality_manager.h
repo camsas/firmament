@@ -30,6 +30,23 @@ class HdfsDataLocalityManager : public DataLayerManagerInterface {
   void GetFileLocations(const string& file_path, list<DataLocation>* locations);
   void RemoveMachine(const string& hostname);
 
+  const unordered_set<ResourceID_t, boost::hash<ResourceID_t>>&
+    GetMachinesInRack(EquivClass_t rack_ec) {
+    CHECK_EQ(rack_ec, 1);
+    return machines_;
+  }
+  inline uint64_t GetNumRacks() {
+    // TODO(ionel): Implement!
+    return 1;
+  }
+  inline void GetRackIDs(vector<EquivClass_t>* rack_ids) {
+    // TODO(ionel): Implement!
+    rack_ids.push_back(1);
+  }
+  inline EquivClass_t GetRackForMachine(ResourceID_t machine_res_id) {
+    return 1;
+  }
+
  private:
   uint64_t GenerateBlockID(const string& file_path, int32_t block_index);
   /**
@@ -51,6 +68,7 @@ class HdfsDataLocalityManager : public DataLayerManagerInterface {
  private:
   hdfsFS fs_;
   unordered_map<string, ResourceID_t> hostname_to_res_id_;
+  unordered_set<ResourceID_t, boost::hash<ResourceID_t>> machines_;
   TraceGenerator* trace_generator_;
 };
 
