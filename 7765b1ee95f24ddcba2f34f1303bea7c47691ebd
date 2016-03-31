@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_d2efeeae",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-31T23:44:59Z",
+      "side": 1,
+      "message": "I\u0027ve changed it everywhere.",
+      "parentUuid": "da9b358b_92096698",
+      "revId": "7765b1ee95f24ddcba2f34f1303bea7c47691ebd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_12cf9657",
         "filename": "src/sim/dfs/simulated_data_layer_manager.cc",
         "patchSetId": 3
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_f2f2f299",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-31T23:44:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_12cf9657",
+      "range": {
+        "startLine": 29,
+        "startChar": 15,
+        "endLine": 29,
+        "endChar": 39
+      },
+      "revId": "7765b1ee95f24ddcba2f34f1303bea7c47691ebd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_d2d80e20",
         "filename": "src/sim/dfs/simulated_data_layer_manager.cc",
         "patchSetId": 3
@@ -53,6 +95,24 @@
       "writtenOn": "2016-03-31T23:33:28Z",
       "side": 1,
       "message": "Is this always correct? The rack may already be in there, because it may already have had spare links. I suspect it\u0027s fine because racks_with_spare_links is a set, though?",
+      "revId": "7765b1ee95f24ddcba2f34f1303bea7c47691ebd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_12f6768f",
+        "filename": "src/sim/dfs/simulated_data_layer_manager.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-03-31T23:44:59Z",
+      "side": 1,
+      "message": "Yes, it works because racks_with_spare_links is a set.",
+      "parentUuid": "da9b358b_d2d80e20",
       "revId": "7765b1ee95f24ddcba2f34f1303bea7c47691ebd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
