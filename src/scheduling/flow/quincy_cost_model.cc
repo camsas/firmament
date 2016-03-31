@@ -370,6 +370,7 @@ uint64_t QuincyCostModel::ComputeClusterDataStatistics(
     for (auto& block_size : machine_blocks.second) {
       data_on_machine += block_size.second;
     }
+    CHECK_GE(input_size, data_on_machine);
     CHECK(InsertIfNotPresent(data_on_machines, machine_blocks.first,
                              data_on_machine));
   }
@@ -378,6 +379,7 @@ uint64_t QuincyCostModel::ComputeClusterDataStatistics(
     for (auto& block_size : rack_blocks.second) {
       data_on_rack += block_size.second;
     }
+    CHECK_GE(input_size, data_on_rack);
     CHECK(InsertIfNotPresent(data_on_racks, rack_blocks.first, data_on_rack));
   }
   return input_size;

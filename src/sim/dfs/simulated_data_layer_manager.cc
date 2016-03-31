@@ -17,7 +17,8 @@ DEFINE_double(simulated_quincy_runtime_factor, 0.298,
 DEFINE_double(simulated_quincy_runtime_power, -0.2627,
               "Runtime power law distribution: power parameter.");
 // Distributed filesystem options
-DEFINE_uint64(simulated_block_size, 512, "The size of a DFS block in MB");
+DEFINE_uint64(simulated_block_size, 536870912,
+              "The size of a DFS block in bytes");
 DEFINE_uint64(simulated_dfs_blocks_per_machine, 12288,
               "Number of blocks each machine stores. "
               "Defaults to 12288, i.e. 6 TB for 512MB blocks.");
