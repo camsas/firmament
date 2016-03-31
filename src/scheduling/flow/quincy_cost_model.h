@@ -180,19 +180,19 @@ class QuincyCostModel : public CostModelInterface {
   EquivClass_t cluster_aggregator_ec_;
   // Map storing the machine resource ids associated with each rack.
   unordered_map<EquivClass_t,
-    unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>>>
+    unordered_set<ResourceID_t, boost::hash<ResourceID_t>>>
     rack_to_machine_res_;
   // Set storing the racks to which we can still connect machines.
   unordered_set<EquivClass_t> racks_with_spare_links_;
   // Map storing the rack EC associated with each machine.
-  unordered_map<ResourceID_t, EquivClass_t, boost::hash<boost::uuids::uuid>>
+  unordered_map<ResourceID_t, EquivClass_t, boost::hash<ResourceID_t>>
     machine_to_rack_ec_;
   // Map storing the EC preference list for each task.
   unordered_map<TaskID_t, unordered_map<EquivClass_t, int64_t>>
     task_preferred_ecs_;
   // Map storing the machine preference list for each task.
   unordered_map<TaskID_t,
-    unordered_map<ResourceID_t, int64_t, boost::hash<boost::uuids::uuid>>>
+    unordered_map<ResourceID_t, int64_t, boost::hash<ResourceID_t>>>
     task_preferred_machines_;
   // Map storing the data transfer cost and the resource for each running task.
   unordered_map<TaskID_t, pair<ResourceID_t, int64_t>> task_running_arcs_;
