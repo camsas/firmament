@@ -448,18 +448,14 @@ uint64_t QuincyCostModel::ComputeDataStatsForMachine(
     data_layer->GetFileLocations(dependency.location(), &locations);
     for (auto& location : locations) {
       if (machine_res_id == location.machine_res_id_ &&
-          machine_block_ids.find(location.block_id_) ==
-          machine_block_ids.end()) {
-        machine_block_ids.insert(location.block_id_);
+          machine_block_ids.insert(location.block_id_).second) {
         *data_on_machine = *data_on_machine + location.size_bytes_;
       }
       EquivClass_t* machine_rack_ec_ptr =
         FindOrNull(machine_to_rack_ec_, location.machine_res_id_);
       CHECK_NOTNULL(machine_rack_ec_ptr);
       if (*ec_ptr == *machine_rack_ec_ptr &&
-          rack_block_ids.find(location.block_id_) ==
-          rack_block_ids.end()) {
-        rack_block_ids.insert(location.block_id_);
+          rack_block_ids.insert(location.block_id_).second) {
         *data_on_rack = *data_on_rack + location.size_bytes_;
       }
     }
@@ -469,6 +465,7 @@ uint64_t QuincyCostModel::ComputeDataStatsForMachine(
 
 int64_t QuincyCostModel::ComputeTransferCostToMachine(uint64_t remote_data,
                                                       uint64_t data_on_rack) {
+  CHECK_GE(remote_data, data_on_rack);
   return (FLAGS_quincy_tor_transfer_cost * data_on_rack +
     FLAGS_quincy_core_transfer_cost * (remote_data - data_on_rack)) /
     BYTES_TO_GB;
@@ -481,7 +478,7 @@ int64_t QuincyCostModel::ComputeTransferCostToRack(
     const unordered_map<ResourceID_t, uint64_t,
       boost::hash<boost::uuids::uuid>>& data_on_machines) {
   auto machines_in_rack = FindOrNull(rack_to_machine_res_, ec);
-  int64_t cost_worst_machine = 0;
+  int64_t cost_worst_machine = INT64_MIN;
   for (auto& machine_res_id : *machines_in_rack) {
     const uint64_t* data_on_machine_ptr =
       FindOrNull(data_on_machines, machine_res_id);
@@ -530,11 +527,11 @@ void QuincyCostModel::ConstructTaskPreferredSet(TaskID_t task_id) {
       best_machine_cost = min(best_machine_cost, transfer_cost);
     }
   }
-  int64_t worst_cluster_cost = 0;
+  int64_t worst_cluster_cost = INT64_MIN;
   if (data_on_ecs.size() < rack_to_machine_res_.size()) {
     // There are racks on which we have no data.
     worst_cluster_cost = FLAGS_quincy_core_transfer_cost * input_size /
-      BYTES_TO_GB;;
+      BYTES_TO_GB;
   }
   int64_t best_rack_cost = INT64_MAX;
   for (auto& rack_data : data_on_ecs) {
@@ -610,7 +607,7 @@ void QuincyCostModel::UpdateTaskCosts(const TaskDescriptor& td,
   CHECK_NOTNULL(preferred_ecs);
   // TODO(ionel): We don't correctly update the cost for the case in which we
   // remove the worst machine. To correctly handle it we would have to revisit
-  // all the ECs and figure out the new worst machine. However, this woulb be
+  // all the ECs and figure out the new worst machine. However, this would be
   // too expensive.
   int64_t* prev_worst_cost = FindOrNull(*preferred_ecs, cluster_aggregator_ec_);
   CHECK_NOTNULL(prev_worst_cost);
@@ -675,7 +672,7 @@ int64_t QuincyCostModel::UpdateTaskCostForRack(const TaskDescriptor& td,
   }
   // Update the cost for each machine in the rack.
   auto task_pref_machines = FindOrNull(task_preferred_machines_, td.uid());
-  uint64_t worst_rack_cost = 0;
+  uint64_t worst_rack_cost = INT64_MIN;
   for (auto& machine_res_id : *machines_in_rack) {
     auto machine_blocks = FindOrNull(machines_blocks, machine_res_id);
     if (machine_blocks) {

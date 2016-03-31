@@ -87,7 +87,7 @@ uint64_t SimulatedDataLayerManager::AddFilesForTask(
       num_blocks++;
     }
     dfs_->AddBlocksForTask(td, num_blocks, max_machine_spread);
-    return input_size;
+    return num_blocks * FLAGS_simulated_block_size;
   } else {
     return 0;
   }
