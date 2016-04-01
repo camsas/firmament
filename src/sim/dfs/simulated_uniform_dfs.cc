@@ -158,8 +158,15 @@ void SimulatedUniformDFS::RemoveMachine(ResourceID_t machine_res_id) {
                                       data_location.block_id_,
                                       data_location.size_bytes_);
         // Move the block to another random machine.
-        range_it.first->second.machine_res_id_ = PlaceBlockOnRandomMachine();
+        ResourceID_t new_machine_res_id = PlaceBlockOnRandomMachine();
+        // TODO(ionel): Set DataLocation's rack_id_ to the rack corresponding
+        // to the machine onto which we're moving the block.
+        range_it.first->second.machine_res_id_ = new_machine_res_id;
         const DataLocation& new_data_location = range_it.first->second;
+        unordered_set<TaskID_t>* tasks_machine =
+          FindOrNull(tasks_on_machine_, new_machine_res_id);
+        CHECK_NOTNULL(tasks_machine);
+        tasks_machine->insert(task_id);
         trace_generator_->AddBlock(new_data_location.machine_res_id_,
                                    new_data_location.block_id_,
                                    new_data_location.size_bytes_);
