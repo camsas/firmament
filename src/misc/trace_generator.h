@@ -114,6 +114,7 @@ class TraceGenerator {
   uint64_t unscheduled_tasks_cnt_;
   uint64_t running_tasks_cnt_;
   uint64_t evicted_tasks_cnt_;
+  uint64_t migrated_tasks_cnt_;
   // It includes task submissions, completions, evictions, failures, kills,
   // placements and migrations
   uint64_t task_events_cnt_per_round_;

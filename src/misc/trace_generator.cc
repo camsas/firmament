@@ -25,8 +25,8 @@ namespace firmament {
 
 TraceGenerator::TraceGenerator(TimeInterface* time_manager)
   : time_manager_(time_manager), unscheduled_tasks_cnt_(0),
-    running_tasks_cnt_(0), evicted_tasks_cnt_(0), task_events_cnt_per_round_(0),
-    machine_events_cnt_per_round_(0) {
+    running_tasks_cnt_(0), evicted_tasks_cnt_(0), migrated_tasks_cnt_(0),
+    task_events_cnt_per_round_(0), machine_events_cnt_per_round_(0) {
   if (FLAGS_generate_trace) {
     MkdirIfNotPresent(FLAGS_generated_trace_path);
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/machine_events");
@@ -216,18 +216,19 @@ void TraceGenerator::SchedulerRun(
       (unscheduled_tasks_cnt_ + running_tasks_cnt_);
     if (unscheduled_tasks_percentage > UNSCHEDULED_TASKS_WARNING_THRESHOLD) {
       LOG(WARNING) << unscheduled_tasks_percentage
-                   << " of tasks are unscheduled";
+                   << "% of tasks are unscheduled";
     }
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
-    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju,%ju,%ju,%s\n",
+    fprintf(scheduler_events_, "%ju,%ju,%ju,%ju,%ju,%ju,%ju,%ju,%ju,%ju,%s\n",
             timestamp, scheduler_stats.scheduler_runtime_,
             scheduler_stats.algorithm_runtime_,
             scheduler_stats.total_runtime_,
-            unscheduled_tasks_cnt_, evicted_tasks_cnt_,
+            unscheduled_tasks_cnt_, evicted_tasks_cnt_, migrated_tasks_cnt_,
             unscheduled_tasks_cnt_ + running_tasks_cnt_,
             task_events_cnt_per_round_, machine_events_cnt_per_round_,
             dimacs_stats.GetStatsString().c_str());
     evicted_tasks_cnt_ = 0;
+    migrated_tasks_cnt_ = 0;
     task_events_cnt_per_round_ = 0;
     machine_events_cnt_per_round_ = 0;
     fflush(scheduler_events_);
@@ -381,6 +382,7 @@ void TraceGenerator::TaskMigrated(TaskDescriptor* td_ptr,
                                   const ResourceDescriptor& old_rd,
                                   const ResourceDescriptor& new_rd) {
   if (FLAGS_generate_trace) {
+    migrated_tasks_cnt_++;
     // Note: We don't have to update the counters here because they're
     // updated in TaskEvicted/Submitted/Scheduled.
     TaskEvicted(td_ptr->uid(), old_rd, true);
