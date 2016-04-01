@@ -135,11 +135,10 @@ uint64_t SimulatedDataLayerManager::AddFilesForTask(
     double cumulative_probability =
       runtime_dist_->ProportionShorterTasks(avg_runtime);
     uint64_t input_size = input_block_dist_->Inverse(cumulative_probability);
-    uint64_t num_blocks =
-      input_size / FLAGS_simulated_block_size / MB_TO_BYTES;
+    uint64_t num_blocks = input_size / FLAGS_simulated_block_size;
     // Need to increase if there was a remainder, since integer division
     // truncates.
-    if ((input_size / MB_TO_BYTES) % FLAGS_simulated_block_size != 0) {
+    if (input_size % FLAGS_simulated_block_size != 0) {
       num_blocks++;
     }
     dfs_->AddBlocksForTask(td, num_blocks, max_machine_spread);
