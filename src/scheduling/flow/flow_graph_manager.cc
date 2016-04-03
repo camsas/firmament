@@ -695,8 +695,8 @@ void FlowGraphManager::UpdateArcsForScheduledTask(FlowGraphNode* task_node,
       running_arc = graph_change_manager_->AddArc(
           task_node, res_node, 0, 1, new_cost, RUNNING, ADD_ARC_RUNNING_TASK,
           "UpdateArcsForScheduledTask: add running arc");
-      InsertIfNotPresent(&task_to_running_arc_, task_node->td_ptr_->uid(),
-                         running_arc);
+      CHECK(InsertIfNotPresent(&task_to_running_arc_, task_node->td_ptr_->uid(),
+                               running_arc));
     }
     UpdateRunningTaskToUnscheduledAggArc(task_node);
   } else {

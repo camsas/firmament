@@ -389,14 +389,8 @@ void EventDrivenScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
   ResourceStatus* old_rs = FindPtrOrNull(*resource_map_, *old_res_id_ptr);
   CHECK_NOTNULL(old_rs);
   ResourceDescriptor* old_rd = old_rs->mutable_descriptor();
-  // We don't have to remove the task from rd_ptr's running tasks because
-  // we've already cleared the list.
-  if (old_rd->current_running_tasks_size() == 0) {
-    old_rd->set_state(ResourceDescriptor::RESOURCE_IDLE);
-  }
-  rd_ptr->add_current_running_tasks(task_id);
-  ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
-  InsertOrUpdate(&task_bindings_, task_id, res_id);
+  CHECK(UnbindTaskFromResource(td_ptr, *old_res_id_ptr));
+  BindTaskToResource(td_ptr, rd_ptr);
   trace_generator_->TaskMigrated(td_ptr, *old_rd, *rd_ptr);
   if (event_notifier_) {
     event_notifier_->OnTaskMigration(td_ptr, rd_ptr);

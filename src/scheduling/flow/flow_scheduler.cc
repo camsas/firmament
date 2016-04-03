@@ -255,6 +255,12 @@ void FlowScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
   ResourceID_t* old_res_id_ptr = FindOrNull(task_bindings_, task_id);
   CHECK_NOTNULL(old_res_id_ptr);
   ResourceID_t old_res_id = *old_res_id_ptr;
+  // XXX(ionel): HACK! We update scheduled_to_resource field here
+  // and in the EventDrivenScheduler. We update it here because
+  // TaskMigrated first calls TaskEvict and then TaskSchedule.
+  // TaskSchedule requires scheduled_to_resource to be up to date.
+  // Hence, we have to set it before we call the method.
+  td_ptr->set_scheduled_to_resource(rd_ptr->uuid());
   flow_graph_manager_->TaskMigrated(task_id, old_res_id,
                                     ResourceIDFromString(rd_ptr->uuid()));
   EventDrivenScheduler::HandleTaskMigration(td_ptr, rd_ptr);
