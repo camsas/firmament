@@ -175,7 +175,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   uint64_t t = 100;
   const vector<uint64_t> leaf_ids(flow_graph_manager.leaf_node_ids().begin(),
                                   flow_graph_manager.leaf_node_ids().end());
-  unsigned int seed = time(NULL);
+  uint32_t seed = static_cast<uint32_t>(time(NULL));
   for (uint64_t i = 0; i < j; ++i) {
     JobDescriptor jd;
     jd.set_uuid(to_string(GenerateJobID()));
@@ -255,7 +255,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     uint64_t t = 100;
     const vector<uint64_t> leaf_ids(flow_graph_manager.leaf_node_ids().begin(),
                                     flow_graph_manager.leaf_node_ids().end());
-    unsigned int seed = time(NULL);
+    uint32_t seed = static_cast<uint32_t>(time(NULL));
     for (uint64_t i = 0; i < j; ++i) {
       JobDescriptor jd;
       jd.set_uuid(to_string(GenerateJobID()));

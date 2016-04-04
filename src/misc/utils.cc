@@ -107,7 +107,7 @@ ResourceID_t GenerateRootResourceID(const string& hostname) {
 
 JobID_t GenerateJobID() {
   if (!job_id_rg_init_) {
-    job_id_rg_.seed(time(NULL));
+    job_id_rg_.seed(static_cast<uint32_t>(time(NULL)));
     job_id_rg_init_ = true;
   }
   boost::uuids::basic_random_generator<boost::mt19937> gen(&job_id_rg_);

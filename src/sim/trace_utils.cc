@@ -33,8 +33,8 @@ void LoadMachineTemplate(ResourceTopologyNodeDescriptor* machine_tmpl) {
   if (machine_tmpl_path.is_relative()) {
     // lookup file relative to directory of binary, not CWD
     char binary_path[1024];
-    size_t bytes = ExecutableDirectory(binary_path, sizeof(binary_path));
-    CHECK(bytes < sizeof(binary_path));
+    int32_t bytes = ExecutableDirectory(binary_path, sizeof(binary_path));
+    CHECK(static_cast<uint32_t>(bytes) < sizeof(binary_path));
     boost::filesystem::path binary_path_boost(binary_path);
     binary_path_boost.remove_filename();
 

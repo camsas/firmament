@@ -160,7 +160,7 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   // Now run the solver
   vector<string> args;
   pid_t solver_pid = 0;
-  pthread_t logger_thread = -1;
+  pthread_t logger_thread = static_cast<pthread_t>(-1);
   // If the solver hasn't executed or if we're not running in incremental mode.
   if (!solver_ran_once_ || !FLAGS_incremental_flow) {
     // Pipe setup
@@ -225,7 +225,8 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   solver_ran_once_ = true;
 
   if (scheduler_stats != NULL) {
-    scheduler_stats->scheduler_runtime_ = flowsolver_timer.elapsed().wall /
+    scheduler_stats->scheduler_runtime_ =
+      static_cast<uint64_t>(flowsolver_timer.elapsed().wall) /
       NANOSECONDS_IN_MICROSECOND;
     scheduler_stats->algorithm_runtime_ = algorithm_runtime;
   }

@@ -70,7 +70,8 @@ TEST_F(UtilsTest, DataObjectIDGenerateFromTDTest) {
   EXPECT_EQ(GenerateDataObjectID(td).name_printable_string(),
             "688e0d28bada33dbce023b7290e4a6ee4613667cffe897a8567eb1eb89e94200");
   EXPECT_EQ(GenerateDataObjectID(td.uid(),
-                                td.outputs_size()).name_printable_string(),
+                                 static_cast<TaskOutputID_t>(td.outputs_size()))
+            .name_printable_string(),
             "688e0d28bada33dbce023b7290e4a6ee4613667cffe897a8567eb1eb89e94200");
 }
 

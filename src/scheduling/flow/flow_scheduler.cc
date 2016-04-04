@@ -367,7 +367,8 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
     // from now on are going to be included in the next scheduler run.
     DIMACSChangeStats current_run_dimacs_stats = *dimacs_stats_;
     dimacs_stats_->ResetStats();
-    scheduler_stats->total_runtime_ = total_scheduler_timer.elapsed().wall /
+    scheduler_stats->total_runtime_ =
+      static_cast<uint64_t>(total_scheduler_timer.elapsed().wall) /
       NANOSECONDS_IN_MICROSECOND;
     trace_generator_->SchedulerRun(*scheduler_stats, current_run_dimacs_stats);
   }

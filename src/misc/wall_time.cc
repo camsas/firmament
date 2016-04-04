@@ -12,7 +12,8 @@ WallTime::~WallTime() {
 uint64_t WallTime::GetCurrentTimestamp() {
   struct timeval ts;
   gettimeofday(&ts, NULL);
-  return ts.tv_sec * 1000000ULL + ts.tv_usec;
+  return static_cast<uint64_t>(ts.tv_sec) * 1000000ULL +
+    static_cast<uint64_t>(ts.tv_usec);
 }
 
 void WallTime::UpdateCurrentTimestamp(uint64_t timestmap) {

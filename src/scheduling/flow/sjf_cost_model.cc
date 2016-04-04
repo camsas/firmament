@@ -56,10 +56,11 @@ Cost_t SJFCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   // average runtime is a lower bound on the cost.
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   CHECK_GT(equiv_classes->size(), 0);
-  uint64_t avg_runtime =
-    knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
+  Cost_t avg_runtime = static_cast<Cost_t>(
+      knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front()));
   delete equiv_classes;
-  return max(WAIT_TIME_MULTIPLIER * wait_time_centamillis, avg_runtime * 100);
+  return max(static_cast<Cost_t>(WAIT_TIME_MULTIPLIER * wait_time_centamillis),
+             avg_runtime * 100);
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
@@ -77,10 +78,10 @@ Cost_t SJFCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   vector<EquivClass_t>* equiv_classes = GetTaskEquivClasses(task_id);
   CHECK_GT(equiv_classes->size(), 0);
   // Avg runtime is in milliseconds, so we convert it to tenths of a second
-  uint64_t avg_runtime =
-    knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front());
+  Cost_t avg_runtime = static_cast<Cost_t>(
+      knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front()));
   delete equiv_classes;
-  return (avg_runtime * 100);
+  return avg_runtime * 100;
 }
 
 Cost_t SJFCostModel::TaskToResourceNodeCost(TaskID_t task_id,
@@ -203,7 +204,8 @@ FlowGraphNode* SJFCostModel::GatherStats(FlowGraphNode* accumulator,
     // The other node is not a resource node.
     if (other->type_ == FlowNodeType::SINK) {
       accumulator->rd_ptr_->set_num_running_tasks_below(
-          accumulator->rd_ptr_->current_running_tasks_size());
+          static_cast<uint64_t>(
+              accumulator->rd_ptr_->current_running_tasks_size()));
       accumulator->rd_ptr_->set_num_slots_below(FLAGS_max_tasks_per_pu);
     }
     return accumulator;
