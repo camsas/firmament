@@ -1234,11 +1234,10 @@ void FlowGraphManager::UpdateUnscheduledAggNode(
         unsched_agg_node, sink_node_, 0, static_cast<uint64_t>(cap_delta),
         new_cost, OTHER, ADD_ARC_FROM_UNSCHED, "UpdateUnscheduledAggNode");
   } else {
-    CHECK_GE(unsched_agg_sink_arc->cap_upper_bound_, cap_delta);
-    uint64_t new_capacity =
-      static_cast<uint64_t>(
-          static_cast<int64_t>(unsched_agg_sink_arc->cap_upper_bound_) +
-          cap_delta);
+    int64_t cap_upper_bound =
+      static_cast<int64_t>(unsched_agg_sink_arc->cap_upper_bound_);
+    CHECK_GE(cap_upper_bound, cap_delta);
+    uint64_t new_capacity = static_cast<uint64_t>(cap_upper_bound + cap_delta);
     graph_change_manager_->ChangeArc(
         unsched_agg_sink_arc, unsched_agg_sink_arc->cap_lower_bound_,
         new_capacity, new_cost, CHG_ARC_FROM_UNSCHED,
