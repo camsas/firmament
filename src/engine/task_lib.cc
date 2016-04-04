@@ -36,9 +36,6 @@ DEFINE_uint64(heartbeat_interval, 1000000,
 DEFINE_string(tasklib_application, "",
               "The application running alongside tasklib");
 
-DEFINE_string(completion_filename, "",
-              "A file which to read completion status from.");
-
 #define SET_PROTO_IF_DICT_HAS_INT(proto, dict, member, val) \
   val = json_object_get(dict, # member); \
   if (val) proto->set ## _ ## member(json_integer_value(val));
@@ -71,11 +68,6 @@ TaskLib::TaskLib()
   else
     LOG(ERROR) << "No coordinator_uri environment variable!";
 
-  if (!FLAGS_completion_filename.empty()) {
-    // Open a completion file if the flag is set.
-    completion_file_.reset(fopen(FLAGS_completion_filename.c_str(), "r"));
-  }
-
   const char* task_id_env = getenv("FLAGS_task_id");
   VLOG(1) << "Task ID is " << task_id_env;
   CHECK_NOTNULL(task_id_env);
@@ -103,10 +95,6 @@ TaskLib::TaskLib()
 }
 
 TaskLib::~TaskLib() {
-  // Close the completion file if open
-  if (completion_file_) {
-    CHECK_EQ(fclose(completion_file_.get()), 0);
-  }
 }
 
 void TaskLib::Stop(bool success) {
@@ -155,32 +143,6 @@ void TaskLib::AddTaskStatisticsToHeartbeat(
     // Scheduler statistics
     stats->set_sched_run(proc_stats.sched_run_ticks);
     stats->set_sched_wait(proc_stats.sched_wait_runnable_ticks);
-  }
-
-  if (!FLAGS_completion_filename.empty() || internal_completed_) {
-    VLOG(3) << "Adding completion stats!";
-    AddCompletionStatistics(stats);
-  }
-}
-
-void TaskLib::AddCompletionStatistics(TaskPerfStatisticsSample *ts) {
-  // Retrieve the completion stats externally if the completion filename is set
-  // and simply use the set value otherwise.
-  if (!FLAGS_completion_filename.empty()) {
-    CHECK(completion_file_);
-
-    char str[20];
-    int num_bytes = fread(str, 1, 20, completion_file_.get());
-    rewind(completion_file_.get());
-    str[num_bytes] = '\0';
-    if (num_bytes) {
-      completed_ = strtod(str, NULL);
-    }
-  }
-  ts->set_completed(completed_);
-  // Mark ourselves as ready to stop once the task progress has been completed.
-  if (completed_ >= 1.0) {
-    exit_ = true;
   }
 }
 

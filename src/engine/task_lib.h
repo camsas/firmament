@@ -87,9 +87,7 @@ class TaskLib {
   void SendFinalizeMessage(bool success);
   void SendHeartbeat(const ProcFSMonitor::ProcessStatistics_t& stats);
   bool SendMessageToCoordinator(BaseMessage* msg);
-
   void setUpStorageEngine();
-  void AddCompletionStatistics(TaskPerfStatisticsSample *ts);
 
  private:
   pid_t pid_;
@@ -103,7 +101,6 @@ class TaskLib {
   // If set, gives the fraction of task completed.
   volatile double completed_;
   ProcFSMonitor task_perf_monitor_;
-  unique_ptr<FILE> completion_file_;
 };
 
 }  // namespace firmament
