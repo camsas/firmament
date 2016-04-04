@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_75e4aa0c",
+        "filename": "src/scheduling/flow/dimacs_change_arc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-04T14:59:40Z",
+      "side": 1,
+      "message": "It\u0027d be nice to use Cost_t here; I didn\u0027t do so last night because I didn\u0027t immediately remember where it is defined. Can we change this?",
+      "revId": "cd89c74277f1df445916b900fa0c58fff3f7bb7d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_55f1a6cc",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-04T14:59:40Z",
+      "side": 1,
+      "message": "Cost_t?",
+      "range": {
+        "startLine": 71,
+        "startChar": 16,
+        "endLine": 71,
+        "endChar": 23
+      },
+      "revId": "cd89c74277f1df445916b900fa0c58fff3f7bb7d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
