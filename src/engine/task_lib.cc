@@ -174,7 +174,7 @@ void TaskLib::AddCompletionStatistics(TaskPerfStatisticsSample *ts) {
     rewind(completion_file_.get());
     str[num_bytes] = '\0';
     if (num_bytes) {
-    completed_ = strtod(str, NULL);
+      completed_ = strtod(str, NULL);
     }
   }
   ts->set_completed(completed_);

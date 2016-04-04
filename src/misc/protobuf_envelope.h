@@ -27,7 +27,7 @@ class Envelope<BaseMessage> : public PrintableInterface {
       // de-allocate buffer
       delete data_;
   }
-  virtual size_t size() const {
+  virtual int32_t size() const {
     CHECK(data_ != NULL) << "Protobuf message envelope has NULL content.";
     return data_->ByteSize();
   }
@@ -36,7 +36,7 @@ class Envelope<BaseMessage> : public PrintableInterface {
     // TODO(malte): consider moving this to a shared_ptr
     return data_;
   }
-  virtual bool Parse(void *buffer, size_t length) {
+  virtual bool Parse(void *buffer, int32_t length) {
     if (!data_) {
       // XXX(malte): check if we can use smart pointers instead here.
       VLOG(2) << "Allocating new message inside envelope at " << this;
@@ -45,7 +45,7 @@ class Envelope<BaseMessage> : public PrintableInterface {
     }
     return data_->ParseFromArray(buffer, length);
   }
-  virtual bool Serialize(void *buffer, size_t length) const {
+  virtual bool Serialize(void *buffer, int32_t length) const {
     CHECK(data_ != NULL) << "Tried to serialize a protobuf message envelope "
                          << "with NULL contents.";
     return data_->SerializeToArray(buffer, length);

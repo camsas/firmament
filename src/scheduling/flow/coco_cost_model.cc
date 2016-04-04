@@ -108,14 +108,16 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
     FindPtrOrNull(*resource_map_, ResourceIDFromString(other->uuid()));
   CHECK_NOTNULL(ors);
   const ResourceTopologyNodeDescriptor& ortnd = ors->topology_node();
+  uint64_t num_children =
+    max(static_cast<uint64_t>(ortnd.children_size()), 1UL);
   aiv->set_turtle_penalty(aiv->turtle_penalty() +
-      (oiv.turtle_penalty() / max(ortnd.children_size(), 1)));
+      (oiv.turtle_penalty() / num_children));
   aiv->set_sheep_penalty(aiv->sheep_penalty() +
-      (oiv.sheep_penalty() / max(ortnd.children_size(), 1)));
+      (oiv.sheep_penalty() / num_children));
   aiv->set_rabbit_penalty(aiv->rabbit_penalty() +
-      (oiv.rabbit_penalty() / max(ortnd.children_size(), 1)));
+      (oiv.rabbit_penalty() / num_children));
   aiv->set_devil_penalty(aiv->devil_penalty() +
-      (oiv.devil_penalty() / max(ortnd.children_size(), 1)));
+      (oiv.devil_penalty() / num_children));
   // Resource reservations
   ResourceVector* acc_reservation = accumulator->mutable_reserved_resources();
   const ResourceVector& other_reservation = other->reserved_resources();
@@ -129,7 +131,7 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
                                other_reservation.disk_bw());
 }
 
-uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
+int64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
   // Find resource within topology
   VLOG(2) << "Computing interference scores for resources below " << res_id;
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
@@ -157,7 +159,7 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
     return 0;
   } else if (rd.type() == ResourceDescriptor::RESOURCE_PU) {
     // Base case, we're at a PU
-    uint64_t interference_score = 0;
+    int64_t interference_score = 0;
     RepeatedField<uint64_t> running_tasks = rd.current_running_tasks();
     for (auto& task_id : running_tasks) {
       CoCoInterferenceScores iv;
@@ -182,7 +184,7 @@ uint64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
     }
   }
   VLOG(2) << "Total aggregate cost: " << summed_interference_costs;
-  uint64_t interference_cost =
+  int64_t interference_cost =
     (scale_factor * summed_interference_costs) - summed_interference_costs;
   VLOG(2) << "After scaling: " << interference_cost;
   return interference_cost;
@@ -279,9 +281,9 @@ const string CocoCostModel::DebugInfoCSV() const {
 
 Cost_t CocoCostModel::FlattenCostVector(CostVector_t cv) {
   // Compute priority dimension and ensure that it always dominates
-  uint64_t priority_value = cv.priority_ * omega_;
+  int64_t priority_value = cv.priority_ * omega_;
   // Compute the rest of the cost vector
-  uint64_t accumulator = 0;
+  int64_t accumulator = 0;
   accumulator += cv.cpu_cores_;
   accumulator += cv.ram_cap_;
   accumulator += cv.network_bw_;
@@ -488,27 +490,27 @@ Cost_t CocoCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   // Baseline value (based on resource request)
   CostVector_t cost_vector;
   cost_vector.priority_ = td.priority();
-  cost_vector.cpu_cores_ = omega_ +
-    NormalizeCost(td.resource_request().cpu_cores(),
-                  min_machine_capacity_.cpu_cores());
-  cost_vector.ram_cap_ = omega_ +
-    NormalizeCost(td.resource_request().ram_cap(),
-                  min_machine_capacity_.ram_cap());
-  cost_vector.network_bw_ = omega_ +
-    NormalizeCost(td.resource_request().net_bw(),
-                  min_machine_capacity_.net_bw());
-  cost_vector.disk_bw_ = omega_ +
-    NormalizeCost(td.resource_request().disk_bw(),
-                  min_machine_capacity_.disk_bw());
+  cost_vector.cpu_cores_ = static_cast<uint32_t>(
+    omega_ + NormalizeCost(td.resource_request().cpu_cores(),
+                           min_machine_capacity_.cpu_cores()));
+  cost_vector.ram_cap_ = static_cast<uint32_t>(
+    omega_ + NormalizeCost(td.resource_request().ram_cap(),
+                           min_machine_capacity_.ram_cap()));
+  cost_vector.network_bw_ = static_cast<uint32_t>(
+    omega_ + NormalizeCost(td.resource_request().net_bw(),
+                           min_machine_capacity_.net_bw()));
+  cost_vector.disk_bw_ = static_cast<uint32_t>(
+    omega_ + NormalizeCost(td.resource_request().disk_bw(),
+                           min_machine_capacity_.disk_bw()));
   cost_vector.machine_type_score_ = 1;
   cost_vector.interference_score_ = 1;
   cost_vector.locality_score_ = 0;
-  uint64_t base_cost = FlattenCostVector(cost_vector);
+  int64_t base_cost = FlattenCostVector(cost_vector);
   uint64_t time_since_submit =
     time_manager_->GetCurrentTimestamp() - td.submit_time();
   // timestamps are in microseconds, but we scale to tenths of a second here in
   // order to keep the costs small
-  uint64_t wait_time_cost = WAIT_TIME_MULTIPLIER * (time_since_submit / 100000);
+  int64_t wait_time_cost = WAIT_TIME_MULTIPLIER * (time_since_submit / 100000);
   if (VLOG_IS_ON(2)) {
     VLOG(2) << "Task " << task_id << "'s cost to unscheduled aggregator:";
     VLOG(2) << "  Baseline vector: ";
@@ -663,18 +665,16 @@ pair<Cost_t, uint64_t> CocoCostModel::EquivClassToResourceNode(
       // N.B.: This assumes that all tasks in an EC are of the same type.
       TaskID_t sample_task_id = *task_set->begin();
       const TaskDescriptor& td = GetTask(sample_task_id);
+      uint64_t num_children =
+        max(static_cast<uint64_t>(rtnd.children_size()), 1UL);
       if (td.task_type() == TaskDescriptor::TURTLE) {
-        score = rd.coco_interference_scores().turtle_penalty() /
-          max(rtnd.children_size(), 1);
+        score = rd.coco_interference_scores().turtle_penalty() / num_children;
       } else if (td.task_type() == TaskDescriptor::SHEEP) {
-        score = rd.coco_interference_scores().sheep_penalty() /
-          max(rtnd.children_size(), 1);
+        score = rd.coco_interference_scores().sheep_penalty() / num_children;
       } else if (td.task_type() == TaskDescriptor::RABBIT) {
-        score = rd.coco_interference_scores().rabbit_penalty() /
-          max(rtnd.children_size(), 1);
+        score = rd.coco_interference_scores().rabbit_penalty() / num_children;
       } else if (td.task_type() == TaskDescriptor::DEVIL) {
-        score = rd.coco_interference_scores().devil_penalty() /
-          max(rtnd.children_size(), 1);
+        score = rd.coco_interference_scores().devil_penalty() / num_children;
       }
     }
     VLOG(2) << num_tasks_that_fit << " tasks of TEC " << ec << " fit under "
@@ -710,17 +710,10 @@ ResourceID_t CocoCostModel::MachineResIDForResource(ResourceID_t res_id) {
   return ResourceIDFromString(rtnd->resource_desc().uuid());
 }
 
-uint32_t CocoCostModel::NormalizeCost(double raw_cost, double max_cost) {
-  if (omega_ == 0 || max_cost == 0.0)
+Cost_t CocoCostModel::NormalizeCost(double raw_cost, double max_cost) {
+  if (omega_ == 0 || fabsl(max_cost) < COMPARE_EPS)
     return 0;
   return (raw_cost / max_cost) * omega_;
-}
-
-uint32_t CocoCostModel::NormalizeCost(uint64_t raw_cost, uint64_t max_cost) {
-  if (omega_ == 0 || max_cost == 0)
-    return 0;
-  return (static_cast<double>(raw_cost) /
-          static_cast<double>(max_cost)) * omega_;
 }
 
 void CocoCostModel::PrintCostVector(CostVector_t cv) {
@@ -852,9 +845,10 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
       uint64_t idx = label.find("PU #");
       if (idx != string::npos) {
         string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
-        int64_t core_id = strtoll(core_id_substr.c_str(), 0, 10);
+        uint32_t core_id = strtoul(core_id_substr.c_str(), 0, 10);
         rd_ptr->mutable_available_resources()->set_cpu_cores(
-            latest_stats.cpus_usage(core_id).idle() / 100.0);
+            static_cast<double>(latest_stats.cpus_usage(core_id).idle()) /
+            100.0);
         rd_ptr->mutable_max_available_resources_below()->set_cpu_cores(
             latest_stats.cpus_usage(core_id).idle() / 100.0);
         rd_ptr->mutable_min_available_resources_below()->set_cpu_cores(
@@ -1059,12 +1053,12 @@ CocoCostModel::TaskFitsUnderResourceAggregate(
   const ResourceVector& cap = res.resource_capacity();
   const ResourceVector& reserved = res.reserved_resources();
   unreserved.set_cpu_cores(max(cap.cpu_cores() - reserved.cpu_cores(), 0.0f));
-  unreserved.set_ram_cap(max(static_cast<int64_t>(cap.ram_cap()) -
-                             static_cast<int64_t>(reserved.ram_cap()), 0L));
-  unreserved.set_net_bw(max(static_cast<int64_t>(cap.net_bw()) -
-                            static_cast<int64_t>(reserved.net_bw()), 0L));
-  unreserved.set_disk_bw(max(static_cast<int64_t>(cap.disk_bw()) -
-                             static_cast<int64_t>(reserved.disk_bw()), 0L));
+  unreserved.set_ram_cap(max(static_cast<uint64_t>(cap.ram_cap()) -
+                             static_cast<uint64_t>(reserved.ram_cap()), 0UL));
+  unreserved.set_net_bw(max(static_cast<uint64_t>(cap.net_bw()) -
+                            static_cast<uint64_t>(reserved.net_bw()), 0UL));
+  unreserved.set_disk_bw(max(static_cast<uint64_t>(cap.disk_bw()) -
+                             static_cast<uint64_t>(reserved.disk_bw()), 0UL));
   VLOG(2) << "Unreserved resources under " << res.uuid() << ": "
           << ResourceVectorToString(unreserved, " / ");
   if (CompareResourceVectors(*request, unreserved) ==

@@ -23,10 +23,10 @@
 DEFINE_double(events_fraction, 1.0, "Fraction of events to retain.");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(trace_path, "", "Path where the trace files are.");
-DEFINE_int64(sim_machine_max_cores, 12,
-             "Maximum number of cores the simulated machines have");
-DEFINE_int64(sim_machine_max_ram, 65536,
-             "Maximum ram size (in MB) the simulated machines have");
+DEFINE_uint64(sim_machine_max_cores, 12,
+              "Maximum number of cores the simulated machines have");
+DEFINE_uint64(sim_machine_max_ram, 65536,
+              "Maximum ram size (in MB) the simulated machines have");
 
 DECLARE_uint64(runtime);
 

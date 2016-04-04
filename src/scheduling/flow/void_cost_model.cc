@@ -143,7 +143,8 @@ FlowGraphNode* VoidCostModel::GatherStats(FlowGraphNode* accumulator,
     // The other node is not a resource node.
     if (other->type_ == FlowNodeType::SINK) {
       accumulator->rd_ptr_->set_num_running_tasks_below(
-          accumulator->rd_ptr_->current_running_tasks_size());
+          static_cast<uint64_t>(
+              accumulator->rd_ptr_->current_running_tasks_size()));
       accumulator->rd_ptr_->set_num_slots_below(FLAGS_max_tasks_per_pu);
     }
     return accumulator;

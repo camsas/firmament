@@ -41,7 +41,7 @@ uint64_t GoogleBlockDistribution::Inverse(double y) {
   } else {
     double x = (y - percent_min_) / coef_;
     x = exp2(x);
-    return std::round(x) * SIZE_OF_BLOCK_IN_DISTRIBUTION;
+    return static_cast<uint64_t>(std::round(x)) * SIZE_OF_BLOCK_IN_DISTRIBUTION;
   }
 }
 

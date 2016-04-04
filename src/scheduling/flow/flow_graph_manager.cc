@@ -195,7 +195,8 @@ void FlowGraphManager::AddResourceTopology(
         CapacityFromResNodeToParent(rtnd_ptr->resource_desc()));
     UpdateResourceStatsUpToRoot(
         cur_node, capacity_to_parent,
-        rtnd_ptr->resource_desc().num_slots_below(), running_tasks_delta);
+        static_cast<int64_t>(rtnd_ptr->resource_desc().num_slots_below()),
+        running_tasks_delta);
   }
 }
 
@@ -966,14 +967,23 @@ void FlowGraphManager::UpdateResourceStatsUpToRoot(
                                                             cur_node);
       CHECK_NOTNULL(parent_arc);
       CHECK_GE(parent_arc->cap_upper_bound_, cap_delta);
+      uint64_t new_capacity =
+        static_cast<uint64_t>(
+            static_cast<int64_t>(parent_arc->cap_upper_bound_) + cap_delta);
       graph_change_manager_->ChangeArcCapacity(
-          parent_arc, parent_arc->cap_upper_bound_ + cap_delta,
-          CHG_ARC_BETWEEN_RES, "UpdateCapacityUpToRoot");
-      parent_node->rd_ptr_->set_num_slots_below(
-          parent_node->rd_ptr_->num_slots_below() + slots_delta);
-      parent_node->rd_ptr_->set_num_running_tasks_below(
-          parent_node->rd_ptr_->num_running_tasks_below() +
-          running_tasks_delta);
+          parent_arc, new_capacity, CHG_ARC_BETWEEN_RES,
+          "UpdateCapacityUpToRoot");
+      uint64_t new_num_slots =
+        static_cast<uint64_t>(
+            static_cast<int64_t>(parent_node->rd_ptr_->num_slots_below()) +
+            slots_delta);
+      parent_node->rd_ptr_->set_num_slots_below(new_num_slots);
+      uint64_t new_num_running_tasks =
+        static_cast<uint64_t>(
+            static_cast<int64_t>(
+                 parent_node->rd_ptr_->num_running_tasks_below()) +
+            running_tasks_delta);
+      parent_node->rd_ptr_->set_num_running_tasks_below(new_num_running_tasks);
     }
     cur_node = parent_node;
   }
@@ -1221,11 +1231,14 @@ void FlowGraphManager::UpdateUnscheduledAggNode(
   if (!unsched_agg_sink_arc) {
     CHECK_GE(cap_delta, 1);
     graph_change_manager_->AddArc(
-        unsched_agg_node, sink_node_, 0, cap_delta, new_cost,
-        OTHER, ADD_ARC_FROM_UNSCHED, "UpdateUnscheduledAggNode");
+        unsched_agg_node, sink_node_, 0, static_cast<uint64_t>(cap_delta),
+        new_cost, OTHER, ADD_ARC_FROM_UNSCHED, "UpdateUnscheduledAggNode");
   } else {
     CHECK_GE(unsched_agg_sink_arc->cap_upper_bound_, cap_delta);
-    uint64_t new_capacity = unsched_agg_sink_arc->cap_upper_bound_ + cap_delta;
+    uint64_t new_capacity =
+      static_cast<uint64_t>(
+          static_cast<int64_t>(unsched_agg_sink_arc->cap_upper_bound_) +
+          cap_delta);
     graph_change_manager_->ChangeArc(
         unsched_agg_sink_arc, unsched_agg_sink_arc->cap_lower_bound_,
         new_capacity, new_cost, CHG_ARC_FROM_UNSCHED,

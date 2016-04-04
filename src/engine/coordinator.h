@@ -112,7 +112,7 @@ class Coordinator : public Node,
       if (ResourceIDFromString(cur->resource_desc().uuid()) == res_id) {
         return cur;
       }
-      for (int64_t i = 0; i < cur->children_size(); ++i)
+      for (int32_t i = 0; i < cur->children_size(); ++i)
         q.push(cur->mutable_children(i));
       q.pop();
     }
@@ -145,10 +145,10 @@ class Coordinator : public Node,
     TaskDescriptor* result = FindPtrOrNull(*task_table_, task_id);
     return result;
   }
-  inline size_t NumResources() { return associated_resources_->size(); }
-  inline size_t NumJobs() { return job_table_->size(); }
-  inline size_t NumJobsInState(JobDescriptor::JobState state) {
-    size_t count = 0;
+  inline uint64_t NumResources() { return associated_resources_->size(); }
+  inline uint64_t NumJobs() { return job_table_->size(); }
+  inline uint64_t NumJobsInState(JobDescriptor::JobState state) {
+    uint64_t count = 0;
     if (job_table_->empty())
       return 0;
     for (JobMap_t::const_iterator j_iter = job_table_->begin();
@@ -158,9 +158,9 @@ class Coordinator : public Node,
         count++;
     return count;
   }
-  inline size_t NumTasks() { return task_table_->size(); }
-  inline size_t NumTasksInState(TaskDescriptor::TaskState state) {
-    size_t count = 0;
+  inline uint64_t NumTasks() { return task_table_->size(); }
+  inline uint64_t NumTasksInState(TaskDescriptor::TaskState state) {
+    uint64_t count = 0;
     for (TaskMap_t::const_iterator t_iter = task_table_->begin();
          t_iter != task_table_->end();
          ++t_iter) {

@@ -23,7 +23,7 @@ class DIMACSAddNode : public DIMACSChange {
   const string GenerateChange() const;
   uint32_t GetNodeType() const;
   const uint64_t id_;
-  const uint64_t excess_;
+  const int64_t excess_;
   const FlowNodeType type_;
   vector<DIMACSNewArc> arc_additions_;
 };

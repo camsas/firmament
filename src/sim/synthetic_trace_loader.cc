@@ -62,13 +62,15 @@ void SyntheticTraceLoader::LoadMachineEvents(
     for (uint64_t failure_index = 0;
          failure_index < FLAGS_synthetic_machine_failure_rate;
          ++failure_index) {
-      uint64_t failure_timestamp = timestamp + rand_r(&rand_seed) %
+      uint64_t failure_timestamp =
+        timestamp + static_cast<uint64_t>(rand_r(&rand_seed)) %
         (SECONDS_IN_HOUR * MICROSECONDS_IN_SECOND);
       EventDescriptor event_desc;
       uint64_t machine_id = 0;
       // Loop until we find a machine id that is not currently in a failed state
       while (true) {
-        machine_id = rand_r(&rand_seed) % FLAGS_synthetic_num_machines + 1;
+        machine_id = static_cast<uint64_t>(rand_r(&rand_seed)) %
+          FLAGS_synthetic_num_machines + 1;
         uint64_t* recovery_timestamp = FindOrNull(machine_recovery, machine_id);
         if (!recovery_timestamp || *recovery_timestamp < failure_timestamp) {
           break;

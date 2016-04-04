@@ -89,9 +89,9 @@ class QuincyCostModel : public CostModelInterface {
   uint64_t ComputeDataStatsForMachine(
       const TaskDescriptor& td, ResourceID_t machine_res_id,
       uint64_t* data_on_rack, uint64_t* data_on_machine);
-  int64_t ComputeTransferCostToMachine(uint64_t remote_data,
-                                       uint64_t data_on_rack);
-  int64_t ComputeTransferCostToRack(
+  Cost_t ComputeTransferCostToMachine(uint64_t remote_data,
+                                      uint64_t data_on_rack);
+  Cost_t ComputeTransferCostToRack(
       EquivClass_t ec,
       uint64_t input_size,
       uint64_t data_on_rack,
@@ -104,8 +104,8 @@ class QuincyCostModel : public CostModelInterface {
    * @param task_id the id of the task
    * @param res_id the id of the resource on which the task is running
    */
-  int64_t GetTransferCostToNotPreferredRes(TaskID_t task_id,
-                                           ResourceID_t res_id);
+  Cost_t GetTransferCostToNotPreferredRes(TaskID_t task_id,
+                                          ResourceID_t res_id);
   void RemovePreferencesToMachine(ResourceID_t res_id);
   void RemovePreferencesToRack(EquivClass_t ec);
   void UpdateMachineBlocks(
@@ -125,7 +125,7 @@ class QuincyCostModel : public CostModelInterface {
    */
   void UpdateTaskCosts(const TaskDescriptor& td, EquivClass_t ec_changed,
                        bool rack_removed);
-  int64_t UpdateTaskCostForRack(const TaskDescriptor& td, EquivClass_t rack_ec);
+  Cost_t UpdateTaskCostForRack(const TaskDescriptor& td, EquivClass_t rack_ec);
 
   /**
    * Depending on how much data the machine has, the method adds, updates
@@ -139,18 +139,18 @@ class QuincyCostModel : public CostModelInterface {
    * @return an updated version of the task's machine preference map. If the
    * passed task_pref_machines is NULL the method may return a new pointer
    */
-  unordered_map<ResourceID_t, int64_t, boost::hash<ResourceID_t>>*
+  unordered_map<ResourceID_t, Cost_t, boost::hash<ResourceID_t>>*
     UpdateTaskPreferredMachineList(
       TaskID_t task_id,
       uint64_t input_size,
       ResourceID_t machine_res_id,
       uint64_t data_on_machine,
-      int64_t transfer_cost,
-      unordered_map<ResourceID_t, int64_t, boost::hash<ResourceID_t>>*
+      Cost_t transfer_cost,
+      unordered_map<ResourceID_t, Cost_t, boost::hash<ResourceID_t>>*
       task_pref_machines);
   void UpdateTaskPreferredRacksList(
       TaskID_t task_id, uint64_t input_size, uint64_t data_on_rack,
-      int64_t worst_rack_cost, EquivClass_t rack_ec);
+      Cost_t worst_rack_cost, EquivClass_t rack_ec);
   inline uint64_t GetNumSchedulableSlots(ResourceID_t res_id) {
     ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
     CHECK_NOTNULL(rs);
@@ -177,14 +177,14 @@ class QuincyCostModel : public CostModelInterface {
   // EC corresponding to the cluster aggregator node.
   EquivClass_t cluster_aggregator_ec_;
   // Map storing the EC preference list for each task.
-  unordered_map<TaskID_t, unordered_map<EquivClass_t, int64_t>>
+  unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t>>
     task_preferred_ecs_;
   // Map storing the machine preference list for each task.
   unordered_map<TaskID_t,
-    unordered_map<ResourceID_t, int64_t, boost::hash<ResourceID_t>>>
+    unordered_map<ResourceID_t, Cost_t, boost::hash<ResourceID_t>>>
     task_preferred_machines_;
   // Map storing the data transfer cost and the resource for each running task.
-  unordered_map<TaskID_t, pair<ResourceID_t, int64_t>> task_running_arcs_;
+  unordered_map<TaskID_t, pair<ResourceID_t, Cost_t>> task_running_arcs_;
   TraceGenerator* trace_generator_;
   TimeInterface* time_manager_;
   DataLayerManagerInterface* data_layer_manager_;

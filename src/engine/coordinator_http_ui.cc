@@ -79,12 +79,13 @@ void CoordinatorHTTPUI::AddHeaderToTemplate(TemplateDictionary* dict,
   pgheader_sub_dict->SetValue("RESOURCE_HOST", coordinator_->hostname());
   // Statistics for page header
   pgheader_sub_dict->SetIntValue("NUM_JOBS_RUNNING",
-      coordinator_->NumJobsInState(JobDescriptor::RUNNING));
+      static_cast<int64_t>(coordinator_->NumJobsInState(JobDescriptor::RUNNING)));
   pgheader_sub_dict->SetIntValue("NUM_TASKS_RUNNING",
-      coordinator_->NumTasksInState(TaskDescriptor::RUNNING) +
-      coordinator_->NumTasksInState(TaskDescriptor::DELEGATED));
+      static_cast<int64_t>(
+          coordinator_->NumTasksInState(TaskDescriptor::RUNNING) +
+          coordinator_->NumTasksInState(TaskDescriptor::DELEGATED)));
   pgheader_sub_dict->SetIntValue("NUM_RESOURCES",
-      coordinator_->NumResources());
+      static_cast<int64_t>(coordinator_->NumResources()));
   // Error message, if set
   if (err) {
     TemplateDictionary* err_dict =
@@ -178,21 +179,29 @@ void CoordinatorHTTPUI::HandleRootURI(const http::request_ptr& http_request,
                           URITools::GetHostnameFromURI(
                               coordinator_->parent_uri()));
   }
-  dict.SetIntValue("NUM_JOBS_KNOWN", coordinator_->NumJobs());
-  dict.SetIntValue("NUM_JOBS_RUNNING", coordinator_->NumJobsInState(
-      JobDescriptor::RUNNING));
-  dict.SetIntValue("NUM_TASKS_KNOWN", coordinator_->NumTasks());
+  dict.SetIntValue("NUM_JOBS_KNOWN",
+                   static_cast<int64_t>(coordinator_->NumJobs()));
+  dict.SetIntValue("NUM_JOBS_RUNNING",
+                   static_cast<int64_t>(coordinator_->NumJobsInState(
+                       JobDescriptor::RUNNING)));
+  dict.SetIntValue("NUM_TASKS_KNOWN",
+                   static_cast<int64_t>(coordinator_->NumTasks()));
   dict.SetIntValue("NUM_TASKS_RUNNING",
-      coordinator_->NumTasksInState(TaskDescriptor::RUNNING) +
-      coordinator_->NumTasksInState(TaskDescriptor::DELEGATED));
+      static_cast<int64_t>(
+          coordinator_->NumTasksInState(TaskDescriptor::RUNNING) +
+          coordinator_->NumTasksInState(TaskDescriptor::DELEGATED)));
   // The +1 is because the coordinator itself is a resource, too.
-  dict.SetIntValue("NUM_RESOURCES_KNOWN", coordinator_->NumResources() + 1);
-  dict.SetIntValue("NUM_RESOURCES_LOCAL", coordinator_->NumResources());
+  dict.SetIntValue("NUM_RESOURCES_KNOWN",
+                   static_cast<int64_t>(coordinator_->NumResources()) + 1);
+  dict.SetIntValue("NUM_RESOURCES_LOCAL",
+                   static_cast<int64_t>(coordinator_->NumResources()));
   dict.SetIntValue("NUM_REFERENCES_KNOWN",
-                   coordinator_->get_object_store()->NumTotalReferences());
+                   static_cast<int64_t>(
+                       coordinator_->get_object_store()->NumTotalReferences()));
   dict.SetIntValue("NUM_REFERENCES_CONCRETE",
-                   coordinator_->get_object_store()->NumReferencesOfType(
-                       ReferenceDescriptor::CONCRETE));
+                   static_cast<int64_t>(
+                       coordinator_->get_object_store()->NumReferencesOfType(
+                           ReferenceDescriptor::CONCRETE)));
   // Scheduler information
   if (FLAGS_scheduler == "simple") {
     dict.SetValue("SCHEDULER_NAME", "queue-based");
@@ -209,7 +218,8 @@ void CoordinatorHTTPUI::HandleRootURI(const http::request_ptr& http_request,
       for (uint64_t i = 0; i < sched->dispatcher().seq_num(); ++i) {
         TemplateDictionary* iteration_dict =
             flow_scheduler_detail_dict->AddSectionDictionary("SCHEDULER_ITER");
-        iteration_dict->SetIntValue("SCHEDULER_ITER_ID", i);
+        iteration_dict->SetIntValue("SCHEDULER_ITER_ID",
+                                    static_cast<int64_t>(i));
       }
     }
   }
@@ -234,7 +244,7 @@ void CoordinatorHTTPUI::HandleJobsListURI(const http::request_ptr& http_request,
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
   // Get job list from coordinator
   vector<JobDescriptor> jobs = coordinator_->active_jobs();
-  uint64_t i = 0;
+  int64_t i = 0;
   TemplateDictionary dict("jobs_list");
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
@@ -439,7 +449,7 @@ void CoordinatorHTTPUI::HandleResourcesListURI(
   // Get resource information from coordinator
   const vector<ResourceStatus*> resources =
       coordinator_->associated_resources();
-  uint64_t i = 0;
+  int64_t i = 0;
   TemplateDictionary dict("resources_list");
   AddHeaderToTemplate(&dict, coordinator_->uuid(), NULL);
   AddFooterToTemplate(&dict);
@@ -659,7 +669,8 @@ void CoordinatorHTTPUI::HandleReferenceURI(
                                         (*ref_iter)->desc().scope()));
       sect_dict->SetIntValue("REF_NONDET",
                             (*ref_iter)->desc().non_deterministic());
-      sect_dict->SetIntValue("REF_SIZE", (*ref_iter)->desc().size());
+      sect_dict->SetIntValue("REF_SIZE",
+                             static_cast<int64_t>((*ref_iter)->desc().size()));
       sect_dict->SetFormattedValue("REF_PRODUCER", "%ju",
                                   (*ref_iter)->desc().producing_task());
     }
@@ -806,10 +817,10 @@ void CoordinatorHTTPUI::HandleStatisticsURI(
     const deque<MachinePerfStatisticsSample> result =
       coordinator_->scheduler()->knowledge_base()->GetStatsForMachine(res_id);
     if (coordinator_->GetResourceTreeNode(res_id)) {
-      int64_t length = result.size();
+      int64_t length = static_cast<int64_t>(result.size());
       output += "[";
       for (deque<MachinePerfStatisticsSample>::const_iterator it =
-          result.begin() + max(0LL, length - WEBUI_PERF_QUEUE_LEN);
+             result.begin() + max(0LL, length - WEBUI_PERF_QUEUE_LEN);
           it != result.end();
           ++it) {
         if (output != "[")
@@ -837,9 +848,9 @@ void CoordinatorHTTPUI::HandleStatisticsURI(
             TaskIDFromString(task_id_str));
     if (samples_result) {
       bool first = true;
-      int64_t length = samples_result->size();
+      int64_t length = static_cast<int64_t>(samples_result->size());
       for (deque<TaskPerfStatisticsSample>::const_iterator it =
-          samples_result->begin() + max(0LL, length - WEBUI_PERF_QUEUE_LEN);
+             samples_result->begin() + max(0LL, length - WEBUI_PERF_QUEUE_LEN);
           it != samples_result->end();
           ++it) {
         if (!first)
@@ -1310,7 +1321,7 @@ void CoordinatorHTTPUI::ServeFile(const string& filename,
     } else if (n == 0) {
       break;
     }
-    writer->write(&output[0], n);
+    writer->write(&output[0], static_cast<size_t>(n));
   }
   close(fd);
 }

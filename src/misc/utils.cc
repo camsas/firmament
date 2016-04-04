@@ -88,7 +88,7 @@ void SetupResourceID(boost::mt19937 *resource_id, const char *seed) {
     snprintf(hn, sizeof(hn), "%s", seed);
   }
   // Hash the hostname (truncated to 100 characters)
-  uint64_t hash = SpookyHash::Hash32(&hn, sizeof(hn), SEED);
+  uint32_t hash = SpookyHash::Hash32(&hn, sizeof(hn), SEED);
   VLOG(2) << "Seeding resource ID RNG with " << hash << " from seed " << hn;
   resource_id->seed(hash);
 }
@@ -150,8 +150,9 @@ TaskID_t GenerateTaskID(const TaskDescriptor& parent_task, uint64_t child_num) {
 
 DataObjectID_t GenerateDataObjectID(const TaskDescriptor& producing_task) {
   // A thin shim that converts to the signature of GenerateDataObjectID.
-  return GenerateDataObjectID(producing_task.uid(),
-                              producing_task.outputs_size());
+  return GenerateDataObjectID(
+      producing_task.uid(),
+      static_cast<TaskOutputID_t>(producing_task.outputs_size()));
 }
 
 DataObjectID_t GenerateDataObjectID(
