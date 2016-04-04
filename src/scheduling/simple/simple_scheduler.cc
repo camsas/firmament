@@ -164,7 +164,8 @@ uint64_t SimpleScheduler::ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
     num_scheduled_tasks += ScheduleJob(jd_ptr, scheduler_stats);
   }
   if (scheduler_stats != NULL) {
-    scheduler_stats->scheduler_runtime_ = scheduler_timer.elapsed().wall /
+    scheduler_stats->scheduler_runtime_ =
+      static_cast<uint64_t>(scheduler_timer.elapsed().wall) /
       NANOSECONDS_IN_MICROSECOND;
   }
   return num_scheduled_tasks;

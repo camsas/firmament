@@ -198,7 +198,7 @@ bool GoogleTraceLoader::LoadTaskEvents(
             event_desc.set_scheduling_class(lexical_cast<uint32_t>(vals[7]));
             event_desc.set_priority(lexical_cast<uint32_t>(vals[8]));
             try {
-              event_desc.set_requested_cpu_cores(lexical_cast<double>(vals[9]) *
+              event_desc.set_requested_cpu_cores(lexical_cast<float>(vals[9]) *
                                                  FLAGS_sim_machine_max_cores);
             } catch (boost::bad_lexical_cast e) {
               event_desc.set_requested_cpu_cores(0);
@@ -368,7 +368,7 @@ uint64_t GoogleTraceLoader::MaxEventHashToRetain() {
   if (IsEqual(FLAGS_events_fraction, 1.0)) {
     return UINT64_MAX;
   } else {
-    return FLAGS_events_fraction * UINT64_MAX;
+    return static_cast<uint64_t>(FLAGS_events_fraction * UINT64_MAX);
   }
 }
 

@@ -382,7 +382,7 @@ class FlowGraphManager {
   // Counter updated whenever we compute topology statistics. The counter is
   // used as a marker in the resource topology traversal. It helps us to avoid
   // having to reset the visited state before each traversal.
-  uint64_t cur_traversal_counter_;
+  uint32_t cur_traversal_counter_;
 };
 
 }  // namespace firmament

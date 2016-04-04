@@ -25,8 +25,8 @@ DEFINE_string(serial_machine_samples, "serial_machine_samples",
 DEFINE_string(serial_task_samples, "serial_task_samples",
               "Path to the file where the knowledge base will serialize task"
               " specific information");
-DEFINE_int64(max_sample_queue_size, 100,
-             "Maximum size (in KB) of each queue storing historical data");
+DEFINE_uint64(max_sample_queue_size, 100,
+              "Maximum size (in KB) of each queue storing historical data");
 
 namespace firmament {
 

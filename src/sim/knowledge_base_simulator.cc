@@ -99,8 +99,9 @@ void KnowledgeBaseSimulator::PopulateTaskFinalReport(TaskDescriptor* td_ptr,
   if (task_stats && task_stats->avg_cpi_ > COMPARE_EPS) {
     double instructions = (td_ptr->finish_time() - td_ptr->start_time()) /
       task_stats->avg_cpi_ * SIMULATED_CPU_FREQUENCY;
-    report->set_instructions(instructions);
-    report->set_cycles(instructions * task_stats->avg_cpi_);
+    report->set_instructions(static_cast<uint64_t>(instructions));
+    report->set_cycles(
+        static_cast<uint64_t>(instructions * task_stats->avg_cpi_));
   } else {
     // We don't have any stats for the task.
     // XXX(ionel): We assume a CPI of 1. Maybe set to the avg_cpi of the
@@ -108,8 +109,8 @@ void KnowledgeBaseSimulator::PopulateTaskFinalReport(TaskDescriptor* td_ptr,
     double cpi = 1.0;
     double instructions = (td_ptr->finish_time() - td_ptr->start_time()) *
       SIMULATED_CPU_FREQUENCY / cpi;
-    report->set_instructions(instructions);
-    report->set_cycles(instructions * cpi);
+    report->set_instructions(static_cast<uint64_t>(instructions));
+    report->set_cycles(static_cast<uint64_t>(instructions * cpi));
   }
 }
 

@@ -3,7 +3,7 @@ include_directories(${Firmament_BUILD_DIR}/src)
 
 # debug/release flags
 if(DEBUG)
-  set(CMAKE_CXX_FLAGS "-g -O0 -fsanitize=address -fsanitize=undefined")
+  set(CMAKE_CXX_FLAGS "-g -O0 -fsanitize=address -fsanitize=undefined -pedantic -Wconversion")
 else()
   set(CMAKE_CXX_FLAGS "-O3")
 endif()

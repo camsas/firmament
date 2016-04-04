@@ -127,7 +127,7 @@ uint32_t HdfsDataLocalityManager::GetNumberOfBlocks(const string& filename) {
   }
   hdfsFreeFileInfo(file_stat, 1);
   hdfsFreeFileBlockLocations(block_location, num_blocks);
-  return num_blocks;
+  return static_cast<uint32_t>(num_blocks);
 }
 
 ResourceID_t HdfsDataLocalityManager::HostToResourceID(const string& hostname) {

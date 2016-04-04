@@ -137,7 +137,7 @@ void FlowGraphManager::AddResourceTopologyDFS(
         rd_ptr->set_num_slots_below(FLAGS_max_tasks_per_pu);
         if (!rd_ptr->has_num_running_tasks_below()) {
           rd_ptr->set_num_running_tasks_below(
-              rd_ptr->current_running_tasks_size());
+              static_cast<uint64_t>(rd_ptr->current_running_tasks_size()));
         }
       }
     } else {
@@ -189,10 +189,13 @@ void FlowGraphManager::AddResourceTopology(
     // already added an arc between rtnd_ptr and its parent.
     FlowGraphNode* cur_node =
       NodeForResourceID(ResourceIDFromString(rtnd_ptr->parent_id()));
+    int64_t running_tasks_delta =
+      static_cast<int64_t>(rtnd_ptr->resource_desc().num_running_tasks_below());
+    int64_t capacity_to_parent = static_cast<int64_t>(
+        CapacityFromResNodeToParent(rtnd_ptr->resource_desc()));
     UpdateResourceStatsUpToRoot(
-        cur_node, CapacityFromResNodeToParent(rtnd_ptr->resource_desc()),
-        rtnd_ptr->resource_desc().num_slots_below(),
-        rtnd_ptr->resource_desc().num_running_tasks_below());
+        cur_node, capacity_to_parent,
+        rtnd_ptr->resource_desc().num_slots_below(), running_tasks_delta);
   }
 }
 
@@ -387,7 +390,7 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
       // This preference arc connects the same nodes as the running arc. Hence,
       // we just transform it into the running arc.
       added_running_arc = true;
-      uint64_t new_cost =
+      int64_t new_cost =
         cost_model_->TaskContinuationCost(task_node->td_ptr_->uid());
       arc->type_ = RUNNING;
       graph_change_manager_->ChangeArc(
@@ -503,9 +506,10 @@ void FlowGraphManager::RemoveResourceTopology(const ResourceDescriptor& rd,
     }
   }
   // Propagate the stats update up to the root resource.
-  UpdateResourceStatsUpToRoot(res_node, cap_delta,
-                              -(res_node->rd_ptr_->num_slots_below()),
-                              -(res_node->rd_ptr_->num_running_tasks_below()));
+  UpdateResourceStatsUpToRoot(
+      res_node, cap_delta,
+      -(static_cast<int64_t>(res_node->rd_ptr_->num_slots_below())),
+      -(static_cast<int64_t>(res_node->rd_ptr_->num_running_tasks_below())));
   // Delete the node.
   if (res_node->type_ == FlowNodeType::PU) {
     pus_removed->insert(res_node->id_);
@@ -679,7 +683,7 @@ void FlowGraphManager::UpdateArcsForScheduledTask(FlowGraphNode* task_node,
   if (FLAGS_preemption) {
     // We do not remove any old arcs. We only add/change a running arc to
     // the resource.
-    uint64_t new_cost =
+    int64_t new_cost =
       cost_model_->TaskContinuationCost(task_node->td_ptr_->uid());
     FlowGraphArc* running_arc =
       FindPtrOrNull(task_to_running_arc_, task_node->td_ptr_->uid());
@@ -892,13 +896,13 @@ void FlowGraphManager::UpdateResourceTopology(
     // we already update the arc between rtnd_ptr and its parent.
     FlowGraphNode* cur_node =
       NodeForResourceID(ResourceIDFromString(rtnd_ptr->parent_id()));
-    int64_t cap_delta =
-      static_cast<int64_t>(CapacityFromResNodeToParent(rd)) - old_capacity;
-    int64_t num_slots_delta =
-      static_cast<int64_t>(rd.num_slots_below()) - old_num_slots;
+    int64_t cap_delta = static_cast<int64_t>(CapacityFromResNodeToParent(rd)) -
+      static_cast<int64_t>(old_capacity);
+    int64_t num_slots_delta = static_cast<int64_t>(rd.num_slots_below()) -
+      static_cast<int64_t>(old_num_slots);
     int64_t num_running_tasks_delta =
       static_cast<int64_t>(rd.num_running_tasks_below()) -
-      old_num_running_tasks;
+      static_cast<int64_t>(old_num_running_tasks);
     UpdateResourceStatsUpToRoot(cur_node, cap_delta, num_slots_delta,
                                 num_running_tasks_delta);
   }
@@ -911,7 +915,8 @@ void FlowGraphManager::UpdateResourceTopologyDFS(
   if (rd_ptr->type() == ResourceDescriptor::RESOURCE_PU) {
     // Base case.
     rd_ptr->set_num_slots_below(FLAGS_max_tasks_per_pu);
-    rd_ptr->set_num_running_tasks_below(rd_ptr->current_running_tasks_size());
+    rd_ptr->set_num_running_tasks_below(
+        static_cast<uint64_t>(rd_ptr->current_running_tasks_size()));
   } else {
     rd_ptr->set_num_slots_below(0);
     rd_ptr->set_num_running_tasks_below(0);
@@ -960,6 +965,7 @@ void FlowGraphManager::UpdateResourceStatsUpToRoot(
         graph_change_manager_->mutable_flow_graph()->GetArc(parent_node,
                                                             cur_node);
       CHECK_NOTNULL(parent_arc);
+      CHECK_GE(parent_arc->cap_upper_bound_, cap_delta);
       graph_change_manager_->ChangeArcCapacity(
           parent_arc, parent_arc->cap_upper_bound_ + cap_delta,
           CHG_ARC_BETWEEN_RES, "UpdateCapacityUpToRoot");
@@ -1034,7 +1040,7 @@ void FlowGraphManager::UpdateRunningTaskNode(
   FlowGraphArc* running_arc = FindPtrOrNull(task_to_running_arc_,
                                             task_node->td_ptr_->uid());
   CHECK_NOTNULL(running_arc);
-  uint64_t new_cost =
+  int64_t new_cost =
     cost_model_->TaskContinuationCost(task_node->td_ptr_->uid());
   graph_change_manager_->ChangeArcCost(
       running_arc, new_cost, CHG_ARC_TASK_TO_RES,
@@ -1218,10 +1224,12 @@ void FlowGraphManager::UpdateUnscheduledAggNode(
         unsched_agg_node, sink_node_, 0, cap_delta, new_cost,
         OTHER, ADD_ARC_FROM_UNSCHED, "UpdateUnscheduledAggNode");
   } else {
+    CHECK_GE(unsched_agg_sink_arc->cap_upper_bound_, cap_delta);
+    uint64_t new_capacity = unsched_agg_sink_arc->cap_upper_bound_ + cap_delta;
     graph_change_manager_->ChangeArc(
         unsched_agg_sink_arc, unsched_agg_sink_arc->cap_lower_bound_,
-        unsched_agg_sink_arc->cap_upper_bound_ + cap_delta,
-        new_cost, CHG_ARC_FROM_UNSCHED, "UpdateUnscheduledAggNode");
+        new_capacity, new_cost, CHG_ARC_FROM_UNSCHED,
+        "UpdateUnscheduledAggNode");
   }
 }
 

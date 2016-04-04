@@ -88,14 +88,15 @@ void SetupResourceID(boost::mt19937 *resource_id, const char *seed) {
     snprintf(hn, sizeof(hn), "%s", seed);
   }
   // Hash the hostname (truncated to 100 characters)
-  uint64_t hash = SpookyHash::Hash64(&hn, sizeof(hn), SEED);
+  uint64_t hash = SpookyHash::Hash32(&hn, sizeof(hn), SEED);
   VLOG(2) << "Seeding resource ID RNG with " << hash << " from seed " << hn;
   resource_id->seed(hash);
 }
 
 ResourceID_t GenerateRootResourceID(const string& hostname) {
   // Hash the hostname
-  uint64_t hash = HashString(hostname);
+  uint32_t hash =
+    SpookyHash::Hash32(hostname.c_str(), sizeof(char) * hostname.length(), SEED);
   VLOG(2) << "Seeing resource ID RNG with " << hash << " from hostname "
           << hostname;
   resource_id_rg_.seed(hash);
@@ -114,7 +115,7 @@ JobID_t GenerateJobID() {
 }
 
 JobID_t GenerateJobID(uint64_t job_id) {
-  uint64_t hash = SpookyHash::Hash64(&job_id, sizeof(job_id), SEED);
+  uint32_t hash = SpookyHash::Hash32(&job_id, sizeof(job_id), SEED);
   job_id_rg_.seed(hash);
   job_id_rg_init_ = true;
   boost::uuids::basic_random_generator<boost::mt19937> gen(&job_id_rg_);
@@ -479,10 +480,12 @@ ResourceID_t PickRandomResourceID(
   size_t bucket_index = 0;
   size_t bucket_size = 0;
   while (bucket_size == 0) {
-    bucket_index = rand_r(&rand_seed) % leaf_res_ids.bucket_count();
+    bucket_index =
+      static_cast<size_t>(rand_r(&rand_seed)) % leaf_res_ids.bucket_count();
     bucket_size = leaf_res_ids.bucket_size(bucket_index);
   }
-  size_t index_within_bucket = rand_r(&rand_seed) % bucket_size;
+  size_t index_within_bucket =
+    static_cast<size_t>(rand_r(&rand_seed)) % bucket_size;
   auto it = leaf_res_ids.begin(bucket_index);
   advance(it, index_within_bucket);
   return *it;

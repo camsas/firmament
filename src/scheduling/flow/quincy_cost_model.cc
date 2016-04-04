@@ -624,7 +624,7 @@ int64_t QuincyCostModel::UpdateTaskCostForRack(const TaskDescriptor& td,
   }
   // Update the cost for each machine in the rack.
   auto task_pref_machines = FindOrNull(task_preferred_machines_, td.uid());
-  uint64_t worst_rack_cost = INT64_MIN;
+  int64_t worst_rack_cost = INT64_MIN;
   for (const auto& machine_res_id : machines_in_rack) {
     auto machine_blocks = FindOrNull(machines_blocks, machine_res_id);
     if (machine_blocks) {
@@ -633,7 +633,7 @@ int64_t QuincyCostModel::UpdateTaskCostForRack(const TaskDescriptor& td,
       for (auto& machine_block_size : *machine_blocks) {
         data_on_machine += machine_block_size.second;
       }
-      uint64_t transfer_cost =
+      int64_t transfer_cost =
         ComputeTransferCostToMachine(input_size - data_on_machine,
                                      data_on_rack - data_on_machine);
       task_pref_machines =
