@@ -46,7 +46,7 @@ Cost_t OctopusCostModel::ResourceNodeToResourceNodeCost(
     const ResourceDescriptor& dst) {
   // The cost in the Octopus model is the number of already running tasks, i.e.
   // a crude per-task load balancing algorithm.
-  return dst.num_running_tasks_below();
+  return static_cast<Cost_t>(dst.num_running_tasks_below());
 }
 
 Cost_t OctopusCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
@@ -151,7 +151,8 @@ FlowGraphNode* OctopusCostModel::GatherStats(FlowGraphNode* accumulator,
         return accumulator;
       CHECK_EQ(other->type_, FlowNodeType::SINK);
       accumulator->rd_ptr_->set_num_running_tasks_below(
-          accumulator->rd_ptr_->current_running_tasks_size());
+          static_cast<uint64_t>(
+              accumulator->rd_ptr_->current_running_tasks_size()));
       accumulator->rd_ptr_->set_num_slots_below(FLAGS_max_tasks_per_pu);
     }
     return accumulator;

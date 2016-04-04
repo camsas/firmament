@@ -25,7 +25,7 @@ namespace firmament {
 
 typedef struct CostVector {
   // record number of dimensions here
-  static const uint16_t dimensions_ = 8;
+  static const int16_t dimensions_ = 8;
   // Data follows
   uint32_t priority_;
   uint32_t cpu_cores_;
@@ -85,9 +85,9 @@ class CocoCostModel : public CostModelInterface {
  private:
   // Fixed value for OMEGA, the normalization ceiling for each dimension's cost
   // value
-  const uint64_t omega_ = 1000;
+  const Cost_t omega_ = 1000;
   const Cost_t WAIT_TIME_MULTIPLIER = 1;
-  const uint64_t MAX_PRIORITY_VALUE = 10;
+  const int64_t MAX_PRIORITY_VALUE = 10LL;
 
   // Resource vector comparison type and enum
   typedef enum {
@@ -116,7 +116,7 @@ class CocoCostModel : public CostModelInterface {
     const ResourceVector& rv1,
     const ResourceVector& rv2);
   // Interference score
-  uint64_t ComputeInterferenceScore(ResourceID_t res_id);
+  int64_t ComputeInterferenceScore(ResourceID_t res_id);
   // Helper method to get TD for a task ID
   const TaskDescriptor& GetTask(TaskID_t task_id);
   void GetInterferenceScoreForTask(TaskID_t task_id,
@@ -126,8 +126,7 @@ class CocoCostModel : public CostModelInterface {
   // Get machine resource for a lower-level resource
   ResourceID_t MachineResIDForResource(ResourceID_t res_id);
   // Bring cost into the range (0, omega_)
-  uint32_t NormalizeCost(double raw_cost, double max_cost);
-  uint32_t NormalizeCost(uint64_t raw_cost, uint64_t max_cost);
+  Cost_t NormalizeCost(double raw_cost, double max_cost);
   // Get a delimited string representing a resource vector
   string ResourceVectorToString(const ResourceVector& rv,
                                 const string& delimiter) const;
@@ -157,7 +156,7 @@ class CocoCostModel : public CostModelInterface {
   unordered_set<EquivClass_t> task_aggs_;
 
   // Largest cost seen so far, plus one
-  uint64_t infinity_;
+  Cost_t infinity_;
   // Vector to track the maximum capacity values in each dimension
   // present in the cluster (N.B.: these can execeed OMEGA).
   ResourceVector max_machine_capacity_;

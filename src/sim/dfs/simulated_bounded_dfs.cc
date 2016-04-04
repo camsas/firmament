@@ -68,7 +68,8 @@ ResourceID_t SimulatedBoundedDFS::PlaceBlockOnMachinesPool(
   ResourceID_t machine_res_id;
   uint64_t* num_free_blocks;
   do {
-    uint32_t machine_index = rand_r(&rand_seed_) % machines->size();
+    uint32_t machine_index =
+      static_cast<uint32_t>(rand_r(&rand_seed_)) % machines->size();
     num_free_blocks =
       FindOrNull(machine_num_free_blocks_, (*machines)[machine_index]);
     CHECK_NOTNULL(num_free_blocks);
@@ -95,7 +96,8 @@ void SimulatedBoundedDFS::GetRandomMachinePool(
       LOG(FATAL) << "Could not find " << num_machines
                  << " with available space";
     }
-    uint32_t machine_index = rand_r(&rand_seed_) % machines_.size();
+    uint32_t machine_index =
+      static_cast<uint32_t>(rand_r(&rand_seed_)) % machines_.size();
     ResourceID_t machine_res_id = machines_[machine_index];
     uint64_t* num_free_blocks =
       FindOrNull(machine_num_free_blocks_, machine_res_id);
@@ -113,7 +115,8 @@ void SimulatedBoundedDFS::GetJobMachinePool(const string& job_id,
   uint32_t machine_rand_seed =
     SpookyHash::Hash32(&job_id, sizeof(job_id), MACHINE_POOL_SEED);
   while (machines->size() < num_tasks) {
-    uint32_t machine_index = rand_r(&machine_rand_seed) % machines_.size();
+    uint32_t machine_index =
+      static_cast<uint32_t>(rand_r(&machine_rand_seed)) % machines_.size();
     machines->push_back(machines_[machine_index]);
   }
 }

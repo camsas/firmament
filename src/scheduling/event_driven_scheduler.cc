@@ -25,8 +25,8 @@
 #include "storage/reference_types.h"
 #include "storage/reference_utils.h"
 
-DEFINE_int64(task_fail_timeout, 60, "Time (in seconds) after which to declare "
-             "a task as failed if it has not sent heartbeats");
+DEFINE_uint64(task_fail_timeout, 60, "Time (in seconds) after which to declare "
+              "a task as failed if it has not sent heartbeats");
 
 namespace firmament {
 namespace scheduler {

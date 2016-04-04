@@ -78,7 +78,8 @@ ResourceID_t SimulatedUniformDFS::PlaceBlockOnRandomMachine() {
   // free space.
   uint64_t num_machines_selected = 0;
   do {
-    uint32_t machine_index = rand_r(&rand_seed_) % machines_.size();
+    uint32_t machine_index =
+      static_cast<uint32_t>(rand_r(&rand_seed_)) % machines_.size();
     machine_res_id = machines_[machine_index];
     num_free_blocks = FindOrNull(machine_num_free_blocks_, machine_res_id);
     CHECK_NOTNULL(num_free_blocks);

@@ -26,7 +26,7 @@ using boost::hash;
 
 DECLARE_uint64(runtime);
 DECLARE_string(scheduler);
-DECLARE_int64(sim_machine_max_ram);
+DECLARE_uint64(sim_machine_max_ram);
 DECLARE_int32(flow_scheduling_cost_model);
 
 namespace firmament {
@@ -297,7 +297,6 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(
   // Add a dependency for the task.
   if (data_layer_manager_) {
     ReferenceDescriptor* dependency =  new_task->add_dependencies();
-    uint64_t avg_runtime = 0;
     uint64_t* runtime_ptr = FindOrNull(task_runtime_, task_id);
     uint64_t input_size = 0;
     if (runtime_ptr) {
@@ -587,7 +586,7 @@ void SimulatorBridge::SetupMachine(
       new ResourceStatus(rd, rtnd, "endpoint_uri",
                          simulated_time_->GetCurrentTimestamp())));
   if (rd->type() == ResourceDescriptor::RESOURCE_PU) {
-    uint64_t cpu_cores = 1;
+    float cpu_cores = 1;
     if (machine_res_cap->has_cpu_cores()) {
       cpu_cores = machine_res_cap->cpu_cores() + 1;
     }
