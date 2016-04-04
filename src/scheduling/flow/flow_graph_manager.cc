@@ -1236,7 +1236,6 @@ void FlowGraphManager::UpdateUnscheduledAggNode(
   } else {
     int64_t cap_upper_bound =
       static_cast<int64_t>(unsched_agg_sink_arc->cap_upper_bound_);
-    CHECK_GE(cap_upper_bound, cap_delta);
     uint64_t new_capacity = static_cast<uint64_t>(cap_upper_bound + cap_delta);
     graph_change_manager_->ChangeArc(
         unsched_agg_sink_arc, unsched_agg_sink_arc->cap_lower_bound_,
