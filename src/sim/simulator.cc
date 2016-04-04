@@ -30,8 +30,6 @@ using boost::token_compress_off;
 
 DEFINE_string(solver, "flowlessly",
               "Solver to use: flowlessly | cs2 | custom.");
-DEFINE_uint64(scheduler_timeout, UINT64_MAX,
-              "Timeout: terminate after waiting this number of seconds");
 DEFINE_bool(run_incremental_scheduler, false,
             "Run the Flowlessly incremental scheduler.");
 DEFINE_string(simulation, "google",
@@ -168,16 +166,12 @@ void Simulator::Run() {
   }
 
   LOG(INFO) << "Starting Google trace simulator!";
-  // Register timeout handler.
-  signal(SIGALRM, Simulator::SchedulerTimeoutHandler);
   ReplaySimulation();
   LOG(INFO) << "Simulator has seen " << bridge_->get_num_duplicate_task_ids()
             << " duplicate task ids";
 }
 
 uint64_t Simulator::ScheduleJobsHelper(uint64_t run_scheduler_at) {
-  // Set a timeout on the scheduler's run
-  alarm(FLAGS_scheduler_timeout);
   boost::timer::cpu_timer timer;
   scheduler::SchedulerStats scheduler_stats;
   bridge_->ScheduleJobs(&scheduler_stats);
@@ -189,12 +183,6 @@ uint64_t Simulator::ScheduleJobsHelper(uint64_t run_scheduler_at) {
     return event_manager_->GetTimeOfNextSchedulerRun(
         run_scheduler_at, scheduler_stats.scheduler_runtime_);
   }
-}
-
-void Simulator::SchedulerTimeoutHandler(int sig) {
-  signal(SIGALRM, SIG_IGN);
-  LOG(FATAL) << "Timeout after waiting for scheduler for "
-             << FLAGS_scheduler_timeout << " seconds.";
 }
 
 } // namespace sim
