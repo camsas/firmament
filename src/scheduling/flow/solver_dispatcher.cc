@@ -412,7 +412,7 @@ vector<unordered_map<uint64_t, uint64_t>>* SolverDispatcher::ReadFlowGraph(
   vector<unordered_map<uint64_t, uint64_t>>* adj_list =
     new vector<unordered_map<uint64_t, uint64_t> >(num_vertices + 1);
   // The cost is not returned.
-  uint64_t cost;
+  int64_t cost;
   char line[100];
   vector<string> vals;
   FILE* dbg_fptr = NULL;

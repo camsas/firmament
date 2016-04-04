@@ -28,11 +28,11 @@ DEFINE_double(quincy_preferred_machine_data_fraction, 0.1,
 DEFINE_double(quincy_preferred_rack_data_fraction, 0.1,
               "Threshold of proportion of data stored on rack for it to be on "
               "preferred list.");
-DEFINE_uint64(quincy_tor_transfer_cost, 1,
-              "Cost per unit of data transferred in core switch.");
+DEFINE_int64(quincy_tor_transfer_cost, 1,
+             "Cost per unit of data transferred in core switch.");
 // Cost was 2 for most experiments, 20 for constrained network experiments
-DEFINE_uint64(quincy_core_transfer_cost, 2,
-              "Cost per unit of data transferred in core switch.");
+DEFINE_int64(quincy_core_transfer_cost, 2,
+             "Cost per unit of data transferred in core switch.");
 DEFINE_bool(quincy_update_costs_upon_machine_change, true,
             "True if the costs should be updated if a machine is added or "
             "removed");
@@ -67,9 +67,13 @@ QuincyCostModel::~QuincyCostModel() {
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
-  return (td.total_unscheduled_time() + time_manager_->GetCurrentTimestamp() -
-          td.submit_time()) *
-    FLAGS_quincy_wait_time_factor / MICROSECONDS_IN_SECOND;
+  int64_t total_unscheduled_time =
+    static_cast<int64_t>(td.total_unscheduled_time()) +
+    static_cast<int64_t>(time_manager_->GetCurrentTimestamp()) -
+    static_cast<int64_t>(td.submit_time());
+  return static_cast<int64_t>(total_unscheduled_time *
+                              FLAGS_quincy_wait_time_factor /
+                              static_cast<int64_t>(MICROSECONDS_IN_SECOND));
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
@@ -97,7 +101,7 @@ Cost_t QuincyCostModel::TaskToResourceNodeCost(TaskID_t task_id,
   }
 }
 
-uint64_t QuincyCostModel::GetTransferCostToNotPreferredRes(
+int64_t QuincyCostModel::GetTransferCostToNotPreferredRes(
     TaskID_t task_id,
     ResourceID_t res_id) {
   pair<ResourceID_t, int64_t>* machine_transfer_cost =
@@ -145,7 +149,7 @@ Cost_t QuincyCostModel::TaskContinuationCost(TaskID_t task_id) {
   Cost_t cost_to_resource = TaskToResourceNodeCost(task_id, machine_res_id);
   // cost_to_resource corresponds to d* and total_running_time corresponds
   // to p* in the Quincy paper.
-  return cost_to_resource - td.total_run_time();
+  return cost_to_resource - static_cast<int64_t>(td.total_run_time());
 }
 
 Cost_t QuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {
@@ -413,9 +417,9 @@ uint64_t QuincyCostModel::ComputeDataStatsForMachine(
 int64_t QuincyCostModel::ComputeTransferCostToMachine(uint64_t remote_data,
                                                       uint64_t data_on_rack) {
   CHECK_GE(remote_data, data_on_rack);
-  return (FLAGS_quincy_tor_transfer_cost * data_on_rack +
-    FLAGS_quincy_core_transfer_cost * (remote_data - data_on_rack)) /
-    BYTES_TO_GB;
+  return (FLAGS_quincy_tor_transfer_cost * static_cast<int64_t>(data_on_rack) +
+          FLAGS_quincy_core_transfer_cost *
+          static_cast<int64_t>(remote_data - data_on_rack)) / BYTES_TO_GB;
 }
 
 int64_t QuincyCostModel::ComputeTransferCostToRack(
@@ -478,8 +482,8 @@ void QuincyCostModel::ConstructTaskPreferredSet(TaskID_t task_id) {
   int64_t best_rack_cost = INT64_MAX;
   if (data_on_ecs.size() < data_layer_manager_->GetNumRacks()) {
     // There are racks on which we have no data.
-    worst_cluster_cost = FLAGS_quincy_core_transfer_cost * input_size /
-      BYTES_TO_GB;
+    worst_cluster_cost = FLAGS_quincy_core_transfer_cost *
+      static_cast<int64_t>(input_size) / BYTES_TO_GB;
     best_rack_cost = min(best_rack_cost, worst_cluster_cost);
   }
   for (auto& rack_data : data_on_ecs) {

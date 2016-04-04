@@ -23,8 +23,8 @@ class FlowGraph {
   FlowGraphArc* AddArc(uint64_t src, uint64_t dst);
   FlowGraphNode* AddNode();
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
-                 uint64_t cap_upper_bound, uint64_t cost);
-  void ChangeArcCost(FlowGraphArc* arc, uint64_t cost);
+                 uint64_t cap_upper_bound, int64_t cost);
+  void ChangeArcCost(FlowGraphArc* arc, int64_t cost);
   void DeleteArc(FlowGraphArc* arc);
   void DeleteNode(FlowGraphNode* node);
   FlowGraphArc* GetArc(FlowGraphNode* src, FlowGraphNode* dst);

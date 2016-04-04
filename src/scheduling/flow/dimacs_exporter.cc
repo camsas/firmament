@@ -53,7 +53,7 @@ void DIMACSExporter::ExportIncremental(const vector<DIMACSChange*>& changes,
 
 inline void DIMACSExporter::GenerateArc(const FlowGraphArc& arc, FILE* stream) {
   fprintf(stream,
-          "a %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n",
+          "a %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRId64 "\n",
           arc.src_, arc.dst_, arc.cap_lower_bound_, arc.cap_upper_bound_,
           arc.cost_);
   fflush(stream);

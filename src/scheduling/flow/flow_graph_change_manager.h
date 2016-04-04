@@ -26,7 +26,7 @@ class FlowGraphChangeManager {
                        FlowGraphNode* dst,
                        uint64_t cap_lower_bound,
                        uint64_t cap_upper_bound,
-                       uint64_t cost,
+                       int64_t cost,
                        FlowGraphArcType arc_type,
                        DIMACSChangeType change_type,
                        const char* comment);
@@ -34,7 +34,7 @@ class FlowGraphChangeManager {
                        uint64_t dst_node_id,
                        uint64_t cap_lower_bound,
                        uint64_t cap_upper_bound,
-                       uint64_t cost,
+                       int64_t cost,
                        FlowGraphArcType arc_type,
                        DIMACSChangeType change_type,
                        const char* comment);
@@ -43,11 +43,11 @@ class FlowGraphChangeManager {
                          DIMACSChangeType change_type,
                          const char* comment);
   void ChangeArc(FlowGraphArc* arc, uint64_t cap_lower_bound,
-                 uint64_t cap_upper_bound, uint64_t cost,
+                 uint64_t cap_upper_bound, int64_t cost,
                  DIMACSChangeType change_type, const char* comment);
   void ChangeArcCapacity(FlowGraphArc* arc, uint64_t capacity,
                          DIMACSChangeType change_type, const char* comment);
-  void ChangeArcCost(FlowGraphArc* arc, uint64_t cost,
+  void ChangeArcCost(FlowGraphArc* arc, int64_t cost,
                      DIMACSChangeType change_type, const char* comment);
   void DeleteArc(FlowGraphArc* arc, DIMACSChangeType change_type,
                  const char* comment);
@@ -89,7 +89,7 @@ class FlowGraphChangeManager {
    */
   void MergeChangesToSameArcHelper(
       uint64_t src_id, uint64_t dst_id, uint64_t cap_lower_bound,
-      uint64_t cap_upper_bound, uint64_t cost, FlowGraphArcType type,
+      uint64_t cap_upper_bound, int64_t cost, FlowGraphArcType type,
       DIMACSChange* change, vector<DIMACSChange*>* new_graph_changes,
       unordered_map<uint64_t, unordered_map<uint64_t, DIMACSChange*>>*
       arcs_src_changes,

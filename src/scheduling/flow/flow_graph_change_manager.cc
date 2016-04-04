@@ -37,7 +37,7 @@ FlowGraphArc* FlowGraphChangeManager::AddArc(FlowGraphNode* src,
                                              FlowGraphNode* dst,
                                              uint64_t cap_lower_bound,
                                              uint64_t cap_upper_bound,
-                                             uint64_t cost,
+                                             int64_t cost,
                                              FlowGraphArcType arc_type,
                                              DIMACSChangeType change_type,
                                              const char* comment) {
@@ -49,7 +49,7 @@ FlowGraphArc* FlowGraphChangeManager::AddArc(uint64_t src_node_id,
                                              uint64_t dst_node_id,
                                              uint64_t cap_lower_bound,
                                              uint64_t cap_upper_bound,
-                                             uint64_t cost,
+                                             int64_t cost,
                                              FlowGraphArcType arc_type,
                                              DIMACSChangeType change_type,
                                              const char* comment) {
@@ -95,12 +95,12 @@ FlowGraphNode* FlowGraphChangeManager::AddNode(
 void FlowGraphChangeManager::ChangeArc(FlowGraphArc* arc,
                                        uint64_t cap_lower_bound,
                                        uint64_t cap_upper_bound,
-                                       uint64_t cost,
+                                       int64_t cost,
                                        DIMACSChangeType change_type,
                                        const char* comment) {
   CHECK_NOTNULL(arc);
   CHECK_GE(arc->cap_upper_bound_, 0);
-  uint64_t old_cost = arc->cost_;
+  int64_t old_cost = arc->cost_;
   if (old_cost != cost ||
       arc->cap_lower_bound_ != cap_lower_bound ||
       arc->cap_upper_bound_ != cap_upper_bound) {
@@ -132,11 +132,11 @@ void FlowGraphChangeManager::ChangeArcCapacity(FlowGraphArc* arc,
 }
 
 void FlowGraphChangeManager::ChangeArcCost(FlowGraphArc* arc,
-                                           uint64_t cost,
+                                           int64_t cost,
                                            DIMACSChangeType change_type,
                                            const char* comment) {
   CHECK_NOTNULL(arc);
-  uint64_t old_cost = arc->cost_;
+  int64_t old_cost = arc->cost_;
   if (old_cost != cost) {
     flow_graph_->ChangeArcCost(arc, cost);
     if (FLAGS_incremental_flow) {
@@ -176,7 +176,7 @@ void FlowGraphChangeManager::DeleteNode(FlowGraphNode* node,
 
 void FlowGraphChangeManager::MergeChangesToSameArcHelper(
     uint64_t src_id, uint64_t dst_id, uint64_t cap_lower_bound,
-    uint64_t cap_upper_bound, uint64_t cost, FlowGraphArcType type,
+    uint64_t cap_upper_bound, int64_t cost, FlowGraphArcType type,
     DIMACSChange* change, vector<DIMACSChange*>* new_graph_changes,
     unordered_map<uint64_t, unordered_map<uint64_t, DIMACSChange*>>*
     arcs_src_changes,

@@ -21,7 +21,7 @@ class DIMACSNewArc : public DIMACSChange {
   uint64_t dst_;
   uint64_t cap_lower_bound_;
   uint64_t cap_upper_bound_;
-  uint64_t cost_;
+  int64_t cost_;
   FlowGraphArcType type_;
 };
 
