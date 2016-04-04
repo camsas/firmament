@@ -465,7 +465,7 @@ void SimulatorBridge::OnTaskEviction(TaskDescriptor* td_ptr,
   } else {
     // The task didn't finish in the trace.
   }
-  td_ptr->set_start_time(0);
+  td_ptr->clear_start_time();
   td_ptr->set_submit_time(simulated_time_->GetCurrentTimestamp());
   event_manager_->RemoveTaskEndRuntimeEvent(*ti_ptr, task_end_time);
 }
@@ -478,15 +478,10 @@ void SimulatorBridge::OnTaskFailure(TaskDescriptor* td_ptr,
 
 void SimulatorBridge::OnTaskMigration(TaskDescriptor* td_ptr,
                                       ResourceDescriptor* rd_ptr) {
-  // XXX(ionel): This assumes that the Migration is done via two calls.
-  // First, a call to OnTaskEviction and then OnTaskMigration.
-  TraceTaskIdentifier* ti_ptr =
-    FindOrNull(task_id_to_identifier_, td_ptr->uid());
-  CHECK_NOTNULL(ti_ptr);
-  uint64_t task_end_time = td_ptr->finish_time();
+  td_ptr->set_submit_time(simulated_time_->GetCurrentTimestamp());
   td_ptr->set_start_time(simulated_time_->GetCurrentTimestamp());
-  event_manager_->RemoveTaskEndRuntimeEvent(*ti_ptr, task_end_time);
-  AddTaskEndEvent(*ti_ptr, td_ptr);
+  // We don't have to update the end event because we assume that it
+  // takes no time to migrate a task.
 }
 
 void SimulatorBridge::OnTaskPlacement(TaskDescriptor* td_ptr,
