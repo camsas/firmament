@@ -380,6 +380,7 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
 }
 
 uint64_t UpdateTaskTotalRunTime(const TaskDescriptor& td) {
+  CHECK_GE(td.finish_time(), td.start_time());
   if (td.has_total_run_time()) {
     return td.total_run_time() + td.finish_time() - td.start_time();
   } else {
@@ -392,11 +393,8 @@ uint64_t UpdateTaskTotalUnscheduledTime(const TaskDescriptor& td) {
   if (td.has_total_unscheduled_time()) {
     total_unscheduled_time = td.total_unscheduled_time();
   }
-  if (td.has_finish_time()) {
-    total_unscheduled_time += td.start_time() - td.finish_time();
-  } else {
-    total_unscheduled_time += td.start_time() - td.submit_time();
-  }
+  CHECK_GE(td.start_time(), td.submit_time());
+  total_unscheduled_time += td.start_time() - td.submit_time();
   return total_unscheduled_time;
 }
 
