@@ -104,8 +104,8 @@ class QuincyCostModel : public CostModelInterface {
    * @param task_id the id of the task
    * @param res_id the id of the resource on which the task is running
    */
-  uint64_t GetTransferCostToNotPreferredRes(TaskID_t task_id,
-                                            ResourceID_t res_id);
+  int64_t GetTransferCostToNotPreferredRes(TaskID_t task_id,
+                                           ResourceID_t res_id);
   void RemovePreferencesToMachine(ResourceID_t res_id);
   void RemovePreferencesToRack(EquivClass_t ec);
   void UpdateMachineBlocks(

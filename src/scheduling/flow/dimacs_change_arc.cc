@@ -8,7 +8,7 @@
 namespace firmament {
 
 DIMACSChangeArc::DIMACSChangeArc(const FlowGraphArc& arc,
-                                 const uint64_t old_cost)
+                                 const int64_t old_cost)
   : DIMACSChange(), src_(arc.src_), dst_(arc.dst_),
     cap_lower_bound_(arc.cap_lower_bound_),
     cap_upper_bound_(arc.cap_upper_bound_), cost_(arc.cost_), type_(arc.type_),
