@@ -966,7 +966,6 @@ void FlowGraphManager::UpdateResourceStatsUpToRoot(
         graph_change_manager_->mutable_flow_graph()->GetArc(parent_node,
                                                             cur_node);
       CHECK_NOTNULL(parent_arc);
-      CHECK_GE(parent_arc->cap_upper_bound_, cap_delta);
       uint64_t new_capacity =
         static_cast<uint64_t>(
             static_cast<int64_t>(parent_arc->cap_upper_bound_) + cap_delta);
