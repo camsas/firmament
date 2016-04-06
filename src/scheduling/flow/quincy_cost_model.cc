@@ -157,7 +157,9 @@ Cost_t QuincyCostModel::TaskContinuationCost(TaskID_t task_id) {
     // This should only happen for the first solver run. In such cases
     // we just set the task's runtime to minimum value that will not cause
     // a unnecessary preemption (i.e., 1 second).
-    CHECK_EQ(time_manager_->GetCurrentTimestamp(), 0);
+    LOG(WARNING) << "Task " << td.uid() << " has a start_time " td.start_time()
+                 << " greater then current time "
+                 << time_manager_->GetCurrentTimestamp();
     task_executed_for = (td.total_run_time() - 1) / MICROSECONDS_IN_SECOND;
   } else {
     task_executed_for =
