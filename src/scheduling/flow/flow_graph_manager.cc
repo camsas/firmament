@@ -33,6 +33,7 @@ DEFINE_bool(update_preferences_running_task, false,
             "True if the preferences of a running task should be updated before"
             " each scheduling round");
 
+DECLARE_string(flow_scheduling_solver);
 DECLARE_uint64(max_tasks_per_pu);
 
 namespace firmament {
@@ -394,8 +395,16 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
       int64_t new_cost =
         cost_model_->TaskContinuationCost(task_node->td_ptr_->uid());
       arc->type_ = RUNNING;
+      uint64_t low_bound_capacity = 1;
+      if (FLAGS_flow_scheduling_solver == "custom") {
+        // XXX(ionel): RelaxIV doesn't print the flow on the arcs on which
+        // the lower capacity bound is equal to the upper capacity bound.
+        // We work around this by simply not setting the lower bound capacity
+        // for custom solvers.
+        low_bound_capacity = 0;
+      }
       graph_change_manager_->ChangeArc(
-          arc, 1, 1, new_cost, CHG_ARC_RUNNING_TASK,
+          arc, low_bound_capacity, 1, new_cost, CHG_ARC_RUNNING_TASK,
           "PinTaskToNode: transform to running arc");
       CHECK(InsertIfNotPresent(&task_to_running_arc_,
                                task_node->td_ptr_->uid(), arc));
@@ -409,9 +418,17 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
   // Decrement capacity from unsched agg node to sink.
   UpdateUnscheduledAggNode(UnschedAggNodeForJobID(task_node->job_id_), -1);
   if (!added_running_arc) {
+    uint64_t low_bound_capacity = 1;
+    if (FLAGS_flow_scheduling_solver == "custom") {
+      // XXX(ionel): RelaxIV doesn't print the flow on the arcs on which
+      // the lower capacity bound is equal to the upper capacity bound.
+      // We work around this by simply not setting the lower bound capacity
+      // for custom solvers.
+      low_bound_capacity = 0;
+    }
     // Add a single arc from the task to the resource node
     FlowGraphArc* new_arc = graph_change_manager_->AddArc(
-        task_node, res_node, 1, 1,
+        task_node, res_node, low_bound_capacity, 1,
         cost_model_->TaskContinuationCost(task_node->td_ptr_->uid()),
         RUNNING, ADD_ARC_RUNNING_TASK, "PinTaskToNode: add running arc");
     CHECK(InsertIfNotPresent(&task_to_running_arc_,
