@@ -36,9 +36,11 @@ DEFINE_string(flowlessly_binary,
 DEFINE_string(flowlessly_algorithm, "fast_cost_scaling",
               "Algorithm to be used by flowlessly. Options: cycle_cancelling |"
               "cost_scaling | fast_cost_scaling | relax");
-DEFINE_string(flowlessly_initial_run_algorithm, "",
+DEFINE_string(flowlessly_initial_runs_algorithm, "",
               "Algorithm to be used for the first solver run. If empty then "
               "flowlessly_algorithm is used.");
+DEFINE_int64(flowlessly_number_initial_runs, 0,
+             "Number of solver runs for which to used initial_runs_algorithm");
 DEFINE_string(cs2_binary, "build/third_party/cs2/src/cs2/cs2.exe",
               "Path to the cs2 binary.");
 DEFINE_bool(log_solver_stderr, false, "Set to true to log solver's stderr.");
@@ -300,9 +302,11 @@ void SolverDispatcher::SolverConfiguration(const string& solver,
       if (!FLAGS_incremental_flow) {
         args->push_back("--daemon=false");
       }
-      if (FLAGS_flowlessly_initial_run_algorithm.compare("")) {
-        args->push_back("--algorithm_first_solver_run=" +
-                        FLAGS_flowlessly_initial_run_algorithm);
+      if (FLAGS_flowlessly_initial_runs_algorithm.compare("")) {
+        args->push_back("--algorithm_initial_solver_runs=" +
+                        FLAGS_flowlessly_initial_runs_algorithm);
+        args->push_back("--algorithm_number_initial_runs=" +
+                        to_string(FLAGS_flowlessly_number_initial_runs));
       }
     } else if (solver == "cs2") {
       // Nothing to do
