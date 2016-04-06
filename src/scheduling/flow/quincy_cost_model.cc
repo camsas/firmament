@@ -147,9 +147,26 @@ Cost_t QuincyCostModel::TaskContinuationCost(TaskID_t task_id) {
   ResourceID_t machine_res_id =
     MachineResIDForResource(resource_map_, pu_res_id);
   Cost_t cost_to_resource = TaskToResourceNodeCost(task_id, machine_res_id);
+  // NOTE: total_run_time only includes the time of previous runs. We need
+  // to include the current run time as well in order for the continuation
+  // cost to be correct.
+  uint64_t task_executed_for;
+  if (time_manager_->GetCurrentTimestamp() < td.start_time()) {
+    // XXX(ionel): HACK! Current timestamp can be smaller than start time
+    // in the case in which we don't move forward the simulated time.
+    // This should only happen for the first solver run. In such cases
+    // we just set the task's runtime to minimum value that will not cause
+    // a unnecessary preemption (i.e., 1 second).
+    CHECK_EQ(time_manager_->GetCurrentTimestamp(), 0);
+    task_executed_for = (td.total_run_time() - 1) / MICROSECONDS_IN_SECOND;
+  } else {
+    task_executed_for =
+      (td.total_run_time() + time_manager_->GetCurrentTimestamp() -
+       td.start_time()) / MICROSECONDS_IN_SECOND;
+  }
   // cost_to_resource corresponds to d* and total_running_time corresponds
   // to p* in the Quincy paper.
-  return cost_to_resource - static_cast<Cost_t>(td.total_run_time());
+  return cost_to_resource - static_cast<Cost_t>(task_executed_for);
 }
 
 Cost_t QuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {
