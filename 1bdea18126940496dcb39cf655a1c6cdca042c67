@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_ecb8e9e7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-04-07T16:48:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_2c3131a3",
+      "range": {
+        "startLine": 10,
+        "startChar": 30,
+        "endLine": 10,
+        "endChar": 34
+      },
+      "revId": "1bdea18126940496dcb39cf655a1c6cdca042c67",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_8c039db8",
         "filename": "src/scheduling/flow/quincy_cost_model.cc",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2016-04-07T16:27:35Z",
       "side": 1,
       "message": "\"current unscheduled wait period\", rather than \"run\", surely?",
+      "range": {
+        "startLine": 80,
+        "startChar": 13,
+        "endLine": 80,
+        "endChar": 25
+      },
+      "revId": "1bdea18126940496dcb39cf655a1c6cdca042c67",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_2cbff1d1",
+        "filename": "src/scheduling/flow/quincy_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-04-07T16:48:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_8c039db8",
       "range": {
         "startLine": 80,
         "startChar": 13,
