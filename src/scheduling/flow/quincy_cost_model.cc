@@ -36,6 +36,9 @@ DEFINE_int64(quincy_core_transfer_cost, 2,
 DEFINE_bool(quincy_update_costs_upon_machine_change, true,
             "True if the costs should be updated if a machine is added or "
             "removed");
+DEFINE_uint64(quincy_ramp_up_period, 0,
+              "Time (in us) for which we maintain a high unscheduled cost "
+              "(used to ensure initial cluster state stabilizes)");
 
 DECLARE_uint64(max_tasks_per_pu);
 DECLARE_bool(generate_quincy_cost_model_trace);
@@ -66,11 +69,18 @@ QuincyCostModel::~QuincyCostModel() {
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
+  if (time_manager_->GetCurrentTimestamp() < FLAGS_quincy_ramp_up_period) {
+    return static_cast<Cost_t>(FLAGS_quincy_ramp_up_period /
+                               MICROSECONDS_IN_SECOND);
+  }
   const TaskDescriptor& td = GetTask(task_id);
   int64_t total_unscheduled_time =
-    static_cast<int64_t>(td.total_unscheduled_time()) +
-    static_cast<int64_t>(time_manager_->GetCurrentTimestamp()) -
-    static_cast<int64_t>(td.submit_time());
+    static_cast<int64_t>(td.total_unscheduled_time());
+  if (time_manager_->GetCurrentTimestamp() > td.submit_time()) {
+    total_unscheduled_time +=
+      static_cast<int64_t>(time_manager_->GetCurrentTimestamp()) -
+      static_cast<int64_t>(td.submit_time());
+  }
   return static_cast<Cost_t>(total_unscheduled_time *
                              FLAGS_quincy_wait_time_factor /
                              static_cast<int64_t>(MICROSECONDS_IN_SECOND));
@@ -154,13 +164,11 @@ Cost_t QuincyCostModel::TaskContinuationCost(TaskID_t task_id) {
   if (time_manager_->GetCurrentTimestamp() < td.start_time()) {
     // XXX(ionel): HACK! Current timestamp can be smaller than start time
     // in the case in which we don't move forward the simulated time.
-    // This should only happen for the first solver run. In such cases
-    // we just set the task's runtime to minimum value that will not cause
-    // a unnecessary preemption (i.e., 1 second).
+    // This should only happen for the first solver run.
     LOG(WARNING) << "Task " << td.uid() << " has a start_time "
                  << td.start_time() << " greater than current time "
                  << time_manager_->GetCurrentTimestamp();
-    task_executed_for = (td.total_run_time() - 1) / MICROSECONDS_IN_SECOND;
+    task_executed_for = td.total_run_time() / MICROSECONDS_IN_SECOND;
   } else {
     task_executed_for =
       (td.total_run_time() + time_manager_->GetCurrentTimestamp() -
