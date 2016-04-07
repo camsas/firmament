@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_cc6d2534",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-07T17:59:09Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this be a flag?",
+      "revId": "56dc95b5fc8240c71419802ff665e7f638667346",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
