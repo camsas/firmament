@@ -477,11 +477,15 @@ uint64_t FlowScheduler::RunSchedulingIteration(
   // Freeing the mappings because they're not used below.
   delete task_mappings;
 
-  // Set the current timestamp to the timestamp of the end of the scheduling
-  // round. Thus, we make sure that all the changes applied as a result of
-  // scheduling have a timestamp equal to the end of the scheduling iteration.
-  time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp +
-                                        scheduler_stats->scheduler_runtime_);
+  // Move the time to solver_start_time + solver_run_time if this is not
+  // the first run of a simulation.
+  if (time_manager_->GetCurrentTimestamp() != 0 && solver_run_cnt_ > 1) {
+    // Set the current timestamp to the timestamp of the end of the scheduling
+    // round. Thus, we make sure that all the changes applied as a result of
+    // scheduling have a timestamp equal to the end of the scheduling iteration.
+    time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp +
+                                          scheduler_stats->scheduler_runtime_);
+  }
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
   // Makes sure the deltas get correctly freed.
   deltas.clear();
