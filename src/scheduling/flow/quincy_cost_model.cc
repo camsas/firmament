@@ -70,13 +70,15 @@ QuincyCostModel::~QuincyCostModel() {
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   if (time_manager_->GetCurrentTimestamp() < FLAGS_quincy_ramp_up_period) {
-    return static_cast<Cost_t>(FLAGS_quincy_ramp_up_period /
+    return static_cast<Cost_t>(FLAGS_quincy_ramp_up_period *
+                               FLAGS_quincy_wait_time_factor /
                                MICROSECONDS_IN_SECOND);
   }
   const TaskDescriptor& td = GetTask(task_id);
   int64_t total_unscheduled_time =
     static_cast<int64_t>(td.total_unscheduled_time());
-  if (time_manager_->GetCurrentTimestamp() > td.submit_time()) {
+  // Include current unscheduled wait period if it hasn't yet started.
+  if (!td.has_start_time() || td.start_time() < td.submit_time()) {
     total_unscheduled_time +=
       static_cast<int64_t>(time_manager_->GetCurrentTimestamp()) -
       static_cast<int64_t>(td.submit_time());
@@ -160,20 +162,11 @@ Cost_t QuincyCostModel::TaskContinuationCost(TaskID_t task_id) {
   // NOTE: total_run_time only includes the time of previous runs. We need
   // to include the current run time as well in order for the continuation
   // cost to be correct.
+  CHECK_GE(time_manager_->GetCurrentTimestamp(), td.start_time());
   uint64_t task_executed_for;
-  if (time_manager_->GetCurrentTimestamp() < td.start_time()) {
-    // XXX(ionel): HACK! Current timestamp can be smaller than start time
-    // in the case in which we don't move forward the simulated time.
-    // This should only happen for the first solver run.
-    LOG(WARNING) << "Task " << td.uid() << " has a start_time "
-                 << td.start_time() << " greater than current time "
-                 << time_manager_->GetCurrentTimestamp();
-    task_executed_for = td.total_run_time() / MICROSECONDS_IN_SECOND;
-  } else {
-    task_executed_for =
-      (td.total_run_time() + time_manager_->GetCurrentTimestamp() -
-       td.start_time()) / MICROSECONDS_IN_SECOND;
-  }
+  task_executed_for =
+    (td.total_run_time() + time_manager_->GetCurrentTimestamp() -
+     td.start_time()) / MICROSECONDS_IN_SECOND;
   // cost_to_resource corresponds to d* and total_running_time corresponds
   // to p* in the Quincy paper.
   return cost_to_resource - static_cast<Cost_t>(task_executed_for);
