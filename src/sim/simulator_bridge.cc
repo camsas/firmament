@@ -21,6 +21,7 @@
 #include "sim/trace_loader.h"
 #include "storage/simple_object_store.h"
 
+#define TIME_ZERO_TOTAL_UNSCHEDULED_TIME 600000000
 using boost::lexical_cast;
 using boost::hash;
 
@@ -289,6 +290,13 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(
   new_task->set_submit_time(simulated_time_->GetCurrentTimestamp());
   new_task->set_trace_job_id(task_identifier.job_id);
   new_task->set_trace_task_id(task_identifier.task_index);
+  if (simulated_time_->GetCurrentTimestamp() == 0) {
+    // XXX(ionel): HACK! We set the total_unscheduled_time for tasks
+    // created at time zero. By setting it to a high value we make sure that
+    // all the tasks get scheduled in the first solver run when using
+    // time-dependent cost models.
+    new_task->set_total_unscheduled_time(TIME_ZERO_TOTAL_UNSCHEDULED_TIME);
+  }
   TaskID_t task_id = new_task->uid();
   // The task binary is used by GenerateRootTaskID to generate a unique
   // root task identifier. Hence, we set it to the trace job id which

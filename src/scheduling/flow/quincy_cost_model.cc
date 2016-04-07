@@ -36,9 +36,6 @@ DEFINE_int64(quincy_core_transfer_cost, 2,
 DEFINE_bool(quincy_update_costs_upon_machine_change, true,
             "True if the costs should be updated if a machine is added or "
             "removed");
-DEFINE_uint64(quincy_ramp_up_period, 0,
-              "Time (in us) for which we maintain a high unscheduled cost "
-              "(used to ensure initial cluster state stabilizes)");
 
 DECLARE_uint64(max_tasks_per_pu);
 DECLARE_bool(generate_quincy_cost_model_trace);
@@ -69,11 +66,6 @@ QuincyCostModel::~QuincyCostModel() {
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  if (time_manager_->GetCurrentTimestamp() < FLAGS_quincy_ramp_up_period) {
-    return static_cast<Cost_t>(FLAGS_quincy_ramp_up_period *
-                               FLAGS_quincy_wait_time_factor /
-                               MICROSECONDS_IN_SECOND);
-  }
   const TaskDescriptor& td = GetTask(task_id);
   int64_t total_unscheduled_time =
     static_cast<int64_t>(td.total_unscheduled_time());
