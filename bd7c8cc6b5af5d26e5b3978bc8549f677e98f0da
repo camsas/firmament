@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_8fd82c1f",
+        "filename": "src/scheduling/flow/flow_scheduler.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-08T15:09:01Z",
+      "side": 1,
+      "message": "It\u0027d be nice to have a more versatile flag that allows choosing the simulation stepping: \"algorithm\", \"solver\", and \"realtime\" would be options that correspond to stepping by algorithm time, solver time and full processing time, respectively.",
+      "range": {
+        "startLine": 46,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 34
+      },
+      "revId": "bd7c8cc6b5af5d26e5b3978bc8549f677e98f0da",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
