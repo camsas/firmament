@@ -442,8 +442,25 @@ uint64_t FlowScheduler::RunSchedulingIteration(
       event_notifier_->OnSchedulingDecisionsCompletion(
          scheduler_start_timestamp, 0);
     } else {
-      event_notifier_->OnSchedulingDecisionsCompletion(
-          scheduler_start_timestamp, scheduler_stats->scheduler_runtime_);
+      if (FLAGS_solver_runtime_accounting_mode == "algorithm") {
+        if (FLAGS_flow_scheduling_solver == "cs2") {
+          // CS2 doesn't export algorithm runtime. We fallback to solver mode.
+          event_notifier_->OnSchedulingDecisionsCompletion(
+              scheduler_start_timestamp, scheduler_stats->scheduler_runtime_);
+        } else {
+          event_notifier_->OnSchedulingDecisionsCompletion(
+              scheduler_start_timestamp, scheduler_stats->algorithm_runtime_);
+        }
+      } else if (FLAGS_solver_runtime_accounting_mode == "solver") {
+        event_notifier_->OnSchedulingDecisionsCompletion(
+           scheduler_start_timestamp, scheduler_stats->scheduler_runtime_);
+      } else if (FLAGS_solver_runtime_accounting_mode == "firmament") {
+        event_notifier_->OnSchedulingDecisionsCompletion(
+           scheduler_start_timestamp, scheduler_stats->total_runtime_);
+      } else {
+        LOG(FATAL) << "Unexpected accounting mode: "
+                   << FLAGS_solver_runtime_accounting_mode;
+      }
     }
   }
   // Solver's done, let's post-process the results.
