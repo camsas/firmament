@@ -41,6 +41,7 @@ DEFINE_bool(exit_simulation_after_last_task_event, false,
 DECLARE_uint64(heartbeat_interval);
 DECLARE_uint64(max_solver_runtime);
 DECLARE_uint64(runtime);
+DECLARE_string(solver_runtime_accounting_mode);
 
 static bool ValidateSolver(const char* flagname, const string& solver) {
   if (solver.compare("cs2") && solver.compare("flowlessly") &&
@@ -180,8 +181,25 @@ uint64_t Simulator::ScheduleJobsHelper(uint64_t run_scheduler_at) {
     first_scheduler_run_ = false;
     return run_scheduler_at;
   } else {
-    return event_manager_->GetTimeOfNextSchedulerRun(
-        run_scheduler_at, scheduler_stats.scheduler_runtime_);
+    if (FLAGS_solver_runtime_accounting_mode == "algorithm") {
+      if (FLAGS_solver == "cs2") {
+        // CS2 doesn't export algorithm runtime. We fallback to solver mode.
+        return event_manager_->GetTimeOfNextSchedulerRun(
+            run_scheduler_at, scheduler_stats.scheduler_runtime_);
+      } else {
+        return event_manager_->GetTimeOfNextSchedulerRun(
+            run_scheduler_at, scheduler_stats.algorithm_runtime_);
+      }
+    } else if (FLAGS_solver_runtime_accounting_mode == "solver") {
+      return event_manager_->GetTimeOfNextSchedulerRun(
+          run_scheduler_at, scheduler_stats.scheduler_runtime_);
+    } else if (FLAGS_solver_runtime_accounting_mode == "firmament") {
+      return event_manager_->GetTimeOfNextSchedulerRun(
+          run_scheduler_at, scheduler_stats.total_runtime_);
+    } else {
+      LOG(FATAL) << "Unexpected accounting mode: "
+                 << FLAGS_solver_runtime_accounting_mode;
+    }
   }
 }
 

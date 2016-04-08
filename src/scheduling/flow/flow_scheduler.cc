@@ -43,6 +43,11 @@ DEFINE_bool(update_resource_topology_capacities, false,
             "updated after every scheduling round");
 DEFINE_uint64(max_tasks_per_pu, 1,
               "The maximum number of tasks we can schedule per PU");
+DEFINE_string(solver_runtime_accounting_mode, "algorithm",
+              "Options: algorithm | solver | firmament. Modes to account for "
+              "scheduling duration in simulations");
+
+DECLARE_string(flow_scheduling_solver);
 
 namespace firmament {
 namespace scheduler {
@@ -483,8 +488,26 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     // Set the current timestamp to the timestamp of the end of the scheduling
     // round. Thus, we make sure that all the changes applied as a result of
     // scheduling have a timestamp equal to the end of the scheduling iteration.
-    time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp +
-                                          scheduler_stats->scheduler_runtime_);
+    if (FLAGS_solver_runtime_accounting_mode == "algorithm") {
+      if (FLAGS_flow_scheduling_solver == "cs2") {
+        // CS2 doesn't export algorithm runtime. We fallback to solver mode.
+        time_manager_->UpdateCurrentTimestamp(
+            scheduler_start_timestamp + scheduler_stats->scheduler_runtime_);
+      } else {
+        time_manager_->UpdateCurrentTimestamp(
+            scheduler_start_timestamp + scheduler_stats->algorithm_runtime_);
+
+      }
+    } else if (FLAGS_solver_runtime_accounting_mode == "solver") {
+      time_manager_->UpdateCurrentTimestamp(
+          scheduler_start_timestamp + scheduler_stats->scheduler_runtime_);
+    } else if (FLAGS_solver_runtime_accounting_mode == "firmament") {
+      time_manager_->UpdateCurrentTimestamp(
+          scheduler_start_timestamp + scheduler_stats->total_runtime_);
+    } else {
+      LOG(FATAL) << "Unexpected accounting mode: "
+                 << FLAGS_solver_runtime_accounting_mode;
+    }
   }
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
   // Makes sure the deltas get correctly freed.
