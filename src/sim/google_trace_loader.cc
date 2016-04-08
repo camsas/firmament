@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/units.h"
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 
@@ -51,7 +52,10 @@ namespace sim {
 GoogleTraceLoader::GoogleTraceLoader(EventManager* event_manager)
   : TraceLoader(event_manager),
     current_task_events_file_id_(0),
-    task_events_file_(NULL) {
+    task_events_file_(NULL),
+    loaded_fake_task_(false) {
+  fake_task_.job_id = 0;
+  fake_task_.task_index = 0;
 }
 
 GoogleTraceLoader::~GoogleTraceLoader() {
@@ -70,6 +74,8 @@ void GoogleTraceLoader::LoadJobsNumTasks(
   if ((jobs_tasks_file = fopen(jobs_tasks_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open jobs num tasks file.";
   }
+  // Load the fake job.
+  CHECK(InsertIfNotPresent(job_num_tasks, fake_task_.job_id, 1));
   int64_t num_line = 1;
   while (!feof(jobs_tasks_file)) {
     if (fscanf(jobs_tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -146,6 +152,19 @@ bool GoogleTraceLoader::LoadTaskEvents(
   char line[MAX_LINE_LENGTH];
   vector<string> vals;
   bool loaded_event = false;
+  if (!loaded_fake_task_) {
+    // Add a submit event for the fake task.
+    EventDescriptor event_desc;
+    event_desc.set_type(EventDescriptor::TASK_SUBMIT);
+    event_desc.set_job_id(fake_task_.job_id);
+    event_desc.set_task_index(fake_task_.task_index);
+    event_desc.set_scheduling_class(0);
+    event_desc.set_priority(0);
+    event_desc.set_requested_cpu_cores(0);
+    event_desc.set_requested_ram(0);
+    event_manager_->AddEvent(1 * SECONDS_TO_MICROSECONDS, event_desc);
+    loaded_fake_task_ = true;
+  }
   while (true) {
     // Check if we're already reading from a file.
     if (!task_events_file_) {
@@ -320,7 +339,10 @@ void GoogleTraceLoader::LoadTasksRunningTime(
   if ((tasks_file = fopen(tasks_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace runtime events file.";
   }
-
+  // Load the runtime of the fake task.
+  TaskID_t fake_task_id = GenerateTaskIDFromTraceIdentifier(fake_task_);
+  CHECK(InsertIfNotPresent(task_runtime, fake_task_id,
+                           1 * SECONDS_TO_MICROSECONDS));
   int64_t num_line = 1;
   while (!feof(tasks_file)) {
     if (fscanf(tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
