@@ -43,6 +43,11 @@ DEFINE_bool(update_resource_topology_capacities, false,
             "updated after every scheduling round");
 DEFINE_uint64(max_tasks_per_pu, 1,
               "The maximum number of tasks we can schedule per PU");
+DEFINE_bool(include_dimacs_import_in_solver_runtime, false,
+            "True if the time it takes to read the graph should be included in "
+            "the solver runtime");
+
+DECLARE_string(flow_scheduling_solver);
 
 namespace firmament {
 namespace scheduler {
@@ -483,8 +488,14 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     // Set the current timestamp to the timestamp of the end of the scheduling
     // round. Thus, we make sure that all the changes applied as a result of
     // scheduling have a timestamp equal to the end of the scheduling iteration.
-    time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp +
-                                          scheduler_stats->scheduler_runtime_);
+    if (FLAGS_include_dimacs_import_in_solver_runtime ||
+        FLAGS_flow_scheduling_solver == "cs2") {
+      time_manager_->UpdateCurrentTimestamp(
+          scheduler_start_timestamp + scheduler_stats->scheduler_runtime_);
+    } else {
+      time_manager_->UpdateCurrentTimestamp(
+          scheduler_start_timestamp + scheduler_stats->algorithm_runtime_);
+    }
   }
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
   // Makes sure the deltas get correctly freed.

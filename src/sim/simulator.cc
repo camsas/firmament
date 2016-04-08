@@ -41,6 +41,7 @@ DEFINE_bool(exit_simulation_after_last_task_event, false,
 DECLARE_uint64(heartbeat_interval);
 DECLARE_uint64(max_solver_runtime);
 DECLARE_uint64(runtime);
+DECLARE_bool(include_dimacs_import_in_solver_runtime);
 
 static bool ValidateSolver(const char* flagname, const string& solver) {
   if (solver.compare("cs2") && solver.compare("flowlessly") &&
@@ -180,8 +181,14 @@ uint64_t Simulator::ScheduleJobsHelper(uint64_t run_scheduler_at) {
     first_scheduler_run_ = false;
     return run_scheduler_at;
   } else {
-    return event_manager_->GetTimeOfNextSchedulerRun(
-        run_scheduler_at, scheduler_stats.scheduler_runtime_);
+    if (FLAGS_include_dimacs_import_in_solver_runtime ||
+        FLAGS_solver == "cs2") {
+      return event_manager_->GetTimeOfNextSchedulerRun(
+          run_scheduler_at, scheduler_stats.scheduler_runtime_);
+    } else {
+      return event_manager_->GetTimeOfNextSchedulerRun(
+          run_scheduler_at, scheduler_stats.algorithm_runtime_);
+    }
   }
 }
 
