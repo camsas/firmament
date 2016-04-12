@@ -44,6 +44,8 @@ DEFINE_int64(flowlessly_number_initial_runs, 0,
 DEFINE_string(cs2_binary, "build/third_party/cs2/src/cs2/cs2.exe",
               "Path to the cs2 binary.");
 DEFINE_bool(log_solver_stderr, false, "Set to true to log solver's stderr.");
+DEFINE_bool(flowlessly_flip_algorithms, false, "True if Flowlessly should "
+            "alternate between fast_cost_scaling and relax");
 
 namespace firmament {
 namespace scheduler {
@@ -307,6 +309,9 @@ void SolverDispatcher::SolverConfiguration(const string& solver,
                         FLAGS_flowlessly_initial_runs_algorithm);
         args->push_back("--algorithm_number_initial_runs=" +
                         to_string(FLAGS_flowlessly_number_initial_runs));
+      }
+      if (FLAGS_flowlessly_flip_algorithms) {
+        args->push_back("--flip_algorithms");
       }
     } else if (solver == "cs2") {
       // Nothing to do
