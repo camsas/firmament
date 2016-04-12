@@ -84,7 +84,7 @@ namespace sim {
 Simulator::Simulator() {
   event_manager_ = new EventManager(&simulated_time_);
   bridge_ = new SimulatorBridge(event_manager_, &simulated_time_);
-  first_scheduler_run_ = true;
+  scheduler_run_cnt_ = 0;
 }
 
 Simulator::~Simulator() {
@@ -176,9 +176,9 @@ uint64_t Simulator::ScheduleJobsHelper(uint64_t run_scheduler_at) {
   boost::timer::cpu_timer timer;
   scheduler::SchedulerStats scheduler_stats;
   bridge_->ScheduleJobs(&scheduler_stats);
+  scheduler_run_cnt_++;
   alarm(0);
-  if (first_scheduler_run_ && FLAGS_batch_step == 0) {
-    first_scheduler_run_ = false;
+  if (scheduler_run_cnt_ <= 2 && FLAGS_batch_step == 0) {
     return run_scheduler_at;
   } else {
     if (FLAGS_solver_runtime_accounting_mode == "algorithm") {
