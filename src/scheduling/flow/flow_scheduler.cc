@@ -26,6 +26,8 @@
 #include "scheduling/flow/cost_models.h"
 #include "scheduling/flow/cost_model_interface.h"
 
+#define SIMULATION_START_TIME 600000000
+
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
@@ -48,6 +50,7 @@ DEFINE_string(solver_runtime_accounting_mode, "algorithm",
               "scheduling duration in simulations");
 
 DECLARE_string(flow_scheduling_solver);
+DECLARE_bool(flowlessly_flip_algorithms);
 
 namespace firmament {
 namespace scheduler {
@@ -354,7 +357,13 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
       jds_with_runnables.push_back(jd_ptr);
     }
   }
-  if (jds_with_runnables.size() > 0) {
+  // XXX(ionel): HACK! We should only run the scheduler when we have
+  // runnable jobs. However, we also run the scheduler when we've
+  // set the flowlessly_flip_algorithms flag in order to speed up
+  // simulators and make sure different simulations are synchronous.
+  if (jds_with_runnables.size() > 0 ||
+      (FLAGS_flowlessly_flip_algorithms &&
+       time_manager_->GetCurrentTimestamp() >= SIMULATION_START_TIME)) {
     // First, we update the cost model's resource topology statistics
     // (e.g. based on machine load and prior decisions); these need to be
     // known before AddOrUpdateJobNodes is invoked below, as it may add arcs
