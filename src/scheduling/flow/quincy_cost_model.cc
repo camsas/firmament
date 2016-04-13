@@ -167,12 +167,16 @@ Cost_t QuincyCostModel::TaskContinuationCost(TaskID_t task_id) {
      td.start_time()) / MICROSECONDS_IN_SECOND;
   // cost_to_resource corresponds to d* and total_running_time corresponds
   // to p* in the Quincy paper.
-  return cost_to_resource - static_cast<Cost_t>(task_executed_for) +
-    FLAGS_quincy_positive_cost_offset;
+  // NOTE: We don't have to offset the cost because the cost_to_resource is
+  // already offsetted.
+  return cost_to_resource - static_cast<Cost_t>(task_executed_for);
+
 }
 
 Cost_t QuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {
-  return TaskToUnscheduledAggCost(task_id) + FLAGS_quincy_positive_cost_offset;
+  // NOTE: We don't have to offset the cost because TaskToUnscheduledAggCost
+  // already does it.
+  return TaskToUnscheduledAggCost(task_id);
 }
 
 Cost_t QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
