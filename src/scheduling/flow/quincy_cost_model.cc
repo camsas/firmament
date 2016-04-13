@@ -36,6 +36,9 @@ DEFINE_int64(quincy_core_transfer_cost, 2,
 DEFINE_bool(quincy_update_costs_upon_machine_change, true,
             "True if the costs should be updated if a machine is added or "
             "removed");
+DEFINE_int64(quincy_positive_cost_offset, 2592000, "Value to offset costs so "
+             "that they don't go negative. This value should be bigger than "
+             "the runtime (in sec) of the longest task");
 
 DECLARE_uint64(max_tasks_per_pu);
 DECLARE_bool(generate_quincy_cost_model_trace);
@@ -77,7 +80,8 @@ Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   }
   return static_cast<Cost_t>(total_unscheduled_time *
                              FLAGS_quincy_wait_time_factor /
-                             static_cast<int64_t>(MICROSECONDS_IN_SECOND));
+                             static_cast<int64_t>(MICROSECONDS_IN_SECOND) +
+                             FLAGS_quincy_positive_cost_offset);
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
@@ -94,14 +98,16 @@ Cost_t QuincyCostModel::TaskToResourceNodeCost(TaskID_t task_id,
   if (machines_data) {
     Cost_t* transfer_cost = FindOrNull(*machines_data, resource_id);
     if (transfer_cost) {
-      return *transfer_cost;
+      return *transfer_cost + FLAGS_quincy_positive_cost_offset;
     } else {
       // The machine is not a preferred one.
-      return GetTransferCostToNotPreferredRes(task_id, resource_id);
+      return GetTransferCostToNotPreferredRes(task_id, resource_id) +
+        FLAGS_quincy_positive_cost_offset;
     }
   } else {
     // The task doesn't have any preferred machines.
-    return GetTransferCostToNotPreferredRes(task_id, resource_id);
+    return GetTransferCostToNotPreferredRes(task_id, resource_id) +
+      FLAGS_quincy_positive_cost_offset;
   }
 }
 
@@ -161,11 +167,12 @@ Cost_t QuincyCostModel::TaskContinuationCost(TaskID_t task_id) {
      td.start_time()) / MICROSECONDS_IN_SECOND;
   // cost_to_resource corresponds to d* and total_running_time corresponds
   // to p* in the Quincy paper.
-  return cost_to_resource - static_cast<Cost_t>(task_executed_for);
+  return cost_to_resource - static_cast<Cost_t>(task_executed_for) +
+    FLAGS_quincy_positive_cost_offset;
 }
 
 Cost_t QuincyCostModel::TaskPreemptionCost(TaskID_t task_id) {
-  return TaskToUnscheduledAggCost(task_id);
+  return TaskToUnscheduledAggCost(task_id) + FLAGS_quincy_positive_cost_offset;
 }
 
 Cost_t QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
@@ -174,7 +181,7 @@ Cost_t QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
   CHECK_NOTNULL(ec_costs);
   Cost_t* transfer_cost = FindOrNull(*ec_costs, ec);
   CHECK_NOTNULL(transfer_cost);
-  return *transfer_cost;
+  return *transfer_cost + FLAGS_quincy_positive_cost_offset;
 }
 
 pair<Cost_t, uint64_t> QuincyCostModel::EquivClassToResourceNode(
