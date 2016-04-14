@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_03abba75",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-14T21:46:04Z",
+      "side": 1,
+      "message": "typo: accurate, we may",
+      "range": {
+        "startLine": 10,
+        "startChar": 35,
+        "endLine": 10,
+        "endChar": 50
+      },
+      "revId": "61d2490d2ce8a29ff77da67a81dae70debb626e4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_c3bb92c3",
+        "filename": "src/sim/synthetic_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-14T21:46:04Z",
+      "side": 1,
+      "message": "Is this between 0 and 1, or between 0 and 100? (There are some bits of code below that suggest it\u0027s 0-100, see comments.)",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 28
+      },
+      "revId": "61d2490d2ce8a29ff77da67a81dae70debb626e4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_a3b08ede",
+        "filename": "src/sim/synthetic_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-14T21:46:04Z",
+      "side": 1,
+      "message": "Why divide by 100 here? Surely if FLAGS_prepopulated_cluster_percentage is between 0 and 1, we end up with the right integer here?",
+      "range": {
+        "startLine": 58,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 33
+      },
+      "revId": "61d2490d2ce8a29ff77da67a81dae70debb626e4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
