@@ -5,6 +5,8 @@
 #include "sim/synthetic_trace_loader.h"
 
 #include "base/units.h"
+#include "misc/pb_utils.h"
+#include "sim/trace_utils.h"
 
 DEFINE_uint64(synthetic_machine_failure_rate, 1,
               "Number of machine failures per hour");
@@ -19,7 +21,11 @@ DEFINE_uint64(synthetic_tasks_per_job, 2,
               "Number of tasks per job");
 DEFINE_uint64(synthetic_task_duration, 10 * firmament::SECONDS_TO_MICROSECONDS,
               "Duration (in microseconds) of a task");
+DEFINE_double(prepopulated_cluster_fraction, 0,
+              "Fraction of the cluster that is in use at the start of the "
+              "simulation");
 
+DECLARE_uint64(max_tasks_per_pu);
 DECLARE_uint64(runtime);
 
 namespace firmament {
@@ -31,14 +37,38 @@ SyntheticTraceLoader::SyntheticTraceLoader(EventManager* event_manager)
     LOG(FATAL) << "Cannot add machine failure events for a simulation "
                << "without runtime set";
   }
+  ResourceTopologyNodeDescriptor machine_tmpl;
+  LoadMachineTemplate(&machine_tmpl);
+  num_slots_per_machine_ = 0;
+  DFSTraverseResourceProtobufTreeReturnRTND(
+      machine_tmpl,
+      boost::bind(&SyntheticTraceLoader::GetNumberOfSlots,
+                  this, _1, &num_slots_per_machine_));
+}
+
+void SyntheticTraceLoader::GetNumberOfSlots(
+    const ResourceTopologyNodeDescriptor& rtnd,
+    uint64_t* num_slots) {
+  if (rtnd.resource_desc().type() == ResourceDescriptor::RESOURCE_PU) {
+    *num_slots = *num_slots + FLAGS_max_tasks_per_pu;
+  }
+}
+
+uint64_t SyntheticTraceLoader::NumTasksAtBeginning() {
+  return FLAGS_prepopulated_cluster_fraction * FLAGS_synthetic_num_machines *
+    num_slots_per_machine_;
 }
 
 void SyntheticTraceLoader::LoadJobsNumTasks(
     unordered_map<uint64_t, uint64_t>* job_num_tasks) {
   uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
+  uint64_t num_tasks_at_beginning = NumTasksAtBeginning();
+  if (num_tasks_at_beginning > 0) {
+    CHECK(InsertIfNotPresent(job_num_tasks, 0, num_tasks_at_beginning));
+  }
   uint64_t job_id = 1;
   for (uint64_t timestamp = 0;
-       timestamp <= FLAGS_runtime && job_id < FLAGS_synthetic_num_jobs;
+       timestamp <= FLAGS_runtime && job_id <= FLAGS_synthetic_num_jobs;
        timestamp += usec_between_jobs, ++job_id) {
     CHECK(InsertIfNotPresent(job_num_tasks, job_id,
                              FLAGS_synthetic_tasks_per_job));
@@ -99,8 +129,21 @@ bool SyntheticTraceLoader::LoadTaskEvents(
   if (current_timestamp > events_up_to_time) {
     return true;
   }
+  if (last_generated_job_id_ == 0) {
+    // Prepopulate the cluster.
+    uint64_t num_tasks_at_beginning = NumTasksAtBeginning();
+    for (uint64_t task_index = 1;
+         task_index <= num_tasks_at_beginning;
+         ++task_index) {
+      EventDescriptor event_desc;
+      event_desc.set_job_id(0);
+      event_desc.set_task_index(task_index);
+      event_desc.set_type(EventDescriptor::TASK_SUBMIT);
+      event_manager_->AddEvent(0, event_desc);
+    }
+  }
   for (uint64_t timestamp = current_timestamp;
-       last_generated_job_id_ < FLAGS_synthetic_num_jobs;
+       last_generated_job_id_ <= FLAGS_synthetic_num_jobs;
        timestamp += usec_between_jobs) {
     last_generated_job_id_++;
     for (uint64_t task_index = 1; task_index <= FLAGS_synthetic_tasks_per_job;
@@ -129,9 +172,22 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
   task_stats.avg_assigned_mem_usage_ = 0.2;
   task_stats.avg_unmapped_page_cache_ = 0.2;
   task_stats.avg_total_page_cache_ = 0.2;
+  uint64_t num_tasks_at_beginning = NumTasksAtBeginning();
+  if (num_tasks_at_beginning > 0) {
+    TraceTaskIdentifier task_identifier;
+    task_identifier.job_id = 0;
+    for (uint64_t task_index = 1;
+         task_index <= num_tasks_at_beginning;
+         ++task_index) {
+      task_identifier.task_index = task_index;
+      CHECK(InsertIfNotPresent(
+          task_id_to_stats, GenerateTaskIDFromTraceIdentifier(task_identifier),
+          task_stats));
+    }
+  }
   uint64_t job_id = 1;
   for (uint64_t timestamp = 0;
-       timestamp <= FLAGS_runtime && job_id < FLAGS_synthetic_num_jobs;
+       timestamp <= FLAGS_runtime && job_id <= FLAGS_synthetic_num_jobs;
        timestamp += usec_between_jobs, ++job_id) {
     TraceTaskIdentifier task_identifier;
     task_identifier.job_id = job_id;
@@ -148,9 +204,22 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
 void SyntheticTraceLoader::LoadTasksRunningTime(
     unordered_map<TaskID_t, uint64_t>* task_runtime) {
   uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
+  uint64_t num_tasks_at_beginning = NumTasksAtBeginning();
+  if (num_tasks_at_beginning > 0) {
+    TraceTaskIdentifier task_identifier;
+    task_identifier.job_id = 0;
+    for (uint64_t task_index = 1;
+         task_index <= num_tasks_at_beginning;
+         ++task_index) {
+      task_identifier.task_index = task_index;
+      CHECK(InsertIfNotPresent(
+          task_runtime, GenerateTaskIDFromTraceIdentifier(task_identifier),
+          FLAGS_runtime));
+    }
+  }
   uint64_t job_id = 1;
   for (uint64_t timestamp = 0;
-       timestamp <= FLAGS_runtime && job_id < FLAGS_synthetic_num_jobs;
+       timestamp <= FLAGS_runtime && job_id <= FLAGS_synthetic_num_jobs;
        timestamp += usec_between_jobs, ++job_id) {
     TraceTaskIdentifier task_identifier;
     task_identifier.job_id = job_id;
