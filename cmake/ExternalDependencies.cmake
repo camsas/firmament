@@ -8,12 +8,11 @@ find_package(Boost REQUIRED COMPONENTS chrono date_time filesystem regex
 if (${ENABLE_CS2})
   ExternalProject_Add(
       cs2
-      GIT_REPOSITORY https://github.com/iveney/cs2.git
+      GIT_REPOSITORY https://github.com/ICGog/cs2.git
       TIMEOUT 10
       PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/cs2
       # no configure or install step required
       CONFIGURE_COMMAND ""
-      PATCH_COMMAND cp ${Firmament_ROOT_DIR}/scripts/cs2-custom-makefile makefile
       INSTALL_COMMAND ""
       BUILD_IN_SOURCE ON
       # Wrap download, configure and build steps in a script to log output
