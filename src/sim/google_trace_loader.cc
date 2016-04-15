@@ -28,6 +28,7 @@ DEFINE_uint64(sim_machine_max_cores, 12,
               "Maximum number of cores the simulated machines have");
 DEFINE_uint64(sim_machine_max_ram, 65536,
               "Maximum ram size (in MB) the simulated machines have");
+DEFINE_uint64(trace_speed_up, 1, "Factor by which to speed up events");
 
 DECLARE_uint64(runtime);
 
@@ -118,7 +119,7 @@ void GoogleTraceLoader::LoadMachineEvents(
           // only load the events that we need
           break;
         }
-
+        timestamp /= FLAGS_trace_speed_up;
         // schema: (timestamp, machine_id, event_type, platform, CPUs, Memory)
         uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
         // Sub-sample the trace if we only retain < 100% of machines.
@@ -190,6 +191,7 @@ bool GoogleTraceLoader::LoadTaskEvents(
         } else {
           TraceTaskIdentifier task_id;
           uint64_t task_event_time = lexical_cast<uint64_t>(vals[0]);
+          task_event_time /= FLAGS_trace_speed_up;
           task_id.job_id = lexical_cast<uint64_t>(vals[2]);
           task_id.task_index = lexical_cast<uint64_t>(vals[3]);
           uint64_t event_type = lexical_cast<uint64_t>(vals[5]);
@@ -366,6 +368,7 @@ void GoogleTraceLoader::LoadTasksRunningTime(
         // sure that the task runs for the same amount of time as when
         // it executed in real-world.
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
+        runtime /= FLAGS_trace_speed_up;
         if (!InsertIfNotPresent(task_runtime,
                                 GenerateTaskIDFromTraceIdentifier(ti),
                                 runtime) &&
