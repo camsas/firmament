@@ -143,7 +143,7 @@ bool SyntheticTraceLoader::LoadTaskEvents(
     }
   }
   for (uint64_t timestamp = current_timestamp;
-       last_generated_job_id_ <= FLAGS_synthetic_num_jobs;
+       last_generated_job_id_ < FLAGS_synthetic_num_jobs;
        timestamp += usec_between_jobs) {
     last_generated_job_id_++;
     for (uint64_t task_index = 1; task_index <= FLAGS_synthetic_tasks_per_job;
