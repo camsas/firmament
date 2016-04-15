@@ -113,7 +113,8 @@ void SimulatedBoundedDFS::GetJobMachinePool(const string& job_id,
                                             uint64_t num_tasks,
                                             vector<ResourceID_t>* machines) {
   uint32_t machine_rand_seed =
-    SpookyHash::Hash32(&job_id, sizeof(job_id), MACHINE_POOL_SEED);
+    SpookyHash::Hash32(job_id.c_str(), sizeof(char) * job_id.length(),
+                       MACHINE_POOL_SEED);
   while (machines->size() < num_tasks) {
     uint32_t machine_index =
       static_cast<uint32_t>(rand_r(&machine_rand_seed)) % machines_.size();
