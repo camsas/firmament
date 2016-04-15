@@ -118,7 +118,6 @@ ResourceDescriptor* SimulatorBridge::AddMachine(
   rd_ptr->set_friendly_name(hostname);
   rd_ptr->set_type(ResourceDescriptor::RESOURCE_MACHINE);
   rd_ptr->set_trace_machine_id(machine_id);
-  ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
   ResourceVector* res_cap = rd_ptr->mutable_resource_capacity();
   // TODO(ionel): Do not manually set ram_cap! Update the machine protobuf
   // to include resource capacity values.
@@ -126,7 +125,7 @@ ResourceDescriptor* SimulatorBridge::AddMachine(
   DFSTraverseResourceProtobufTreeReturnRTND(
       new_machine, boost::bind(&SimulatorBridge::SetupMachine,
                                this, _1, res_cap, hostname, machine_id,
-                               root_uuid, res_id));
+                               root_uuid, rd_ptr->uuid()));
   CHECK(InsertIfNotPresent(&trace_machine_id_to_rtnd_, machine_id,
                            new_machine));
   scheduler_->RegisterResource(new_machine, false, true);
@@ -561,7 +560,7 @@ void SimulatorBridge::SetupMachine(
     const string& hostname,
     uint64_t trace_machine_id,
     const string& root_uuid,
-    ResourceID_t machine_res_id) {
+    const string& old_machine_res_id) {
   string new_uuid;
   if (rtnd->has_parent_id()) {
     // This is an intermediate node, so translate the parent UUID via the
@@ -594,6 +593,10 @@ void SimulatorBridge::SetupMachine(
       new ResourceStatus(rd, rtnd, "endpoint_uri",
                          simulated_time_->GetCurrentTimestamp())));
   if (rd->type() == ResourceDescriptor::RESOURCE_PU) {
+    string* new_machine_res_id = FindOrNull(uuid_conversion_map_,
+                                            old_machine_res_id);
+    CHECK_NOTNULL(new_machine_res_id);
+    ResourceID_t machine_res_id = ResourceIDFromString(*new_machine_res_id);
     float cpu_cores = 1;
     if (machine_res_cap->has_cpu_cores()) {
       cpu_cores = machine_res_cap->cpu_cores() + 1;

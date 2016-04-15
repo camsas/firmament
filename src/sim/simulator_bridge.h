@@ -207,7 +207,7 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
                     const string& hostname,
                     uint64_t trace_machine_id,
                     const string& root_uuid,
-                    ResourceID_t machine_res_id);
+                    const string& old_machine_res_id);
   /**
    * Computes the new total run time of a task.
    * NOTE: This method differs from the method with the same name in utils
