@@ -50,7 +50,7 @@ void KnowledgeBaseSimulator::AddMachineSample(
   vector<double> cpus_usage(num_cores, 1.0);
   for (auto& task_id_rd : task_id_to_rd) {
     TraceTaskStats* task_stat = FindOrNull(task_stats_, task_id_rd.first);
-    if (!task_stats) {
+    if (!task_stat) {
       // We don't have any stats for the task. Ignore it.
       continue;
     }
