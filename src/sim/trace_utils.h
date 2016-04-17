@@ -37,6 +37,11 @@ struct TraceTaskIdentifierHasher {
 };
 
 struct TraceTaskStats {
+  TraceTaskStats() : avg_mean_cpu_usage_(0), avg_canonical_mem_usage_(0),
+    avg_assigned_mem_usage_(0), avg_unmapped_page_cache_(0),
+    avg_total_page_cache_(0), avg_mean_disk_io_time_(0),
+    avg_mean_local_disk_used_(0), avg_cpi_(0), avg_mai_(0) {
+  }
   double avg_mean_cpu_usage_;
   double avg_canonical_mem_usage_;
   double avg_assigned_mem_usage_;

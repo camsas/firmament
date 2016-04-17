@@ -263,6 +263,10 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
   if ((usage_file = fopen(usage_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace task runtime stats file.";
   }
+  TraceTaskStats fake_task_stats;
+  CHECK(InsertIfNotPresent(task_id_to_stats,
+                           GenerateTaskIDFromTraceIdentifier(fake_task_),
+                           fake_task_stats));
   int64_t num_line = 1;
   while (!feof(usage_file)) {
     if (fscanf(usage_file, "%[^\n]%*[\n]", &line[0]) > 0) {
