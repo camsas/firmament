@@ -50,7 +50,10 @@ void KnowledgeBaseSimulator::AddMachineSample(
   vector<double> cpus_usage(num_cores, 1.0);
   for (auto& task_id_rd : task_id_to_rd) {
     TraceTaskStats* task_stat = FindOrNull(task_stats_, task_id_rd.first);
-    CHECK_NOTNULL(task_stat);
+    if (!task_stats) {
+      // We don't have any stats for the task. Ignore it.
+      continue;
+    }
     mem_usage += task_stat->avg_canonical_mem_usage_ +
       task_stat->avg_unmapped_page_cache_ -
       task_stat->avg_total_page_cache_;
