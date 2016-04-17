@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_9f1716a3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-17T18:42:02Z",
+      "side": 1,
+      "message": "... and because the statistics struct values were uninitialized? Or is that just a preventative fix?",
+      "revId": "cd8e3b61c6c13c651ecb0db00b9900924e7109d6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
