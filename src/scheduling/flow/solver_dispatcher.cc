@@ -46,6 +46,8 @@ DEFINE_string(cs2_binary, "build/third_party/cs2/src/cs2/cs2.exe",
 DEFINE_bool(log_solver_stderr, false, "Set to true to log solver's stderr.");
 DEFINE_bool(flowlessly_flip_algorithms, false, "True if Flowlessly should "
             "alternate between fast_cost_scaling and relax");
+DEFINE_bool(flowlessly_best_algorithm, false, "True if Flowlessly should "
+            " try to pick the best algorithm");
 
 namespace firmament {
 namespace scheduler {
@@ -312,6 +314,9 @@ void SolverDispatcher::SolverConfiguration(const string& solver,
       }
       if (FLAGS_flowlessly_flip_algorithms) {
         args->push_back("--flip_algorithms");
+      }
+      if (FLAGS_flowlessly_best_algorithm) {
+        args->push_back("--best_flowlessly_algorithm");
       }
     } else if (solver == "cs2") {
       // Nothing to do
