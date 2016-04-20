@@ -153,14 +153,28 @@ multimap<uint64_t, uint64_t>* SolverDispatcher::Run(
   if (FLAGS_debug_flow_graph) {
     // TODO(malte): somewhat ugly hack to compose a unique file name for each
     // scheduler iteration
+    FlowGraphChangeManager* change_manager =
+      flow_graph_manager_->flow_graph_change_manager();
     string out_file_name;
     spf(&out_file_name, "%s/debug_%ju.dm", FLAGS_debug_output_dir.c_str(),
         debug_seq_num_);
     LOG(INFO) << "Writing flow graph debug info into " << out_file_name;
     FILE* debug_out_file;
     CHECK((debug_out_file = fopen(out_file_name.c_str(), "w")) != NULL);
-    ExportGraph(debug_out_file);
+    dimacs_exporter_.Export(change_manager->flow_graph(), debug_out_file);
     fclose(debug_out_file);
+    if (solver_ran_once_ && FLAGS_incremental_flow) {
+      // Export incremental graph.
+      string incremental_file_name;
+      spf(&incremental_file_name, "%s/debug_incremental_%ju.dm",
+          FLAGS_debug_output_dir.c_str(), debug_seq_num_);
+      FILE* incremental_file;
+      CHECK((incremental_file = fopen(incremental_file_name.c_str(), "w")) !=
+            NULL);
+      dimacs_exporter_.ExportIncremental(
+          change_manager->GetOptimizedGraphChanges(), incremental_file);
+      fclose(incremental_file);
+    }
   }
 
   // Now run the solver
