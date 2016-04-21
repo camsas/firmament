@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_be41a70d",
+        "filename": "src/scheduling/flow/dimacs_add_node.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-21T15:45:29Z",
+      "side": 1,
+      "message": "Is this an intermediate resource? (i.e., not an EC)",
+      "revId": "7eed57a6495426b7cd5fd40428bfeb3a10d41f61",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_9e44a31b",
+        "filename": "src/scheduling/flow/dimacs_add_node.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-21T15:45:29Z",
+      "side": 1,
+      "message": "Ah, ok, this answers my above question. Do we not need a node type for ECs?",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 40
+      },
+      "revId": "7eed57a6495426b7cd5fd40428bfeb3a10d41f61",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
