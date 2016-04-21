@@ -16,7 +16,9 @@ enum NodeType {
   DIMACS_NODE_OTHER = 0,
   DIMACS_NODE_TASK = 1,
   DIMACS_NODE_PU = 2,
-  DIMACS_NODE_SINK = 3
+  DIMACS_NODE_SINK = 3,
+  DIMACS_NODE_MACHINE = 4,
+  DIMACS_NODE_INTERMEDIATE_RES = 5
 };
 
 DIMACSAddNode::DIMACSAddNode(const FlowGraphNode& node,
@@ -42,6 +44,13 @@ const string DIMACSAddNode::GenerateChange() const {
 uint32_t DIMACSAddNode::GetNodeType() const {
   if (type_ == FlowNodeType::PU) {
     return DIMACS_NODE_PU;
+  } else if (type_ == FlowNodeType::MACHINE) {
+    return DIMACS_NODE_MACHINE;
+  } else if (type_ == FlowNodeType::NUMA_NODE ||
+             type_ == FlowNodeType::SOCKET ||
+             type_ == FlowNodeType::CACHE ||
+             type_ == FlowNodeType::CORE) {
+    return DIMACS_NODE_INTERMEDIATE_RES;
   } else if (type_ == FlowNodeType::SINK) {
     return DIMACS_NODE_SINK;
   } else if (type_ == FlowNodeType::UNSCHEDULED_TASK ||
