@@ -4,7 +4,7 @@
 #ifndef FIRMAMENT_SIM_DFS_SIMULATED_UNIFORM_DFS_H
 #define FIRMAMENT_SIM_DFS_SIMULATED_UNIFORM_DFS_H
 
-#include "sim/dfs/simulated_dfs_interface.h"
+#include "sim/dfs/simulated_dfs.h"
 
 #include <list>
 #include <queue>
@@ -24,7 +24,7 @@
 namespace firmament {
 namespace sim {
 
-class SimulatedUniformDFS : public SimulatedDFSInterface {
+class SimulatedUniformDFS : public SimulatedDFS {
  public:
   SimulatedUniformDFS(TraceGenerator* trace_generator);
   virtual ~SimulatedUniformDFS();
@@ -42,8 +42,9 @@ class SimulatedUniformDFS : public SimulatedDFSInterface {
   /**
    * Add a new machine to the DFS.
    * @param machine_res_id the resource id of the new machine
+   * @return the id of the rack in which the machine is located
    */
-  void AddMachine(ResourceID_t machine_res_id);
+  EquivClass_t AddMachine(ResourceID_t machine_res_id);
   void GetFileLocations(const string& file_path, list<DataLocation>* locations);
 
   /**
@@ -57,8 +58,9 @@ class SimulatedUniformDFS : public SimulatedDFSInterface {
    * the machine and makes sure they're again
    * FLAGS_simulated_dfs_replication_factor replicated.
    * @param machine_res_id the resource id of the machine to be removed
+   * @return true if the machine's rack no longer contains machines
    */
-  void RemoveMachine(ResourceID_t machine_res_id);
+  bool RemoveMachine(ResourceID_t machine_res_id);
 
  protected:
   uint64_t GenerateBlockID(TaskID_t task_id, uint64_t block_index);

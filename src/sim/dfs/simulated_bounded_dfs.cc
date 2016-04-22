@@ -48,9 +48,9 @@ void SimulatedBoundedDFS::AddBlocksForTask(const TaskDescriptor& td,
         FindOrNull(tasks_on_machine_, machine_res_id);
       CHECK_NOTNULL(tasks_machine);
       tasks_machine->insert(task_id);
-      // TODO(ionel): Update the code so that DataLocation's rack_id_ is
-      // correctly initialized.
-      DataLocation data_location(machine_res_id, 0, block_id,
+      DataLocation data_location(machine_res_id,
+                                 GetRackForMachine(machine_res_id),
+                                 block_id,
                                  FLAGS_simulated_block_size);
       task_to_data_locations_.insert(
           pair<TaskID_t, DataLocation>(task_id, data_location));

@@ -19,8 +19,6 @@
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
 
-// Racks contain "between 29 and 31 computers" in Quincy test setup
-DEFINE_uint64(machines_per_rack, 30, "Number of machines per rack");
 DEFINE_double(quincy_wait_time_factor, 0.5, "The Quincy wait time factor");
 DEFINE_double(quincy_preferred_machine_data_fraction, 0.1,
               "Threshold of proportion of data stored on machine for it to be "
