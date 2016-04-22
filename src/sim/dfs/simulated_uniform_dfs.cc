@@ -24,7 +24,7 @@ namespace sim {
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
 SimulatedUniformDFS::SimulatedUniformDFS(TraceGenerator* trace_generator)
-  : rand_seed_(42), trace_generator_(trace_generator) {
+  : SimulatedDFS(), rand_seed_(42), trace_generator_(trace_generator) {
 }
 
 SimulatedUniformDFS::~SimulatedUniformDFS() {
@@ -42,12 +42,13 @@ void SimulatedUniformDFS::AddBlocksForTask(const TaskDescriptor& td,
   }
 }
 
-void SimulatedUniformDFS::AddMachine(ResourceID_t machine_res_id) {
+EquivClass_t SimulatedUniformDFS::AddMachine(ResourceID_t machine_res_id) {
   CHECK(InsertIfNotPresent(&machine_num_free_blocks_, machine_res_id,
                            FLAGS_simulated_dfs_blocks_per_machine));
   CHECK(InsertIfNotPresent(&tasks_on_machine_, machine_res_id,
                            unordered_set<TaskID_t>()));
   machines_.push_back(machine_res_id);
+  return SimulatedDFS::AddMachine(machine_res_id);
 }
 
 uint64_t SimulatedUniformDFS::GenerateBlockID(TaskID_t task_id,
@@ -102,9 +103,9 @@ void SimulatedUniformDFS::PlaceBlockOnMachines(TaskID_t task_id,
       FindOrNull(tasks_on_machine_, machine_res_id);
     CHECK_NOTNULL(tasks_machine);
     tasks_machine->insert(task_id);
-    // TODO(ionel): Update the code so that DataLocation's rack_id_ is
-    // correctly initialized.
-    DataLocation data_location(machine_res_id, 0, block_id,
+    DataLocation data_location(machine_res_id,
+                               GetRackForMachine(machine_res_id),
+                               block_id,
                                FLAGS_simulated_block_size);
     task_to_data_locations_.insert(pair<TaskID_t, DataLocation>(task_id,
                                                                 data_location));
@@ -131,7 +132,7 @@ void SimulatedUniformDFS::RemoveBlocksForTask(TaskID_t task_id) {
   task_to_data_locations_.erase(task_id);
 }
 
-void SimulatedUniformDFS::RemoveMachine(ResourceID_t machine_res_id) {
+bool SimulatedUniformDFS::RemoveMachine(ResourceID_t machine_res_id) {
   ResourceID_t res_tmp = machine_res_id;
   // Remove the machine from the map of machines with storage space.
   machine_num_free_blocks_.erase(res_tmp);
@@ -160,9 +161,8 @@ void SimulatedUniformDFS::RemoveMachine(ResourceID_t machine_res_id) {
                                       data_location.size_bytes_);
         // Move the block to another random machine.
         ResourceID_t new_machine_res_id = PlaceBlockOnRandomMachine();
-        // TODO(ionel): Set DataLocation's rack_id_ to the rack corresponding
-        // to the machine onto which we're moving the block.
         range_it.first->second.machine_res_id_ = new_machine_res_id;
+        range_it.first->second.rack_id_ = GetRackForMachine(new_machine_res_id);
         const DataLocation& new_data_location = range_it.first->second;
         unordered_set<TaskID_t>* tasks_machine =
           FindOrNull(tasks_on_machine_, new_machine_res_id);
@@ -176,6 +176,7 @@ void SimulatedUniformDFS::RemoveMachine(ResourceID_t machine_res_id) {
   }
   // There are no more tasks with blocks on this machine.
   tasks_on_machine_.erase(machine_res_id);
+  return SimulatedDFS::RemoveMachine(machine_res_id);
 }
 
 } // namespace sim
