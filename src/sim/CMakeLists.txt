@@ -6,6 +6,7 @@ set(SIM_DFS_SRC
   sim/dfs/simulated_bounded_dfs.cc
   sim/dfs/simulated_dfs.cc
   sim/dfs/simulated_hdfs.cc
+  sim/dfs/simulated_skewed_dfs.cc
   sim/dfs/simulated_uniform_dfs.cc
   )
 

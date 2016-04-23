@@ -9,6 +9,7 @@
 #include "sim/dfs/google_block_distribution.h"
 #include "sim/dfs/simulated_bounded_dfs.h"
 #include "sim/dfs/simulated_hdfs.h"
+#include "sim/dfs/simulated_skewed_dfs.h"
 #include "sim/dfs/simulated_uniform_dfs.h"
 #include "sim/google_runtime_distribution.h"
 
@@ -26,7 +27,7 @@ DEFINE_uint64(simulated_dfs_blocks_per_machine, 12288,
 DEFINE_uint64(simulated_dfs_replication_factor, 3,
               "The number of times each block should be replicated.");
 DEFINE_string(simulated_dfs_type, "bounded", "The type of DFS to simulated. "
-              "Options: uniform | bounded | hdfs");
+              "Options: uniform | bounded | hdfs | skewed");
 
 
 namespace firmament {
@@ -44,6 +45,8 @@ SimulatedDataLayerManager::SimulatedDataLayerManager(
     dfs_ = new SimulatedBoundedDFS(trace_generator);
   } else if (!FLAGS_simulated_dfs_type.compare("hdfs")) {
     dfs_ = new SimulatedHDFS(trace_generator);
+  } else if (!FLAGS_simulated_dfs_type.compare("skewed")) {
+    dfs_ = new SimulatedSkewedDFS(trace_generator);
   } else {
     LOG(FATAL) << "Unexpected simulated DFS type: " << FLAGS_simulated_dfs_type;
   }
