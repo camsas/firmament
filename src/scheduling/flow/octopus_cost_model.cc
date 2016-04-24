@@ -44,9 +44,16 @@ Cost_t OctopusCostModel::TaskToResourceNodeCost(TaskID_t task_id,
 Cost_t OctopusCostModel::ResourceNodeToResourceNodeCost(
     const ResourceDescriptor& src,
     const ResourceDescriptor& dst) {
-  // The cost in the Octopus model is the number of already running tasks, i.e.
-  // a crude per-task load balancing algorithm.
-  return static_cast<Cost_t>(dst.num_running_tasks_below());
+  if (dst.type() ==  ResourceDescriptor::RESOURCE_PU) {
+    string label = dst.friendly_name();
+    uint64_t idx = label.find("PU #");
+    if (idx != string::npos) {
+      string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
+      int64_t core_id = strtoll(core_id_substr.c_str(), 0, 10);
+      return core_id;
+    }
+  }
+  return 0LL;
 }
 
 Cost_t OctopusCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
@@ -54,16 +61,16 @@ Cost_t OctopusCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
 }
 
 Cost_t OctopusCostModel::TaskContinuationCost(TaskID_t task_id) {
-  return 0ULL;
+  return 0LL;
 }
 
 Cost_t OctopusCostModel::TaskPreemptionCost(TaskID_t task_id) {
-  return 0ULL;
+  return 1000000LL;
 }
 
 Cost_t OctopusCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
                                                     EquivClass_t ec) {
-  return 0ULL;
+  return 1LL;
 }
 
 pair<Cost_t, uint64_t> OctopusCostModel::EquivClassToResourceNode(
