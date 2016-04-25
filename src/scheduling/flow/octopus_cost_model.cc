@@ -190,17 +190,6 @@ void OctopusCostModel::PrepareStats(FlowGraphNode* accumulator) {
 
 FlowGraphNode* OctopusCostModel::UpdateStats(FlowGraphNode* accumulator,
                                              FlowGraphNode* other) {
-  if (!accumulator->IsResourceNode()) {
-    return accumulator;
-  }
-  if (other->resource_id_.is_nil()) {
-    return accumulator;
-  }
-
-  // Reset the state.
-  if (!other->rd_ptr_)
-    return accumulator;
-  other->rd_ptr_->set_num_running_tasks_below(0);
   return accumulator;
 }
 
