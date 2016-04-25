@@ -73,6 +73,13 @@ inline void DIMACSExporter::GenerateNode(const FlowGraphNode& node,
   uint32_t node_type = 0;
   if (node.type_ == FlowNodeType::PU) {
     node_type = 2;
+  } else if (node.type_ == FlowNodeType::MACHINE) {
+    node_type = 4;
+  } else if (node.type_ == FlowNodeType::NUMA_NODE ||
+             node.type_ == FlowNodeType::SOCKET ||
+             node.type_ == FlowNodeType::CACHE ||
+             node.type_ == FlowNodeType::CORE) {
+    node_type = 5;
   } else if (node.type_ == FlowNodeType::SINK) {
     node_type = 3;
   } else if (node.type_ == FlowNodeType::UNSCHEDULED_TASK ||
