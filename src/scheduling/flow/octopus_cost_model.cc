@@ -10,6 +10,8 @@
 #include "misc/map-util.h"
 #include "scheduling/flow/flow_graph_manager.h"
 
+#define BUSY_PU_OFFSET 100
+
 DECLARE_bool(preemption);
 DECLARE_uint64(max_tasks_per_pu);
 
@@ -50,10 +52,10 @@ Cost_t OctopusCostModel::ResourceNodeToResourceNodeCost(
     if (idx != string::npos) {
       string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
       int64_t core_id = strtoll(core_id_substr.c_str(), 0, 10);
-      return core_id;
+      return core_id + dst.num_running_tasks_below() * BUSY_PU_OFFSET;
     }
   }
-  return 0LL;
+  return dst.num_running_tasks_below() * BUSY_PU_OFFSET;
 }
 
 Cost_t OctopusCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
@@ -80,7 +82,9 @@ pair<Cost_t, uint64_t> OctopusCostModel::EquivClassToResourceNode(
   CHECK_NOTNULL(rs);
   uint64_t num_free_slots = rs->descriptor().num_slots_below() -
     rs->descriptor().num_running_tasks_below();
-  return pair<Cost_t, uint64_t>(0LL, num_free_slots);
+  Cost_t cost =
+    rs->descriptor().num_running_tasks_below() * BUSY_PU_OFFSET;
+  return pair<Cost_t, uint64_t>(cost, num_free_slots);
 }
 
 pair<Cost_t, uint64_t> OctopusCostModel::EquivClassToEquivClass(
