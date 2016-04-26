@@ -59,6 +59,7 @@ class GoogleTraceLoader : public TraceLoader {
 
  private:
   uint64_t MaxEventHashToRetain();
+  uint64_t MaxMachineEventHashToRetain();
 
   // The number of the task events file the simulator is reading from.
   int32_t current_task_events_file_id_;

@@ -22,6 +22,9 @@
 #define MAX_LINE_LENGTH 1000
 
 DEFINE_double(events_fraction, 1.0, "Fraction of events to retain.");
+DEFINE_double(machine_events_fraction, 1.0,
+              "Fraction of machine events to retain. NOTE: the minimum "
+              "of events_fraction and machine_events_fraction will be used");
 DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(trace_path, "", "Path where the trace files are.");
 DEFINE_uint64(sim_machine_max_cores, 12,
@@ -124,7 +127,7 @@ void GoogleTraceLoader::LoadMachineEvents(
         uint64_t machine_id = lexical_cast<uint64_t>(cols[1]);
         // Sub-sample the trace if we only retain < 100% of machines.
         if (SpookyHash::Hash64(&machine_id, sizeof(machine_id), kSeed) >
-            MaxEventHashToRetain()) {
+            MaxMachineEventHashToRetain()) {
           // skip event
           continue;
         }
@@ -398,6 +401,18 @@ uint64_t GoogleTraceLoader::MaxEventHashToRetain() {
     return UINT64_MAX;
   } else {
     return static_cast<uint64_t>(FLAGS_events_fraction * UINT64_MAX);
+  }
+}
+
+uint64_t GoogleTraceLoader::MaxMachineEventHashToRetain() {
+  // We must check if we're retaining all events. If so, we have to return
+  // UINT64_MAX because otherwise we might end up overflowing.
+  double events_fraction =
+    min(FLAGS_events_fraction, FLAGS_machine_events_fraction);
+  if (IsEqual(events_fraction, 1.0)) {
+    return UINT64_MAX;
+  } else {
+    return static_cast<uint64_t>(events_fraction * UINT64_MAX);
   }
 }
 
