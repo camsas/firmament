@@ -68,6 +68,11 @@ QuincyCostModel::~QuincyCostModel() {
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
+  if (td.has_priority() && td.priority() == 1000) {
+    // XXX(ionel): HACK! This forces synthetic tasks to be scheduled while
+    // replaying a Google trace.
+    return 64;
+  }
   int64_t total_unscheduled_time =
     static_cast<int64_t>(td.total_unscheduled_time());
   // Include current unscheduled wait period if it hasn't yet started.

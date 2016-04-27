@@ -70,12 +70,12 @@ class GoogleTraceLoader : public TraceLoader {
   // not have to do that. We use this collection to maintain a set of tasks
   // that have already been filtered.
   unordered_set<TraceTaskIdentifier, TraceTaskIdentifierHasher> filtered_tasks_;
-  // Fake task that is inserted into the trace in order to trigger a solver
+  // Synthetic task that is inserted into the trace in order to trigger a solver
   // run before the tasks at timestamp 600000000 are processed. This solver
   // run will make sure that the flow of the initial tasks running in the
   // cluster is routed via their running arcs.
-  TraceTaskIdentifier fake_task_;
-  bool loaded_fake_task_;
+  TraceTaskIdentifier synthetic_task_;
+  bool loaded_synthetic_task_;
 };
 
 }  // namespace sim

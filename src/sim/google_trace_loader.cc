@@ -32,6 +32,11 @@ DEFINE_uint64(sim_machine_max_cores, 12,
 DEFINE_uint64(sim_machine_max_ram, 65536,
               "Maximum ram size (in MB) the simulated machines have");
 DEFINE_uint64(trace_speed_up, 1, "Factor by which to speed up events");
+DEFINE_uint64(num_tasks_synthetic_job_after_initial_run, 1,
+              "Number of tasks the synthetic job added after initial scheduler "
+              "run.");
+DEFINE_uint64(synthetic_task_runtime, 1000000,
+              "Runtime of the synthetic task (in us)");
 
 DECLARE_uint64(runtime);
 
@@ -57,9 +62,9 @@ GoogleTraceLoader::GoogleTraceLoader(EventManager* event_manager)
   : TraceLoader(event_manager),
     current_task_events_file_id_(0),
     task_events_file_(NULL),
-    loaded_fake_task_(false) {
-  fake_task_.job_id = 0;
-  fake_task_.task_index = 0;
+    loaded_synthetic_task_(false) {
+  synthetic_task_.job_id = 0;
+  synthetic_task_.task_index = 0;
 }
 
 GoogleTraceLoader::~GoogleTraceLoader() {
@@ -78,8 +83,9 @@ void GoogleTraceLoader::LoadJobsNumTasks(
   if ((jobs_tasks_file = fopen(jobs_tasks_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open jobs num tasks file.";
   }
-  // Load the fake job.
-  CHECK(InsertIfNotPresent(job_num_tasks, fake_task_.job_id, 1));
+  // Load the synthetic job.
+  CHECK(InsertIfNotPresent(job_num_tasks, synthetic_task_.job_id,
+                           FLAGS_num_tasks_synthetic_job_after_initial_run));
   int64_t num_line = 1;
   while (!feof(jobs_tasks_file)) {
     if (fscanf(jobs_tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -156,18 +162,22 @@ bool GoogleTraceLoader::LoadTaskEvents(
   char line[MAX_LINE_LENGTH];
   vector<string> vals;
   bool loaded_event = false;
-  if (!loaded_fake_task_) {
-    // Add a submit event for the fake task.
-    EventDescriptor event_desc;
-    event_desc.set_type(EventDescriptor::TASK_SUBMIT);
-    event_desc.set_job_id(fake_task_.job_id);
-    event_desc.set_task_index(fake_task_.task_index);
-    event_desc.set_scheduling_class(0);
-    event_desc.set_priority(0);
-    event_desc.set_requested_cpu_cores(0);
-    event_desc.set_requested_ram(0);
-    event_manager_->AddEvent(1 * SECONDS_TO_MICROSECONDS, event_desc);
-    loaded_fake_task_ = true;
+  if (!loaded_synthetic_task_) {
+    // Add a submit event for the synthetic task.
+    for (uint64_t task_index = 0;
+         task_index < FLAGS_num_tasks_synthetic_job_after_initial_run;
+         task_index++) {
+      EventDescriptor event_desc;
+      event_desc.set_type(EventDescriptor::TASK_SUBMIT);
+      event_desc.set_job_id(synthetic_task_.job_id);
+      event_desc.set_task_index(task_index);
+      event_desc.set_scheduling_class(0);
+      event_desc.set_priority(1000);
+      event_desc.set_requested_cpu_cores(0);
+      event_desc.set_requested_ram(0);
+      event_manager_->AddEvent(1 * SECONDS_TO_MICROSECONDS, event_desc);
+    }
+    loaded_synthetic_task_ = true;
   }
   while (true) {
     // Check if we're already reading from a file.
@@ -266,10 +276,18 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
   if ((usage_file = fopen(usage_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace task runtime stats file.";
   }
-  TraceTaskStats fake_task_stats;
-  CHECK(InsertIfNotPresent(task_id_to_stats,
-                           GenerateTaskIDFromTraceIdentifier(fake_task_),
-                           fake_task_stats));
+  TraceTaskStats synthetic_task_stats;
+  TraceTaskIdentifier cur_synthetic_task;
+  cur_synthetic_task.job_id = synthetic_task_.job_id;
+  for (uint64_t task_index = 0;
+       task_index < FLAGS_num_tasks_synthetic_job_after_initial_run;
+       task_index++) {
+    cur_synthetic_task.task_index = task_index;
+    CHECK(InsertIfNotPresent(
+        task_id_to_stats,
+        GenerateTaskIDFromTraceIdentifier(cur_synthetic_task),
+        synthetic_task_stats));
+  }
   int64_t num_line = 1;
   while (!feof(usage_file)) {
     if (fscanf(usage_file, "%[^\n]%*[\n]", &line[0]) > 0) {
@@ -348,10 +366,18 @@ void GoogleTraceLoader::LoadTasksRunningTime(
   if ((tasks_file = fopen(tasks_file_name.c_str(), "r")) == NULL) {
     LOG(FATAL) << "Failed to open trace runtime events file.";
   }
-  // Load the runtime of the fake task.
-  TaskID_t fake_task_id = GenerateTaskIDFromTraceIdentifier(fake_task_);
-  CHECK(InsertIfNotPresent(task_runtime, fake_task_id,
-                           1 * SECONDS_TO_MICROSECONDS));
+  // Load the runtime of the synthetic task.
+  TraceTaskIdentifier cur_synthetic_task;
+  cur_synthetic_task.job_id = synthetic_task_.job_id;
+  for (uint64_t task_index = 0;
+       task_index < FLAGS_num_tasks_synthetic_job_after_initial_run;
+       task_index++) {
+    cur_synthetic_task.task_index = task_index;
+    TaskID_t synthetic_task_id =
+      GenerateTaskIDFromTraceIdentifier(cur_synthetic_task);
+    CHECK(InsertIfNotPresent(task_runtime, synthetic_task_id,
+                             FLAGS_synthetic_task_runtime));
+  }
   int64_t num_line = 1;
   while (!feof(tasks_file)) {
     if (fscanf(tasks_file, "%[^\n]%*[\n]", &line[0]) > 0) {
