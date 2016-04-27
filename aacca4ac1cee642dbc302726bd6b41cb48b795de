@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_49dad579",
+        "filename": "src/sim/google_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-27T14:51:44Z",
+      "side": 1,
+      "message": "This is now also the runtime for the synthetic tasks; use the same terminology to avoid flag confusion. (Either refer to all of them as \"fake tasks\", or all of them as \"synthetic tasks\", or deconflate the notions -- see later comment.)",
+      "revId": "aacca4ac1cee642dbc302726bd6b41cb48b795de",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_a9f4c1f1",
+        "filename": "src/sim/google_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-04-27T14:51:44Z",
+      "side": 1,
+      "message": "This seems to conflate the \"fake task\" (which we always have in order to stabilize things), and the synthetic tasks. Specifically, if FLAGS_num_tasks_synthetic_job_after_initial_run was set to zero, no fake task would be generated. Is that intentional?",
+      "range": {
+        "startLine": 164,
+        "startChar": 0,
+        "endLine": 168,
+        "endChar": 24
+      },
+      "revId": "aacca4ac1cee642dbc302726bd6b41cb48b795de",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
