@@ -125,7 +125,7 @@ bool SyntheticTraceLoader::LoadTaskEvents(
     uint64_t events_up_to_time,
     unordered_map<uint64_t, uint64_t>* job_num_tasks) {
   uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
-  uint64_t current_timestamp = last_generated_job_id_ * usec_between_jobs;
+  uint64_t current_timestamp = (last_generated_job_id_ + 1) * usec_between_jobs;
   if (current_timestamp > events_up_to_time) {
     return true;
   }
