@@ -48,6 +48,10 @@ DEFINE_bool(flowlessly_flip_algorithms, false, "True if Flowlessly should "
             "alternate between fast_cost_scaling and relax");
 DEFINE_bool(flowlessly_best_algorithm, false, "True if Flowlessly should "
             " try to pick the best algorithm");
+DEFINE_bool(flowlessly_run_cost_scaling_and_relax, false, "True if Flowlessly "
+            "should run both algorithms");
+DEFINE_int64(flowlessly_alpha_factor, 9, "Alpha factor to be used by "
+             "Flowlessly's cost scaling");
 
 namespace firmament {
 namespace scheduler {
@@ -332,6 +336,11 @@ void SolverDispatcher::SolverConfiguration(const string& solver,
       if (FLAGS_flowlessly_best_algorithm) {
         args->push_back("--best_flowlessly_algorithm");
       }
+      if (FLAGS_flowlessly_run_cost_scaling_and_relax) {
+        args->push_back("--run_cost_scaling_and_relax");
+      }
+      args->push_back("--alpha_scaling_factor=" +
+                      FLAGS_flowlessly_alpha_factor);
     } else if (solver == "cs2") {
       // Nothing to do
     } else {
