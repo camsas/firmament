@@ -31,7 +31,6 @@ DEFINE_uint64(sim_machine_max_cores, 12,
               "Maximum number of cores the simulated machines have");
 DEFINE_uint64(sim_machine_max_ram, 65536,
               "Maximum ram size (in MB) the simulated machines have");
-DEFINE_uint64(trace_speed_up, 1, "Factor by which to speed up events");
 DEFINE_uint64(num_tasks_synthetic_job_after_initial_run, 1,
               "Number of tasks the synthetic job added after initial scheduler "
               "run.");
@@ -39,6 +38,7 @@ DEFINE_uint64(synthetic_task_runtime, 1000000,
               "Runtime of the synthetic task (in us)");
 
 DECLARE_uint64(runtime);
+DECLARE_double(trace_speed_up);
 
 static bool ValidateTracePath(const char* flagname, const string& trace_path) {
   if (trace_path.empty()) {

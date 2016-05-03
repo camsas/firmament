@@ -27,6 +27,7 @@ DEFINE_double(prepopulated_cluster_fraction, 0,
 
 DECLARE_uint64(max_tasks_per_pu);
 DECLARE_uint64(runtime);
+DECLARE_double(trace_speed_up);
 
 namespace firmament {
 namespace sim {
@@ -109,14 +110,17 @@ void SyntheticTraceLoader::LoadMachineEvents(
       event_desc.set_machine_id(machine_id);
       event_desc.set_type(EventDescriptor::REMOVE_MACHINE);
       machine_events->insert(
-          pair<uint64_t, EventDescriptor>(failure_timestamp, event_desc));
+          pair<uint64_t, EventDescriptor>(
+              failure_timestamp / FLAGS_trace_speed_up, event_desc));
       // The failure is temporary. Add the machine back.
       uint64_t recovery_timestamp = failure_timestamp +
         FLAGS_synthetic_machine_failure_duration * SECONDS_TO_MICROSECONDS;
       event_desc.set_type(EventDescriptor::ADD_MACHINE);
       machine_events->insert(
-          pair<uint64_t, EventDescriptor>(recovery_timestamp, event_desc));
-      InsertOrUpdate(&machine_recovery, machine_id, recovery_timestamp);
+          pair<uint64_t, EventDescriptor>(
+              recovery_timestamp / FLAGS_trace_speed_up, event_desc));
+      InsertOrUpdate(&machine_recovery, machine_id,
+                     recovery_timestamp / FLAGS_trace_speed_up);
     }
   }
 }
@@ -126,7 +130,7 @@ bool SyntheticTraceLoader::LoadTaskEvents(
     unordered_map<uint64_t, uint64_t>* job_num_tasks) {
   uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
   uint64_t current_timestamp = (last_generated_job_id_ + 1) * usec_between_jobs;
-  if (current_timestamp > events_up_to_time) {
+  if (current_timestamp / FLAGS_trace_speed_up > events_up_to_time) {
     return true;
   }
   if (last_generated_job_id_ == 0) {
@@ -152,9 +156,9 @@ bool SyntheticTraceLoader::LoadTaskEvents(
       event_desc.set_job_id(last_generated_job_id_);
       event_desc.set_task_index(task_index);
       event_desc.set_type(EventDescriptor::TASK_SUBMIT);
-      event_manager_->AddEvent(timestamp, event_desc);
+      event_manager_->AddEvent(timestamp / FLAGS_trace_speed_up, event_desc);
     }
-    if (timestamp > events_up_to_time) {
+    if (timestamp / FLAGS_trace_speed_up > events_up_to_time) {
       // We want to add one additional event after events_up_to_time to make
       // sure that the simulation doesn't end.
       return true;
@@ -214,7 +218,7 @@ void SyntheticTraceLoader::LoadTasksRunningTime(
       task_identifier.task_index = task_index;
       CHECK(InsertIfNotPresent(
           task_runtime, GenerateTaskIDFromTraceIdentifier(task_identifier),
-          FLAGS_runtime));
+          FLAGS_runtime / FLAGS_trace_speed_up));
     }
   }
   uint64_t job_id = 1;
@@ -228,7 +232,7 @@ void SyntheticTraceLoader::LoadTasksRunningTime(
       task_identifier.task_index = task_index;
       CHECK(InsertIfNotPresent(
           task_runtime, GenerateTaskIDFromTraceIdentifier(task_identifier),
-          FLAGS_synthetic_task_duration));
+          FLAGS_synthetic_task_duration / FLAGS_trace_speed_up));
     }
   }
 }

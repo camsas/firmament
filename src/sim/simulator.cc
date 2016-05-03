@@ -37,6 +37,7 @@ DEFINE_string(simulation, "google",
 DEFINE_bool(exit_simulation_after_last_task_event, false,
             "True if the simulation should not wait for the running tasks "
             "to complete");
+DEFINE_double(trace_speed_up, 1, "Factor by which to speed up events");
 
 DECLARE_uint64(heartbeat_interval);
 DECLARE_uint64(max_solver_runtime);
@@ -130,7 +131,7 @@ void Simulator::ReplaySimulation() {
       event_desc.set_type(EventDescriptor::MACHINE_HEARTBEAT);
       event_manager_->AddEvent(current_heartbeat_time, event_desc);
     }
-    if (run_scheduler_at <= FLAGS_runtime) {
+    if (run_scheduler_at <= FLAGS_runtime / FLAGS_trace_speed_up) {
       bridge_->ProcessSimulatorEvents(run_scheduler_at);
       // Current timestamp is at the last event <= run_scheduler_at. We want
       // to make sure that it's at run_scheduler_at so that all the events
@@ -142,7 +143,7 @@ void Simulator::ReplaySimulation() {
       // we already processed the events up to run_scheduler_at.
       num_scheduling_rounds++;
     } else {
-      bridge_->ProcessSimulatorEvents(FLAGS_runtime);
+      bridge_->ProcessSimulatorEvents(FLAGS_runtime / FLAGS_trace_speed_up);
     }
     if (!loaded_events && FLAGS_exit_simulation_after_last_task_event) {
       // The simulator has finished loading all the task events.

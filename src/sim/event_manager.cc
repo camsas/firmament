@@ -22,6 +22,8 @@ DEFINE_uint64(runtime, UINT64_MAX,
               "Maximum time in microsec to extract data for"
               "(from start of trace)");
 
+DECLARE_double(trace_speed_up);
+
 static bool ValidateBatchStep(const char* flagname, uint64_t batch_step) {
   if (batch_step == 0) {
     if (firmament::IsEqual(FLAGS_online_factor, 0.0)) {
@@ -108,7 +110,7 @@ uint64_t EventManager::GetTimeOfNextSchedulerRun(
 
 bool EventManager::HasSimulationCompleted(uint64_t num_scheduling_rounds) {
   // We only run for the first FLAGS_runtime microseconds.
-  if (FLAGS_runtime < GetTimeOfNextEvent()) {
+  if (FLAGS_runtime / FLAGS_trace_speed_up < GetTimeOfNextEvent()) {
     LOG(INFO) << "Terminating at : " << simulated_time_->GetCurrentTimestamp();
     return true;
   }

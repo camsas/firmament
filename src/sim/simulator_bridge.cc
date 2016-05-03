@@ -29,6 +29,7 @@ DECLARE_uint64(runtime);
 DECLARE_string(scheduler);
 DECLARE_uint64(sim_machine_max_ram);
 DECLARE_int32(flow_scheduling_cost_model);
+DECLARE_double(trace_speed_up);
 
 namespace firmament {
 namespace sim {
@@ -246,9 +247,10 @@ void SimulatorBridge::AddTaskEndEvent(
                             *runtime_ptr);
   } else {
     // The task didn't finish in the trace. Set the task's end event to the
-    // last timestamp of the simulation.
-    event_manager_->AddEvent(FLAGS_runtime, event_desc);
-    td_ptr->set_finish_time(FLAGS_runtime);
+    // the timestamp just after the end of the simulation.
+    event_manager_->AddEvent(FLAGS_runtime / FLAGS_trace_speed_up + 1,
+                             event_desc);
+    td_ptr->set_finish_time(FLAGS_runtime / FLAGS_trace_speed_up + 1);
   }
 }
 
