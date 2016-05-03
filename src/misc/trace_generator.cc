@@ -239,7 +239,9 @@ void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
   if (FLAGS_generate_trace) {
     unscheduled_tasks_cnt_++;
     task_events_cnt_per_round_++;
-    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
+    // NOTE: We do not use time_manager_ because the task already has a
+    // submit time which was set by the coordinator or the simulator.
+    uint64_t timestamp = td_ptr->submit_time();
     uint64_t job_id;
     string simulator_job_prefix = "firmament_simulation_job_";
     TaskID_t task_id = td_ptr->uid();

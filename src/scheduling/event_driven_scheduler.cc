@@ -320,12 +320,12 @@ void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
   CHECK_NOTNULL(exec);
   exec->HandleTaskEviction(td_ptr);
   trace_generator_->TaskEvicted(td_ptr->uid(), *rd_ptr, false);
-  // The Google-style trace requires a submit event to be printed after
-  // a task is evicted.
-  trace_generator_->TaskSubmitted(td_ptr);
   if (event_notifier_) {
     event_notifier_->OnTaskEviction(td_ptr, rd_ptr);
   }
+  // The Google-style trace requires a submit event to be printed after
+  // a task is evicted.
+  trace_generator_->TaskSubmitted(td_ptr);
 }
 
 void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
