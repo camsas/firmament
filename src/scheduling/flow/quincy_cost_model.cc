@@ -68,10 +68,15 @@ QuincyCostModel::~QuincyCostModel() {
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
+  // XXX(ionel): HACK! In our simulations a task doesn't have more than 39GB
+  // of input data. We offset the cost to the unscheduled aggregator for all
+  // the tasks by MAX_TASK_INPUT_SIZE * FLAGS_quincy_core_transfer_cost to
+  // force them to schedule as soon as possible.
+  int64_t no_delay_offset = 39 * FLAGS_quincy_core_transfer_cost;
   if (td.has_priority() && td.priority() == 1000) {
     // XXX(ionel): HACK! This forces synthetic tasks to be scheduled while
     // replaying a Google trace.
-    return 100 + FLAGS_quincy_positive_cost_offset;
+    return 100 + FLAGS_quincy_positive_cost_offset + no_delay_offset;
   }
   int64_t total_unscheduled_time =
     static_cast<int64_t>(td.total_unscheduled_time());
@@ -84,7 +89,7 @@ Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   return static_cast<Cost_t>(total_unscheduled_time *
                              FLAGS_quincy_wait_time_factor /
                              static_cast<int64_t>(MICROSECONDS_IN_SECOND) +
-                             FLAGS_quincy_positive_cost_offset);
+                             FLAGS_quincy_positive_cost_offset + no_delay_offset);
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
