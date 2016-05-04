@@ -24,6 +24,8 @@ DEFINE_uint64(synthetic_task_duration, 10 * firmament::SECONDS_TO_MICROSECONDS,
 DEFINE_double(prepopulated_cluster_fraction, 0,
               "Fraction of the cluster that is in use at the start of the "
               "simulation");
+DEFINE_uint64(prepopulated_task_duration, 0,
+              "Duration of tasks used to prepopulate the cluster");
 
 DECLARE_uint64(max_tasks_per_pu);
 DECLARE_uint64(runtime);
@@ -34,6 +36,11 @@ namespace sim {
 
 SyntheticTraceLoader::SyntheticTraceLoader(EventManager* event_manager)
   : TraceLoader(event_manager), last_generated_job_id_(0) {
+  if (FLAGS_prepopulated_task_duration == 0) {
+    // Set the duration of the prepopulated tasks to the runtime of the
+    // simulation if a value is not specified.
+    FLAGS_prepopulated_task_duration = FLAGS_runtime;
+  }
   if (FLAGS_runtime == UINT64_MAX) {
     LOG(FATAL) << "Cannot add machine failure events for a simulation "
                << "without runtime set";
@@ -218,7 +225,7 @@ void SyntheticTraceLoader::LoadTasksRunningTime(
       task_identifier.task_index = task_index;
       CHECK(InsertIfNotPresent(
           task_runtime, GenerateTaskIDFromTraceIdentifier(task_identifier),
-          FLAGS_runtime / FLAGS_trace_speed_up));
+          FLAGS_prepopulated_task_duration / FLAGS_trace_speed_up));
     }
   }
   uint64_t job_id = 1;
