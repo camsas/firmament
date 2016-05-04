@@ -37,6 +37,8 @@ DEFINE_bool(quincy_update_costs_upon_machine_change, true,
 DEFINE_int64(quincy_positive_cost_offset, 2592000, "Value to offset costs so "
              "that they don't go negative. This value should be bigger than "
              "the runtime (in sec) of the longest task");
+DEFINE_bool(quincy_no_scheduling_delay, false, "Offset cost to unscheduled "
+            "aggregator so that tasks get scheduled as soon as possible");
 
 DECLARE_uint64(max_tasks_per_pu);
 DECLARE_bool(generate_quincy_cost_model_trace);
@@ -68,11 +70,14 @@ QuincyCostModel::~QuincyCostModel() {
 // scheduling it.
 Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
-  // XXX(ionel): HACK! In our simulations a task doesn't have more than 39GB
-  // of input data. We offset the cost to the unscheduled aggregator for all
-  // the tasks by MAX_TASK_INPUT_SIZE * FLAGS_quincy_core_transfer_cost to
-  // force them to schedule as soon as possible.
-  int64_t no_delay_offset = 39 * FLAGS_quincy_core_transfer_cost;
+  int64_t no_delay_offset = 0;
+  if (FLAGS_quincy_no_scheduling_delay) {
+    // XXX(ionel): HACK! In our simulations a task doesn't have more than 39GB
+    // of input data. We offset the cost to the unscheduled aggregator for all
+    // the tasks by MAX_TASK_INPUT_SIZE * FLAGS_quincy_core_transfer_cost to
+    // force them to schedule as soon as possible.
+    no_delay_offset = 39 * FLAGS_quincy_core_transfer_cost;
+  }
   if (td.has_priority() && td.priority() == 1000) {
     // XXX(ionel): HACK! This forces synthetic tasks to be scheduled while
     // replaying a Google trace.
