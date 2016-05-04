@@ -508,8 +508,12 @@ void EventDrivenScheduler::LazyGraphReduction(
   CHECK_NOTNULL(rtd_ptr);
   // Only add the root task if it is not already scheduled, running, done
   // or failed.
-  if (rtd_ptr->state() == TaskDescriptor::CREATED)
+  if (rtd_ptr->state() == TaskDescriptor::CREATED ||
+      rtd_ptr->state() == TaskDescriptor::RUNNING ||
+      rtd_ptr->state() == TaskDescriptor::RUNNABLE ||
+      rtd_ptr->state() == TaskDescriptor::COMPLETED) {
     newly_active_tasks.push_back(rtd_ptr);
+  }
   // Keep iterating over tasks as long as there are more to visit
   while (!newly_active_tasks.empty()) {
     TaskDescriptor* current_task = newly_active_tasks.front();
@@ -517,46 +521,48 @@ void EventDrivenScheduler::LazyGraphReduction(
     newly_active_tasks.pop_front();
     // Find any unfulfilled dependencies
     bool will_block = false;
-    for (auto& dependency : current_task->dependencies()) {
-      ReferenceInterface* ref = ReferenceFromDescriptor(dependency);
-      // Subscribe the current task to the reference, to enable it to be
-      // unblocked if it becomes available.
-      // Note that we subscribe even tasks whose dependencies are concrete, as
-      // they may later disappear and failures will be handled via the
-      // subscription relationship.
-      unordered_set<TaskDescriptor*>* subscribers = FindOrNull(
-          reference_subscriptions_, ref->id());
-      if (!subscribers) {
-        InsertIfNotPresent(&reference_subscriptions_,
-                           ref->id(), unordered_set<TaskDescriptor*>());
-        subscribers = FindOrNull(reference_subscriptions_, ref->id());
-      }
-      subscribers->insert(current_task);
-      // Now proceed to check if it is available
-      if (ref->Consumable()) {
-        // This input reference is consumable. So far, so good.
-        VLOG(2) << "Task " << current_task->uid() << "'s dependency " << *ref
-                << " is consumable.";
-      } else {
-        // This input reference is not consumable; set the task to block and
-        // look at its predecessors (which may produce the necessary input, and
-        // may be runnable).
-        VLOG(2) << "Task " << current_task->uid()
-                << " is blocking on reference " << *ref;
-        will_block = true;
-        // Look at predecessor task (producing this reference)
-        unordered_set<TaskDescriptor*> producing_tasks =
-            ProducingTasksForDataObjectID(ref->id(), job_id);
-        if (producing_tasks.size() == 0) {
-          LOG(ERROR) << "Failed to find producing task for ref " << ref
-                     << "; will block until it is produced.";
-          continue;
+    if (current_task->state() == TaskDescriptor::CREATED) {
+      for (auto& dependency : current_task->dependencies()) {
+        ReferenceInterface* ref = ReferenceFromDescriptor(dependency);
+        // Subscribe the current task to the reference, to enable it to be
+        // unblocked if it becomes available.
+        // Note that we subscribe even tasks whose dependencies are concrete, as
+        // they may later disappear and failures will be handled via the
+        // subscription relationship.
+        unordered_set<TaskDescriptor*>* subscribers = FindOrNull(
+                                                                 reference_subscriptions_, ref->id());
+        if (!subscribers) {
+          InsertIfNotPresent(&reference_subscriptions_,
+                             ref->id(), unordered_set<TaskDescriptor*>());
+          subscribers = FindOrNull(reference_subscriptions_, ref->id());
         }
-        for (auto& task : producing_tasks) {
-          if (task->state() == TaskDescriptor::CREATED ||
-              task->state() == TaskDescriptor::COMPLETED) {
-            task->set_state(TaskDescriptor::BLOCKING);
-            newly_active_tasks.push_back(task);
+        subscribers->insert(current_task);
+        // Now proceed to check if it is available
+        if (ref->Consumable()) {
+          // This input reference is consumable. So far, so good.
+          VLOG(2) << "Task " << current_task->uid() << "'s dependency " << *ref
+                  << " is consumable.";
+        } else {
+          // This input reference is not consumable; set the task to block and
+          // look at its predecessors (which may produce the necessary input, and
+          // may be runnable).
+          VLOG(2) << "Task " << current_task->uid()
+                  << " is blocking on reference " << *ref;
+          will_block = true;
+          // Look at predecessor task (producing this reference)
+          unordered_set<TaskDescriptor*> producing_tasks =
+            ProducingTasksForDataObjectID(ref->id(), job_id);
+          if (producing_tasks.size() == 0) {
+            LOG(ERROR) << "Failed to find producing task for ref " << ref
+                       << "; will block until it is produced.";
+            continue;
+          }
+          for (auto& task : producing_tasks) {
+            if (task->state() == TaskDescriptor::CREATED ||
+                task->state() == TaskDescriptor::COMPLETED) {
+              task->set_state(TaskDescriptor::BLOCKING);
+              newly_active_tasks.push_back(task);
+            }
           }
         }
       }
@@ -566,13 +572,13 @@ void EventDrivenScheduler::LazyGraphReduction(
       if (child_task.outputs_size() == 0)
         newly_active_tasks.push_back(&child_task);
     }
-    if (!will_block || (current_task->dependencies_size() == 0
-                        && current_task->outputs_size() == 0)) {
-      // This task is runnable
-      VLOG(2) << "Adding task " << current_task->uid() << " to RUNNABLE set.";
-      current_task->set_state(TaskDescriptor::RUNNABLE);
-      InsertTaskIntoRunnables(JobIDFromString(current_task->job_id()),
-                              current_task->uid());
+    if (current_task->state() == TaskDescriptor::CREATED) {
+      if (!will_block || (current_task->dependencies_size() == 0
+                          && current_task->outputs_size() == 0)) {
+        current_task->set_state(TaskDescriptor::RUNNABLE);
+        InsertTaskIntoRunnables(JobIDFromString(current_task->job_id()),
+                                current_task->uid());
+      }
     }
   }
 }
