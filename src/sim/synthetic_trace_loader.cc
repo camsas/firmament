@@ -26,6 +26,9 @@ DEFINE_double(prepopulated_cluster_fraction, 0,
               "simulation");
 DEFINE_uint64(prepopulated_task_duration, 0,
               "Duration of tasks used to prepopulate the cluster");
+DEFINE_bool(prepopulate_using_interarrival, false, "True if the prepopulated "
+            "tasks should have runtims proportional with the job inter arrival "
+            "rate");
 
 DECLARE_uint64(max_tasks_per_pu);
 DECLARE_uint64(runtime);
@@ -222,10 +225,17 @@ void SyntheticTraceLoader::LoadTasksRunningTime(
     for (uint64_t task_index = 1;
          task_index <= num_tasks_at_beginning;
          ++task_index) {
+      uint64_t duration = 0;
+      if (FLAGS_prepopulate_using_interarrival) {
+        duration = ((task_index - 1) / FLAGS_synthetic_tasks_per_job) *
+          FLAGS_synthetic_job_interarrival_time;
+      } else {
+        duration = FLAGS_prepopulated_task_duration;
+      }
       task_identifier.task_index = task_index;
       CHECK(InsertIfNotPresent(
           task_runtime, GenerateTaskIDFromTraceIdentifier(task_identifier),
-          FLAGS_prepopulated_task_duration / FLAGS_trace_speed_up));
+          duration / FLAGS_trace_speed_up));
     }
   }
   uint64_t job_id = 1;
