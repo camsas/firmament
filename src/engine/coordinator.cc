@@ -160,6 +160,7 @@ void Coordinator::DetectLocalResources() {
   // method) once at startup.
   ResourceTopologyNodeDescriptor* root_node =
       local_resource_topology_->add_children();
+  root_node->mutable_resource_desc()->set_friendly_name(hostname_);
   topology_manager_->AsProtobuf(root_node);
   root_node->set_parent_id(to_string(uuid_));
   BFSTraverseResourceProtobufTreeReturnRTND(
