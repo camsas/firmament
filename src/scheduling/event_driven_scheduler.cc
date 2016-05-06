@@ -521,7 +521,8 @@ void EventDrivenScheduler::LazyGraphReduction(
     newly_active_tasks.pop_front();
     // Find any unfulfilled dependencies
     bool will_block = false;
-    if (current_task->state() == TaskDescriptor::CREATED) {
+    if (current_task->state() == TaskDescriptor::CREATED ||
+        current_task->state() == TaskDescriptor::BLOCKING) {
       for (auto& dependency : current_task->dependencies()) {
         ReferenceInterface* ref = ReferenceFromDescriptor(dependency);
         // Subscribe the current task to the reference, to enable it to be
@@ -572,7 +573,8 @@ void EventDrivenScheduler::LazyGraphReduction(
       if (child_task.outputs_size() == 0)
         newly_active_tasks.push_back(&child_task);
     }
-    if (current_task->state() == TaskDescriptor::CREATED) {
+    if (current_task->state() == TaskDescriptor::CREATED ||
+        current_task->state() == TaskDescriptor::BLOCKING) {
       if (!will_block || (current_task->dependencies_size() == 0
                           && current_task->outputs_size() == 0)) {
         current_task->set_state(TaskDescriptor::RUNNABLE);
