@@ -131,7 +131,13 @@ uint32_t HdfsDataLocalityManager::GetNumberOfBlocks(const string& filename) {
 }
 
 ResourceID_t HdfsDataLocalityManager::HostToResourceID(const string& hostname) {
-  ResourceID_t* res_id = FindOrNull(hostname_to_res_id_, hostname);
+  // XXX(ionel): HACK! Remove!
+  string local_hostname = hostname;
+  size_t start_position = local_hostname.find(".cl.cam.ac.uk");
+  if (start_position != string::npos) {
+    local_hostname.erase(start_position, 13);
+  }
+  ResourceID_t* res_id = FindOrNull(hostname_to_res_id_, local_hostname);
   CHECK_NOTNULL(res_id);
   return *res_id;
 }
