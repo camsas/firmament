@@ -43,6 +43,7 @@
 #include "messages/storage_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "misc/trace_generator.h"
+#include "misc/utils.h"
 #include "misc/wall_time.h"
 #include "platforms/common.h"
 #include "platforms/unix/signal_handler.h"
@@ -131,6 +132,12 @@ class Coordinator : public Node,
   const string GetLocationForResource(ResourceID_t res_id) {
     ResourceStatus* res = FindPtrOrNull(*associated_resources_, res_id);
     return res->location();
+  }
+
+  ResourceDescriptor* GetMachineRDForResource(ResourceID_t res_id) {
+    ResourceID_t machine_res_id =
+      MachineResIDForResource(associated_resources_, res_id);
+    return GetResource(machine_res_id);
   }
 
   // Gets a pointer to the job descriptor for a job known to the coordinator.

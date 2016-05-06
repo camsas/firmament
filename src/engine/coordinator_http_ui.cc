@@ -991,11 +991,12 @@ void CoordinatorHTTPUI::HandleTaskURI(const http::request_ptr& http_request,
       dict.SetValue("TASK_SCHEDULED_TO", td_ptr->scheduled_to_resource());
     }
     // Location
-    if (td_ptr->has_last_heartbeat_location()) {
-      dict.SetValue("TASK_LOCATION", td_ptr->last_heartbeat_location());
-      dict.SetValue("TASK_LOCATION_HOST",
-                    URITools::GetHostnameFromURI(
-                        td_ptr->last_heartbeat_location()));
+    if (td_ptr->has_scheduled_to_resource()) {
+      ResourceDescriptor* rd_ptr =
+        coordinator_->GetMachineRDForResource(ResourceIDFromString(
+            td_ptr->scheduled_to_resource()));
+      dict.SetValue("TASK_LOCATION", rd_ptr->friendly_name());
+      dict.SetValue("TASK_LOCATION_HOST", rd_ptr->friendly_name());
     } else {
       dict.SetValue("TASK_LOCATION", "unknown");
       dict.SetValue("TASK_LOCATION_HOST", "localhost");
