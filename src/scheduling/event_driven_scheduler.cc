@@ -186,9 +186,6 @@ void EventDrivenScheduler::ExecuteTask(TaskDescriptor* td_ptr,
                                        ResourceDescriptor* rd_ptr) {
   TaskID_t task_id = td_ptr->uid();
   ResourceID_t res_id = ResourceIDFromString(rd_ptr->uuid());
-  // Remove the task from the runnable set
-  CHECK_EQ(runnable_tasks_[JobIDFromString(td_ptr->job_id())].erase(task_id),
-           1) << "Failed to remove task " << task_id << " from runnable set!";
   if (VLOG_IS_ON(2))
     DebugPrintRunnableTasks();
   // Find an executor for this resource.
@@ -304,6 +301,16 @@ void EventDrivenScheduler::HandleTaskDelegationFailure(
   CHECK_NOTNULL(jd);
   // Try again to schedule...
   ScheduleJob(jd, NULL);
+}
+
+void EventDrivenScheduler::HandleTaskDelegationSuccess(
+    TaskDescriptor* td_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  // Remove the task from the runnable set
+  JobID_t job_id = JobIDFromString(td_ptr->job_id());
+  TaskID_t task_id = td_ptr->uid();
+  CHECK_EQ(runnable_tasks_[job_id].erase(task_id), 1)
+    << "Failed to remove task " << task_id << " from runnable set!";
 }
 
 void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,

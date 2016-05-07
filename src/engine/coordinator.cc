@@ -612,6 +612,7 @@ void Coordinator::HandleTaskDelegationResponse(
     // Confirm that we've successfully started the task remotely
     td->set_state(TaskDescriptor::DELEGATED);
     td->set_delegated_to(remote_endpoint);
+    scheduler_->HandleTaskDelegationSuccess(td);
   } else {
     LOG(WARNING) << "Task delegation for " << msg.task_id() << " to "
                  << remote_endpoint << " FAILED. Trying again to schedule.";

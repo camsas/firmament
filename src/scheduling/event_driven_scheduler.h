@@ -59,6 +59,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   virtual void HandleTaskCompletion(TaskDescriptor* td_ptr,
                                     TaskFinalReport* report);
   virtual void HandleTaskDelegationFailure(TaskDescriptor* td_ptr);
+  virtual void HandleTaskDelegationSuccess(TaskDescriptor* td_ptr);
   virtual void HandleTaskEviction(TaskDescriptor* td_ptr,
                                   ResourceDescriptor* rd_ptr);
   virtual void HandleTaskFailure(TaskDescriptor* td_ptr);

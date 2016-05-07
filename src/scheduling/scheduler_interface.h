@@ -123,6 +123,8 @@ class SchedulerInterface : public PrintableInterface {
    */
   virtual void HandleTaskDelegationFailure(TaskDescriptor* td_ptr) = 0;
 
+  virtual void HandleTaskDelegationSuccess(TaskDescriptor* td_ptr) = 0;
+
   /**
    * Handles the eviction of a task.
    * @param td_ptr the task descriptor of the evicted task
