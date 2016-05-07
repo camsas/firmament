@@ -29,6 +29,7 @@ class DataLayerManagerInterface {
                                   ResourceID_t res_id) = 0;
   virtual void GetFileLocations(const string& file_path,
                                 list<DataLocation>* locations) = 0;
+  virtual int64_t GetFileSize(const string& file_path) = 0;
   virtual const unordered_set<ResourceID_t, boost::hash<ResourceID_t>>&
     GetMachinesInRack(EquivClass_t rack_ec) = 0;
   virtual uint64_t GetNumRacks() = 0;

@@ -33,6 +33,7 @@ class SimulatedDataLayerManager : public DataLayerManagerInterface {
                            uint64_t max_machine_spread);
   EquivClass_t AddMachine(const string& hostname, ResourceID_t machine_res_id);
   void GetFileLocations(const string& file_path, list<DataLocation>* locations);
+  int64_t GetFileSize(const string& file_path);
   void RemoveFilesForTask(const TaskDescriptor& td);
   bool RemoveMachine(const string& hostname);
   inline const unordered_set<ResourceID_t, boost::hash<ResourceID_t>>&

@@ -28,6 +28,7 @@ class HdfsDataLocalityManager : public DataLayerManagerInterface {
    * @param a pointer to a list to which the locations should be added
    */
   void GetFileLocations(const string& file_path, list<DataLocation>* locations);
+  int64_t GetFileSize(const string& filename);
   bool RemoveMachine(const string& hostname);
 
   const unordered_set<ResourceID_t, boost::hash<ResourceID_t>>&

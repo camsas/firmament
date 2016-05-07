@@ -72,7 +72,7 @@ class QuincyCostModel : public CostModelInterface {
 
  private:
   uint64_t ComputeClusterDataStatistics(
-      const TaskDescriptor& td,
+      TaskDescriptor* td_ptr,
       unordered_map<ResourceID_t, uint64_t,
         boost::hash<ResourceID_t>>* data_on_machines,
       unordered_map<EquivClass_t, uint64_t>* data_on_racks);
@@ -87,7 +87,7 @@ class QuincyCostModel : public CostModelInterface {
    * @return the total task input size
    */
   uint64_t ComputeDataStatsForMachine(
-      const TaskDescriptor& td, ResourceID_t machine_res_id,
+      TaskDescriptor* td_ptr, ResourceID_t machine_res_id,
       uint64_t* data_on_rack, uint64_t* data_on_machine);
   Cost_t ComputeTransferCostToMachine(uint64_t remote_data,
                                       uint64_t data_on_rack);
@@ -123,9 +123,9 @@ class QuincyCostModel : public CostModelInterface {
    * @param ec_changed the rack in which the machines changed
    * @param rack_removed true if the rack has already been removed
    */
-  void UpdateTaskCosts(const TaskDescriptor& td, EquivClass_t ec_changed,
+  void UpdateTaskCosts(TaskDescriptor* td_ptr, EquivClass_t ec_changed,
                        bool rack_removed);
-  Cost_t UpdateTaskCostForRack(const TaskDescriptor& td, EquivClass_t rack_ec);
+  Cost_t UpdateTaskCostForRack(TaskDescriptor* td_ptr, EquivClass_t rack_ec);
 
   /**
    * Depending on how much data the machine has, the method adds, updates
@@ -165,6 +165,11 @@ class QuincyCostModel : public CostModelInterface {
     TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
     CHECK_NOTNULL(td);
     return *td;
+  }
+  inline TaskDescriptor* GetMutableTask(TaskID_t task_id) {
+    TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
+    CHECK_NOTNULL(td);
+    return td;
   }
 
   // Lookup maps for various resources from the scheduler.

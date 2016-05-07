@@ -111,6 +111,15 @@ void HdfsDataLocalityManager::GetFileLocations(const string& file_path,
   hdfsFreeFileBlockLocations(block_location, num_blocks);
 }
 
+int64_t HdfsDataLocalityManager::GetFileSize(const string& filename) {
+  hdfsFileInfo* file_stat = hdfsGetPathInfo(fs_, filename.c_str());
+  if (!file_stat) {
+    LOG(ERROR) << "Could not get HDFS file info for: " << filename;
+    return 0;
+  }
+  return file_stat->mSize;
+}
+
 uint32_t HdfsDataLocalityManager::GetNumberOfBlocks(const string& filename) {
   hdfsFileInfo* file_stat = hdfsGetPathInfo(fs_, filename.c_str());
   if (!file_stat) {

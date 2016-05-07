@@ -71,6 +71,11 @@ void SimulatedDataLayerManager::GetFileLocations(
   dfs_->GetFileLocations(file_path, locations);
 }
 
+int64_t SimulatedDataLayerManager::GetFileSize(const string& file_path) {
+  // TODO(ionel): Implement!
+  return 0;
+}
+
 bool SimulatedDataLayerManager::RemoveMachine(const string& hostname) {
   ResourceID_t* machine_res_id = FindOrNull(hostname_to_res_id_, hostname);
   CHECK_NOTNULL(machine_res_id);
