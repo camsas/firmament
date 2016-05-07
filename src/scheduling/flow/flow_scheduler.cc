@@ -163,6 +163,11 @@ uint64_t FlowScheduler::ApplySchedulingDeltas(
       // We should not get any NOOP deltas as they get filtered before.
       continue;
     } else if (delta->type() == SchedulingDelta::PLACE) {
+      // Tag the job to which this task belongs as running
+      JobDescriptor* jd =
+        FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
+      if (jd->state() != JobDescriptor::RUNNING)
+        jd->set_state(JobDescriptor::RUNNING);
       HandleTaskPlacement(td_ptr, rs->mutable_descriptor());
       num_scheduled++;
     } else if (delta->type() == SchedulingDelta::PREEMPT) {
@@ -280,11 +285,6 @@ void FlowScheduler::HandleTaskPlacement(TaskDescriptor* td_ptr,
   td_ptr->set_scheduled_to_resource(rd_ptr->uuid());
   flow_graph_manager_->TaskScheduled(td_ptr->uid(),
                                      ResourceIDFromString(rd_ptr->uuid()));
-  // Tag the job to which this task belongs as running
-  JobDescriptor* jd =
-    FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
-  if (jd->state() != JobDescriptor::RUNNING)
-    jd->set_state(JobDescriptor::RUNNING);
   EventDrivenScheduler::HandleTaskPlacement(td_ptr, rd_ptr);
 }
 
