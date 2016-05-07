@@ -405,11 +405,6 @@ void EventDrivenScheduler::HandleTaskPlacement(
   TaskID_t task_id = td_ptr->uid();
   VLOG(1) << "Placing task " << task_id << " on resource " << rd_ptr->uuid();
   BindTaskToResource(td_ptr, rd_ptr);
-  // Tag the job to which this task belongs as running
-  JobDescriptor* jd =
-    FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
-  if (jd->state() != JobDescriptor::RUNNING)
-    jd->set_state(JobDescriptor::RUNNING);
   ExecuteTask(td_ptr, rd_ptr);
   trace_generator_->TaskScheduled(task_id, *rd_ptr);
   if (event_notifier_) {

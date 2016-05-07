@@ -280,6 +280,11 @@ void FlowScheduler::HandleTaskPlacement(TaskDescriptor* td_ptr,
   td_ptr->set_scheduled_to_resource(rd_ptr->uuid());
   flow_graph_manager_->TaskScheduled(td_ptr->uid(),
                                      ResourceIDFromString(rd_ptr->uuid()));
+  // Tag the job to which this task belongs as running
+  JobDescriptor* jd =
+    FindOrNull(*job_map_, JobIDFromString(td_ptr->job_id()));
+  if (jd->state() != JobDescriptor::RUNNING)
+    jd->set_state(JobDescriptor::RUNNING);
   EventDrivenScheduler::HandleTaskPlacement(td_ptr, rd_ptr);
 }
 
