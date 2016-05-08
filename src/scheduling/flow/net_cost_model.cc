@@ -13,6 +13,8 @@
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/flow_graph_manager.h"
 
+DEFINE_uint64(max_multi_arcs, 10, "Maximum number of multi-arcs.");
+
 DECLARE_uint64(max_tasks_per_pu);
 
 namespace firmament {
@@ -34,18 +36,7 @@ Cost_t NetCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
 
 Cost_t NetCostModel::TaskToResourceNodeCost(TaskID_t task_id,
                                             ResourceID_t resource_id) {
-  const TaskDescriptor& td = GetTask(task_id);
-  uint64_t required_net_bw = td.resource_request().net_bw();
-  ResourceStatus* rs = FindPtrOrNull(*resource_map_, resource_id);
-  CHECK_NOTNULL(rs);
-  const ResourceDescriptor& rd = rs->topology_node().resource_desc();
-  CHECK_EQ(rd.type(), ResourceDescriptor::RESOURCE_MACHINE);
-  uint64_t available_net_bw = rd.max_available_resources_below().net_bw();
-  if (available_net_bw < required_net_bw) {
-    return 2500LL;
-  }
-  return static_cast<int64_t>(required_net_bw) -
-    static_cast<int64_t>(available_net_bw) + 1250LL;
+  return 0LL;
 }
 
 Cost_t NetCostModel::ResourceNodeToResourceNodeCost(
@@ -76,64 +67,130 @@ Cost_t NetCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
 pair<Cost_t, uint64_t> NetCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
-  return pair<Cost_t, uint64_t>(0LL, 0ULL);
+  // The arcs between ECs an machine can only carry unit flow.
+  return pair<Cost_t, uint64_t>(0LL, 1ULL);
 }
 
 pair<Cost_t, uint64_t> NetCostModel::EquivClassToEquivClass(
     EquivClass_t ec1,
     EquivClass_t ec2) {
-  return pair<Cost_t, uint64_t>(0LL, 0ULL);
+  uint64_t* required_net_bw = FindOrNull(ec_bw_requirement_, ec1);
+  CHECK_NOTNULL(required_net_bw);
+  ResourceID_t* machine_res_id = FindOrNull(ec_to_machine_, ec2);
+  CHECK_NOTNULL(machine_res_id);
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, *machine_res_id);
+  CHECK_NOTNULL(rs);
+  const ResourceDescriptor& rd = rs->topology_node().resource_desc();
+  CHECK_EQ(rd.type(), ResourceDescriptor::RESOURCE_MACHINE);
+  uint64_t available_net_bw = rd.max_available_resources_below().net_bw();
+  uint64_t* index = FindOrNull(ec_to_index_, ec2);
+  CHECK_NOTNULL(index);
+  uint64_t ec_index = *index + 1;
+  if (available_net_bw < *required_net_bw * ec_index) {
+    return pair<Cost_t, uint64_t>(0LL, 0ULL);
+  }
+  return pair<Cost_t, uint64_t>(static_cast<int64_t>(ec_index) *
+                                static_cast<int64_t>(*required_net_bw) -
+                                static_cast<int64_t>(available_net_bw) + 1250LL,
+                                1ULL);
 }
 
 vector<EquivClass_t>* NetCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   vector<EquivClass_t>* ecs = new vector<EquivClass_t>();
+  // Get the equivalence class for the task's required bw.
+  uint64_t* task_required_bw = FindOrNull(task_bw_requirement_, task_id);
+  CHECK_NOTNULL(task_required_bw);
+  EquivClass_t bw_ec = static_cast<EquivClass_t>(HashInt(*task_required_bw));
+  ecs->push_back(bw_ec);
+  InsertIfNotPresent(&ec_bw_requirement_, bw_ec, *task_required_bw);
   return ecs;
 }
 
 vector<ResourceID_t>* NetCostModel::GetOutgoingEquivClassPrefArcs(
     EquivClass_t ec) {
-  return NULL;
+  vector<ResourceID_t>* machine_res = new vector<ResourceID_t>();
+  ResourceID_t* machine_res_id = FindOrNull(ec_to_machine_, ec);
+  if (machine_res_id) {
+    machine_res->push_back(*machine_res_id);
+  }
+  return machine_res;
 }
 
 vector<ResourceID_t>* NetCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
   vector<ResourceID_t>* pref_res = new vector<ResourceID_t>();
-  for (auto& machine_res_id : machines_) {
-    ResourceStatus* rs = FindPtrOrNull(*resource_map_, machine_res_id);
-    CHECK_NOTNULL(rs);
-    const ResourceDescriptor& rd = rs->topology_node().resource_desc();
-    uint64_t available_net_bw = rd.max_available_resources_below().net_bw();
-    const TaskDescriptor& td = GetTask(task_id);
-    uint64_t required_net_bw = td.resource_request().net_bw();
-    if (available_net_bw >= required_net_bw) {
-      pref_res->push_back(machine_res_id);
-    }
-  }
   return pref_res;
 }
 
 vector<EquivClass_t>* NetCostModel::GetEquivClassToEquivClassesArcs(
     EquivClass_t ec) {
-  return NULL;
+  vector<EquivClass_t>* pref_ecs = new vector<EquivClass_t>();
+  uint64_t* required_net_bw = FindOrNull(ec_bw_requirement_, ec);
+  if (required_net_bw) {
+    // if EC is a bw EC then connect it to machine ECs.
+    for (auto& ec_machines : ecs_for_machines_) {
+      ResourceStatus* rs = FindPtrOrNull(*resource_map_, ec_machines.first);
+      CHECK_NOTNULL(rs);
+      const ResourceDescriptor& rd = rs->topology_node().resource_desc();
+      uint64_t available_net_bw = rd.max_available_resources_below().net_bw();
+      ResourceID_t res_id = ResourceIDFromString(rd.uuid());
+      vector<EquivClass_t>* ecs_for_machine =
+        FindOrNull(ecs_for_machines_, res_id);
+      CHECK_NOTNULL(ecs_for_machine);
+      uint64_t index = 0;
+      for (uint64_t cur_bw = *required_net_bw;
+           cur_bw <= available_net_bw && index < ecs_for_machine->size();
+           cur_bw += *required_net_bw) {
+        pref_ecs->push_back(ec_machines.second[index]);
+        index++;
+      }
+    }
+  }
+  return pref_ecs;
 }
 
 void NetCostModel::AddMachine(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   CHECK_NOTNULL(rtnd_ptr);
+  const ResourceDescriptor& rd = rtnd_ptr->resource_desc();
   // Keep track of the new machine
-  CHECK(rtnd_ptr->resource_desc().type() ==
-      ResourceDescriptor::RESOURCE_MACHINE);
-  machines_.insert(ResourceIDFromString(rtnd_ptr->resource_desc().uuid()));
+  CHECK(rd.type() == ResourceDescriptor::RESOURCE_MACHINE);
+  ResourceID_t res_id = ResourceIDFromString(rd.uuid());
+  vector<EquivClass_t> machine_ecs;
+  for (uint64_t index = 0; index < FLAGS_max_multi_arcs; ++index) {
+    EquivClass_t multi_machine_ec = GetMachineEC(rd.friendly_name(), index);
+    machine_ecs.push_back(multi_machine_ec);
+    CHECK(InsertIfNotPresent(&ec_to_index_, multi_machine_ec, index));
+    CHECK(InsertIfNotPresent(&ec_to_machine_, multi_machine_ec, res_id));
+  }
+  CHECK(InsertIfNotPresent(&ecs_for_machines_, res_id, machine_ecs));
 }
 
 void NetCostModel::AddTask(TaskID_t task_id) {
+  const TaskDescriptor& td = GetTask(task_id);
+  uint64_t required_net_bw = td.resource_request().net_bw();
+  CHECK(InsertIfNotPresent(&task_bw_requirement_, task_id, required_net_bw));
 }
 
 void NetCostModel::RemoveMachine(ResourceID_t res_id) {
-  CHECK_EQ(machines_.erase(res_id), 1);
+  vector<EquivClass_t>* ecs = FindOrNull(ecs_for_machines_, res_id);
+  CHECK_NOTNULL(ecs);
+  for (EquivClass_t& ec : *ecs) {
+    CHECK_EQ(ec_to_machine_.erase(ec), 1);
+    CHECK_EQ(ec_to_index_.erase(ec), 1);
+  }
+  CHECK_EQ(ecs_for_machines_.erase(res_id), 1);
 }
 
 void NetCostModel::RemoveTask(TaskID_t task_id) {
+  CHECK_EQ(task_bw_requirement_.erase(task_id), 1);
+}
+
+EquivClass_t NetCostModel::GetMachineEC(const string& machine_name,
+                                        uint64_t ec_index) {
+  uint64_t hash = HashString(machine_name);
+  boost::hash_combine(hash, ec_index);
+  return static_cast<EquivClass_t>(hash);
 }
 
 FlowGraphNode* NetCostModel::GatherStats(FlowGraphNode* accumulator,

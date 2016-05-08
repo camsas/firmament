@@ -57,6 +57,7 @@ class NetCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
+  EquivClass_t GetMachineEC(const string& machine_name, uint64_t ec_index);
   inline const TaskDescriptor& GetTask(TaskID_t task_id) {
     TaskDescriptor* td = FindPtrOrNull(*task_map_, task_id);
     CHECK_NOTNULL(td);
@@ -64,12 +65,16 @@ class NetCostModel : public CostModelInterface {
   }
 
   shared_ptr<ResourceMap_t> resource_map_;
-  // Set of node IDs corresponding to machines
-  unordered_set<ResourceID_t, boost::hash<boost::uuids::uuid>> machines_;
   // The task map used in the rest of the system
   shared_ptr<TaskMap_t> task_map_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   shared_ptr<KnowledgeBase> knowledge_base_;
+  unordered_map<TaskID_t, uint64_t> task_bw_requirement_;
+  unordered_map<EquivClass_t, uint64_t> ec_bw_requirement_;
+  unordered_map<ResourceID_t, vector<EquivClass_t>, boost::hash<ResourceID_t>>
+    ecs_for_machines_;
+  unordered_map<EquivClass_t, ResourceID_t> ec_to_machine_;
+  unordered_map<EquivClass_t, uint64_t> ec_to_index_;
 };
 
 }  // namespace firmament

@@ -56,6 +56,7 @@ TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task);
 TaskID_t GenerateTaskID(const TaskDescriptor& parent_task, uint64_t child_num);
 uint64_t HashCommandLine(const TaskDescriptor& td);
+uint64_t HashInt(const uint64_t input);
 uint64_t HashJobID(const TaskDescriptor& td);
 uint64_t HashString(const string& str);
 bool IsEqual(double first, double second);

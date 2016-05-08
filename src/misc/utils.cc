@@ -189,6 +189,10 @@ uint64_t HashString(const string& str) {
   return SpookyHash::Hash64(str.c_str(), sizeof(char) * str.length(), SEED);
 }
 
+uint64_t HashInt(const uint64_t input) {
+  return SpookyHash::Hash64(&input, sizeof(input), SEED);
+}
+
 void MkdirIfNotPresent(const string &directory) {
   if (mkdir(directory.c_str(), 0777) < 0) {
     // mkdir error
