@@ -31,7 +31,7 @@
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID");
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, 8 = NET");
 DEFINE_uint64(max_solver_runtime, 100000000,
               "Maximum runtime of the solver in u-sec");
 DEFINE_int64(time_dependent_cost_update_frequency, 10000000ULL,
@@ -124,6 +124,8 @@ FlowScheduler::FlowScheduler(
       cost_model_ = new VoidCostModel(resource_map, task_map);
       VLOG(1) << "Using the void cost model";
       break;
+    case CostModelType::COST_MODEL_NET:
+      cost_model_ = new NetCostModel(resource_map, task_map, knowledge_base);
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "
                  << "(" << FLAGS_flow_scheduling_cost_model << ")";

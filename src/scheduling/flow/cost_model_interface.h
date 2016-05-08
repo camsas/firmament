@@ -31,7 +31,7 @@ enum CostModelType {
   COST_MODEL_COCO = 5,
   COST_MODEL_OCTOPUS = 6,
   COST_MODEL_VOID = 7,
-  COST_MODEL_SIMULATED_QUINCY = 8,
+  COST_MODEL_NET = 8,
 };
 
 // Forward declarations to avoid cyclic dependencies

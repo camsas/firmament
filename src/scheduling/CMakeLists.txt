@@ -18,6 +18,7 @@ set(SCHEDULING_SRC
   scheduling/flow/flow_graph_node.cc
   scheduling/flow/flow_scheduler.cc
   scheduling/flow/json_exporter.cc
+  scheduling/flow/net_cost_model.cc
   scheduling/flow/octopus_cost_model.cc
   scheduling/flow/quincy_cost_model.cc
   scheduling/flow/random_cost_model.cc
