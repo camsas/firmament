@@ -18,14 +18,14 @@ class Workload:
     self.scheduler_port = port
     self.target = target
 
-  def add(self, name, binary, arg_string, task_count,
+  def add(self, name, binary, tasks_args, task_count,
           task_type=task_desc_pb2.TaskDescriptor.TURTLE,
           resource_request=None):
     if self.target == "firmament":
       self.jobs[name] = Job(name)
     elif self.target == "mesos":
       self.jobs[name] = MesosJob(name)
-    self.jobs[name].prepare(binary, arg_string, task_count, task_type=task_type,
+    self.jobs[name].prepare(binary, tasks_args, task_count, task_type=task_type,
                             resource_request=resource_request)
 
   def start(self):

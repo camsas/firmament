@@ -268,6 +268,7 @@ void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
     }
     fprintf(task_events_, "%ju,,%ju,%ju,,%d,,,,,,,\n",
             timestamp, job_id, trace_task_id, TASK_SUBMIT_EVENT);
+    fflush(task_events_);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     if (tr_ptr == NULL) {
       TaskRuntime task_runtime;
@@ -294,6 +295,7 @@ void TraceGenerator::TaskCompleted(TaskID_t task_id,
     fprintf(task_events_, "%ju,,%ju,%ju,%ju,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id_, machine_id,
             TASK_FINISH_EVENT);
+    fflush(task_events_);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
     tr_ptr->total_runtime_ += timestamp - tr_ptr->last_schedule_time_;
@@ -324,6 +326,7 @@ void TraceGenerator::TaskEvicted(TaskID_t task_id,
     fprintf(task_events_, "%ju,,%ju,%ju,%ju,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id_, machine_id,
             TASK_EVICT_EVENT);
+    fflush(task_events_);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
     tr_ptr->total_runtime_ += timestamp - tr_ptr->last_schedule_time_;
@@ -344,6 +347,7 @@ void TraceGenerator::TaskFailed(TaskID_t task_id,
     fprintf(task_events_, "%ju,,%ju,%ju,%ju,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id_, machine_id,
             TASK_FAIL_EVENT);
+    fflush(task_events_);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
     tr_ptr->total_runtime_ += timestamp - tr_ptr->last_schedule_time_;
@@ -369,6 +373,7 @@ void TraceGenerator::TaskKilled(TaskID_t task_id,
     fprintf(task_events_, "%ju,,%ju,%ju,%ju,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id_, machine_id,
             TASK_KILL_EVENT);
+    fflush(task_events_);
     // XXX(ionel): This assumes that only one task with task_id is running
     // at a time.
     tr_ptr->total_runtime_ += timestamp - tr_ptr->last_schedule_time_;
@@ -407,6 +412,7 @@ void TraceGenerator::TaskScheduled(TaskID_t task_id,
     fprintf(task_events_, "%ju,,%ju,%ju,%ju,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id_, machine_id,
             TASK_SCHEDULE_EVENT);
+    fflush(task_events_);
     tr_ptr->num_runs_++;
     tr_ptr->last_schedule_time_ = timestamp;
   }

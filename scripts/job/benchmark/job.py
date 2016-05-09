@@ -66,14 +66,14 @@ class Job:
       print "----------------------------------------------"
     conn.close()
 
-  def prepare(self, binary, args, num_tasks, name="", inject_task_lib=True,
+  def prepare(self, binary, task_args, num_tasks, name="", inject_task_lib=True,
               task_type=task_desc_pb2.TaskDescriptor.TURTLE,
               resource_request=None):
     self.task_type = task_type
-    self.add_root_task(binary, args, inject_task_lib, resource_request)
+    self.add_root_task(binary, task_args[0], inject_task_lib, resource_request)
     # add more tasks
     for i in range(1, num_tasks):
-      self.root_task.add_subtask(binary, args, i, task_type, resource_request)
+      self.root_task.add_subtask(binary, task_args[i], i, task_type, resource_request)
 
   def completed(self, hostname, port):
     job_id = self.desc.uuid
