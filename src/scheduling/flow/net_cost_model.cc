@@ -173,17 +173,17 @@ void NetCostModel::AddTask(TaskID_t task_id) {
 }
 
 void NetCostModel::RemoveMachine(ResourceID_t res_id) {
-  vector<EquivClass_t>* ecs = FindOrNull(ecs_for_machines_, res_id);
-  CHECK_NOTNULL(ecs);
-  for (EquivClass_t& ec : *ecs) {
-    CHECK_EQ(ec_to_machine_.erase(ec), 1);
-    CHECK_EQ(ec_to_index_.erase(ec), 1);
-  }
-  CHECK_EQ(ecs_for_machines_.erase(res_id), 1);
+  // vector<EquivClass_t>* ecs = FindOrNull(ecs_for_machines_, res_id);
+  // CHECK_NOTNULL(ecs);
+  // for (EquivClass_t& ec : *ecs) {
+  //   CHECK_EQ(ec_to_machine_.erase(ec), 1);
+  //   CHECK_EQ(ec_to_index_.erase(ec), 1);
+  // }
+  // CHECK_EQ(ecs_for_machines_.erase(res_id), 1);
 }
 
 void NetCostModel::RemoveTask(TaskID_t task_id) {
-  CHECK_EQ(task_bw_requirement_.erase(task_id), 1);
+  // CHECK_EQ(task_bw_requirement_.erase(task_id), 1);
 }
 
 EquivClass_t NetCostModel::GetMachineEC(const string& machine_name,
