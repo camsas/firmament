@@ -22,25 +22,32 @@ class MesosJob:
     else:
       self.desc.name = "anonymous_job_at_%d" % (int(time.time()))
 
-  def add_root_task(self, binary, args=[], inject_task_lib=True):
-    self.root_task = Task(self.desc.root_task, self.desc, 0, binary, args)
+  def add_root_task(self, binary, args=[], inject_task_lib=True,
+                    resource_request=None):
+    self.root_task = Task(self.desc.root_task, self.desc, 0, binary, args,
+                          self.task_type)
+    if resource_request:
+      self.root_task.add_resource_request(resource_request)
 
-  def mesos_run_helper(self, master_hostname, master_port):
+  def mesos_run_helper(self, hostname, port):
     try:
-      # XXX(malte): hack -- this (for now) assumes that mesos-execute is
-      # available in $(PWD)
       ret = subprocess.call("./mesos-execute --master=%s:%d --name=%s " \
-                            "--command=\"%s %s\" --instances=%d" \
-                            % (master_hostname, master_port, self.desc.name,
-                               self.root_task.desc.binary,
+                            "--command=\"%s %s\" --instances=%d " \
+                            "--resources=\"cpus:%f;mem:%d;disk:%d\"" \
+                            % (hostname, port, self.desc.name, \
+                               self.root_task.desc.binary, \
                                " ".join(self.root_task.desc.args), \
-                               len(self.root_task.subtasks) + 1), shell=True)
+                               len(self.root_task.subtasks) + 1, \
+                               self.root_task.desc.resource_request.cpu_cores,
+                               self.root_task.desc.resource_request.ram_cap,
+                               self.root_task.desc.resource_request.ram_cap), \
+                            shell=True)
     except Exception as e:
-      print "ERROR: failed to submit job to Mesos: %s" % (e)
+      print "ERROR submitted job to Mesos: %s" % (e)
       return (False, "")
     return (True, "")
 
-  def submit(self, master_hostname, master_port, verbose=False):
+  def submit(self, hostname, port, verbose=False):
     self.desc.name = "%s-%d" % (self.job_name, self.instance)
     params = 'test=%s' % text_format.MessageToString(self.desc)
     if verbose:
@@ -48,21 +55,20 @@ class MesosJob:
       print params
       print ""
 
-    # create a thread to run the CLI 'framework' in
-    self.mesos_execute_thread = threading.Thread(
-            target=self.mesos_run_helper,
-            args=(master_hostname, master_port))
+    self.mesos_execute_thread = threading.Thread(target=self.mesos_run_helper, args=(hostname, port))
     self.mesos_execute_thread.start()
     if self.mesos_execute_thread.is_alive():
-      return (True, self.desc.name)
-    else
-      print "ERROR: mesos-execute failed to run"
-      return (False, "")
+      return (True, "")
 
-  def prepare(self, binary, args, num_tasks, name="", inject_task_lib=True):
-    self.add_root_task(binary, args, inject_task_lib)
+  def prepare(self, binary, args, num_tasks, name="", inject_task_lib=True,
+              task_type=task_desc_pb2.TaskDescriptor.TURTLE,
+              resource_request=None):
+    self.task_type = task_type
+    self.add_root_task(binary, args, inject_task_lib, resource_request)
+    # add more tasks
     for i in range(1, num_tasks):
-      self.root_task.add_subtask(binary, args, i)
+      self.root_task.add_subtask(binary, args, i, task_type, resource_request)
+
 
   def completed(self, hostname, port):
     job_id = self.desc.uuid

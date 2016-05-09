@@ -54,11 +54,34 @@ wl = Workload(scheduler_hostname, scheduler_port, target)
 rv = resource_vector_pb2.ResourceVector()
 rv.cpu_cores = 0.9
 rv.ram_cap = 128
-rv.net_bw = 700
+rv.net_bw = 600
 rv.disk_bw = 0
+
+# 3 NGINX with 4 AB each
+# 1 PS with 15 workers
+
+# 3GB of input (1)
 for i in range(0, 2):
   wl.add("hdfs_get_%d" % (i), bin_path + "/hdfs/hdfs_get",
-         "caelum10g-301.cl.cam.ac.uk 8020 /input/test_data/task_runtime_events.csv", 4, 2, rv)
+         "caelum10g-301.cl.cam.ac.uk 8020 /input/test_data/task_runtime_events.csv", 1, 2, rv)
+
+# About 3.7GB of input (8)
+# for i in range(0, 8):
+#   wl.add("hdfs_get_%d" % (i), bin_path + "/hdfs/hdfs_get",
+#          "caelum10g-301.cl.cam.ac.uk 8020 /input/sssp_tw_edges_splits8/sssp_tw_edges%d.in" % (i),
+#          1, 2, rv)
+
+# About 3.9GB of input (16)
+for i in range(0, 16):
+  wl.add("hdfs_get_%d" % (i), bin_path + "/hdfs/hdfs_get",
+         "caelum10g-301.cl.cam.ac.uk 8020 /input/pagerank_uk-2007-05_edges_splits16/pagerank_uk-2007-05_edges%d.in" % (i),
+         1, 2, rv)
+
+# About 1.4GB of input (14)
+for i in range(0, 14):
+  wl.add("hdfs_get_%d" % (i), bin_path + "/hdfs/hdfs_get",
+         "caelum10g-301.cl.cam.ac.uk 8020 /input/lineitem_splits14/lineitem%d.in" % (i),
+         1, 2, rv)
 
 wl.start()
 
