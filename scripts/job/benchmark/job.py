@@ -20,9 +20,12 @@ class Job:
     else:
       self.desc.name = "anonymous_job_at_%d" % (int(time.time()))
 
-  def add_root_task(self, binary, args=[], inject_task_lib=True):
+  def add_root_task(self, binary, args=[], inject_task_lib=True,
+                    resource_request=None):
     self.root_task = Task(self.desc.root_task, self.desc, 0, binary, args,
                           self.task_type)
+    if resource_request:
+      self.root_task.add_resource_request(resource_request)
 
   def submit(self, hostname, port, verbose=False):
     self.desc.name = "%s/%d" % (self.job_name, self.instance)
@@ -64,12 +67,13 @@ class Job:
     conn.close()
 
   def prepare(self, binary, args, num_tasks, name="", inject_task_lib=True,
-              task_type=task_desc_pb2.TaskDescriptor.TURTLE):
+              task_type=task_desc_pb2.TaskDescriptor.TURTLE,
+              resource_request=None):
     self.task_type = task_type
-    self.add_root_task(binary, args, inject_task_lib)
+    self.add_root_task(binary, args, inject_task_lib, resource_request)
     # add more tasks
     for i in range(1, num_tasks):
-      self.root_task.add_subtask(binary, args, i)
+      self.root_task.add_subtask(binary, args, i, task_type, resource_request)
 
   def completed(self, hostname, port):
     job_id = self.desc.uuid
@@ -87,5 +91,3 @@ class Job:
       return True
     else:
       return False
-
-

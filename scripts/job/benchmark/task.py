@@ -24,17 +24,18 @@ class Task:
     self.desc.inject_task_lib = True
     self.desc.task_type = task_type
 
-  def add_subtask(self, binary, args, task_index, task_type=None):
+  def add_subtask(self, binary, args, task_index, task_type=None,
+                  resource_request=None):
     if task_type is None:
       task_type = self.desc.task_type
     new_desc = self.desc.spawned.add()
     new_task = Task(new_desc, self.job, task_index, binary, args, task_type)
+    if resource_request:
+      new_task.add_resource_request(resource_request)
     self.subtasks.append(new_task)
 
-  def add_resource_request(self, cores, ram, net_bw, disk_bw):
-    self.desc.resource_request.cpu_cores = cores
-    self.desc.resource_request.ram_gb = ram
-    self.desc.resource_request.net_bw = net_bw
-    self.desc.resource_request.disk_bw = disk_bw
-
-
+  def add_resource_request(self, rr):
+    self.desc.resource_request.cpu_cores = rr.cpu_cores
+    self.desc.resource_request.ram_cap = rr.ram_cap
+    self.desc.resource_request.net_bw = rr.net_bw
+    self.desc.resource_request.disk_bw = rr.disk_bw
