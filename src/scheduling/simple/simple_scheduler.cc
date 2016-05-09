@@ -70,6 +70,41 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
   return NULL;
 }
 
+void SimpleScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
+                                           TaskFinalReport* report) {
+  ResourceID_t res_id = ResourceIDFromString(td_ptr->scheduled_to_resource());
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  ResourceDescriptor* rd_ptr = rs->mutable_descriptor();
+  // TODO(ionel): This assumes no PU sharing.
+  rd_ptr->clear_current_running_tasks();
+  EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
+}
+
+void SimpleScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
+                                         ResourceDescriptor* rd_ptr) {
+  // TODO(ionel): This assumes no PU sharing.
+  rd_ptr->clear_current_running_tasks();
+  EventDrivenScheduler::HandleTaskEviction(td_ptr, rd_ptr);
+}
+
+void SimpleScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
+  ResourceID_t res_id = ResourceIDFromString(td_ptr->scheduled_to_resource());
+  ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
+  CHECK_NOTNULL(rs);
+  ResourceDescriptor* rd_ptr = rs->mutable_descriptor();
+  // TODO(ionel): This assumes no PU sharing.
+  rd_ptr->clear_current_running_tasks();
+  EventDrivenScheduler::HandleTaskFailure(td_ptr);
+}
+
+void SimpleScheduler::KillRunningTask(
+    TaskID_t task_id,
+    TaskKillMessage::TaskKillReason reason) {
+  // TODO(ionel): Make sure the task is removed from current_running_tasks
+  // when it is killed.
+}
+
 void SimpleScheduler::HandleTaskFinalReport(const TaskFinalReport& report,
                                             TaskDescriptor* td_ptr) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);

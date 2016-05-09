@@ -300,7 +300,8 @@ void EventDrivenScheduler::HandleTaskDelegationFailure(
   JobDescriptor* jd = FindOrNull(*job_map_, job_id);
   CHECK_NOTNULL(jd);
   // Try again to schedule...
-  ScheduleJob(jd, NULL);
+  scheduler::SchedulerStats scheduler_stats;
+  ScheduleJob(jd, &scheduler_stats);
 }
 
 void EventDrivenScheduler::HandleTaskDelegationSuccess(

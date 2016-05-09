@@ -40,6 +40,12 @@ class SimpleScheduler : public EventDrivenScheduler {
                   TimeInterface* time_manager,
                   TraceGenerator* trace_generator);
   ~SimpleScheduler();
+  void HandleTaskCompletion(TaskDescriptor* td_ptr,
+                            TaskFinalReport* report);
+  void HandleTaskEviction(TaskDescriptor* td_ptr, ResourceDescriptor* rd_ptr);
+  void HandleTaskFailure(TaskDescriptor* td_ptr);
+  void KillRunningTask(TaskID_t task_id,
+                       TaskKillMessage::TaskKillReason reason);
   void HandleTaskFinalReport(const TaskFinalReport& report,
                              TaskDescriptor* td_ptr);
   void PopulateSchedulerResourceUI(ResourceID_t res_id,
