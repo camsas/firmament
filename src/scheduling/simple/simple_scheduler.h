@@ -68,6 +68,9 @@ class SimpleScheduler : public EventDrivenScheduler {
   FRIEND_TEST(SimpleSchedulerTest, ProducingTaskLookup);
 
   const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
+  const ResourceID_t* FindRandomResourceForTask(TaskDescriptor* task_desc);
+
+  uint32_t rand_seed_;
 };
 
 }  // namespace scheduler

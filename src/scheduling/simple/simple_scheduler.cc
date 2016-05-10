@@ -18,6 +18,8 @@
 #include "misc/utils.h"
 #include "storage/object_store_interface.h"
 
+DEFINE_bool(randomly_place_tasks, false, "Place tasks randomly");
+
 namespace firmament {
 namespace scheduler {
 
@@ -63,6 +65,34 @@ const ResourceID_t* SimpleScheduler::FindResourceForTask(
     if (res_iter->second->descriptor().state() ==
         ResourceDescriptor::RESOURCE_IDLE)
       return rid;
+  }
+  // We have not found any idle resources in our local resource map. At this
+  // point, we should start looking beyond the machine boundary and towards
+  // remote resources.
+  return NULL;
+}
+
+const ResourceID_t* SimpleScheduler::FindRandomResourceForTask(
+    TaskDescriptor* task_desc) {
+  // TODO(malte): This is an extremely simple-minded approach to resource
+  // selection (i.e. the essence of scheduling). We will simply traverse the
+  // resource map in some order, and grab the first resource available.
+  VLOG(2) << "Trying to place task " << task_desc->uid() << "...";
+  vector<ResourceStatus*> resources;
+  // Find the first idle resource in the resource map
+  for (ResourceMap_t::iterator res_iter = resource_map_->begin();
+       res_iter != resource_map_->end();
+       ++res_iter) {
+    resources.push_back(res_iter->second);
+  }
+  for (uint64_t max_attempts = 2000; max_attempts > 0; max_attempts--) {
+    uint32_t resource_index =
+      static_cast<uint32_t>(rand_r(&rand_seed_)) % resources.size();
+    if (resources[resource_index]->descriptor().state() ==
+        ResourceDescriptor::RESOURCE_IDLE) {
+      return new ResourceID_t(
+          ResourceIDFromString(resources[resource_index]->descriptor().uuid()));
+    }
   }
   // We have not found any idle resources in our local resource map. At this
   // point, we should start looking beyond the machine boundary and towards
@@ -166,7 +196,12 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
     VLOG(2) << "Considering task " << (*td)->uid() << ":\n"
             << (*td)->DebugString();
     // TODO(malte): check passing semantics here.
-    const ResourceID_t* best_resource = FindResourceForTask(*td);
+    const ResourceID_t* best_resource;
+    if (FLAGS_randomly_place_tasks) {
+      best_resource= FindRandomResourceForTask(*td);
+    } else {
+      best_resource= FindResourceForTask(*td);
+    }
     if (!best_resource) {
       VLOG(2) << "No suitable resource found, will need to try again.";
     } else {
