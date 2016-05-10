@@ -58,13 +58,13 @@ rv.net_bw = 600
 rv.disk_bw = 0
 
 # 3 NGINX with 4 AB each
-# 1 PS with 15 workers
+# 3 PS with 4 workers
 
 # 3GB of input (2)
 tasks_args = ["caelum10g-301.cl.cam.ac.uk 8020 /input/test_data/task_runtime_events.csv",
               "caelum10g-301.cl.cam.ac.uk 8020 /input/test_data/task_runtime_events.csv"]
 
-for i in range(0, 91000, 9000):
+for i in range(0, 96000, 8000):
   wl.add(i, "hdfs_get_task_runtime_events%d" % (i), bin_path + "/hdfs/hdfs_get", tasks_args, 2, 2, rv)
 
 # About 3.7GB of input (8)
@@ -72,7 +72,7 @@ tasks_args = []
 for i in range(0, 8):
   tasks_args.append("caelum10g-301.cl.cam.ac.uk 8020 /input/sssp_tw_edges_splits8/sssp_tw_edges%d.in" % (i))
 
-for i in range(2250, 91000, 9000):
+for i in range(2000, 96000, 8000):
   wl.add(i, "hdfs_get_sspp_tw%d" % (i), bin_path + "/hdfs/hdfs_get", tasks_args, 8, 2, rv)
 
 # About 3.9GB of input (16). Each task takes about 6-8 seconds.
@@ -80,7 +80,7 @@ tasks_args = []
 for i in range(0, 16):
   tasks_args.append("caelum10g-301.cl.cam.ac.uk 8020 /input/pagerank_uk-2007-05_edges_splits16/pagerank_uk-2007-05_edges%d.in" % (i))
 
-for i in range(4500, 91000, 9000):
+for i in range(6000, 96000, 8000):
   wl.add(i, "hdfs_get_pagerank_uk%d" % (i), bin_path + "/hdfs/hdfs_get", tasks_args, 16, 2, rv)
 
 # About 1.4GB of input (14). Each task takes about 6-8 seconds.
@@ -88,7 +88,7 @@ tasks_args = []
 for i in range(0, 14):
   tasks_args.append("caelum10g-301.cl.cam.ac.uk 8020 /input/lineitem_splits14/lineitem%d.in" % (i))
 
-for i in range(6750, 91000, 9000):
+for i in range(8000, 96000, 8000):
   wl.add(i, "hdfs_get_lineitem%d" % (i), bin_path + "/hdfs/hdfs_get", tasks_args, 14, 2, rv)
 
 wl.start()
