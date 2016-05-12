@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_d839d8a5",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-05-12T23:17:25Z",
+      "side": 1,
+      "message": "Do we have a policy on where these state changes are applied? (i.e., why did this appear here?)",
+      "revId": "5fcfb48093f0077f21669df13abc17d97d450be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
