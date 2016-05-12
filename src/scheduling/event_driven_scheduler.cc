@@ -310,8 +310,10 @@ void EventDrivenScheduler::HandleTaskDelegationSuccess(
   // Remove the task from the runnable set
   JobID_t job_id = JobIDFromString(td_ptr->job_id());
   TaskID_t task_id = td_ptr->uid();
-  CHECK_EQ(runnable_tasks_[job_id].erase(task_id), 1)
-    << "Failed to remove task " << task_id << " from runnable set!";
+  // We don't have to check if we're actually removing the task because
+  // some schedulers may already remove it before calling
+  // HandleTaskDelegationSuccess.
+  runnable_tasks_[job_id].erase(task_id);
 }
 
 void EventDrivenScheduler::HandleTaskEviction(TaskDescriptor* td_ptr,
