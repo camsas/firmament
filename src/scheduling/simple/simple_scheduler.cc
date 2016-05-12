@@ -187,12 +187,14 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
   unordered_set<TaskID_t> runnable_tasks = ComputeRunnableTasksForJob(jd_ptr);
   VLOG(2) << "Scheduling job " << jd_ptr->uuid() << ", which has "
           << runnable_tasks.size() << " runnable tasks.";
+  JobID_t job_id = JobIDFromString(jd_ptr->uuid());
   for (unordered_set<TaskID_t>::const_iterator task_iter =
        runnable_tasks.begin();
        task_iter != runnable_tasks.end();
        ++task_iter) {
     TaskDescriptor** td = FindOrNull(*task_map_, *task_iter);
     CHECK(td);
+    trace_generator_->TaskSubmitted(*td);
     VLOG(2) << "Considering task " << (*td)->uid() << ":\n"
             << (*td)->DebugString();
     // TODO(malte): check passing semantics here.
@@ -209,8 +211,8 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
       CHECK(rp);
       LOG(INFO) << "Scheduling task " << (*td)->uid() << " on resource "
                 << (*rp)->descriptor().uuid() << " [" << *rp << "]";
-      // HandleTaskPlacement both binds the task AND removes it from the
-      // runnable set.
+      // Remove the task from the runnable set.
+      runnable_tasks_[job_id].erase((*td)->uid());
       HandleTaskPlacement(*td, (*rp)->mutable_descriptor());
       num_scheduled_tasks++;
     }
