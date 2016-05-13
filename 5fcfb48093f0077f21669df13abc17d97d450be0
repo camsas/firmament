@@ -16,6 +16,24 @@
       "revId": "5fcfb48093f0077f21669df13abc17d97d450be0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_eca73fbb",
+        "filename": "src/scheduling/simple/simple_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-05-13T14:49:26Z",
+      "side": 1,
+      "message": "Unfortunately, we don\u0027t. Currently we set a task to running in several places (FlowScheduler, EventDrivenScheduler).\n\nI tried to see why I added this line, but I\u0027ve failed. I\u0027ve removed it for now and I can bring it back later if it turns out it\u0027s needed.",
+      "parentUuid": "baa041b7_d839d8a5",
+      "revId": "5fcfb48093f0077f21669df13abc17d97d450be0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
