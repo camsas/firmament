@@ -16,6 +16,24 @@
       "revId": "063cfeb04d4010868689cc3060227ecb15c5e3e9",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_93a1e748",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-05-16T21:02:35Z",
+      "side": 1,
+      "message": "1. Yes, we already have another invocation in HandleSuccessfulTaskDelegation.\n2. We don\u0027t because this erase only covers the case when the task is running on the master.",
+      "parentUuid": "baa041b7_f396f3ee",
+      "revId": "063cfeb04d4010868689cc3060227ecb15c5e3e9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
