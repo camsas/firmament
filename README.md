@@ -104,20 +104,21 @@ models are available and in development.
 
 ### Cost models
 
-There are currently seven cost models in the Firmament code base:
+There are currently eight scheduling policies ("cost models") in the Firmament
+code base:
 
 | Cost model  | Description                                               | Status   |
 | ----------- | --------------------------------------------------------- | -------- |
 | TRIVIAL (0) | Fixed costs, tasks always schedule if resources are idle. | Complete |
 | RANDOM (1)  | Random costs, for fuzz tests. Not useful in practice!     | Complete |
 | SJF (2)     | Shortest job first policy based on avg. past runtimes.    | Complete |
-| QUINCY (3)  | Original Quincy cost model, with data locality.           | Broken!  |
+| QUINCY (3)  | Original Quincy cost model, with data locality.           | Complete |
 | WHARE (4)   | Implementation of Whare-Map's M and MCs policies.         | Complete |
-| COCO (5)    | Coordinated co-location model (in development).           | Complete   |
+| COCO (5)    | Coordinated co-location model (in development).           | Complete |
 | OCTOPUS (6) | Simple load balancing based on task counts.               | Complete |
+| VOID (7)    | Bogus cost model used for KB with simple scheduler.       | Complete |
+| NET-BW (8)  | Network-bandwidth-aware cost model (avoids hotspots).     | Complete |
 | ----------- | --------------------------------------------------------- | -------- |
-| VOID (7)    | Bogus cost model used for KB in simple scheduler.         | Complete |
-| SIM QUINCY (8) | Quincy cost model with simulated DFS; for simulator only. | Complete |
 
 ## Running on multiple machines
 
