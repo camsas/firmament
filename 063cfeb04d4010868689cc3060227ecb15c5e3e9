@@ -34,6 +34,24 @@
       "revId": "063cfeb04d4010868689cc3060227ecb15c5e3e9",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_5388ffc4",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-05-16T21:07:52Z",
+      "side": 1,
+      "message": "Ok, so these are separate code paths. (I guess we should make this clear: HandleTaskPlacement() could as well be invoked whenever a task is placed, whether by a local or a remote scheduler.)\n\nI guess it might be good to have the CHECK nevertheless, in case the code ever changes. Otherwise we may end with a weird NULL pointer here...",
+      "parentUuid": "baa041b7_93a1e748",
+      "revId": "063cfeb04d4010868689cc3060227ecb15c5e3e9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
