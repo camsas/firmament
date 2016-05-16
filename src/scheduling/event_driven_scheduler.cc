@@ -415,6 +415,13 @@ void EventDrivenScheduler::HandleTaskPlacement(
   TaskID_t task_id = td_ptr->uid();
   VLOG(1) << "Placing task " << task_id << " on resource " << rd_ptr->uuid();
   BindTaskToResource(td_ptr, rd_ptr);
+  // Remove the task from the runnable_tasks.
+  JobID_t job_id = JobIDFromString(td_ptr->job_id());
+  unordered_set<TaskID_t>* runnables_for_job =
+    FindOrNull(runnable_tasks_, job_id);
+  if (runnables_for_job) {
+    runnables_for_job->erase(task_id);
+  }
   ExecuteTask(td_ptr, rd_ptr);
   trace_generator_->TaskScheduled(task_id, *rd_ptr);
   if (event_notifier_) {
