@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_f396f3ee",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-05-16T21:00:36Z",
+      "side": 1,
+      "message": "If this handles the removal for *all* tasks (delegated and local), then surely we have to remove another erase() invocation somewhere else?\n\nAlso: do we need a CHECK to ensure that the JobID is actually in runnable_tasks_?",
+      "revId": "063cfeb04d4010868689cc3060227ecb15c5e3e9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
