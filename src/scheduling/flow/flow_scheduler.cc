@@ -342,6 +342,19 @@ uint64_t FlowScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats) {
   return num_scheduled_tasks;
 }
 
+uint64_t FlowScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats,
+                                        vector<SchedulingDelta>* deltas) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  vector<JobDescriptor*> jobs;
+  for (auto& job_id_jd : jobs_to_schedule_) {
+    if (ComputeRunnableTasksForJob(job_id_jd.second).size() > 0) {
+      jobs.push_back(job_id_jd.second);
+    }
+  }
+  uint64_t num_scheduled_tasks = ScheduleJobs(jobs, scheduler_stats, deltas);
+  return num_scheduled_tasks;
+}
+
 uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr,
                                     SchedulerStats* scheduler_stats) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
@@ -353,7 +366,8 @@ uint64_t FlowScheduler::ScheduleJob(JobDescriptor* jd_ptr,
 }
 
 uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
-                                     SchedulerStats* scheduler_stats) {
+                                     SchedulerStats* scheduler_stats,
+                                     vector<SchedulingDelta>* deltas) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   CHECK_NOTNULL(scheduler_stats);
   uint64_t num_scheduled_tasks = 0;
@@ -380,7 +394,7 @@ uint64_t FlowScheduler::ScheduleJobs(const vector<JobDescriptor*>& jd_ptr_vect,
     // depending on these metrics.
     UpdateCostModelResourceStats();
     flow_graph_manager_->AddOrUpdateJobNodes(jds_with_runnables);
-    num_scheduled_tasks += RunSchedulingIteration(scheduler_stats);
+    num_scheduled_tasks += RunSchedulingIteration(scheduler_stats, deltas);
     VLOG(1) << "STOP SCHEDULING, placed " << num_scheduled_tasks << " tasks";
     // If we have cost model debug logging turned on, write some debugging
     // information now.
@@ -411,7 +425,8 @@ void FlowScheduler::RegisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr,
 }
 
 uint64_t FlowScheduler::RunSchedulingIteration(
-    SchedulerStats* scheduler_stats) {
+    SchedulerStats* scheduler_stats,
+    vector<SchedulingDelta>* deltas_output) {
   // If it's time to revisit time-dependent costs, do so now, just before
   // we run the solver.
   uint64_t cur_time = time_manager_->GetCurrentTimestamp();
@@ -546,6 +561,11 @@ uint64_t FlowScheduler::RunSchedulingIteration(
     }
   }
   uint64_t num_scheduled = ApplySchedulingDeltas(deltas);
+  if (deltas_output) {
+    for (auto& delta : deltas) {
+      deltas_output->push_back(*delta);
+    }
+  }
   // Makes sure the deltas get correctly freed.
   deltas.clear();
   time_manager_->UpdateCurrentTimestamp(scheduler_start_timestamp);

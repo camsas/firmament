@@ -176,6 +176,17 @@ uint64_t SimpleScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats) {
   return num_scheduled_tasks;
 }
 
+uint64_t SimpleScheduler::ScheduleAllJobs(SchedulerStats* scheduler_stats,
+                                          vector<SchedulingDelta>* deltas) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  vector<JobDescriptor*> jobs;
+  for (auto& job_id_jd : jobs_to_schedule_) {
+    jobs.push_back(job_id_jd.second);
+  }
+  uint64_t num_scheduled_tasks = ScheduleJobs(jobs, scheduler_stats, deltas);
+  return num_scheduled_tasks;
+}
+
 uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
                                       SchedulerStats* scheduler_stats) {
   uint64_t num_scheduled_tasks = 0;
@@ -228,10 +239,12 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
 }
 
 uint64_t SimpleScheduler::ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
-                                       SchedulerStats* scheduler_stats) {
+                                       SchedulerStats* scheduler_stats,
+                                       vector<SchedulingDelta>* deltas) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   uint64_t num_scheduled_tasks = 0;
   boost::timer::cpu_timer scheduler_timer;
+  // TODO(ionel): Populate scheduling deltas!
   for (auto& jd_ptr : jds_ptr) {
     num_scheduled_tasks += ScheduleJob(jd_ptr, scheduler_stats);
   }

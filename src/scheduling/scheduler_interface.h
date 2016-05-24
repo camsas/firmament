@@ -21,6 +21,7 @@
 #include "engine/executors/executor_interface.h"
 #include "engine/executors/topology_manager.h"
 #include "scheduling/knowledge_base.h"
+#include "scheduling/scheduling_delta.pb.h"
 #include "storage/object_store_interface.h"
 
 namespace firmament {
@@ -206,6 +207,8 @@ class SchedulerInterface : public PrintableInterface {
    * @return the number of tasks scheduled
    */
   virtual uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats) = 0;
+  virtual uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats,
+                                   vector<SchedulingDelta>* deltas) = 0;
 
   /**
    * Schedules all runnable tasks in a job.
@@ -223,7 +226,8 @@ class SchedulerInterface : public PrintableInterface {
    * @return the number of tasks scheduled
    */
   virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
-                                SchedulerStats* scheduler_stats) = 0;
+                                SchedulerStats* scheduler_stats,
+                                vector<SchedulingDelta>* deltas = NULL) = 0;
 
  protected:
   /**

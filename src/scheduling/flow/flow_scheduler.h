@@ -20,11 +20,11 @@
 #include "misc/time_interface.h"
 #include "scheduling/event_driven_scheduler.h"
 #include "scheduling/knowledge_base.h"
+#include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/scheduling_event_notifier_interface.h"
 #include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/dimacs_exporter.h"
 #include "scheduling/flow/flow_graph_manager.h"
-#include "scheduling/flow/scheduling_delta.pb.h"
 #include "scheduling/flow/solver_dispatcher.h"
 #include "storage/reference_interface.h"
 
@@ -68,10 +68,13 @@ class FlowScheduler : public EventDrivenScheduler {
                                 bool local,
                                 bool simulated);
   virtual uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats);
+  virtual uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats,
+                                   vector<SchedulingDelta>* deltas);
   virtual uint64_t ScheduleJob(JobDescriptor* jd_ptr,
                                SchedulerStats* scheduler_stats);
   virtual uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
-                                SchedulerStats* scheduler_stats);
+                                SchedulerStats* scheduler_stats,
+                                vector<SchedulingDelta>* deltas = NULL);
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<FlowScheduler for coordinator " << coordinator_uri_
                    << ">";
@@ -97,7 +100,8 @@ class FlowScheduler : public EventDrivenScheduler {
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   void RegisterLocalResource(ResourceID_t res_id);
   void RegisterRemoteResource(ResourceID_t res_id);
-  uint64_t RunSchedulingIteration(SchedulerStats* scheduler_stats);
+  uint64_t RunSchedulingIteration(SchedulerStats* scheduler_stats,
+                                  vector<SchedulingDelta>* deltas_output);
   void UpdateCostModelResourceStats();
 
   // Pointer to the coordinator's topology manager
