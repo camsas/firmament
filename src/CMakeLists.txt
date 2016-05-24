@@ -119,7 +119,7 @@ add_library(firmament_scheduling SHARED
   ${MISC_TRACE_GENERATOR_SRC}
   ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS})
 
-add_dependencies(firmament_scheduling gtest pb2json pion spooky-hash
+add_dependencies(firmament_scheduling cs2 gtest pb2json pion spooky-hash
   thread-safe-stl-containers)
 
 target_link_libraries(firmament_scheduling LINK_PUBLIC ${spooky-hash_BINARY}
