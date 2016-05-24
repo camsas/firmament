@@ -16,13 +16,13 @@
 #include "misc/map-util.h"
 #include "misc/time_interface.h"
 #include "misc/trace_generator.h"
+#include "scheduling/scheduling_delta.pb.h"
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/dimacs_change.h"
 #include "scheduling/flow/dimacs_change_stats.h"
 #include "scheduling/flow/flow_graph_arc.h"
 #include "scheduling/flow/flow_graph_change_manager.h"
 #include "scheduling/flow/flow_graph_node.h"
-#include "scheduling/flow/scheduling_delta.pb.h"
 
 DECLARE_bool(preemption);
 DECLARE_string(flow_scheduling_solver);

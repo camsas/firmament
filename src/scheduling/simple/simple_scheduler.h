@@ -53,10 +53,14 @@ class SimpleScheduler : public EventDrivenScheduler {
   void PopulateSchedulerTaskUI(TaskID_t task_id,
                                TemplateDictionary* dict) const;
   uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats);
+  uint64_t ScheduleAllJobs(SchedulerStats* scheduler_stats,
+                           vector<SchedulingDelta>* deltas);
   uint64_t ScheduleJob(JobDescriptor* jd_ptr,
                        SchedulerStats* scheduler_stats);
   uint64_t ScheduleJobs(const vector<JobDescriptor*>& jds_ptr,
-                        SchedulerStats* scheduler_stats);
+                        SchedulerStats* scheduler_stats,
+                        vector<SchedulingDelta>* deltas = NULL);
+
   virtual ostream& ToString(ostream* stream) const {
     return *stream << "<SimpleScheduler>";
   }
