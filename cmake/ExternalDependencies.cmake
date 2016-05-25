@@ -126,14 +126,13 @@ ExternalProject_Add(
     TIMEOUT 10
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/pb2json
     BUILD_IN_SOURCE ON
+    # XXX/malte): workaround for CMake issue forcing a spurious git stash
+    UPDATE_COMMAND make clean
     # no configure step
     CONFIGURE_COMMAND ""
     BUILD_COMMAND "make"
     # no install step
-    INSTALL_COMMAND ""
-    # Wrap download, configure and build steps in a script to log output
-    LOG_DOWNLOAD ON
-    LOG_BUILD ON)
+    INSTALL_COMMAND "")
 
 ExternalProject_Get_Property(pb2json SOURCE_DIR)
 set(pb2json_SOURCE_DIR ${SOURCE_DIR})
