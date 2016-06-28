@@ -56,7 +56,6 @@ class KnowledgeBase {
     return *data_layer_manager_;
   }
   inline DataLayerManagerInterface* mutable_data_layer_manager() {
-    CHECK_NOTNULL(data_layer_manager_);
     return data_layer_manager_;
   }
 
