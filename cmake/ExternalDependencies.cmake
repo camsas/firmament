@@ -11,13 +11,13 @@ if (${ENABLE_CS2})
       GIT_REPOSITORY https://github.com/ICGog/cs2.git
       TIMEOUT 10
       PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/cs2
+      # XXX/malte): workaround for CMake issue forcing a spurious git stash
+      UPDATE_COMMAND ""
       # no configure or install step required
       CONFIGURE_COMMAND ""
       INSTALL_COMMAND ""
       BUILD_IN_SOURCE ON
-      # Wrap download, configure and build steps in a script to log output
-      LOG_DOWNLOAD ON
-      LOG_BUILD ON)
+      BUILD_COMMAND make)
 endif (${ENABLE_CS2})
 
 ###############################################################################
@@ -127,10 +127,10 @@ ExternalProject_Add(
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/pb2json
     BUILD_IN_SOURCE ON
     # XXX/malte): workaround for CMake issue forcing a spurious git stash
-    UPDATE_COMMAND make clean
+    UPDATE_COMMAND ""
     # no configure step
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND "make"
+    BUILD_COMMAND make
     # no install step
     INSTALL_COMMAND "")
 
