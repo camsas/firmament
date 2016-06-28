@@ -30,7 +30,8 @@ DEFINE_uint64(max_sample_queue_size, 100,
 
 namespace firmament {
 
-KnowledgeBase::KnowledgeBase() {
+KnowledgeBase::KnowledgeBase()
+  : data_layer_manager_(NULL) {
   KnowledgeBase(NULL);
 }
 
