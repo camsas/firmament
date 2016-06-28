@@ -14,7 +14,7 @@ option(ENABLE_CS2 "Downloads, compiles and enables the cs2 solver (academic lice
 option(ENABLE_FLOWLESSLY "Downloads, compiles and enables the Flowlessly solver." OFF)
 
 # Coordinator options
-option(ENABLE_HDFS "Support HDFS-based locality information in Coordinator." ON)
+option(ENABLE_HDFS "Support HDFS-based locality information in Coordinator." OFF)
 
 # The VERBOSE flag controls build system verbosity
 set(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
