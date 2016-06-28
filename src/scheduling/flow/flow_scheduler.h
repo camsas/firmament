@@ -28,6 +28,8 @@
 #include "scheduling/flow/solver_dispatcher.h"
 #include "storage/reference_interface.h"
 
+DECLARE_int32(flow_scheduling_cost_model);
+
 namespace firmament {
 namespace scheduler {
 

@@ -9,11 +9,35 @@
 
 #include "misc/utils.h"
 #include "misc/map-util.h"
+#include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/flow/flow_scheduler.h"
 
+DEFINE_bool(enable_hdfs_data_locality, false,
+            "True if the scheduler should consider input file block locality "
+            "in HDFS.");
 DEFINE_string(hdfs_name_node_address, "hdfs://localhost",
               "The address of the HDFS name node");
 DEFINE_int32(hdfs_name_node_port, 8020,
              "The port of the HDFS name node");
+
+static bool ValidateHDFSDataLocality(const char* flagname, bool enable_dl) {
+#ifdef ENABLE_HDFS
+   if (!enable_dl) {
+     // Quincy cost model requires HDFS data locality to be enabled
+     if (FLAGS_flow_scheduling_cost_model == firmament::COST_MODEL_QUINCY) {
+       LOG(ERROR) << "To use the Quincy cost model, HDFS data locality must "
+         << "be enabled.\n"
+         << "Pass the --" << flagname << " argument and ensure that "
+         << "the HDFS NameNode is correctly configured and reachable.";
+       return false;
+     }
+   }
+#endif
+   return true;
+}
+static const bool hdfs_dl_validator =
+    google::RegisterFlagValidator(&FLAGS_enable_hdfs_data_locality,
+                                  &ValidateHDFSDataLocality);
 
 namespace firmament {
 namespace store {
