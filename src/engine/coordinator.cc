@@ -54,6 +54,11 @@ DEFINE_int32(http_ui_port, 8080,
 #endif
 DEFINE_bool(populate_knowledge_base_from_file, false,
             "True if we should load the knowledge base from file.");
+#ifdef ENABLE_HDFS
+DEFINE_bool(hdfs_data_locality_enable, false,
+            "True if the scheduler should consider input file block locality in "
+            "HDFS.");
+#endif
 
 namespace firmament {
 
@@ -79,11 +84,17 @@ Coordinator::Coordinator()
   local_resource_topology_->mutable_resource_desc()->CopyFrom(
       resource_desc_);
 
+  shared_ptr<KnowledgeBase> knowledge_base;
 #ifdef ENABLE_HDFS
-  shared_ptr<KnowledgeBase> knowledge_base(new KnowledgeBase(
-      new store::HdfsDataLocalityManager(trace_generator_)));
+  if (FLAGS_hdfs_data_locality_enable) {
+    store::HdfsDataLocalityManager* hdfs_dlm =
+      new store::HdfsDataLocalityManager(trace_generator_);
+    knowledge_base.reset(new KnowledgeBase(hdfs_dlm));
+  } else {
+    knowledge_base.reset(new KnowledgeBase());
+  }
 #else
-  shared_ptr<KnowledgeBase> knowledge_base(new KnowledgeBase());
+  knowledge_base.reset(new KnowledgeBase());
 #endif
   // Set up the scheduler
   if (FLAGS_scheduler == "simple") {

@@ -29,7 +29,9 @@ HdfsDataLocalityManager::HdfsDataLocalityManager(
   fs_ = hdfsBuilderConnect(hdfs_builder);
   hdfsFreeBuilder(hdfs_builder);
   if (!fs_) {
-    LOG(FATAL) << "Could not connect to HDFS";
+    LOG(FATAL) << "Could not connect to HDFS NameNode at "
+               << FLAGS_hdfs_name_node_address << ":"
+               << FLAGS_hdfs_name_node_port;
   }
 }
 
