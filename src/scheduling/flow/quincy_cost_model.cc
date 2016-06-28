@@ -60,6 +60,9 @@ QuincyCostModel::QuincyCostModel(
     time_manager_(time_manager) {
   cluster_aggregator_ec_ = HashString("CLUSTER_AGG");
   data_layer_manager_ = knowledge_base_->mutable_data_layer_manager();
+  CHECK(data_layer_manager_ != NULL)
+    << "No data layer manager in knowledge base, but the Quincy cost model "
+    << "requires one.";
 }
 
 QuincyCostModel::~QuincyCostModel() {

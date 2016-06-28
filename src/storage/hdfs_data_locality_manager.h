@@ -13,6 +13,8 @@
 #include "base/common.h"
 #include "misc/trace_generator.h"
 
+DECLARE_bool(enable_hdfs_data_locality);
+
 namespace firmament {
 namespace store {
 
