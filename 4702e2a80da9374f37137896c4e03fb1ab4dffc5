@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_a0e73d11",
+        "filename": "src/scheduling/knowledge_base.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-06-30T14:09:24Z",
+      "side": 0,
+      "message": "I think we should keep this check here. We want to be sure we don\u0027t return a NULL pointer.",
+      "revId": "4702e2a80da9374f37137896c4e03fb1ab4dffc5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
