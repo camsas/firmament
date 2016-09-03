@@ -21,8 +21,6 @@ def parse_arguments():
                       help="Scheduling coordinator hostname")
   parser.add_argument("--port", dest="scheduler_port", type=int,
                       default=8080, help="Scheduler coordinator port")
-  parser.add_argument("-d", "--duration", dest="duration", type=int,
-                      default=120, help="Experiment runtime in sec.")
   parser.add_argument("-t", "--target", dest="target",
                       default="firmament",
                       help="Target system (firmament, mesos)")
@@ -31,18 +29,11 @@ def parse_arguments():
   return arguments
 
 parser = argparse.ArgumentParser(description="Run cluster mix.")
-
 arguments = parse_arguments()
 
 scheduler_hostname = arguments.scheduler_hostname
 scheduler_port = arguments.scheduler_port
-duration = arguments.duration
 target = arguments.target
-
-print time.ctime()
-print "Running experiment for %d seconds." % (duration)
-cur_time = time.time()
-start_time = cur_time
 
 random.seed(42)
 
@@ -83,13 +74,15 @@ for i in range(0, 16):
 for i in range(6000, 96000, 8000):
   wl.add(i, "hdfs_get_pagerank_uk%d" % (i), bin_path + "/hdfs/hdfs_get", tasks_args, 16, 2, rv)
 
-# About 1.4GB of input (14). Each task takes about 6-8 seconds.
-tasks_args = []
-for i in range(0, 14):
-  tasks_args.append("caelum10g-301.cl.cam.ac.uk 8020 /input/lineitem_splits14/lineitem%d.in" % (i))
+# We don't submit lineitem tasks because we would end up oversubscribing the
+# network.
+# # About 1.4GB of input (14). Each task takes about 6-8 seconds.
+# tasks_args = []
+# for i in range(0, 14):
+#   tasks_args.append("caelum10g-301.cl.cam.ac.uk 8020 /input/lineitem_splits14/lineitem%d.in" % (i))
 
-for i in range(8000, 96000, 8000):
-  wl.add(i, "hdfs_get_lineitem%d" % (i), bin_path + "/hdfs/hdfs_get", tasks_args, 14, 2, rv)
+# for i in range(8000, 96000, 8000):
+#   wl.add(i, "hdfs_get_lineitem%d" % (i), bin_path + "/hdfs/hdfs_get", tasks_args, 14, 2, rv)
 
 wl.start()
 

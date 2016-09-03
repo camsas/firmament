@@ -9,6 +9,7 @@ import time
 import shlex
 import Queue
 from datetime import datetime
+from mesos_job import *
 from job import *
 from task import *
 
@@ -27,6 +28,14 @@ class SyncWorkload:
       new_job.prepare(binary, tasks_args, task_count, task_type=task_type,
                       resource_request=resource_request)
       self.events.put((run_at_time, new_job))
+    elif self.target == "mesos":
+      new_job = MesosJob(name)
+      new_job.prepare(binary, tasks_args, task_count, task_type=task_type,
+                      resource_request=resource_request)
+      self.events.put((run_at_time, new_job))
+    else:
+      print "ERROR: Unexpected target %s" % (self.target)
+
 
   def start(self):
     self.start_time = datetime.now()

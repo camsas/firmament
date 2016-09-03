@@ -25,6 +25,9 @@ class Workload:
       self.jobs[name] = Job(name)
     elif self.target == "mesos":
       self.jobs[name] = MesosJob(name)
+    else:
+      print "ERROR: Unexpected target %s" % (self.target)
+      return
     self.jobs[name].prepare(binary, tasks_args, task_count, task_type=task_type,
                             resource_request=resource_request)
 
