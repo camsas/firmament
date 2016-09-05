@@ -31,13 +31,12 @@ class MesosJob:
 
   def mesos_run_helper(self, hostname, port):
     try:
-      ret = subprocess.call("./mesos-execute --master=%s:%d --name=%s " \
-                            "--command=\"%s %s\" --instances=%d " \
+      ret = subprocess.call("mesos-execute --master=%s:%d --name=%s " \
+                            "--command=\"%s %s\" " \
                             "--resources=\"cpus:%f;mem:%d;disk:%d\"" \
                             % (hostname, port, self.desc.name, \
                                self.root_task.desc.binary, \
                                " ".join(self.root_task.desc.args), \
-                               len(self.root_task.subtasks) + 1, \
                                self.root_task.desc.resource_request.cpu_cores,
                                self.root_task.desc.resource_request.ram_cap,
                                self.root_task.desc.resource_request.ram_cap), \
@@ -60,15 +59,11 @@ class MesosJob:
     if self.mesos_execute_thread.is_alive():
       return (True, "")
 
-  def prepare(self, binary, args, num_tasks, name="", inject_task_lib=True,
+  def prepare(self, binary, args, name="", inject_task_lib=True,
               task_type=task_desc_pb2.TaskDescriptor.TURTLE,
               resource_request=None):
     self.task_type = task_type
     self.add_root_task(binary, args, inject_task_lib, resource_request)
-    # add more tasks
-    for i in range(1, num_tasks):
-      self.root_task.add_subtask(binary, args, i, task_type, resource_request)
-
 
   def completed(self, hostname, port):
     job_id = self.desc.uuid

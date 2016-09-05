@@ -29,8 +29,10 @@ class SyncWorkload:
                       resource_request=resource_request)
       self.events.put((run_at_time, new_job))
     elif self.target == "mesos":
+      if task_count != 1:
+        print 'ERROR: Mesos jobs can not have more than 1 task'
       new_job = MesosJob(name)
-      new_job.prepare(binary, tasks_args, task_count, task_type=task_type,
+      new_job.prepare(binary, tasks_args, task_type=task_type,
                       resource_request=resource_request)
       self.events.put((run_at_time, new_job))
     else:

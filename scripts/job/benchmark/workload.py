@@ -23,13 +23,18 @@ class Workload:
           resource_request=None):
     if self.target == "firmament":
       self.jobs[name] = Job(name)
+      self.jobs[name].prepare(binary, tasks_args, task_count,
+                              task_type=task_type,
+                              resource_request=resource_request)
     elif self.target == "mesos":
+      if task_count != 1:
+        print 'ERROR: Mesos jobs can not have more than 1 task'
       self.jobs[name] = MesosJob(name)
+      self.jobs[name].prepare(binary, tasks_args, task_type=task_type,
+                              resource_request=resource_request)
     else:
       print "ERROR: Unexpected target %s" % (self.target)
       return
-    self.jobs[name].prepare(binary, tasks_args, task_count, task_type=task_type,
-                            resource_request=resource_request)
 
   def start(self):
     self.start_time = time.time()
