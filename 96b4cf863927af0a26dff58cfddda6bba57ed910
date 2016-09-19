@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_d4a4354c",
+        "filename": "src/webui/resource_status.tpl",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-09-19T15:02:17Z",
+      "side": 1,
+      "message": "Shouldn\u0027t we add a second time series and display both?",
+      "revId": "96b4cf863927af0a26dff58cfddda6bba57ed910",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
