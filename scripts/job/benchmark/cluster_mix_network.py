@@ -45,14 +45,16 @@ wl = SyncWorkload(scheduler_hostname, scheduler_port, target)
 rv = resource_vector_pb2.ResourceVector()
 rv.cpu_cores = 0.9
 rv.ram_cap = 128
-rv.net_bw = 600
+rv.net_tx_bw = 1
+rv.net_rx_bw = 600
 rv.disk_bw = 0
 
 # CPU SPIN JOB
 rv_cpuspin = resource_vector_pb2.ResourceVector()
 rv_cpuspin.cpu_cores = 1.0
 rv_cpuspin.ram_cap = 10
-rv_cpuspin.net_bw = 0
+rv_cpuspin.net_tx_bw = 0
+rv_cpuspin.net_rx_bw = 0
 rv_cpuspin.disk_bw = 0
 
 # 3 NGINX with 4 AB each

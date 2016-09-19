@@ -74,36 +74,37 @@ pair<Cost_t, uint64_t> NetCostModel::EquivClassToResourceNode(
 pair<Cost_t, uint64_t> NetCostModel::EquivClassToEquivClass(
     EquivClass_t ec1,
     EquivClass_t ec2) {
-  uint64_t* required_net_bw = FindOrNull(ec_bw_requirement_, ec1);
-  CHECK_NOTNULL(required_net_bw);
+  uint64_t* required_net_rx_bw = FindOrNull(ec_rx_bw_requirement_, ec1);
+  CHECK_NOTNULL(required_net_rx_bw);
   ResourceID_t* machine_res_id = FindOrNull(ec_to_machine_, ec2);
   CHECK_NOTNULL(machine_res_id);
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, *machine_res_id);
   CHECK_NOTNULL(rs);
   const ResourceDescriptor& rd = rs->topology_node().resource_desc();
   CHECK_EQ(rd.type(), ResourceDescriptor::RESOURCE_MACHINE);
-  uint64_t available_net_bw = rd.max_available_resources_below().net_bw();
+  uint64_t available_net_rx_bw = rd.max_available_resources_below().net_rx_bw();
   uint64_t* index = FindOrNull(ec_to_index_, ec2);
   CHECK_NOTNULL(index);
   uint64_t ec_index = *index + 1;
-  if (available_net_bw < *required_net_bw * ec_index) {
+  if (available_net_rx_bw < *required_net_rx_bw * ec_index) {
     return pair<Cost_t, uint64_t>(0LL, 0ULL);
   }
   return pair<Cost_t, uint64_t>(static_cast<int64_t>(ec_index) *
-                                static_cast<int64_t>(*required_net_bw) -
-                                static_cast<int64_t>(available_net_bw) + 1250LL,
-                                1ULL);
+                                static_cast<int64_t>(*required_net_rx_bw) -
+                                static_cast<int64_t>(available_net_rx_bw) +
+                                1250LL, 1ULL);
 }
 
 vector<EquivClass_t>* NetCostModel::GetTaskEquivClasses(
     TaskID_t task_id) {
   vector<EquivClass_t>* ecs = new vector<EquivClass_t>();
-  // Get the equivalence class for the task's required bw.
-  uint64_t* task_required_bw = FindOrNull(task_bw_requirement_, task_id);
-  CHECK_NOTNULL(task_required_bw);
-  EquivClass_t bw_ec = static_cast<EquivClass_t>(HashInt(*task_required_bw));
-  ecs->push_back(bw_ec);
-  InsertIfNotPresent(&ec_bw_requirement_, bw_ec, *task_required_bw);
+  // Get the equivalence class for the task's required rx bw.
+  uint64_t* task_required_rx_bw = FindOrNull(task_rx_bw_requirement_, task_id);
+  CHECK_NOTNULL(task_required_rx_bw);
+  EquivClass_t rx_bw_ec =
+    static_cast<EquivClass_t>(HashInt(*task_required_rx_bw));
+  ecs->push_back(rx_bw_ec);
+  InsertIfNotPresent(&ec_rx_bw_requirement_, rx_bw_ec, *task_required_rx_bw);
   return ecs;
 }
 
@@ -125,22 +126,23 @@ vector<ResourceID_t>* NetCostModel::GetTaskPreferenceArcs(TaskID_t task_id) {
 vector<EquivClass_t>* NetCostModel::GetEquivClassToEquivClassesArcs(
     EquivClass_t ec) {
   vector<EquivClass_t>* pref_ecs = new vector<EquivClass_t>();
-  uint64_t* required_net_bw = FindOrNull(ec_bw_requirement_, ec);
-  if (required_net_bw) {
-    // if EC is a bw EC then connect it to machine ECs.
+  uint64_t* required_net_rx_bw = FindOrNull(ec_rx_bw_requirement_, ec);
+  if (required_net_rx_bw) {
+    // if EC is a rx bw EC then connect it to machine ECs.
     for (auto& ec_machines : ecs_for_machines_) {
       ResourceStatus* rs = FindPtrOrNull(*resource_map_, ec_machines.first);
       CHECK_NOTNULL(rs);
       const ResourceDescriptor& rd = rs->topology_node().resource_desc();
-      uint64_t available_net_bw = rd.max_available_resources_below().net_bw();
+      uint64_t available_net_rx_bw =
+        rd.max_available_resources_below().net_rx_bw();
       ResourceID_t res_id = ResourceIDFromString(rd.uuid());
       vector<EquivClass_t>* ecs_for_machine =
         FindOrNull(ecs_for_machines_, res_id);
       CHECK_NOTNULL(ecs_for_machine);
       uint64_t index = 0;
-      for (uint64_t cur_bw = *required_net_bw;
-           cur_bw <= available_net_bw && index < ecs_for_machine->size();
-           cur_bw += *required_net_bw) {
+      for (uint64_t cur_rx_bw = *required_net_rx_bw;
+           cur_rx_bw <= available_net_rx_bw && index < ecs_for_machine->size();
+           cur_rx_bw += *required_net_rx_bw) {
         pref_ecs->push_back(ec_machines.second[index]);
         index++;
       }
@@ -168,8 +170,9 @@ void NetCostModel::AddMachine(
 
 void NetCostModel::AddTask(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
-  uint64_t required_net_bw = td.resource_request().net_bw();
-  CHECK(InsertIfNotPresent(&task_bw_requirement_, task_id, required_net_bw));
+  uint64_t required_net_rx_bw = td.resource_request().net_rx_bw();
+  CHECK(InsertIfNotPresent(&task_rx_bw_requirement_, task_id,
+                           required_net_rx_bw));
 }
 
 void NetCostModel::RemoveMachine(ResourceID_t res_id) {
@@ -183,7 +186,7 @@ void NetCostModel::RemoveMachine(ResourceID_t res_id) {
 }
 
 void NetCostModel::RemoveTask(TaskID_t task_id) {
-  // CHECK_EQ(task_bw_requirement_.erase(task_id), 1);
+  // CHECK_EQ(task_rx_bw_requirement_.erase(task_id), 1);
 }
 
 EquivClass_t NetCostModel::GetMachineEC(const string& machine_name,
@@ -228,15 +231,24 @@ FlowGraphNode* NetCostModel::GatherStats(FlowGraphNode* accumulator,
       knowledge_base_->GetLatestStatsForMachine(accumulator->resource_id_,
                                                 &latest_stats);
     if (have_sample) {
-      rd_ptr->mutable_available_resources()->set_net_bw(
-          rd_ptr->resource_capacity().net_bw() -
-          latest_stats.net_bw() / BYTES_TO_MB);
-      rd_ptr->mutable_max_available_resources_below()->set_net_bw(
-          rd_ptr->resource_capacity().net_bw() -
-          latest_stats.net_bw() / BYTES_TO_MB);
-      rd_ptr->mutable_min_available_resources_below()->set_net_bw(
-          rd_ptr->resource_capacity().net_bw() -
-          latest_stats.net_bw() / BYTES_TO_MB);
+      rd_ptr->mutable_available_resources()->set_net_tx_bw(
+          rd_ptr->resource_capacity().net_tx_bw() -
+          latest_stats.net_tx_bw() / BYTES_TO_MB);
+      rd_ptr->mutable_max_available_resources_below()->set_net_tx_bw(
+          rd_ptr->resource_capacity().net_tx_bw() -
+          latest_stats.net_tx_bw() / BYTES_TO_MB);
+      rd_ptr->mutable_min_available_resources_below()->set_net_tx_bw(
+          rd_ptr->resource_capacity().net_tx_bw() -
+          latest_stats.net_tx_bw() / BYTES_TO_MB);
+      rd_ptr->mutable_available_resources()->set_net_rx_bw(
+          rd_ptr->resource_capacity().net_rx_bw() -
+          latest_stats.net_rx_bw() / BYTES_TO_MB);
+      rd_ptr->mutable_max_available_resources_below()->set_net_rx_bw(
+          rd_ptr->resource_capacity().net_rx_bw() -
+          latest_stats.net_rx_bw() / BYTES_TO_MB);
+      rd_ptr->mutable_min_available_resources_below()->set_net_rx_bw(
+          rd_ptr->resource_capacity().net_rx_bw() -
+          latest_stats.net_rx_bw() / BYTES_TO_MB);
     }
   }
 

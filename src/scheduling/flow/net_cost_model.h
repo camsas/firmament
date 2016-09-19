@@ -69,8 +69,8 @@ class NetCostModel : public CostModelInterface {
   shared_ptr<TaskMap_t> task_map_;
   // A knowledge base instance that we will refer to for job runtime statistics.
   shared_ptr<KnowledgeBase> knowledge_base_;
-  unordered_map<TaskID_t, uint64_t> task_bw_requirement_;
-  unordered_map<EquivClass_t, uint64_t> ec_bw_requirement_;
+  unordered_map<TaskID_t, uint64_t> task_rx_bw_requirement_;
+  unordered_map<EquivClass_t, uint64_t> ec_rx_bw_requirement_;
   unordered_map<ResourceID_t, vector<EquivClass_t>, boost::hash<ResourceID_t>>
     ecs_for_machines_;
   unordered_map<EquivClass_t, ResourceID_t> ec_to_machine_;

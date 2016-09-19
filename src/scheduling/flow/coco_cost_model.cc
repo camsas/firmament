@@ -61,7 +61,10 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
   // aggregators above the machine level (e.g., rack aggregators), so this does
   // not consider the additive case for RAM/net/disk resources yet.
   acc_avail->set_ram_cap(max(acc_avail->ram_cap(), other_avail->ram_cap()));
-  acc_avail->set_net_bw(max(acc_avail->net_bw(), other_avail->net_bw()));
+  acc_avail->set_net_tx_bw(max(acc_avail->net_tx_bw(),
+                               other_avail->net_tx_bw()));
+  acc_avail->set_net_rx_bw(max(acc_avail->net_rx_bw(),
+                               other_avail->net_rx_bw()));
   acc_avail->set_disk_bw(max(acc_avail->disk_bw(), other_avail->disk_bw()));
   // Track the maximum resources available in any dimensions at resources below
   // the accumulator node
@@ -70,7 +73,8 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
   ResourceVector* other_max = other->mutable_max_available_resources_below();
   acc_max->set_cpu_cores(max(acc_max->cpu_cores(), other_max->cpu_cores()));
   acc_max->set_ram_cap(max(acc_max->ram_cap(), other_max->ram_cap()));
-  acc_max->set_net_bw(max(acc_max->net_bw(), other_max->net_bw()));
+  acc_max->set_net_tx_bw(max(acc_max->net_tx_bw(), other_max->net_tx_bw()));
+  acc_max->set_net_rx_bw(max(acc_max->net_rx_bw(), other_max->net_rx_bw()));
   acc_max->set_disk_bw(max(acc_max->disk_bw(), other_max->disk_bw()));
   // Track the minimum resources available in any dimensions at resources below
   // the accumulator node
@@ -87,10 +91,14 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
     acc_min->set_ram_cap(other_min->ram_cap());
   else if (other_min->ram_cap() > 0)
     acc_min->set_ram_cap(min(acc_min->ram_cap(), other_min->ram_cap()));
-  if (acc_min->net_bw() == 0)
-    acc_min->set_net_bw(other_min->net_bw());
-  else if (other_min->net_bw() > 0)
-    acc_min->set_net_bw(min(acc_min->net_bw(), other_min->net_bw()));
+  if (acc_min->net_tx_bw() == 0)
+    acc_min->set_net_tx_bw(other_min->net_tx_bw());
+  else if (other_min->net_tx_bw() > 0)
+    acc_min->set_net_tx_bw(min(acc_min->net_tx_bw(), other_min->net_tx_bw()));
+  if (acc_min->net_rx_bw() == 0)
+    acc_min->set_net_rx_bw(other_min->net_rx_bw());
+  else if (other_min->net_rx_bw() > 0)
+    acc_min->set_net_rx_bw(min(acc_min->net_rx_bw(), other_min->net_rx_bw()));
   if (acc_min->disk_bw() == 0)
     acc_min->set_disk_bw(other_min->disk_bw());
   else if (other_min->disk_bw() > 0)
@@ -125,8 +133,10 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
                                  other_reservation.cpu_cores());
   acc_reservation->set_ram_cap(acc_reservation->ram_cap() +
                                other_reservation.ram_cap());
-  acc_reservation->set_net_bw(acc_reservation->net_bw() +
-                              other_reservation.net_bw());
+  acc_reservation->set_net_tx_bw(acc_reservation->net_tx_bw() +
+                                 other_reservation.net_tx_bw());
+  acc_reservation->set_net_rx_bw(acc_reservation->net_rx_bw() +
+                                 other_reservation.net_rx_bw());
   acc_reservation->set_disk_bw(acc_reservation->disk_bw() +
                                other_reservation.disk_bw());
 }
@@ -286,7 +296,8 @@ Cost_t CocoCostModel::FlattenCostVector(CostVector_t cv) {
   int64_t accumulator = 0;
   accumulator += cv.cpu_cores_;
   accumulator += cv.ram_cap_;
-  accumulator += cv.network_bw_;
+  accumulator += cv.network_tx_bw_;
+  accumulator += cv.network_rx_bw_;
   accumulator += cv.disk_bw_;
   accumulator += cv.machine_type_score_;
   accumulator += cv.interference_score_;
@@ -496,9 +507,12 @@ Cost_t CocoCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   cost_vector.ram_cap_ = static_cast<uint32_t>(
     omega_ + NormalizeCost(td.resource_request().ram_cap(),
                            min_machine_capacity_.ram_cap()));
-  cost_vector.network_bw_ = static_cast<uint32_t>(
-    omega_ + NormalizeCost(td.resource_request().net_bw(),
-                           min_machine_capacity_.net_bw()));
+  cost_vector.network_tx_bw_ = static_cast<uint32_t>(
+    omega_ + NormalizeCost(td.resource_request().net_tx_bw(),
+                           min_machine_capacity_.net_tx_bw()));
+  cost_vector.network_rx_bw_ = static_cast<uint32_t>(
+    omega_ + NormalizeCost(td.resource_request().net_rx_bw(),
+                           min_machine_capacity_.net_rx_bw()));
   cost_vector.disk_bw_ = static_cast<uint32_t>(
     omega_ + NormalizeCost(td.resource_request().disk_bw(),
                            min_machine_capacity_.disk_bw()));
@@ -567,10 +581,14 @@ Cost_t CocoCostModel::ResourceNodeToResourceNodeCost(
         NormalizeCost(machine_rd.resource_capacity().ram_cap() -
                       destination.available_resources().ram_cap(),
                       machine_rd.resource_capacity().ram_cap());
-    cost_vector.network_bw_ =
-        NormalizeCost(machine_rd.resource_capacity().net_bw() -
-                      destination.available_resources().net_bw(),
-                      machine_rd.resource_capacity().net_bw());
+    cost_vector.network_tx_bw_ =
+        NormalizeCost(machine_rd.resource_capacity().net_tx_bw() -
+                      destination.available_resources().net_tx_bw(),
+                      machine_rd.resource_capacity().net_tx_bw());
+    cost_vector.network_rx_bw_ =
+        NormalizeCost(machine_rd.resource_capacity().net_rx_bw() -
+                      destination.available_resources().net_rx_bw(),
+                      machine_rd.resource_capacity().net_rx_bw());
     cost_vector.disk_bw_ =
         NormalizeCost(machine_rd.resource_capacity().disk_bw() -
                       destination.available_resources().disk_bw(),
@@ -627,8 +645,10 @@ Cost_t CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
                                          max_machine_capacity_.cpu_cores());
   cost_vector.ram_cap_ = NormalizeCost(td.resource_request().ram_cap(),
                                        max_machine_capacity_.ram_cap());
-  cost_vector.network_bw_ = NormalizeCost(td.resource_request().net_bw(),
-                                          max_machine_capacity_.net_bw());
+  cost_vector.network_tx_bw_ = NormalizeCost(td.resource_request().net_tx_bw(),
+                                             max_machine_capacity_.net_tx_bw());
+  cost_vector.network_rx_bw_ = NormalizeCost(td.resource_request().net_rx_bw(),
+                                             max_machine_capacity_.net_rx_bw());
   cost_vector.disk_bw_ = NormalizeCost(td.resource_request().disk_bw(),
                                        max_machine_capacity_.disk_bw());
   cost_vector.machine_type_score_ = 0;
@@ -720,7 +740,8 @@ void CocoCostModel::PrintCostVector(CostVector_t cv) {
   LOG(INFO) << "[ PRIORITY: " << cv.priority_ << ", ";
   LOG(INFO) << "  CPU: " << cv.cpu_cores_ << ", ";
   LOG(INFO) << "  RAM: " << cv.ram_cap_ << ", ";
-  LOG(INFO) << "  NET: " << cv.network_bw_ << ", ";
+  LOG(INFO) << "  NET TX: " << cv.network_tx_bw_ << ", ";
+  LOG(INFO) << "  NET RX: " << cv.network_rx_bw_ << ", ";
   LOG(INFO) << "  DISK: " << cv.disk_bw_ << ", ";
   LOG(INFO) << "  MACHINE TYPE: " << cv.machine_type_score_ << ", ";
   LOG(INFO) << "  INTERFERENCE: " << cv.interference_score_ << ", ";
@@ -734,7 +755,8 @@ string CocoCostModel::ResourceVectorToString(
   out << rv.cpu_cores() << delimiter;
   out << rv.ram_cap() << delimiter;
   out << rv.disk_bw() << delimiter;
-  out << rv.net_bw();
+  out << rv.net_tx_bw() << delimiter;
+  out << rv.net_rx_bw();
   return out.str();
 }
 
@@ -746,8 +768,10 @@ void CocoCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
     max_machine_capacity_.set_cpu_cores(cap.cpu_cores());
   if (cap.ram_cap() > max_machine_capacity_.ram_cap())
     max_machine_capacity_.set_ram_cap(cap.ram_cap());
-  if (cap.net_bw() > max_machine_capacity_.net_bw())
-    max_machine_capacity_.set_net_bw(cap.net_bw());
+  if (cap.net_tx_bw() > max_machine_capacity_.net_tx_bw())
+    max_machine_capacity_.set_net_tx_bw(cap.net_tx_bw());
+  if (cap.net_rx_bw() > max_machine_capacity_.net_rx_bw())
+    max_machine_capacity_.set_net_rx_bw(cap.net_rx_bw());
   if (cap.disk_bw() > max_machine_capacity_.disk_bw())
     max_machine_capacity_.set_disk_bw(cap.disk_bw());
   // Check if this machine's capacity is the minimum in any capacity
@@ -759,9 +783,13 @@ void CocoCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {
       cap.ram_cap() < min_machine_capacity_.ram_cap()) {
     min_machine_capacity_.set_ram_cap(cap.ram_cap());
   }
-  if (min_machine_capacity_.net_bw() == 0 ||
-      cap.net_bw() < min_machine_capacity_.net_bw()) {
-    min_machine_capacity_.set_net_bw(cap.net_bw());
+  if (min_machine_capacity_.net_tx_bw() == 0 ||
+      cap.net_tx_bw() < min_machine_capacity_.net_tx_bw()) {
+    min_machine_capacity_.set_net_tx_bw(cap.net_tx_bw());
+  }
+  if (min_machine_capacity_.net_rx_bw() == 0 ||
+      cap.net_rx_bw() < min_machine_capacity_.net_rx_bw()) {
+    min_machine_capacity_.set_net_rx_bw(cap.net_rx_bw());
   }
   if (min_machine_capacity_.disk_bw() == 0 ||
       cap.disk_bw() < min_machine_capacity_.disk_bw()) {
@@ -883,8 +911,11 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
         if (!reserved->has_disk_bw()) {
           reserved->set_disk_bw(0);
         }
-        if (!reserved->has_net_bw()) {
-          reserved->set_net_bw(0);
+        if (!reserved->has_net_tx_bw()) {
+          reserved->set_net_tx_bw(0);
+        }
+        if (!reserved->has_net_rx_bw()) {
+          reserved->set_net_rx_bw(0);
         }
         reserved->set_cpu_cores(reserved->cpu_cores() +
                                 td.resource_request().cpu_cores());
@@ -892,8 +923,10 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
                               td.resource_request().ram_cap());
         reserved->set_disk_bw(reserved->disk_bw() +
                               td.resource_request().disk_bw());
-        reserved->set_net_bw(reserved->net_bw() +
-                             td.resource_request().net_bw());
+        reserved->set_net_tx_bw(reserved->net_tx_bw() +
+                                td.resource_request().net_tx_bw());
+        reserved->set_net_rx_bw(reserved->net_rx_bw() +
+                                td.resource_request().net_rx_bw());
       }
     }
     return accumulator;
@@ -916,15 +949,24 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
       rd_ptr->mutable_min_available_resources_below()->set_disk_bw(
           rd_ptr->resource_capacity().disk_bw() -
           (latest_stats.disk_bw() / BYTES_TO_MB));
-      rd_ptr->mutable_available_resources()->set_net_bw(
-          rd_ptr->resource_capacity().net_bw() -
-          (latest_stats.net_bw() / BYTES_TO_MB));
-      rd_ptr->mutable_max_available_resources_below()->set_net_bw(
-          rd_ptr->resource_capacity().net_bw() -
-          (latest_stats.net_bw() / BYTES_TO_MB));
-      rd_ptr->mutable_min_available_resources_below()->set_net_bw(
-          rd_ptr->resource_capacity().net_bw() -
-          (latest_stats.net_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_available_resources()->set_net_tx_bw(
+          rd_ptr->resource_capacity().net_tx_bw() -
+          (latest_stats.net_tx_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_max_available_resources_below()->set_net_tx_bw(
+          rd_ptr->resource_capacity().net_tx_bw() -
+          (latest_stats.net_tx_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_min_available_resources_below()->set_net_tx_bw(
+          rd_ptr->resource_capacity().net_tx_bw() -
+          (latest_stats.net_tx_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_available_resources()->set_net_rx_bw(
+          rd_ptr->resource_capacity().net_rx_bw() -
+          (latest_stats.net_rx_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_max_available_resources_below()->set_net_rx_bw(
+          rd_ptr->resource_capacity().net_rx_bw() -
+          (latest_stats.net_rx_bw() / BYTES_TO_MB));
+      rd_ptr->mutable_min_available_resources_below()->set_net_rx_bw(
+          rd_ptr->resource_capacity().net_rx_bw() -
+          (latest_stats.net_rx_bw() / BYTES_TO_MB));
     }
   }
   if (accumulator->rd_ptr_ && other->rd_ptr_) {
@@ -976,15 +1018,26 @@ CocoCostModel::CompareResourceVectors(
           << "; " << at_least_one_fit << "/"
           << at_least_one_nonfit;
   // Network bandwidth
-  if (rv1.net_bw() <= rv2.net_bw()) {
+  if (rv1.net_tx_bw() <= rv2.net_tx_bw()) {
     at_least_one_fit = true;
   } else {
     at_least_one_nonfit = true;
-    VLOG(2) << "non-fit due to net: " << rv1.net_bw() << "/"
-            << rv2.net_bw();
+    VLOG(2) << "non-fit due to net tx: " << rv1.net_tx_bw() << "/"
+            << rv2.net_tx_bw();
   }
-  VLOG(2) << "Net BW: " << rv1.net_bw()
-          << ", " << rv2.net_bw()
+  VLOG(2) << "Net tx BW: " << rv1.net_tx_bw()
+          << ", " << rv2.net_tx_bw()
+          << "; " << at_least_one_fit << "/"
+          << at_least_one_nonfit;
+  if (rv1.net_rx_bw() <= rv2.net_rx_bw()) {
+    at_least_one_fit = true;
+  } else {
+    at_least_one_nonfit = true;
+    VLOG(2) << "non-fit due to net rx: " << rv1.net_rx_bw() << "/"
+            << rv2.net_rx_bw();
+  }
+  VLOG(2) << "Net rx BW: " << rv1.net_rx_bw()
+          << ", " << rv2.net_rx_bw()
           << "; " << at_least_one_fit << "/"
           << at_least_one_nonfit;
   // We must either fit or not fit in at least one dimension!
@@ -1035,8 +1088,11 @@ uint64_t CocoCostModel::TaskFitCount(const ResourceVector& req,
   if (req.disk_bw() > 0) {
     num_tasks = min(num_tasks, avail.disk_bw() / req.disk_bw());
   }
-  if (req.net_bw() > 0) {
-    num_tasks = min(num_tasks, avail.net_bw() / req.net_bw());
+  if (req.net_tx_bw() > 0) {
+    num_tasks = min(num_tasks, avail.net_tx_bw() / req.net_tx_bw());
+  }
+  if (req.net_rx_bw() > 0) {
+    num_tasks = min(num_tasks, avail.net_rx_bw() / req.net_rx_bw());
   }
   return num_tasks;
 }
@@ -1055,8 +1111,12 @@ CocoCostModel::TaskFitsUnderResourceAggregate(
   unreserved.set_cpu_cores(max(cap.cpu_cores() - reserved.cpu_cores(), 0.0f));
   unreserved.set_ram_cap(max(static_cast<uint64_t>(cap.ram_cap()) -
                              static_cast<uint64_t>(reserved.ram_cap()), 0UL));
-  unreserved.set_net_bw(max(static_cast<uint64_t>(cap.net_bw()) -
-                            static_cast<uint64_t>(reserved.net_bw()), 0UL));
+  unreserved.set_net_tx_bw(
+      max(static_cast<uint64_t>(cap.net_tx_bw()) -
+          static_cast<uint64_t>(reserved.net_tx_bw()), 0UL));
+  unreserved.set_net_rx_bw(
+      max(static_cast<uint64_t>(cap.net_rx_bw()) -
+          static_cast<uint64_t>(reserved.net_rx_bw()), 0UL));
   unreserved.set_disk_bw(max(static_cast<uint64_t>(cap.disk_bw()) -
                              static_cast<uint64_t>(reserved.disk_bw()), 0UL));
   VLOG(2) << "Unreserved resources under " << res.uuid() << ": "

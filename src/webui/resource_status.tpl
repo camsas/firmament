@@ -10,7 +10,8 @@ var ramPercentTimeseries;
 var cpuAggUsrTimeseries;
 var cpuAggSysTimeseries;
 var diskBWTimeseries;
-var netBWTimeseries;
+var netBWTxTimeseries;
+var netBWRxTimeseries;
 
 function getRAM(data) {
   var ts1 = [];
@@ -44,11 +45,14 @@ function getDisk(data) {
 }
 
 function getNet(data) {
-  var ts1 = [];
+  var tstx = [];
+  var tsrx = [];
   for (i = 0; i < data.length; i++) {
-    ts1.push((data[i].net_bw * 8) / 1000.0 / 1000.0);
+    tstx.push((data[i].net_tx_bw * 8) / 1000.0 / 1000.0);
+    tsrx.push((data[i].net_rx_bw * 8) / 1000.0 / 1000.0);
   }
-  netBWTimeseries = ts1;
+  netBWTxTimeseries = tstx;
+  netBWRxTimeseries = tsrx;
 }
 
 function updateGraphs(data) {
@@ -83,7 +87,8 @@ function step() {
   $('#ram-sparkline').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
   $('#cpu-agg-sys').sparkline(cpuAggSysTimeseries, {lineColor: '#ff0000', fillColor: '#ffaaaa'});
   $('#cpu-agg-usr').sparkline(cpuAggUsrTimeseries, {lineColor: '#00ff00', fillColor: '#aaffaa'});
-  $('#net-bw-sparkline').sparkline(netBWTimeseries, {lineColor: '#ff00ff', fillColor: '#ffaaff', tooltipSuffix: ' MBit/sec'});
+  $('#net-bw-tx-sparkline').sparkline(netBWTxTimeseries, {lineColor: '#ff00ff', fillColor: '#ffaaff', tooltipSuffix: ' MBit/sec'});
+  $('#net-bw-rx-sparkline').sparkline(netBWRxTimeseries, {lineColor: '#ff00ff', fillColor: '#ffaaff', tooltipSuffix: ' MBit/sec'});
   $('#disk-bw-sparkline').sparkline(diskBWTimeseries, {lineColor: '#ffff00', fillColor: '#ffffaa', tooltipSuffix: ' MB/sec'});
   // update timers
   $("abbr.timeago").each(function (index) {
@@ -158,8 +163,12 @@ $(function() {
     <td><span id="ram-perc-sparkline">Waiting for data...</span></td>
   </tr>
   <tr>
-    <td>Network bandwidth in use</td>
-    <td><span id="net-bw-sparkline">Waiting for data...</span></td>
+    <td>Network bandwidth TX in use</td>
+    <td><span id="net-bw-tx-sparkline">Waiting for data...</span></td>
+  </tr>
+  <tr>
+    <td>Network bandwidth RX in use</td>
+    <td><span id="net-bw-rx-sparkline">Waiting for data...</span></td>
   </tr>
   <tr>
     <td>Disk I/O bandwidth in use</td>
