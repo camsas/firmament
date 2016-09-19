@@ -46,7 +46,7 @@ function getDisk(data) {
 function getNet(data) {
   var ts1 = [];
   for (i = 0; i < data.length; i++) {
-    ts1.push((data[i].net_bw * 8) / 1000.0 / 1000.0);
+    ts1.push(((data[i].net_tx_bw + data[i].net_rx_bw) * 8) / 1000.0 / 1000.0);
   }
   netBWTimeseries = ts1;
 }

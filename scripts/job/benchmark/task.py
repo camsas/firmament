@@ -37,5 +37,6 @@ class Task:
   def add_resource_request(self, rr):
     self.desc.resource_request.cpu_cores = rr.cpu_cores
     self.desc.resource_request.ram_cap = rr.ram_cap
-    self.desc.resource_request.net_bw = rr.net_bw
+    self.desc.resource_request.net_tx_bw = rr.net_tx_bw
+    self.desc.resource_request.net_rx_bw = rr.net_rx_bw
     self.desc.resource_request.disk_bw = rr.disk_bw

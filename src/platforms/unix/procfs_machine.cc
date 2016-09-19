@@ -61,10 +61,12 @@ const MachinePerfStatisticsSample* ProcFSMachine::CreateStatistics(
   // We divide by FLAGS_heartbeat_interval / 1000000, since the samples are
   // taken every FLAGS_heartbeat_interval, and they are in microseconds; we
   // want the bandwidth to be in bytes/second.
-  stats->set_net_bw(
-      ((net_stats.send - net_stats_.send) + (net_stats.recv - net_stats_.recv))
-      / (static_cast<double>(FLAGS_heartbeat_interval) /
-         static_cast<double>(SECONDS_TO_MICROSECONDS)));
+  stats->set_net_tx_bw((net_stats.send - net_stats_.send) /
+                       (static_cast<double>(FLAGS_heartbeat_interval) /
+                        static_cast<double>(SECONDS_TO_MICROSECONDS)));
+  stats->set_net_rx_bw((net_stats.recv - net_stats_.recv) /
+                       (static_cast<double>(FLAGS_heartbeat_interval) /
+                        static_cast<double>(SECONDS_TO_MICROSECONDS)));
   net_stats_ = net_stats;
   // Disk I/O stats
   DiskStatistics_t disk_stats = GetDiskStats();
@@ -214,7 +216,8 @@ void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
   if (speed == 0)
     LOG(WARNING) << "Failed to determinate network interface speed for "
                  << FLAGS_monitor_netif;
-  cap->set_net_bw(speed / 8);
+  cap->set_net_tx_bw(speed / 8);
+  cap->set_net_rx_bw(speed / 8);
   // Get disk read/write speed
   if (FLAGS_monitor_blockdev_maxbw == -1) {
     // XXX(malte): we use a hack here -- if the disk is not rotational, we

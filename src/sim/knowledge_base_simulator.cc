@@ -88,7 +88,8 @@ void KnowledgeBaseSimulator::AddMachineSample(
   machine_stats.set_disk_bw(0);
   // Network stats
   // The trace doesn't have any information about network utilization.
-  machine_stats.set_net_bw(0);
+  machine_stats.set_net_rx_bw(0);
+  machine_stats.set_net_tx_bw(0);
   KnowledgeBase::AddMachineSample(machine_stats);
 }
 

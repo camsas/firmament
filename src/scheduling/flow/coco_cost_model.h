@@ -30,7 +30,8 @@ typedef struct CostVector {
   uint32_t priority_;
   uint32_t cpu_cores_;
   uint32_t ram_cap_;
-  uint32_t network_bw_;
+  uint32_t network_tx_bw_;
+  uint32_t network_rx_bw_;
   uint32_t disk_bw_;
   uint32_t machine_type_score_;
   uint32_t interference_score_;

@@ -26,7 +26,8 @@ job_desc.root_task.binary = "/usr/bin/hadoop"
 job_desc.root_task.priority = 5
 job_desc.root_task.resource_request.cpu_cores = 0.1
 job_desc.root_task.resource_request.ram_cap = 128
-job_desc.root_task.resource_request.net_bw = 0
+job_desc.root_task.resource_request.net_tx_bw = 0
+job_desc.root_task.resource_request.net_rx_bw = 0
 job_desc.root_task.resource_request.disk_bw = 0
 if len(sys.argv) > 5:
   job_desc.root_task.args.extend(shlex.split(sys.argv[5]))

@@ -13,7 +13,8 @@ message MachinePerfStatisticsSample {
   // The first entry is the cpu usage of cpu0 and so on.
   repeated CpuUsage cpus_usage = 5;
   optional uint64 disk_bw = 6 [default = 0];
-  optional uint64 net_bw = 7 [default = 0];
+  optional uint64 net_tx_bw = 7 [default = 0];
+  optional uint64 net_rx_bw = 8 [default = 0];
 }
 
 message CpuUsage {
