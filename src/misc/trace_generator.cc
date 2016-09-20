@@ -437,8 +437,9 @@ void TraceGenerator::TaskScheduled(TaskID_t task_id,
     CHECK_NOTNULL(job_id_ptr);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
-    fprintf(task_events_, "%ju,,%ju,%ju,%s,%d,,,,,,,\n",
-            timestamp, *job_id_ptr, tr_ptr->task_id_, rd.friendly_name().c_str(),
+    uint64_t machine_id = GetMachineId(rd);
+    fprintf(task_events_, "%ju,,%ju,%ju,%ju,%d,,,,,,,\n",
+            timestamp, *job_id_ptr, tr_ptr->task_id_, machine_id,
             TASK_SCHEDULE_EVENT);
     fflush(task_events_);
     tr_ptr->num_runs_++;
