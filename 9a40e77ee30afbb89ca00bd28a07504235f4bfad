@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_605a43f4",
+        "filename": "LICENSE.dependencies",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-09-20T09:40:50Z",
+      "side": 1,
+      "message": "Flowlessly is under the Apache license:).",
+      "revId": "9a40e77ee30afbb89ca00bd28a07504235f4bfad",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
