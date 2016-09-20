@@ -37,6 +37,7 @@ TraceGenerator::TraceGenerator(TimeInterface* time_manager)
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/task_usage_stat");
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/dfs_events");
     MkdirIfNotPresent(FLAGS_generated_trace_path + "/tasks_to_blocks");
+    MkdirIfNotPresent(FLAGS_generated_trace_path + "/machines_to_racks");
     string path =
       FLAGS_generated_trace_path + "/machine_events/part-00000-of-00001.csv";
     machine_events_ = fopen(path.c_str(), "w");
@@ -64,6 +65,9 @@ TraceGenerator::TraceGenerator(TimeInterface* time_manager)
     path = FLAGS_generated_trace_path + "/tasks_to_blocks/tasks_to_blocks.csv";
     tasks_to_blocks_ = fopen(path.c_str(), "w");
     CHECK(tasks_to_blocks_ != NULL) << "Failed to open: " << path;
+    path = FLAGS_generated_trace_path + "/machines_to_racks/machines_to_racks.csv";
+    machines_to_racks_ = fopen(path.c_str(), "w");
+    CHECK(machines_to_racks_ != NULL) << "Failed to open: " << path;
     if (FLAGS_generate_quincy_cost_model_trace) {
       MkdirIfNotPresent(FLAGS_generated_trace_path + "/quincy_tasks");
       path = FLAGS_generated_trace_path + "/quincy_tasks/quincy_tasks.csv";
@@ -105,6 +109,7 @@ TraceGenerator::~TraceGenerator() {
     fclose(task_usage_stat_);
     fclose(dfs_events_);
     fclose(tasks_to_blocks_);
+    fclose(machines_to_racks_);
     if (FLAGS_generate_quincy_cost_model_trace) {
       fclose(quincy_tasks_);
     }
@@ -134,6 +139,18 @@ void TraceGenerator::AddMachine(const ResourceDescriptor& rd) {
                              machine_id));
     fprintf(machine_events_, "%ju,%ju,%d,,,\n",
             timestamp, machine_id, MACHINE_ADD);
+  }
+}
+
+void TraceGenerator::AddMachineToRack(ResourceID_t machine_res_id,
+                                      uint64_t rack_id) {
+  if (FLAGS_generate_trace) {
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
+    uint64_t* machine_id =
+      FindOrNull(machine_res_id_to_trace_id_, machine_res_id);
+    CHECK_NOTNULL(machine_id);
+    fprintf(machines_to_racks_, "%ju,%d,%ju,%ju\n", timestamp, MACHINE_ADD,
+            *machine_id, rack_id);
   }
 }
 
@@ -205,6 +222,18 @@ void TraceGenerator::RemoveMachine(const ResourceDescriptor& rd) {
     machine_res_id_to_trace_id_.erase(ResourceIDFromString(rd.uuid()));
     fprintf(machine_events_, "%ju,%ju,%d,,,\n",
             timestamp, machine_id, MACHINE_REMOVE);
+  }
+}
+
+void TraceGenerator::RemoveMachineFromRack(ResourceID_t machine_res_id,
+                                           uint64_t rack_id) {
+  if (FLAGS_generate_trace) {
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
+    uint64_t* machine_id =
+      FindOrNull(machine_res_id_to_trace_id_, machine_res_id);
+    CHECK_NOTNULL(machine_id);
+    fprintf(machines_to_racks_, "%ju,%d,%ju,%ju\n", timestamp, MACHINE_REMOVE,
+            *machine_id, rack_id);
   }
 }
 
@@ -408,7 +437,6 @@ void TraceGenerator::TaskScheduled(TaskID_t task_id,
     CHECK_NOTNULL(job_id_ptr);
     TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
     CHECK_NOTNULL(tr_ptr);
-    uint64_t machine_id = GetMachineId(rd);
     fprintf(task_events_, "%ju,,%ju,%ju,%s,%d,,,,,,,\n",
             timestamp, *job_id_ptr, tr_ptr->task_id_, rd.friendly_name().c_str(),
             TASK_SCHEDULE_EVENT);

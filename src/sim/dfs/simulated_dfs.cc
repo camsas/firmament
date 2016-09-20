@@ -9,7 +9,8 @@ namespace sim {
 // Racks contain "between 29 and 31 computers" in Quincy test setup
 DEFINE_uint64(machines_per_rack, 30, "Number of machines per rack");
 
-SimulatedDFS::SimulatedDFS() : unique_rack_id_(0) {
+SimulatedDFS::SimulatedDFS(TraceGenerator* trace_generator)
+  : trace_generator_(trace_generator), unique_rack_id_(0) {
 }
 
 EquivClass_t SimulatedDFS::AddMachine(ResourceID_t machine_res_id) {
@@ -34,6 +35,7 @@ EquivClass_t SimulatedDFS::AddMachine(ResourceID_t machine_res_id) {
     racks_with_spare_links_.erase(rack_ec);
   }
   CHECK(InsertIfNotPresent(&machine_to_rack_ec_, machine_res_id, rack_ec));
+  trace_generator_->AddMachineToRack(machine_res_id, rack_ec);
   return rack_ec;
 }
 
@@ -56,6 +58,7 @@ bool SimulatedDFS::RemoveMachine(ResourceID_t machine_res_id) {
     rack_removed = false;
   }
   machine_to_rack_ec_.erase(machine_res_id);
+  trace_generator_->RemoveMachineFromRack(machine_res_id, rack_ec);
   return rack_removed;
 }
 

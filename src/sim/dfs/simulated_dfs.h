@@ -7,6 +7,7 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "misc/map-util.h"
+#include "misc/trace_generator.h"
 #include "scheduling/data_layer_manager_interface.h"
 
 namespace firmament {
@@ -14,7 +15,7 @@ namespace sim {
 
 class SimulatedDFS {
  public:
-  SimulatedDFS();
+  SimulatedDFS(TraceGenerator* trace_generator);
   virtual ~SimulatedDFS() {};
   /**
    * Add num_blocks for a new task.
@@ -70,6 +71,8 @@ class SimulatedDFS {
     return *rack_ec;
   }
 
+ protected:
+  TraceGenerator* trace_generator_;
  private:
   // Set storing the racks to which we can still connect machines.
   unordered_set<EquivClass_t> racks_with_spare_links_;

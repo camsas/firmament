@@ -82,7 +82,6 @@ class SimulatedUniformDFS : public SimulatedDFS {
   // Mapping storing the block locations for every task.
   unordered_multimap<TaskID_t, DataLocation> task_to_data_locations_;
   uint32_t rand_seed_;
-  TraceGenerator* trace_generator_;
 };
 
 } // namespace sim
