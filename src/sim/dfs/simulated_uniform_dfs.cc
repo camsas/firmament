@@ -24,7 +24,7 @@ namespace sim {
 // justification for block parameters from Chen, et al (2012)
 // blocks: 64 MB, max blocks 160 corresponds to 10 GB
 SimulatedUniformDFS::SimulatedUniformDFS(TraceGenerator* trace_generator)
-  : SimulatedDFS(), rand_seed_(42), trace_generator_(trace_generator) {
+  : SimulatedDFS(trace_generator), rand_seed_(42) {
 }
 
 SimulatedUniformDFS::~SimulatedUniformDFS() {
