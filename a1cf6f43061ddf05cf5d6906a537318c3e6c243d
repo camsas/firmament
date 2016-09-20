@@ -22,6 +22,30 @@
       "revId": "a1cf6f43061ddf05cf5d6906a537318c3e6c243d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_8665601e",
+        "filename": "src/misc/trace_generator.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-09-20T14:16:36Z",
+      "side": 1,
+      "message": "We use EquivClass_t for the ids of the racks. We would have to cast if we use other type here.",
+      "parentUuid": "baa041b7_e6a9cc25",
+      "range": {
+        "startLine": 72,
+        "startChar": 53,
+        "endLine": 72,
+        "endChar": 61
+      },
+      "revId": "a1cf6f43061ddf05cf5d6906a537318c3e6c243d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
