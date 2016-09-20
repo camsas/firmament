@@ -118,7 +118,6 @@ code base:
 | OCTOPUS (6) | Simple load balancing based on task counts.               | Complete |
 | VOID (7)    | Bogus cost model used for KB with simple scheduler.       | Complete |
 | NET-BW (8)  | Network-bandwidth-aware cost model (avoids hotspots).     | Complete |
-| ----------- | --------------------------------------------------------- | -------- |
 
 ## Running on multiple machines
 
