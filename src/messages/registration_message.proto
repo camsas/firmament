@@ -3,14 +3,16 @@
 //
 // RegistrationMessage informs about the existence of a resource.
 
+syntax = "proto3";
+
 package firmament;
 
 import "base/resource_desc.proto";
 import "base/resource_topology_node_desc.proto";
 
 message RegistrationMessage {
-  required string uuid = 1;
-  optional string location = 2;
-  optional ResourceDescriptor res_desc = 3;
-  optional ResourceTopologyNodeDescriptor rtn_desc = 4;
+  string uuid = 1;
+  string location = 2;
+  ResourceDescriptor res_desc = 3;
+  ResourceTopologyNodeDescriptor rtn_desc = 4;
 }

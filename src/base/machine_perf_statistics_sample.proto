@@ -3,29 +3,31 @@
 //
 // A runtime sample of a task's resource demands.
 
+syntax = "proto3";
+
 package firmament;
 
 message MachinePerfStatisticsSample {
-  required string resource_id = 1;
-  required uint64 timestamp = 2;
-  required uint64 total_ram = 3;
-  required uint64 free_ram = 4;
+  string resource_id = 1;
+  uint64 timestamp = 2;
+  uint64 total_ram = 3;
+  uint64 free_ram = 4;
   // The first entry is the cpu usage of cpu0 and so on.
   repeated CpuUsage cpus_usage = 5;
-  optional uint64 disk_bw = 6 [default = 0];
-  optional uint64 net_tx_bw = 7 [default = 0];
-  optional uint64 net_rx_bw = 8 [default = 0];
+  uint64 disk_bw = 6;
+  uint64 net_tx_bw = 7;
+  uint64 net_rx_bw = 8;
 }
 
 message CpuUsage {
-  optional double user = 1;
-  optional double nice = 2;
-  optional double system = 3;
-  optional double idle = 4;
-  optional double iowait = 5;
-  optional double irq = 6;
-  optional double soft_irq = 7;
-  optional double steal = 8;
-  optional double guest = 9;
-  optional double guest_nice = 10;
+  double user = 1;
+  double nice = 2;
+  double system = 3;
+  double idle = 4;
+  double iowait = 5;
+  double irq = 6;
+  double soft_irq = 7;
+  double steal = 8;
+  double guest = 9;
+  double guest_nice = 10;
 }

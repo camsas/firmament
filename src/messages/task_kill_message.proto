@@ -3,6 +3,8 @@
 //
 // Task kill message.
 
+syntax = "proto3";
+
 package firmament;
 
 message TaskKillMessage {
@@ -11,6 +13,6 @@ message TaskKillMessage {
     RESOURCE_EXCEEDED = 1;
     PREEMPTION = 2;
   }
-  required uint64 task_id = 1;
-  optional TaskKillReason reason = 2;
+  uint64 task_id = 1;
+  TaskKillReason reason = 2;
 }

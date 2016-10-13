@@ -3,6 +3,8 @@
 //
 // Represents a scheduling change to be applied.
 
+syntax = "proto3";
+
 package firmament;
 
 message SchedulingDelta {
@@ -13,7 +15,7 @@ message SchedulingDelta {
     NOOP = 3;
   }
 
-  required uint64 task_id = 1;
-  required string resource_id = 2;
-  required ChangeType type = 3 [default = NOOP];
+  uint64 task_id = 1;
+  string resource_id = 2;
+  ChangeType type = 3;
 }

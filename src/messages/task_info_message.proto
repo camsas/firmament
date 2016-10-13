@@ -3,18 +3,20 @@
 //
 // Task information RPC messages.
 
+syntax = "proto3";
+
 package firmament;
 
 import "base/task_desc.proto";
 
 message TaskInfoRequestMessage {
-  required uint64 task_id = 1;
-  required string requesting_resource_id = 2;
-  required string requesting_endpoint = 3;
-  optional uint32 task_pid = 4;
+  uint64 task_id = 1;
+  string requesting_resource_id = 2;
+  string requesting_endpoint = 3;
+  uint32 task_pid = 4;
 }
 
 message TaskInfoResponseMessage {
-  required uint64 task_id = 1;
-  optional TaskDescriptor task_desc = 2;
+  uint64 task_id = 1;
+  TaskDescriptor task_desc = 2;
 }
