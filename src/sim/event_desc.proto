@@ -3,6 +3,8 @@
 //
 // Simulator event descriptor protobuf.
 
+syntax = "proto3";
+
 package firmament;
 
 message EventDescriptor {
@@ -15,12 +17,12 @@ message EventDescriptor {
     MACHINE_HEARTBEAT = 5;
   }
 
-  required EventType type = 1;
-  optional uint64 machine_id = 2;
-  optional uint64 task_index = 3;
-  optional uint64 job_id = 4;
-  optional float requested_cpu_cores = 5;
-  optional uint64 requested_ram = 6; // in MB
-  optional uint32 priority = 7;
-  optional uint32 scheduling_class = 8;
+  EventType type = 1;
+  uint64 machine_id = 2;
+  uint64 task_index = 3;
+  uint64 job_id = 4;
+  float requested_cpu_cores = 5;
+  uint64 requested_ram = 6; // in MB
+  uint32 priority = 7;
+  uint32 scheduling_class = 8;
 }

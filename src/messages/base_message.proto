@@ -5,12 +5,8 @@
 // can be treated as a BaseMessage, and this is the type used for transmission
 // channels. Subordinate messages are implemented as optional members, and
 // need to be registered in the comment below.
-//
-// **Note:** Protobuf message extensions have no formal inheritance relationship
-// to their containers; thus, "subordinate" here is conceptual, rather than in
-// terms of C++ inheritance. In particular, a subordinate message CANNOT be
-// passed around or otherwise treated as a BaseMessage, including referencing it
-// by BaseMessage pointers or references.
+
+syntax = "proto3";
 
 package firmament;
 
@@ -67,41 +63,39 @@ import "messages/io_notification_message.proto";
 import "messages/lookup_message.proto";
 import "base/task_final_report.proto";
 
-
-
 message BaseMessage {
   // TODO(malte): Think about having a type identifier in here, and use a
   // special "batch message" type to indicate presence of multiple extensions.
-  optional TestMessage test = 1;
-  optional HeartbeatMessage heartbeat = 2;
-  optional RegistrationMessage registration = 3;
-  optional TaskHeartbeatMessage task_heartbeat = 4;
-  optional TaskSpawnMessage task_spawn = 5;
-  optional TaskStateMessage task_state = 6;
-  optional StorageRegistrationMessage storage_registration = 7;
-  optional TaskInfoRequestMessage task_info_request = 8;
-  optional TaskInfoResponseMessage task_info_response = 9;
-  optional TaskDelegationRequestMessage task_delegation_request = 10;
-  optional TaskDelegationResponseMessage task_delegation_response = 11;
-  optional ObtainObjectMessage obtain_object = 12;
-  optional StorageDiscoverMessage storage_discover = 13;
-  optional StorageHeartBeatMessage storage_heartbeat = 14;
-  optional ObjectInfoMessage object_info = 15;
-  optional TaskKillMessage task_kill = 16;
-  optional TaskFinalReport task_final_report = 17;
+  TestMessage test = 1;
+  HeartbeatMessage heartbeat = 2;
+  RegistrationMessage registration = 3;
+  TaskHeartbeatMessage task_heartbeat = 4;
+  TaskSpawnMessage task_spawn = 5;
+  TaskStateMessage task_state = 6;
+  StorageRegistrationMessage storage_registration = 7;
+  TaskInfoRequestMessage task_info_request = 8;
+  TaskInfoResponseMessage task_info_response = 9;
+  TaskDelegationRequestMessage task_delegation_request = 10;
+  TaskDelegationResponseMessage task_delegation_response = 11;
+  ObtainObjectMessage obtain_object = 12;
+  StorageDiscoverMessage storage_discover = 13;
+  StorageHeartBeatMessage storage_heartbeat = 14;
+  ObjectInfoMessage object_info = 15;
+  TaskKillMessage task_kill = 16;
+  TaskFinalReport task_final_report = 17;
   // -----------------------------
   // libDIOS messages
-  optional CopyRequest copy_request = 18;
-  optional CopyResponse copy_response = 19;
-  optional CreateRequest create_request = 20;
-  optional CreateResponse create_response = 21;
-  optional DeleteNotification delete_notification = 22;
-  optional BeginReadNotification begin_read_notification = 23;
-  optional EndReadNotification end_read_notification = 24;
-  optional BeginWriteNotification begin_write_notification = 25;
-  optional EndWriteNotification end_write_notification = 26;
-  optional EndWriteFinalNotification end_write_final_notification = 27;
-  optional SelectNotification select_notification = 28;
-  optional LookupRequest lookup_request = 29;
-  optional LookupResponse lookup_response = 30;
+  CopyRequest copy_request = 18;
+  CopyResponse copy_response = 19;
+  CreateRequest create_request = 20;
+  CreateResponse create_response = 21;
+  DeleteNotification delete_notification = 22;
+  BeginReadNotification begin_read_notification = 23;
+  EndReadNotification end_read_notification = 24;
+  BeginWriteNotification begin_write_notification = 25;
+  EndWriteNotification end_write_notification = 26;
+  EndWriteFinalNotification end_write_final_notification = 27;
+  SelectNotification select_notification = 28;
+  LookupRequest lookup_request = 29;
+  LookupResponse lookup_response = 30;
 }

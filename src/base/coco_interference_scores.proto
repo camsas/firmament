@@ -3,11 +3,13 @@
 //
 // CoCo co-location interference score protobuf.
 
+syntax = "proto3";
+
 package firmament;
 
 message CoCoInterferenceScores {
-  required uint32 devil_penalty = 1 [default = 0];
-  required uint32 rabbit_penalty = 2 [default = 0];
-  required uint32 sheep_penalty = 3 [default = 0];
-  required uint32 turtle_penalty = 4 [default = 0];
+  uint32 devil_penalty = 1;
+  uint32 rabbit_penalty = 2;
+  uint32 sheep_penalty = 3;
+  uint32 turtle_penalty = 4;
 }

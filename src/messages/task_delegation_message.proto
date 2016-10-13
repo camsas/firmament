@@ -3,18 +3,20 @@
 //
 // TaskDelegationMessage is used by a coordinator to delegate rsource
 
+syntax = "proto3";
+
 package firmament;
 
 import "base/task_desc.proto";
 
 message TaskDelegationRequestMessage {
-  required TaskDescriptor task_descriptor = 2;
-  optional string target_resource_id = 1;
-  optional string delegating_resource_id = 3;
+  TaskDescriptor task_descriptor = 2;
+  string target_resource_id = 1;
+  string delegating_resource_id = 3;
 }
 
 message TaskDelegationResponseMessage {
-  required uint64 task_id = 1;
-  required bool success = 2;
-  optional string target_resource_id = 3;
+  uint64 task_id = 1;
+  bool success = 2;
+  string target_resource_id = 3;
 }
