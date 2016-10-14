@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_a3e479df",
+        "filename": "cmake/ExternalDependencies.cmake",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-14T21:11:57Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this be libpb3json.a?",
+      "revId": "1347bd25518b9fd6483c5f499204e7cc5a111444",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
