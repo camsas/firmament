@@ -175,7 +175,7 @@ void EventDrivenScheduler::DeregisterResource(
                   this, _1));
   // We've finished using ResourceTopologyNodeDescriptor. We can now deconnect
   // it from its parent.
-  if (rtnd_ptr->has_parent_id()) {
+  if (!rtnd_ptr->parent_id().empty()) {
     RemoveResourceNodeFromParentChildrenList(rtnd_ptr);
   } else {
     LOG(WARNING) << "Deregistered node without a parent";
@@ -365,7 +365,7 @@ void EventDrivenScheduler::HandleTaskFailure(TaskDescriptor* td_ptr) {
   // We only need to run the scheduler if the failed task was not delegated from
   // elsewhere, i.e. if it is managed by the local scheduler. If so, we kick the
   // scheduler if we haven't exceeded the retry limit.
-  if (td_ptr->has_delegated_from()) {
+  if (!td_ptr->delegated_from().empty()) {
     // XXX(malte): Need to forward message about task failure to delegator here!
   }
   trace_generator_->TaskFailed(td_ptr->uid(), rs_ptr->descriptor());
@@ -380,7 +380,7 @@ void EventDrivenScheduler::HandleTaskFinalReport(const TaskFinalReport& report,
   VLOG(2) << "Handling task final report for " << report.task_id();
   // Add the report to the TD if the task is not local (otherwise, the
   // scheduler has already done so)
-  if (td_ptr->has_delegated_to()) {
+  if (!td_ptr->delegated_to().empty()) {
     td_ptr->mutable_final_report()->CopyFrom(report);
   }
 }
@@ -638,7 +638,7 @@ EventDrivenScheduler::ProducingTasksForDataObjectID(
   if (!refs)
     return producing_tasks;
   for (auto& ref : *refs) {
-    if (ref->desc().has_producing_task()) {
+    if (ref->desc().producing_task() != 0) {
       TaskDescriptor* td_ptr =
         FindPtrOrNull(*task_map_, ref->desc().producing_task());
       if (td_ptr) {

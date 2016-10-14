@@ -134,7 +134,7 @@ void TopologyManager::MakeProtobufTree(
   }
   obj_pb->mutable_resource_desc()->set_uuid(to_string(obj_id));
   obj_pb->mutable_resource_desc()->set_type(TranslateHwlocType(node->type));
-  if (!obj_pb->mutable_resource_desc()->has_friendly_name()) {
+  if (obj_pb->mutable_resource_desc()->friendly_name().empty()) {
     obj_pb->mutable_resource_desc()->set_friendly_name(obj_string);
   }
   // If we have a parent_pb, also add this object's ID to the parent object's

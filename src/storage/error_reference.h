@@ -49,12 +49,12 @@ class ErrorReference : public ReferenceInterface {
  protected:
   void ValidateInitDescriptor(const ReferenceDescriptor& desc) {
     CHECK_EQ(desc.type(), ReferenceDescriptor::ERROR);
-    CHECK(desc.has_inline_data());
+    CHECK(!desc.inline_data().empty());
   }
   void ValidateInternalDescriptor() const {
     CHECK_EQ(*id_.name_str(), desc_.id());
     CHECK_EQ(desc_.type(), ReferenceDescriptor::ERROR);
-    CHECK(desc_.has_inline_data());
+    CHECK(!desc_.inline_data().empty());
     CHECK_EQ(desc_.inline_data(), reason_ + ": " + details_);
   }
 
