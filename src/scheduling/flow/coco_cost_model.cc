@@ -153,7 +153,7 @@ int64_t CocoCostModel::ComputeInterferenceScore(ResourceID_t res_id) {
   uint64_t num_total_slots_below = rd.num_slots_below();
   uint64_t num_idle_slots_below = num_total_slots_below;
   double scale_factor = 1;
-  if (rd.has_num_running_tasks_below() && num_total_slots_below > 0) {
+  if (rd.num_running_tasks_below() > 0 && num_total_slots_below > 0) {
     num_idle_slots_below = num_total_slots_below -
       rd.num_running_tasks_below();
     VLOG(2) << num_idle_slots_below << " of " << num_total_slots_below
@@ -327,18 +327,6 @@ void CocoCostModel::GetInterferenceScoreForTask(
     TaskID_t task_id,
     CoCoInterferenceScores* interference_vector) {
   const TaskDescriptor& td = GetTask(task_id);
-  if (!interference_vector->has_turtle_penalty()) {
-    interference_vector->set_turtle_penalty(0);
-  }
-  if (!interference_vector->has_sheep_penalty()) {
-    interference_vector->set_sheep_penalty(0);
-  }
-  if (!interference_vector->has_rabbit_penalty()) {
-    interference_vector->set_rabbit_penalty(0);
-  }
-  if (!interference_vector->has_devil_penalty()) {
-    interference_vector->set_devil_penalty(0);
-  }
 
   if (td.task_type() == TaskDescriptor::TURTLE) {
     // Turtles don't care about devils, or indeed anything else
@@ -720,7 +708,7 @@ ResourceID_t CocoCostModel::MachineResIDForResource(ResourceID_t res_id) {
   CHECK_NOTNULL(rs);
   ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
   while (rtnd->resource_desc().type() != ResourceDescriptor::RESOURCE_MACHINE) {
-    if (!rtnd->has_parent_id()) {
+    if (rtnd->parent_id().empty()) {
       LOG(FATAL) << "Non-machine resource " << rtnd->resource_desc().uuid()
                  << " has no parent!";
     }
@@ -902,21 +890,6 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
         // Get TD for running tasks for reservation
         const TaskDescriptor& td = GetTask(task_id);
         ResourceVector* reserved = rd_ptr->mutable_reserved_resources();
-        if (!reserved->has_cpu_cores()) {
-          reserved->set_cpu_cores(0);
-        }
-        if (!reserved->has_ram_cap()) {
-          reserved->set_ram_cap(0);
-        }
-        if (!reserved->has_disk_bw()) {
-          reserved->set_disk_bw(0);
-        }
-        if (!reserved->has_net_tx_bw()) {
-          reserved->set_net_tx_bw(0);
-        }
-        if (!reserved->has_net_rx_bw()) {
-          reserved->set_net_rx_bw(0);
-        }
         reserved->set_cpu_cores(reserved->cpu_cores() +
                                 td.resource_request().cpu_cores());
         reserved->set_ram_cap(reserved->ram_cap() +

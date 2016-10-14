@@ -78,7 +78,7 @@ Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
     // force them to schedule as soon as possible.
     no_delay_offset = 39 * FLAGS_quincy_core_transfer_cost;
   }
-  if (td.has_priority() && td.priority() == 1000) {
+  if (td.priority() == 1000) {
     // XXX(ionel): HACK! This forces synthetic tasks to be scheduled while
     // replaying a Google trace.
     return 100 + FLAGS_quincy_positive_cost_offset + no_delay_offset;
@@ -86,7 +86,7 @@ Cost_t QuincyCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
   int64_t total_unscheduled_time =
     static_cast<int64_t>(td.total_unscheduled_time());
   // Include current unscheduled wait period if it hasn't yet started.
-  if (!td.has_start_time() || td.start_time() < td.submit_time()) {
+  if (td.start_time() == 0 || td.start_time() < td.submit_time()) {
     total_unscheduled_time +=
       static_cast<int64_t>(time_manager_->GetCurrentTimestamp()) -
       static_cast<int64_t>(td.submit_time());
@@ -403,7 +403,7 @@ uint64_t QuincyCostModel::ComputeClusterDataStatistics(
        ++dependency_it) {
     auto& dependency = *dependency_it;
     string location = dependency->location();
-    if (!dependency->has_size()) {
+    if (dependency->size() == 0) {
       dependency->set_size(data_layer_manager_->GetFileSize(location));
     }
     input_size += dependency->size();
@@ -447,7 +447,7 @@ uint64_t QuincyCostModel::ComputeDataStatsForMachine(
        ++dependency_it) {
     auto& dependency = *dependency_it;
     string location = dependency->location();
-    if (!dependency->has_size()) {
+    if (dependency->size() == 0) {
       dependency->set_size(data_layer_manager_->GetFileSize(location));
     }
     input_size += dependency->size();
@@ -649,7 +649,7 @@ Cost_t QuincyCostModel::UpdateTaskCostForRack(TaskDescriptor* td_ptr,
        ++dependency_it) {
     auto& dependency = *dependency_it;
     string location = dependency->location();
-    if (!dependency->has_size()) {
+    if (dependency->size() == 0) {
       dependency->set_size(data_layer_manager_->GetFileSize(location));
     }
     input_size += dependency->size();
