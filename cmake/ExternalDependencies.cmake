@@ -161,7 +161,7 @@ set(protobuf3_SOURCE_DIR ${SOURCE_DIR})
 set(protobuf3_BINARY_DIR ${BINARY_DIR})
 set(protobuf3_INCLUDE_DIR ${protobuf3_SOURCE_DIR}/src)
 include_directories(${protobuf3_INCLUDE_DIR})
-set(protobuf3_LIBRARY ${protobuf3_SOURCE_DIR}/libpb2json.a)
+set(protobuf3_LIBRARY ${protobuf3_BINARY_DIR}/libprotobuf.a)
 
 
 ###############################################################################
