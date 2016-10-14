@@ -38,10 +38,8 @@ class ConcreteReference : public ReferenceInterface {
     : ReferenceInterface(fut.id()) {
       desc_.CopyFrom(fut.desc());
       desc_.set_type(ReferenceDescriptor::CONCRETE);
-      if (desc_.has_location())
-        location_ = desc_.location();
-      if (desc_.has_size())
-        size_ = desc_.size();
+      location_ = desc_.location();
+      size_ = desc_.size();
   }
   explicit ConcreteReference(const ReferenceDescriptor& desc)
   : ReferenceInterface(desc) {
