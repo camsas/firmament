@@ -159,7 +159,7 @@ void TraceGenerator::AddTaskInputBlock(const TaskDescriptor& td,
   if (FLAGS_generate_trace) {
     uint64_t trace_job_id;
     uint64_t trace_task_id;
-    if (td.has_trace_job_id()) {
+    if (td.trace_job_id() != 0) {
       trace_job_id = td.trace_job_id();
       trace_task_id = td.trace_task_id();
     } else {
@@ -180,7 +180,7 @@ void TraceGenerator::AddTaskQuincy(
     uint64_t timestamp = time_manager_->GetCurrentTimestamp();
     uint64_t trace_job_id;
     uint64_t trace_task_id;
-    if (td.has_trace_job_id()) {
+    if (td.trace_job_id() != 0) {
       trace_job_id = td.trace_job_id();
       trace_task_id = td.trace_task_id();
     } else {
@@ -195,7 +195,7 @@ void TraceGenerator::AddTaskQuincy(
 }
 
 uint64_t TraceGenerator::GetMachineId(const ResourceDescriptor& rd) {
-  if (rd.has_trace_machine_id()) {
+  if (rd.trace_machine_id() != 0) {
     return rd.trace_machine_id();
   } else {
     return HashString(rd.uuid());
@@ -275,7 +275,7 @@ void TraceGenerator::TaskSubmitted(TaskDescriptor* td_ptr) {
     string simulator_job_prefix = "firmament_simulation_job_";
     TaskID_t task_id = td_ptr->uid();
     uint64_t trace_task_id;
-    if (td_ptr->has_trace_job_id()) {
+    if (td_ptr->trace_job_id() != 0) {
       job_id = td_ptr->trace_job_id();
       trace_task_id = td_ptr->trace_task_id();
     } else {
