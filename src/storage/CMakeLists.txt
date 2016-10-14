@@ -35,8 +35,8 @@ if (BUILD_TESTS)
       $<TARGET_OBJECTS:storage>)
     target_link_libraries(${TEST_NAME}
       ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
-      ${libhdfs3_LIBRARY} ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags
-      hwloc protobuf)
+      ${libhdfs3_LIBRARY} ${protobuf3_LIBRARY} ${Firmament_SHARED_LIBRARIES}
+      ctemplate glog gflags hwloc)
     add_test(${TEST_NAME} ${TEST_NAME})
   endforeach(T)
 endif (BUILD_TESTS)

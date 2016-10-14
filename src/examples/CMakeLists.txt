@@ -21,8 +21,8 @@ add_dependencies(examples/hello_world/hello_world gtest spooky-hash
   thread-safe-stl-containers)
 
 target_link_libraries(examples/hello_world/hello_world
-  LINK_PUBLIC ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} glog gflags
-  protobuf)
+  LINK_PUBLIC ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES}
+  ${protobuf3_LIBRARY} glog gflags)
 
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/examples/timespin)
 add_executable(examples/timespin/timespin ${EXAMPLES_TIMESPIN_SRC}
@@ -37,5 +37,5 @@ add_dependencies(examples/timespin/timespin gtest spooky-hash
   thread-safe-stl-containers)
 
 target_link_libraries(examples/timespin/timespin
-  LINK_PUBLIC ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} glog gflags
-  protobuf)
+  LINK_PUBLIC ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES}
+  ${protobuf3_LIBRARY} glog gflags)
