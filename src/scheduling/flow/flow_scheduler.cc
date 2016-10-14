@@ -194,7 +194,7 @@ void FlowScheduler::DeregisterResource(
       boost::bind(&FlowScheduler::EvictTasksFromResource, this, _1));
   flow_graph_manager_->RemoveResourceTopology(
       rtnd_ptr->resource_desc(), &pus_removed_during_solver_run_);
-  if (!rtnd_ptr->has_parent_id()) {
+  if (rtnd_ptr->parent_id().empty()) {
     resource_roots_.erase(rtnd_ptr);
   }
   EventDrivenScheduler::DeregisterResource(rtnd_ptr);
@@ -228,7 +228,7 @@ void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   // We don't need to do any flow graph stuff for delegated tasks as
   // they are not currently represented in the flow graph.
   // Otherwise, we need to remove nodes, etc.
-  if (!td_ptr->has_delegated_from()) {
+  if (td_ptr->delegated_from().empty()) {
     uint64_t task_node_id = flow_graph_manager_->TaskCompleted(td_ptr->uid());
     tasks_completed_during_solver_run_.insert(task_node_id);
   }
@@ -411,7 +411,7 @@ void FlowScheduler::RegisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr,
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   EventDrivenScheduler::RegisterResource(rtnd_ptr, local, simulated);
   flow_graph_manager_->AddResourceTopology(rtnd_ptr);
-  if (!rtnd_ptr->has_parent_id()) {
+  if (rtnd_ptr->parent_id().empty()) {
     resource_roots_.insert(rtnd_ptr);
   }
 }

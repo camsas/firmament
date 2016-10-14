@@ -632,7 +632,7 @@ void WhareMapCostModel::RemoveTask(TaskID_t task_id) {
     EquivClass_t tec = equiv_classes->at(0);
     // Get the machine EC that this task was previously running on
     const TaskDescriptor& td = GetTask(task_id);
-    CHECK(td.has_scheduled_to_resource());
+    CHECK(!td.scheduled_to_resource().empty());
     ResourceID_t res_id = ResourceIDFromString(td.scheduled_to_resource());
     ResourceID_t machine_res_id =
       MachineResIDForResource(resource_map_, res_id);
@@ -696,20 +696,16 @@ FlowGraphNode* WhareMapCostModel::GatherStats(FlowGraphNode* accumulator,
       RepeatedField<uint64_t> running_tasks;
       for (auto& task_id : running_tasks) {
         TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
-        if (td_ptr->has_task_type()) {
-          if (td_ptr->task_type() == TaskDescriptor::DEVIL) {
-            wms_ptr->set_num_devils(wms_ptr->num_devils() + 1);
-          } else if (td_ptr->task_type() == TaskDescriptor::RABBIT) {
-            wms_ptr->set_num_rabbits(wms_ptr->num_rabbits() + 1);
-          } else if (td_ptr->task_type() == TaskDescriptor::SHEEP) {
-            wms_ptr->set_num_sheep(wms_ptr->num_sheep() + 1);
-          } else if (td_ptr->task_type() == TaskDescriptor::TURTLE) {
-            wms_ptr->set_num_turtles(wms_ptr->num_turtles() + 1);
-          } else {
-            LOG(FATAL) << "Unexpected task type";
-          }
+        if (td_ptr->task_type() == TaskDescriptor::DEVIL) {
+          wms_ptr->set_num_devils(wms_ptr->num_devils() + 1);
+        } else if (td_ptr->task_type() == TaskDescriptor::RABBIT) {
+          wms_ptr->set_num_rabbits(wms_ptr->num_rabbits() + 1);
+        } else if (td_ptr->task_type() == TaskDescriptor::SHEEP) {
+          wms_ptr->set_num_sheep(wms_ptr->num_sheep() + 1);
+        } else if (td_ptr->task_type() == TaskDescriptor::TURTLE) {
+          wms_ptr->set_num_turtles(wms_ptr->num_turtles() + 1);
         } else {
-          LOG(WARNING) << "Task " << td_ptr->uid() << " does not have a type";
+          LOG(FATAL) << "Unexpected task type";
         }
       }
     }

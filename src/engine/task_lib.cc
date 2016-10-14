@@ -186,7 +186,7 @@ void TaskLib::Spawn(const ReferenceInterface& code,
     out_rd->set_producing_task(new_task->uid());
   }
   // Job ID field must be set on task spawn
-  CHECK(task_descriptor_.has_job_id());
+  CHECK(!task_descriptor_.job_id().empty());
   new_task->set_job_id(task_descriptor_.job_id());
   // Copy the new task descriptor into the message
   msg.mutable_task_spawn()->mutable_spawned_task_desc()->CopyFrom(*new_task);

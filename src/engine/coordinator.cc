@@ -658,7 +658,7 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
   spawnee->CopyFrom(msg.spawned_task_desc());
   InsertIfNotPresent(task_table_.get(), spawnee->uid(), spawnee);
   // Extract job ID (we expect it to be set)
-  CHECK(msg.spawned_task_desc().has_job_id());
+  CHECK(!msg.spawned_task_desc().job_id().empty());
   JobID_t job_id = JobIDFromString(msg.spawned_task_desc().job_id());
   // Update references with producing task, if necessary
   // TODO(malte): implement this properly; below is a hack that delegates
@@ -721,7 +721,7 @@ void Coordinator::HandleTaskStateChange(
       VLOG(1) << "Task " << msg.id() << "'s state changed to "
               << static_cast<uint64_t> (msg.new_state());
       // Check if this is a delegated task, and forward the message if so
-      if (td_ptr->has_delegated_from()) {
+      if (!td_ptr->delegated_from().empty()) {
         BaseMessage bm;
         bm.mutable_task_state()->CopyFrom(msg);
         m_adapter_->SendMessageToEndpoint(td_ptr->delegated_from(), bm);
@@ -729,7 +729,7 @@ void Coordinator::HandleTaskStateChange(
       break;
   }
   // Do not run scheduler if delegated
-  if (td_ptr->has_delegated_from()) {
+  if (!td_ptr->delegated_from().empty()) {
     return;
   }
 
@@ -749,7 +749,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
   // Report will be filled in if the task is local (currently)
   scheduler_->HandleTaskCompletion(td_ptr, &report);
   // First check if this is a delegated task, and forward the message if so
-  if (td_ptr->has_delegated_from()) {
+  if (!td_ptr->delegated_from().empty()) {
     BaseMessage bm;
     bm.mutable_task_state()->CopyFrom(msg);
 
@@ -772,7 +772,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
       scheduler_->HandleJobCompletion(JobIDFromString(jd->uuid()));
     }
   }
-  if (report.has_task_id()) {
+  if (report.task_id() != 0) {
     // Process the final report locally
     scheduler_->HandleTaskFinalReport(report, td_ptr);
   }
@@ -838,9 +838,8 @@ bool Coordinator::KillRunningTask(TaskID_t task_id,
   if (!td_ptr) {
     LOG(ERROR) << "Tried to kill unknown task " << task_id;
     return false;
-  } else if (!td_ptr->has_delegated_to() &&
-             (!td_ptr->has_last_heartbeat_location() ||
-              td_ptr->last_heartbeat_location().empty())) {
+  } else if (td_ptr->delegated_to().empty() &&
+             td_ptr->last_heartbeat_location().empty()) {
     LOG(ERROR) << "Tried to kill task " << task_id << " at unknown location";
     return false;
   }
@@ -858,7 +857,7 @@ bool Coordinator::KillRunningTask(TaskID_t task_id,
   SUBMSG_WRITE(bm, task_kill, task_id, task_id);
   SUBMSG_WRITE(bm, task_kill, reason, reason);
   // Send the message -- either directly or via delegation path
-  if (td_ptr->has_delegated_to()) {
+  if (!td_ptr->delegated_to().empty()) {
     LOG(INFO) << "Forwarding KILL message to task " << task_id << " via "
               << "coordinator at " << td_ptr->delegated_to();
     m_adapter_->SendMessageToEndpoint(td_ptr->delegated_to(), bm);
@@ -963,7 +962,7 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   root_task->set_uid(GenerateRootTaskID(*new_jd));
   // Compute the absolute deadline for the root task if it has a deadline
   // set.
-  if (root_task->has_relative_deadline()) {
+  if (root_task->relative_deadline() != 0) {
     root_task->set_absolute_deadline(
         time_manager_->GetCurrentTimestamp() + root_task->relative_deadline() *
         1000000);

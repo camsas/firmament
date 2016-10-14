@@ -249,7 +249,7 @@ ResourceID_t MachineResIDForResource(shared_ptr<ResourceMap_t> resource_map,
   CHECK_NOTNULL(rs);
   ResourceTopologyNodeDescriptor* rtnd = rs->mutable_topology_node();
   while (rtnd->resource_desc().type() != ResourceDescriptor::RESOURCE_MACHINE) {
-    CHECK(rtnd->has_parent_id())
+    CHECK(!rtnd->parent_id().empty())
       << "Non-machine resource " << rtnd->resource_desc().uuid()
       << " has no parent!";
     rs = FindPtrOrNull(*resource_map, ResourceIDFromString(rtnd->parent_id()));
@@ -387,7 +387,7 @@ int32_t ExecCommandSync(const string& cmdline, vector<string> args,
 
 uint64_t UpdateTaskTotalRunTime(const TaskDescriptor& td) {
   CHECK_GE(td.finish_time(), td.start_time());
-  if (td.has_total_run_time()) {
+  if (td.total_run_time() > 0) {
     return td.total_run_time() + td.finish_time() - td.start_time();
   } else {
     return td.finish_time() - td.start_time();
@@ -395,10 +395,7 @@ uint64_t UpdateTaskTotalRunTime(const TaskDescriptor& td) {
 }
 
 uint64_t UpdateTaskTotalUnscheduledTime(const TaskDescriptor& td) {
-  uint64_t total_unscheduled_time = 0;
-  if (td.has_total_unscheduled_time()) {
-    total_unscheduled_time = td.total_unscheduled_time();
-  }
+  uint64_t total_unscheduled_time = td.total_unscheduled_time();
   CHECK_GE(td.start_time(), td.submit_time());
   total_unscheduled_time += td.start_time() - td.submit_time();
   return total_unscheduled_time;
