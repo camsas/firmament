@@ -16,6 +16,24 @@
       "revId": "1347bd25518b9fd6483c5f499204e7cc5a111444",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_23d98922",
+        "filename": "cmake/ExternalDependencies.cmake",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-14T21:14:08Z",
+      "side": 1,
+      "message": "Ok, I\u0027ve noticed you\u0027ve addressed it in another diff.",
+      "parentUuid": "baa041b7_a3e479df",
+      "revId": "1347bd25518b9fd6483c5f499204e7cc5a111444",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
