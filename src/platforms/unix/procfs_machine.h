@@ -60,9 +60,15 @@ class ProcFSMachine {
   MemoryStatistics_t GetMemoryStats();
   NetworkStatistics_t GetNetworkStats();
 
-  inline void readunsigned(FILE* input, uint64_t *x) {
-    CHECK_EQ(fscanf(input, "%ju ", x), 1);
-  }
+  inline int readunsigned(FILE* input, uint64_t *x) {
+    errno = 0;             //reset errno
+    if (fscanf(input, "%ju ", x) < 0) {
+      int new_errno = errno;
+      errno = 0;           //reset errno before returning
+      return new_errno;
+    }
+    return 0;
+}
 
   vector<CPUStatistics_t> cpu_stats_;
   DiskStatistics_t disk_stats_;
