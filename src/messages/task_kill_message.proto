@@ -5,8 +5,6 @@
 
 package firmament;
 
-import "base/task_desc.proto";
-
 message TaskKillMessage {
   enum TaskKillReason {
     USER_ABORT = 0;
