@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_09ab3f89",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-18T11:34:18Z",
+      "side": 1,
+      "message": "What\u0027s the unit? Mbps? (Indicate in description.)\n\nIf this flag only supposed to be used for a default fallback value? If so, it should have \"default\" in its name. If not (e.g., if it\u0027s used as an override) its default should be -1, so that auto-detection can be used.\n\nEDIT: Aha, I see from later code that it\u0027s a default. I would suggest renaming it to \"monitor_netif_default_speed\".",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_09821fff",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-18T11:34:18Z",
+      "side": 1,
+      "message": "This declaration can be moved to the block starting at line 217, it doesn\u0027t need to be valid in the whole method.",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_89974f44",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-18T11:34:18Z",
+      "side": 1,
+      "message": "No spaces around condition, but a space in between the \") {\" is are required to match Google C++ style.",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_498ca734",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-18T11:34:18Z",
+      "side": 1,
+      "message": "Please put a username in brackets after TODO, e.g. \"TODO(malte)\", so that the TODO can be tracked back to whoever put it in (Google C++ style)",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_e9cffb7c",
+        "filename": "src/platforms/unix/procfs_machine.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-18T11:34:18Z",
+      "side": 1,
+      "message": "IIRC, `fscanf` sets `errno` to its error code. If that\u0027s correct, we should return `errno` here.",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_09b45fee",
+        "filename": "src/platforms/unix/procfs_machine.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-18T11:34:18Z",
+      "side": 1,
+      "message": "Please add spaces around \"else\" (Google C++ style)",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
