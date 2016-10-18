@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_e19caf6b",
+        "filename": "src/messages/test_message.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-18T21:36:00Z",
+      "side": 0,
+      "message": "Does this have any effect on the unit tests? Are they still passing?",
+      "revId": "6d9d11617345171869b5288747bdc71d1736aaba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

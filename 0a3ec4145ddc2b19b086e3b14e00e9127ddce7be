@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_c1976b43",
+        "filename": "src/scheduling/scheduling_delta.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-18T21:36:00Z",
+      "side": 1,
+      "message": "Can you please reorder the entries in ChangeType? Set NOOP \u003d 0 so that type defaults to NOOP as it previously used to.",
+      "revId": "0a3ec4145ddc2b19b086e3b14e00e9127ddce7be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
