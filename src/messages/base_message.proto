@@ -32,22 +32,6 @@ package firmament;
 // 014  - ObjectInfoMessage
 // 015  - TaskKillMessage
 // 016  - TaskFinalReport   XXX(malte): inconsistent name!
-// -----------------------------
-// libDIOS messages
-// 017  - CopyRequest
-// 018  - CopyResponse
-// 019  - CreateRequest
-// 020  - CreateResponse
-// 021  - DeleteNotification
-// 022  - BeginReadNotification
-// 023  - EndReadNotification
-// 024  - BeginWriteNotification
-// 025  - EndWriteNotification
-// 026  - EndWriteFinalNotification
-// 027  - SelectNotification
-// 028  - LookupRequest
-// 029  - LookupResponse
-// ...
 
 import "messages/test_message.proto";
 import "messages/heartbeat_message.proto";
@@ -60,14 +44,7 @@ import "messages/storage_message.proto";
 import "messages/task_info_message.proto";
 import "messages/task_delegation_message.proto";
 import "messages/task_kill_message.proto";
-import "messages/copy_message.proto";
-import "messages/create_message.proto";
-import "messages/delete_message.proto";
-import "messages/io_notification_message.proto";
-import "messages/lookup_message.proto";
 import "base/task_final_report.proto";
-
-
 
 message BaseMessage {
   // TODO(malte): Think about having a type identifier in here, and use a
@@ -89,19 +66,4 @@ message BaseMessage {
   optional ObjectInfoMessage object_info = 15;
   optional TaskKillMessage task_kill = 16;
   optional TaskFinalReport task_final_report = 17;
-  // -----------------------------
-  // libDIOS messages
-  optional CopyRequest copy_request = 18;
-  optional CopyResponse copy_response = 19;
-  optional CreateRequest create_request = 20;
-  optional CreateResponse create_response = 21;
-  optional DeleteNotification delete_notification = 22;
-  optional BeginReadNotification begin_read_notification = 23;
-  optional EndReadNotification end_read_notification = 24;
-  optional BeginWriteNotification begin_write_notification = 25;
-  optional EndWriteNotification end_write_notification = 26;
-  optional EndWriteFinalNotification end_write_final_notification = 27;
-  optional SelectNotification select_notification = 28;
-  optional LookupRequest lookup_request = 29;
-  optional LookupResponse lookup_response = 30;
 }

@@ -374,23 +374,6 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
     scheduler_->HandleTaskFinalReport(msg, td_ptr);
     handled_extensions++;
   }
-  // DIOS syscall: create message
-  if (bm->has_create_request()) {
-    const CreateRequest& msg = bm->create_request();
-    HandleCreateRequest(msg, remote_endpoint);
-    handled_extensions++;
-  }
-  // DIOS syscall: lookup message
-  if (bm->has_lookup_request()) {
-    const LookupRequest& msg = bm->lookup_request();
-    HandleLookupRequest(msg, remote_endpoint);
-    handled_extensions++;
-  }
-  // DIOS I/O notification
-  if (bm->has_end_write_notification()) {
-    HandleIONotification(*bm, remote_endpoint);
-    handled_extensions++;
-  }
   // Check that we have handled at least one sub-message
   if (handled_extensions == 0)
     LOG(ERROR) << "Ignored incoming message, no known extension present, "
@@ -415,23 +398,6 @@ void Coordinator::HandleIncomingReceiveError(
   }
 }
 
-
-
-void Coordinator::HandleCreateRequest(const CreateRequest& msg,
-                                      const string& remote_endpoint) {
-  // Try to insert the reference descriptor conveyed into the object table.
-  ReferenceDescriptor* new_rd = new ReferenceDescriptor;
-  new_rd->CopyFrom(msg.reference());
-  new_rd->set_producing_task(msg.task_id());
-  bool succ = !object_store_->AddReference(
-      DataObjectIDFromProtobuf(msg.reference().id()), new_rd);
-  // Manufacture and send a response
-  BaseMessage resp_msg;
-  SUBMSG_WRITE(resp_msg, create_response, name, msg.reference().id());
-  SUBMSG_WRITE(resp_msg, create_response, success, succ);
-  m_adapter_->SendMessageToEndpoint(remote_endpoint, resp_msg);
-}
-
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
   boost::uuids::string_generator gen;
   boost::uuids::uuid uuid = gen(msg.uuid());
@@ -449,69 +415,6 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       // Record resource statistics sample
       scheduler_->knowledge_base()->AddMachineSample(msg.load());
   }
-}
-
-void Coordinator::HandleIONotification(const BaseMessage& bm,
-                                       const string& remote_uri) {
-  if (bm.has_end_write_notification()) {
-    const EndWriteNotification msg = bm.end_write_notification();
-    DataObjectID_t id = DataObjectIDFromProtobuf(msg.reference().id());
-    unordered_set<ReferenceInterface*>* refs = object_store_->GetReferences(id);
-    vector<ReferenceInterface*> remove;
-    vector<ConcreteReference*> add;
-    for (unordered_set<ReferenceInterface*>::iterator it = refs->begin();
-         it != refs->end();
-         ++it) {
-      if ((*it)->desc().type() == ReferenceDescriptor::FUTURE &&
-          (*it)->desc().producing_task() == msg.reference().producing_task()) {
-        // Upgrade to a concrete reference
-        VLOG(2) << "Found future reference for " << id
-                << ", upgrading to concrete!";
-        remove.push_back(*it);
-        // XXX(malte): skanky, skanky...
-        add.push_back(new ConcreteReference(
-            *dynamic_cast<FutureReference*>(*it)));  // NOLINT
-      }
-    }
-    VLOG(1) << "Found " << remove.size() << " matching references for "
-            << id << ", and converted them into concrete refs.";
-    TaskDescriptor** td_ptr = FindOrNull(*task_table_,
-                                         msg.reference().producing_task());
-    CHECK_NOTNULL(td_ptr);
-    for (uint64_t i = 0; i < remove.size(); ++i) {
-      refs->erase(remove[i]);
-      refs->insert(add[i]);
-      scheduler_->HandleReferenceStateChange(*remove[i], *add[i], *td_ptr);
-      delete remove[i];
-    }
-    // Call into scheduler, as this change may have made things runnable
-    JobDescriptor* jd = DescriptorForJob((*td_ptr)->job_id());
-    scheduler::SchedulerStats scheduler_stats;
-    scheduler_->ScheduleJob(jd, &scheduler_stats);
-  }
-}
-
-void Coordinator::HandleLookupRequest(const LookupRequest& msg,
-                                      const string& remote_endpoint) {
-  // Check if the name requested exists in the object table, and return all
-  // reference descriptors for it if so.
-  // XXX(malte): This currently returns a single reference; we should return
-  // multiple if they exist.
-  unordered_set<ReferenceInterface*>* refs = object_store_->GetReferences(
-      DataObjectIDFromProtobuf(msg.name()));
-  // Manufacture and send a response
-  BaseMessage resp_msg;
-  if (refs && refs->size() > 0) {
-    for (unordered_set<ReferenceInterface*>::const_iterator
-           ref_iter = refs->begin();
-         ref_iter != refs->end();
-         ++ref_iter) {
-      ReferenceDescriptor* resp_rd =
-          resp_msg.mutable_lookup_response()->add_references();
-      resp_rd->CopyFrom((*ref_iter)->desc());
-    }
-  }
-  m_adapter_->SendMessageToEndpoint(remote_endpoint, resp_msg);
 }
 
 void Coordinator::HandleRegistrationRequest(

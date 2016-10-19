@@ -237,16 +237,10 @@ class Coordinator : public Node,
   bool RegisterWithCoordinator(StreamSocketsChannel<BaseMessage>* chan);
   void DetectLocalResources();
   bool HasJobCompleted(const JobDescriptor& jd);
-  void HandleCreateRequest(const CreateRequest& msg,
-                           const string& remote_endpoint);
   void HandleIncomingMessage(BaseMessage *bm, const string& remote_endpoint);
   void HandleIncomingReceiveError(const boost::system::error_code& error,
                                   const string& remote_endpoint);
   void HandleHeartbeat(const HeartbeatMessage& msg);
-  void HandleLookupRequest(const LookupRequest& msg,
-                           const string& remote_endpoint);
-  void HandleIONotification(const BaseMessage& msg,
-                            const string& remote_uri);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
   void HandleTaskCompletion(const TaskStateMessage& msg, TaskDescriptor* td);
   void HandleTaskDelegationRequest(const TaskDelegationRequestMessage& msg,
