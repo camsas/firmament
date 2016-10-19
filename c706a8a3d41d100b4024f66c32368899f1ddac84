@@ -1,0 +1,305 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_50555fbf",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "Shouldn\u0027t these be changed as well?",
+      "range": {
+        "startLine": 310,
+        "startChar": 0,
+        "endLine": 340,
+        "endChar": 3
+      },
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_7062a3ae",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_905f67e4",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 348,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b04dcb3c",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_d0528fdd",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_f047d31a",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_104d973d",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_3041bb0a",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 384,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_503e7f8b",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_703bc39c",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_903887a1",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b064abb2",
+        "filename": "src/engine/coordinator_http_ui.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1035,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "We don\u0027t need the ifs anymore.",
+      "range": {
+        "startLine": 1016,
+        "startChar": 0,
+        "endLine": 1035,
+        "endChar": 5
+      },
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_500c3feb",
+        "filename": "src/engine/task_lib.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_300f7be1",
+        "filename": "src/engine/task_lib.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto.",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_d0004fad",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "I think this introduces a logic bug because num_running_tasks_below can be 0.",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b0fb8bbd",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 624,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "ditto.",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_50daff4b",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 699,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-19T18:52:47Z",
+      "side": 1,
+      "message": "I guess this means that we now by default categorise tasks without a type as sheep.",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
