@@ -16,6 +16,24 @@
       "revId": "6d9d11617345171869b5288747bdc71d1736aaba",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_eb36c8e5",
+        "filename": "src/messages/test_message.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-19T22:25:33Z",
+      "side": 0,
+      "message": "Yep, they\u0027re fine: they all set the value explicitly (originally to something other than 42 to be able to detect the case when it remains at the default). None of them expect to see 42, so zero as a default is fine.",
+      "parentUuid": "baa041b7_e19caf6b",
+      "revId": "6d9d11617345171869b5288747bdc71d1736aaba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
