@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_e7e718a9",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_50555fbf",
+      "range": {
+        "startLine": 310,
+        "startChar": 0,
+        "endLine": 340,
+        "endChar": 3
+      },
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_7062a3ae",
         "filename": "src/engine/coordinator.cc",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2016-10-19T18:52:47Z",
       "side": 1,
       "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_c703f440",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_7062a3ae",
       "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -76,6 +118,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_a7feb035",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 354,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_b04dcb3c",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_d0528fdd",
         "filename": "src/engine/coordinator.cc",
         "patchSetId": 1
@@ -110,6 +170,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_87f96c50",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_f047d31a",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_104d973d",
         "filename": "src/engine/coordinator.cc",
         "patchSetId": 1
@@ -121,6 +199,24 @@
       "writtenOn": "2016-10-19T18:52:47Z",
       "side": 1,
       "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_67f42854",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_104d973d",
       "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -144,6 +240,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_4796c4f0",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 384,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_3041bb0a",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_503e7f8b",
         "filename": "src/engine/coordinator.cc",
         "patchSetId": 1
@@ -155,6 +269,24 @@
       "writtenOn": "2016-10-19T18:52:47Z",
       "side": 1,
       "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_2799801f",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 390,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_503e7f8b",
       "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -178,6 +310,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_079c3c0c",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_703bc39c",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_903887a1",
         "filename": "src/engine/coordinator.cc",
         "patchSetId": 1
@@ -189,6 +339,24 @@
       "writtenOn": "2016-10-19T18:52:47Z",
       "side": 1,
       "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_e79ef804",
+        "filename": "src/engine/coordinator.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_903887a1",
       "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -218,6 +386,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_678b08c1",
+        "filename": "src/engine/coordinator_http_ui.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1035,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_b064abb2",
+      "range": {
+        "startLine": 1016,
+        "startChar": 0,
+        "endLine": 1035,
+        "endChar": 5
+      },
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_500c3feb",
         "filename": "src/engine/task_lib.cc",
         "patchSetId": 1
@@ -229,6 +421,24 @@
       "writtenOn": "2016-10-19T18:52:47Z",
       "side": 1,
       "message": "ditto",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_27c060df",
+        "filename": "src/engine/task_lib.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_500c3feb",
       "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -252,6 +462,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_07b31c9b",
+        "filename": "src/engine/task_lib.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_300f7be1",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_d0004fad",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -263,6 +491,24 @@
       "writtenOn": "2016-10-19T18:52:47Z",
       "side": 1,
       "message": "I think this introduces a logic bug because num_running_tasks_below can be 0.",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_a7ac7035",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Removed the first part of the conditional, since num_running_tasks_below is a uint64, so it can\u0027t be negative and \"\u003e\u003d 0\" becomes a tautology.",
+      "parentUuid": "baa041b7_d0004fad",
       "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -286,6 +532,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_87a72c4f",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 624,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "Message field, so still fine.",
+      "parentUuid": "baa041b7_b0fb8bbd",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_50daff4b",
         "filename": "src/scheduling/flow/wharemap_cost_model.cc",
         "patchSetId": 1
@@ -297,6 +561,24 @@
       "writtenOn": "2016-10-19T18:52:47Z",
       "side": 1,
       "message": "I guess this means that we now by default categorise tasks without a type as sheep.",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_47648420",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 699,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:00:45Z",
+      "side": 1,
+      "message": "It does -- do you think we should add an \"UNKNOWN\" type? This would require new code paths in WhareMap to handle it.\n\nIn a related note, it\u0027s a bit unfortunately that we unconditionally have this type in the TD: it\u0027s only meaningful to the WhareMap policy, and should therefore be in a policy-specific sub-protobuf of the TD, I think (which would not be present in non-WhareMap policies).",
+      "parentUuid": "baa041b7_50daff4b",
       "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
