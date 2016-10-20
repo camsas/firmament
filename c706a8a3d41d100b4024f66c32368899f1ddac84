@@ -618,6 +618,24 @@
       "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_ea08ff28",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 699,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-20T16:10:51Z",
+      "side": 1,
+      "message": "Done, and noted in the TD protobuf as well",
+      "parentUuid": "baa041b7_0741dc62",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
