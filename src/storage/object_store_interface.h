@@ -15,7 +15,6 @@
 #include "base/types.h"
 #include "misc/map-util.h"
 #include "misc/printable_interface.h"
-#include "messages/storage_registration_message.pb.h"
 #include "storage/types.h"
 #include "storage/reference_interface.h"
 #include "storage/reference_utils.h"

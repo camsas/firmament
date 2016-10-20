@@ -18,16 +18,12 @@ package firmament;
 // 004  - TaskHeartbeatMessage
 // 005  - TaskSpawnMessage
 // 006  - TaskStateMessage
-// 007  - StorageRegistrationMessage
-// 008  - TaskInfoRequestMessage
-// 009  - TaskInfoResponseMessage
-// 010  - TaskDelegationMessage
-// 011  - ObtainObjectMessage
-// 012  - StorageDiscoverMessage
-// 013  - StorageHeartBeatMessage
-// 014  - ObjectInfoMessage
-// 015  - TaskKillMessage
-// 016  - TaskFinalReport   XXX(malte): inconsistent name!
+// 007  - TaskInfoRequestMessage
+// 008  - TaskInfoResponseMessage
+// 009  - TaskDelegationRequest
+// 010  - TaskDelegationResponse
+// 011  - TaskKillMessage
+// 012  - TaskFinalReport   XXX(malte): inconsistent name!
 
 import "messages/test_message.proto";
 import "messages/heartbeat_message.proto";
@@ -35,8 +31,6 @@ import "messages/registration_message.proto";
 import "messages/task_heartbeat_message.proto";
 import "messages/task_spawn_message.proto";
 import "messages/task_state_message.proto";
-import "messages/storage_registration_message.proto";
-import "messages/storage_message.proto";
 import "messages/task_info_message.proto";
 import "messages/task_delegation_message.proto";
 import "messages/task_kill_message.proto";
@@ -51,15 +45,10 @@ message BaseMessage {
   TaskHeartbeatMessage task_heartbeat = 4;
   TaskSpawnMessage task_spawn = 5;
   TaskStateMessage task_state = 6;
-  StorageRegistrationMessage storage_registration = 7;
-  TaskInfoRequestMessage task_info_request = 8;
-  TaskInfoResponseMessage task_info_response = 9;
-  TaskDelegationRequestMessage task_delegation_request = 10;
-  TaskDelegationResponseMessage task_delegation_response = 11;
-  ObtainObjectMessage obtain_object = 12;
-  StorageDiscoverMessage storage_discover = 13;
-  StorageHeartBeatMessage storage_heartbeat = 14;
-  ObjectInfoMessage object_info = 15;
-  TaskKillMessage task_kill = 16;
-  TaskFinalReport task_final_report = 17;
+  TaskInfoRequestMessage task_info_request = 7;
+  TaskInfoResponseMessage task_info_response = 8;
+  TaskDelegationRequestMessage task_delegation_request = 9;
+  TaskDelegationResponseMessage task_delegation_response = 10;
+  TaskKillMessage task_kill = 11;
+  TaskFinalReport task_final_report = 12;
 }

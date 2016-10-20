@@ -4,8 +4,6 @@ set(MESSAGES_PROTOBUFS
   messages/base_message.proto
   messages/heartbeat_message.proto
   messages/registration_message.proto
-  messages/storage_message.proto
-  messages/storage_registration_message.proto
   messages/task_delegation_message.proto
   messages/task_heartbeat_message.proto
   messages/task_info_message.proto

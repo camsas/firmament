@@ -26,7 +26,6 @@
 #include "base/task_desc.pb.h"
 #include "base/types.h"
 #include "messages/base_message.pb.h"
-#include "messages/storage_message.pb.h"
 #include "misc/map-util.h"
 #include "misc/messaging_interface.h"
 #include "platforms/common.h"

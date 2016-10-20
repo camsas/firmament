@@ -39,7 +39,6 @@
 #include "messages/task_info_message.pb.h"
 #include "messages/task_spawn_message.pb.h"
 #include "messages/task_state_message.pb.h"
-#include "messages/storage_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "misc/trace_generator.h"
 #include "misc/utils.h"
@@ -223,7 +222,6 @@ class Coordinator : public Node,
     return scheduler_;
   }
 
-  void InformStorageEngineNewResource(ResourceDescriptor* rd);
   bool KillRunningJob(JobID_t job_id);
   bool KillRunningTask(TaskID_t task_id,
                        TaskKillMessage::TaskKillReason reason);
@@ -251,10 +249,7 @@ class Coordinator : public Node,
                              const string& remote_endpoint);
   void HandleTaskSpawn(const TaskSpawnMessage& msg);
   void HandleTaskStateChange(const TaskStateMessage& msg);
-  void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg);
 
-  /* Only necessary if storage is not guaranteed to be local*/
-  void HandleStorageDiscoverRequest(const StorageDiscoverMessage& msg);
 #ifdef __HTTP_UI__
   void InitHTTPUI();
 #endif

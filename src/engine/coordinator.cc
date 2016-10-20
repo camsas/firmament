@@ -22,8 +22,6 @@
 #include "base/task_final_report.pb.h"
 #include "engine/health_monitor.h"
 #include "messages/base_message.pb.h"
-#include "messages/storage_registration_message.pb.h"
-#include "messages/storage_message.pb.h"
 #include "misc/map-util.h"
 #include "misc/pb_utils.h"
 #include "misc/protobuf_envelope.h"
@@ -437,7 +435,6 @@ void Coordinator::HandleRegistrationRequest(
                           msg.location(), false));
     // Register the resource with the scheduler.
     scheduler_->RegisterResource(rtnd, false);
-    //InformStorageEngineNewResource(rd);
   } else {
     LOG(INFO) << "REGISTRATION request from resource " << msg.uuid()
               << " that we already know about. "
