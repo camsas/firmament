@@ -7,7 +7,6 @@ set(BASE_SRC
 
 set(BASE_PROTOBUFS
   base/coco_interference_scores.proto
-  base/data_object_name.proto
   base/job_desc.proto
   base/machine_perf_statistics_sample.proto
   base/reference_desc.proto
@@ -16,7 +15,6 @@ set(BASE_PROTOBUFS
   base/resource_vector.proto
   base/task_desc.proto
   base/task_final_report.proto
-  base/task_instance_profile.proto
   base/task_perf_statistics_sample.proto
   base/whare_map_stats.proto
   )
