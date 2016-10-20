@@ -141,6 +141,30 @@ include_directories(${pb2json_INCLUDE_DIR})
 set(pb2json_LIBRARY ${pb2json_SOURCE_DIR}/libpb2json.a)
 
 ###############################################################################
+# protobuf3
+ExternalProject_Add(
+    protobuf3
+    GIT_REPOSITORY https://github.com/google/protobuf
+    GIT_TAG v3.1.0
+    TIMEOUT 10
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/protobuf3
+    CONFIGURE_COMMAND "${CMAKE_COMMAND}"
+                      "-H${CMAKE_CURRENT_BINARY_DIR}/third_party/protobuf3/src/protobuf3/cmake"
+                      "-B${CMAKE_CURRENT_BINARY_DIR}/third_party/protobuf3/src/protobuf3-build"
+                      "-Dprotobuf_BUILD_TESTS=off"
+    # no install required, we link the library from the build tree
+    INSTALL_COMMAND "")
+
+ExternalProject_Get_Property(protobuf3 SOURCE_DIR)
+ExternalProject_Get_Property(protobuf3 BINARY_DIR)
+set(protobuf3_SOURCE_DIR ${SOURCE_DIR})
+set(protobuf3_BINARY_DIR ${BINARY_DIR})
+set(protobuf3_INCLUDE_DIR ${protobuf3_SOURCE_DIR}/src)
+include_directories(${protobuf3_INCLUDE_DIR})
+set(protobuf3_LIBRARY ${protobuf3_SOURCE_DIR}/libpb2json.a)
+
+
+###############################################################################
 # Pion integrated web server
 ExternalProject_Add(
     pion
