@@ -3,6 +3,8 @@
 //
 // Resource descriptor protobuf.
 
+syntax = "proto3";
+
 package firmament;
 
 import "base/coco_interference_scores.proto";
@@ -31,30 +33,30 @@ message ResourceDescriptor {
     RESOURCE_COORDINATOR = 10;
   }
 
-  required string uuid = 1;
-  optional string friendly_name = 2;
-  optional string descriptive_name = 3;
-  optional ResourceState state = 4 [default = RESOURCE_UNKNOWN];
-  optional uint64 task_capacity = 5 [default = 0];
-  optional uint64 last_heartbeat = 6;
-  optional ResourceType type = 7;
-  optional bool schedulable = 8 [default = false];
+  string uuid = 1;
+  string friendly_name = 2;
+  string descriptive_name = 3;
+  ResourceState state = 4;
+  uint64 task_capacity = 5;
+  uint64 last_heartbeat = 6;
+  ResourceType type = 7;
+  bool schedulable = 8;
   repeated uint64 current_running_tasks = 9;
   // Stores the number of running tasks on the resources that
   // are below this node,
-  optional uint64 num_running_tasks_below = 10 [default = 0];
-  optional uint64 num_slots_below = 11 [default = 0];
+  uint64 num_running_tasks_below = 10;
+  uint64 num_slots_below = 11;
   // Resource capacity and load tracking
-  optional ResourceVector available_resources = 12;
-  optional ResourceVector reserved_resources = 13;
-  optional ResourceVector min_available_resources_below = 14;
-  optional ResourceVector max_available_resources_below = 15;
-  optional ResourceVector min_unreserved_resources_below = 16;
-  optional ResourceVector max_unreserved_resources_below = 17;
-  optional ResourceVector resource_capacity = 18;
+  ResourceVector available_resources = 12;
+  ResourceVector reserved_resources = 13;
+  ResourceVector min_available_resources_below = 14;
+  ResourceVector max_available_resources_below = 15;
+  ResourceVector min_unreserved_resources_below = 16;
+  ResourceVector max_unreserved_resources_below = 17;
+  ResourceVector resource_capacity = 18;
   // Cost-model-specific statistics
-  optional WhareMapStats whare_map_stats = 19;
-  optional CoCoInterferenceScores coco_interference_scores = 20;
+  WhareMapStats whare_map_stats = 19;
+  CoCoInterferenceScores coco_interference_scores = 20;
   // Simulation related fields
-  optional uint64 trace_machine_id = 21;
+  uint64 trace_machine_id = 21;
 }

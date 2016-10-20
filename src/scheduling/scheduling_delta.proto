@@ -3,17 +3,19 @@
 //
 // Represents a scheduling change to be applied.
 
+syntax = "proto3";
+
 package firmament;
 
 message SchedulingDelta {
   enum ChangeType {
-    PLACE = 0;
-    PREEMPT = 1;
-    MIGRATE = 2;
-    NOOP = 3;
+    NOOP = 0;
+    PLACE = 1;
+    PREEMPT = 2;
+    MIGRATE = 3;
   }
 
-  required uint64 task_id = 1;
-  required string resource_id = 2;
-  required ChangeType type = 3 [default = NOOP];
+  uint64 task_id = 1;
+  string resource_id = 2;
+  ChangeType type = 3;
 }

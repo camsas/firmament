@@ -968,7 +968,7 @@ void CoordinatorHTTPUI::HandleTaskURI(const http::request_ptr& http_request,
       TaskIDFromString(task_id));
   if (td_ptr) {
     dict.SetFormattedValue("TASK_ID", "%ju", TaskID_t(td_ptr->uid()));
-    if (td_ptr->has_name())
+    if (!td_ptr->name().empty())
       dict.SetValue("TASK_NAME", td_ptr->name());
     dict.SetValue("TASK_BINARY", td_ptr->binary());
     dict.SetValue("TASK_JOB_ID", td_ptr->job_id());
@@ -987,11 +987,11 @@ void CoordinatorHTTPUI::HandleTaskURI(const http::request_ptr& http_request,
     dict.SetValue("TASK_STATUS", ENUM_TO_STRING(TaskDescriptor::TaskState,
                                                 td_ptr->state()));
     // Scheduled to resource
-    if (td_ptr->has_scheduled_to_resource()) {
+    if (!td_ptr->scheduled_to_resource().empty()) {
       dict.SetValue("TASK_SCHEDULED_TO", td_ptr->scheduled_to_resource());
     }
     // Location
-    if (td_ptr->has_scheduled_to_resource()) {
+    if (!td_ptr->scheduled_to_resource().empty()) {
       ResourceDescriptor* rd_ptr =
         coordinator_->GetMachineRDForResource(ResourceIDFromString(
             td_ptr->scheduled_to_resource()));
@@ -1001,12 +1001,12 @@ void CoordinatorHTTPUI::HandleTaskURI(const http::request_ptr& http_request,
       dict.SetValue("TASK_LOCATION", "unknown");
       dict.SetValue("TASK_LOCATION_HOST", "localhost");
     }
-    if (td_ptr->has_delegated_to()) {
+    if (!td_ptr->delegated_to().empty()) {
       dict.SetValue("TASK_LOCATION", td_ptr->delegated_to());
       dict.SetValue("TASK_LOCATION_HOST",
                     URITools::GetHostnameFromURI(td_ptr->delegated_to()));
     }
-    if (td_ptr->has_delegated_from()) {
+    if (!td_ptr->delegated_from().empty()) {
       TemplateDictionary* del_dict =
           dict.AddSectionDictionary("TASK_DELEGATION");
       del_dict->SetValue("TASK_DELEGATED_FROM_HOST",
@@ -1014,25 +1014,13 @@ void CoordinatorHTTPUI::HandleTaskURI(const http::request_ptr& http_request,
                              td_ptr->delegated_from()));
     }
     // Timestamps
-    if (td_ptr->has_submit_time()) {
-      dict.SetIntValue("TASK_SUBMIT_TIME", td_ptr->submit_time() / 1000);
-    } else {
-      dict.SetIntValue("TASK_SUBMIT_TIME", 0);
-    }
-    if (td_ptr->has_start_time()) {
-      dict.SetIntValue("TASK_START_TIME", td_ptr->start_time() / 1000);
-      dict.SetValue("TASK_START_TIME_HR",
-          CoarseTimestampToHumanReadble(td_ptr->start_time() / 1000000));
-    } else {
-      dict.SetIntValue("TASK_START_TIME", 0);
-    }
-    if (td_ptr->has_finish_time()) {
-      dict.SetIntValue("TASK_FINISH_TIME", td_ptr->finish_time() / 1000);
-      dict.SetValue("TASK_FINISH_TIME_HR",
-          CoarseTimestampToHumanReadble(td_ptr->finish_time() / 1000000));
-    } else {
-      dict.SetIntValue("TASK_FINISH_TIME", 0);
-    }
+    dict.SetIntValue("TASK_SUBMIT_TIME", td_ptr->submit_time() / 1000);
+    dict.SetIntValue("TASK_START_TIME", td_ptr->start_time() / 1000);
+    dict.SetValue("TASK_START_TIME_HR",
+        CoarseTimestampToHumanReadble(td_ptr->start_time() / 1000000));
+    dict.SetIntValue("TASK_FINISH_TIME", td_ptr->finish_time() / 1000);
+    dict.SetValue("TASK_FINISH_TIME_HR",
+        CoarseTimestampToHumanReadble(td_ptr->finish_time() / 1000000));
     // Heartbeat time
     // JS expects millisecond values
     dict.SetIntValue("TASK_LAST_HEARTBEAT",
@@ -1106,7 +1094,7 @@ void CoordinatorHTTPUI::HandleTaskLogURI(const http::request_ptr& http_request,
   }
   TaskID_t task_id = TaskIDFromString(task_id_str);
   TaskDescriptor* td = coordinator_->GetTask(task_id);
-  if (td->has_delegated_to()) {
+  if (!td->delegated_to().empty()) {
     string target = "http://" +
                     URITools::GetHostnameFromURI(td->delegated_to()) +
                     ":" + to_string(port_) + "/tasklog/?id=" +

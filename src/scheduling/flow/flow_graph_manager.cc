@@ -134,9 +134,9 @@ void FlowGraphManager::AddResourceTopologyDFS(
     res_node = AddResourceNode(rd_ptr);
     if (res_node->type_ == FlowNodeType::PU) {
       UpdateResToSinkArc(res_node);
-      if (!rd_ptr->has_num_slots_below()) {
+      if (rd_ptr->num_slots_below() == 0) {
         rd_ptr->set_num_slots_below(FLAGS_max_tasks_per_pu);
-        if (!rd_ptr->has_num_running_tasks_below()) {
+        if (rd_ptr->num_running_tasks_below() == 0) {
           rd_ptr->set_num_running_tasks_below(
               static_cast<uint64_t>(rd_ptr->current_running_tasks_size()));
         }
@@ -161,7 +161,7 @@ void FlowGraphManager::AddResourceTopologyDFS(
     //            << " already exists";
   }
   VisitTopologyChildren(rtnd_ptr);
-  if (!rtnd_ptr->has_parent_id()) {
+  if (rtnd_ptr->parent_id().empty()) {
     CHECK_EQ(rtnd_ptr->resource_desc().type(),
              ResourceDescriptor::RESOURCE_COORDINATOR)
       << "A resource node that is not a coordinator must have a parent";
@@ -185,7 +185,7 @@ void FlowGraphManager::AddResourceTopology(
   CHECK_NOTNULL(rtnd_ptr);
   AddResourceTopologyDFS(rtnd_ptr);
   // Progapate the capacity increase to the root of the topology.
-  if (rtnd_ptr->has_parent_id()) {
+  if (!rtnd_ptr->parent_id().empty()) {
     // We start from rtnd_ptr's parent because in AddResourceTopologyDFS we
     // already added an arc between rtnd_ptr and its parent.
     FlowGraphNode* cur_node =
@@ -204,7 +204,7 @@ void FlowGraphManager::AddResourceTopology(
 FlowGraphNode* FlowGraphManager::AddResourceNode(ResourceDescriptor* rd_ptr) {
   CHECK_NOTNULL(rd_ptr);
   string comment;
-  if (rd_ptr->has_friendly_name()) {
+  if (!rd_ptr->friendly_name().empty()) {
     comment = rd_ptr->friendly_name();
   } else {
     comment = "AddResourceNode";
@@ -909,7 +909,7 @@ void FlowGraphManager::UpdateResourceTopology(
   uint64_t old_num_slots = rd.num_slots_below();
   uint64_t old_num_running_tasks = rd.num_running_tasks_below();
   UpdateResourceTopologyDFS(rtnd_ptr);
-  if (rtnd_ptr->has_parent_id()) {
+  if (!rtnd_ptr->parent_id().empty()) {
     // We start from rtnd_ptr's parent because in UpdateResourceTopologyDFS
     // we already update the arc between rtnd_ptr and its parent.
     FlowGraphNode* cur_node =
@@ -951,7 +951,7 @@ void FlowGraphManager::UpdateResourceTopologyDFS(
          rd_ptr->num_running_tasks_below() +
          (*child_iter)->resource_desc().num_running_tasks_below());
   }
-  if (rtnd_ptr->has_parent_id()) {
+  if (!rtnd_ptr->parent_id().empty()) {
     // Update the arc to the parent.
     FlowGraphNode* cur_node =
       NodeForResourceID(ResourceIDFromString(rd_ptr->uuid()));

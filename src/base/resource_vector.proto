@@ -3,14 +3,16 @@
 //
 // Resource vector protobuf.
 
+syntax = "proto3";
+
 package firmament;
 
 message ResourceVector {
-  optional float cpu_cores = 1 [default = 0.0];
-  optional uint64 ram_bw = 2 [default = 0];
-  optional uint64 ram_cap = 3 [default = 0]; // in MB
-  optional uint64 disk_bw = 4 [default = 0];
-  optional uint64 disk_cap = 5 [default = 0];
-  optional uint64 net_tx_bw = 6 [default = 0];
-  optional uint64 net_rx_bw = 7 [default = 0];
+  float cpu_cores = 1;
+  uint64 ram_bw = 2;
+  uint64 ram_cap = 3; // in MB
+  uint64 disk_bw = 4;
+  uint64 disk_cap = 5;
+  uint64 net_tx_bw = 6;
+  uint64 net_rx_bw = 7;
 }

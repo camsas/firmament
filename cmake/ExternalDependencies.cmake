@@ -151,7 +151,7 @@ ExternalProject_Add(
     CONFIGURE_COMMAND "${CMAKE_COMMAND}"
                       "-H${CMAKE_CURRENT_BINARY_DIR}/third_party/protobuf3/src/protobuf3/cmake"
                       "-B${CMAKE_CURRENT_BINARY_DIR}/third_party/protobuf3/src/protobuf3-build"
-                      "-Dprotobuf_BUILD_TESTS=off"
+                      "-Dprotobuf_BUILD_TESTS=off" "-DCMAKE_CXX_FLAGS=\"-fPIC\""
     # no install required, we link the library from the build tree
     INSTALL_COMMAND "")
 
@@ -161,7 +161,7 @@ set(protobuf3_SOURCE_DIR ${SOURCE_DIR})
 set(protobuf3_BINARY_DIR ${BINARY_DIR})
 set(protobuf3_INCLUDE_DIR ${protobuf3_SOURCE_DIR}/src)
 include_directories(${protobuf3_INCLUDE_DIR})
-set(protobuf3_LIBRARY ${protobuf3_SOURCE_DIR}/libpb2json.a)
+set(protobuf3_LIBRARY ${protobuf3_BINARY_DIR}/libprotobuf.a)
 
 
 ###############################################################################

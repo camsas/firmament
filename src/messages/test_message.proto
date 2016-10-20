@@ -3,8 +3,10 @@
 //
 // TestMessage is a simple test protobuf message used mainly in unit tests.
 
+syntax = "proto3";
+
 package firmament;
 
 message TestMessage {
-  optional int64 test = 1 [default = 42];
+  int64 test = 1;
 }

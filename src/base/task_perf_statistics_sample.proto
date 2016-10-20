@@ -3,15 +3,17 @@
 //
 // A runtime sample of a task's resource demands.
 
+syntax = "proto3";
+
 package firmament;
 
 message TaskPerfStatisticsSample {
-  required uint64 task_id = 1;
-  required uint64 timestamp = 2;
-  optional uint64 vsize = 3;
-  optional uint64 rsize = 4;
-  optional uint64 sched_run = 5;
-  optional uint64 sched_wait = 6;
-  optional bool completed = 7;
-  optional string hostname = 8;
+  uint64 task_id = 1;
+  uint64 timestamp = 2;
+  uint64 vsize = 3;
+  uint64 rsize = 4;
+  uint64 sched_run = 5;
+  uint64 sched_wait = 6;
+  bool completed = 7;
+  string hostname = 8;
 }

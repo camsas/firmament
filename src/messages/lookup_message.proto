@@ -3,13 +3,15 @@
 //
 // Name lookup messages; contains request and response messages.
 
+syntax = "proto3";
+
 package firmament;
 
 import "base/reference_desc.proto";
 
 message LookupRequest {
-  required bytes name = 1;
-  optional uint64 task_id = 2;
+  bytes name = 1;
+  uint64 task_id = 2;
 }
 
 message LookupResponse {
