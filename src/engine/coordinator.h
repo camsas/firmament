@@ -30,7 +30,6 @@
 #include "base/reference_desc.pb.h"
 #include "base/resource_desc.pb.h"
 #include "base/resource_topology_node_desc.pb.h"
-#include "base/task_graph.h"
 #include "engine/health_monitor.h"
 #include "engine/node.h"
 #include "messages/heartbeat_message.pb.h"
