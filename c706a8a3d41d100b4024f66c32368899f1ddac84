@@ -515,6 +515,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_47324411",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-20T16:06:27Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "baa041b7_a7ac7035",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_b0fb8bbd",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -579,6 +597,24 @@
       "side": 1,
       "message": "It does -- do you think we should add an \"UNKNOWN\" type? This would require new code paths in WhareMap to handle it.\n\nIn a related note, it\u0027s a bit unfortunately that we unconditionally have this type in the TD: it\u0027s only meaningful to the WhareMap policy, and should therefore be in a policy-specific sub-protobuf of the TD, I think (which would not be present in non-WhareMap policies).",
       "parentUuid": "baa041b7_50daff4b",
+      "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_0741dc62",
+        "filename": "src/scheduling/flow/wharemap_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 699,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-10-20T16:06:27Z",
+      "side": 1,
+      "message": "Maybe just add a big TODO here and we can handle this issue in a separate diff.",
+      "parentUuid": "baa041b7_47648420",
       "revId": "c706a8a3d41d100b4024f66c32368899f1ddac84",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
