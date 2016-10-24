@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_7a039210",
+        "filename": "cmake/ExternalDependencies.cmake",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-24T15:31:51Z",
+      "side": 1,
+      "message": "Let\u0027s use a HTTPS repo URL here. The SSH ones require keys to be present, which many users and deployment environments don\u0027t have.",
+      "revId": "6c4279ae6d3c876f1ff5a052e5c881df002c3570",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_5afe8e06",
+        "filename": "cmake/ExternalDependencies.cmake",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-24T15:31:51Z",
+      "side": 1,
+      "message": "See above re HTTPS repo",
+      "revId": "6c4279ae6d3c876f1ff5a052e5c881df002c3570",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
