@@ -1,5 +1,5 @@
 // The Firmament project
-// Copyright (c) 2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) The Firmament Authors.
 //
 // Adaptation of Derek Murray's timespin micro-benchmark for Firmament.
 
@@ -8,7 +8,7 @@
  * specified (in seconds) on argv[1].
  *
  * Copyright (c) 2011 Derek Murray <Derek.Murray@cl.cam.ac.uk>
- * Copyright (c) 2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+ * Copyright (c) The Firmament Authors.
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
