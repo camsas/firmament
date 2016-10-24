@@ -119,8 +119,8 @@ add_library(firmament_scheduling SHARED
   ${MISC_TRACE_GENERATOR_SRC}
   ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS})
 
-add_dependencies(firmament_scheduling protobuf3 cs2 gtest pb2json pion
-  spooky-hash thread-safe-stl-containers)
+add_dependencies(firmament_scheduling protobuf3 cs2 flowlessly gtest pb2json
+  pion spooky-hash thread-safe-stl-containers)
 
 target_link_libraries(firmament_scheduling LINK_PUBLIC ${protobuf3_LIBRARY}
   ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags
