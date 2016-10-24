@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_f540d360",
+        "filename": "src/sim/SIMULATOR.md",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-24T19:10:31Z",
+      "side": 1,
+      "message": "Can we rename this to README.md, so that GitHub displays it by default when users go to src/sim?",
+      "revId": "88d246c42e9eea942d18f4607adb1a5382e1628e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
