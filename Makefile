@@ -10,6 +10,3 @@ all:
 	@echo " $$ cd build"
 	@echo " $$ make"
 	@echo "-----------------------------------------------"
-
-doc:
-	doxygen Doxyfile
