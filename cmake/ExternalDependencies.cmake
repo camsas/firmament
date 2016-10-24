@@ -22,7 +22,7 @@ endif (${ENABLE_CS2})
 
 ###############################################################################
 # Flowlessly solver
-if (${ENABLE_FLOWLESSLY})
+if (${ENABLE_PRIVATE_FLOWLESSLY})
   ExternalProject_Add(
       flowlessly
       GIT_REPOSITORY git@github.com:ICGog/FlowlesslyPrivate.git
@@ -33,7 +33,18 @@ if (${ENABLE_FLOWLESSLY})
       # Wrap download, configure and build steps in a script to log output
       LOG_DOWNLOAD ON
       LOG_BUILD ON)
-endif (${ENABLE_FLOWLESSLY})
+else (${ENABLE_PRIVATE_FLOWLESSLY})
+  ExternalProject_Add(
+      flowlessly
+      GIT_REPOSITORY https://github.com/ICGog/Flowlessly.git
+      TIMEOUT 10
+      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/flowlessly
+      # no install required, we link the library from the build tree
+      INSTALL_COMMAND ""
+      # Wrap download, configure and build steps in a script to log output
+      LOG_DOWNLOAD ON
+      LOG_BUILD ON)
+endif (${ENABLE_PRIVATE_FLOWLESSLY})
 
 ###############################################################################
 # cpplint
