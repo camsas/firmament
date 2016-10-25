@@ -22,7 +22,7 @@ endif (${ENABLE_CS2})
 
 ###############################################################################
 # Flowlessly solver
-if (${ENABLE_FLOWLESSLY})
+if (${ENABLE_PRIVATE_FLOWLESSLY})
   ExternalProject_Add(
       flowlessly
       GIT_REPOSITORY git@github.com:ICGog/FlowlesslyPrivate.git
@@ -33,7 +33,18 @@ if (${ENABLE_FLOWLESSLY})
       # Wrap download, configure and build steps in a script to log output
       LOG_DOWNLOAD ON
       LOG_BUILD ON)
-endif (${ENABLE_FLOWLESSLY})
+else (${ENABLE_PRIVATE_FLOWLESSLY})
+  ExternalProject_Add(
+      flowlessly
+      GIT_REPOSITORY https://github.com/ICGog/Flowlessly.git
+      TIMEOUT 10
+      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/flowlessly
+      # no install required, we link the library from the build tree
+      INSTALL_COMMAND ""
+      # Wrap download, configure and build steps in a script to log output
+      LOG_DOWNLOAD ON
+      LOG_BUILD ON)
+endif (${ENABLE_PRIVATE_FLOWLESSLY})
 
 ###############################################################################
 # cpplint
@@ -139,6 +150,30 @@ set(pb2json_SOURCE_DIR ${SOURCE_DIR})
 set(pb2json_INCLUDE_DIR ${pb2json_SOURCE_DIR})
 include_directories(${pb2json_INCLUDE_DIR})
 set(pb2json_LIBRARY ${pb2json_SOURCE_DIR}/libpb2json.a)
+
+###############################################################################
+# protobuf3
+ExternalProject_Add(
+    protobuf3
+    GIT_REPOSITORY https://github.com/google/protobuf
+    GIT_TAG v3.1.0
+    TIMEOUT 10
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/protobuf3
+    CONFIGURE_COMMAND "${CMAKE_COMMAND}"
+                      "-H${CMAKE_CURRENT_BINARY_DIR}/third_party/protobuf3/src/protobuf3/cmake"
+                      "-B${CMAKE_CURRENT_BINARY_DIR}/third_party/protobuf3/src/protobuf3-build"
+                      "-Dprotobuf_BUILD_TESTS=off" "-DCMAKE_CXX_FLAGS=\"-fPIC\""
+    # no install required, we link the library from the build tree
+    INSTALL_COMMAND "")
+
+ExternalProject_Get_Property(protobuf3 SOURCE_DIR)
+ExternalProject_Get_Property(protobuf3 BINARY_DIR)
+set(protobuf3_SOURCE_DIR ${SOURCE_DIR})
+set(protobuf3_BINARY_DIR ${BINARY_DIR})
+set(protobuf3_INCLUDE_DIR ${protobuf3_SOURCE_DIR}/src)
+include_directories(${protobuf3_INCLUDE_DIR})
+set(protobuf3_LIBRARY ${protobuf3_BINARY_DIR}/libprotobuf.a)
+
 
 ###############################################################################
 # Pion integrated web server

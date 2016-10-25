@@ -2,15 +2,8 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/messages)
 
 set(MESSAGES_PROTOBUFS
   messages/base_message.proto
-  messages/copy_message.proto
-  messages/create_message.proto
-  messages/delete_message.proto
   messages/heartbeat_message.proto
-  messages/io_notification_message.proto
-  messages/lookup_message.proto
   messages/registration_message.proto
-  messages/storage_message.proto
-  messages/storage_registration_message.proto
   messages/task_delegation_message.proto
   messages/task_heartbeat_message.proto
   messages/task_info_message.proto

@@ -1,5 +1,4 @@
-# XXX(malte): should we not hardcode this?
-set(PROTOC protoc)
+set(PROTOC ${protobuf3_BINARY_DIR}/protoc)
 
 function(PROTOBUF_COMPILE BASE_NAME PROTO_PATH)
   # Arguments for protoc: include and output directories

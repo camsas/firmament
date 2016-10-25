@@ -6,12 +6,14 @@
 // directly included, while the parent is referenced by ID (optional; do not
 // rely on back-references to the parent being present!).
 
+syntax = "proto3";
+
 package firmament;
 
 import "base/resource_desc.proto";
 
 message ResourceTopologyNodeDescriptor {
-  required ResourceDescriptor resource_desc = 1;
+  ResourceDescriptor resource_desc = 1;
   repeated ResourceTopologyNodeDescriptor children = 2;
-  optional string parent_id = 3;
+  string parent_id = 3;
 }

@@ -189,9 +189,7 @@ bool SimulatorBridge::AddTask(const TraceTaskIdentifier& task_identifier,
   td_ptr->mutable_resource_request()->set_cpu_cores(
       event_desc.requested_cpu_cores());
   td_ptr->mutable_resource_request()->set_ram_cap(event_desc.requested_ram());
-  if (event_desc.has_priority()) {
-    td_ptr->set_priority(event_desc.priority());
-  }
+  td_ptr->set_priority(event_desc.priority());
   if (InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr)) {
     CHECK(InsertIfNotPresent(&task_id_to_identifier_,
                              td_ptr->uid(), task_identifier));
@@ -277,7 +275,7 @@ TaskDescriptor* SimulatorBridge::AddTaskToJob(
   CHECK_NOTNULL(jd_ptr);
   TaskDescriptor* root_task = jd_ptr->mutable_root_task();
   TaskDescriptor* new_task;
-  if (root_task->has_uid()) {
+  if (root_task->uid() != 0) {
     new_task = root_task->add_spawned();
     new_task->set_uid(GenerateTaskIDFromTraceIdentifier(task_identifier));
   } else {
@@ -564,7 +562,7 @@ void SimulatorBridge::SetupMachine(
     const string& root_uuid,
     const string& old_machine_res_id) {
   string new_uuid;
-  if (rtnd->has_parent_id()) {
+  if (!rtnd->parent_id().empty()) {
     // This is an intermediate node, so translate the parent UUID via the
     // lookup table
     const string& old_parent_id = rtnd->parent_id();
@@ -599,10 +597,7 @@ void SimulatorBridge::SetupMachine(
                                             old_machine_res_id);
     CHECK_NOTNULL(new_machine_res_id);
     ResourceID_t machine_res_id = ResourceIDFromString(*new_machine_res_id);
-    float cpu_cores = 1;
-    if (machine_res_cap->has_cpu_cores()) {
-      cpu_cores = machine_res_cap->cpu_cores() + 1;
-    }
+    float cpu_cores = machine_res_cap->cpu_cores() + 1;
     // NOTE: We set the number of cpu_cores to the number of PUs.
     machine_res_cap->set_cpu_cores(cpu_cores);
     machine_res_id_pus_.insert(
@@ -617,7 +612,7 @@ void SimulatorBridge::ScheduleJobs(SchedulerStats* scheduler_stats) {
 uint64_t SimulatorBridge::UpdateTaskTotalRunTime(const TaskDescriptor& td) {
   uint64_t task_executed_for =
     simulated_time_->GetCurrentTimestamp() - td.start_time();
-  if (td.has_total_run_time()) {
+  if (td.total_run_time() > 0) {
     return td.total_run_time() + task_executed_for;
   } else {
     return task_executed_for;

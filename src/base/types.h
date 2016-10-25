@@ -26,7 +26,6 @@
 #include "base/resource_status.h"
 #include "base/resource_desc.pb.h"
 #include "base/job_desc.pb.h"
-#include "base/task_graph.h"
 
 using std::map;
 using std::pair;

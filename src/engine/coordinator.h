@@ -30,7 +30,6 @@
 #include "base/reference_desc.pb.h"
 #include "base/resource_desc.pb.h"
 #include "base/resource_topology_node_desc.pb.h"
-#include "base/task_graph.h"
 #include "engine/health_monitor.h"
 #include "engine/node.h"
 #include "messages/heartbeat_message.pb.h"
@@ -40,7 +39,6 @@
 #include "messages/task_info_message.pb.h"
 #include "messages/task_spawn_message.pb.h"
 #include "messages/task_state_message.pb.h"
-#include "messages/storage_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "misc/trace_generator.h"
 #include "misc/utils.h"
@@ -224,7 +222,6 @@ class Coordinator : public Node,
     return scheduler_;
   }
 
-  void InformStorageEngineNewResource(ResourceDescriptor* rd);
   bool KillRunningJob(JobID_t job_id);
   bool KillRunningTask(TaskID_t task_id,
                        TaskKillMessage::TaskKillReason reason);
@@ -237,16 +234,10 @@ class Coordinator : public Node,
   bool RegisterWithCoordinator(StreamSocketsChannel<BaseMessage>* chan);
   void DetectLocalResources();
   bool HasJobCompleted(const JobDescriptor& jd);
-  void HandleCreateRequest(const CreateRequest& msg,
-                           const string& remote_endpoint);
   void HandleIncomingMessage(BaseMessage *bm, const string& remote_endpoint);
   void HandleIncomingReceiveError(const boost::system::error_code& error,
                                   const string& remote_endpoint);
   void HandleHeartbeat(const HeartbeatMessage& msg);
-  void HandleLookupRequest(const LookupRequest& msg,
-                           const string& remote_endpoint);
-  void HandleIONotification(const BaseMessage& msg,
-                            const string& remote_uri);
   void HandleRegistrationRequest(const RegistrationMessage& msg);
   void HandleTaskCompletion(const TaskStateMessage& msg, TaskDescriptor* td);
   void HandleTaskDelegationRequest(const TaskDelegationRequestMessage& msg,
@@ -258,10 +249,7 @@ class Coordinator : public Node,
                              const string& remote_endpoint);
   void HandleTaskSpawn(const TaskSpawnMessage& msg);
   void HandleTaskStateChange(const TaskStateMessage& msg);
-  void HandleStorageRegistrationRequest(const StorageRegistrationMessage& msg);
 
-  /* Only necessary if storage is not guaranteed to be local*/
-  void HandleStorageDiscoverRequest(const StorageDiscoverMessage& msg);
 #ifdef __HTTP_UI__
   void InitHTTPUI();
 #endif

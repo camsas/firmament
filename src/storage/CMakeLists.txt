@@ -2,7 +2,6 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/storage)
 
 set(STORAGE_SRC
   storage/simple_object_store.cc
-  storage/stub_object_store.cc
   )
 
 if (${ENABLE_HDFS})
@@ -14,7 +13,6 @@ endif (${ENABLE_HDFS})
 
 set(STORAGE_TESTS
   storage/references_test.cc
-  storage/stub_object_store_test.cc
 )
 
 ###############################################################################
@@ -35,8 +33,8 @@ if (BUILD_TESTS)
       $<TARGET_OBJECTS:storage>)
     target_link_libraries(${TEST_NAME}
       ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
-      ${libhdfs3_LIBRARY} ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags
-      hwloc protobuf)
+      ${libhdfs3_LIBRARY} ${protobuf3_LIBRARY} ${Firmament_SHARED_LIBRARIES}
+      ctemplate glog gflags hwloc)
     add_test(${TEST_NAME} ${TEST_NAME})
   endforeach(T)
 endif (BUILD_TESTS)

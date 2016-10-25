@@ -3,13 +3,15 @@
 //
 // TaskStateMessage indicates a state change of a task.
 
+syntax = "proto3";
+
 package firmament;
 
 import "base/task_desc.proto";
 import "base/task_final_report.proto";
 
 message TaskStateMessage {
-  optional uint64 id = 1;
-  required TaskDescriptor.TaskState new_state = 2;
-  optional TaskFinalReport report = 3;
+  uint64 id = 1;
+  TaskDescriptor.TaskState new_state = 2;
+  TaskFinalReport report = 3;
 }

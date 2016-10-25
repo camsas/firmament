@@ -41,7 +41,7 @@ class ValueReference : public ReferenceInterface {
  protected:
   void ValidateInitDescriptor(const ReferenceDescriptor& desc) {
     CHECK_EQ(desc.type(), ReferenceDescriptor::VALUE);
-    CHECK(desc.has_inline_data());
+    CHECK(!desc.inline_data().empty());
   }
   void ValidateInternalDescriptor() const {
     CHECK_EQ(*id_.name_str(), desc_.id());

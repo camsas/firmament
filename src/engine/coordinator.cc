@@ -22,8 +22,6 @@
 #include "base/task_final_report.pb.h"
 #include "engine/health_monitor.h"
 #include "messages/base_message.pb.h"
-#include "messages/storage_registration_message.pb.h"
-#include "messages/storage_message.pb.h"
 #include "misc/map-util.h"
 #include "misc/pb_utils.h"
 #include "misc/protobuf_envelope.h"
@@ -374,23 +372,6 @@ void Coordinator::HandleIncomingMessage(BaseMessage *bm,
     scheduler_->HandleTaskFinalReport(msg, td_ptr);
     handled_extensions++;
   }
-  // DIOS syscall: create message
-  if (bm->has_create_request()) {
-    const CreateRequest& msg = bm->create_request();
-    HandleCreateRequest(msg, remote_endpoint);
-    handled_extensions++;
-  }
-  // DIOS syscall: lookup message
-  if (bm->has_lookup_request()) {
-    const LookupRequest& msg = bm->lookup_request();
-    HandleLookupRequest(msg, remote_endpoint);
-    handled_extensions++;
-  }
-  // DIOS I/O notification
-  if (bm->has_end_write_notification()) {
-    HandleIONotification(*bm, remote_endpoint);
-    handled_extensions++;
-  }
   // Check that we have handled at least one sub-message
   if (handled_extensions == 0)
     LOG(ERROR) << "Ignored incoming message, no known extension present, "
@@ -415,23 +396,6 @@ void Coordinator::HandleIncomingReceiveError(
   }
 }
 
-
-
-void Coordinator::HandleCreateRequest(const CreateRequest& msg,
-                                      const string& remote_endpoint) {
-  // Try to insert the reference descriptor conveyed into the object table.
-  ReferenceDescriptor* new_rd = new ReferenceDescriptor;
-  new_rd->CopyFrom(msg.reference());
-  new_rd->set_producing_task(msg.task_id());
-  bool succ = !object_store_->AddReference(
-      DataObjectIDFromProtobuf(msg.reference().id()), new_rd);
-  // Manufacture and send a response
-  BaseMessage resp_msg;
-  SUBMSG_WRITE(resp_msg, create_response, name, msg.reference().id());
-  SUBMSG_WRITE(resp_msg, create_response, success, succ);
-  m_adapter_->SendMessageToEndpoint(remote_endpoint, resp_msg);
-}
-
 void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
   boost::uuids::string_generator gen;
   boost::uuids::uuid uuid = gen(msg.uuid());
@@ -449,69 +413,6 @@ void Coordinator::HandleHeartbeat(const HeartbeatMessage& msg) {
       // Record resource statistics sample
       scheduler_->knowledge_base()->AddMachineSample(msg.load());
   }
-}
-
-void Coordinator::HandleIONotification(const BaseMessage& bm,
-                                       const string& remote_uri) {
-  if (bm.has_end_write_notification()) {
-    const EndWriteNotification msg = bm.end_write_notification();
-    DataObjectID_t id = DataObjectIDFromProtobuf(msg.reference().id());
-    unordered_set<ReferenceInterface*>* refs = object_store_->GetReferences(id);
-    vector<ReferenceInterface*> remove;
-    vector<ConcreteReference*> add;
-    for (unordered_set<ReferenceInterface*>::iterator it = refs->begin();
-         it != refs->end();
-         ++it) {
-      if ((*it)->desc().type() == ReferenceDescriptor::FUTURE &&
-          (*it)->desc().producing_task() == msg.reference().producing_task()) {
-        // Upgrade to a concrete reference
-        VLOG(2) << "Found future reference for " << id
-                << ", upgrading to concrete!";
-        remove.push_back(*it);
-        // XXX(malte): skanky, skanky...
-        add.push_back(new ConcreteReference(
-            *dynamic_cast<FutureReference*>(*it)));  // NOLINT
-      }
-    }
-    VLOG(1) << "Found " << remove.size() << " matching references for "
-            << id << ", and converted them into concrete refs.";
-    TaskDescriptor** td_ptr = FindOrNull(*task_table_,
-                                         msg.reference().producing_task());
-    CHECK_NOTNULL(td_ptr);
-    for (uint64_t i = 0; i < remove.size(); ++i) {
-      refs->erase(remove[i]);
-      refs->insert(add[i]);
-      scheduler_->HandleReferenceStateChange(*remove[i], *add[i], *td_ptr);
-      delete remove[i];
-    }
-    // Call into scheduler, as this change may have made things runnable
-    JobDescriptor* jd = DescriptorForJob((*td_ptr)->job_id());
-    scheduler::SchedulerStats scheduler_stats;
-    scheduler_->ScheduleJob(jd, &scheduler_stats);
-  }
-}
-
-void Coordinator::HandleLookupRequest(const LookupRequest& msg,
-                                      const string& remote_endpoint) {
-  // Check if the name requested exists in the object table, and return all
-  // reference descriptors for it if so.
-  // XXX(malte): This currently returns a single reference; we should return
-  // multiple if they exist.
-  unordered_set<ReferenceInterface*>* refs = object_store_->GetReferences(
-      DataObjectIDFromProtobuf(msg.name()));
-  // Manufacture and send a response
-  BaseMessage resp_msg;
-  if (refs && refs->size() > 0) {
-    for (unordered_set<ReferenceInterface*>::const_iterator
-           ref_iter = refs->begin();
-         ref_iter != refs->end();
-         ++ref_iter) {
-      ReferenceDescriptor* resp_rd =
-          resp_msg.mutable_lookup_response()->add_references();
-      resp_rd->CopyFrom((*ref_iter)->desc());
-    }
-  }
-  m_adapter_->SendMessageToEndpoint(remote_endpoint, resp_msg);
 }
 
 void Coordinator::HandleRegistrationRequest(
@@ -534,7 +435,6 @@ void Coordinator::HandleRegistrationRequest(
                           msg.location(), false));
     // Register the resource with the scheduler.
     scheduler_->RegisterResource(rtnd, false);
-    //InformStorageEngineNewResource(rd);
   } else {
     LOG(INFO) << "REGISTRATION request from resource " << msg.uuid()
               << " that we already know about. "
@@ -658,7 +558,7 @@ void Coordinator::HandleTaskSpawn(const TaskSpawnMessage& msg) {
   spawnee->CopyFrom(msg.spawned_task_desc());
   InsertIfNotPresent(task_table_.get(), spawnee->uid(), spawnee);
   // Extract job ID (we expect it to be set)
-  CHECK(msg.spawned_task_desc().has_job_id());
+  CHECK(!msg.spawned_task_desc().job_id().empty());
   JobID_t job_id = JobIDFromString(msg.spawned_task_desc().job_id());
   // Update references with producing task, if necessary
   // TODO(malte): implement this properly; below is a hack that delegates
@@ -721,7 +621,7 @@ void Coordinator::HandleTaskStateChange(
       VLOG(1) << "Task " << msg.id() << "'s state changed to "
               << static_cast<uint64_t> (msg.new_state());
       // Check if this is a delegated task, and forward the message if so
-      if (td_ptr->has_delegated_from()) {
+      if (!td_ptr->delegated_from().empty()) {
         BaseMessage bm;
         bm.mutable_task_state()->CopyFrom(msg);
         m_adapter_->SendMessageToEndpoint(td_ptr->delegated_from(), bm);
@@ -729,7 +629,7 @@ void Coordinator::HandleTaskStateChange(
       break;
   }
   // Do not run scheduler if delegated
-  if (td_ptr->has_delegated_from()) {
+  if (!td_ptr->delegated_from().empty()) {
     return;
   }
 
@@ -749,7 +649,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
   // Report will be filled in if the task is local (currently)
   scheduler_->HandleTaskCompletion(td_ptr, &report);
   // First check if this is a delegated task, and forward the message if so
-  if (td_ptr->has_delegated_from()) {
+  if (!td_ptr->delegated_from().empty()) {
     BaseMessage bm;
     bm.mutable_task_state()->CopyFrom(msg);
 
@@ -772,7 +672,7 @@ void Coordinator::HandleTaskCompletion(const TaskStateMessage& msg,
       scheduler_->HandleJobCompletion(JobIDFromString(jd->uuid()));
     }
   }
-  if (report.has_task_id()) {
+  if (report.task_id() != 0) {
     // Process the final report locally
     scheduler_->HandleTaskFinalReport(report, td_ptr);
   }
@@ -838,9 +738,8 @@ bool Coordinator::KillRunningTask(TaskID_t task_id,
   if (!td_ptr) {
     LOG(ERROR) << "Tried to kill unknown task " << task_id;
     return false;
-  } else if (!td_ptr->has_delegated_to() &&
-             (!td_ptr->has_last_heartbeat_location() ||
-              td_ptr->last_heartbeat_location().empty())) {
+  } else if (td_ptr->delegated_to().empty() &&
+             td_ptr->last_heartbeat_location().empty()) {
     LOG(ERROR) << "Tried to kill task " << task_id << " at unknown location";
     return false;
   }
@@ -858,7 +757,7 @@ bool Coordinator::KillRunningTask(TaskID_t task_id,
   SUBMSG_WRITE(bm, task_kill, task_id, task_id);
   SUBMSG_WRITE(bm, task_kill, reason, reason);
   // Send the message -- either directly or via delegation path
-  if (td_ptr->has_delegated_to()) {
+  if (!td_ptr->delegated_to().empty()) {
     LOG(INFO) << "Forwarding KILL message to task " << task_id << " via "
               << "coordinator at " << td_ptr->delegated_to();
     m_adapter_->SendMessageToEndpoint(td_ptr->delegated_to(), bm);
@@ -963,7 +862,7 @@ const string Coordinator::SubmitJob(const JobDescriptor& job_descriptor) {
   root_task->set_uid(GenerateRootTaskID(*new_jd));
   // Compute the absolute deadline for the root task if it has a deadline
   // set.
-  if (root_task->has_relative_deadline()) {
+  if (root_task->relative_deadline() != 0) {
     root_task->set_absolute_deadline(
         time_manager_->GetCurrentTimestamp() + root_task->relative_deadline() *
         1000000);

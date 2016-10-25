@@ -34,7 +34,7 @@ if (BUILD_TESTS)
       $<TARGET_OBJECTS:platforms_unix>)
     target_link_libraries(${TEST_NAME}
       ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
-      ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)
+      ${protobuf3_LIBRARY} ${Firmament_SHARED_LIBRARIES} glog gflags)
     add_test(${TEST_NAME} ${TEST_NAME})
   endforeach(T)
 endif (BUILD_TESTS)

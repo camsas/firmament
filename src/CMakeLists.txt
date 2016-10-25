@@ -86,9 +86,9 @@ target_compile_definitions(coordinator PRIVATE -D__HTTP_UI__)
 
 # N.B.: ${libhdfs3_LIBRARY} is empty if !${ENABLE_HDFS}
 target_link_libraries(coordinator LINK_PUBLIC
-  ${pb2json_LIBRARY} ${pion_LIBRARY} ${spooky-hash_BINARY}
+  ${pb2json_LIBRARY} ${pion_LIBRARY} ${protobuf3_LIBRARY} ${spooky-hash_BINARY}
   ${libhdfs3_LIBRARY} ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc
-  jansson protobuf)
+  jansson)
 
 ###############################################################################
 # Google trace data extractor
@@ -106,8 +106,8 @@ add_executable(google_trace_processor ${GOOGLE_TRACE_PROCESSOR_SRCS}
 add_dependencies(google_trace_processor gtest spooky-hash
   thread-safe-stl-containers)
 
-target_link_libraries(google_trace_processor LINK_PUBLIC ${spooky-hash_BINARY}
-  ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)
+target_link_libraries(google_trace_processor LINK_PUBLIC ${protobuf3_LIBRARY}
+  ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} glog gflags)
 
 ###############################################################################
 # Scheduling library (for integrations)
@@ -119,11 +119,12 @@ add_library(firmament_scheduling SHARED
   ${MISC_TRACE_GENERATOR_SRC}
   ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS})
 
-add_dependencies(firmament_scheduling cs2 gtest pb2json pion spooky-hash
-  thread-safe-stl-containers)
+add_dependencies(firmament_scheduling protobuf3 cs2 gtest pb2json pion
+  spooky-hash thread-safe-stl-containers)
 
-target_link_libraries(firmament_scheduling LINK_PUBLIC ${spooky-hash_BINARY}
-  ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc protobuf)
+target_link_libraries(firmament_scheduling LINK_PUBLIC ${protobuf3_LIBRARY}
+  ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags
+  hwloc)
 
 ###############################################################################
 # Trace-driven simulator
@@ -155,9 +156,9 @@ add_dependencies(simulator gtest spooky-hash thread-safe-stl-containers)
 target_compile_definitions(simulator PRIVATE
   -DSOLVER_DIR="${Firmament_BINARY_DIR}/third_party")
 
-target_link_libraries(simulator LINK_PUBLIC ${spooky-hash_BINARY}
-  ${Firmament_SHARED_LIBRARIES} ${libhdfs3_LIBRARY}
-  ctemplate glog gflags hwloc jansson protobuf)
+target_link_libraries(simulator LINK_PUBLIC ${protobuf3_LIBRARY}
+  ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} ${libhdfs3_LIBRARY}
+  ctemplate glog gflags hwloc jansson)
 
 ###############################################################################
 # TaskLib
@@ -177,8 +178,8 @@ add_library(task_lib_inject SHARED ${TASK_LIB_SRCS})
 
 add_dependencies(task_lib_inject gtest spooky-hash thread-safe-stl-containers)
 
-target_link_libraries(task_lib_inject LINK_PUBLIC ${spooky-hash_BINARY}
-  ${Firmament_SHARED_LIBRARIES} glog gflags hwloc protobuf)
+target_link_libraries(task_lib_inject LINK_PUBLIC ${protobuf3_LIBRARY}
+  ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} glog gflags hwloc)
 
 ###############################################################################
 # Worker
@@ -199,5 +200,6 @@ add_executable(worker ${WORKER_SRCS}
 
 add_dependencies(worker gtest spooky-hash thread-safe-stl-containers)
 
-target_link_libraries(worker LINK_PUBLIC ${spooky-hash_BINARY}
-  ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc protobuf)
+target_link_libraries(worker LINK_PUBLIC ${protobuf3_LIBRARY}
+  ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags
+  hwloc)

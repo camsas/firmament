@@ -7,7 +7,6 @@ set(BASE_SRC
 
 set(BASE_PROTOBUFS
   base/coco_interference_scores.proto
-  base/data_object_name.proto
   base/job_desc.proto
   base/machine_perf_statistics_sample.proto
   base/reference_desc.proto
@@ -16,7 +15,6 @@ set(BASE_PROTOBUFS
   base/resource_vector.proto
   base/task_desc.proto
   base/task_final_report.proto
-  base/task_instance_profile.proto
   base/task_perf_statistics_sample.proto
   base/whare_map_stats.proto
   )
@@ -40,7 +38,7 @@ if (BUILD_TESTS)
       $<TARGET_OBJECTS:base>)
     target_link_libraries(${TEST_NAME}
       ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
-      ${Firmament_SHARED_LIBRARIES} glog gflags protobuf)
+      ${protobuf3_LIBRARY} ${Firmament_SHARED_LIBRARIES} glog gflags)
     add_test(${TEST_NAME} ${TEST_NAME})
   endforeach(T)
 endif (BUILD_TESTS)

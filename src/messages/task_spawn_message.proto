@@ -3,11 +3,13 @@
 //
 // Task spawn message.
 
+syntax = "proto3";
+
 package firmament;
 
 import "base/task_desc.proto";
 
 message TaskSpawnMessage {
-  required uint64 creating_task_id = 1;
-  required TaskDescriptor spawned_task_desc = 2;
+  uint64 creating_task_id = 1;
+  TaskDescriptor spawned_task_desc = 2;
 }

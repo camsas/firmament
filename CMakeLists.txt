@@ -28,6 +28,9 @@ include(LintTargets)
 # Docker target (image build)
 include(DockerTargets)
 
+# Doxy documentaion target
+include(DoxyTargets)
+
 # Unit tests
 if (BUILD_TESTS)
   enable_testing()

@@ -4,6 +4,8 @@
 // Reference description protobuf. This is used to serialize and pass around
 // references.
 
+syntax = "proto3";
+
 package firmament;
 
 message ReferenceDescriptor {
@@ -21,19 +23,16 @@ message ReferenceDescriptor {
     PRIVATE = 1;
   }
 
-  required bytes id = 1;
-  required ReferenceType type = 2;
-  optional ReferenceScope scope = 3 [default = PUBLIC];
-  optional bool non_deterministic = 4 [default = true];
-  optional uint64 size = 5;
-  optional string location = 6;
-  optional bytes inline_data = 7;
-  optional uint64 producing_task = 8;
+  bytes id = 1;
+  ReferenceType type = 2;
+  ReferenceScope scope = 3;
+  bool non_deterministic = 4;
+  uint64 size = 5;
+  string location = 6;
+  bytes inline_data = 7;
+  uint64 producing_task = 8;
 
-  optional uint64 time_to_compute = 9 ;
-  optional uint64 version = 10 ;
-
-  /* Modifications for storage engine */
-  optional bool is_modified = 11;
+  uint64 time_to_compute = 9 ;
+  uint64 version = 10 ;
 }
 
