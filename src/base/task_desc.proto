@@ -36,7 +36,7 @@ message TaskDescriptor {
   repeated ReferenceDescriptor dependencies = 6;
   repeated ReferenceDescriptor outputs = 7;
   /* Command and arguments */
-  bytes binary = 8;
+  string binary = 8;
   repeated string args = 9;
   /* Children */
   repeated TaskDescriptor spawned = 10;
