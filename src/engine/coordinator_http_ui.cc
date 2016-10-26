@@ -13,8 +13,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/bind.hpp>
-#include <google/protobuf/text_format.h>
-#include <pb2json.h>
+#include <google/protobuf/util/json_util.h>
 
 #include "base/job_desc.pb.h"
 #include "engine/coordinator.h"
@@ -36,6 +35,8 @@ DECLARE_bool(debug_flow_graph);
 
 DEFINE_string(http_ui_template_dir, "src/webui",
               "Path to the directory where the web UI templates are located.");
+
+using google::protobuf::util::MessageToJsonString;
 
 namespace firmament {
 namespace webui {
@@ -151,10 +152,10 @@ void CoordinatorHTTPUI::HandleJobSubmitURI(
   }
   // We're okay to continue
   http::response_writer_ptr writer = InitOkResponse(http_request, tcp_conn);
-  // Submit the JD to the coordinator
   JobDescriptor job_descriptor;
-  google::protobuf::TextFormat::ParseFromString(job_descriptor_param,
-                                                &job_descriptor);
+  google::protobuf::util::JsonStringToMessage(job_descriptor_param,
+                                              &job_descriptor);
+  // Submit the JD to the coordinator
   VLOG(3) << "JD:" << job_descriptor.DebugString();
   string job_id = coordinator_->SubmitJob(job_descriptor);
   // Return the job ID to the client
@@ -543,7 +544,8 @@ void CoordinatorHTTPUI::HandleResourcesTopologyURI(
   // Return serialized resource topology
   http::response_writer_ptr writer = InitOkResponse(http_request,
                                                 tcp_conn);
-  char *json = pb2json(root_rtnd);
+  string json;
+  CHECK(MessageToJsonString(root_rtnd, &json).ok());
   writer->write(json);
   FinishOkResponse(writer);
 }
@@ -606,7 +608,8 @@ void CoordinatorHTTPUI::HandleJobDTGURI(const http::request_ptr& http_request,
     // Return serialized DTG
     http::response_writer_ptr writer = InitOkResponse(http_request,
                                                       tcp_conn);
-    char *json = pb2json(*jd);
+    string json;
+    CHECK(MessageToJsonString(*jd, &json).ok());
     writer->write(json);
     FinishOkResponse(writer);
   } else {
@@ -825,7 +828,9 @@ void CoordinatorHTTPUI::HandleStatisticsURI(
           ++it) {
         if (output != "[")
           output += ", ";
-        output += pb2json(*it);
+        string json;
+        CHECK(MessageToJsonString(*it, &json).ok());
+        output += json;
       }
       output += "]";
     } else {
@@ -855,7 +860,9 @@ void CoordinatorHTTPUI::HandleStatisticsURI(
           ++it) {
         if (!first)
           output += ", ";
-        output += pb2json(*it);
+        string json;
+        CHECK(MessageToJsonString(*it, &json).ok());
+        output += json;
         first = false;
       }
     }
@@ -872,7 +879,9 @@ void CoordinatorHTTPUI::HandleStatisticsURI(
           ++it) {
         if (!first)
           output += ", ";
-        output += pb2json(*it);
+        string json;
+        CHECK(MessageToJsonString(*it, &json).ok());
+        output += json;
         first = false;
       }
     }
@@ -890,7 +899,9 @@ void CoordinatorHTTPUI::HandleStatisticsURI(
           ++it) {
         if (!first)
           output += ", ";
-        output += pb2json(*it);
+        string json;
+        CHECK(MessageToJsonString(*it, &json).ok());
+        output += json;
         first = false;
       }
     }

@@ -130,28 +130,6 @@ if (${ENABLE_HDFS})
 endif (${ENABLE_HDFS})
 
 ###############################################################################
-# pb2json
-ExternalProject_Add(
-    pb2json
-    GIT_REPOSITORY https://github.com/ms705/pb2json.git
-    TIMEOUT 10
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/pb2json
-    BUILD_IN_SOURCE ON
-    # XXX/malte): workaround for CMake issue forcing a spurious git stash
-    UPDATE_COMMAND ""
-    # no configure step
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND make
-    # no install step
-    INSTALL_COMMAND "")
-
-ExternalProject_Get_Property(pb2json SOURCE_DIR)
-set(pb2json_SOURCE_DIR ${SOURCE_DIR})
-set(pb2json_INCLUDE_DIR ${pb2json_SOURCE_DIR})
-include_directories(${pb2json_INCLUDE_DIR})
-set(pb2json_LIBRARY ${pb2json_SOURCE_DIR}/libpb2json.a)
-
-###############################################################################
 # protobuf3
 ExternalProject_Add(
     protobuf3

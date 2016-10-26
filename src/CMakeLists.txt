@@ -25,8 +25,7 @@ add_library(base OBJECT ${BASE_SRC} ${BASE_PROTOBUF_SRCS})
 add_dependencies(base gtest spooky-hash thread-safe-stl-containers)
 add_library(engine OBJECT ${ENGINE_SRC} ${BASE_PROTOBUF_HDRS}
   ${MESSAGES_PROTOBUF_HDRS} ${SCHEDULING_PROTOBUF_HDRS})
-add_dependencies(engine gtest pb2json pion spooky-hash
-  thread-safe-stl-containers)
+add_dependencies(engine gtest pion spooky-hash thread-safe-stl-containers)
 add_library(executors OBJECT ${EXECUTOR_SRC} ${BASE_PROTOBUF_HDRS}
   ${MESSAGES_PROTOBUF_HDRS})
 add_dependencies(executors gtest spooky-hash thread-safe-stl-containers)
@@ -42,8 +41,7 @@ add_library(platforms_sim OBJECT ${PLATFORMS_SIM_SRC})
 add_dependencies(platforms_sim gtest spooky-hash thread-safe-stl-containers)
 add_library(scheduling OBJECT ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS}
   ${BASE_PROTOBUF_HDRS} ${MESSAGES_PROTOBUF_HDRS})
-add_dependencies(scheduling gtest pb2json pion spooky-hash
-  thread-safe-stl-containers)
+add_dependencies(scheduling gtest pion spooky-hash thread-safe-stl-containers)
 # TODO(malte): N.B. this subsumes sim_dfs; should disentangle!
 add_library(sim OBJECT ${SIM_SRC} ${SIM_DFS_SRC} ${SIM_PROTOBUF_SRCS}
   ${BASE_PROTOBUF_HDRS} ${MESSAGES_PROTOBUF_HDRS} ${SCHEDULING_PROTOBUF_HDRS})
@@ -78,17 +76,16 @@ add_executable(coordinator ${COORDINATOR_SRCS}
   $<TARGET_OBJECTS:storage>
   )
 
-add_dependencies(coordinator gtest pb2json pion scripts_job spooky-hash
+add_dependencies(coordinator gtest pion scripts_job spooky-hash
   thread-safe-stl-containers)
 
 # XXX(malte): remove this
 target_compile_definitions(coordinator PRIVATE -D__HTTP_UI__)
 
 # N.B.: ${libhdfs3_LIBRARY} is empty if !${ENABLE_HDFS}
-target_link_libraries(coordinator LINK_PUBLIC
-  ${pb2json_LIBRARY} ${pion_LIBRARY} ${protobuf3_LIBRARY} ${spooky-hash_BINARY}
-  ${libhdfs3_LIBRARY} ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc
-  jansson)
+target_link_libraries(coordinator LINK_PUBLIC ${pion_LIBRARY}
+  ${protobuf3_LIBRARY} ${spooky-hash_BINARY} ${libhdfs3_LIBRARY}
+  ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc jansson)
 
 ###############################################################################
 # Google trace data extractor
@@ -119,8 +116,8 @@ add_library(firmament_scheduling SHARED
   ${MISC_TRACE_GENERATOR_SRC}
   ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS})
 
-add_dependencies(firmament_scheduling protobuf3 cs2 gtest pb2json pion
-  spooky-hash thread-safe-stl-containers)
+add_dependencies(firmament_scheduling protobuf3 cs2 gtest pion spooky-hash
+  thread-safe-stl-containers)
 
 target_link_libraries(firmament_scheduling LINK_PUBLIC ${protobuf3_LIBRARY}
   ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags

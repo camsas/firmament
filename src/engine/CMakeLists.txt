@@ -58,8 +58,8 @@ if (BUILD_TESTS)
     target_link_libraries(${TEST_NAME}
       ${Firmament_SHARED_LIBRARIES}
       ${spooky-hash_BINARY} ${gtest_LIBRARY} ${gtest_MAIN_LIBRARY}
-      ${libhdfs3_LIBRARY} ${pb2json_LIBRARY} ${pion_LIBRARY}
-      ${protobuf3_LIBRARY} ctemplate glog gflags hwloc jansson)
+      ${libhdfs3_LIBRARY} ${pion_LIBRARY} ${protobuf3_LIBRARY} ctemplate glog
+      gflags hwloc jansson)
     add_test(${TEST_NAME} ${TEST_NAME})
   endforeach(T)
 endif (BUILD_TESTS)
