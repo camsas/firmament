@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_c7e86db6",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-30T15:50:41Z",
+      "side": 1,
+      "message": "Done in 299907.",
+      "parentUuid": "baa041b7_09ab3f89",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_09821fff",
         "filename": "src/platforms/unix/procfs_machine.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2016-10-18T11:34:18Z",
       "side": 1,
       "message": "This declaration can be moved to the block starting at line 217, it doesn\u0027t need to be valid in the whole method.",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_a7ce8959",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-30T15:50:41Z",
+      "side": 1,
+      "message": "Partly done in 299907.",
+      "parentUuid": "baa041b7_09821fff",
       "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_87cb854a",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-30T15:50:41Z",
+      "side": 1,
+      "message": "Done in 299907.",
+      "parentUuid": "baa041b7_89974f44",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_498ca734",
         "filename": "src/platforms/unix/procfs_machine.cc",
         "patchSetId": 1
@@ -64,6 +118,24 @@
       "writtenOn": "2016-10-18T11:34:18Z",
       "side": 1,
       "message": "Please put a username in brackets after TODO, e.g. \"TODO(malte)\", so that the TODO can be tracked back to whoever put it in (Google C++ style)",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_67d8811f",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-30T15:50:41Z",
+      "side": 1,
+      "message": "Done in 299907.",
+      "parentUuid": "baa041b7_498ca734",
       "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_47d57de3",
+        "filename": "src/platforms/unix/procfs_machine.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-30T15:50:41Z",
+      "side": 1,
+      "message": "Partly done in 299907.",
+      "parentUuid": "baa041b7_e9cffb7c",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_09b45fee",
         "filename": "src/platforms/unix/procfs_machine.h",
         "patchSetId": 1
@@ -98,6 +188,24 @@
       "writtenOn": "2016-10-18T11:34:18Z",
       "side": 1,
       "message": "Please add spaces around \"else\" (Google C++ style)",
+      "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_2701596e",
+        "filename": "src/platforms/unix/procfs_machine.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-10-30T15:50:41Z",
+      "side": 1,
+      "message": "Done in 299907.",
+      "parentUuid": "baa041b7_09b45fee",
       "revId": "22a6c1e1a3098f18418b49fdc223374c695e27ec",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
