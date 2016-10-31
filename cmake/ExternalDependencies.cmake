@@ -1,4 +1,8 @@
 ###############################################################################
+# pkg-config (which we rely on for detecting some other libraries)
+find_package(PkgConfig REQUIRED)
+
+###############################################################################
 # Boost
 find_package(Boost REQUIRED COMPONENTS chrono date_time filesystem regex
   system thread timer)
@@ -105,6 +109,10 @@ set(gmock_MAIN_LIBRARY ${gtest_BINARY_DIR}/googlemock/libgmock_main.a)
 find_package(Hwloc REQUIRED)
 
 ###############################################################################
+# libctemplate
+find_package(Ctemplate REQUIRED)
+
+###############################################################################
 # libhdfs3
 if (${ENABLE_HDFS})
   # libHDFS requires libxml2
@@ -128,6 +136,14 @@ if (${ENABLE_HDFS})
   include_directories(${libhdfs3_INCLUDE_DIR})
   set(libhdfs3_LIBRARY ${libhdfs3_BINARY_DIR}/src/libhdfs3.so)
 endif (${ENABLE_HDFS})
+
+###############################################################################
+# libjansson
+find_package(Libjansson REQUIRED)
+
+###############################################################################
+# OpenSSL
+find_package(OpenSSL REQUIRED)
 
 ###############################################################################
 # protobuf3
