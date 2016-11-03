@@ -46,14 +46,8 @@ $ ctest
 
 runs unit tests.
 
-Other targets can be listed by running
-
-```console
-$ make help
-```
-
-Binaries are in the build/ subdirectory of the project root, and all accept the
-`--helpshort` argument to show their command line options.
+Binaries are in the build/src subdirectory of the project root, and all accept
+the `--helpshort` argument to show their command line options.
 
 Start up by running a coordinator:
 
