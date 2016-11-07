@@ -1,5 +1,5 @@
 // The Firmament project
-// Copyright (c) 2015 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) The Firmament Authors.
 //
 // A bridge to TaskLib for use in applications that link TaskLib at
 // compilation time.

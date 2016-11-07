@@ -1,5 +1,5 @@
 // The Firmament project
-// Copyright (c) 2011-2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) The Firmament Authors.
 //
 // Joins two R2D2 DAG capture files, matching packets in the second one (DAG1)
 // to packets in the first one (DAG0). Writes out the timestamp when the packet

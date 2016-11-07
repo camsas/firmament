@@ -1,5 +1,5 @@
 // The Firmament project
-// Copyright (c) 2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) The Firmament Authors.
 // Copyright (c) 2012 Matthew P. Grosvenor  <matthew.grosvenor@cl.cam.ac.uk>
 //
 // Common data types and definitions for R2D2 packet capture pipeline.

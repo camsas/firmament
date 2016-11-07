@@ -1,5 +1,5 @@
 // The Firmament project
-// Copyright (c) 2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) The Firmament Authors.
 // Copyright (c) 2012 Matthew P. Grosvenor  <matthew.grosvenor@cl.cam.ac.uk>
 //
 // IO helpers for operation of R2D2 examples in standalone mode.

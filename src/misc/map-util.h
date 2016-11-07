@@ -1,5 +1,5 @@
 // Copyright 2010 Google
-// Copyright 2012 Malte Schwarzkopf <malte.schwarzkopf@cl.cam.ac.uk>
+// Copyright (c) The Firmament Authors.
 //
 // Modified for the Firmament project, originally from
 // http://or-tools.googlecode.com/svn-history/r302/trunk/base/map-util.h
