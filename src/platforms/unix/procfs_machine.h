@@ -77,8 +77,15 @@ class ProcFSMachine {
   MemoryStatistics_t GetMemoryStats();
   NetworkStatistics_t GetNetworkStats();
 
-  inline void readunsigned(FILE* input, uint64_t *x) {
-    CHECK_EQ(fscanf(input, "%ju ", x), 1);
+  inline int readunsigned(FILE* input, uint64_t *x) {
+    int valid_unsigned_read = -1;
+    valid_unsigned_read = fscanf(input, "%ju ", x);
+
+    if (valid_unsigned_read <= 0){
+       return -1;
+    }else{
+       return 0;
+    }
   }
 
   vector<CPUStatistics_t> cpu_stats_;

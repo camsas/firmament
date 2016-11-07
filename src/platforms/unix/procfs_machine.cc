@@ -39,6 +39,8 @@ DEFINE_string(monitor_blockdev, "sda",
               "Block device on which to monitor I/O statistics.");
 DEFINE_int64(monitor_blockdev_maxbw, -1,
              "Maximum read/write bandwidth of monitored block device.");
+DEFINE_uint64(monitor_netif_speed, 100,
+             "Default network interface speed");
 DECLARE_uint64(heartbeat_interval);
 
 namespace firmament {
@@ -199,7 +201,7 @@ DiskStatistics_t ProcFSMachine::GetDiskStats() {
   if (blockdev_stat_fd) {
     uint64_t tmp_value;
     for (uint64_t i = 0; i < 11; i++) {
-      readunsigned(blockdev_stat_fd, &tmp_value);
+      CHECK_EQ(readunsigned(blockdev_stat_fd, &tmp_value), 0);
       if (i == 2)
         // read sector count
         disk_stats.read = tmp_value * 512;
@@ -213,6 +215,7 @@ DiskStatistics_t ProcFSMachine::GetDiskStats() {
 }
 
 void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
+  int valid_nic_speed = -1;
   // Extract the total available resource capacities on this machine
   MemoryStatistics_t mem_stats = GetMemoryStats();
   cap->set_ram_cap(mem_stats.mem_total / BYTES_TO_MB);
@@ -227,7 +230,11 @@ void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
   FILE* nic_speed_fd = fopen(nic_speed_path.c_str(), "r");
   uint64_t speed = 0;
   if (nic_speed_fd) {
-    readunsigned(nic_speed_fd, &speed);
+    valid_nic_speed = readunsigned(nic_speed_fd, &speed);
+    if ( valid_nic_speed < 0 ){
+       // TODO: Get the default values? 100Mb/s is assumed for now.
+       speed = FLAGS_monitor_netif_speed;
+    }
     CHECK_EQ(fclose(nic_speed_fd), 0);
   }
   if (speed == 0)
@@ -245,7 +252,7 @@ void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
     FILE* disk_type_fd = fopen(disk_type_path.c_str(), "r");
     uint64_t disk_is_rotational = 1;  // HDD is the default
     if (disk_type_fd) {
-      readunsigned(disk_type_fd, &disk_is_rotational);
+      CHECK_EQ(readunsigned(disk_type_fd, &disk_is_rotational), 0);
       CHECK_EQ(fclose(disk_type_fd), 0);
     }
     if (disk_is_rotational) {
@@ -299,13 +306,13 @@ NetworkStatistics_t ProcFSMachine::GetNetworkStats() {
   // Send
   FILE* tx_stat_fd = fopen((interface_path + "/tx_bytes").c_str(), "r");
   if (tx_stat_fd) {
-    readunsigned(tx_stat_fd, &net_stats.send);
+    CHECK_EQ(readunsigned(tx_stat_fd, &net_stats.send), 0);
     CHECK_EQ(fclose(tx_stat_fd), 0);
   }
   // Recv
   FILE* rx_stat_fd = fopen((interface_path + "/rx_bytes").c_str(), "r");
   if (rx_stat_fd) {
-    readunsigned(rx_stat_fd, &net_stats.recv);
+    CHECK_EQ(readunsigned(rx_stat_fd, &net_stats.recv), 0);
     CHECK_EQ(fclose(rx_stat_fd), 0);
   }
   return net_stats;
