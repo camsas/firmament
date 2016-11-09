@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_0e475ebd",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-11-09T18:30:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_27da791e",
+      "revId": "c64c2167cea24da84e673bff1421d9dbf9a1c29d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_a7c7a945",
         "filename": "src/platforms/unix/procfs_machine.h",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2016-10-30T15:47:35Z",
       "side": 1,
       "message": "If you\u0027re resetting errno anyway, these lines can be simplified to just two lines:\n\nfscanf(input, \"%ju\", x);\nreturn errno;",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 70,
+        "endChar": 13
+      },
+      "revId": "c64c2167cea24da84e673bff1421d9dbf9a1c29d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_2e3a2235",
+        "filename": "src/platforms/unix/procfs_machine.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-11-09T18:30:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_a7c7a945",
       "range": {
         "startLine": 65,
         "startChar": 0,
