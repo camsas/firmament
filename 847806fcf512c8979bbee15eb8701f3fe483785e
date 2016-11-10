@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_fb7f5315",
+        "filename": "scripts/install_packages.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-11-10T18:13:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_7b18e31e",
+      "revId": "847806fcf512c8979bbee15eb8701f3fe483785e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_3bd13b30",
         "filename": "scripts/install_packages.sh",
         "patchSetId": 2
@@ -30,6 +48,30 @@
       "writtenOn": "2016-11-10T17:53:34Z",
       "side": 1,
       "message": "Can be dropped",
+      "range": {
+        "startLine": 156,
+        "startChar": 0,
+        "endLine": 160,
+        "endChar": 27
+      },
+      "revId": "847806fcf512c8979bbee15eb8701f3fe483785e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_9b75e734",
+        "filename": "scripts/install_packages.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-11-10T18:13:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_3bd13b30",
       "range": {
         "startLine": 156,
         "startChar": 0,
