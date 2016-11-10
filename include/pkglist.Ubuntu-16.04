@@ -1,8 +1,8 @@
 #!/bin/bash
-BOOST_VER=1.55
+BOOST_VER=1.58
 
 BASE_PKGS="wget make cmake pkg-config"
-CLANG_PKGS="clang-3.4"
+CLANG_PKGS="clang-3.8"
 COMPILER_PKGS="g++"
 GOOGLE_PKGS="libgflags-dev libgoogle-glog-dev"
 PERFTOOLS_PKGS="google-perftools"
