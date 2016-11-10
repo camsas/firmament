@@ -138,10 +138,6 @@ if (${ENABLE_HDFS})
 endif (${ENABLE_HDFS})
 
 ###############################################################################
-# libjansson
-find_package(Libjansson REQUIRED)
-
-###############################################################################
 # OpenSSL
 find_package(OpenSSL REQUIRED)
 

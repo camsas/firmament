@@ -12,3 +12,5 @@ add_custom_target(scripts_job
     ${JOB_SUBMIT_PROTOBUFS} &&
     touch ${Firmament_ROOT_DIR}/scripts/job/base/__init__.py
   COMMENT "Generating job submission script protobufs...")
+
+add_dependencies(scripts_job protobuf3)

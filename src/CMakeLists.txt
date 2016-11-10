@@ -22,36 +22,37 @@ add_definitions(-D__PLATFORM_HAS_BOOST__)
 # Object collections representing different modules (~= source dirs)
 
 add_library(base OBJECT ${BASE_SRC} ${BASE_PROTOBUF_SRCS})
-add_dependencies(base gtest spooky-hash thread-safe-stl-containers)
+add_dependencies(base gtest protobuf3 spooky-hash thread-safe-stl-containers)
 add_library(engine OBJECT ${ENGINE_SRC} ${BASE_PROTOBUF_HDRS}
   ${MESSAGES_PROTOBUF_HDRS} ${SCHEDULING_PROTOBUF_HDRS})
-add_dependencies(engine gtest pion spooky-hash thread-safe-stl-containers)
+add_dependencies(engine gtest pion protobuf3 spooky-hash thread-safe-stl-containers)
 add_library(executors OBJECT ${EXECUTOR_SRC} ${BASE_PROTOBUF_HDRS}
   ${MESSAGES_PROTOBUF_HDRS})
-add_dependencies(executors gtest spooky-hash thread-safe-stl-containers)
+add_dependencies(executors gtest protobuf3 spooky-hash thread-safe-stl-containers)
 add_library(messages OBJECT ${MESSAGES_PROTOBUF_SRCS} ${BASE_PROTOBUF_HDRS})
+add_dependencies(messages protobuf3)
 add_library(misc OBJECT ${MISC_SRC} ${BASE_PROTOBUF_HDRS})
-add_dependencies(misc gtest spooky-hash thread-safe-stl-containers)
+add_dependencies(misc gtest protobuf3 spooky-hash thread-safe-stl-containers)
 add_library(misc_trace_generator OBJECT ${MISC_TRACE_GENERATOR_SRC})
-add_dependencies(misc_trace_generator gtest spooky-hash
+add_dependencies(misc_trace_generator gtest protobuf3 spooky-hash
   thread-safe-stl-containers)
 add_library(platforms_unix OBJECT ${PLATFORMS_UNIX_SRC})
-add_dependencies(platforms_unix gtest spooky-hash thread-safe-stl-containers)
+add_dependencies(platforms_unix gtest protobuf3 spooky-hash thread-safe-stl-containers)
 add_library(platforms_sim OBJECT ${PLATFORMS_SIM_SRC})
-add_dependencies(platforms_sim gtest spooky-hash thread-safe-stl-containers)
+add_dependencies(platforms_sim gtest protobuf3 spooky-hash thread-safe-stl-containers)
 add_library(scheduling OBJECT ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS}
   ${BASE_PROTOBUF_HDRS} ${MESSAGES_PROTOBUF_HDRS})
-add_dependencies(scheduling gtest pion spooky-hash thread-safe-stl-containers)
+add_dependencies(scheduling gtest pion protobuf3 spooky-hash thread-safe-stl-containers)
 # TODO(malte): N.B. this subsumes sim_dfs; should disentangle!
 add_library(sim OBJECT ${SIM_SRC} ${SIM_DFS_SRC} ${SIM_PROTOBUF_SRCS}
   ${BASE_PROTOBUF_HDRS} ${MESSAGES_PROTOBUF_HDRS} ${SCHEDULING_PROTOBUF_HDRS})
 # XXX(malte): get rid of this
 target_compile_definitions(sim PRIVATE
   -DSOLVER_DIR="${Firmament_BINARY_DIR}/third_party")
-add_dependencies(sim gtest spooky-hash thread-safe-stl-containers)
+add_dependencies(sim gtest protobuf3 spooky-hash thread-safe-stl-containers)
 add_library(storage OBJECT ${STORAGE_SRC} ${BASE_PROTOBUF_HDRS}
   ${MESSAGES_PROTOBUF_HDRS} ${SCHEDULING_PROTOBUF_HDRS})
-add_dependencies(storage gtest spooky-hash thread-safe-stl-containers)
+add_dependencies(storage gtest protobuf3 spooky-hash thread-safe-stl-containers)
 if (${ENABLE_HDFS})
   add_dependencies(storage libhdfs3)
 endif (${ENABLE_HDFS})
@@ -85,7 +86,7 @@ target_compile_definitions(coordinator PRIVATE -D__HTTP_UI__)
 # N.B.: ${libhdfs3_LIBRARY} is empty if !${ENABLE_HDFS}
 target_link_libraries(coordinator LINK_PUBLIC ${pion_LIBRARY}
   ${protobuf3_LIBRARY} ${spooky-hash_BINARY} ${libhdfs3_LIBRARY}
-  ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc jansson)
+  ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc)
 
 ###############################################################################
 # Google trace data extractor
@@ -155,7 +156,7 @@ target_compile_definitions(simulator PRIVATE
 
 target_link_libraries(simulator LINK_PUBLIC ${protobuf3_LIBRARY}
   ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} ${libhdfs3_LIBRARY}
-  ctemplate glog gflags hwloc jansson)
+  ctemplate glog gflags hwloc)
 
 ###############################################################################
 # TaskLib
@@ -173,7 +174,7 @@ set(TASK_LIB_SRCS
 
 add_library(task_lib_inject SHARED ${TASK_LIB_SRCS})
 
-add_dependencies(task_lib_inject gtest spooky-hash thread-safe-stl-containers)
+add_dependencies(task_lib_inject gtest protobuf3 spooky-hash thread-safe-stl-containers)
 
 target_link_libraries(task_lib_inject LINK_PUBLIC ${protobuf3_LIBRARY}
   ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES} glog gflags hwloc)

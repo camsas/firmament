@@ -24,7 +24,6 @@
 
 #include "engine/task_lib.h"
 
-#include <jansson.h>
 #include <vector>
 #include <stdlib.h>
 #include <iostream>
