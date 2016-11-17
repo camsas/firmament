@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_365b7324",
+        "filename": "src/sim/synthetic_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-11-17T16:16:52Z",
+      "side": 1,
+      "message": "\u003e Shouldn\u0027t this flag actually be in the KnowledgeBaseSimulator? If I\n \u003e understand correctly as it stands whenever we run using the Google\n \u003e Trace Loader we would load the times and as a result the\n \u003e simulations will always have access to the runtime.\n\nNot quite -- with the current patch, there will be *no* times if using the GoogleTraceLoader because I modified only the synthetic trace loader to actually set the total_runtime_ field in TraceTaskStats.\n\nHowever, you\u0027re probably right in that we want this for the GoogleTraceLoader too, so I\u0027ll move the flag.\n\n \u003e However, we don\u0027t want this to be the default behaviour. If you\n \u003e move the flag to the KnowledgeBase simulator you can either return\n \u003e the runtime if the FLAG is set or check the final report if it\u0027s\n \u003e not. Then we would also make sure we don\u0027t crash hard when we\u0027re\n \u003e checking the report.\n\nFair point, I\u0027ll move it there. It\u0027s a little annoying to have these flag dependencies across files (they make it hard to break up CMake targets), but since both KnowledgeBaseSimulator and the trace loaders are in the \"sim\" target, we should be okay here.",
+      "parentUuid": "baa041b7_a01e1d0b",
+      "revId": "9db322119bf06e2e7381fd9a5537238ce7e10dec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_5b56222b",
         "filename": "src/sim/trace_utils.h",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2016-11-17T16:11:12Z",
       "side": 1,
       "message": "Here we use uint64 instead of double, Is it because google trace uses uint64 for runtime?",
+      "range": {
+        "startLine": 72,
+        "startChar": 2,
+        "endLine": 72,
+        "endChar": 10
+      },
+      "revId": "9db322119bf06e2e7381fd9a5537238ce7e10dec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_d66b27b8",
+        "filename": "src/sim/trace_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-11-17T16:16:52Z",
+      "side": 1,
+      "message": "Yes (sorta). Runtimes in Firmament are generally measured in microseconds stored as a uint64_t. The only places where doubles are used for times are when we take averages, but even those should probably actually be in microseconds stored as uint64_t.",
+      "parentUuid": "baa041b7_5b56222b",
       "range": {
         "startLine": 72,
         "startChar": 2,
