@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_f65e2be7",
+        "filename": "src/sim/synthetic_trace_loader.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1009813
+      },
+      "writtenOn": "2016-11-17T16:51:20Z",
+      "side": 1,
+      "message": "In this case, for the synthetic trace loader, every task will have the same run time, right?",
+      "range": {
+        "startLine": 234,
+        "startChar": 9,
+        "endLine": 234,
+        "endChar": 39
+      },
+      "revId": "1d9c51ca8c986b3998ff20d602b506b7c4326469",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
