@@ -280,9 +280,12 @@ void SimulatorBridge::AddTaskStats(
                  << trace_task_identifier.task_index << " exist";
     return;
   }
-  // NOTE: We do not add runtime statistics./ Hence, the simulations
-  // work without knowing tasks' runtime before their first run. I believe this
-  // is the correct way to replay the trace.
+  // NOTE: task_stats has a "total_runtime" field that can optionally be set. If
+  // it is set, the simulation will know the accurate runtime of the task ahead
+  // of execution (i.e., it has an oracle). It it us unset (i.e., zero), the
+  // simulation works without knowing tasks' runtime before their first run.
+  // Which of these ways of operating is preferable depends on the simulation
+  // goals, by typically the runtime would be unset.
   knowledge_base_->SetTraceTaskStats(task_id, *task_stats);
   task_id_to_stats_.erase(task_id);
 }

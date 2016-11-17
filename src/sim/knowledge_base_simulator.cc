@@ -114,6 +114,19 @@ void KnowledgeBaseSimulator::EraseTraceTaskStats(TaskID_t task_id) {
   task_stats_.erase(task_id);
 }
 
+uint64_t KnowledgeBaseSimulator::GetRuntimeForTask(TaskID_t task_id) {
+  TraceTaskStats* task_stats = FindOrNull(task_stats_, task_id);
+  CHECK_NOTNULL(task_stats);
+  if (task_stats->total_runtime_ > 0) {
+    // Use information from trace oracle
+    return task_stats->total_runtime_;
+  } else {
+    // We have no oracle from the trace, so try finding a final report.
+    // This will fail hard if the task has not yet finished.
+    return KnowledgeBase::GetRuntimeForTask(task_id);
+  }
+}
+
 void KnowledgeBaseSimulator::PopulateTaskFinalReport(TaskDescriptor* td_ptr,
                                                      TaskFinalReport* report) {
   TraceTaskStats* task_stats = FindOrNull(task_stats_, td_ptr->uid());

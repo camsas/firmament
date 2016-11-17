@@ -64,6 +64,7 @@ class KnowledgeBase {
   virtual double GetAvgRuntimeForTEC(EquivClass_t id);
   const deque<TaskFinalReport>* GetFinalReportForTask(TaskID_t task_id) const;
   const deque<TaskFinalReport>* GetFinalReportsForTEC(EquivClass_t ec_id) const;
+  virtual uint64_t GetRuntimeForTask(TaskID_t task_id);
   void LoadKnowledgeBaseFromFile();
   void ProcessTaskFinalReport(const vector<EquivClass_t>& equiv_classes,
                               const TaskFinalReport& report);

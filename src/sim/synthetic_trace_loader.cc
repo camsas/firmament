@@ -45,6 +45,8 @@ DEFINE_uint64(prepopulated_task_duration, 0,
 DEFINE_bool(prepopulate_using_interarrival, false, "True if the prepopulated "
             "tasks should have runtims proportional with the job inter arrival "
             "rate");
+DEFINE_bool(task_duration_oracle, false, "True if task durations in the KB are "
+            "supposed to be set from the trace ahead of running.");
 
 DECLARE_uint64(max_tasks_per_pu);
 DECLARE_uint64(runtime);
@@ -210,6 +212,10 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
          task_index <= num_tasks_at_beginning;
          ++task_index) {
       task_identifier.task_index = task_index;
+      if (FLAGS_task_duration_oracle) {
+        task_stats.total_runtime_ =
+          FLAGS_prepopulated_task_duration / FLAGS_trace_speed_up;
+      }
       CHECK(InsertIfNotPresent(
           task_id_to_stats, GenerateTaskIDFromTraceIdentifier(task_identifier),
           task_stats));
@@ -224,6 +230,10 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
     for (uint64_t task_index = 1; task_index <= FLAGS_synthetic_tasks_per_job;
          ++task_index) {
       task_identifier.task_index = task_index;
+      if (FLAGS_task_duration_oracle) {
+        task_stats.total_runtime_ =
+          FLAGS_synthetic_task_duration / FLAGS_trace_speed_up;
+      }
       CHECK(InsertIfNotPresent(
           task_id_to_stats, GenerateTaskIDFromTraceIdentifier(task_identifier),
           task_stats));

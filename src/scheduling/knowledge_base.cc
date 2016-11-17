@@ -256,6 +256,14 @@ double KnowledgeBase::GetAvgRuntimeForTEC(EquivClass_t id) {
   return accumulator / res->size();
 }
 
+uint64_t KnowledgeBase::GetRuntimeForTask(TaskID_t task_id) {
+  boost::lock_guard<boost::upgrade_mutex> lock_shared(kb_lock_);
+  const deque<TaskFinalReport>* rep = GetFinalReportForTask(task_id);
+  CHECK_NOTNULL(rep);
+  CHECK(rep->size() > 0);
+  return rep->front().finish_time() - rep->front().start_time();
+}
+
 void KnowledgeBase::LoadKnowledgeBaseFromFile() {
   // Load the machine samples.
   fstream machine_samples(FLAGS_serial_machine_samples.c_str(),
