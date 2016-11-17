@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_a01e1d0b",
+        "filename": "src/sim/synthetic_trace_loader.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2016-11-17T11:35:01Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this flag actually be in the KnowledgeBaseSimulator? If I understand correctly as it stands whenever we run using the Google Trace Loader we would load the times and as a result the simulations will always have access to the runtime.\nHowever, we don\u0027t want this to be the default behaviour. If you move the flag to the KnowledgeBase simulator you can either return the runtime if the FLAG is set or check the final report if it\u0027s not. Then we would also make sure we don\u0027t crash hard when we\u0027re checking the report.",
+      "revId": "9db322119bf06e2e7381fd9a5537238ce7e10dec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
