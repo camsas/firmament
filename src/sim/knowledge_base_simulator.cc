@@ -42,6 +42,8 @@ DEFINE_double(devil_page_cache_threshold, 0.05,
               "Total page cache threshold for DEVIL");
 DEFINE_double(sheep_cpi_threshold, 1.6, "CPI threshold for SHEEP");
 DEFINE_double(sheep_mai_threshold, 0.001, "MAI thereshold for SHEEP");
+DEFINE_bool(task_duration_oracle, false, "True if task duration in the KB is "
+            "supposed to be set from the trace ahead of running the task.");
 
 namespace firmament {
 namespace sim {
@@ -112,6 +114,19 @@ void KnowledgeBaseSimulator::AddMachineSample(
 
 void KnowledgeBaseSimulator::EraseTraceTaskStats(TaskID_t task_id) {
   task_stats_.erase(task_id);
+}
+
+uint64_t KnowledgeBaseSimulator::GetRuntimeForTask(TaskID_t task_id) {
+  TraceTaskStats* task_stats = FindOrNull(task_stats_, task_id);
+  CHECK_NOTNULL(task_stats);
+  if (FLAGS_task_duration_oracle) {
+    // Use information from trace oracle
+    return task_stats->total_runtime_;
+  } else {
+    // We have no oracle from the trace, so try finding a final report.
+    // This will fail hard if the task has not yet finished.
+    return KnowledgeBase::GetRuntimeForTask(task_id);
+  }
 }
 
 void KnowledgeBaseSimulator::PopulateTaskFinalReport(TaskDescriptor* td_ptr,
