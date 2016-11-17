@@ -16,6 +16,29 @@
       "revId": "9db322119bf06e2e7381fd9a5537238ce7e10dec",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_5b56222b",
+        "filename": "src/sim/trace_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1009813
+      },
+      "writtenOn": "2016-11-17T16:11:12Z",
+      "side": 1,
+      "message": "Here we use uint64 instead of double, Is it because google trace uses uint64 for runtime?",
+      "range": {
+        "startLine": 72,
+        "startChar": 2,
+        "endLine": 72,
+        "endChar": 10
+      },
+      "revId": "9db322119bf06e2e7381fd9a5537238ce7e10dec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
