@@ -22,6 +22,30 @@
       "revId": "1d9c51ca8c986b3998ff20d602b506b7c4326469",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_76f21be5",
+        "filename": "src/sim/synthetic_trace_loader.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-11-17T17:03:09Z",
+      "side": 1,
+      "message": "Correct! Do you need something more than this?\n\nThe synthetic trace loader is currently mostly useful for development and debugging, not for generating realistic workloads. If could relatively easily be extended to generate runtimes and resource requests (see lines 200-205) according to distributions, however -- but it\u0027s unclear if that\u0027s worth it given that we have the Google trace loader.",
+      "parentUuid": "baa041b7_f65e2be7",
+      "range": {
+        "startLine": 234,
+        "startChar": 9,
+        "endLine": 234,
+        "endChar": 39
+      },
+      "revId": "1d9c51ca8c986b3998ff20d602b506b7c4326469",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
