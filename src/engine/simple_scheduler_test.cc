@@ -233,7 +233,7 @@ TEST_F(SimpleSchedulerTest, FindRunnableTasksForComplexJob2) {
   JobDescriptor* test_job = new JobDescriptor;
   JobID_t job_id = GenerateJobID();
   test_job->set_uuid(to_string(job_id));
-  test_job->mutable_root_task()->set_uid(0);
+  test_job->mutable_root_task()->set_uid(GenerateRootTaskID(*test_job));
   test_job->mutable_root_task()->set_name("root_task");
   test_job->mutable_root_task()->set_job_id(to_string(job_id));
   ReferenceDescriptor* o0_rt = test_job->mutable_root_task()->add_outputs();
