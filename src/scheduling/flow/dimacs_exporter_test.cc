@@ -108,6 +108,7 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   ResourceTopologyNodeDescriptor rtn_root;
   string root_id = to_string(GenerateResourceID("test"));
   rtn_root.mutable_resource_desc()->set_uuid(root_id);
+  rtn_root.mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_COORDINATOR);
   ResourceTopologyNodeDescriptor* rtn_c1 = rtn_root.add_children();
   string c1_uid = to_string(GenerateResourceID("test-c1"));
   rtn_c1->mutable_resource_desc()->set_uuid(c1_uid);
@@ -124,12 +125,15 @@ TEST_F(DIMACSExporterTest, SimpleGraphOutput) {
   TaskDescriptor* rt = jd.mutable_root_task();
   rt->set_uid(GenerateRootTaskID(jd));
   rt->set_state(TaskDescriptor::RUNNABLE);
+  rt->set_job_id(jd.uuid());
   TaskDescriptor* ct1 = rt->add_spawned();
   ct1->set_uid(GenerateTaskID(*rt));
   ct1->set_state(TaskDescriptor::RUNNABLE);
+  ct1->set_job_id(jd.uuid());
   TaskDescriptor* ct2 = rt->add_spawned();
   ct2->set_uid(GenerateTaskID(*rt));
   ct2->set_state(TaskDescriptor::RUNNABLE);
+  ct2->set_job_id(jd.uuid());
   CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
   CHECK(InsertIfNotPresent(task_map.get(), ct1->uid(), ct1));
   CHECK(InsertIfNotPresent(task_map.get(), ct2->uid(), ct2));
@@ -175,6 +179,7 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
   ResourceTopologyNodeDescriptor rtn_root;
   ResourceID_t root_uuid = GenerateResourceID("test");
   rtn_root.mutable_resource_desc()->set_uuid(to_string(root_uuid));
+  rtn_root.mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_COORDINATOR);
   InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
                      to_string(root_uuid));
   for (uint64_t i = 0; i < n; ++i) {
@@ -255,6 +260,7 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
     ResourceTopologyNodeDescriptor rtn_root;
     ResourceID_t root_uuid = GenerateResourceID("test");
     rtn_root.mutable_resource_desc()->set_uuid(to_string(root_uuid));
+    rtn_root.mutable_resource_desc()->set_type(ResourceDescriptor::RESOURCE_COORDINATOR);
     InsertIfNotPresent(&uuid_conversion_map_, to_string(root_uuid),
                        to_string(root_uuid));
     for (uint64_t i = 0; i < n; ++i) {
