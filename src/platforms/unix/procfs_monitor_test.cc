@@ -24,6 +24,9 @@
 
 #include <boost/thread.hpp>
 
+#include <sys/mman.h>
+#include <unistd.h>
+
 #include "base/common.h"
 #include "platforms/unix/common.h"
 #include "platforms/unix/procfs_monitor.h"
@@ -74,9 +77,19 @@ TEST_F(ProcFSMonitorTest, SimpleProcessStatsTest) {
   const ProcFSMonitor::ProcessStatistics_t* stats =
       pfsm_.ProcessInformation(pid, NULL);
   CHECK_EQ(stats->pid, pid);
-  CHECK_NOTNULL(malloc(getpagesize()));
+  usleep(1000);
+  char* p = (char*)mmap(0, getpagesize() * 10, PROT_READ | PROT_WRITE,
+                        MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+  CHECK_NOTNULL(p);
+  for (int i = 0; i < getpagesize() * 10; ++i) {
+    p[i] = 42;  // demand-page
+  }
+  usleep(1000);
   // Should have more pages allocated now...
-  CHECK_LT(stats->rss, pfsm_.ProcessInformation(pid, NULL)->rss);
+  const ProcFSMonitor::ProcessStatistics_t* new_stats =
+    pfsm_.ProcessInformation(pid, NULL);
+  CHECK_LT(stats->vsize, new_stats->vsize);
+  munmap(p, getpagesize() * 10);
 }
 
 // Tests retrieval of simple process statistics.
