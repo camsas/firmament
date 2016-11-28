@@ -415,7 +415,10 @@ int32_t LocalExecutor::RunProcessSync(TaskID_t task_id,
         PLOG(FATAL) << "Failed to close stderr FD in child";
 
       // Change to task's working directory
-      CHECK_EQ(chdir(env["FLAGS_task_data_dir"].c_str()), 0);
+      if (!FindOrNull(env, "FLAGS_task_data_dir") &&
+          !env["FLAGS_task_data_dir"].empty()) {
+        CHECK_EQ(chdir(env["FLAGS_task_data_dir"].c_str()), 0);
+      }
 
       // Close the open FDs in the child before exec-ing, so that the task does
       // not inherit all of the coordinator's sockets and FDs.
