@@ -55,11 +55,12 @@ DEFINE_uint64(synthetic_task_runtime, 1000000,
               "Runtime of the synthetic task (in us)");
 
 DECLARE_uint64(runtime);
+DECLARE_string(simulation);
 DECLARE_double(trace_speed_up);
 DECLARE_bool(task_duration_oracle);
 
 static bool ValidateTracePath(const char* flagname, const string& trace_path) {
-  if (trace_path.empty()) {
+  if (FLAGS_simulation == "google" && trace_path.empty()) {
     LOG(ERROR) << "Please specify a path to the Google trace!";
     return false;
   }
