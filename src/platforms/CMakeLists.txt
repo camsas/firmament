@@ -17,8 +17,6 @@ set(PLATFORMS_UNIX_SRC
 set(PLATFORMS_UNIX_TESTS
   platforms/unix/procfs_machine_test.cc
   platforms/unix/procfs_monitor_test.cc
-  platforms/unix/stream_sockets_adapter_test.cc
-  platforms/unix/stream_sockets_channel_test.cc
 )
 
 ###############################################################################
