@@ -61,7 +61,8 @@ class TraceLoader {
       unordered_map<uint64_t, uint64_t>* job_num_tasks) = 0;
 
   virtual void LoadTaskUtilizationStats(
-      unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats) = 0;
+      unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats,
+      const unordered_map<TaskID_t, uint64_t>& task_runtimes) = 0;
 
   /**
    * Loads all the task runtimes and returns map task_identifier -> runtime.

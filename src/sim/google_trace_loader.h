@@ -66,7 +66,8 @@ class GoogleTraceLoader : public TraceLoader {
                       unordered_map<uint64_t, uint64_t>* job_num_tasks);
 
   void LoadTaskUtilizationStats(
-      unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats);
+      unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats,
+      const unordered_map<TaskID_t, uint64_t>& task_runtimes);
 
   /**
    * Loads all the task runtimes and returns map task_identifier -> runtime.

@@ -56,6 +56,7 @@ DEFINE_uint64(synthetic_task_runtime, 1000000,
 
 DECLARE_uint64(runtime);
 DECLARE_double(trace_speed_up);
+DECLARE_bool(task_duration_oracle);
 
 static bool ValidateTracePath(const char* flagname, const string& trace_path) {
   if (trace_path.empty()) {
@@ -284,7 +285,8 @@ bool GoogleTraceLoader::LoadTaskEvents(
 }
 
 void GoogleTraceLoader::LoadTaskUtilizationStats(
-    unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats) {
+    unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats,
+    const unordered_map<TaskID_t, uint64_t>& task_runtimes) {
   char line[MAX_LINE_LENGTH];
   vector<string> cols;
   FILE* usage_file = NULL;
@@ -316,6 +318,7 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
         TraceTaskIdentifier ti;
         ti.job_id = lexical_cast<uint64_t>(cols[0]);
         ti.task_index = lexical_cast<uint64_t>(cols[1]);
+        TaskID_t tid = GenerateTaskIDFromTraceIdentifier(ti);
         TraceTaskStats task_stats;
         task_stats.avg_mean_cpu_usage_ = lexical_cast<double>(cols[4]);
         task_stats.avg_canonical_mem_usage_ = lexical_cast<double>(cols[8]);
@@ -327,9 +330,13 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
         task_stats.avg_cpi_ = lexical_cast<double>(cols[32]);
         task_stats.avg_mai_ = lexical_cast<double>(cols[36]);
 
-        if (!InsertIfNotPresent(task_id_to_stats,
-                                GenerateTaskIDFromTraceIdentifier(ti),
-                                task_stats) &&
+        if (FLAGS_task_duration_oracle) {
+          uint64_t runtime = 0;
+          CHECK(FindCopy(task_runtimes, tid, &runtime));
+          task_stats.total_runtime_ = runtime;
+        }
+
+        if (!InsertIfNotPresent(task_id_to_stats, tid, task_stats) &&
             VLOG_IS_ON(1)) {
           LOG(ERROR) << "LoadTaskUtilizationStats: There should not be more "
                      << "than an entry for job " << ti.job_id

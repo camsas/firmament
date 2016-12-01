@@ -195,7 +195,8 @@ bool SyntheticTraceLoader::LoadTaskEvents(
 }
 
 void SyntheticTraceLoader::LoadTaskUtilizationStats(
-    unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats) {
+    unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats,
+    const unordered_map<TaskID_t, uint64_t>& task_runtimes) {
   uint64_t usec_between_jobs = FLAGS_synthetic_job_interarrival_time;
   TraceTaskStats task_stats;
   task_stats.avg_mean_cpu_usage_ = 0.5;
@@ -210,14 +211,14 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
     for (uint64_t task_index = 1;
          task_index <= num_tasks_at_beginning;
          ++task_index) {
+      TaskID_t tid = GenerateTaskIDFromTraceIdentifier(task_identifier);
       task_identifier.task_index = task_index;
       if (FLAGS_task_duration_oracle) {
-        task_stats.total_runtime_ =
-          FLAGS_prepopulated_task_duration / FLAGS_trace_speed_up;
+        uint64_t runtime = 0;
+        CHECK(FindCopy(task_runtimes, tid, &runtime));
+        task_stats.total_runtime_ = runtime;
       }
-      CHECK(InsertIfNotPresent(
-          task_id_to_stats, GenerateTaskIDFromTraceIdentifier(task_identifier),
-          task_stats));
+      CHECK(InsertIfNotPresent(task_id_to_stats, tid, task_stats));
     }
   }
   uint64_t job_id = 1;
@@ -229,13 +230,13 @@ void SyntheticTraceLoader::LoadTaskUtilizationStats(
     for (uint64_t task_index = 1; task_index <= FLAGS_synthetic_tasks_per_job;
          ++task_index) {
       task_identifier.task_index = task_index;
+      TaskID_t tid = GenerateTaskIDFromTraceIdentifier(task_identifier);
       if (FLAGS_task_duration_oracle) {
-        task_stats.total_runtime_ =
-          FLAGS_synthetic_task_duration / FLAGS_trace_speed_up;
+        uint64_t runtime = 0;
+        CHECK(FindCopy(task_runtimes, tid, &runtime));
+        task_stats.total_runtime_ = runtime;
       }
-      CHECK(InsertIfNotPresent(
-          task_id_to_stats, GenerateTaskIDFromTraceIdentifier(task_identifier),
-          task_stats));
+      CHECK(InsertIfNotPresent(task_id_to_stats, tid, task_stats));
     }
   }
 }
