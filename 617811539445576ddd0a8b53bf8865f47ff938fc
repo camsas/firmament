@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5aa745d1_60ff4c35",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1009813
+      },
+      "writtenOn": "2016-12-02T02:12:42Z",
+      "side": 1,
+      "message": "I think I understand the logic in trace_loader that takes the task_runtime map input and populate the information. Just to check here, how is task_runtime_ itself gets initialized from actual google data? Do we need to modify that part in any way or it was originally implemented?",
+      "range": {
+        "startLine": 367,
+        "startChar": 61,
+        "endLine": 367,
+        "endChar": 74
+      },
+      "revId": "617811539445576ddd0a8b53bf8865f47ff938fc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
