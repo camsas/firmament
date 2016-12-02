@@ -22,6 +22,30 @@
       "revId": "617811539445576ddd0a8b53bf8865f47ff938fc",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5aa745d1_a071d4e2",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2016-12-02T03:30:12Z",
+      "side": 1,
+      "message": "task_runtime_ is initialized and populated by LoadTaskRunnningTime just above on line 365, which has different implementations for SyntheticTraceLoader and GoogleTraceLoader. In the Google trace loader, it populates the map with the actual runtimes from the trace, so it will work correctly: we pass the map to LoadTaskUtilizationStats, which obtains the runtime for each task and sticks it into the TraceTaskStats structure that is stored in the simulated KB.",
+      "parentUuid": "5aa745d1_60ff4c35",
+      "range": {
+        "startLine": 367,
+        "startChar": 61,
+        "endLine": 367,
+        "endChar": 74
+      },
+      "revId": "617811539445576ddd0a8b53bf8865f47ff938fc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
