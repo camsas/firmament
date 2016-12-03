@@ -88,7 +88,7 @@ TEST_F(FlowGraphTest, ChangeArc) {
   CHECK_EQ(arc->dst_, n1->id_);
   uint64_t num_arcs = graph.NumArcs();
   // This should delete the arc.
-  graph.ChangeArc(arc, 0, 0, 42);
+  graph.DeleteArc(arc);
   CHECK_EQ(graph.NumArcs(), num_arcs - 1);
 }
 
