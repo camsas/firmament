@@ -364,7 +364,7 @@ void SimulatorBridge::LoadTraceData(TraceLoader* trace_loader) {
   // Load tasks' runtime.
   trace_loader->LoadTasksRunningTime(&task_runtime_);
   // Populate the knowledge base.
-  trace_loader->LoadTaskUtilizationStats(&task_id_to_stats_);
+  trace_loader->LoadTaskUtilizationStats(&task_id_to_stats_, task_runtime_);
 }
 
 void SimulatorBridge::ProcessSimulatorEvents(uint64_t events_up_to_time) {

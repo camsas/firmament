@@ -37,7 +37,8 @@ class SyntheticTraceLoader : public TraceLoader {
   bool LoadTaskEvents(uint64_t events_up_to_time,
                       unordered_map<uint64_t, uint64_t>* job_num_tasks);
   void LoadTaskUtilizationStats(
-      unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats);
+      unordered_map<TaskID_t, TraceTaskStats>* task_id_to_stats,
+      const unordered_map<TaskID_t, uint64_t>& task_runtimes);
   void LoadTasksRunningTime(
       unordered_map<TaskID_t, uint64_t>* task_runtime);
  private:
