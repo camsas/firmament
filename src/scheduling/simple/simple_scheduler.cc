@@ -66,35 +66,37 @@ SimpleScheduler::SimpleScheduler(
 SimpleScheduler::~SimpleScheduler() {
 }
 
-const ResourceID_t* SimpleScheduler::FindResourceForTask(
-    TaskDescriptor* task_desc) {
+bool SimpleScheduler::FindResourceForTask(const TaskDescriptor& task_desc,
+                                          ResourceID_t* best_resource) {
   // TODO(malte): This is an extremely simple-minded approach to resource
   // selection (i.e. the essence of scheduling). We will simply traverse the
   // resource map in some order, and grab the first resource available.
-  VLOG(2) << "Trying to place task " << task_desc->uid() << "...";
+  VLOG(2) << "Trying to place task " << task_desc.uid() << "...";
   // Find the first idle resource in the resource map
   for (ResourceMap_t::iterator res_iter = resource_map_->begin();
        res_iter != resource_map_->end();
        ++res_iter) {
-    ResourceID_t* rid = new ResourceID_t(res_iter->first);
-    VLOG(3) << "Considering resource " << *rid << ", which is in state "
+    VLOG(3) << "Considering resource " << res_iter->first
+            << ", which is in state "
             << res_iter->second->descriptor().state();
     if (res_iter->second->descriptor().state() ==
-        ResourceDescriptor::RESOURCE_IDLE)
-      return rid;
+        ResourceDescriptor::RESOURCE_IDLE) {
+      *best_resource = res_iter->first;
+      return true;
+    }
   }
   // We have not found any idle resources in our local resource map. At this
   // point, we should start looking beyond the machine boundary and towards
   // remote resources.
-  return NULL;
+  return false;
 }
 
-const ResourceID_t* SimpleScheduler::FindRandomResourceForTask(
-    TaskDescriptor* task_desc) {
+bool SimpleScheduler::FindRandomResourceForTask(const TaskDescriptor& task_desc,
+                                                ResourceID_t* best_resource) {
   // TODO(malte): This is an extremely simple-minded approach to resource
   // selection (i.e. the essence of scheduling). We will simply traverse the
   // resource map in some order, and grab the first resource available.
-  VLOG(2) << "Trying to place task " << task_desc->uid() << "...";
+  VLOG(2) << "Trying to place task " << task_desc.uid() << "...";
   vector<ResourceStatus*> resources;
   // Find the first idle resource in the resource map
   for (ResourceMap_t::iterator res_iter = resource_map_->begin();
@@ -107,14 +109,15 @@ const ResourceID_t* SimpleScheduler::FindRandomResourceForTask(
       static_cast<uint32_t>(rand_r(&rand_seed_)) % resources.size();
     if (resources[resource_index]->descriptor().state() ==
         ResourceDescriptor::RESOURCE_IDLE) {
-      return new ResourceID_t(
-          ResourceIDFromString(resources[resource_index]->descriptor().uuid()));
+      *best_resource = ResourceIDFromString(
+          resources[resource_index]->descriptor().uuid());
+      return true;
     }
   }
   // We have not found any idle resources in our local resource map. At this
   // point, we should start looking beyond the machine boundary and towards
   // remote resources.
-  return NULL;
+  return false;
 }
 
 void SimpleScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
@@ -214,28 +217,29 @@ uint64_t SimpleScheduler::ScheduleJob(JobDescriptor* jd_ptr,
        runnable_tasks.begin();
        task_iter != runnable_tasks.end();
        ++task_iter) {
-    TaskDescriptor** td = FindOrNull(*task_map_, *task_iter);
+    TaskDescriptor* td = FindPtrOrNull(*task_map_, *task_iter);
     CHECK(td);
-    trace_generator_->TaskSubmitted(*td);
-    VLOG(2) << "Considering task " << (*td)->uid() << ":\n"
-            << (*td)->DebugString();
-    // TODO(malte): check passing semantics here.
-    const ResourceID_t* best_resource;
+    trace_generator_->TaskSubmitted(td);
+    VLOG(2) << "Considering task " << td->uid() << ":\n"
+            << td->DebugString();
+
+    ResourceID_t best_resource;
+    bool success = false;
     if (FLAGS_randomly_place_tasks) {
-      best_resource= FindRandomResourceForTask(*td);
+      success = FindRandomResourceForTask(*td, &best_resource);
     } else {
-      best_resource= FindResourceForTask(*td);
+      success = FindResourceForTask(*td, &best_resource);
     }
-    if (!best_resource) {
+    if (!success) {
       VLOG(2) << "No suitable resource found, will need to try again.";
     } else {
-      ResourceStatus** rp = FindOrNull(*resource_map_, *best_resource);
+      ResourceStatus* rp = FindPtrOrNull(*resource_map_, best_resource);
       CHECK(rp);
-      LOG(INFO) << "Scheduling task " << (*td)->uid() << " on resource "
-                << (*rp)->descriptor().uuid() << " [" << *rp << "]";
+      VLOG(1) << "Scheduling task " << td->uid() << " on resource "
+              << rp->descriptor().uuid();
       // Remove the task from the runnable set.
-      runnable_tasks_[job_id].erase((*td)->uid());
-      HandleTaskPlacement(*td, (*rp)->mutable_descriptor());
+      runnable_tasks_[job_id].erase(td->uid());
+      HandleTaskPlacement(td, rp->mutable_descriptor());
       num_scheduled_tasks++;
     }
   }
