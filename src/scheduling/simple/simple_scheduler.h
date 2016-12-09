@@ -88,8 +88,10 @@ class SimpleScheduler : public EventDrivenScheduler {
   FRIEND_TEST(SimpleSchedulerTest, ObjectIDToReferenceDescLookup);
   FRIEND_TEST(SimpleSchedulerTest, ProducingTaskLookup);
 
-  const ResourceID_t* FindResourceForTask(TaskDescriptor* task_desc);
-  const ResourceID_t* FindRandomResourceForTask(TaskDescriptor* task_desc);
+  bool FindResourceForTask(const TaskDescriptor& task_desc,
+                           ResourceID_t* best_resource);
+  bool FindRandomResourceForTask(const TaskDescriptor& task_desc,
+                                 ResourceID_t* best_resource);
 
   uint32_t rand_seed_;
 };
