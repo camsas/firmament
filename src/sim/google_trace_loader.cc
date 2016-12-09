@@ -320,6 +320,14 @@ void GoogleTraceLoader::LoadTaskUtilizationStats(
         ti.job_id = lexical_cast<uint64_t>(cols[0]);
         ti.task_index = lexical_cast<uint64_t>(cols[1]);
         TaskID_t tid = GenerateTaskIDFromTraceIdentifier(ti);
+
+        // Sub-sample the trace if we only retain < 100% of tasks.
+        if (SpookyHash::Hash64(&ti, sizeof(ti), kSeed) >
+            MaxEventHashToRetain()) {
+          // skip event
+          continue;
+        }
+
         TraceTaskStats task_stats;
         task_stats.avg_mean_cpu_usage_ = lexical_cast<double>(cols[4]);
         task_stats.avg_canonical_mem_usage_ = lexical_cast<double>(cols[8]);
@@ -421,15 +429,15 @@ void GoogleTraceLoader::LoadTasksRunningTime(
           // skip event
           continue;
         }
+
         // Get the total runtime of the task. This includes the time
         // of the runs that failed or were killed. In this way, we make
         // sure that the task runs for the same amount of time as when
         // it executed in real-world.
         uint64_t runtime = lexical_cast<uint64_t>(cols[4]);
         runtime /= FLAGS_trace_speed_up;
-        if (!InsertIfNotPresent(task_runtime,
-                                GenerateTaskIDFromTraceIdentifier(ti),
-                                runtime) &&
+        TaskID_t tid = GenerateTaskIDFromTraceIdentifier(ti);
+        if (!InsertIfNotPresent(task_runtime, tid, runtime) &&
             VLOG_IS_ON(1)) {
           LOG(ERROR) << "LoadTasksRunningTime: There should not be more than "
                      << "one entry for job " << ti.job_id
