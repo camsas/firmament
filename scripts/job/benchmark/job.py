@@ -29,7 +29,7 @@ class Job:
 
   def submit(self, hostname, port, verbose=False):
     self.desc.name = "%s/%d" % (self.job_name, self.instance)
-    params = 'test=%s' % text_format.MessageToString(self.desc)
+    params = 'jd=%s' % text_format.MessageToString(self.desc)
     if verbose:
       print "SUBMITTING job \"%s\" with parameters:" % (self.desc.name)
       print params

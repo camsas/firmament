@@ -94,7 +94,7 @@ final_output2_desc.location = "blob:/tmp/out2"
 
 
 #params = urllib.urlencode({'test': text_format.MessageToString(job_desc)})
-params = 'test=%s' % text_format.MessageToString(job_desc)
+params = 'jd=%s' % text_format.MessageToString(job_desc)
 print "SUBMITTING job with parameters:"
 print params
 print ""

@@ -160,7 +160,7 @@ void CoordinatorHTTPUI::HandleJobSubmitURI(
     const tcp::connection_ptr& tcp_conn) {
   LogRequest(http_request);
   // Check if we have a JobDescriptor as part of the POST parameters
-  string job_descriptor_param = http_request->get_query("test");
+  string job_descriptor_param = http_request->get_query("jd");
   if (http_request->get_method() != "POST" || job_descriptor_param.empty()) {
     ErrorResponse(http::types::RESPONSE_CODE_SERVER_ERROR, http_request,
                   tcp_conn);
