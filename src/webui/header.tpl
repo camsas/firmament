@@ -59,6 +59,10 @@
       word-wrap: normal;
       white-space: pre;
     }
+
+    .container[role=main] {
+      padding-top: 50px;
+    }
   </style>
 
   <!-- JQuery -->
@@ -123,4 +127,3 @@
   };
   </script>
 </head>
-
