@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fabf19d9_6d7808f3",
+        "filename": "src/misc/uri_tools.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-01-20T00:07:48Z",
+      "side": 1,
+      "message": "Wow, that\u0027s a pretty complex regex. Why isn\u0027t it sufficient to allow for hyphens in the existing expression?\n\nIt seems to me like \"[a-zA-Z0-9\\.\\-]+\" should cover \"firmament-test.us-west-2.zone.com\" and similar expressions?",
+      "revId": "71c89312e3ce3f627f4ad105524eee68917af171",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
