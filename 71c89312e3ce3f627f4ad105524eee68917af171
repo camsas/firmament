@@ -16,6 +16,24 @@
       "revId": "71c89312e3ce3f627f4ad105524eee68917af171",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_cd5dd47a",
+        "filename": "src/misc/uri_tools.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-01-20T00:09:57Z",
+      "side": 1,
+      "message": "I guess you\u0027re actually validating that the TLD part is between 2 and 6 characters, etc. -- but this may not always by the case in private networks.\n\nAlso, if I read the expression correctly, it forces the user to provide a FQDN, rather than being able to use just a local hostname? (Specifically, the TLD part isn\u0027t optional, which forces a FQDN.)",
+      "parentUuid": "fabf19d9_6d7808f3",
+      "revId": "71c89312e3ce3f627f4ad105524eee68917af171",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
