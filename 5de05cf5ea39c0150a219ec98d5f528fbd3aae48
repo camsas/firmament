@@ -16,6 +16,24 @@
       "revId": "5de05cf5ea39c0150a219ec98d5f528fbd3aae48",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_8121e3b6",
+        "filename": "src/misc/uri_tools.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-01-21T03:48:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fabf19d9_8d859cae",
+      "revId": "5de05cf5ea39c0150a219ec98d5f528fbd3aae48",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
