@@ -388,8 +388,13 @@ void CoordinatorHTTPUI::HandleJobURI(const http::request_ptr& http_request,
   }
   AddFooterToTemplate(&dict);
   string output;
-  ExpandTemplate(FLAGS_http_ui_template_dir + "/job_status.tpl",
+  if (!http_request->get_query("json").empty()) {
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/json_job_status.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
+  } else {
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/job_status.tpl",
                  ctemplate::DO_NOT_STRIP, &dict, &output);
+  }
   writer->write(output);
   FinishOkResponse(writer);
 }
@@ -1102,8 +1107,13 @@ void CoordinatorHTTPUI::HandleTaskURI(const http::request_ptr& http_request,
   }
   AddFooterToTemplate(&dict);
   string output;
-  ExpandTemplate(FLAGS_http_ui_template_dir + "/task_status.tpl",
-                 ctemplate::DO_NOT_STRIP, &dict, &output);
+  if (!http_request->get_query("json").empty()) {
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/json_task_status.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
+  } else {
+    ExpandTemplate(FLAGS_http_ui_template_dir + "/task_status.tpl",
+                   ctemplate::DO_NOT_STRIP, &dict, &output);
+  }
   writer->write(output);
   FinishOkResponse(writer);
 }
