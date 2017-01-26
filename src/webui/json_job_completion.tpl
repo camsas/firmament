@@ -1,1 +1,3 @@
-{{JOB_STATUS}}
+{
+  "job_status": "{{JOB_STATUS}}"
+}
