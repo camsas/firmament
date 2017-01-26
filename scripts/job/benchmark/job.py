@@ -4,6 +4,7 @@ from base import reference_desc_pb2
 from google.protobuf import text_format
 import httplib, urllib, re, sys, random
 import binascii
+import json
 import time
 import shlex
 from task import *
@@ -87,7 +88,13 @@ class Job:
       return False
 
     data = response.read()
-    if "COMPLETED" in data:
+    try:
+      as_json = json.loads(data)
+    except Exception as e:
+      print "ERROR parsing response to JSON: %s" % (e)
+      return False
+
+    if "COMPLETED" in as_json["job_status"]:
       return True
     else:
       return False
