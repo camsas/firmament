@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fabf19d9_f9ddd3e0",
+        "filename": "src/engine/coordinator_http_ui.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1111,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-01-30T00:58:44Z",
+      "side": 1,
+      "message": "This is fine, although a template expansion isn\u0027t strictly necessary as the output merely represents the content of the TD (I think).\n\nprotobuf3 allows direct conversion from protobufs into JSON; cf. https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.util.json_util.",
+      "revId": "65733ccb73ab4d4f56f77769ce6c8658805055c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_39cfcb2a",
+        "filename": "src/webui/json_job_completion.tpl",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-01-30T00:58:44Z",
+      "side": 1,
+      "message": "This is fine, although the old state of things actually happens to be almost-valid JSON: it does need quotes, but a plain string is valid (basic) JSON.",
+      "revId": "65733ccb73ab4d4f56f77769ce6c8658805055c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_59ceff2e",
+        "filename": "src/webui/json_job_status.tpl",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-01-30T00:58:44Z",
+      "side": 1,
+      "message": "Does this work in practice? I thought ctemplate syntax didn\u0027t allow spaces around variable names, but I might well be wrong.",
+      "revId": "65733ccb73ab4d4f56f77769ce6c8658805055c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
