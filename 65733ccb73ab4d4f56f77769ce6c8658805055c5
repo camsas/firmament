@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fabf19d9_197087db",
+        "filename": "src/engine/coordinator_http_ui.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1111,
+      "author": {
+        "id": 1010255
+      },
+      "writtenOn": "2017-01-30T03:08:58Z",
+      "side": 1,
+      "message": "I kept to template expansion mainly for two reasons here:\n\n1. There are other JSON Views that use ExpandTemplate (my guess if from before the protobuf3 switchover). I wanted to keep \"tradition\" in that sense. I think if these should be changed it should be all at once.\n\n2. I think Templates may provide more useful for example renaming \"job_id\" to \"id\" when talking about a specific job. Being able to customize keys/what exactly is shown provides a nice level of configurability. Unless there\u0027s a nice performance win with protobuf3 to json I think templates offer that advantage.",
+      "parentUuid": "fabf19d9_f9ddd3e0",
+      "revId": "65733ccb73ab4d4f56f77769ce6c8658805055c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fabf19d9_39cfcb2a",
         "filename": "src/webui/json_job_completion.tpl",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "fabf19d9_f97953c9",
+        "filename": "src/webui/json_job_completion.tpl",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1010255
+      },
+      "writtenOn": "2017-01-30T03:08:58Z",
+      "side": 1,
+      "message": "True, I\u0027d be happy to change it back to a simple string (with proper quotes) if you\u0027d like, but I\u0027d figure I\u0027d make it more inline with other json views.",
+      "parentUuid": "fabf19d9_39cfcb2a",
+      "revId": "65733ccb73ab4d4f56f77769ce6c8658805055c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fabf19d9_59ceff2e",
         "filename": "src/webui/json_job_status.tpl",
         "patchSetId": 1
@@ -47,6 +83,24 @@
       "writtenOn": "2017-01-30T00:58:44Z",
       "side": 1,
       "message": "Does this work in practice? I thought ctemplate syntax didn\u0027t allow spaces around variable names, but I might well be wrong.",
+      "revId": "65733ccb73ab4d4f56f77769ce6c8658805055c5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_d9768fd6",
+        "filename": "src/webui/json_job_status.tpl",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1010255
+      },
+      "writtenOn": "2017-01-30T03:08:58Z",
+      "side": 1,
+      "message": "It may not which may be why my views don\u0027t work (or maybe I\u0027m just crazy). I\u0027ll do some more testing without (and see if it makes a difference)",
+      "parentUuid": "fabf19d9_59ceff2e",
       "revId": "65733ccb73ab4d4f56f77769ce6c8658805055c5",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
