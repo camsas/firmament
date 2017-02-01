@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fabf19d9_a13832f0",
+        "filename": "src/webui/json_job_status.tpl",
+        "patchSetId": 3
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-02-01T03:05:58Z",
+      "side": 1,
+      "message": "Ah, good catch. I missed this one.",
+      "revId": "4fc8a50c5ed2e66ce584723cff11f9334ff16283",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
