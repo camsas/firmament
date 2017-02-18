@@ -43,6 +43,7 @@ class SchedulingEventNotifierInterface {
   virtual void OnTaskFailure(TaskDescriptor* td_ptr,
                              ResourceDescriptor* rd_ptr) = 0;
   virtual void OnTaskMigration(TaskDescriptor* td_ptr,
+                               ResourceDescriptor* old_rd_ptr,
                                ResourceDescriptor* rd_ptr) = 0;
   virtual void OnTaskPlacement(TaskDescriptor* td_ptr,
                                ResourceDescriptor* rd_ptr) = 0;

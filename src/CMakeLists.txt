@@ -44,8 +44,9 @@ add_library(scheduling OBJECT ${SCHEDULING_SRC} ${SCHEDULING_PROTOBUF_SRCS}
   ${BASE_PROTOBUF_HDRS} ${MESSAGES_PROTOBUF_HDRS})
 add_dependencies(scheduling gtest pion protobuf3 spooky-hash thread-safe-stl-containers)
 # TODO(malte): N.B. this subsumes sim_dfs; should disentangle!
-add_library(sim OBJECT ${SIM_SRC} ${SIM_DFS_SRC} ${SIM_PROTOBUF_SRCS}
-  ${BASE_PROTOBUF_HDRS} ${MESSAGES_PROTOBUF_HDRS} ${SCHEDULING_PROTOBUF_HDRS})
+add_library(sim OBJECT ${SIM_SRC} ${SIM_DFS_SRC} ${SIM_INTERFERENCE_SRC}
+  ${SIM_PROTOBUF_SRCS} ${BASE_PROTOBUF_HDRS} ${MESSAGES_PROTOBUF_HDRS}
+  ${SCHEDULING_PROTOBUF_HDRS})
 # XXX(malte): get rid of this
 target_compile_definitions(sim PRIVATE
   -DSOLVER_DIR="${Firmament_BINARY_DIR}/third_party")
