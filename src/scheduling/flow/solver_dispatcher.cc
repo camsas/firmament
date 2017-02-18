@@ -48,7 +48,7 @@ DEFINE_bool(incremental_flow, false, "Generate incremental graph changes.");
 DEFINE_bool(only_read_assignment_changes, false, "Read only changes in task"
             " assignments.");
 DEFINE_string(flowlessly_binary,
-              "build/third_party/flowlessly/src/flowlessly/build/flow_scheduler",
+              "build/third_party/flowlessly/src/flowlessly-build/flow_scheduler",
               "Path to the flowlessly binary.");
 DEFINE_string(flowlessly_algorithm, "fast_cost_scaling",
               "Algorithm to be used by flowlessly. Options: cycle_cancelling |"
