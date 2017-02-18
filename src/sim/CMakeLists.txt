@@ -19,9 +19,12 @@ set(SIM_SRC
   sim/google_runtime_distribution.cc
   sim/google_trace_loader.cc
   sim/knowledge_base_simulator.cc
+  sim/no_task_interference.cc
+  sim/quincy_task_interference.cc
   sim/simulated_wall_time.cc
   sim/simulator_bridge.cc
   sim/simulator.cc
+  sim/simulator_utils.cc
   sim/synthetic_trace_loader.cc
   sim/trace_utils.cc
   )

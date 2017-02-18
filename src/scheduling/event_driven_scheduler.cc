@@ -420,7 +420,7 @@ void EventDrivenScheduler::HandleTaskMigration(TaskDescriptor* td_ptr,
   BindTaskToResource(td_ptr, rd_ptr);
   trace_generator_->TaskMigrated(td_ptr, *old_rd, *rd_ptr);
   if (event_notifier_) {
-    event_notifier_->OnTaskMigration(td_ptr, rd_ptr);
+    event_notifier_->OnTaskMigration(td_ptr, old_rd, rd_ptr);
   }
 }
 
