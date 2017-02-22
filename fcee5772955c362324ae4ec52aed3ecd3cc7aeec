@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fabf19d9_d01ef25d",
+        "filename": "src/sim/CMakeLists.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-02-22T04:09:21Z",
+      "side": 1,
+      "message": "Nit: should these files be in a separate subdirectory? (much like cost models)",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 33
+      },
+      "revId": "fcee5772955c362324ae4ec52aed3ecd3cc7aeec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_703f26b4",
+        "filename": "src/sim/no_task_interference.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-02-22T04:09:21Z",
+      "side": 1,
+      "message": "This is good, but we make assumptions to the contrary elsewhere (e.g., in google_trace_task_processor.cc) when calculating task runtimes. Is that a problem?",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 77
+      },
+      "revId": "fcee5772955c362324ae4ec52aed3ecd3cc7aeec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
