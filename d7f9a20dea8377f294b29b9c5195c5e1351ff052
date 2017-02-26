@@ -1,0 +1,112 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fabf19d9_a8abf9d5",
+        "filename": "src/sim/no_task_interference.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-02-26T15:49:01Z",
+      "side": 1,
+      "message": "Why is this a pointer? I assume the task interference class doesn\u0027t own the map, but borrows it from the SimulatorBridge or something similar?",
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_68b5e12f",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 627,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-02-26T15:49:01Z",
+      "side": 1,
+      "message": "Why does this need to take a vector? All call sites I can see only have a single element in the vector, but I assume you\u0027re trying to future-proof for some more complex use case?",
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_08a42506",
+        "filename": "src/sim/simulator_utils.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-02-26T15:49:01Z",
+      "side": 1,
+      "message": "Is this conditional required? td.total_run_time() can\u0027t be negative, because it\u0027s a uint64 field.",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 3
+      },
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_489a1dc7",
+        "filename": "src/sim/simulator_utils.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-02-26T15:49:01Z",
+      "side": 1,
+      "message": "The method name (which I know isn\u0027t new) is a bit misleading: it really *returns* the new total run time, rather than updating some mutable state (as the name implies). \"ComputeTaskTotalRuntime\" might be better?",
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_e8a8d1dd",
+        "filename": "src/sim/task_interference_interface.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-02-26T15:49:01Z",
+      "side": 1,
+      "message": "This class just stores information -- should it be a protobuf?",
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fabf19d9_c8ae2de7",
+        "filename": "src/sim/task_interference_interface.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-02-26T15:49:01Z",
+      "side": 1,
+      "message": "What is the meaning of the final argument? It\u0027s a vector of all previous task end times for this particular task (i.e., empty if it\u0027s never been preempted) and the current end time gets appended to it?",
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fabf19d9_88b8352c",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-02-26T15:49:01Z",
+      "side": 0,
+      "message": "OOI, why did this get deleted?",
+      "revId": "cb6b89ed1f92a5742c355a0ae56ae9e5f12561a2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
