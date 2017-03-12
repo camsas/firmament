@@ -113,7 +113,8 @@ class FlowScheduler : public EventDrivenScheduler {
 
  private:
   uint64_t ApplySchedulingDeltas(const vector<SchedulingDelta*>& deltas);
-  void EvictTasksFromResource(ResourceTopologyNodeDescriptor* rtnd_ptr);
+  void HandleTasksFromDeregisteredResource(
+      ResourceTopologyNodeDescriptor* rtnd_ptr);
   void LogDebugCostModel();
   TaskDescriptor* ProducingTaskForDataObjectID(DataObjectID_t id);
   void RegisterLocalResource(ResourceID_t res_id);

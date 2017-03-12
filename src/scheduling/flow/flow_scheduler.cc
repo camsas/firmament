@@ -64,6 +64,8 @@ DEFINE_uint64(max_tasks_per_pu, 1,
 DEFINE_string(solver_runtime_accounting_mode, "algorithm",
               "Options: algorithm | solver | firmament. Modes to account for "
               "scheduling duration in simulations");
+DEFINE_bool(reschedule_tasks_upon_node_failure, true, "True if tasks that were "
+            "running on failed nodes should be rescheduled");
 
 DECLARE_string(flow_scheduling_solver);
 DECLARE_bool(flowlessly_flip_algorithms);
@@ -207,7 +209,8 @@ void FlowScheduler::DeregisterResource(
   // Traverse the resource topology tree in order to evict tasks.
   DFSTraversePostOrderResourceProtobufTreeReturnRTND(
       rtnd_ptr,
-      boost::bind(&FlowScheduler::EvictTasksFromResource, this, _1));
+      boost::bind(&FlowScheduler::HandleTasksFromDeregisteredResource,
+                  this, _1));
   flow_graph_manager_->RemoveResourceTopology(
       rtnd_ptr->resource_desc(), &pus_removed_during_solver_run_);
   if (rtnd_ptr->parent_id().empty()) {
@@ -216,14 +219,18 @@ void FlowScheduler::DeregisterResource(
   EventDrivenScheduler::DeregisterResource(rtnd_ptr);
 }
 
-void FlowScheduler::EvictTasksFromResource(
+void FlowScheduler::HandleTasksFromDeregisteredResource(
     ResourceTopologyNodeDescriptor* rtnd_ptr) {
   ResourceID_t res_id = ResourceIDFromString(rtnd_ptr->resource_desc().uuid());
   vector<TaskID_t> tasks = BoundTasksForResource(res_id);
   ResourceDescriptor* rd_ptr = rtnd_ptr->mutable_resource_desc();
   for (auto& task_id : tasks) {
     TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
-    HandleTaskEviction(td_ptr, rd_ptr);
+    if (FLAGS_reschedule_tasks_upon_node_failure) {
+      HandleTaskEviction(td_ptr, rd_ptr);
+    } else {
+      HandleTaskFailure(td_ptr);
+    }
   }
 }
 
