@@ -1,0 +1,12 @@
+// The Firmament project
+// Copyright (c) The Firmament Authors.
+//
+
+syntax = "proto3";
+
+package firmament;
+
+message Label {
+  string key = 1;
+  string value = 2;
+}

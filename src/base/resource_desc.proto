@@ -8,6 +8,7 @@ syntax = "proto3";
 package firmament;
 
 import "base/coco_interference_scores.proto";
+import "base/label.proto";
 import "base/resource_vector.proto";
 import "base/whare_map_stats.proto";
 
@@ -59,4 +60,6 @@ message ResourceDescriptor {
   CoCoInterferenceScores coco_interference_scores = 20;
   // Simulation related fields
   uint64 trace_machine_id = 21;
+  /* Resource labels */
+  repeated Label labels = 32;
 }

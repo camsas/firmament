@@ -4,6 +4,7 @@ set(SCHEDULING_SRC
   scheduling/common.cc
   scheduling/event_driven_scheduler.cc
   scheduling/knowledge_base.cc
+  scheduling/label_utils.cc
   scheduling/flow/coco_cost_model.cc
   scheduling/flow/dimacs_add_node.cc
   scheduling/flow/dimacs_change_arc.cc

@@ -1,0 +1,20 @@
+// The Firmament project
+// Copyright (c) The Firmament Authors.
+//
+
+syntax = "proto3";
+
+package firmament;
+
+message LabelSelector {
+  enum SelectorType {
+    IN_SET = 0;
+    NOT_IN_SET = 1;
+    EXISTS_KEY = 2;
+    NOT_EXISTS_KEY = 3;
+  }
+
+  SelectorType type = 1;
+  string key = 2;
+  repeated string values = 3;
+}
