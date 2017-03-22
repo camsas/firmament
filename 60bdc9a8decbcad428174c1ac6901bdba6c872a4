@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e5416ae8_4f2e5d6d",
+        "filename": "src/base/resource_desc.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-03-22T16:57:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "798a3212_a43d5bb7",
+      "revId": "60bdc9a8decbcad428174c1ac6901bdba6c872a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "376500ba_ffdbe327",
         "filename": "src/scheduling/label_utils.h",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2017-03-22T16:48:04Z",
       "side": 1,
       "message": "Do all of these variants need to be public? AIUI, the last one is an internal implementation that is called into by the earlier, higher-level variants?",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 59
+      },
+      "revId": "60bdc9a8decbcad428174c1ac6901bdba6c872a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8307aeda_bc960584",
+        "filename": "src/scheduling/label_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-03-22T16:57:52Z",
+      "side": 1,
+      "message": "I think the last method will not be used externally. However, they\u0027re defined in a namespace and AFAIK there isn\u0027t a nice way to make it private.",
+      "parentUuid": "376500ba_ffdbe327",
       "range": {
         "startLine": 35,
         "startChar": 0,
