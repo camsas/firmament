@@ -63,7 +63,9 @@ ResourceID_t GenerateResourceID();
 ResourceID_t GenerateResourceID(const string& seed);
 ResourceID_t GenerateRootResourceID(const string& hostname);
 JobID_t GenerateJobID();
+// These will yield deterministic job identifiers.
 JobID_t GenerateJobID(uint64_t job_id);
+JobID_t GenerateJobID(const string& job_id);
 DataObjectID_t GenerateDataObjectID(const TaskDescriptor& task_descriptor);
 DataObjectID_t GenerateDataObjectID(TaskID_t producing_task,
                                     TaskOutputID_t output_id);
