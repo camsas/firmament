@@ -139,6 +139,15 @@ JobID_t GenerateJobID(uint64_t job_id) {
   return gen();
 }
 
+JobID_t GenerateJobID(const string& job_id) {
+  uint32_t hash = SpookyHash::Hash32(job_id.c_str(),
+                                     sizeof(char) * job_id.length(), SEED);
+  job_id_rg_.seed(hash);
+  job_id_rg_init_ = true;
+  boost::uuids::basic_random_generator<boost::mt19937> gen(&job_id_rg_);
+  return gen();
+}
+
 TaskID_t GenerateRootTaskID(const JobDescriptor& job_desc) {
   uint64_t hash = HashString(job_desc.name());
   boost::hash_combine(hash, job_desc.root_task().binary());
