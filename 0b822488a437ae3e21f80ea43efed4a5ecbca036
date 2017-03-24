@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "977cf727_21ab5074",
+        "filename": "src/misc/utils.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-03-24T02:24:20Z",
+      "side": 1,
+      "message": "I think this should be using strlen(3) instead.",
+      "range": {
+        "startLine": 144,
+        "startChar": 37,
+        "endLine": 144,
+        "endChar": 67
+      },
+      "revId": "0b822488a437ae3e21f80ea43efed4a5ecbca036",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
