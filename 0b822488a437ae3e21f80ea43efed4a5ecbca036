@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "ccfb8854_4b35b9a4",
+        "filename": "src/misc/utils.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-03-27T14:55:51Z",
+      "side": 1,
+      "message": "Fair; on second thought, actually, this is fine because job_id is a C++ string and we\u0027re merely converting to a size in bytes (that said, http://www.cplusplus.com/reference/string/string/length/ suggests that the multiplication by sizeof(char) is actually unnecessary, because the length is already in bytes).",
+      "parentUuid": "4f72db28_81f94d9e",
+      "range": {
+        "startLine": 144,
+        "startChar": 37,
+        "endLine": 144,
+        "endChar": 67
+      },
+      "revId": "0b822488a437ae3e21f80ea43efed4a5ecbca036",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "384ca131_7666c6e8",
         "filename": "src/misc/utils.h",
         "patchSetId": 1
