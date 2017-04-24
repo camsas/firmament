@@ -48,7 +48,7 @@ set(SCHEDULING_TESTS
 ###############################################################################
 # Protocol buffers
 
-PROTOBUF_LIST_COMPILE(SCHEDULING "${SCHEDULING_PROTOBUFS}")
+PROTOBUF_LIST_COMPILE(SCHEDULING "${SCHEDULING_PROTOBUFS}" FALSE)
 
 ###############################################################################
 # Unit tests
