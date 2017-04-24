@@ -38,7 +38,7 @@ set(SIM_TESTS
 ###############################################################################
 # Protocol buffers
 
-PROTOBUF_LIST_COMPILE(SIM "${SIM_PROTOBUFS}")
+PROTOBUF_LIST_COMPILE(SIM "${SIM_PROTOBUFS}", OFF)
 
 ###############################################################################
 # Unit tests

@@ -226,3 +226,35 @@ ExternalProject_Add(
 ExternalProject_Get_Property(thread-safe-stl-containers SOURCE_DIR)
 set(thread-safe-stl-containers_INCLUDE_DIR ${SOURCE_DIR})
 include_directories(${thread-safe-stl-containers_INCLUDE_DIR})
+
+###############################################################################
+# grpc
+ExternalProject_Add(
+    grpc
+    GIT_REPOSITORY https://github.com/grpc/grpc.git
+    GIT_TAG v1.2.0
+    TIMEOUT 10
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/third_party/grpc
+    DEPENDS protobuf3
+    BUILD_IN_SOURCE ON
+    INSTALL_COMMAND ""
+    CMAKE_CACHE_ARGS
+        -DCMAKE_BUILD_TYPE:STRING=Release
+        -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF
+        -DPROTOBUF_INCLUDE_DIRS:STRING=${PROTOBUF3_INCLUDE_DIR}
+        -DPROTOBUF_LIBRARIES:STRING=${protobuf3_LIBRARY}
+
+        -DZLIB_ROOT:STRING=${ZLIB_INSTALL}
+    # Wrap download, configure and build steps in a script to log output
+    LOG_DOWNLOAD ON
+    LOG_BUILD ON
+    LOG_INSTALL ON)
+
+ExternalProject_Get_Property(grpc SOURCE_DIR)
+ExternalProject_Get_Property(grpc BINARY_DIR)
+set(grpc_SOURCE_DIR ${SOURCE_DIR})
+set(grpc_BINARY_DIR ${BINARY_DIR})
+set(grpc_INCLUDE_DIR ${grpc_SOURCE_DIR}/include)
+include_directories(${grpc_INCLUDE_DIR})
+set(grpc_LIBRARY ${grpc_SOURCE_DIR}/libgrpc++.a)
+message(${grpc_LIBRARY})

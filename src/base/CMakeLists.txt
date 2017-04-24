@@ -28,7 +28,7 @@ set(BASE_TESTS
 ###############################################################################
 # Protocol buffers
 
-PROTOBUF_LIST_COMPILE(BASE "${BASE_PROTOBUFS}")
+PROTOBUF_LIST_COMPILE(BASE "${BASE_PROTOBUFS}", OFF)
 
 ###############################################################################
 # Unit tests
