@@ -82,6 +82,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   virtual void HandleTaskFailure(TaskDescriptor* td_ptr);
   virtual void HandleTaskFinalReport(const TaskFinalReport& report,
                                      TaskDescriptor* td_ptr);
+  virtual void HandleTaskRemoval(TaskDescriptor* td_ptr);
   virtual void KillRunningTask(TaskID_t task_id,
                                TaskKillMessage::TaskKillReason reason);
   bool PlaceDelegatedTask(TaskDescriptor* td, ResourceID_t target_resource);

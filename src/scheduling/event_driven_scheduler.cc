@@ -446,6 +446,17 @@ void EventDrivenScheduler::HandleTaskPlacement(
   }
 }
 
+void EventDrivenScheduler::HandleTaskRemoval(TaskDescriptor* td_ptr) {
+  bool was_running = false;
+  if (td_ptr->state() == TaskDescriptor::RUNNING) {
+    was_running = true;
+    KillRunningTask(td_ptr->uid(), TaskKillMessage::USER_ABORT);
+  } else {
+    td_ptr->set_state(TaskDescriptor::ABORTED);
+  }
+  trace_generator_->TaskRemoved(td_ptr->uid(), was_running);
+}
+
 void EventDrivenScheduler::KillRunningTask(
     TaskID_t task_id,
     TaskKillMessage::TaskKillReason reason) {
@@ -474,6 +485,9 @@ void EventDrivenScheduler::KillRunningTask(
             << *rid << " (endpoint: " << td_ptr->last_heartbeat_location()
             << ")";
   m_adapter_ptr_->SendMessageToEndpoint(td_ptr->last_heartbeat_location(), bm);
+  if (!rid) {
+    CHECK(UnbindTaskFromResource(td_ptr, *rid));
+  }
   trace_generator_->TaskKilled(task_id, rs_ptr->descriptor());
 }
 

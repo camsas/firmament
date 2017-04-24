@@ -444,6 +444,25 @@ void TraceGenerator::TaskMigrated(TaskDescriptor* td_ptr,
   }
 }
 
+void TraceGenerator::TaskRemoved(TaskID_t task_id, bool was_running) {
+  if (FLAGS_generate_trace) {
+    if (was_running) {
+      running_tasks_cnt_--;
+    }
+    task_events_cnt_per_round_++;
+    uint64_t timestamp = time_manager_->GetCurrentTimestamp();
+    uint64_t* job_id_ptr = FindOrNull(task_to_job_, task_id);
+    CHECK_NOTNULL(job_id_ptr);
+    TaskRuntime* tr_ptr = FindOrNull(task_to_runtime_, task_id);
+    CHECK_NOTNULL(tr_ptr);
+    fprintf(task_events_, "%ju,,%ju,%ju,,,%d,,,,,,,\n",
+            timestamp, *job_id_ptr, tr_ptr->task_id_, TASK_REMOVED_EVENT);
+    fflush(task_events_);
+    task_to_job_.erase(task_id);
+    task_to_runtime_.erase(task_id);
+  }
+}
+
 void TraceGenerator::TaskScheduled(TaskID_t task_id,
                                    const ResourceDescriptor& rd) {
   if (FLAGS_generate_trace) {

@@ -42,6 +42,7 @@ enum TraceTaskEvent {
   TASK_LOST_EVENT = 6,
   TASK_UPDATE_PENDING_EVENT = 7,
   TASK_UPDATE_RUNNING_EVENT = 8,
+  TASK_REMOVED_EVENT = 9,
 };
 
 enum TraceMachineEvent {
@@ -104,6 +105,7 @@ class TraceGenerator {
                    bool migrated);
   void TaskFailed(TaskID_t task_id, const ResourceDescriptor& rd);
   void TaskKilled(TaskID_t task_id, const ResourceDescriptor& rd);
+  void TaskRemoved(TaskID_t task_id, bool was_running);
   void TaskMigrated(TaskDescriptor* td_ptr,
                     const ResourceDescriptor& old_rd,
                     const ResourceDescriptor& new_rd);

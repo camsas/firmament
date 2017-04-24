@@ -570,6 +570,20 @@ void FlowGraphManager::RemoveResourceNode(FlowGraphNode* res_node) {
                                     "RemoveResourceNode");
 }
 
+void FlowGraphManager::RemoveTaskHelper(TaskID_t task_id) {
+  FlowGraphNode* task_node = NodeForTaskID(task_id);
+  CHECK_NOTNULL(task_node);
+  if (FLAGS_preemption) {
+    // We reduce the capacity from the unscheduled aggregator to the sink when
+    // we pin the task. Hence, we only have to reduce the capacity when we
+    // support preemption.
+    UpdateUnscheduledAggNode(UnschedAggNodeForJobID(task_node->job_id_), -1);
+  }
+  task_to_running_arc_.erase(task_id);
+  RemoveTaskNode(task_node);
+  cost_model_->RemoveTask(task_id);
+}
+
 uint64_t FlowGraphManager::RemoveTaskNode(FlowGraphNode* task_node) {
   CHECK_NOTNULL(task_node);
   uint64_t task_node_id = task_node->id_;
@@ -629,31 +643,11 @@ void FlowGraphManager::TaskEvicted(TaskID_t task_id, ResourceID_t res_id) {
 }
 
 void FlowGraphManager::TaskFailed(TaskID_t task_id) {
-  FlowGraphNode* task_node = NodeForTaskID(task_id);
-  CHECK_NOTNULL(task_node);
-  if (FLAGS_preemption) {
-    // When we pin the task we reduce the capacity from the unscheduled
-    // aggrator to the sink. Hence, we only have to reduce the capacity
-    // when we support preemption.
-    UpdateUnscheduledAggNode(UnschedAggNodeForJobID(task_node->job_id_), -1);
-  }
-  task_to_running_arc_.erase(task_id);
-  RemoveTaskNode(task_node);
-  cost_model_->RemoveTask(task_id);
+  RemoveTaskHelper(task_id);
 }
 
 void FlowGraphManager::TaskKilled(TaskID_t task_id) {
-  FlowGraphNode* task_node = NodeForTaskID(task_id);
-  CHECK_NOTNULL(task_node);
-  if (FLAGS_preemption) {
-    // When we pin the task we reduce the capacity from the unscheduled
-    // aggrator to the sink. Hence, we only have to reduce the capacity
-    // when we support preemption.
-    UpdateUnscheduledAggNode(UnschedAggNodeForJobID(task_node->job_id_), -1);
-  }
-  task_to_running_arc_.erase(task_id);
-  RemoveTaskNode(task_node);
-  cost_model_->RemoveTask(task_id);
+  RemoveTaskHelper(task_id);
 }
 
 void FlowGraphManager::TaskMigrated(TaskID_t task_id,
@@ -661,6 +655,10 @@ void FlowGraphManager::TaskMigrated(TaskID_t task_id,
                                     ResourceID_t new_res_id) {
   TaskEvicted(task_id, old_res_id);
   TaskScheduled(task_id, new_res_id);
+}
+
+void FlowGraphManager::TaskRemoved(TaskID_t task_id) {
+  RemoveTaskHelper(task_id);
 }
 
 void FlowGraphManager::TaskScheduled(TaskID_t task_id, ResourceID_t res_id) {

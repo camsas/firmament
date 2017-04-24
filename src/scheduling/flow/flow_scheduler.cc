@@ -316,6 +316,12 @@ void FlowScheduler::HandleTaskPlacement(TaskDescriptor* td_ptr,
   EventDrivenScheduler::HandleTaskPlacement(td_ptr, rd_ptr);
 }
 
+void FlowScheduler::HandleTaskRemoval(TaskDescriptor* td_ptr) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  flow_graph_manager_->TaskRemoved(td_ptr->uid());
+  EventDrivenScheduler::HandleTaskRemoval(td_ptr);
+}
+
 void FlowScheduler::KillRunningTask(TaskID_t task_id,
                                     TaskKillMessage::TaskKillReason reason) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);

@@ -114,6 +114,7 @@ class FlowGraphManager {
   void TaskMigrated(TaskID_t task_id,
                     ResourceID_t old_res_id,
                     ResourceID_t new_res_id);
+  void TaskRemoved(TaskID_t task_id);
   void TaskScheduled(TaskID_t task_id, ResourceID_t res_id);
 
   /**
@@ -209,6 +210,7 @@ class FlowGraphManager {
                                 const vector<ResourceID_t>& pref_resources,
                                 DIMACSChangeType change_type);
   void RemoveResourceNode(FlowGraphNode* res_node);
+  void RemoveTaskHelper(TaskID_t task_id);
   uint64_t RemoveTaskNode(FlowGraphNode* task_node);
   void RemoveUnscheduledAggNode(JobID_t job_id);
 

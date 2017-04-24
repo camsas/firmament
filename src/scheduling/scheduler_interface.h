@@ -173,6 +173,14 @@ class SchedulerInterface : public PrintableInterface {
                                      TaskDescriptor* td_ptr) = 0;
 
   /**
+   * Handles the removal of a task. If the task is running, then
+   * it is killed, otherwise the task is just removed from internal data
+   * structures.
+   * @param td_ptr the task descriptor of the task to remove
+   */
+  virtual void HandleTaskRemoval(TaskDescriptor* td_ptr) = 0;
+
+  /**
    * Kills a running task.
    * @param task_id the id of the task to kill
    * @param reason the reason to kill the task
