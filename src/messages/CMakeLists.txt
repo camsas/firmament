@@ -18,4 +18,4 @@ set(MESSAGES_PROTOBUFS
 ###############################################################################
 # Protocol buffers
 
-PROTOBUF_LIST_COMPILE(MESSAGES "${MESSAGES_PROTOBUFS}")
+PROTOBUF_LIST_COMPILE(MESSAGES "${MESSAGES_PROTOBUFS}" FALSE)
