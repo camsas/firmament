@@ -22,6 +22,30 @@
       "revId": "585f5d897e587e66f270814772aadd0c0dfd441f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ab7dcecd_b9c8eeb3",
+        "filename": "cmake/ProtobufCompile.cmake",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-04-26T08:16:30Z",
+      "side": 1,
+      "message": "It would also duplicate lines 35-45. Plus, we would have to copy the PROTOBUF_LIST_COMPILE function as well to get rid of the flag as well. All in all, we would have to copy both functions.",
+      "parentUuid": "c5f907a3_9b6216d4",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 25
+      },
+      "revId": "585f5d897e587e66f270814772aadd0c0dfd441f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
