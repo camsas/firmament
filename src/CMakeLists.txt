@@ -89,6 +89,29 @@ target_link_libraries(coordinator LINK_PUBLIC ${pion_LIBRARY}
   ${Firmament_SHARED_LIBRARIES} ctemplate glog gflags hwloc)
 
 ###############################################################################
+# Scheduling service (for integrations)
+
+add_executable(firmament_scheduler
+  ${SCHEDULING_SERVICE_PROTOBUF_SRCS}
+  ${SCHEDULING_SERVICE_SRC}
+  $<TARGET_OBJECTS:base>
+  $<TARGET_OBJECTS:engine>
+  $<TARGET_OBJECTS:executors>
+  $<TARGET_OBJECTS:messages>
+  $<TARGET_OBJECTS:misc>
+  $<TARGET_OBJECTS:misc_trace_generator>
+  $<TARGET_OBJECTS:platforms_unix>
+  $<TARGET_OBJECTS:scheduling>
+  )
+
+add_dependencies(firmament_scheduler cs2 flowlessly grpc gtest pion protobuf3
+  spooky-hash thread-safe-stl-containers)
+
+target_link_libraries(firmament_scheduler LINK_PUBLIC ${grpc_LIBRARY}
+  ${protobuf3_LIBRARY} ${spooky-hash_BINARY} ${Firmament_SHARED_LIBRARIES}
+  ctemplate glog gflags hwloc z)
+
+###############################################################################
 # Google trace data extractor
 
 set(GOOGLE_TRACE_PROCESSOR_SRCS
