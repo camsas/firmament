@@ -36,6 +36,15 @@ set(SCHEDULING_PROTOBUFS
   scheduling/scheduling_delta.proto
   )
 
+set(SCHEDULING_SERVICE_SRC
+  scheduling/firmament_scheduler_service.cc
+  scheduling/knowledge_base_populator.cc
+  )
+
+set(SCHEDULING_SERVICE_PROTOBUFS
+  scheduling/firmament_scheduler.proto
+  )
+
 set(SCHEDULING_TESTS
   scheduling/flow/dimacs_exporter_test.cc
   scheduling/flow/flow_graph_change_manager_test.cc
@@ -49,6 +58,7 @@ set(SCHEDULING_TESTS
 # Protocol buffers
 
 PROTOBUF_LIST_COMPILE(SCHEDULING "${SCHEDULING_PROTOBUFS}" FALSE)
+PROTOBUF_LIST_COMPILE(SCHEDULING_SERVICE "${SCHEDULING_SERVICE_PROTOBUFS}" TRUE)
 
 ###############################################################################
 # Unit tests
