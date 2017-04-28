@@ -43,6 +43,26 @@ void DFSTraverseResourceProtobufTree(
   }
 }
 
+bool DFSTraverseResourceProtobufTreeIfTrue(
+    const ResourceTopologyNodeDescriptor& pb,
+    boost::function<bool(const ResourceDescriptor&)> callback) {  // NOLINT
+  VLOG(3) << "DFSTraversal of resource topology, reached "
+          << pb.resource_desc().uuid()
+          << ", invoking callback [" << callback << "]";
+  if (!callback(pb.resource_desc())) {
+    return false;
+  }
+  for (RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator
+       rtnd_iter = pb.children().begin();
+       rtnd_iter != pb.children().end();
+       ++rtnd_iter) {
+    if (!DFSTraverseResourceProtobufTreeIfTrue(*rtnd_iter, callback)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Overload taking a callback that itself takes a ResourceTopologyNodeDescriptor
 // as its argument.
 void DFSTraverseResourceProtobufTreeReturnRTND(
