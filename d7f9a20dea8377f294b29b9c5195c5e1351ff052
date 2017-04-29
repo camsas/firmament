@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "51988613_70efa609",
+        "filename": "src/sim/no_task_interference.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-04-29T19:21:36Z",
+      "side": 1,
+      "message": "Ok, thanks.",
+      "parentUuid": "fabf19d9_6872814b",
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f823032d_7365edc9",
         "filename": "src/sim/quincy_task_interference.cc",
         "patchSetId": 2
@@ -112,6 +130,24 @@
     },
     {
       "key": {
+        "uuid": "3b3c4446_45efc34c",
+        "filename": "src/sim/simulator_bridge.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 627,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-04-29T19:21:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fabf19d9_a878992c",
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fabf19d9_08a42506",
         "filename": "src/sim/simulator_utils.cc",
         "patchSetId": 2
@@ -147,6 +183,30 @@
       "side": 1,
       "message": "Someone might have been a tad on the tired side when wrote the code which inspired this one.",
       "parentUuid": "fabf19d9_08a42506",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 3
+      },
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "385fbe57_4b6c2b26",
+        "filename": "src/sim/simulator_utils.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-04-29T19:21:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fabf19d9_0898a569",
       "range": {
         "startLine": 29,
         "startChar": 0,
@@ -229,6 +289,24 @@
     },
     {
       "key": {
+        "uuid": "df7fce36_770bd95a",
+        "filename": "src/sim/task_interference_interface.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-04-29T19:21:36Z",
+      "side": 1,
+      "message": "Mostly just that the mechanistic code below would be auto-generated. But since it\u0027s already written and these structures aren\u0027t going to be serialized, it\u0027s probably okay to keep what we have here.",
+      "parentUuid": "fabf19d9_28936951",
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fabf19d9_c8ae2de7",
         "filename": "src/sim/task_interference_interface.h",
         "patchSetId": 2
@@ -258,6 +336,24 @@
       "side": 1,
       "message": "tasks_end_time is a vector that gets populated by the method with new task end times. tasks_end_time contains new end events for the tasks co-located with the completed task as well as an entry for the task itself.",
       "parentUuid": "fabf19d9_c8ae2de7",
+      "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7f3cde37_70777db1",
+        "filename": "src/sim/task_interference_interface.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-04-29T19:21:36Z",
+      "side": 1,
+      "message": "Ok, cool. Might be worth renaming it to \"colocated_tasks_end_times\" to make the semantics more obvious?",
+      "parentUuid": "fabf19d9_488e9d28",
       "revId": "d7f9a20dea8377f294b29b9c5195c5e1351ff052",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
