@@ -55,6 +55,9 @@ DEFINE_bool(exit_simulation_after_last_task_event, false,
             "True if the simulation should not wait for the running tasks "
             "to complete");
 DEFINE_double(trace_speed_up, 1, "Factor by which to speed up events");
+DEFINE_bool(enable_task_interference, false,
+            "True if task runtimes should be affected by co-location "
+            "interference");
 
 DECLARE_uint64(heartbeat_interval);
 DECLARE_uint64(max_solver_runtime);

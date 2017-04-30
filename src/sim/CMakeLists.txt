@@ -22,9 +22,15 @@ set(SIM_SRC
   sim/simulated_wall_time.cc
   sim/simulator_bridge.cc
   sim/simulator.cc
+  sim/simulator_utils.cc
   sim/synthetic_trace_loader.cc
   sim/trace_utils.cc
   )
+
+set(SIM_INTERFERENCE_SRC
+  sim/interference/no_task_interference.cc
+  sim/interference/quincy_task_interference.cc
+)
 
 set(SIM_PROTOBUFS
   sim/event_desc.proto
