@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f2a04ec3_8e6e353b",
+        "filename": "src/misc/pb_utils.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-02T15:54:11Z",
+      "side": 1,
+      "message": "Nit: Is the purpose of this method to traverse until a callback predicate fails? If so, \"DFSTraverseResourceProtobufTreeWhileTrue\" might be a better name.",
+      "revId": "8d9c1e3ee46c9e314fef4e56d94e9a7ebe26b57c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e091d0a6_5a90f965",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-02T15:54:11Z",
+      "side": 1,
+      "message": "This supports only flow schedulers, which I guess is fine since the GRPC service is a top-level binary (correct?).\n\nIf we ditch the other top-level targets (i.e., coordinator) in the future in favor of the GRPC interface, we might want to preserve the ability to run non-flow schedulers, however.",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 78
+      },
+      "revId": "8d9c1e3ee46c9e314fef4e56d94e9a7ebe26b57c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ce5f39e6_6ee6fe54",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-02T15:54:11Z",
+      "side": 1,
+      "message": "Is this incomplete? Otherwise, the method has an odd name: it doesn\u0027t actually apply the scheduling delta in any meaningful way.",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 3
+      },
+      "revId": "8d9c1e3ee46c9e314fef4e56d94e9a7ebe26b57c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2f9557d8_443cb343",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-02T15:54:11Z",
+      "side": 1,
+      "message": "Nit: I find it preferable to have \"positive\" versions of API calls -- i.e., CheckResourceExists here, which can be turned into CheckResourceDoesntExist by negating the result.",
+      "range": {
+        "startLine": 237,
+        "startChar": 0,
+        "endLine": 241,
+        "endChar": 3
+      },
+      "revId": "8d9c1e3ee46c9e314fef4e56d94e9a7ebe26b57c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "03eea2a3_ae425022",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-02T15:54:11Z",
+      "side": 1,
+      "message": "I guess the higher-level point here is that we should deconflate the scheduling code and the executor logic, so that the scheduler code doesn\u0027t have any notion of executors.\n\nWorth adding a high-level issue on GitHub for this?",
+      "range": {
+        "startLine": 272,
+        "startChar": 0,
+        "endLine": 276,
+        "endChar": 61
+      },
+      "revId": "8d9c1e3ee46c9e314fef4e56d94e9a7ebe26b57c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4c551cd2_fb140b52",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-02T15:54:11Z",
+      "side": 1,
+      "message": "I guess this also only exists to be compatible with the existing APIs, and we should refactor the code so that it\u0027s not required?",
+      "revId": "8d9c1e3ee46c9e314fef4e56d94e9a7ebe26b57c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
