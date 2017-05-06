@@ -111,6 +111,10 @@ void QuincyTaskInterference::OnTaskMigration(
     ResourceID_t old_res_id,
     ResourceID_t res_id,
     vector<TaskEndRuntimes>* tasks_end_time) {
+  ResourceID_t old_machine_res_id =
+    MachineResIDForResource(resource_map_, old_res_id);
+  ResourceID_t new_machine_res_id =
+    MachineResIDForResource(resource_map_, res_id);
   // Update runtime of the tasks running on the machine from which the task
   // has been migrated.
   vector<TaskID_t> colocated_on_pu;
@@ -118,12 +122,15 @@ void QuincyTaskInterference::OnTaskMigration(
   // co-located_on_pu does not include the migrated task.
   GetColocatedTasks(old_res_id, &colocated_on_pu, &colocated_on_machine);
   uint64_t num_tasks_colocated_on_old_machine =
-    colocated_on_pu.size() + colocated_on_machine.size();
-  UpdateOtherTasksOnMachine(current_time_us,
-                            num_tasks_colocated_on_old_machine + 1,
-                            num_tasks_colocated_on_old_machine, colocated_on_pu,
-                            colocated_on_machine, tasks_end_time);
-
+    colocated_on_pu.size() + colocated_on_machine.size() + 1;
+  if (old_machine_res_id != new_machine_res_id) {
+    // co-located_on_machine does not include the migrated task.
+    UpdateOtherTasksOnMachine(current_time_us,
+                              num_tasks_colocated_on_old_machine,
+                              num_tasks_colocated_on_old_machine - 1,
+                              colocated_on_pu, colocated_on_machine,
+                              tasks_end_time);
+  }
   // Update runtime of the tasks running on the machine on which the task
   // has been migrated.
   TaskID_t task_id = td_ptr->uid();
@@ -137,12 +144,13 @@ void QuincyTaskInterference::OnTaskMigration(
   colocated_on_pu.erase(task_it);
   uint64_t num_tasks_colocated_on_new_machine =
     colocated_on_pu.size() + colocated_on_machine.size();
-  UpdateOtherTasksOnMachine(current_time_us,
-                            num_tasks_colocated_on_new_machine,
-                            num_tasks_colocated_on_new_machine + 1,
-                            colocated_on_pu, colocated_on_machine,
-                            tasks_end_time);
-
+  if (old_machine_res_id != new_machine_res_id) {
+    UpdateOtherTasksOnMachine(current_time_us,
+                              num_tasks_colocated_on_new_machine,
+                              num_tasks_colocated_on_new_machine + 1,
+                              colocated_on_pu, colocated_on_machine,
+                              tasks_end_time);
+  }
   td_ptr->set_total_run_time(ComputeTaskTotalRunTime(current_time_us, *td_ptr));
   uint64_t* runtime_ptr = FindOrNull(*task_runtime_, task_id);
   if (runtime_ptr != NULL) {
@@ -153,7 +161,7 @@ void QuincyTaskInterference::OnTaskMigration(
     uint64_t task_executed_for = current_time_us - td_ptr->start_time();
     uint64_t real_executed_for =
       TimeWithInterferenceToTraceTime(task_executed_for,
-                                      num_tasks_colocated_on_old_machine + 1);
+                                      num_tasks_colocated_on_old_machine);
     uint64_t real_time_left = *runtime_ptr - real_executed_for;
     InsertOrUpdate(task_runtime_, task_id, real_time_left);
     uint64_t task_end_time = current_time_us +
@@ -163,6 +171,7 @@ void QuincyTaskInterference::OnTaskMigration(
                  (num_tasks_colocated_on_new_machine + 1))));
     task_end_runtimes.set_current_end_time(task_end_time);
     td_ptr->set_finish_time(task_end_time);
+    tasks_end_time->push_back(task_end_runtimes);
   } else {
     // The task didn't finish in the trace.
   }
