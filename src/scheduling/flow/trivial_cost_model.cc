@@ -46,59 +46,60 @@ TrivialCostModel::TrivialCostModel(
   VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;
 }
 
-Cost_t TrivialCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  return 5LL;
+ArcCostCap TrivialCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
+  return ArcCostCap(5LL, 1ULL, 0ULL);
 }
 
-Cost_t TrivialCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
-  return 0LL;
+ArcCostCap TrivialCostModel::UnscheduledAggToSink(JobID_t job_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t TrivialCostModel::TaskToResourceNodeCost(TaskID_t task_id,
+ArcCostCap TrivialCostModel::TaskToResourceNode(TaskID_t task_id,
                                                 ResourceID_t resource_id) {
-  return 0LL;
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t TrivialCostModel::ResourceNodeToResourceNodeCost(
+ArcCostCap TrivialCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
-  return 0LL;
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t TrivialCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
-  return 0LL;
+ArcCostCap TrivialCostModel::LeafResourceNodeToSink(
+    ResourceID_t resource_id) {
+  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-Cost_t TrivialCostModel::TaskContinuationCost(TaskID_t task_id) {
-  return 0ULL;
+ArcCostCap TrivialCostModel::TaskContinuation(TaskID_t task_id) {
+  return ArcCostCap(0ULL, 1ULL, 0ULL);
 }
 
-Cost_t TrivialCostModel::TaskPreemptionCost(TaskID_t task_id) {
-  return 0ULL;
+ArcCostCap TrivialCostModel::TaskPreemption(TaskID_t task_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t TrivialCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                    EquivClass_t ec) {
+ArcCostCap TrivialCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                        EquivClass_t ec) {
   if (ec == cluster_aggregator_ec_)
-    return 2ULL;
+    return ArcCostCap(2LL, 1ULL, 0ULL);
   else
-    return 0ULL;
+    return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-pair<Cost_t, uint64_t> TrivialCostModel::EquivClassToResourceNode(
+ArcCostCap TrivialCostModel::EquivClassToResourceNode(
     EquivClass_t tec,
     ResourceID_t res_id) {
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs);
   uint64_t num_free_slots = rs->descriptor().num_slots_below() -
     rs->descriptor().num_running_tasks_below();
-  return pair<Cost_t, uint64_t>(0LL, num_free_slots);
+  return ArcCostCap(0LL, num_free_slots, 0ULL);
 }
 
-pair<Cost_t, uint64_t> TrivialCostModel::EquivClassToEquivClass(
+ArcCostCap TrivialCostModel::EquivClassToEquivClass(
     EquivClass_t tec1,
     EquivClass_t tec2) {
-  return pair<Cost_t, uint64_t>(0LL, 0ULL);
+  return ArcCostCap(0LL, 0ULL, 0ULL);
 }
 
 vector<EquivClass_t>* TrivialCostModel::GetTaskEquivClasses(
