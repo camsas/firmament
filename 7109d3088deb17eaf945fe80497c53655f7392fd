@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "311f268a_75808f89",
+        "filename": "src/scheduling/firmament_scheduler.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-10T21:23:21Z",
+      "side": 1,
+      "message": "I assume these are for Heapster interaction? Some of the information duplicates what is already present in ProcessStatistics_t and ProcFSMachine\u0027s various structs; do you think we should have both structures in parallel for a while and eventually deprecate the homemade ones in src/platforms/unix, or keep both indefinitely?\n\nhttps://github.com/camsas/firmament/blob/master/src/platforms/unix/procfs_monitor.h#L38\n\nhttps://github.com/camsas/firmament/blob/master/src/platforms/unix/procfs_machine.h",
+      "revId": "7109d3088deb17eaf945fe80497c53655f7392fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4df34fb7_602dd933",
+        "filename": "src/scheduling/firmament_scheduler.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-10T21:23:21Z",
+      "side": 1,
+      "message": "What unit are these in? Is it possible to have fractions of CPU cores even though they\u0027re integers?",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 107,
+        "endChar": 23
+      },
+      "revId": "7109d3088deb17eaf945fe80497c53655f7392fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a601163c_8e3f7552",
+        "filename": "src/scheduling/firmament_scheduler.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-10T21:23:21Z",
+      "side": 1,
+      "message": "See above.",
+      "range": {
+        "startLine": 128,
+        "startChar": 0,
+        "endLine": 131,
+        "endChar": 29
+      },
+      "revId": "7109d3088deb17eaf945fe80497c53655f7392fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
