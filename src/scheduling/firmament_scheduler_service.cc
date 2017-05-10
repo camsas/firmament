@@ -219,6 +219,7 @@ class FirmamentSchedulerServiceImpl final :
       CHECK(InsertIfNotPresent(task_map_.get(), root_td_ptr->uid(),
                                root_td_ptr));
       root_td_ptr->set_submit_time(wall_time_.GetCurrentTimestamp());
+      CHECK(InsertIfNotPresent(&job_num_incomplete_tasks_, job_id, 0));
     } else {
       TaskDescriptor* td_ptr = jd_ptr->mutable_root_task()->add_spawned();
       td_ptr->CopyFrom(task_desc_ptr->task_descriptor());
