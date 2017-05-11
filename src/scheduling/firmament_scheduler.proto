@@ -102,28 +102,29 @@ enum NodeReplyType {
 
 message TaskStats {
   TaskUID task_uid = 1;
+  string hostname = 2;
   // CPU stats in millicores.
-  uint64 cpu_limit = 2;
-  uint64 cpu_request = 3;
-  uint64 cpu_usage = 4;
+  uint64 cpu_limit = 3;
+  uint64 cpu_request = 4;
+  uint64 cpu_usage = 5;
   // Memory stats in Kb.
-  uint64 mem_limit = 5;
-  uint64 mem_request = 6;
-  uint64 mem_usage = 7;
-  uint64 mem_working_set = 8;
-  uint64 mem_page_faults = 9;
-  double mem_page_faults_rate = 10;
-  uint64 major_page_faults = 11;
-  double major_page_faults_rate = 12;
+  uint64 mem_limit = 6;
+  uint64 mem_request = 7;
+  uint64 mem_usage = 8;
+  uint64 mem_working_set = 9;
+  uint64 mem_page_faults = 10;
+  double mem_page_faults_rate = 11;
+  uint64 major_page_faults = 12;
+  double major_page_faults_rate = 13;
   // Network stats in Kb.
-  uint64 net_rx = 13;
-  uint64 net_rx_errors = 14;
-  double net_rx_errors_rate = 15;
-  double net_rx_rate = 16;
-  uint64 net_tx = 17;
-  uint64 net_tx_errors = 18;
-  double net_tx_errors_rate = 19;
-  double net_tx_rate = 20;
+  uint64 net_rx = 14;
+  uint64 net_rx_errors = 15;
+  double net_rx_errors_rate = 16;
+  double net_rx_rate = 17;
+  uint64 net_tx = 18;
+  uint64 net_tx_errors = 19;
+  double net_tx_errors_rate = 20;
+  double net_tx_rate = 21;
 }
 
 message ResourceStats {
