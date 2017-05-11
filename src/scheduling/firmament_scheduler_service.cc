@@ -310,13 +310,13 @@ class FirmamentSchedulerServiceImpl final :
   Status AddTaskStats(ServerContext* context,
                       const TaskStats* task_stats,
                       TaskStatsResponse* reply) override {
-    TaskID_t task_id = task_stats->task_uid().task_uid();
+    TaskID_t task_id = task_stats->task_id();
     TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
     if (td_ptr == NULL) {
       reply->set_type(TaskReplyType::TASK_NOT_FOUND);
       return Status::OK;
     }
-    kb_populator_->PopulateTaskStats(task_id, task_stats);
+    knowledge_base_->AddTaskStatsSample(*task_stats);
     return Status::OK;
   }
 

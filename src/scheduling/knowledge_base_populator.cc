@@ -77,22 +77,6 @@ void KnowledgeBasePopulator::PopulateNodeStats(
   knowledge_base_->AddMachineSample(machine_stats);
 }
 
-void KnowledgeBasePopulator::PopulateTaskStats(TaskID_t task_id,
-                                               const TaskStats* task_stats) {
-  TaskPerfStatisticsSample task_perf_stats;
-  task_perf_stats.set_task_id(task_id);
-  task_perf_stats.set_timestamp(time_manager_.GetCurrentTimestamp());
-  task_perf_stats.set_hostname(task_stats->hostname());
-  // TODO(ionel): Populate the other fields. They're currently not used,
-  // but they may be used in the future.
-  // task_perf_stats.set_vsize();
-  // task_perf_stats.set_rsize();
-  // task_perf_stats.set_sched_run();
-  // task_perf_stats.set_sched_wait();
-  task_perf_stats.set_completed(false);
-  knowledge_base_->AddTaskSample(task_perf_stats);
-}
-
 void KnowledgeBasePopulator::PopulateTaskFinalReport(const TaskDescriptor& td,
                                                      TaskFinalReport* report) {
   // TODO(ionel): Populate the other fields.

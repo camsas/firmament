@@ -38,8 +38,8 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/machine_perf_statistics_sample.pb.h"
-#include "base/task_perf_statistics_sample.pb.h"
 #include "base/task_final_report.pb.h"
+#include "base/task_stats.pb.h"
 #include "scheduling/data_layer_manager_interface.h"
 
 namespace firmament {
@@ -50,14 +50,13 @@ class KnowledgeBase {
   KnowledgeBase(DataLayerManagerInterface* data_layer_manager);
   virtual ~KnowledgeBase();
   void AddMachineSample(const MachinePerfStatisticsSample& sample);
-  void AddTaskSample(const TaskPerfStatisticsSample& sample);
+  void AddTaskStatsSample(const TaskStats& stats_sample);
   void DumpMachineStats(const ResourceID_t& res_id) const;
   bool GetLatestStatsForMachine(ResourceID_t id,
                                 MachinePerfStatisticsSample* sample);
   const deque<MachinePerfStatisticsSample> GetStatsForMachine(
       ResourceID_t id);
-  const deque<TaskPerfStatisticsSample>* GetStatsForTask(
-      TaskID_t id) const;
+  const deque<TaskStats>* GetStatsForTask(TaskID_t id) const;
   virtual double GetAvgCPIForTEC(EquivClass_t id);
   virtual double GetAvgIPMAForTEC(EquivClass_t id);
   virtual double GetAvgPsPIForTEC(EquivClass_t id);
@@ -82,7 +81,7 @@ class KnowledgeBase {
       boost::hash<boost::uuids::uuid> > machine_map_;
   // TODO(malte): note that below sample queue has no awareness of time within a
   // task, i.e. it mixes samples from all phases
-  unordered_map<TaskID_t, deque<TaskPerfStatisticsSample> > task_map_;
+  unordered_map<TaskID_t, deque<TaskStats> > task_map_;
   unordered_map<TaskID_t, deque<TaskFinalReport> > task_exec_reports_;
   boost::upgrade_mutex kb_lock_;
 

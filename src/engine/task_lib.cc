@@ -32,6 +32,7 @@
 
 #include "base/common.h"
 #include "base/data_object.h"
+#include "base/units.h"
 #include "messages/registration_message.pb.h"
 #include "messages/task_heartbeat_message.pb.h"
 #include "messages/task_info_message.pb.h"
@@ -145,20 +146,15 @@ void TaskLib::Stop(bool success) {
 }
 
 void TaskLib::AddTaskStatisticsToHeartbeat(
-    const ProcFSMonitor::ProcessStatistics_t& proc_stats,
-    TaskPerfStatisticsSample* stats) {
+    const ProcFSMonitor::ProcessStatistics_t& proc_stats, TaskStats* stats) {
   // Task ID and timestamp
   stats->set_task_id(task_id_);
-  stats->set_timestamp(time_manager_.GetCurrentTimestamp());
   stats->set_hostname(hostname_);
+  stats->set_timestamp(time_manager_.GetCurrentTimestamp());
 
   if (use_procfs_) {
     // Memory allocated and used
-    stats->set_vsize(proc_stats.vsize);
-    stats->set_rsize(proc_stats.rss * getpagesize());
-    // Scheduler statistics
-    stats->set_sched_run(proc_stats.sched_run_ticks);
-    stats->set_sched_wait(proc_stats.sched_wait_runnable_ticks);
+    stats->set_mem_usage(proc_stats.rss * getpagesize() / BYTES_TO_KB);
   }
 }
 
@@ -352,10 +348,8 @@ void TaskLib::SendHeartbeat(
   SUBMSG_WRITE(bm, task_heartbeat, task_id, task_id_);
   // Add current set of procfs statistics
 
-  TaskPerfStatisticsSample* taskperf_stats =
-      bm.mutable_task_heartbeat()->mutable_stats();
-
-  AddTaskStatisticsToHeartbeat(proc_stats, taskperf_stats);
+  TaskStats* task_stats = bm.mutable_task_heartbeat()->mutable_stats();
+  AddTaskStatisticsToHeartbeat(proc_stats, task_stats);
 
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).

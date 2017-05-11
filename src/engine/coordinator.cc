@@ -476,7 +476,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
     tdp->set_last_heartbeat_time(time_manager_->GetCurrentTimestamp());
     // Process the profiling information submitted by the task, add it to
     // the knowledge base
-    scheduler_->knowledge_base()->AddTaskSample(msg.stats());
+    scheduler_->knowledge_base()->AddTaskStatsSample(msg.stats());
   }
 
   // If we have a parent coordinator on whose behalf we are managing this task,
@@ -493,7 +493,7 @@ void Coordinator::HandleTaskHeartbeat(const TaskHeartbeatMessage& msg) {
       RegisterWithCoordinator(parent_chan_);
     }
   } else {
-    scheduler_->knowledge_base()->AddTaskSample(msg.stats());
+    scheduler_->knowledge_base()->AddTaskStatsSample(msg.stats());
   }
 }
 

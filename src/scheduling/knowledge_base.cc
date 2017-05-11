@@ -113,15 +113,14 @@ void KnowledgeBase::AddMachineSample(
   }
 }
 
-void KnowledgeBase::AddTaskSample(const TaskPerfStatisticsSample& sample) {
+void KnowledgeBase::AddTaskStatsSample(const TaskStats& sample) {
   TaskID_t tid = sample.task_id();
   boost::lock_guard<boost::upgrade_mutex> lock(kb_lock_);
   // Check if we already have a record for this task
-  deque<TaskPerfStatisticsSample>* q = FindOrNull(task_map_, tid);
+  deque<TaskStats>* q = FindOrNull(task_map_, tid);
   if (!q) {
     // Add a blank queue for this task
-    CHECK(InsertOrUpdate(&task_map_, tid,
-                         deque<TaskPerfStatisticsSample>()));
+    CHECK(InsertOrUpdate(&task_map_, tid, deque<TaskStats>()));
     q = FindOrNull(task_map_, tid);
     CHECK_NOTNULL(q);
   }
@@ -177,9 +176,8 @@ const deque<MachinePerfStatisticsSample> KnowledgeBase::GetStatsForMachine(
   return copy;
 }
 
-const deque<TaskPerfStatisticsSample>* KnowledgeBase::GetStatsForTask(
-      TaskID_t id) const {
-  const deque<TaskPerfStatisticsSample>* res = FindOrNull(task_map_, id);
+const deque<TaskStats>* KnowledgeBase::GetStatsForTask(TaskID_t id) const {
+  const deque<TaskStats>* res = FindOrNull(task_map_, id);
   return res;
 }
 
@@ -318,9 +316,9 @@ void KnowledgeBase::LoadKnowledgeBaseFromFile() {
       LOG(ERROR) << "Unexpected format of the input file";
       break;
     }
-    TaskPerfStatisticsSample task_sample;
-    task_sample.ParseFromString(message);
-    AddTaskSample(task_sample);
+    TaskStats task_stats;
+    task_stats.ParseFromString(message);
+    AddTaskStatsSample(task_stats);
   }
   delete coded_task_input;
   delete raw_task_input;

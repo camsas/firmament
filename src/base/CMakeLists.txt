@@ -17,7 +17,7 @@ set(BASE_PROTOBUFS
   base/resource_vector.proto
   base/task_desc.proto
   base/task_final_report.proto
-  base/task_perf_statistics_sample.proto
+  base/task_stats.proto
   base/whare_map_stats.proto
   )
 

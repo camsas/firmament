@@ -869,13 +869,13 @@ void CoordinatorHTTPUI::HandleStatisticsURI(
       return;
     }
     output += "{ \"samples\": [";
-    const deque<TaskPerfStatisticsSample>* samples_result =
+    const deque<TaskStats>* samples_result =
       coordinator_->scheduler()->knowledge_base()->GetStatsForTask(
             TaskIDFromString(task_id_str));
     if (samples_result) {
       bool first = true;
       int64_t length = static_cast<int64_t>(samples_result->size());
-      for (deque<TaskPerfStatisticsSample>::const_iterator it =
+      for (deque<TaskStats>::const_iterator it =
              samples_result->begin() + max(0LL, length - WEBUI_PERF_QUEUE_LEN);
           it != samples_result->end();
           ++it) {

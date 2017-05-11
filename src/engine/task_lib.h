@@ -34,9 +34,8 @@
 #include "base/common.h"
 #include "base/types.h"
 #include "base/resource_desc.pb.h"
-#include "base/task_perf_statistics_sample.pb.h"
-#include "storage/reference_types.h"
 #include "base/task_interface.h"
+#include "base/task_stats.pb.h"
 #include "messages/base_message.pb.h"
 #include "misc/messaging_interface.h"
 #include "misc/protobuf_envelope.h"
@@ -45,6 +44,7 @@
 #include "platforms/unix/procfs_monitor.h"
 #include "platforms/unix/stream_sockets_adapter.h"
 #include "platforms/unix/stream_sockets_channel.h"
+#include "storage/reference_types.h"
 #include "storage/types.h"
 
 namespace firmament {
@@ -91,8 +91,7 @@ class TaskLib {
   TaskDescriptor task_descriptor_;
 
   void AddTaskStatisticsToHeartbeat(
-      const ProcFSMonitor::ProcessStatistics_t& proc_stats,
-      TaskPerfStatisticsSample* stats);
+      const ProcFSMonitor::ProcessStatistics_t& proc_stats, TaskStats* stats);
   void ConvertTaskArgs(int argc, char *argv[], vector<char*>* arg_vec);
   void HandleIncomingMessage(BaseMessage *bm,
                              const string& remote_endpoint);

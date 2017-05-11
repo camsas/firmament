@@ -7,11 +7,11 @@ syntax = "proto3";
 
 package firmament;
 
-import "base/task_perf_statistics_sample.proto";
+import "base/task_stats.proto";
 
 message TaskHeartbeatMessage {
   uint64 task_id = 1;
   string location = 2;
   uint64 sequence_number = 3;
-  TaskPerfStatisticsSample stats = 4;
+  TaskStats stats = 4;
 }

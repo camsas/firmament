@@ -23,7 +23,7 @@
 
 #include "base/machine_perf_statistics_sample.pb.h"
 #include "base/task_final_report.pb.h"
-#include "base/task_perf_statistics_sample.pb.h"
+#include "base/task_stats.pb.h"
 #include "misc/wall_time.h"
 #include "scheduling/firmament_scheduler.pb.h"
 #include "scheduling/knowledge_base.h"
@@ -36,8 +36,6 @@ class KnowledgeBasePopulator {
   void AddMachineCpuUsage(MachinePerfStatisticsSample* machine_sample);
   void PopulateNodeStats(const ResourceID_t& res_id,
                          const ResourceStats* resource_stats);
-  void PopulateTaskStats(TaskID_t task_id,
-                         const TaskStats* task_stats);
   void PopulateTaskFinalReport(const TaskDescriptor& td,
                                TaskFinalReport* report);
  private:
