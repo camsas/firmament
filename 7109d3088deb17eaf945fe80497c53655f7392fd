@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "6245f014_b4df18de",
+        "filename": "src/scheduling/firmament_scheduler.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-05-11T12:25:38Z",
+      "side": 1,
+      "message": "I\u0027ve added comments that specify the units. It is possible to have fractions of CPUs because the units are in millicores.",
+      "parentUuid": "4df34fb7_602dd933",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 107,
+        "endChar": 23
+      },
+      "revId": "7109d3088deb17eaf945fe80497c53655f7392fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a601163c_8e3f7552",
         "filename": "src/scheduling/firmament_scheduler.proto",
         "patchSetId": 1
@@ -53,6 +77,30 @@
       "writtenOn": "2017-05-10T21:23:21Z",
       "side": 1,
       "message": "See above.",
+      "range": {
+        "startLine": 128,
+        "startChar": 0,
+        "endLine": 131,
+        "endChar": 29
+      },
+      "revId": "7109d3088deb17eaf945fe80497c53655f7392fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "27b7b62a_ec70b7ec",
+        "filename": "src/scheduling/firmament_scheduler.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-05-11T12:25:38Z",
+      "side": 1,
+      "message": "See above.:)",
+      "parentUuid": "a601163c_8e3f7552",
       "range": {
         "startLine": 128,
         "startChar": 0,
