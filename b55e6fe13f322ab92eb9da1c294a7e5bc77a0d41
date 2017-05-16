@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e349701b_af4f5adb",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 549,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-05-16T10:38:31Z",
+      "side": 1,
+      "message": "The return value is currently ignored in the flow_graph_manager. I\u0027ll soon write a utils class that can be called from the cost_models to return the correct UnscheduledAggToSink capacity. I\u0027ll update the cost_model_interface with TODOs for the method returns that are ignored.",
+      "parentUuid": "42ba91bd_3b543160",
+      "range": {
+        "startLine": 549,
+        "startChar": 25,
+        "endLine": 549,
+        "endChar": 29
+      },
+      "revId": "b55e6fe13f322ab92eb9da1c294a7e5bc77a0d41",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "558a1e1a_d2fe06e3",
         "filename": "src/scheduling/flow/coco_cost_model.cc",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2017-05-15T21:53:06Z",
       "side": 1,
       "message": "This seems potentially incorrect: resource nodes can aggregate many PUs, so presumably the maximum capacity should be \u003e1?",
+      "range": {
+        "startLine": 619,
+        "startChar": 31,
+        "endLine": 619,
+        "endChar": 35
+      },
+      "revId": "b55e6fe13f322ab92eb9da1c294a7e5bc77a0d41",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c40711f8_42fcd783",
+        "filename": "src/scheduling/flow/coco_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 619,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-05-16T10:38:31Z",
+      "side": 1,
+      "message": "As above.",
+      "parentUuid": "558a1e1a_d2fe06e3",
       "range": {
         "startLine": 619,
         "startChar": 31,
@@ -65,6 +113,42 @@
     },
     {
       "key": {
+        "uuid": "4ced82bd_df1ab3a4",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-05-16T10:38:31Z",
+      "side": 1,
+      "message": "Yes, I wanted to contain the change. We probably want to move CapacityFromResNodeToParent to a cost_model_utils class. The end goal is to have a flow_graph_manager that only changes the structure of the flow graph based on what the cost model returns.",
+      "parentUuid": "99641d80_cfde5aa3",
+      "revId": "b55e6fe13f322ab92eb9da1c294a7e5bc77a0d41",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2c038cb7_ea2729f2",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-05-16T10:38:31Z",
+      "side": 1,
+      "message": "Yes, I wanted to keep the change smallish, otherwise it would have been yuuugeee.",
+      "parentUuid": "99641d80_cfde5aa3",
+      "revId": "b55e6fe13f322ab92eb9da1c294a7e5bc77a0d41",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7fdad5e4_8972e897",
         "filename": "src/scheduling/flow/flow_graph_manager.cc",
         "patchSetId": 1
@@ -76,6 +160,30 @@
       "writtenOn": "2017-05-15T21:53:06Z",
       "side": 1,
       "message": "Does this still have the same semantics? Previously, it would maintain the values from prev_ec_arc, but now it could set anything that the TaskToEquivClassAggregator() call returns. Moreover, TaskToEquivClassAggregator() does not have access to the values on prev_ec_arc, so how would it return the correct ones?",
+      "range": {
+        "startLine": 1176,
+        "startChar": 0,
+        "endLine": 1178,
+        "endChar": 37
+      },
+      "revId": "b55e6fe13f322ab92eb9da1c294a7e5bc77a0d41",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0edcb6d8_76dbac0d",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1178,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-05-16T10:38:31Z",
+      "side": 1,
+      "message": "Yes, it still has the same semantics. The idea is that the flow graph manager should not make any decisions on prior values of arcs. The ground truth is what the cost model returns. In this particular case our cost models would return the same min_flow requirement and capacity for arc between the task and the aggregator as they did on previous calls.",
+      "parentUuid": "7fdad5e4_8972e897",
       "range": {
         "startLine": 1176,
         "startChar": 0,
