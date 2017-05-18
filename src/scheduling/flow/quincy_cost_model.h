@@ -54,25 +54,22 @@ class QuincyCostModel : public CostModelInterface {
   ~QuincyCostModel();
 
   // Costs pertaining to leaving tasks unscheduled
-  Cost_t TaskToUnscheduledAggCost(TaskID_t task_id);
-  Cost_t UnscheduledAggToSinkCost(JobID_t job_id);
+  ArcCostCap TaskToUnscheduledAgg(TaskID_t task_id);
+  ArcCostCap UnscheduledAggToSink(JobID_t job_id);
   // Per-task costs (into the resource topology)
-  Cost_t TaskToResourceNodeCost(TaskID_t task_id,
-                                  ResourceID_t resource_id);
+  ArcCostCap TaskToResourceNode(TaskID_t task_id, ResourceID_t resource_id);
   // Costs within the resource topology
-  Cost_t ResourceNodeToResourceNodeCost(const ResourceDescriptor& source,
-                                        const ResourceDescriptor& destination);
-  Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id);
+  ArcCostCap ResourceNodeToResourceNode(
+      const ResourceDescriptor& source,
+      const ResourceDescriptor& destination);
+  ArcCostCap LeafResourceNodeToSink(ResourceID_t resource_id);
   // Costs pertaining to preemption (i.e. already running tasks)
-  Cost_t TaskContinuationCost(TaskID_t task_id);
-  Cost_t TaskPreemptionCost(TaskID_t task_id);
+  ArcCostCap TaskContinuation(TaskID_t task_id);
+  ArcCostCap TaskPreemption(TaskID_t task_id);
   // Costs to equivalence class aggregators
-  Cost_t TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
-  pair<Cost_t, uint64_t> EquivClassToResourceNode(
-      EquivClass_t tec,
-      ResourceID_t res_id);
-  pair<Cost_t, uint64_t> EquivClassToEquivClass(EquivClass_t tec1,
-                                                EquivClass_t tec2);
+  ArcCostCap TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
+  ArcCostCap EquivClassToResourceNode(EquivClass_t tec, ResourceID_t res_id);
+  ArcCostCap EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
   // Get the type of equiv class.
   vector<EquivClass_t>* GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(EquivClass_t tec);

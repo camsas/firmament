@@ -38,64 +38,64 @@ VoidCostModel::VoidCostModel(shared_ptr<ResourceMap_t> resource_map,
     : resource_map_(resource_map), task_map_(task_map) {
 }
 
-Cost_t VoidCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  return 0LL;
+ArcCostCap VoidCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t VoidCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
-  return 0LL;
+ArcCostCap VoidCostModel::UnscheduledAggToSink(JobID_t job_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
 Cost_t VoidCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   return 0LL;
 }
 
-Cost_t VoidCostModel::TaskToResourceNodeCost(TaskID_t task_id,
+ArcCostCap VoidCostModel::TaskToResourceNode(TaskID_t task_id,
                                              ResourceID_t resource_id) {
-  return 0LL;
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
 Cost_t VoidCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
   return 0LL;
 }
 
-Cost_t VoidCostModel::ResourceNodeToResourceNodeCost(
+ArcCostCap VoidCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
-    const ResourceDescriptor& destination) {
-  return 0LL;
+    const ResourceDescriptor& destinpation) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t VoidCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
-  return 0LL;
+ArcCostCap VoidCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
+  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-Cost_t VoidCostModel::TaskContinuationCost(TaskID_t task_id) {
-  return 0LL;
+ArcCostCap VoidCostModel::TaskContinuation(TaskID_t task_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t VoidCostModel::TaskPreemptionCost(TaskID_t task_id) {
-  return 0LL;
+ArcCostCap VoidCostModel::TaskPreemption(TaskID_t task_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t VoidCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                 EquivClass_t tec) {
-  return 0LL;
+ArcCostCap VoidCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                     EquivClass_t tec) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-pair<Cost_t, uint64_t> VoidCostModel::EquivClassToResourceNode(
+ArcCostCap VoidCostModel::EquivClassToResourceNode(
     EquivClass_t tec,
     ResourceID_t res_id) {
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs);
   uint64_t num_free_slots = rs->descriptor().num_slots_below() -
     rs->descriptor().num_running_tasks_below();
-  return pair<Cost_t, uint64_t>(0LL, num_free_slots);
+  return ArcCostCap(0LL, num_free_slots, 0ULL);
 }
 
-pair<Cost_t, uint64_t> VoidCostModel::EquivClassToEquivClass(
+ArcCostCap VoidCostModel::EquivClassToEquivClass(
     EquivClass_t tec1,
     EquivClass_t tec2) {
-  return pair<Cost_t, uint64_t>(0LL, 0ULL);
+  return ArcCostCap(0LL, 0ULL, 0ULL);
 }
 
 vector<EquivClass_t>* VoidCostModel::GetTaskEquivClasses(TaskID_t task_id) {

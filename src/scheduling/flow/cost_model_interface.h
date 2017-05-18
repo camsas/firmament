@@ -50,6 +50,15 @@ enum CostModelType {
   COST_MODEL_NET = 8,
 };
 
+struct ArcCostCap {
+  ArcCostCap(Cost_t cost, uint64_t capacity, uint64_t min_flow) : cost_(cost),
+    capacity_(capacity), min_flow_(min_flow) {
+  }
+  Cost_t cost_;
+  uint64_t capacity_;
+  uint64_t min_flow_;
+};
+
 // Forward declarations to avoid cyclic dependencies
 class FlowGraphManager;
 
@@ -64,49 +73,73 @@ class CostModelInterface {
    * calls. It is used to adjust the cost of leaving a task unscheduled after
    * each iteration.
    */
-  virtual Cost_t TaskToUnscheduledAggCost(TaskID_t task_id) = 0;
-  virtual Cost_t UnscheduledAggToSinkCost(JobID_t job_id) = 0;
+  virtual ArcCostCap TaskToUnscheduledAgg(TaskID_t task_id) = 0;
+  // TODO(ionel): The returned capacity is ignored because the cost models
+  // do not set it correctly.
+  virtual ArcCostCap UnscheduledAggToSink(JobID_t job_id) = 0;
 
   /**
-   * Get the cost of a preference arc from a task node to a resource node.
+   * Get the cost, the capacity and the minimum flow of a preference arc from a
+   * task node to a resource node.
+   * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual Cost_t TaskToResourceNodeCost(TaskID_t task_id,
+  virtual ArcCostCap TaskToResourceNode(TaskID_t task_id,
                                         ResourceID_t resource_id) = 0;
 
   /**
-   * Get the cost of an arc between two resource nodes.
+   * Get the cost, the capacity and the minimum flow of an arc between two
+   * resource nodes.
+   * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual Cost_t ResourceNodeToResourceNodeCost(
+  // TODO(ionel): The returned capacity is ignored because the cost models do
+  // not set it correctly.
+  virtual ArcCostCap ResourceNodeToResourceNode(
       const ResourceDescriptor& source,
       const ResourceDescriptor& destination) = 0;
+
   /**
-   * Get the cost of an arc from a resource to the sink.
-   **/
-  virtual Cost_t LeafResourceNodeToSinkCost(ResourceID_t resource_id) = 0;
+   * Get the cost, the capacity and the minimu, flow of an arc from a resource
+   * to the sink.
+   * @return the cost, min flow requirement and max capacity of the arc
+   */
+  virtual ArcCostCap LeafResourceNodeToSink(ResourceID_t resource_id) = 0;
 
   // Costs pertaining to preemption (i.e. already running tasks)
-  virtual Cost_t TaskContinuationCost(TaskID_t task_id) = 0;
-  virtual Cost_t TaskPreemptionCost(TaskID_t task_id) = 0;
+  // TODO(ionel): TaskContinuation should return min_flow_requirement = 1 when
+  // task can not be preempted.
+  virtual ArcCostCap TaskContinuation(TaskID_t task_id) = 0;
+  virtual ArcCostCap TaskPreemption(TaskID_t task_id) = 0;
 
   /**
-   * Get the cost of an arc from a task node to an equivalence class node.
+   * Get the cost, the capacity and the minimum flow of an arc from a task node
+   * to an equivalence class node.
+   * @param task_id the task id of the source
+   * @param tec the destination equivalence class
+   * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual Cost_t TaskToEquivClassAggregator(TaskID_t task_id,
-                                            EquivClass_t tec) = 0;
+  virtual ArcCostCap TaskToEquivClassAggregator(TaskID_t task_id,
+                                                EquivClass_t tec) = 0;
+
   /**
-   * Get the cost of an arc from an equivalence class node to a resource node.
+   * Get the cost, the capacity and the minimum flow of an arc from an
+   * equivalence class node to a resource node.
+   * @param tec the source equivalence class
+   * @param res_id the destination resource
+   * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual pair<Cost_t, uint64_t> EquivClassToResourceNode(
-      EquivClass_t tec,
-      ResourceID_t res_id) = 0;
+  virtual ArcCostCap EquivClassToResourceNode(EquivClass_t tec,
+                                              ResourceID_t res_id) = 0;
+
   /**
-   * Get the cost and the capacity of an arc from an equivalence class node to
-   * another equivalence class node.
+   * Get the cost, the capacity and the minimum flow of an arc from an
+   * equivalence class node to another equivalence class node.
    * @param tec1 the source equivalence class
    * @param tec2 the destination equivalence class
+   * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual pair<Cost_t, uint64_t> EquivClassToEquivClass(EquivClass_t tec1,
-                                                        EquivClass_t tec2) = 0;
+  virtual ArcCostCap EquivClassToEquivClass(EquivClass_t tec1,
+                                            EquivClass_t tec2) = 0;
+
   /**
    * Get the equivalence classes of a task.
    * @param task_id the task id for which to get the equivalence classes

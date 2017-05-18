@@ -43,24 +43,24 @@ OctopusCostModel::OctopusCostModel(shared_ptr<ResourceMap_t> resource_map,
   VLOG(1) << "Cluster aggregator EC is " << cluster_aggregator_ec_;
 }
 
-Cost_t OctopusCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  return 1000000LL;
+ArcCostCap OctopusCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
+  return ArcCostCap(1000000LL, 1ULL, 0ULL);
 }
 
-Cost_t OctopusCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
-  return 0LL;
+ArcCostCap OctopusCostModel::UnscheduledAggToSink(JobID_t job_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
 Cost_t OctopusCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   return 0LL;
 }
 
-Cost_t OctopusCostModel::TaskToResourceNodeCost(TaskID_t task_id,
+ArcCostCap OctopusCostModel::TaskToResourceNode(TaskID_t task_id,
                                                 ResourceID_t resource_id) {
-  return 0LL;
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t OctopusCostModel::ResourceNodeToResourceNodeCost(
+ArcCostCap OctopusCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& src,
     const ResourceDescriptor& dst) {
   if (dst.type() ==  ResourceDescriptor::RESOURCE_PU) {
@@ -69,30 +69,33 @@ Cost_t OctopusCostModel::ResourceNodeToResourceNodeCost(
     if (idx != string::npos) {
       string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
       int64_t core_id = strtoll(core_id_substr.c_str(), 0, 10);
-      return core_id + dst.num_running_tasks_below() * BUSY_PU_OFFSET;
+      return ArcCostCap(core_id + dst.num_running_tasks_below() *
+                        BUSY_PU_OFFSET, 1ULL, 0ULL);
     }
   }
-  return dst.num_running_tasks_below() * BUSY_PU_OFFSET;
+  return ArcCostCap(dst.num_running_tasks_below() * BUSY_PU_OFFSET,
+                    1ULL, 0ULL);
 }
 
-Cost_t OctopusCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
-  return 0LL;
+ArcCostCap OctopusCostModel::LeafResourceNodeToSink(
+    ResourceID_t resource_id) {
+  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-Cost_t OctopusCostModel::TaskContinuationCost(TaskID_t task_id) {
-  return 0LL;
+ArcCostCap OctopusCostModel::TaskContinuation(TaskID_t task_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t OctopusCostModel::TaskPreemptionCost(TaskID_t task_id) {
-  return 1000000LL;
+ArcCostCap OctopusCostModel::TaskPreemption(TaskID_t task_id) {
+  return ArcCostCap(1000000LL, 1ULL, 0ULL);
 }
 
-Cost_t OctopusCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                    EquivClass_t ec) {
-  return 1LL;
+ArcCostCap OctopusCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                        EquivClass_t ec) {
+  return ArcCostCap(1LL, 1ULL, 0ULL);
 }
 
-pair<Cost_t, uint64_t> OctopusCostModel::EquivClassToResourceNode(
+ArcCostCap OctopusCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
@@ -101,13 +104,13 @@ pair<Cost_t, uint64_t> OctopusCostModel::EquivClassToResourceNode(
     rs->descriptor().num_running_tasks_below();
   Cost_t cost =
     rs->descriptor().num_running_tasks_below() * BUSY_PU_OFFSET;
-  return pair<Cost_t, uint64_t>(cost, num_free_slots);
+  return ArcCostCap(cost, num_free_slots, 0ULL);
 }
 
-pair<Cost_t, uint64_t> OctopusCostModel::EquivClassToEquivClass(
+ArcCostCap OctopusCostModel::EquivClassToEquivClass(
     EquivClass_t ec1,
     EquivClass_t ec2) {
-  return pair<Cost_t, uint64_t>(0LL, 0ULL);
+  return ArcCostCap(0LL, 0ULL, 0ULL);
 }
 
 vector<EquivClass_t>* OctopusCostModel::GetTaskEquivClasses(

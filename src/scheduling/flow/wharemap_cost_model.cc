@@ -142,7 +142,7 @@ Cost_t WhareMapCostModel::MinFromVec(const vector<uint64_t>& vec) const {
 
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
-Cost_t WhareMapCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
+ArcCostCap WhareMapCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
   uint64_t now = time_manager_->GetCurrentTimestamp();
   uint64_t time_since_submit = now - td.submit_time();
@@ -165,17 +165,19 @@ Cost_t WhareMapCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
             << (static_cast<double>(avg_pspi / *best_avg_pspi)) << "x best";
   }
   delete equiv_classes;
-  return COST_LOWER_BOUND + 1 +
-    max(WAIT_TIME_MULTIPLIER * wait_time_centamillis, normalized_avg_pspi);
+  return ArcCostCap(COST_LOWER_BOUND + 1 +
+                    max(WAIT_TIME_MULTIPLIER * wait_time_centamillis,
+                        normalized_avg_pspi),
+                    1ULL, 0ULL);
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
 // than zero affects all the unscheduled tasks. It is better to affect the cost
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
-Cost_t WhareMapCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
+ArcCostCap WhareMapCostModel::UnscheduledAggToSink(JobID_t job_id) {
   // No cost in this cost model.
-  return 0ULL;
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
 // The cost from the task to the cluster aggregator models how expensive is a
@@ -202,14 +204,14 @@ Cost_t WhareMapCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   return (*worst_avg_pspi * 100) / (*best_avg_pspi);
 }
 
-Cost_t WhareMapCostModel::TaskToResourceNodeCost(TaskID_t task_id,
+ArcCostCap WhareMapCostModel::TaskToResourceNode(TaskID_t task_id,
                                                  ResourceID_t resource_id) {
   // Tasks do not have preference arcs to resources.
   LOG(FATAL) << "Should not be called";
-  return 0LL;
+  return ArcCostCap(0LL, 0ULL, 0ULL);
 }
 
-Cost_t WhareMapCostModel::ResourceNodeToResourceNodeCost(
+ArcCostCap WhareMapCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
   // Below is a somewhat hackish way of making sure that tasks spread out
@@ -221,36 +223,37 @@ Cost_t WhareMapCostModel::ResourceNodeToResourceNodeCost(
     if (idx != string::npos) {
       string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
       int64_t core_id = strtoll(core_id_substr.c_str(), 0, 10);
-      return core_id;
+      return ArcCostCap(core_id, 1ULL, 0ULL);
     }
   }
-  return 0LL;
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
 // The cost from the resource leaf to the sink is 0.
-Cost_t WhareMapCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
-  return 0LL;
+ArcCostCap WhareMapCostModel::LeafResourceNodeToSink(
+    ResourceID_t resource_id) {
+  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-Cost_t WhareMapCostModel::TaskContinuationCost(TaskID_t task_id) {
-  return 0LL;
+ArcCostCap WhareMapCostModel::TaskContinuation(TaskID_t task_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t WhareMapCostModel::TaskPreemptionCost(TaskID_t task_id) {
-  return 0LL;
+ArcCostCap WhareMapCostModel::TaskPreemption(TaskID_t task_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                     EquivClass_t ec) {
+ArcCostCap WhareMapCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                         EquivClass_t ec) {
   // The cost of scheduling via the cluster aggregator
   if (ec == cluster_aggregator_ec_)
-    return TaskToClusterAggCost(task_id);
+    return ArcCostCap(TaskToClusterAggCost(task_id), 1ULL, 0ULL);
   else
     // XXX(malte): Implement other EC's costs!
-    return 0;
+    return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToResourceNode(
+ArcCostCap WhareMapCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
@@ -261,7 +264,7 @@ pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToResourceNode(
   if (task_aggs_.find(ec) == task_aggs_.end()) {
     // ec must be a machine agg or the cluster agg; we don't need
     // any cost here.
-    return pair<Cost_t, uint64_t>(0LL, num_free_slots);
+    return ArcCostCap(0LL, num_free_slots, 0ULL);
   }
   // Otherwise, ec must be a TEC, so we extract the Whare-MCs cost
   // here. Whare-M does not have TEC -> resource arcs, so this won't
@@ -287,14 +290,14 @@ pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToResourceNode(
     CHECK_NOTNULL(best_avg_pspi);
     // Average PsPI for tasks in ec1 on machine of type ec2
     uint64_t avg_for_ec = AverageFromVec(*xi_vec);
-    return pair<Cost_t, uint64_t>((avg_for_ec * 100) / *best_avg_pspi,
-                                  num_free_slots);
+    return ArcCostCap((avg_for_ec * 100) / *best_avg_pspi,
+                      num_free_slots, 0ULL);
   }
   // No record exists, so we return a high cost
-  return pair<Cost_t, uint64_t>(FLAGS_flow_max_arc_cost, num_free_slots);
+  return ArcCostCap(FLAGS_flow_max_arc_cost, num_free_slots, 0ULL);
 }
 
-pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToEquivClass(
+ArcCostCap WhareMapCostModel::EquivClassToEquivClass(
     EquivClass_t ec1,
     EquivClass_t ec2) {
   pair<EquivClass_t, EquivClass_t> ec_pair(ec1, ec2);
@@ -306,10 +309,11 @@ pair<Cost_t, uint64_t> WhareMapCostModel::EquivClassToEquivClass(
     CHECK_NOTNULL(best_avg_pspi);
     // Average PsPI for tasks in ec1 on machine of type ec2
     uint64_t avg_for_ec = AverageFromVec(*pspi_vec);
-    return pair<Cost_t, uint64_t>((avg_for_ec * 100) / *best_avg_pspi,
-                                  GetECOutgoingCapacity(ec2));
+    return ArcCostCap((avg_for_ec * 100) / *best_avg_pspi,
+                      GetECOutgoingCapacity(ec2),
+                      0ULL);
   }
-  return pair<Cost_t, uint64_t>(0LL, 0ULL);
+  return ArcCostCap(0LL, 0ULL, 0ULL);
 }
 
 uint64_t WhareMapCostModel::GetECOutgoingCapacity(EquivClass_t ec) {
@@ -343,7 +347,7 @@ vector<EquivClass_t>* WhareMapCostModel::GetTaskEquivClasses(
   // The ID of the aggregator is the hash of the command line.
   // This (first) EC will be used for the Whare-Map costs: the TEC
   // aggregator is the source of the Whare-M cost arcs, and
-  // TaskToUnscheduledAggCost (currently) assumes that the first TEC is
+  // TaskToUnscheduledAgg (currently) assumes that the first TEC is
   // the one for which the cost model has statistics.
   EquivClass_t task_agg =
     static_cast<EquivClass_t>(HashCommandLine(*td_ptr));
@@ -413,9 +417,8 @@ vector<ResourceID_t>* WhareMapCostModel::GetOutgoingEquivClassPrefArcs(
       for (auto it = machine_to_rtnd_.begin();
            it != machine_to_rtnd_.end();
            ++it) {
-        pair<Cost_t, uint64_t> cost_and_cap_to_res =
-          EquivClassToResourceNode(ec, it->first);
-        Cost_t cost_to_res = cost_and_cap_to_res.first;
+        ArcCostCap arc_cost_cap = EquivClassToResourceNode(ec, it->first);
+        Cost_t cost_to_res = arc_cost_cap.cost_;
         ResourceID_t res_id =
           ResourceIDFromString(it->second->resource_desc().uuid());
         if (cost_to_res >= normed_worst_pspi) {

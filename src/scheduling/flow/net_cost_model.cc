@@ -42,52 +42,52 @@ NetCostModel::NetCostModel(shared_ptr<ResourceMap_t> resource_map,
     knowledge_base_(knowledge_base) {
 }
 
-Cost_t NetCostModel::TaskToUnscheduledAggCost(TaskID_t task_id) {
-  return 2500;
+ArcCostCap NetCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
+  return ArcCostCap(2500, 1ULL, 0ULL);
 }
 
-Cost_t NetCostModel::UnscheduledAggToSinkCost(JobID_t job_id) {
-  return 0LL;
+ArcCostCap NetCostModel::UnscheduledAggToSink(JobID_t job_id) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t NetCostModel::TaskToResourceNodeCost(TaskID_t task_id,
+ArcCostCap NetCostModel::TaskToResourceNode(TaskID_t task_id,
                                             ResourceID_t resource_id) {
-  return 0LL;
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t NetCostModel::ResourceNodeToResourceNodeCost(
+ArcCostCap NetCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
-  return 0LL;
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t NetCostModel::LeafResourceNodeToSinkCost(ResourceID_t resource_id) {
-  return 0LL;
+ArcCostCap NetCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
+  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-Cost_t NetCostModel::TaskContinuationCost(TaskID_t task_id) {
+ArcCostCap NetCostModel::TaskContinuation(TaskID_t task_id) {
   // TODO(ionel): Implement before running with preemption enabled.
-  return 0LL;
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t NetCostModel::TaskPreemptionCost(TaskID_t task_id) {
+ArcCostCap NetCostModel::TaskPreemption(TaskID_t task_id) {
   // TODO(ionel): Implement before running with preemption enabled.
-  return 0LL;
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-Cost_t NetCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                EquivClass_t ec) {
-  return 0LL;
+ArcCostCap NetCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                    EquivClass_t ec) {
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-pair<Cost_t, uint64_t> NetCostModel::EquivClassToResourceNode(
+ArcCostCap NetCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
   // The arcs between ECs an machine can only carry unit flow.
-  return pair<Cost_t, uint64_t>(0LL, 1ULL);
+  return ArcCostCap(0LL, 1ULL, 0ULL);
 }
 
-pair<Cost_t, uint64_t> NetCostModel::EquivClassToEquivClass(
+ArcCostCap NetCostModel::EquivClassToEquivClass(
     EquivClass_t ec1,
     EquivClass_t ec2) {
   uint64_t* required_net_rx_bw = FindOrNull(ec_rx_bw_requirement_, ec1);
@@ -103,12 +103,12 @@ pair<Cost_t, uint64_t> NetCostModel::EquivClassToEquivClass(
   CHECK_NOTNULL(index);
   uint64_t ec_index = *index + 1;
   if (available_net_rx_bw < *required_net_rx_bw * ec_index) {
-    return pair<Cost_t, uint64_t>(0LL, 0ULL);
+    return ArcCostCap(0LL, 0ULL, 0ULL);
   }
-  return pair<Cost_t, uint64_t>(static_cast<int64_t>(ec_index) *
-                                static_cast<int64_t>(*required_net_rx_bw) -
-                                static_cast<int64_t>(available_net_rx_bw) +
-                                1250LL, 1ULL);
+  return ArcCostCap(static_cast<int64_t>(ec_index) *
+                    static_cast<int64_t>(*required_net_rx_bw) -
+                    static_cast<int64_t>(available_net_rx_bw) + 1250LL,
+                    1ULL, 0ULL);
 }
 
 vector<EquivClass_t>* NetCostModel::GetTaskEquivClasses(
