@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d6e8043d_3bede413",
+        "filename": "src/misc/pb_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-18T15:06:12Z",
+      "side": 1,
+      "message": "The semantics of this method are a bit funky, and I find it hard to understand what it\u0027s actually designed to do when used with a callback.\n\nIn the place where it\u0027s used, I believe the first and second resource topology are actually the same; why was this funky dual iteration thing required?",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 86
+      },
+      "revId": "94206eec6b72404a32969402bee95328ecd141b0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eaec30d6_46fc1267",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-05-18T15:06:12Z",
+      "side": 1,
+      "message": "As noted earlier, I don\u0027t fully understand why this is required: aren\u0027t updated_rtnd_ptr and rs_ptr-\u003emutable_topology_node() really the same thing?\n\nOn a higher level, is the intention that the new label (and other updates) are applied to the RTND and all its children? Why is that needed -- do we need to propagate the labels to PUs?",
+      "range": {
+        "startLine": 319,
+        "startChar": 0,
+        "endLine": 323,
+        "endChar": 35
+      },
+      "revId": "94206eec6b72404a32969402bee95328ecd141b0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
