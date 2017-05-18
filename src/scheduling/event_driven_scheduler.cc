@@ -229,6 +229,18 @@ void EventDrivenScheduler::HandleJobCompletion(JobID_t job_id) {
   }
 }
 
+void EventDrivenScheduler::HandleJobRemoval(JobID_t job_id) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  JobDescriptor* jd = FindOrNull(*job_map_, job_id);
+  CHECK_NOTNULL(jd);
+  jobs_to_schedule_.erase(job_id);
+  runnable_tasks_.erase(job_id);
+  jd->set_state(JobDescriptor::ABORTED);
+  if (event_notifier_) {
+    event_notifier_->OnJobRemoval(job_id);
+  }
+}
+
 void EventDrivenScheduler::HandleReferenceStateChange(
     const ReferenceInterface& old_ref,
     const ReferenceInterface& new_ref,

@@ -152,20 +152,13 @@ class FirmamentSchedulerServiceImpl final :
     flow_scheduler_->HandleTaskCompletion(td_ptr, &report);
     kb_populator_->PopulateTaskFinalReport(*td_ptr, &report);
     flow_scheduler_->HandleTaskFinalReport(report, td_ptr);
-    // Don't remove the root task so that tasks can still be appended to
-    // the job. We only remove the root task when the job completes.
-    if (td_ptr != jd_ptr->mutable_root_task()) {
-      task_map_->erase(td_ptr->uid());
-    }
     // Check if it was the last task of the job.
     uint64_t* num_incomplete_tasks =
       FindOrNull(job_num_incomplete_tasks_, job_id);
     CHECK_NOTNULL(num_incomplete_tasks);
+    (*num_incomplete_tasks)--;
     if (*num_incomplete_tasks == 0) {
       flow_scheduler_->HandleJobCompletion(job_id);
-      job_num_incomplete_tasks_.erase(job_id);
-      task_map_->erase(jd_ptr->root_task().uid());
-      job_map_->erase(job_id);
     }
     reply->set_type(TaskReplyType::TASK_COMPLETED_OK);
     return Status::OK;
@@ -193,6 +186,30 @@ class FirmamentSchedulerServiceImpl final :
       return Status::OK;
     }
     flow_scheduler_->HandleTaskRemoval(td_ptr);
+    JobID_t job_id = JobIDFromString(td_ptr->job_id());
+    JobDescriptor* jd_ptr = FindOrNull(*job_map_, job_id);
+    CHECK_NOTNULL(jd_ptr);
+    // Don't remove the root task so that tasks can still be appended to
+    // the job. We only remove the root task when the job completes.
+    if (td_ptr != jd_ptr->mutable_root_task()) {
+      task_map_->erase(td_ptr->uid());
+    }
+    uint64_t* num_tasks_to_remove =
+      FindOrNull(job_num_tasks_to_remove_, job_id);
+    CHECK_NOTNULL(num_tasks_to_remove);
+    (*num_tasks_to_remove)--;
+    if (*num_tasks_to_remove == 0) {
+      uint64_t* num_incomplete_tasks =
+        FindOrNull(job_num_incomplete_tasks_, job_id);
+      if (*num_incomplete_tasks > 0) {
+        flow_scheduler_->HandleJobRemoval(job_id);
+      }
+      // Delete the job because we removed its last task.
+      task_map_->erase(jd_ptr->root_task().uid());
+      job_map_->erase(job_id);
+      job_num_incomplete_tasks_.erase(job_id);
+      job_num_tasks_to_remove_.erase(job_id);
+    }
     reply->set_type(TaskReplyType::TASK_REMOVED_OK);
     return Status::OK;
   }
@@ -220,17 +237,23 @@ class FirmamentSchedulerServiceImpl final :
                                root_td_ptr));
       root_td_ptr->set_submit_time(wall_time_.GetCurrentTimestamp());
       CHECK(InsertIfNotPresent(&job_num_incomplete_tasks_, job_id, 0));
+      CHECK(InsertIfNotPresent(&job_num_tasks_to_remove_, job_id, 0));
     } else {
       TaskDescriptor* td_ptr = jd_ptr->mutable_root_task()->add_spawned();
       td_ptr->CopyFrom(task_desc_ptr->task_descriptor());
       CHECK(InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr));
       td_ptr->set_submit_time(wall_time_.GetCurrentTimestamp());
     }
-    flow_scheduler_->AddJob(jd_ptr);
     uint64_t* num_incomplete_tasks =
       FindOrNull(job_num_incomplete_tasks_, job_id);
     CHECK_NOTNULL(num_incomplete_tasks);
+    if (*num_incomplete_tasks == 0) {
+      flow_scheduler_->AddJob(jd_ptr);
+    }
     (*num_incomplete_tasks)++;
+    uint64_t* num_tasks_to_remove =
+      FindOrNull(job_num_tasks_to_remove_, job_id);
+    (*num_tasks_to_remove)++;
     reply->set_type(TaskReplyType::TASK_SUBMITTED_OK);
     return Status::OK;
   }
@@ -352,6 +375,9 @@ class FirmamentSchedulerServiceImpl final :
   // Mapping from JobID_t to number of incomplete job tasks.
   unordered_map<JobID_t, uint64_t, boost::hash<boost::uuids::uuid>>
     job_num_incomplete_tasks_;
+  // Mapping from JobID_t to number of job tasks left to be removed.
+  unordered_map<JobID_t, uint64_t, boost::hash<boost::uuids::uuid>>
+    job_num_tasks_to_remove_;
   KnowledgeBasePopulator* kb_populator_;
 
   ResourceStatus* CreateTopLevelResource() {

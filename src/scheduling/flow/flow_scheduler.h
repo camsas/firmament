@@ -69,6 +69,7 @@ class FlowScheduler : public EventDrivenScheduler {
   ~FlowScheduler();
   virtual void DeregisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr);
   virtual void HandleJobCompletion(JobID_t job_id);
+  virtual void HandleJobRemoval(JobID_t job_id);
   virtual void HandleTaskCompletion(TaskDescriptor* td_ptr,
                                     TaskFinalReport* report);
   virtual void HandleTaskEviction(TaskDescriptor* td_ptr,

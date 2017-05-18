@@ -84,6 +84,7 @@ class SimulatorBridge : public scheduler::SchedulingEventNotifierInterface {
    * @param job_id the id of the completed job
    */
   void OnJobCompletion(JobID_t job_id);
+  void OnJobRemoval(JobID_t job_id);
 
   /**
    * Event called by the event driven scheduler when the scheduler finishes
