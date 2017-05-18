@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0f66f883_652368e2",
+        "filename": "src/misc/pb_utils.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-05-18T15:12:33Z",
+      "side": 1,
+      "message": "Yes, the topology structures are the same, but they can contain different labels, sizes... These method can be used to update those fields.",
+      "parentUuid": "d6e8043d_3bede413",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 86
+      },
+      "revId": "94206eec6b72404a32969402bee95328ecd141b0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eaec30d6_46fc1267",
         "filename": "src/scheduling/firmament_scheduler_service.cc",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2017-05-18T15:06:12Z",
       "side": 1,
       "message": "As noted earlier, I don\u0027t fully understand why this is required: aren\u0027t updated_rtnd_ptr and rs_ptr-\u003emutable_topology_node() really the same thing?\n\nOn a higher level, is the intention that the new label (and other updates) are applied to the RTND and all its children? Why is that needed -- do we need to propagate the labels to PUs?",
+      "range": {
+        "startLine": 319,
+        "startChar": 0,
+        "endLine": 323,
+        "endChar": 35
+      },
+      "revId": "94206eec6b72404a32969402bee95328ecd141b0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "96d7787f_686c9d0e",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-05-18T15:12:33Z",
+      "side": 1,
+      "message": "Yes, this handles the case when PUs or other \"sub-resources\" have labels as well. With the help of the traversal we can update all the labels.\nIn the future, it would be nice to support even funkier node updates in which the topology changes :P",
+      "parentUuid": "eaec30d6_46fc1267",
       "range": {
         "startLine": 319,
         "startChar": 0,
