@@ -18,6 +18,7 @@ service FirmamentScheduler {
   rpc TaskFailed (TaskUID) returns (TaskFailedResponse) {}
   rpc TaskRemoved (TaskUID) returns (TaskRemovedResponse) {}
   rpc TaskSubmitted (TaskDescription) returns (TaskSubmittedResponse) {}
+  rpc TaskUpdated (TaskDescription) returns (TaskUpdatedResponse) {}
 
   rpc NodeAdded (ResourceTopologyNodeDescriptor) returns (NodeAddedResponse) {}
   rpc NodeFailed (ResourceUID) returns (NodeFailedResponse) {}
@@ -52,6 +53,10 @@ message TaskRemovedResponse {
 }
 
 message TaskFailedResponse {
+  TaskReplyType type = 1;
+}
+
+message TaskUpdatedResponse {
   TaskReplyType type = 1;
 }
 
@@ -92,10 +97,11 @@ enum TaskReplyType {
   TASK_SUBMITTED_OK = 1;
   TASK_REMOVED_OK = 2;
   TASK_FAILED_OK = 3;
-  TASK_NOT_FOUND = 4;
-  TASK_JOB_NOT_FOUND = 5;
-  TASK_ALREADY_SUBMITTED = 6;
-  TASK_STATE_NOT_CREATED = 7;
+  TASK_UPDATED_OK = 4;
+  TASK_NOT_FOUND = 5;
+  TASK_JOB_NOT_FOUND = 6;
+  TASK_ALREADY_SUBMITTED = 7;
+  TASK_STATE_NOT_CREATED = 8;
 }
 
 enum NodeReplyType {

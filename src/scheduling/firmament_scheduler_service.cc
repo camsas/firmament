@@ -235,6 +235,34 @@ class FirmamentSchedulerServiceImpl final :
     return Status::OK;
   }
 
+  Status TaskUpdated(ServerContext* context,
+                     const TaskDescription* task_desc_ptr,
+                     TaskUpdatedResponse* reply) override {
+    TaskID_t task_id = task_desc_ptr->task_descriptor().uid();
+    TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
+    if (td_ptr == NULL) {
+      reply->set_type(TaskReplyType::TASK_NOT_FOUND);
+      return Status::OK;
+    }
+    // The scheduler will notice that the task's properties (e.g.,
+    // resource requirements, labels) are different and react accordingly.
+    const TaskDescriptor& updated_td = task_desc_ptr->task_descriptor();
+    td_ptr->mutable_resource_request()->CopyFrom(updated_td.resource_request());
+    td_ptr->set_priority(updated_td.priority());
+    td_ptr->clear_labels();
+    for (const auto& label : updated_td.labels()) {
+      Label* label_ptr = td_ptr->add_labels();
+      label_ptr->CopyFrom(label);
+    }
+    td_ptr->clear_label_selectors();
+    for (const auto& label_selector : updated_td.label_selectors()) {
+      LabelSelector* label_sel_ptr = td_ptr->add_label_selectors();
+      label_sel_ptr->CopyFrom(label_selector);
+    }
+    // XXX(ionel): We may want to add support for other field updates as well.
+    return Status::OK;
+  }
+
   bool CheckResourceDoesntExist(const ResourceDescriptor& rd) {
     ResourceStatus* rs_ptr =
       FindPtrOrNull(*resource_map_, ResourceIDFromString(rd.uuid()));
