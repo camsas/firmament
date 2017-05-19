@@ -26,6 +26,7 @@
 #include "misc/utils.h"
 #include "misc/map-util.h"
 #include "scheduling/common.h"
+#include "scheduling/flow/cost_model_utils.h"
 
 DECLARE_bool(preemption);
 DECLARE_uint64(max_tasks_per_pu);
@@ -71,7 +72,7 @@ ArcCostCap RandomCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
   return ArcCostCap(rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 4) + 1,
-                    1ULL, 0ULL);
+                    CapacityFromResNodeToParent(destination), 0ULL);
 }
 
 // The cost from the resource leaf to the sink is 0.

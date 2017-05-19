@@ -185,7 +185,6 @@ class FlowGraphManager {
 
   FlowGraphNode* AddTaskNode(JobID_t job_id, TaskDescriptor* td_ptr);
   FlowGraphNode* AddUnscheduledAggNode(JobID_t job_id);
-  uint64_t CapacityFromResNodeToParent(const ResourceDescriptor& rd);
   void PinTaskToNode(FlowGraphNode* task_node, FlowGraphNode* res_node);
   void RemoveEquivClassNode(FlowGraphNode* ec_node);
 

@@ -38,6 +38,7 @@
 #include "misc/string_utils.h"
 #include "misc/utils.h"
 #include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/flow/cost_model_utils.h"
 #include "scheduling/flow/dimacs_add_node.h"
 #include "scheduling/flow/dimacs_change_arc.h"
 #include "scheduling/flow/dimacs_new_arc.h"
@@ -186,14 +187,11 @@ void FlowGraphManager::AddResourceTopologyDFS(
       NodeForResourceID(ResourceIDFromString(rtnd_ptr->parent_id()));
     CHECK_NOTNULL(parent_node);
     CHECK(InsertIfNotPresent(&node_to_parent_node_map_, res_node, parent_node));
-    // TODO(ionel): Move CapacityFromResNodeToParent in cost_models and use
-    // arc_cost_cap.capacity_.
     ArcCostCap arc_cost_cap =
       cost_model_->ResourceNodeToResourceNode(*parent_node->rd_ptr_, *rd_ptr);
     graph_change_manager_->AddArc(
         parent_node, res_node, arc_cost_cap.min_flow_,
-        CapacityFromResNodeToParent(rtnd_ptr->resource_desc()),
-        arc_cost_cap.cost_,
+        arc_cost_cap.capacity_, arc_cost_cap.cost_,
         OTHER, ADD_ARC_BETWEEN_RES, "AddResourceTopologyDFS");
   }
 }
@@ -263,15 +261,6 @@ FlowGraphNode* FlowGraphManager::AddUnscheduledAggNode(JobID_t job_id) {
       FlowNodeType::JOB_AGGREGATOR, 0, ADD_UNSCHED_JOB_NODE, comment.c_str());
   CHECK(InsertIfNotPresent(&job_unsched_to_node_, job_id, unsched_agg_node));
   return unsched_agg_node;
-}
-
-uint64_t FlowGraphManager::CapacityFromResNodeToParent(
-    const ResourceDescriptor& rd) {
-  if (FLAGS_preemption) {
-    return rd.num_slots_below();
-  } else {
-    return rd.num_slots_below() - rd.num_running_tasks_below();
-  }
 }
 
 void FlowGraphManager::ComputeTopologyStatistics(
@@ -1051,14 +1040,12 @@ void FlowGraphManager::UpdateResOutgoingArcs(
     FlowGraphArc* arc = it->second;
     ++it;
     if (!arc->dst_node_->resource_id_.is_nil()) {
-      // TODO(ionel): ChangeArc rather than ChangeArcCost. Make this
-      // change once ResourceNodeToResourceNode returns the correct
-      // values.
       ArcCostCap arc_cost_cap =
         cost_model_->ResourceNodeToResourceNode(*res_node->rd_ptr_,
                                                 *arc->dst_node_->rd_ptr_);
-      graph_change_manager_->ChangeArcCost(
-          arc, arc_cost_cap.cost_, CHG_ARC_BETWEEN_RES,
+      graph_change_manager_->ChangeArc(
+          arc, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
+          arc_cost_cap.cost_, CHG_ARC_BETWEEN_RES,
           "UpdateResOutgoingArcs");
       if (marked_nodes->find(arc->dst_node_->id_) == marked_nodes->end()) {
         // Add the dst node to the queue if it hasn't been marked yet.

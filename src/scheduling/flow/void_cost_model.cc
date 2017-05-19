@@ -28,6 +28,7 @@
 #include "misc/map-util.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/flow/cost_model_utils.h"
 
 DECLARE_uint64(max_tasks_per_pu);
 
@@ -61,8 +62,8 @@ Cost_t VoidCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
 
 ArcCostCap VoidCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
-    const ResourceDescriptor& destinpation) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+    const ResourceDescriptor& destination) {
+  return ArcCostCap(0LL, CapacityFromResNodeToParent(destination), 0ULL);
 }
 
 ArcCostCap VoidCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {

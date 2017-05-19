@@ -25,6 +25,7 @@
 
 #include "misc/utils.h"
 #include "misc/map-util.h"
+#include "scheduling/flow/cost_model_utils.h"
 #include "scheduling/flow/flow_graph_manager.h"
 
 #define BUSY_PU_OFFSET 100
@@ -70,11 +71,11 @@ ArcCostCap OctopusCostModel::ResourceNodeToResourceNode(
       string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
       int64_t core_id = strtoll(core_id_substr.c_str(), 0, 10);
       return ArcCostCap(core_id + dst.num_running_tasks_below() *
-                        BUSY_PU_OFFSET, 1ULL, 0ULL);
+                        BUSY_PU_OFFSET, CapacityFromResNodeToParent(dst), 0ULL);
     }
   }
   return ArcCostCap(dst.num_running_tasks_below() * BUSY_PU_OFFSET,
-                    1ULL, 0ULL);
+                    CapacityFromResNodeToParent(dst), 0ULL);
 }
 
 ArcCostCap OctopusCostModel::LeafResourceNodeToSink(
