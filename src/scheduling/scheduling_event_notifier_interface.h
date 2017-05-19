@@ -34,6 +34,7 @@ class SchedulingEventNotifierInterface {
  public:
   virtual ~SchedulingEventNotifierInterface() {}
   virtual void OnJobCompletion(JobID_t job_id) = 0;
+  virtual void OnJobRemoval(JobID_t job_id) = 0;
   virtual void OnSchedulingDecisionsCompletion(uint64_t scheduler_start_time,
                                                uint64_t scheduler_runtime) = 0;
   virtual void OnTaskCompletion(TaskDescriptor* td_ptr,

@@ -437,6 +437,10 @@ void SimulatorBridge::OnJobCompletion(JobID_t job_id) {
   job_id_to_trace_job_id_.erase(job_id);
 }
 
+void SimulatorBridge::OnJobRemoval(JobID_t job_id) {
+  // Jobs cannot be removed in simulations.
+}
+
 void SimulatorBridge::OnSchedulingDecisionsCompletion(
     uint64_t scheduler_start_time, uint64_t scheduler_runtime) {
   // We only need to process the simulator events that happened while the

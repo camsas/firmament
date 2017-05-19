@@ -125,6 +125,13 @@ class SchedulerInterface : public PrintableInterface {
   virtual void HandleJobCompletion(JobID_t job_id) = 0;
 
   /**
+   * Handles the removal of a job. It should only be called after all
+   * job's tasks are removed.
+   * @param job_id the id of the job to be removed
+   */
+  virtual void HandleJobRemoval(JobID_t job_id) = 0;
+
+  /**
    * Handles the completion of a task. This usually involves freeing up its
    * resource by setting it idle, and recording any bookkeeping data required.
    * @param td_ptr the task descriptor of the completed task

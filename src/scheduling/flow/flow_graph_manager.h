@@ -80,6 +80,7 @@ class FlowGraphManager {
       boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> gather,
       boost::function<FlowGraphNode*(FlowGraphNode*, FlowGraphNode*)> update);
   void JobCompleted(JobID_t job_id);
+  void JobRemoved(JobID_t job_id);
   void NodeBindingToSchedulingDeltas(
       uint64_t task_node_id, uint64_t resource_node_id,
       unordered_map<TaskID_t, ResourceID_t>* task_bindings,

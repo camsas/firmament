@@ -70,6 +70,7 @@ class EventDrivenScheduler : public SchedulerInterface {
   void CheckRunningTasksHealth();
   virtual void DeregisterResource(ResourceTopologyNodeDescriptor* rtnd_ptr);
   virtual void HandleJobCompletion(JobID_t job_id);
+  virtual void HandleJobRemoval(JobID_t job_id);
   virtual void HandleReferenceStateChange(const ReferenceInterface& old_ref,
                                           const ReferenceInterface& new_ref,
                                           TaskDescriptor* td_ptr);

@@ -242,6 +242,13 @@ void FlowScheduler::HandleJobCompletion(JobID_t job_id) {
   EventDrivenScheduler::HandleJobCompletion(job_id);
 }
 
+void FlowScheduler::HandleJobRemoval(JobID_t job_id) {
+  boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  flow_graph_manager_->JobRemoved(job_id);
+  // Call into superclass handler
+  EventDrivenScheduler::HandleJobRemoval(job_id);
+}
+
 void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                          TaskFinalReport* report) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);

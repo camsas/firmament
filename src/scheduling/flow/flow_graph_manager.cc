@@ -318,6 +318,12 @@ void FlowGraphManager::JobCompleted(JobID_t job_id) {
   // removed.
 }
 
+void FlowGraphManager::JobRemoved(JobID_t job_id) {
+  RemoveUnscheduledAggNode(job_id);
+  // We don't have to do anything else here. The task nodes have already been
+  // removed.
+}
+
 void FlowGraphManager::SchedulingDeltasForPreemptedTasks(
     const multimap<uint64_t, uint64_t>& task_mappings,
     shared_ptr<ResourceMap_t> resource_map,
@@ -580,16 +586,18 @@ void FlowGraphManager::RemoveResourceNode(FlowGraphNode* res_node) {
 
 void FlowGraphManager::RemoveTaskHelper(TaskID_t task_id) {
   FlowGraphNode* task_node = NodeForTaskID(task_id);
-  CHECK_NOTNULL(task_node);
-  if (FLAGS_preemption) {
-    // We reduce the capacity from the unscheduled aggregator to the sink when
-    // we pin the task. Hence, we only have to reduce the capacity when we
-    // support preemption.
-    UpdateUnscheduledAggNode(UnschedAggNodeForJobID(task_node->job_id_), -1);
+  // task_node may be NULL if the task already completed.
+  if (task_node) {
+    if (FLAGS_preemption) {
+      // We reduce the capacity from the unscheduled aggregator to the sink when
+      // we pin the task. Hence, we only have to reduce the capacity when we
+      // support preemption.
+      UpdateUnscheduledAggNode(UnschedAggNodeForJobID(task_node->job_id_), -1);
+    }
+    task_to_running_arc_.erase(task_id);
+    RemoveTaskNode(task_node);
+    cost_model_->RemoveTask(task_id);
   }
-  task_to_running_arc_.erase(task_id);
-  RemoveTaskNode(task_node);
-  cost_model_->RemoveTask(task_id);
 }
 
 uint64_t FlowGraphManager::RemoveTaskNode(FlowGraphNode* task_node) {
