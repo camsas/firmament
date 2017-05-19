@@ -252,13 +252,20 @@ void FlowScheduler::HandleJobRemoval(JobID_t job_id) {
 void FlowScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
                                          TaskFinalReport* report) {
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
+  bool task_in_graph = true;
+  if (td_ptr->state() == TaskDescriptor::FAILED ||
+      td_ptr->state() == TaskDescriptor::ABORTED) {
+    // If the task is marked as failed/aborted then it has already been
+    // removed from the flow network.
+    task_in_graph = false;
+  }
   // We first call into the superclass handler because it populates
   // the task report. The report might be used by the cost models.
   EventDrivenScheduler::HandleTaskCompletion(td_ptr, report);
   // We don't need to do any flow graph stuff for delegated tasks as
   // they are not currently represented in the flow graph.
   // Otherwise, we need to remove nodes, etc.
-  if (td_ptr->delegated_from().empty()) {
+  if (td_ptr->delegated_from().empty() && task_in_graph) {
     uint64_t task_node_id = flow_graph_manager_->TaskCompleted(td_ptr->uid());
     tasks_completed_during_solver_run_.insert(task_node_id);
   }
