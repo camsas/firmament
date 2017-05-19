@@ -292,20 +292,31 @@ void EventDrivenScheduler::HandleTaskCompletion(TaskDescriptor* td_ptr,
   boost::lock_guard<boost::recursive_mutex> lock(scheduling_lock_);
   // Find resource for task
   ResourceID_t* res_id_ptr = BoundResourceForTask(td_ptr->uid());
-  CHECK_NOTNULL(res_id_ptr);
-  // This copy is necessary because UnbindTaskFromResource ends up deleting the
-  // ResourceID_t pointed to by res_id_ptr
-  ResourceID_t res_id_tmp = *res_id_ptr;
-  ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id_tmp);
-  CHECK_NOTNULL(rs_ptr);
-  VLOG(1) << "Handling completion of task " << td_ptr->uid()
-          << ", freeing resource " << res_id_tmp;
-  CHECK(UnbindTaskFromResource(td_ptr, res_id_tmp));
-  // Record final report
-  ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
+  ResourceStatus* rs_ptr = NULL;
+  if (res_id_ptr) {
+    // This copy is necessary because UnbindTaskFromResource ends up deleting
+    // the ResourceID_t pointed to by res_id_ptr
+    ResourceID_t res_id_tmp = *res_id_ptr;
+    rs_ptr = FindPtrOrNull(*resource_map_, res_id_tmp);
+    CHECK_NOTNULL(rs_ptr);
+    VLOG(1) << "Handling completion of task " << td_ptr->uid()
+            << ", freeing resource " << res_id_tmp;
+    CHECK(UnbindTaskFromResource(td_ptr, res_id_tmp));
+    // Record final report
+    ExecutorInterface* exec = FindPtrOrNull(executors_, res_id_tmp);
+    CHECK_NOTNULL(exec);
+    exec->HandleTaskCompletion(td_ptr, report);
+  } else {
+    // The task does not have a bound resource. It can happen when a machine
+    // temporarly fails. As a result of the failure, we mark the task as failed
+    // and unbind it from the machine's resource. However, upon machine recovery
+    // we can receive a task completion notification.
+    VLOG(1) << "Handling completion of task " << td_ptr->uid();
+    ResourceID_t res_id = ResourceIDFromString(td_ptr->scheduled_to_resource());
+    rs_ptr = FindPtrOrNull(*resource_map_, res_id);
+    CHECK_NOTNULL(rs_ptr);
+  }
   td_ptr->set_state(TaskDescriptor::COMPLETED);
-  CHECK_NOTNULL(exec);
-  exec->HandleTaskCompletion(td_ptr, report);
   // Store the final report in the TD for future reference
   td_ptr->mutable_final_report()->CopyFrom(*report);
   trace_generator_->TaskCompleted(td_ptr->uid(), rs_ptr->descriptor());
