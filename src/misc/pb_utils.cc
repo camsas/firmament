@@ -97,6 +97,30 @@ void DFSTraverseResourceProtobufTreeReturnRTND(
   }
 }
 
+void DFSTraverseResourceProtobufTreesReturnRTNDs(
+    ResourceTopologyNodeDescriptor* pb1,
+    const ResourceTopologyNodeDescriptor& pb2,
+    boost::function<void(ResourceTopologyNodeDescriptor*,
+                         const ResourceTopologyNodeDescriptor&)> callback) {  // NOLINT
+  VLOG(3) << "DFSTraversal of resource topology, reached "
+          << pb1->resource_desc().uuid() << " and "
+          << pb2.resource_desc().uuid()
+          << ", invoking callback [" << callback << "]";
+  callback(pb1, pb2);
+  RepeatedPtrField<ResourceTopologyNodeDescriptor>::pointer_iterator
+    rtnd_iter1 = pb1->mutable_children()->pointer_begin();
+  RepeatedPtrField<ResourceTopologyNodeDescriptor>::const_iterator
+    rtnd_iter2 = pb2.children().begin();
+  for (; rtnd_iter1 != pb1->mutable_children()->pointer_end() &&
+         rtnd_iter2 != pb2.children().end();
+       ++rtnd_iter1, ++rtnd_iter2) {
+    DFSTraverseResourceProtobufTreesReturnRTNDs(*rtnd_iter1, *rtnd_iter2,
+                                                callback);
+  }
+  CHECK(rtnd_iter1 == pb1->mutable_children()->pointer_end());
+  CHECK(rtnd_iter2 == pb2.children().end());
+}
+
 void DFSTraversePostOrderResourceProtobufTreeReturnRTND(
     ResourceTopologyNodeDescriptor* pb,
     boost::function<void(ResourceTopologyNodeDescriptor*)> callback) {  // NOLINT

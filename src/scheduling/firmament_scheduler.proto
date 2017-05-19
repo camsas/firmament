@@ -22,6 +22,7 @@ service FirmamentScheduler {
   rpc NodeAdded (ResourceTopologyNodeDescriptor) returns (NodeAddedResponse) {}
   rpc NodeFailed (ResourceUID) returns (NodeFailedResponse) {}
   rpc NodeRemoved (ResourceUID) returns (NodeRemovedResponse) {}
+  rpc NodeUpdated (ResourceTopologyNodeDescriptor) returns (NodeUpdatedResponse) {}
 
   rpc AddTaskStats (TaskStats) returns (TaskStatsResponse) {}
   rpc AddNodeStats (ResourceStats) returns (ResourceStatsResponse) {}
@@ -66,6 +67,10 @@ message NodeFailedResponse {
   NodeReplyType type = 1;
 }
 
+message NodeUpdatedResponse {
+  NodeReplyType type = 1;
+}
+
 message TaskStatsResponse {
   TaskReplyType type = 1;
 }
@@ -97,8 +102,9 @@ enum NodeReplyType {
   NODE_ADDED_OK = 0;
   NODE_FAILED_OK = 1;
   NODE_REMOVED_OK = 2;
-  NODE_NOT_FOUND = 3;
-  NODE_ALREADY_EXISTS = 4;
+  NODE_UPDATED_OK = 3;
+  NODE_NOT_FOUND = 4;
+  NODE_ALREADY_EXISTS = 5;
 }
 
 message ResourceStats {

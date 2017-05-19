@@ -307,6 +307,36 @@ class FirmamentSchedulerServiceImpl final :
     return Status::OK;
   }
 
+  Status NodeUpdated(ServerContext* context,
+                     const ResourceTopologyNodeDescriptor* updated_rtnd_ptr,
+                     NodeUpdatedResponse* reply) override {
+    ResourceID_t res_id = ResourceIDFromString(updated_rtnd_ptr->resource_desc().uuid());
+    ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
+    if (rs_ptr == NULL) {
+      reply->set_type(NodeReplyType::NODE_NOT_FOUND);
+      return Status::OK;
+    }
+    DFSTraverseResourceProtobufTreesReturnRTNDs(
+        rs_ptr->mutable_topology_node(),
+        *updated_rtnd_ptr,
+        boost::bind(&FirmamentSchedulerServiceImpl::UpdateNodeLabels,
+                    this, _1, _2));
+    // TODO(ionel): Support other types of node updates.
+    reply->set_type(NodeReplyType::NODE_UPDATED_OK);
+    return Status::OK;
+  }
+
+  void UpdateNodeLabels(ResourceTopologyNodeDescriptor* old_rtnd_ptr,
+                        const ResourceTopologyNodeDescriptor& new_rtnd_ptr) {
+    ResourceDescriptor* old_rd_ptr = old_rtnd_ptr->mutable_resource_desc();
+    const ResourceDescriptor& new_rd = new_rtnd_ptr.resource_desc();
+    old_rd_ptr->clear_labels();
+    for (const auto& label : new_rd.labels()) {
+      Label* label_ptr = old_rd_ptr->add_labels();
+      label_ptr->CopyFrom(label);
+    }
+  }
+
   Status AddTaskStats(ServerContext* context,
                       const TaskStats* task_stats,
                       TaskStatsResponse* reply) override {

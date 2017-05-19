@@ -47,6 +47,14 @@ void DFSTraverseResourceProtobufTreeReturnRTND(
     ResourceTopologyNodeDescriptor* pb,
     boost::function<void(ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
 
+// Traverses two resource topologies. Assumes that both topologies have the
+// same structure.
+void DFSTraverseResourceProtobufTreesReturnRTNDs(
+    ResourceTopologyNodeDescriptor* pb1,
+    const ResourceTopologyNodeDescriptor& pb2,
+    boost::function<void(ResourceTopologyNodeDescriptor*,
+                         const ResourceTopologyNodeDescriptor&)> callback);  // NOLINT
+
 void DFSTraversePostOrderResourceProtobufTreeReturnRTND(
     ResourceTopologyNodeDescriptor* pb,
     boost::function<void(ResourceTopologyNodeDescriptor*)> callback);  // NOLINT
