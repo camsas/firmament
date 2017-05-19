@@ -35,6 +35,7 @@
 #include "scheduling/knowledge_base_populator.h"
 #include "scheduling/scheduler_interface.h"
 #include "scheduling/scheduling_delta.pb.h"
+#include "scheduling/simple/simple_scheduler.h"
 #include "storage/simple_object_store.h"
 
 using grpc::Server;
@@ -44,7 +45,9 @@ using grpc::Status;
 
 using firmament::scheduler::FlowScheduler;
 using firmament::scheduler::ObjectStoreInterface;
+using firmament::scheduler::SchedulerInterface;
 using firmament::scheduler::SchedulerStats;
+using firmament::scheduler::SimpleScheduler;
 using firmament::scheduler::TopologyManager;
 using firmament::platform::sim::SimulatedMessagingAdapter;
 
@@ -52,6 +55,7 @@ DEFINE_string(firmament_scheduler_service_address, "127.0.0.1",
               "The address of the scheduler service");
 DEFINE_string(firmament_scheduler_service_port, "9090",
               "The port of the scheduler service");
+DEFINE_string(service_scheduler, "flow", "Scheduler to use: flow | simple");
 
 namespace firmament {
 
@@ -70,17 +74,31 @@ class FirmamentSchedulerServiceImpl final :
       ResourceIDFromString(top_level_res_status->descriptor().uuid());
     sim_messaging_adapter_ = new SimulatedMessagingAdapter<BaseMessage>();
     trace_generator_ = new TraceGenerator(&wall_time_);
-    flow_scheduler_ =
-      new FlowScheduler(job_map_, resource_map_,
-                        top_level_res_status->mutable_topology_node(),
-                        obj_store_, task_map_, knowledge_base_,
-                        topology_manager_, sim_messaging_adapter_, NULL,
-                        top_level_res_id_, "", &wall_time_, trace_generator_);
+    if (FLAGS_service_scheduler == "flow") {
+      scheduler_ =
+        new FlowScheduler(job_map_, resource_map_,
+                          top_level_res_status->mutable_topology_node(),
+                          obj_store_, task_map_, knowledge_base_,
+                          topology_manager_, sim_messaging_adapter_, NULL,
+                          top_level_res_id_, "", &wall_time_, trace_generator_);
+    } else if (FLAGS_service_scheduler == "simple") {
+      scheduler_ =
+        new SimpleScheduler(job_map_, resource_map_,
+                            top_level_res_status->mutable_topology_node(),
+                            obj_store_, task_map_, knowledge_base_,
+                            topology_manager_, sim_messaging_adapter_, NULL,
+                            top_level_res_id_, "", &wall_time_,
+                            trace_generator_);
+    } else {
+      LOG(FATAL) << "Flag specifies unknown scheduler "
+                 << FLAGS_service_scheduler;
+    }
+
     kb_populator_ = new KnowledgeBasePopulator(knowledge_base_);
   }
 
   ~FirmamentSchedulerServiceImpl() {
-    delete flow_scheduler_;
+    delete scheduler_;
     delete sim_messaging_adapter_;
     delete trace_generator_;
     delete kb_populator_;
@@ -109,7 +127,7 @@ class FirmamentSchedulerServiceImpl final :
                   SchedulingDeltas* reply) override {
     SchedulerStats sstat;
     vector<SchedulingDelta> deltas;
-    flow_scheduler_->ScheduleAllJobs(&sstat, &deltas);
+    scheduler_->ScheduleAllJobs(&sstat, &deltas);
     // Extract results
     LOG(INFO) << "Got " << deltas.size() << " scheduling deltas";
     for (auto& d : deltas) {
@@ -149,16 +167,16 @@ class FirmamentSchedulerServiceImpl final :
     }
     td_ptr->set_finish_time(wall_time_.GetCurrentTimestamp());
     TaskFinalReport report;
-    flow_scheduler_->HandleTaskCompletion(td_ptr, &report);
+    scheduler_->HandleTaskCompletion(td_ptr, &report);
     kb_populator_->PopulateTaskFinalReport(*td_ptr, &report);
-    flow_scheduler_->HandleTaskFinalReport(report, td_ptr);
+    scheduler_->HandleTaskFinalReport(report, td_ptr);
     // Check if it was the last task of the job.
     uint64_t* num_incomplete_tasks =
       FindOrNull(job_num_incomplete_tasks_, job_id);
     CHECK_NOTNULL(num_incomplete_tasks);
     (*num_incomplete_tasks)--;
     if (*num_incomplete_tasks == 0) {
-      flow_scheduler_->HandleJobCompletion(job_id);
+      scheduler_->HandleJobCompletion(job_id);
     }
     reply->set_type(TaskReplyType::TASK_COMPLETED_OK);
     return Status::OK;
@@ -172,7 +190,7 @@ class FirmamentSchedulerServiceImpl final :
       reply->set_type(TaskReplyType::TASK_NOT_FOUND);
       return Status::OK;
     }
-    flow_scheduler_->HandleTaskFailure(td_ptr);
+    scheduler_->HandleTaskFailure(td_ptr);
     reply->set_type(TaskReplyType::TASK_FAILED_OK);
     return Status::OK;
   }
@@ -185,7 +203,7 @@ class FirmamentSchedulerServiceImpl final :
       reply->set_type(TaskReplyType::TASK_NOT_FOUND);
       return Status::OK;
     }
-    flow_scheduler_->HandleTaskRemoval(td_ptr);
+    scheduler_->HandleTaskRemoval(td_ptr);
     JobID_t job_id = JobIDFromString(td_ptr->job_id());
     JobDescriptor* jd_ptr = FindOrNull(*job_map_, job_id);
     CHECK_NOTNULL(jd_ptr);
@@ -202,7 +220,7 @@ class FirmamentSchedulerServiceImpl final :
       uint64_t* num_incomplete_tasks =
         FindOrNull(job_num_incomplete_tasks_, job_id);
       if (*num_incomplete_tasks > 0) {
-        flow_scheduler_->HandleJobRemoval(job_id);
+        scheduler_->HandleJobRemoval(job_id);
       }
       // Delete the job because we removed its last task.
       task_map_->erase(jd_ptr->root_task().uid());
@@ -248,7 +266,7 @@ class FirmamentSchedulerServiceImpl final :
       FindOrNull(job_num_incomplete_tasks_, job_id);
     CHECK_NOTNULL(num_incomplete_tasks);
     if (*num_incomplete_tasks == 0) {
-      flow_scheduler_->AddJob(jd_ptr);
+      scheduler_->AddJob(jd_ptr);
     }
     (*num_incomplete_tasks)++;
     uint64_t* num_tasks_to_remove =
@@ -325,7 +343,7 @@ class FirmamentSchedulerServiceImpl final :
     // avoid Firmament instantiating an actual executor for this resource.
     // Instead, we rely on the no-op SimulatedExecutor. We should change
     // it such that Firmament does not mandatorily create an executor.
-    flow_scheduler_->RegisterResource(rtnd_ptr, false, true);
+    scheduler_->RegisterResource(rtnd_ptr, false, true);
     reply->set_type(NodeReplyType::NODE_ADDED_OK);
     return Status::OK;
   }
@@ -339,7 +357,7 @@ class FirmamentSchedulerServiceImpl final :
       reply->set_type(NodeReplyType::NODE_NOT_FOUND);
       return Status::OK;
     }
-    flow_scheduler_->DeregisterResource(rs_ptr->mutable_topology_node());
+    scheduler_->DeregisterResource(rs_ptr->mutable_topology_node());
     reply->set_type(NodeReplyType::NODE_FAILED_OK);
     return Status::OK;
   }
@@ -353,7 +371,7 @@ class FirmamentSchedulerServiceImpl final :
       reply->set_type(NodeReplyType::NODE_NOT_FOUND);
       return Status::OK;
     }
-    flow_scheduler_->DeregisterResource(rs_ptr->mutable_topology_node());
+    scheduler_->DeregisterResource(rs_ptr->mutable_topology_node());
     reply->set_type(NodeReplyType::NODE_REMOVED_OK);
     return Status::OK;
   }
@@ -416,7 +434,7 @@ class FirmamentSchedulerServiceImpl final :
   }
 
  private:
-  FlowScheduler* flow_scheduler_;
+  SchedulerInterface* scheduler_;
   SimulatedMessagingAdapter<BaseMessage>* sim_messaging_adapter_;
   TraceGenerator* trace_generator_;
   WallTime wall_time_;
