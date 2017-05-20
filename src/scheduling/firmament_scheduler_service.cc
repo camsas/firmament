@@ -95,13 +95,11 @@ class FirmamentSchedulerServiceImpl final :
   void HandlePreemptionDelta(const SchedulingDelta& delta)
   {
     // TODO(ionel): Implement!
-    LOG(FATAL) << "Preemption not currently supported.";
   }
 
   void HandleMigrationDelta(const SchedulingDelta& delta)
   {
     // TODO(ionel): Implement!
-    LOG(FATAL) << "Migration not currently supported.";
   }
 
   Status Schedule(ServerContext* context,
