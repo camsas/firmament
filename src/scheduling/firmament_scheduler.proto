@@ -115,14 +115,14 @@ enum NodeReplyType {
 
 message ResourceStats {
   ResourceUID resource_uid = 1;
-  // CPU stats in millicores.
-  uint64 cpu_allocatable = 2;
-  uint64 cpu_capacity = 3;
-  uint64 cpu_reservation = 4;
-  uint64 cpu_utilization = 5;
-  // Memory stats in Kb.
-  uint64 mem_allocatable = 6;
-  uint64 mem_capacity = 7;
-  uint64 mem_reservation = 8;
-  uint64 mem_utilization = 9;
+  // CPU stats (fraction of total).
+  double cpu_allocatable = 2;
+  double cpu_capacity = 3;
+  double cpu_reservation = 4;
+  double cpu_utilization = 5;
+  // Memory stats (fraction of total).
+  double mem_allocatable = 6;
+  double mem_capacity = 7;
+  double mem_reservation = 8;
+  double mem_utilization = 9;
 }
