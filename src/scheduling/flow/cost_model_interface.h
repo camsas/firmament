@@ -91,8 +91,6 @@ class CostModelInterface {
    * resource nodes.
    * @return the cost, min flow requirement and max capacity of the arc
    */
-  // TODO(ionel): The returned capacity is ignored because the cost models do
-  // not set it correctly.
   virtual ArcCostCap ResourceNodeToResourceNode(
       const ResourceDescriptor& source,
       const ResourceDescriptor& destination) = 0;

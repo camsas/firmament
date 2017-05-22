@@ -37,6 +37,7 @@
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/flow_graph_manager.h"
+#include "scheduling/flow/cost_model_utils.h"
 
 DECLARE_bool(preemption);
 DECLARE_uint64(max_tasks_per_pu);
@@ -223,10 +224,11 @@ ArcCostCap WhareMapCostModel::ResourceNodeToResourceNode(
     if (idx != string::npos) {
       string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
       int64_t core_id = strtoll(core_id_substr.c_str(), 0, 10);
-      return ArcCostCap(core_id, 1ULL, 0ULL);
+      return ArcCostCap(core_id, CapacityFromResNodeToParent(destination),
+                        0ULL);
     }
   }
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+  return ArcCostCap(0LL, CapacityFromResNodeToParent(destination), 0ULL);
 }
 
 // The cost from the resource leaf to the sink is 0.

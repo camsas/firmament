@@ -37,6 +37,7 @@
 #include "misc/map-util.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/flow/cost_model_utils.h"
 #include "scheduling/flow/flow_graph_manager.h"
 
 DECLARE_bool(preemption);
@@ -616,7 +617,7 @@ ArcCostCap CocoCostModel::ResourceNodeToResourceNode(
     VLOG(2) << "  Flattened: " << flat_cost;
   }
   // Return the flattened vector
-  return ArcCostCap(flat_cost, 1ULL, 0ULL);
+  return ArcCostCap(flat_cost, CapacityFromResNodeToParent(destination), 0ULL);
 }
 
 // The cost from the resource leaf to the sink is 0.

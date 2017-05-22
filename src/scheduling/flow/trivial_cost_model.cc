@@ -27,6 +27,7 @@
 
 #include "misc/map-util.h"
 #include "misc/utils.h"
+#include "scheduling/flow/cost_model_utils.h"
 
 DECLARE_bool(preemption);
 DECLARE_uint64(max_tasks_per_pu);
@@ -62,7 +63,7 @@ ArcCostCap TrivialCostModel::TaskToResourceNode(TaskID_t task_id,
 ArcCostCap TrivialCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+  return ArcCostCap(0LL, CapacityFromResNodeToParent(destination), 0ULL);
 }
 
 ArcCostCap TrivialCostModel::LeafResourceNodeToSink(

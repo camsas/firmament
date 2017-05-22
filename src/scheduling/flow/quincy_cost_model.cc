@@ -34,6 +34,7 @@
 #include "scheduling/common.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/flow/cost_model_utils.h"
 
 DEFINE_double(quincy_wait_time_factor, 0.5, "The Quincy wait time factor");
 DEFINE_double(quincy_preferred_machine_data_fraction, 0.1,
@@ -176,7 +177,7 @@ ArcCostCap QuincyCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
   // Cost between resource nodes is always 0.
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+  return ArcCostCap(0LL, CapacityFromResNodeToParent(destination), 0ULL);
 }
 
 ArcCostCap QuincyCostModel::LeafResourceNodeToSink(

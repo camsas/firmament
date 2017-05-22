@@ -27,6 +27,7 @@
 #include "misc/map-util.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/flow/cost_model_utils.h"
 #include "scheduling/flow/flow_graph_manager.h"
 
 DEFINE_uint64(max_multi_arcs, 10, "Maximum number of multi-arcs.");
@@ -58,7 +59,7 @@ ArcCostCap NetCostModel::TaskToResourceNode(TaskID_t task_id,
 ArcCostCap NetCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+  return ArcCostCap(0LL, CapacityFromResNodeToParent(destination), 0ULL);
 }
 
 ArcCostCap NetCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
