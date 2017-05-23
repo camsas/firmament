@@ -137,6 +137,7 @@ TEST_F(SimulatorBridgeTest, OnJobCompletion) {
   event_desc.set_type(EventDescriptor::TASK_SUBMIT);
   event_desc.set_requested_ram(1);
   event_desc.set_requested_cpu_cores(1);
+  bridge_->AddMachine(1);
   bridge_->AddTask(trace_task_id, event_desc);
   TaskDescriptor* td_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
@@ -168,6 +169,7 @@ TEST_F(SimulatorBridgeTest, OnTaskCompletion) {
   event_desc.set_type(EventDescriptor::TASK_SUBMIT);
   event_desc.set_requested_ram(1);
   event_desc.set_requested_cpu_cores(1);
+  bridge_->AddMachine(1);
   bridge_->AddTask(trace_task_id, event_desc);
   TaskDescriptor* td_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
@@ -200,6 +202,7 @@ TEST_F(SimulatorBridgeTest, OnTaskEviction) {
   event_desc.set_type(EventDescriptor::TASK_SUBMIT);
   event_desc.set_requested_ram(1);
   event_desc.set_requested_cpu_cores(1);
+  bridge_->AddMachine(1);
   bridge_->AddTask(trace_task_id, event_desc);
   TaskDescriptor* td_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
@@ -230,6 +233,7 @@ TEST_F(SimulatorBridgeTest, OnTaskPlacement) {
   event_desc.set_type(EventDescriptor::TASK_SUBMIT);
   event_desc.set_requested_ram(1);
   event_desc.set_requested_cpu_cores(1);
+  bridge_->AddMachine(1);
   bridge_->AddTask(trace_task_id, event_desc);
   TaskDescriptor* td_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
