@@ -7,6 +7,22 @@ Firmament is currently in alpha stage: it runs your jobs and tasks fairly
 reliably, but system components keep changing regularly, and we are actively
 developing system features.
 
+# Getting started
+
+The easiest way to get Firmament up and running is to use our Docker image:
+
+```
+$ docker pull camsas/firmament:dev
+```
+
+Once the image has downloaded, you can start Firmament as follows:
+
+```console
+$ docker run camsas/firmament:dev /firmament/src/coordinator --scheduler flow --flow_scheduling_cost_model 6 --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/build/src
+```
+
+# Building from source
+
 ## System requirements
 
 Firmament is currently known to work on Ubuntu LTS releases 12.04 (precise) and
@@ -26,7 +42,7 @@ Reasons for known breakage:
                   /usr/{lib,include}/clang/3.2 should be symlinked to
                   /usr/lib/llvm-3.2/lib/clang/3.2.
 
-## Getting started
+## Building instructions
 
 After cloning the repository,
 
@@ -128,7 +144,22 @@ $ build/src/coordinator --listen_uri tcp:<local host>:<local port> --parent_uri 
 The parent coordinator must already be running. Once both coordinators are up,
 you will be able to see the child resources on the parent coordinator's web UI.
 
-## Contributing
+# Running the Firmament scheduler service
+
+The easiest way to get Firmament scheduler service up and running is to use our Docker image:
+
+Once the image has downloaded, you can start the Firmament scheduler service as follows:
+
+```
+$ docker run camsas/firmament:dev /firmament/src/firmament_scheduler --flagfile=/firmament/default.conf
+```
+
+You can now deploy our Firmament integration with Kubernetes to schedule Kubernetes pods.
+You can follow these [instructions](https://github.com/camsas/poseidon/blob/master/README.md)
+to build and deploy Poseidon, our Kubernetes integration.
+
+
+# Contributing
 
 We always welcome contributions to Firmament. One contribution you can
 easily make as a newcomer is to do **code reviews** -- this also helps you
