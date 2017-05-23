@@ -165,10 +165,8 @@ void QuincyTaskInterference::OnTaskMigration(
     uint64_t real_time_left = *runtime_ptr - real_executed_for;
     InsertOrUpdate(task_runtime_, task_id, real_time_left);
     uint64_t task_end_time = current_time_us +
-      static_cast<uint64_t>(
-          round(real_time_left *
-                (1 + FLAGS_quincy_interference_runtime_increase *
-                 (num_tasks_colocated_on_new_machine + 1))));
+      TraceTimeToTimeWithInterference(real_time_left,
+                                      num_tasks_colocated_on_new_machine + 1);
     task_end_runtimes.set_current_end_time(task_end_time);
     td_ptr->set_finish_time(task_end_time);
     tasks_end_time->push_back(task_end_runtimes);
@@ -241,6 +239,14 @@ uint64_t QuincyTaskInterference::TimeWithInterferenceToTraceTime(
       (1 + FLAGS_quincy_interference_runtime_increase * num_tasks_colocated)));
 }
 
+uint64_t QuincyTaskInterference::TraceTimeToTimeWithInterference(
+    uint64_t time,
+    uint64_t num_tasks_colocated) {
+  return static_cast<uint64_t>(round(
+      time *
+      (1 + FLAGS_quincy_interference_runtime_increase * num_tasks_colocated)));
+}
+
 TaskEndRuntimes QuincyTaskInterference::UpdateEndTimeForPlacedTask(
     TaskDescriptor* td_ptr,
     uint64_t current_time_us,
@@ -255,10 +261,7 @@ TaskEndRuntimes QuincyTaskInterference::UpdateEndTimeForPlacedTask(
     // quincy_interference_runtime_increase * 100 percent * num_tasks_colocated
     // when the task is colocated with num_tasks_colocated.
     uint64_t task_end_time = current_time_us +
-      static_cast<uint64_t>(
-          round(*runtime_ptr *
-                (1 + FLAGS_quincy_interference_runtime_increase *
-                 num_tasks_colocated)));
+      TraceTimeToTimeWithInterference(*runtime_ptr, num_tasks_colocated);
     task_end_runtimes.set_current_end_time(task_end_time);
     td_ptr->set_finish_time(task_end_time);
   } else {
@@ -293,10 +296,8 @@ TaskEndRuntimes QuincyTaskInterference::UpdateEndTimeForRunningTask(
   uint64_t time_left_to_execute = sim_task_runtime - real_executed_for;
   InsertOrUpdate(task_runtime_, task_id, time_left_to_execute);
   uint64_t task_end_time = current_time_us +
-    static_cast<uint64_t>(
-        round(time_left_to_execute *
-              (1 + FLAGS_quincy_interference_runtime_increase *
-               cur_num_tasks_colocated)));
+    TraceTimeToTimeWithInterference(time_left_to_execute,
+                                    cur_num_tasks_colocated);
   td_ptr->set_start_time(current_time_us);
   task_end_runtimes.set_current_end_time(task_end_time);
   td_ptr->set_finish_time(task_end_time);

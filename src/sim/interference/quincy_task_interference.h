@@ -69,6 +69,8 @@ class QuincyTaskInterference : public TaskInterferenceInterface {
 
   uint64_t TimeWithInterferenceToTraceTime(uint64_t time,
                                            uint64_t num_tasks_colocated);
+  uint64_t TraceTimeToTimeWithInterference(uint64_t time,
+                                           uint64_t num_tasks_colocated);
   TaskEndRuntimes UpdateEndTimeForPlacedTask(TaskDescriptor* td_ptr,
                                              uint64_t current_time_us,
                                              uint64_t num_tasks_colocated);
