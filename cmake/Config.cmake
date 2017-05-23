@@ -3,10 +3,10 @@ include_directories(${Firmament_BUILD_DIR}/src)
 
 # debug/release flags
 if(DEBUG)
-  set(CMAKE_CXX_FLAGS "-g -O0 -fsanitize=address -pedantic -Wconversion")
-else()
+  set(CMAKE_CXX_FLAGS "-g -O0 -pedantic -Wconversion")
+else(DEBUG)
   set(CMAKE_CXX_FLAGS "-O3")
-endif()
+endif(DEBUG)
 
 # Shared compiler flags used by all builds
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -17,9 +17,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-long-long -Wno-variad
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # using clang
   if(DEBUG)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
-  endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address")
+  endif(DEBUG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=language-extension-token")
 else()
   # other compilers, usually g++
+  if(COVERAGE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+  endif(COVERAGE)
 endif()

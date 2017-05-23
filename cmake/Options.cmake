@@ -1,6 +1,7 @@
 # Build options
 option(DEBUG "Set build config to debug." OFF)
 option(VERBOSE "Enable verbose compilation output" OFF)
+option(COVERAGE "Enable coverage output" OFF)
 
 # Modular components
 option(BUILD_SIMULATOR "Builds the trace-driven simulation front-end for Firmament." ON)
