@@ -31,7 +31,6 @@ set(ENGINE_TESTS
   engine/coordinator_test.cc
   engine/simple_scheduler_test.cc
   engine/worker_test.cc
-  engine/executors/local_executor_test.cc
   engine/executors/topology_manager_test.cc
   )
 
