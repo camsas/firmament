@@ -2,6 +2,7 @@ Firmament is a cluster manager and scheduling platform developed CamSaS
 (http://camsas.org) at the University of Cambridge Computer Laboratory.
 
 [![Build Status](https://travis-ci.org/camsas/firmament.svg)](https://travis-ci.org/camsas/firmament)
+[![Coverage Status](https://coveralls.io/repos/github/camsas/firmament/badge.svg?branch=master)](https://coveralls.io/github/camsas/firmament?branch=master)
 
 Firmament is currently in alpha stage: it runs your jobs and tasks fairly
 reliably, but system components keep changing regularly, and we are actively
