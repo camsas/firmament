@@ -13,10 +13,11 @@ include(CheckFunctionExists)
 include(ExternalProject)
 include(CheckCXXSourceCompiles)
 
-# Compiler configuration
-include(Config)
+
 # Build options
 include(Options)
+# Compiler configuration
+include(Config)
 # Third-party dependencies and libraries
 include(ExternalDependencies)
 # Protocol buffer code generation
