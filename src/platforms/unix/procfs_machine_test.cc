@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 #include "base/common.h"
-#include "base/machine_perf_statistics_sample.pb.h"
+#include "base/resource_stats.pb.h"
 #include "platforms/unix/common.h"
 #include "platforms/unix/procfs_machine.h"
 
@@ -70,7 +70,7 @@ class ProcFSMachineTest : public ::testing::Test {
 TEST_F(ProcFSMachineTest, CreateStatistics) {
   // This is more of a joke, but it does the job for testing.
   // Print stats to manually check.
-  MachinePerfStatisticsSample* stats = new MachinePerfStatisticsSample;
+  ResourceStats* stats = new ResourceStats;
   // We need to wait for a bit to collect some data
   sleep(1);
   pfsm_.CreateStatistics(stats);
