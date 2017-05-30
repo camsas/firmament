@@ -267,7 +267,7 @@ void Coordinator::Run() {
     // TODO(malte): wrap this in a timer
     cur_time = time_manager_->GetCurrentTimestamp();
     if (cur_time - last_heartbeat_time > FLAGS_heartbeat_interval) {
-      MachinePerfStatisticsSample stats;
+      ResourceStats stats;
       stats.set_timestamp(cur_time);
       stats.set_resource_id(to_string(machine_uuid_));
       machine_monitor_.CreateStatistics(&stats);
@@ -839,8 +839,7 @@ void Coordinator::AddJobsTasksToTables(TaskDescriptor* td, JobID_t job_id) {
   }
 }
 
-void Coordinator::SendHeartbeatToParent(
-    const MachinePerfStatisticsSample& stats) {
+void Coordinator::SendHeartbeatToParent(const ResourceStats& stats) {
   BaseMessage bm;
   // TODO(malte): we do not always need to send the location string; it
   // sufficies to send it if our location changed (which should be rare).
