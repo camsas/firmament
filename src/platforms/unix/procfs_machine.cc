@@ -38,7 +38,7 @@ DEFINE_string(monitor_netif, "eth0",
 DEFINE_string(monitor_blockdev, "sda",
               "Block device on which to monitor I/O statistics.");
 DEFINE_int64(monitor_blockdev_maxbw, -1,
-             "Maximum read/write bandwidth of monitored block device.");
+             "Maximum read/write bandwidth of monitored block device (in KB).");
 DEFINE_uint64(monitor_netif_default_speed, 100,
              "Default network interface speed 100Mb/s.");
 DECLARE_uint64(heartbeat_interval);
@@ -52,29 +52,22 @@ ProcFSMachine::ProcFSMachine() {
   net_stats_ = GetNetworkStats();
 }
 
-const MachinePerfStatisticsSample* ProcFSMachine::CreateStatistics(
-    MachinePerfStatisticsSample* stats) {
+const ResourceStats* ProcFSMachine::CreateStatistics(ResourceStats* stats) {
   // CPU stats
-  vector<CpuUsage> cpus_usage = GetCPUUsage();
-  vector<CpuUsage>::iterator it;
-  for (it = cpus_usage.begin(); it != cpus_usage.end(); it++) {
-      CpuUsage* cpu_usage = stats->add_cpus_usage();
-      cpu_usage->set_user(it->user());
-      cpu_usage->set_nice(it->nice());
-      cpu_usage->set_system(it->system());
-      cpu_usage->set_idle(it->idle());
-      cpu_usage->set_iowait(it->iowait());
-      cpu_usage->set_irq(it->irq());
-      cpu_usage->set_soft_irq(it->soft_irq());
-      cpu_usage->set_steal(it->steal());
-      cpu_usage->set_guest(it->guest());
-      cpu_usage->set_guest_nice(it->guest_nice());
+  vector<CpuStats> cpus_stats = GetCPUUsage();
+  vector<CpuStats>::iterator it;
+  for (it = cpus_stats.begin(); it != cpus_stats.end(); it++) {
+      CpuStats* cpu_stats = stats->add_cpus_stats();
+      cpu_stats->set_cpu_capacity(it->cpu_capacity());
+      cpu_stats->set_cpu_utilization(it->cpu_utilization());
   }
   // RAM stats
   MemoryStatistics_t mem_stats = GetMemoryStats();
-  stats->set_total_ram(mem_stats.mem_total);
-  stats->set_free_ram(mem_stats.mem_free + mem_stats.mem_buffers +
-                      mem_stats.mem_pagecache);
+  stats->set_mem_capacity(mem_stats.mem_total);
+  stats->set_mem_utilization(
+      static_cast<double>(mem_stats.mem_total - mem_stats.mem_free -
+                          mem_stats.mem_buffers - mem_stats.mem_pagecache) /
+      static_cast<double>(mem_stats.mem_total));
   // Network I/O stats
   NetworkStatistics_t net_stats = GetNetworkStats();
   // We divide by FLAGS_heartbeat_interval / 1000000, since the samples are
@@ -82,10 +75,12 @@ const MachinePerfStatisticsSample* ProcFSMachine::CreateStatistics(
   // want the bandwidth to be in bytes/second.
   stats->set_net_tx_bw((net_stats.send - net_stats_.send) /
                        (static_cast<double>(FLAGS_heartbeat_interval) /
-                        static_cast<double>(SECONDS_TO_MICROSECONDS)));
+                        static_cast<double>(SECONDS_TO_MICROSECONDS)) /
+                       BYTES_TO_KB);
   stats->set_net_rx_bw((net_stats.recv - net_stats_.recv) /
                        (static_cast<double>(FLAGS_heartbeat_interval) /
-                        static_cast<double>(SECONDS_TO_MICROSECONDS)));
+                        static_cast<double>(SECONDS_TO_MICROSECONDS)) /
+                       BYTES_TO_KB);
   net_stats_ = net_stats;
   // Disk I/O stats
   DiskStatistics_t disk_stats = GetDiskStats();
@@ -130,61 +125,27 @@ vector<CPUStatistics_t> ProcFSMachine::GetCPUStats() {
   return cpus_now;
 }
 
-vector<CpuUsage> ProcFSMachine::GetCPUUsage() {
-  vector<CpuUsage> cpu_usage;
+vector<CpuStats> ProcFSMachine::GetCPUUsage() {
+  vector<CpuStats> cpu_stats;
   vector<CPUStatistics_t> cpu_new_stats = GetCPUStats();
-  for (vector<CpuUsage>::size_type cpu_num = 0; cpu_num < cpu_stats_.size();
+  for (vector<CpuStats>::size_type cpu_num = 0; cpu_num < cpu_stats_.size();
        cpu_num++) {
-    double user_diff =
-      static_cast<double>(cpu_new_stats[cpu_num].user -
-                          cpu_stats_[cpu_num].user);
-    double nice_diff =
-      static_cast<double>(cpu_new_stats[cpu_num].nice -
-                          cpu_stats_[cpu_num].nice);
-    double system_diff =
-      static_cast<double>(cpu_new_stats[cpu_num].system -
-                          cpu_stats_[cpu_num].system);
     double idle_diff =
       static_cast<double>(cpu_new_stats[cpu_num].idle -
                           cpu_stats_[cpu_num].idle);
-    double iowait_diff =
-      static_cast<double>(cpu_new_stats[cpu_num].iowait -
-                          cpu_stats_[cpu_num].iowait);
-    double irq_diff =
-      static_cast<double>(cpu_new_stats[cpu_num].irq -
-                          cpu_stats_[cpu_num].irq);
-    double soft_irq_diff =
-      static_cast<double>(cpu_new_stats[cpu_num].soft_irq -
-                          cpu_stats_[cpu_num].soft_irq);
-    double steal_diff =
-      static_cast<double>(cpu_new_stats[cpu_num].steal -
-                          cpu_stats_[cpu_num].steal);
-    double guest_diff =
-      static_cast<double>(cpu_new_stats[cpu_num].guest -
-                          cpu_stats_[cpu_num].guest);
-    double guest_nice_diff =
-      static_cast<double>(cpu_new_stats[cpu_num].guest_nice -
-               cpu_stats_[cpu_num].guest_nice);
     double total_diff =
       static_cast<double>(cpu_new_stats[cpu_num].total -
                           cpu_stats_[cpu_num].total);
-    CpuUsage cur_cpu_usage;
+    CpuStats cur_cpu_stats;
     if (total_diff == 0)
       total_diff = 1;  // XXX(malte): ugly hack!
-    cur_cpu_usage.set_user(user_diff / total_diff * 100.0);
-    cur_cpu_usage.set_nice(nice_diff / total_diff * 100.0);
-    cur_cpu_usage.set_system(system_diff / total_diff * 100.0);
-    cur_cpu_usage.set_idle(idle_diff / total_diff * 100.0);
-    cur_cpu_usage.set_iowait(iowait_diff / total_diff * 100.0);
-    cur_cpu_usage.set_irq(irq_diff / total_diff * 100.0);
-    cur_cpu_usage.set_soft_irq(soft_irq_diff / total_diff * 100.0);
-    cur_cpu_usage.set_steal(steal_diff / total_diff * 100.0);
-    cur_cpu_usage.set_guest(guest_diff / total_diff * 100.0);
-    cur_cpu_usage.set_guest_nice(guest_nice_diff / total_diff * 100.0);
-    cpu_usage.push_back(cur_cpu_usage);
+    // Capacity is 1000 millicores
+    cur_cpu_stats.set_cpu_capacity(1000);
+    cur_cpu_stats.set_cpu_utilization(1.0 - idle_diff / total_diff);
+    cpu_stats.push_back(cur_cpu_stats);
   }
   cpu_stats_ = cpu_new_stats;
-  return cpu_usage;
+  return cpu_stats;
 }
 
 DiskStatistics_t ProcFSMachine::GetDiskStats() {
@@ -217,7 +178,7 @@ DiskStatistics_t ProcFSMachine::GetDiskStats() {
 void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
   // Extract the total available resource capacities on this machine
   MemoryStatistics_t mem_stats = GetMemoryStats();
-  cap->set_ram_cap(mem_stats.mem_total / BYTES_TO_MB);
+  cap->set_ram_cap(mem_stats.mem_total / BYTES_TO_KB);
   vector<CPUStatistics_t> cpu_stats = GetCPUStats();
   // Subtract one as we have an additional element for the overall CPU load
   // across all cores
@@ -239,8 +200,8 @@ void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
   if (speed == 0)
     LOG(WARNING) << "Failed to determinate network interface speed for "
                  << FLAGS_monitor_netif;
-  cap->set_net_tx_bw(speed / 8);
-  cap->set_net_rx_bw(speed / 8);
+  cap->set_net_tx_bw(speed / 8 / BYTES_TO_KB);
+  cap->set_net_rx_bw(speed / 8 / BYTES_TO_KB);
   // Get disk read/write speed
   if (FLAGS_monitor_blockdev_maxbw == -1) {
     // XXX(malte): we use a hack here -- if the disk is not rotational, we
@@ -256,10 +217,10 @@ void ProcFSMachine::GetMachineCapacity(ResourceVector* cap) {
     }
     if (disk_is_rotational) {
       // Legacy HDD, so return low bandwidth
-      cap->set_disk_bw(50);  // 50 MB/s, a medium estimate
+      cap->set_disk_bw(51200);  // 50 MB/s, a medium estimate
     } else {
       // SSD, so go faster
-      cap->set_disk_bw(300); // 300 MB/s, a medium estimate
+      cap->set_disk_bw(307200); // 300 MB/s, a medium estimate
     }
   } else {
     cap->set_disk_bw(FLAGS_monitor_blockdev_maxbw);

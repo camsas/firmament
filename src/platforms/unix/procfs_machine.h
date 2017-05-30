@@ -25,7 +25,7 @@
 
 #include <vector>
 
-#include "base/machine_perf_statistics_sample.pb.h"
+#include "base/resource_stats.pb.h"
 #include "platforms/unix/common.h"
 
 namespace firmament {
@@ -66,13 +66,12 @@ typedef struct {
 class ProcFSMachine {
  public:
   ProcFSMachine();
-  const MachinePerfStatisticsSample* CreateStatistics(
-      MachinePerfStatisticsSample* stats);
+  const ResourceStats* CreateStatistics(ResourceStats* stats);
   void GetMachineCapacity(ResourceVector* cap);
 
  private:
   vector<CPUStatistics_t> GetCPUStats();
-  vector<CpuUsage> GetCPUUsage();
+  vector<CpuStats> GetCPUUsage();
   DiskStatistics_t GetDiskStats();
   MemoryStatistics_t GetMemoryStats();
   NetworkStatistics_t GetNetworkStats();

@@ -1,4 +1,4 @@
-/*
+ /*
  * Firmament
  * Copyright (c) The Firmament Authors.
  * All rights reserved.
@@ -867,7 +867,7 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
     CHECK_NOTNULL(machine_rs_ptr);
     ResourceDescriptor* machine_rd_ptr = machine_rs_ptr->mutable_descriptor();*/
     // Grab the latest available resource sample from the machine
-    MachinePerfStatisticsSample latest_stats;
+    ResourceStats latest_stats;
     // Take the most recent sample for now
     bool have_sample =
       knowledge_base_->GetLatestStatsForMachine(machine_res_id, &latest_stats);
@@ -881,21 +881,20 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
         string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
         uint32_t core_id = strtoul(core_id_substr.c_str(), 0, 10);
         rd_ptr->mutable_available_resources()->set_cpu_cores(
-            static_cast<double>(latest_stats.cpus_usage(core_id).idle()) /
-            100.0);
+            1.0 - latest_stats.cpus_stats(core_id).cpu_utilization());
         rd_ptr->mutable_max_available_resources_below()->set_cpu_cores(
-            latest_stats.cpus_usage(core_id).idle() / 100.0);
+            1.0 - latest_stats.cpus_stats(core_id).cpu_utilization());
         rd_ptr->mutable_min_available_resources_below()->set_cpu_cores(
-            latest_stats.cpus_usage(core_id).idle() / 100.0);
+            1.0 - latest_stats.cpus_stats(core_id).cpu_utilization());
       }
       // The CPU utilization gets added up automaticaly, so we only set the
       // per-machine properties here
       rd_ptr->mutable_available_resources()->set_ram_cap(
-          (latest_stats.free_ram() / BYTES_TO_MB));
+          latest_stats.mem_capacity() * (1.0 - latest_stats.mem_utilization()));
       rd_ptr->mutable_max_available_resources_below()->set_ram_cap(
-          (latest_stats.free_ram() / BYTES_TO_MB));
+          latest_stats.mem_capacity() * (1.0 - latest_stats.mem_utilization()));
       rd_ptr->mutable_min_available_resources_below()->set_ram_cap(
-          (latest_stats.free_ram() / BYTES_TO_MB));
+          latest_stats.mem_capacity() * (1.0 - latest_stats.mem_utilization()));
       // Running/idle task count
       rd_ptr->set_num_running_tasks_below(rd_ptr->current_running_tasks_size());
       // Interference score vectors and resource reservations are accumulated if
@@ -923,7 +922,7 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
     return accumulator;
   } else if (accumulator->type_ == FlowNodeType::MACHINE) {
     // Grab the latest available resource sample from the machine
-    MachinePerfStatisticsSample latest_stats;
+    ResourceStats latest_stats;
     // Take the most recent sample for now
     bool have_sample =
       knowledge_base_->GetLatestStatsForMachine(accumulator->resource_id_,
@@ -933,31 +932,31 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
               << "resource stats!";
       rd_ptr->mutable_available_resources()->set_disk_bw(
           rd_ptr->resource_capacity().disk_bw() -
-          (latest_stats.disk_bw() / BYTES_TO_MB));
+          latest_stats.disk_bw());
       rd_ptr->mutable_max_available_resources_below()->set_disk_bw(
           rd_ptr->resource_capacity().disk_bw() -
-          (latest_stats.disk_bw() / BYTES_TO_MB));
+          latest_stats.disk_bw());
       rd_ptr->mutable_min_available_resources_below()->set_disk_bw(
           rd_ptr->resource_capacity().disk_bw() -
-          (latest_stats.disk_bw() / BYTES_TO_MB));
+          latest_stats.disk_bw());
       rd_ptr->mutable_available_resources()->set_net_tx_bw(
           rd_ptr->resource_capacity().net_tx_bw() -
-          (latest_stats.net_tx_bw() / BYTES_TO_MB));
+          latest_stats.net_tx_bw());
       rd_ptr->mutable_max_available_resources_below()->set_net_tx_bw(
           rd_ptr->resource_capacity().net_tx_bw() -
-          (latest_stats.net_tx_bw() / BYTES_TO_MB));
+          latest_stats.net_tx_bw());
       rd_ptr->mutable_min_available_resources_below()->set_net_tx_bw(
           rd_ptr->resource_capacity().net_tx_bw() -
-          (latest_stats.net_tx_bw() / BYTES_TO_MB));
+          latest_stats.net_tx_bw());
       rd_ptr->mutable_available_resources()->set_net_rx_bw(
           rd_ptr->resource_capacity().net_rx_bw() -
-          (latest_stats.net_rx_bw() / BYTES_TO_MB));
+          latest_stats.net_rx_bw());
       rd_ptr->mutable_max_available_resources_below()->set_net_rx_bw(
           rd_ptr->resource_capacity().net_rx_bw() -
-          (latest_stats.net_rx_bw() / BYTES_TO_MB));
+          latest_stats.net_rx_bw());
       rd_ptr->mutable_min_available_resources_below()->set_net_rx_bw(
           rd_ptr->resource_capacity().net_rx_bw() -
-          (latest_stats.net_rx_bw() / BYTES_TO_MB));
+          latest_stats.net_rx_bw());
     }
   }
   if (accumulator->rd_ptr_ && other->rd_ptr_) {

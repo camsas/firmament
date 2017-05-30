@@ -21,7 +21,7 @@
 #ifndef FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_POPULATOR_H
 #define FIRMAMENT_SCHEDULING_KNOWLEDGE_BASE_POPULATOR_H
 
-#include "base/machine_perf_statistics_sample.pb.h"
+#include "base/resource_stats.pb.h"
 #include "base/task_final_report.pb.h"
 #include "base/task_stats.pb.h"
 #include "misc/wall_time.h"
@@ -33,9 +33,6 @@ namespace firmament {
 class KnowledgeBasePopulator {
  public:
   KnowledgeBasePopulator(boost::shared_ptr<KnowledgeBase> knowledge_base);
-  void AddMachineCpuUsage(MachinePerfStatisticsSample* machine_sample);
-  void PopulateNodeStats(const ResourceID_t& res_id,
-                         const ResourceStats* resource_stats);
   void PopulateTaskFinalReport(const TaskDescriptor& td,
                                TaskFinalReport* report);
  private:
