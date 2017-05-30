@@ -10,12 +10,12 @@ syntax = "proto3";
 package firmament;
 
 import "base/resource_desc.proto";
-import "base/machine_perf_statistics_sample.proto";
+import "base/resource_stats.proto";
 
 message HeartbeatMessage {
   string uuid = 1;
   string location = 2;
   uint64 capacity = 3;
-  MachinePerfStatisticsSample load = 4;
+  ResourceStats load = 4;
   ResourceDescriptor res_desc = 5;
 }

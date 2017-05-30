@@ -46,8 +46,8 @@ DEFINE_int32(num_files_to_process, 500, "Number of files to process.");
 DEFINE_string(trace_path, "", "Path where the trace files are.");
 DEFINE_uint64(sim_machine_max_cores, 12,
               "Maximum number of cores the simulated machines have");
-DEFINE_uint64(sim_machine_max_ram, 65536,
-              "Maximum ram size (in MB) the simulated machines have");
+DEFINE_uint64(sim_machine_max_ram, 67108864,
+              "Maximum ram size (in KB) the simulated machines have");
 DEFINE_uint64(num_tasks_synthetic_job_after_initial_run, 1,
               "Number of tasks the synthetic job added after initial scheduler "
               "run.");

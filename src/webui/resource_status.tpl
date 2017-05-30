@@ -7,7 +7,6 @@
 <script type="text/javascript">
 var ramTimeseries;
 var ramPercentTimeseries;
-var cpuAggUsrTimeseries;
 var cpuAggSysTimeseries;
 var diskBWTimeseries;
 var netBWTxTimeseries;
@@ -17,9 +16,8 @@ function getRAM(data) {
   var ts1 = [];
   var ts2 = [];
   for (i = 0; i < data.length; i++) {
-    ts2.push((data[i].total_ram - data[i].free_ram) /
-             data[i].total_ram);
-    ts1.push((data[i].total_ram - data[i].free_ram) / 1024.0 / 1024.0);
+    ts2.push(data[i].mem_utilization);
+    ts1.push((data[i].mem_capacity * data[i].mem_utilization) / 1024.0);
   }
   ramTimeseries = ts1;
   ramPercentTimeseries = ts2;
@@ -27,19 +25,16 @@ function getRAM(data) {
 
 function getCPU(data) {
   var ts1 = [];
-  var ts2 = [];
   for (i = 0; i < data.length; i++) {
-    ts1.push(data[i].cpus_usage[0].user);
-    ts2.push(data[i].cpus_usage[0].system);
+    ts1.push(data[i].cpus_usage[0].utilization * 100.0);
   }
-  cpuAggUsrTimeseries = ts1;
-  cpuAggSysTimeseries = ts2;
+  cpuAggSysTimeseries = ts1;
 }
 
 function getDisk(data) {
   var ts1 = [];
   for (i = 0; i < data.length; i++) {
-    ts1.push(data[i].disk_bw / 1024.0 / 1024.0);
+    ts1.push(data[i].disk_bw / 1024.0);
   }
   diskBWTimeseries = ts1;
 }
@@ -48,8 +43,8 @@ function getNet(data) {
   var tstx = [];
   var tsrx = [];
   for (i = 0; i < data.length; i++) {
-    tstx.push((data[i].net_tx_bw * 8) / 1000.0 / 1000.0);
-    tsrx.push((data[i].net_rx_bw * 8) / 1000.0 / 1000.0);
+    tstx.push((data[i].net_tx_bw * 8 * 1024) / 1000.0 / 1000.0);
+    tsrx.push((data[i].net_rx_bw * 8 * 1024) / 1000.0 / 1000.0);
   }
   netBWTxTimeseries = tstx;
   netBWRxTimeseries = tsrx;
@@ -86,7 +81,6 @@ function step() {
   $('#ram-perc-sparkline').sparkline(ramPercentTimeseries, {chartRangeMin: 0.0, chartRangeMax: 1.0});
   $('#ram-sparkline').sparkline(ramTimeseries, {tooltipSuffix: ' MB'});
   $('#cpu-agg-sys').sparkline(cpuAggSysTimeseries, {lineColor: '#ff0000', fillColor: '#ffaaaa'});
-  $('#cpu-agg-usr').sparkline(cpuAggUsrTimeseries, {lineColor: '#00ff00', fillColor: '#aaffaa'});
   $('#net-bw-tx-sparkline').sparkline(netBWTxTimeseries, {lineColor: '#ff00ff', fillColor: '#ffaaff', tooltipSuffix: ' MBit/sec'});
   $('#net-bw-rx-sparkline').sparkline(netBWRxTimeseries, {lineColor: '#ff00ff', fillColor: '#ffaaff', tooltipSuffix: ' MBit/sec'});
   $('#disk-bw-sparkline').sparkline(diskBWTimeseries, {lineColor: '#ffff00', fillColor: '#ffffaa', tooltipSuffix: ' MB/sec'});
@@ -147,11 +141,7 @@ $(function() {
     <td><abbr class="timeago" title="{{RES_LAST_HEARTBEAT}}">{{RES_LAST_HEARTBEAT}}</a></td>
   </tr>
   <tr>
-    <td>CPU (usr)</td>
-    <td><span id="cpu-agg-usr">Waiting for data...</span></td>
-  </tr>
-  <tr>
-    <td>CPU (sys)</td>
+    <td>CPU</td>
     <td><span id="cpu-agg-sys">Waiting for data...</span></td>
   </tr>
   <tr>

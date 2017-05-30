@@ -37,7 +37,7 @@
 
 #include "base/common.h"
 #include "base/types.h"
-#include "base/machine_perf_statistics_sample.pb.h"
+#include "base/resource_stats.pb.h"
 #include "base/task_final_report.pb.h"
 #include "base/task_stats.pb.h"
 #include "scheduling/data_layer_manager_interface.h"
@@ -49,13 +49,11 @@ class KnowledgeBase {
   KnowledgeBase();
   KnowledgeBase(DataLayerManagerInterface* data_layer_manager);
   virtual ~KnowledgeBase();
-  void AddMachineSample(const MachinePerfStatisticsSample& sample);
+  void AddMachineSample(const ResourceStats& sample);
   void AddTaskStatsSample(const TaskStats& stats_sample);
   void DumpMachineStats(const ResourceID_t& res_id) const;
-  bool GetLatestStatsForMachine(ResourceID_t id,
-                                MachinePerfStatisticsSample* sample);
-  const deque<MachinePerfStatisticsSample> GetStatsForMachine(
-      ResourceID_t id);
+  bool GetLatestStatsForMachine(ResourceID_t id, ResourceStats* sample);
+  const deque<ResourceStats> GetStatsForMachine(ResourceID_t id);
   const deque<TaskStats>* GetStatsForTask(TaskID_t id) const;
   virtual double GetAvgCPIForTEC(EquivClass_t id);
   virtual double GetAvgIPMAForTEC(EquivClass_t id);
@@ -77,7 +75,7 @@ class KnowledgeBase {
   }
 
  protected:
-  unordered_map<ResourceID_t, deque<MachinePerfStatisticsSample>,
+  unordered_map<ResourceID_t, deque<ResourceStats>,
       boost::hash<boost::uuids::uuid> > machine_map_;
   // TODO(malte): note that below sample queue has no awareness of time within a
   // task, i.e. it mixes samples from all phases

@@ -97,8 +97,8 @@ TEST_F(SimulatorBridgeTest, AddTask) {
   // Add the first task.
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_SUBMIT);
-  event_desc.set_requested_ram(1);
-  event_desc.set_requested_cpu_cores(1);
+  event_desc.set_requested_ram(1024);
+  event_desc.set_requested_cpu_cores(1000);
   bridge_->AddTask(trace_task_id, event_desc);
   TaskDescriptor* td1_ptr =
     FindPtrOrNull(bridge_->trace_task_id_to_td_, trace_task_id);
@@ -135,8 +135,8 @@ TEST_F(SimulatorBridgeTest, OnJobCompletion) {
   trace_task_id.task_index = 1;
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_SUBMIT);
-  event_desc.set_requested_ram(1);
-  event_desc.set_requested_cpu_cores(1);
+  event_desc.set_requested_ram(1024);
+  event_desc.set_requested_cpu_cores(1000);
   bridge_->AddMachine(1);
   bridge_->AddTask(trace_task_id, event_desc);
   TaskDescriptor* td_ptr =
@@ -167,8 +167,8 @@ TEST_F(SimulatorBridgeTest, OnTaskCompletion) {
   trace_task_id.task_index = 1;
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_SUBMIT);
-  event_desc.set_requested_ram(1);
-  event_desc.set_requested_cpu_cores(1);
+  event_desc.set_requested_ram(1024);
+  event_desc.set_requested_cpu_cores(1000);
   bridge_->AddMachine(1);
   bridge_->AddTask(trace_task_id, event_desc);
   TaskDescriptor* td_ptr =
@@ -200,8 +200,8 @@ TEST_F(SimulatorBridgeTest, OnTaskEviction) {
   trace_task_id.task_index = 1;
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_SUBMIT);
-  event_desc.set_requested_ram(1);
-  event_desc.set_requested_cpu_cores(1);
+  event_desc.set_requested_ram(1024);
+  event_desc.set_requested_cpu_cores(1000);
   bridge_->AddMachine(1);
   bridge_->AddTask(trace_task_id, event_desc);
   TaskDescriptor* td_ptr =
@@ -231,8 +231,8 @@ TEST_F(SimulatorBridgeTest, OnTaskPlacement) {
   trace_task_id.task_index = 1;
   EventDescriptor event_desc;
   event_desc.set_type(EventDescriptor::TASK_SUBMIT);
-  event_desc.set_requested_ram(1);
-  event_desc.set_requested_cpu_cores(1);
+  event_desc.set_requested_ram(1024);
+  event_desc.set_requested_cpu_cores(1000);
   bridge_->AddMachine(1);
   bridge_->AddTask(trace_task_id, event_desc);
   TaskDescriptor* td_ptr =

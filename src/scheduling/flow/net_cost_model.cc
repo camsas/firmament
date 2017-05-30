@@ -44,7 +44,7 @@ NetCostModel::NetCostModel(shared_ptr<ResourceMap_t> resource_map,
 }
 
 ArcCostCap NetCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
-  return ArcCostCap(2500, 1ULL, 0ULL);
+  return ArcCostCap(2560000, 1ULL, 0ULL);
 }
 
 ArcCostCap NetCostModel::UnscheduledAggToSink(JobID_t job_id) {
@@ -108,7 +108,7 @@ ArcCostCap NetCostModel::EquivClassToEquivClass(
   }
   return ArcCostCap(static_cast<int64_t>(ec_index) *
                     static_cast<int64_t>(*required_net_rx_bw) -
-                    static_cast<int64_t>(available_net_rx_bw) + 1250LL,
+                    static_cast<int64_t>(available_net_rx_bw) + 1280000,
                     1ULL, 0ULL);
 }
 
@@ -242,7 +242,7 @@ FlowGraphNode* NetCostModel::GatherStats(FlowGraphNode* accumulator,
   if (accumulator->type_ == FlowNodeType::MACHINE) {
     ResourceDescriptor* rd_ptr = accumulator->rd_ptr_;
     // Grab the latest available resource sample from the machine
-    MachinePerfStatisticsSample latest_stats;
+    ResourceStats latest_stats;
     // Take the most recent sample for now
     bool have_sample =
       knowledge_base_->GetLatestStatsForMachine(accumulator->resource_id_,
@@ -250,22 +250,22 @@ FlowGraphNode* NetCostModel::GatherStats(FlowGraphNode* accumulator,
     if (have_sample) {
       rd_ptr->mutable_available_resources()->set_net_tx_bw(
           rd_ptr->resource_capacity().net_tx_bw() -
-          latest_stats.net_tx_bw() / BYTES_TO_MB);
+          latest_stats.net_tx_bw());
       rd_ptr->mutable_max_available_resources_below()->set_net_tx_bw(
           rd_ptr->resource_capacity().net_tx_bw() -
-          latest_stats.net_tx_bw() / BYTES_TO_MB);
+          latest_stats.net_tx_bw());
       rd_ptr->mutable_min_available_resources_below()->set_net_tx_bw(
           rd_ptr->resource_capacity().net_tx_bw() -
-          latest_stats.net_tx_bw() / BYTES_TO_MB);
+          latest_stats.net_tx_bw());
       rd_ptr->mutable_available_resources()->set_net_rx_bw(
           rd_ptr->resource_capacity().net_rx_bw() -
-          latest_stats.net_rx_bw() / BYTES_TO_MB);
+          latest_stats.net_rx_bw());
       rd_ptr->mutable_max_available_resources_below()->set_net_rx_bw(
           rd_ptr->resource_capacity().net_rx_bw() -
-          latest_stats.net_rx_bw() / BYTES_TO_MB);
+          latest_stats.net_rx_bw());
       rd_ptr->mutable_min_available_resources_below()->set_net_rx_bw(
           rd_ptr->resource_capacity().net_rx_bw() -
-          latest_stats.net_rx_bw() / BYTES_TO_MB);
+          latest_stats.net_rx_bw());
     }
   }
 

@@ -10,9 +10,9 @@ package firmament;
 message ResourceVector {
   float cpu_cores = 1;
   uint64 ram_bw = 2;
-  uint64 ram_cap = 3; // in MB
+  uint64 ram_cap = 3; // in KB
   uint64 disk_bw = 4;
-  uint64 disk_cap = 5;
-  uint64 net_tx_bw = 6;
-  uint64 net_rx_bw = 7;
+  uint64 disk_cap = 5; // in KB
+  uint64 net_tx_bw = 6; // in KB
+  uint64 net_rx_bw = 7; // in KB
 }
