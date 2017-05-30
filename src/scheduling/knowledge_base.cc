@@ -87,17 +87,14 @@ KnowledgeBase::~KnowledgeBase() {
   // the KnowledgeBase.
 }
 
-void KnowledgeBase::AddMachineSample(
-    const MachinePerfStatisticsSample& sample) {
+void KnowledgeBase::AddMachineSample(const ResourceStats& sample) {
   boost::lock_guard<boost::upgrade_mutex> lock(kb_lock_);
   ResourceID_t rid = ResourceIDFromString(sample.resource_id());
   // Check if we already have a record for this machine
-  deque<MachinePerfStatisticsSample>* q =
-      FindOrNull(machine_map_, rid);
+  deque<ResourceStats>* q = FindOrNull(machine_map_, rid);
   if (!q) {
     // Add a blank queue for this machine
-    CHECK(InsertOrUpdate(&machine_map_, rid,
-                         deque<MachinePerfStatisticsSample>()));
+    CHECK(InsertOrUpdate(&machine_map_, rid, deque<ResourceStats>()));
     q = FindOrNull(machine_map_, rid);
     CHECK_NOTNULL(q);
   }
@@ -137,25 +134,23 @@ void KnowledgeBase::AddTaskStatsSample(const TaskStats& sample) {
 
 void KnowledgeBase::DumpMachineStats(const ResourceID_t& res_id) const {
   // Sanity checks
-  const deque<MachinePerfStatisticsSample>* q =
-      FindOrNull(machine_map_, res_id);
+  const deque<ResourceStats>* q = FindOrNull(machine_map_, res_id);
   if (!q)
     return;
   // Dump
   LOG(INFO) << "STATS FOR " << res_id << ": ";
   LOG(INFO) << "Have " << q->size() << " samples.";
-  for (deque<MachinePerfStatisticsSample>::const_iterator it = q->begin();
+  for (deque<ResourceStats>::const_iterator it = q->begin();
       it != q->end();
       ++it) {
-    LOG(INFO) << it->free_ram();
+    LOG(INFO) << it->mem_capacity() * (1.0 - it->mem_utilization());
   }
 }
 
 bool KnowledgeBase::GetLatestStatsForMachine(
-    ResourceID_t id,
-    MachinePerfStatisticsSample* sample) {
+    ResourceID_t id, ResourceStats* sample) {
   boost::lock_guard<boost::upgrade_mutex> lock_shared(kb_lock_);
-  const deque<MachinePerfStatisticsSample>* res = FindOrNull(machine_map_, id);
+  const deque<ResourceStats>* res = FindOrNull(machine_map_, id);
   if (!res)
     return false;
   // We make a copy here, as we lose the lock when returning
@@ -163,16 +158,16 @@ bool KnowledgeBase::GetLatestStatsForMachine(
   return true;
 }
 
-const deque<MachinePerfStatisticsSample> KnowledgeBase::GetStatsForMachine(
+const deque<ResourceStats> KnowledgeBase::GetStatsForMachine(
       ResourceID_t id) {
   boost::lock_guard<boost::upgrade_mutex> lock_shared(kb_lock_);
-  const deque<MachinePerfStatisticsSample>* res = FindOrNull(machine_map_, id);
+  const deque<ResourceStats>* res = FindOrNull(machine_map_, id);
   if (!res) {
-    const deque<MachinePerfStatisticsSample> empty;
+    const deque<ResourceStats> empty;
     return empty;
   }
   // We make a copy here, as we lose the lock when returning
-  const deque<MachinePerfStatisticsSample> copy(*res);
+  const deque<ResourceStats> copy(*res);
   return copy;
 }
 
@@ -285,7 +280,7 @@ void KnowledgeBase::LoadKnowledgeBaseFromFile() {
       LOG(ERROR) << "Unexpected format of the input file";
       break;
     }
-    MachinePerfStatisticsSample machine_stats;
+    ResourceStats machine_stats;
     machine_stats.ParseFromString(message);
     AddMachineSample(machine_stats);
   }

@@ -838,12 +838,12 @@ void CoordinatorHTTPUI::HandleStatisticsURI(
   // Check if we have any statistics for this resource
   if (!res_id_str.empty()) {
     ResourceID_t res_id = ResourceIDFromString(res_id_str);
-    const deque<MachinePerfStatisticsSample> result =
+    const deque<ResourceStats> result =
       coordinator_->scheduler()->knowledge_base()->GetStatsForMachine(res_id);
     if (coordinator_->GetResourceTreeNode(res_id)) {
       int64_t length = static_cast<int64_t>(result.size());
       output += "[";
-      for (deque<MachinePerfStatisticsSample>::const_iterator it =
+      for (deque<ResourceStats>::const_iterator it =
              result.begin() + max(0LL, length - WEBUI_PERF_QUEUE_LEN);
           it != result.end();
           ++it) {

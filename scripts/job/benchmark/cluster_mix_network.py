@@ -44,9 +44,9 @@ wl = SyncWorkload(scheduler_hostname, scheduler_port, target)
 # HDFS JOB
 rv = resource_vector_pb2.ResourceVector()
 rv.cpu_cores = 0.9
-rv.ram_cap = 128
-rv.net_tx_bw = 1
-rv.net_rx_bw = 600
+rv.ram_cap = 131072
+rv.net_tx_bw = 1024
+rv.net_rx_bw = 614400
 rv.disk_bw = 0
 
 # CPU SPIN JOB
