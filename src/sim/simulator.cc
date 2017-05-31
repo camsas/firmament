@@ -208,8 +208,15 @@ uint64_t Simulator::ScheduleJobsHelper(uint64_t run_scheduler_at) {
         return event_manager_->GetTimeOfNextSchedulerRun(
             run_scheduler_at, scheduler_stats.scheduler_runtime_);
       } else {
-        return event_manager_->GetTimeOfNextSchedulerRun(
-            run_scheduler_at, scheduler_stats.algorithm_runtime_);
+        if (scheduler_stats.algorithm_runtime_ ==
+            numeric_limits<uint64_t>::max()) {
+          // Scheduler hasn't executed.
+          return event_manager_->GetTimeOfNextSchedulerRun(
+                     run_scheduler_at, 0);
+        } else {
+          return event_manager_->GetTimeOfNextSchedulerRun(
+                     run_scheduler_at, scheduler_stats.algorithm_runtime_);
+        }
       }
     } else if (FLAGS_solver_runtime_accounting_mode == "solver") {
       return event_manager_->GetTimeOfNextSchedulerRun(
