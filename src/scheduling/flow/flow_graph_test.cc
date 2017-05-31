@@ -62,7 +62,6 @@ class FlowGraphTest : public ::testing::Test {
 
 // Tests arc addition to node.
 TEST_F(FlowGraphTest, AddArcToNode) {
-  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   FlowGraph graph;
   uint64_t init_node_count = graph.NumNodes();
   FlowGraphNode* n0 = graph.AddNode();
@@ -75,7 +74,6 @@ TEST_F(FlowGraphTest, AddArcToNode) {
 
 // Change an arc and check it gets added to changes.
 TEST_F(FlowGraphTest, ChangeArc) {
-  shared_ptr<TaskMap_t> task_map = shared_ptr<TaskMap_t>(new TaskMap_t);
   FlowGraph graph;
   FlowGraphNode* n0 = graph.AddNode();
   FlowGraphNode* n1 = graph.AddNode();
@@ -92,9 +90,52 @@ TEST_F(FlowGraphTest, ChangeArc) {
   CHECK_EQ(graph.NumArcs(), num_arcs - 1);
 }
 
+// Tests add nodes by passing node pointer to FlowGraphNode instead of node ID.
+TEST_F(FlowGraphTest, AddArcToNode2) {
+  FlowGraph fgraph;
+  FlowGraphNode* node0 = fgraph.AddNode();
+  FlowGraphNode* node1 = fgraph.AddNode();
+  FlowGraphArc* arc = fgraph.AddArc(node0, node1);
+  fgraph.ChangeArc(arc, 0, 100, 42);
+  CHECK_EQ(fgraph.NumArcs(), 1);
+  fgraph.DeleteArc(arc);
+  fgraph.DeleteNode(node0);
+  fgraph.DeleteNode(node1);
+}
+
+// Tests change arc cost.
+TEST_F(FlowGraphTest, ChangeArcCost) {
+  FlowGraph fgraph;
+  FlowGraphNode* node0 = fgraph.AddNode();
+  FlowGraphNode* node1 = fgraph.AddNode();
+  FlowGraphArc* arc = fgraph.AddArc(node0, node1);
+  fgraph.ChangeArc(arc, 0, 100, 42);
+  CHECK_EQ(fgraph.NumArcs(), 1);
+  CHECK_EQ(arc->cost_, 42);
+  fgraph.ChangeArcCost(arc, 44);
+  CHECK_EQ(arc->cost_, 44);
+  fgraph.DeleteArc(arc);
+  fgraph.DeleteNode(node0);
+  fgraph.DeleteNode(node1);
+}
+
+// Tests get arc.
+TEST_F(FlowGraphTest, GetArc) {
+  FlowGraph fgraph;
+  FlowGraphNode* node0 = fgraph.AddNode();
+  FlowGraphNode* node1 = fgraph.AddNode();
+  FlowGraphArc* arc = fgraph.AddArc(node0, node1);
+  FlowGraphArc* get_arc = fgraph.GetArc(node0, node1);
+  CHECK_EQ(get_arc->src_, node0->id_);
+  CHECK_EQ(get_arc->dst_, node1->id_);
+  fgraph.DeleteArc(arc);
+  fgraph.DeleteNode(node0);
+  fgraph.DeleteNode(node1);
+}
+
 }  // namespace firmament
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
