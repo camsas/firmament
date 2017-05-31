@@ -61,6 +61,18 @@ class FlowGraphChangeManagerTest : public ::testing::Test {
   FlowGraphChangeManager* change_manager_;
 };
 
+TEST_F(FlowGraphChangeManagerTest, AddGraphChange) {
+  FlowGraphNode node1(1);
+  FlowGraphNode node2(2);
+  FlowGraphArc arc12(1, 2, 0, 1, 42, &node1, &node2);
+  change_manager_->AddGraphChange(
+      new DIMACSAddNode(node1, vector<FlowGraphArc*>()));
+  change_manager_->AddGraphChange(
+      new DIMACSAddNode(node2, vector<FlowGraphArc*>()));
+  change_manager_->AddGraphChange(new DIMACSNewArc(arc12));
+  EXPECT_EQ(change_manager_->graph_changes_.size(), 3);
+}
+
 TEST_F(FlowGraphChangeManagerTest, MergeChangesToSameArc) {
   FlowGraphNode node1(1);
   FlowGraphNode node2(2);
@@ -132,6 +144,20 @@ TEST_F(FlowGraphChangeManagerTest, RemoveDuplicateChanges) {
   EXPECT_EQ(change_manager_->graph_changes_.size(), 9);
   change_manager_->RemoveDuplicateChanges();
   EXPECT_EQ(change_manager_->graph_changes_.size(), 8);
+}
+
+TEST_F(FlowGraphChangeManagerTest, ResetChanges) {
+  FlowGraphNode node1(1);
+  FlowGraphNode node2(2);
+  FlowGraphArc arc12(1, 2, 0, 1, 42, &node1, &node2);
+  change_manager_->AddGraphChange(
+      new DIMACSAddNode(node1, vector<FlowGraphArc*>()));
+  change_manager_->AddGraphChange(
+      new DIMACSAddNode(node2, vector<FlowGraphArc*>()));
+  change_manager_->AddGraphChange(new DIMACSNewArc(arc12));
+  EXPECT_EQ(change_manager_->graph_changes_.size(), 3);
+  change_manager_->ResetChanges();
+  EXPECT_EQ(change_manager_->graph_changes_.size(), 0);
 }
 
 }  // namespace firmament

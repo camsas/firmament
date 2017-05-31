@@ -92,9 +92,11 @@ class FlowGraphChangeManager {
   }
 
  private:
+  FRIEND_TEST(FlowGraphChangeManagerTest, AddGraphChange);
   FRIEND_TEST(FlowGraphChangeManagerTest, MergeChangesToSameArc);
   FRIEND_TEST(FlowGraphChangeManagerTest, PurgeChangesBeforeNodeRemoval);
   FRIEND_TEST(FlowGraphChangeManagerTest, RemoveDuplicateChanges);
+  FRIEND_TEST(FlowGraphChangeManagerTest, ResetChanges);
 
   void AddGraphChange(DIMACSChange* change);
   void OptimizeChanges();
