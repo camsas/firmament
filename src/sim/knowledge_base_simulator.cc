@@ -73,9 +73,13 @@ void KnowledgeBaseSimulator::AddMachineSample(
       // We don't have any stats for the task. Ignore it.
       continue;
     }
-    mem_usage += task_stat->avg_canonical_mem_usage_ +
-      task_stat->avg_unmapped_page_cache_ -
-      task_stat->avg_total_page_cache_;
+    if (task_stat->avg_canonical_mem_usage_ > 0 ||
+        task_stat->avg_unmapped_page_cache_ > 0 ||
+        task_stat->avg_total_page_cache_ > 0) {
+      mem_usage += task_stat->avg_canonical_mem_usage_ +
+        task_stat->avg_unmapped_page_cache_ -
+        task_stat->avg_total_page_cache_;
+    }
     string label = task_id_rd.second->friendly_name();
     uint64_t idx = label.find("PU #");
     CHECK_NE(idx, string::npos)
