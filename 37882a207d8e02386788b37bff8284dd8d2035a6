@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc7ced41_d97805d9",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-06-02T16:34:33Z",
+      "side": 1,
+      "message": "Why does it get set to ABORTED here? The job may already be COMPLETED, in which case the removal simply removes its information, right? In that situation, it\u0027s not an ABORTED job, really.",
+      "revId": "37882a207d8e02386788b37bff8284dd8d2035a6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dda979b5_29ea2f68",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-06-02T16:34:33Z",
+      "side": 1,
+      "message": "Should probably have a CHECK_GE(*num_incomplete_tasks, 0), since otherwise this could have weird behaviour if num_incomplete_tasks ever went negative.",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 160,
+        "endChar": 37
+      },
+      "revId": "37882a207d8e02386788b37bff8284dd8d2035a6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
