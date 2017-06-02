@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1c0f28e_4c27cba4",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-06-02T16:21:15Z",
+      "side": 1,
+      "message": "Should a task that completed on a temporarily failed machine be counted as COMPLETED? It seems confusing, because it was previously FAILED, and the scheduler may have rescheduled it on another machine already.",
+      "revId": "bd5c97ac2b21ec040f6c3fff4ebadb1e500b8bc7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
