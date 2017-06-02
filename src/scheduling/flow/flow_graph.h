@@ -67,8 +67,10 @@ class FlowGraph {
   }
 
  private:
+  FRIEND_TEST(FlowGraphManagerTest, PurgeUnconnectedEquivClassNodes);
   FRIEND_TEST(FlowGraphManagerTest, RemoveEquivClassNode);
   FRIEND_TEST(FlowGraphManagerTest, RemoveResourceNode);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveTaskHelper);
   FRIEND_TEST(FlowGraphManagerTest, RemoveTaskNode);
   FRIEND_TEST(FlowGraphManagerTest, RemoveUnscheduledAggNode);
   FRIEND_TEST(FlowGraphManagerTest, TraverseAndRemoveTopology);

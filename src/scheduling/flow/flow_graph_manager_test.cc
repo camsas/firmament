@@ -370,6 +370,37 @@ TEST_F(FlowGraphManagerTest, PinTaskToNode) {
   CHECK_EQ(new_running_arc->dst_node_->id_, pu2_node->id_);
 }
 
+TEST_F(FlowGraphManagerTest, PurgeUnconnectedEquivClassNodes) {
+  FlowGraphManager* graph_manager = CreateGraphManagerUsingTrivialCost();
+  const FlowGraph& flow_graph =
+      graph_manager->graph_change_manager_->flow_graph();
+  // Create task.
+  JobDescriptor test_job;
+  TaskDescriptor* td_ptr = CreateTask(&test_job, 42);
+  InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr);
+  JobID_t job_id = JobIDFromString(td_ptr->job_id());
+  FlowGraphNode* task_node = graph_manager->AddTaskNode(job_id, td_ptr);
+  task_node->td_ptr_->set_state(TaskDescriptor::RUNNING);
+  // Add EC.
+  EquivClass_t ec1 = 42;
+  FlowGraphNode* ec_node1 = graph_manager->AddEquivClassNode(ec1);
+  CHECK_NOTNULL(ec_node1);
+  // Connect the task to the EC node.
+  graph_manager->graph_change_manager_->AddArc(
+      task_node, ec_node1, 0, 1, 1, FlowGraphArcType::OTHER,
+      ADD_ARC_TASK_TO_EQUIV_CLASS, "test");
+  // Add another EC node, do not connect to any task.
+  EquivClass_t ec2 = 43;
+  FlowGraphNode* ec_node2 = graph_manager->AddEquivClassNode(ec2);
+  CHECK_NOTNULL(ec_node2);
+  EXPECT_EQ(graph_manager->tec_to_node_map_.size(), 2);
+  EXPECT_EQ(0UL, flow_graph.unused_ids_.size());
+  graph_manager->PurgeUnconnectedEquivClassNodes();
+  // Verify purging of unconnected EC node.
+  EXPECT_EQ(graph_manager->tec_to_node_map_.size(), 1);
+  EXPECT_EQ(1UL, flow_graph.unused_ids_.size());
+}
+
 TEST_F(FlowGraphManagerTest, RemoveEquivClassNode) {
   FlowGraphManager* graph_manager = CreateGraphManagerUsingTrivialCost();
   EquivClass_t ec = 42;
@@ -505,6 +536,53 @@ TEST_F(FlowGraphManagerTest, RemoveResourceNode) {
   EXPECT_DEATH(graph_manager->RemoveResourceNode(NULL), "");
 }
 
+TEST_F(FlowGraphManagerTest, RemoveTaskHelper) {
+  MockCostModel mock_cost_model;
+  FlowGraphManager* graph_manager = new FlowGraphManager(
+      &mock_cost_model, leaf_res_ids_, &wall_time_, tg_, &dimacs_stats_);
+  const FlowGraph& flow_graph =
+      graph_manager->graph_change_manager_->flow_graph();
+  uint64_t num_task_nodes = graph_manager->task_to_node_map_.size();
+  uint64_t num_running_arcs = graph_manager->task_to_running_arc_.size();
+  // Add a task.
+  JobDescriptor test_job;
+  TaskDescriptor* td_ptr = CreateTask(&test_job, 42);
+  InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr);
+  JobID_t job_id = JobIDFromString(td_ptr->job_id());
+  EXPECT_CALL(mock_cost_model, AddTask(_)).Times(1);
+  FlowGraphNode* task_node = graph_manager->AddTaskNode(job_id, td_ptr);
+  CHECK_NOTNULL(task_node);
+  task_node->td_ptr_->set_state(TaskDescriptor::RUNNING);
+  // Add a PU to the graph.
+  ResourceTopologyNodeDescriptor pu_rtnd;
+  ResourceDescriptor* pu_rd_ptr = CreateMachine(&pu_rtnd, "pu");
+  pu_rd_ptr->set_type(ResourceDescriptor::RESOURCE_PU);
+  FlowGraphNode* pu_node = graph_manager->AddResourceNode(pu_rd_ptr);
+  CHECK_NOTNULL(pu_node);
+  // Add running arc between task and PU.
+  FlowGraphArc* arc_to_res = graph_manager->graph_change_manager_->AddArc(
+      task_node, pu_node, 1, 1, 1, FlowGraphArcType::RUNNING,
+      ADD_ARC_RUNNING_TASK, "test");
+  CHECK(InsertIfNotPresent(&graph_manager->task_to_running_arc_,
+                           task_node->td_ptr_->uid(), arc_to_res));
+  EXPECT_EQ(FindPtrOrNull(graph_manager->task_to_running_arc_,
+                          task_node->td_ptr_->uid()),
+            arc_to_res);
+  // PU node should have incoming arc.
+  EXPECT_EQ(pu_node->incoming_arc_map_.size(), 1);
+  EXPECT_EQ(flow_graph.unused_ids_.size(), 0);
+  EXPECT_EQ(graph_manager->task_to_running_arc_.size(), num_running_arcs + 1);
+  EXPECT_EQ(graph_manager->task_to_node_map_.size(), num_task_nodes + 1);
+  // Remove task and verify.
+  EXPECT_CALL(mock_cost_model, RemoveTask(_)).Times(1);
+  graph_manager->RemoveTaskHelper(td_ptr->uid());
+  EXPECT_EQ(flow_graph.unused_ids_.size(), 1);
+  EXPECT_EQ(graph_manager->task_to_running_arc_.size(), num_running_arcs);
+  EXPECT_EQ(graph_manager->task_to_node_map_.size(), num_task_nodes);
+  // PU node doesn't have any incoming arcs left.
+  EXPECT_EQ(pu_node->incoming_arc_map_.size(), 0);
+}
+
 TEST_F(FlowGraphManagerTest, RemoveTaskNode) {
   FlowGraphManager* graph_manager = CreateGraphManagerUsingTrivialCost();
   const FlowGraph& flow_graph =
@@ -545,6 +623,54 @@ TEST_F(FlowGraphManagerTest, RemoveUnscheduledAggNode) {
   EXPECT_DEATH(graph_manager->RemoveUnscheduledAggNode(job_id), "");
 }
 
+TEST_F(FlowGraphManagerTest, TaskScheduled) {
+  FlowGraphManager* graph_manager = CreateGraphManagerUsingTrivialCost();
+  uint64_t num_arcs = 
+    graph_manager->graph_change_manager_->flow_graph().NumArcs();
+  // Add a task.
+  JobDescriptor test_job;
+  TaskDescriptor* td_ptr = CreateTask(&test_job, 42);
+  InsertIfNotPresent(task_map_.get(), td_ptr->uid(), td_ptr);
+  JobID_t job_id = JobIDFromString(td_ptr->job_id());
+  FlowGraphNode* task_node = graph_manager->AddTaskNode(job_id, td_ptr);
+  CHECK_NOTNULL(task_node);
+  task_node->td_ptr_->set_state(TaskDescriptor::RUNNING);
+  FlowGraphNode* unsched_agg_node =
+      graph_manager->AddUnscheduledAggNode(job_id);
+  CHECK_NOTNULL(unsched_agg_node);
+  // Add arc between task and unsched_agg.
+  graph_manager->graph_change_manager_->AddArc(task_node, unsched_agg_node, 0,
+                                               1, 1, FlowGraphArcType::OTHER,
+                                               ADD_ARC_TO_UNSCHED, "test");
+  // Add arc between unsched_agg and sink.
+  FlowGraphArc* arc_from_unsched = graph_manager->graph_change_manager_->AddArc(
+      unsched_agg_node, graph_manager->sink_node_, 0, 1, 1,
+      FlowGraphArcType::OTHER, ADD_ARC_FROM_UNSCHED, "test");
+  CHECK_NOTNULL(arc_from_unsched);
+  // Add a PU to the graph.
+  ResourceTopologyNodeDescriptor pu_rtnd;
+  ResourceDescriptor* pu_rd_ptr = CreateMachine(&pu_rtnd, "pu");
+  pu_rd_ptr->set_type(ResourceDescriptor::RESOURCE_PU);
+  FlowGraphNode* pu_node = graph_manager->AddResourceNode(pu_rd_ptr);
+  CHECK_NOTNULL(pu_node);
+  // Schedule the task to PU.
+  graph_manager->TaskScheduled(td_ptr->uid(),
+                               ResourceIDFromString(pu_rd_ptr->uuid()));
+  FlowGraphArc* arc_to_res =
+      graph_manager->graph_change_manager_->mutable_flow_graph()->GetArc(
+          task_node, pu_node);
+  CHECK_NOTNULL(arc_to_res);
+  // Verify task's running arc.
+  EXPECT_EQ(arc_to_res->type_, 1);
+  EXPECT_EQ(arc_to_res->src_node_, task_node);
+  EXPECT_EQ(arc_to_res->dst_node_, pu_node);
+  EXPECT_EQ(FindPtrOrNull(graph_manager->task_to_running_arc_, td_ptr->uid()),
+            arc_to_res);
+  // Check the method doesn't add any new arcs.
+  EXPECT_EQ(num_arcs+2,
+            graph_manager->graph_change_manager_->flow_graph().NumArcs());
+}
+
 TEST_F(FlowGraphManagerTest, TraverseAndRemoveTopology) {
   MockCostModel mock_cost_model;
   FlowGraphManager* graph_manager =
@@ -582,6 +708,50 @@ TEST_F(FlowGraphManagerTest, TraverseAndRemoveTopology) {
   CHECK_EQ(flow_graph.NumArcs(), 0);
   CHECK_EQ(flow_graph.unused_ids_.size(), 3);
   CHECK_EQ(pus_removed.size(), 2);
+}
+
+TEST_F(FlowGraphManagerTest, UpdateAllCostsToUnscheduledAggs) {
+  MockCostModel mock_cost_model;
+  FlowGraphManager* graph_manager = new FlowGraphManager(
+      &mock_cost_model, leaf_res_ids_, &wall_time_, tg_, &dimacs_stats_);
+  // Add a job.
+  JobDescriptor test_job1;
+  TaskDescriptor* td_ptr1 = CreateTask(&test_job1, 42);
+  InsertIfNotPresent(task_map_.get(), td_ptr1->uid(), td_ptr1);
+  JobID_t job_id1 = JobIDFromString(td_ptr1->job_id());
+  EXPECT_CALL(mock_cost_model, AddTask(_)).Times(1);
+  FlowGraphNode* task_node1 = graph_manager->AddTaskNode(job_id1, td_ptr1);
+  FlowGraphNode* unsched_agg_node1 =
+      graph_manager->AddUnscheduledAggNode(job_id1);
+  CHECK_NOTNULL(unsched_agg_node1);
+  // Add arc between task and unsched_agg1.
+  FlowGraphArc* arc_task_to_unsched1 =
+      graph_manager->graph_change_manager_->AddArc(
+          task_node1, unsched_agg_node1, 0, 1, 1, FlowGraphArcType::OTHER,
+          ADD_ARC_TO_UNSCHED, "test1");
+
+  // Adding another job.
+  JobDescriptor test_job2;
+  TaskDescriptor* td_ptr2 = CreateTask(&test_job2, 43);
+  InsertIfNotPresent(task_map_.get(), td_ptr2->uid(), td_ptr2);
+  JobID_t job_id2 = JobIDFromString(td_ptr2->job_id());
+  EXPECT_CALL(mock_cost_model, AddTask(_)).Times(1);
+  FlowGraphNode* task_node2 = graph_manager->AddTaskNode(job_id2, td_ptr2);
+  FlowGraphNode* unsched_agg_node2 =
+      graph_manager->AddUnscheduledAggNode(job_id2);
+  CHECK_NOTNULL(unsched_agg_node2);
+  // Add arc between task and unsched_agg2.
+  FlowGraphArc* arc_task_to_unsched2 =
+      graph_manager->graph_change_manager_->AddArc(
+          task_node2, unsched_agg_node2, 0, 1, 1, FlowGraphArcType::OTHER,
+          ADD_ARC_TO_UNSCHED, "test2");
+  // Update all costs to unsched aggs and verify updated costs.
+  ON_CALL(mock_cost_model, TaskToUnscheduledAgg(_))
+      .WillByDefault(testing::Return(ArcCostCap(45LL, 1ULL, 0ULL)));
+  EXPECT_CALL(mock_cost_model, TaskToUnscheduledAgg(_)).Times(2);
+  graph_manager->UpdateAllCostsToUnscheduledAggs();
+  CHECK_EQ(arc_task_to_unsched1->cost_, 45);
+  CHECK_EQ(arc_task_to_unsched2->cost_, 45);
 }
 
 TEST_F(FlowGraphManagerTest, UpdateArcsForScheduledTask) {
