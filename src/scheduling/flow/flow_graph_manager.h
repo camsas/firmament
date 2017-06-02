@@ -148,11 +148,15 @@ class FlowGraphManager {
   FRIEND_TEST(FlowGraphManagerTest, AddTaskNode);
   FRIEND_TEST(FlowGraphManagerTest, AddUnscheduledAggNode);
   FRIEND_TEST(FlowGraphManagerTest, PinTaskToNode);
+  FRIEND_TEST(FlowGraphManagerTest, PurgeUnconnectedEquivClassNodes);
   FRIEND_TEST(FlowGraphManagerTest, RemoveEquivClassNode);
   FRIEND_TEST(FlowGraphManagerTest, RemoveInvalidECPrefArcs);
   FRIEND_TEST(FlowGraphManagerTest, RemoveInvalidPrefResArcs);
   FRIEND_TEST(FlowGraphManagerTest, RemoveResourceNode);
+  FRIEND_TEST(FlowGraphManagerTest, RemoveTaskHelper);
+  FRIEND_TEST(FlowGraphManagerTest, TaskScheduled);
   FRIEND_TEST(FlowGraphManagerTest, TraverseAndRemoveTopology);
+  FRIEND_TEST(FlowGraphManagerTest, UpdateAllCostsToUnscheduledAggs);
   FRIEND_TEST(FlowGraphManagerTest, UpdateArcsForScheduledTask);
   FRIEND_TEST(FlowGraphManagerTest, UpdateChildrenTasks);
   FRIEND_TEST(FlowGraphManagerTest, UpdateEquivClassNode);
