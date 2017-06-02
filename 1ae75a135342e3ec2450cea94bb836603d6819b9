@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ea6ca9ee_588fe364",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-06-02T17:38:20Z",
+      "side": 1,
+      "message": "Why is the capacity always 1000 millicores? I guess because this is a per-core metric? Unless we actually aggregate the capacities anywhere, it seems like they might not be necessary to track, since a single CPU core is always 1000 millicores by definition.",
+      "range": {
+        "startLine": 143,
+        "startChar": 0,
+        "endLine": 144,
+        "endChar": 41
+      },
+      "revId": "1ae75a135342e3ec2450cea94bb836603d6819b9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
