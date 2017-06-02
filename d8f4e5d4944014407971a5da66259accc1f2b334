@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eee65d61_ed0da5da",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-06-02T16:11:09Z",
+      "side": 1,
+      "message": "Nit: this seems more like a TODO than an XXX to me :) (we\u0027ve generally used XXX for correctness-impending changes, i.e., things that are broken and may need fixing before the code works correctly)",
+      "revId": "d8f4e5d4944014407971a5da66259accc1f2b334",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
