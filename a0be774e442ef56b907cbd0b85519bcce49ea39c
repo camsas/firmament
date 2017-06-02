@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "733394dd_8823e045",
+        "filename": "cmake/Config.cmake",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-06-02T17:11:01Z",
+      "side": 1,
+      "message": "AIUI, ASAN isn\u0027t clang-specific any more these days, so the flag was deliberately outside the Clang condition. Is there a reason it needs to be changed?",
+      "revId": "a0be774e442ef56b907cbd0b85519bcce49ea39c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
