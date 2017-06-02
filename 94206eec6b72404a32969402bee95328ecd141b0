@@ -93,6 +93,30 @@
       "revId": "94206eec6b72404a32969402bee95328ecd141b0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a31f6495_cd9dfba2",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2017-06-02T16:13:35Z",
+      "side": 1,
+      "message": "Fair, but it\u0027s still the case here that updated_rtnd_ptr and rs_ptr-\u003emutable_topology_node() are actually identical, right?",
+      "parentUuid": "96d7787f_686c9d0e",
+      "range": {
+        "startLine": 319,
+        "startChar": 0,
+        "endLine": 323,
+        "endChar": 35
+      },
+      "revId": "94206eec6b72404a32969402bee95328ecd141b0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
