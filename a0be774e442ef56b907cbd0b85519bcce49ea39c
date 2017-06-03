@@ -16,6 +16,24 @@
       "revId": "a0be774e442ef56b907cbd0b85519bcce49ea39c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cf7f28fd_c97ebba6",
+        "filename": "cmake/Config.cmake",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-03T14:55:00Z",
+      "side": 1,
+      "message": "I\u0027m not sure what the reason behind this move was. I\u0027ve moved it back.",
+      "parentUuid": "733394dd_8823e045",
+      "revId": "a0be774e442ef56b907cbd0b85519bcce49ea39c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
