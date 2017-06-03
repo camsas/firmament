@@ -235,7 +235,6 @@ void EventDrivenScheduler::HandleJobRemoval(JobID_t job_id) {
   CHECK_NOTNULL(jd);
   jobs_to_schedule_.erase(job_id);
   runnable_tasks_.erase(job_id);
-  jd->set_state(JobDescriptor::ABORTED);
   if (event_notifier_) {
     event_notifier_->OnJobRemoval(job_id);
   }

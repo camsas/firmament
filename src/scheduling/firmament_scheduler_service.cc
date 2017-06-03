@@ -172,6 +172,7 @@ class FirmamentSchedulerServiceImpl final :
     uint64_t* num_incomplete_tasks =
       FindOrNull(job_num_incomplete_tasks_, job_id);
     CHECK_NOTNULL(num_incomplete_tasks);
+    CHECK_GE(*num_incomplete_tasks, 1);
     (*num_incomplete_tasks)--;
     if (*num_incomplete_tasks == 0) {
       scheduler_->HandleJobCompletion(job_id);
