@@ -117,6 +117,30 @@
       "revId": "94206eec6b72404a32969402bee95328ecd141b0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e018e615_65aa0845",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-03T14:52:17Z",
+      "side": 1,
+      "message": "The assumption for now is that they\u0027re identical in structure (i.e., how PUs are connected), but not in auxiliary properties (e.g., labels, capacity).",
+      "parentUuid": "a31f6495_cd9dfba2",
+      "range": {
+        "startLine": 319,
+        "startChar": 0,
+        "endLine": 323,
+        "endChar": 35
+      },
+      "revId": "94206eec6b72404a32969402bee95328ecd141b0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
