@@ -36,6 +36,23 @@
     },
     {
       "key": {
+        "uuid": "4a42b409_f6bfb449",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-03T15:14:43Z",
+      "side": 1,
+      "message": "As above.",
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "322c5381_e40b3705",
         "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
         "patchSetId": 1
@@ -47,6 +64,40 @@
       "writtenOn": "2017-06-02T17:56:38Z",
       "side": 1,
       "message": "Pointer types should have the asterisk with the type, not the variable name, as per style guide. Applies below as well; consider using \"clang-format -style\u003dgoogle\" on the file.",
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bef94eb9_b17f955c",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 579,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-03T15:14:43Z",
+      "side": 1,
+      "message": "I think it\u0027s worth checking that the PU node doesn\u0027t have any incoming arcs left.",
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "21a4eb76_32a0cbac",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-03T15:14:43Z",
+      "side": 1,
+      "message": "Out of interest: Does this test fail if you also add an arc between the task node and the PU node?",
       "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
