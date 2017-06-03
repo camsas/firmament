@@ -22,6 +22,30 @@
       "revId": "1ae75a135342e3ec2450cea94bb836603d6819b9",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ea09458b_73ef199e",
+        "filename": "src/platforms/unix/procfs_machine.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-03T14:49:13Z",
+      "side": 1,
+      "message": "The capacity is 1000 because it\u0027s a per core metric. It\u0027s worth tracking it because we aggregate capacities for resources that are closer to topology\u0027s root node.",
+      "parentUuid": "ea6ca9ee_588fe364",
+      "range": {
+        "startLine": 143,
+        "startChar": 0,
+        "endLine": 144,
+        "endChar": 41
+      },
+      "revId": "1ae75a135342e3ec2450cea94bb836603d6819b9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
