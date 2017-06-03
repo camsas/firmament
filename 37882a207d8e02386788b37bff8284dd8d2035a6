@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8c044391_dad80ffd",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-03T14:59:47Z",
+      "side": 1,
+      "message": "In fact it doesn\u0027t matter to what we set it here because the job gets removed. I\u0027ve removed the superfluous line.",
+      "parentUuid": "fc7ced41_d97805d9",
+      "revId": "37882a207d8e02386788b37bff8284dd8d2035a6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dda979b5_29ea2f68",
         "filename": "src/scheduling/firmament_scheduler_service.cc",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2017-06-02T16:34:33Z",
       "side": 1,
       "message": "Should probably have a CHECK_GE(*num_incomplete_tasks, 0), since otherwise this could have weird behaviour if num_incomplete_tasks ever went negative.",
+      "range": {
+        "startLine": 159,
+        "startChar": 0,
+        "endLine": 160,
+        "endChar": 37
+      },
+      "revId": "37882a207d8e02386788b37bff8284dd8d2035a6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0459cd06_f17ef8d5",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-03T14:59:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dda979b5_29ea2f68",
       "range": {
         "startLine": 159,
         "startChar": 0,
