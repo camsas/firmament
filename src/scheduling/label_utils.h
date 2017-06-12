@@ -33,7 +33,7 @@ namespace firmament {
 namespace scheduler {
 
 bool SatisfiesLabelSelectors(const ResourceDescriptor& rd,
-                             const RepeatedField<LabelSelector>& selectors);
+                             const RepeatedPtrField<LabelSelector>& selectors);
 bool SatisfiesLabelSelector(const ResourceDescriptor& rd,
                             const LabelSelector& selector);
 bool SatisfiesLabelSelector(const unordered_map<string, string>& rd_labels,
