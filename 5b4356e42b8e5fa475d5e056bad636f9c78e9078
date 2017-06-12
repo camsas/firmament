@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a3291ffb_e7e5d6c3",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-12T10:28:39Z",
+      "side": 1,
+      "message": "This requires lot of change. I have raised new issue, will take it later in another commit.\nhttps://github.com/camsas/firmament/issues/58",
+      "parentUuid": "0e4c91e5_fec80f7a",
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7812c035_50736244",
         "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2017-06-02T17:56:38Z",
       "side": 1,
       "message": "Why is the int64_t cast required here? The literal should compare fine to size_t, right?",
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e0d47520_8e615942",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-12T10:28:39Z",
+      "side": 1,
+      "message": "O is being treated as \u0027int\u0027, removed cast and modified as below to silence compiler warning.\nEXPECT_EQ(0UL, flow_graph.unused_ids_.size());",
+      "parentUuid": "7812c035_50736244",
       "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "66ab0702_82891557",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-12T10:28:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a42b409_f6bfb449",
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "322c5381_e40b3705",
         "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
         "patchSetId": 1
@@ -64,6 +118,24 @@
       "writtenOn": "2017-06-02T17:56:38Z",
       "side": 1,
       "message": "Pointer types should have the asterisk with the type, not the variable name, as per style guide. Applies below as well; consider using \"clang-format -style\u003dgoogle\" on the file.",
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "61762589_e525fc44",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 541,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-12T10:28:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "322c5381_e40b3705",
       "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "abf188ce_71370bdc",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 579,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-12T10:28:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bef94eb9_b17f955c",
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "21a4eb76_32a0cbac",
         "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
         "patchSetId": 1
@@ -98,6 +188,24 @@
       "writtenOn": "2017-06-03T15:14:43Z",
       "side": 1,
       "message": "Out of interest: Does this test fail if you also add an arc between the task node and the PU node?",
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "183a412f_0738fbda",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-12T10:28:39Z",
+      "side": 1,
+      "message": "Test passes. I ignored this case as it is already being covered in unit test of PinTaskNode(which is being called internally by TaskScheduled). Please correct me if I am wrong.",
+      "parentUuid": "21a4eb76_32a0cbac",
       "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -127,6 +235,30 @@
     },
     {
       "key": {
+        "uuid": "0743f436_c7da50a0",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 655,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-12T10:28:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96918b2c_0c0bccb0",
+      "range": {
+        "startLine": 653,
+        "startChar": 0,
+        "endLine": 655,
+        "endChar": 30
+      },
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bcf316c6_12b9dcfb",
         "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
         "patchSetId": 1
@@ -138,6 +270,24 @@
       "writtenOn": "2017-06-02T17:56:38Z",
       "side": 1,
       "message": "The test should also check that no *other* extraneous arcs have been added.",
+      "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a9a6e8e7_c2527e55",
+        "filename": "src/scheduling/flow/flow_graph_manager_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 662,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-12T10:28:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bcf316c6_12b9dcfb",
       "revId": "5b4356e42b8e5fa475d5e056bad636f9c78e9078",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
