@@ -625,7 +625,7 @@ TEST_F(FlowGraphManagerTest, RemoveUnscheduledAggNode) {
 
 TEST_F(FlowGraphManagerTest, TaskScheduled) {
   FlowGraphManager* graph_manager = CreateGraphManagerUsingTrivialCost();
-  uint64_t num_arcs = 
+  uint64_t num_arcs =
     graph_manager->graph_change_manager_->flow_graph().NumArcs();
   // Add a task.
   JobDescriptor test_job;
@@ -667,7 +667,7 @@ TEST_F(FlowGraphManagerTest, TaskScheduled) {
   EXPECT_EQ(FindPtrOrNull(graph_manager->task_to_running_arc_, td_ptr->uid()),
             arc_to_res);
   // Check the method doesn't add any new arcs.
-  EXPECT_EQ(num_arcs+2,
+  EXPECT_EQ(num_arcs + 2,
             graph_manager->graph_change_manager_->flow_graph().NumArcs());
 }
 
