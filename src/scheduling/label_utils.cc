@@ -26,7 +26,7 @@ namespace firmament {
 namespace scheduler {
 
 bool SatisfiesLabelSelectors(const ResourceDescriptor& rd,
-                             const RepeatedField<LabelSelector>& selectors) {
+                             const RepeatedPtrField<LabelSelector>& selectors) {
   unordered_map<string, string> rd_labels;
   for (const auto& label : rd.labels()) {
     InsertIfNotPresent(&rd_labels, label.key(), label.value());
