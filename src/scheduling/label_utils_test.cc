@@ -76,8 +76,8 @@ class LabelUtilsTest : public ::testing::Test {
   }
 };
 
-TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE1) {
-  // Case1: selector type IN_SET, key match & values match
+TEST_F(LabelUtilsTest, SatisfiesLabelSelectorInSetMatch) {
+  // Test: Selector type IN_SET, key match & values match
   ResourceTopologyNodeDescriptor rtnd;
   CreateResourceWithLabels(&rtnd, "Machine1", "1", "One");
   // Checking resource label.
@@ -101,8 +101,8 @@ TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE1) {
   CHECK_EQ(ret, true);
 }
 
-TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE2) {
-  // Case2: selector type IN_SET, key match & values doesn't match.
+TEST_F(LabelUtilsTest, SatisfiesLabelSelectorInSetNoMatch) {
+  // Test: selector type IN_SET, key match & values doesn't match.
   ResourceTopologyNodeDescriptor rtnd;
   CreateResourceWithLabels(&rtnd, "Machine1", "1", "One");
   // Checking resource label.
@@ -126,8 +126,8 @@ TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE2) {
   CHECK_EQ(ret, false);
 }
 
-TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE3) {
-  // Case3: selector type IN_SET, key doesn't match & values match.
+TEST_F(LabelUtilsTest, SatisfiesLabelSelectorInSetNoKeyMatch) {
+  // Test: selector type IN_SET, key doesn't match & values match.
   ResourceTopologyNodeDescriptor rtnd;
   CreateResourceWithLabels(&rtnd, "Machine1", "1", "One");
   // Checking resource label.
@@ -151,8 +151,8 @@ TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE3) {
   CHECK_EQ(ret, false);
 }
 
-TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE4) {
-  // Case4: selector type NOT_IN_SET, key match & values match.
+TEST_F(LabelUtilsTest, SatisfiesLabelSelectorNotIntSetMatch) {
+  // Test: selector type NOT_IN_SET, key match & values match.
   ResourceTopologyNodeDescriptor rtnd;
   CreateResourceWithLabels(&rtnd, "Machine1", "1", "One");
   // Checking resource label.
@@ -176,8 +176,8 @@ TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE4) {
   CHECK_EQ(ret, false);
 }
 
-TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE5) {
-  // Case5: selector type NOT_IN_SET, key match & values doesn't match.
+TEST_F(LabelUtilsTest, SatisfiesLabelSelectorNotInSetNotMatch) {
+  // Test: selector type NOT_IN_SET, key match & values doesn't match.
   ResourceTopologyNodeDescriptor rtnd;
   CreateResourceWithLabels(&rtnd, "Machine1", "1", "One");
   // Checking resource label.
@@ -201,8 +201,8 @@ TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE5) {
   CHECK_EQ(ret, true);
 }
 
-TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE6) {
-  // Case6: selector type NOT_IN_SET, key doesn't match & values match.
+TEST_F(LabelUtilsTest, SatisfiesLabelSelectorNotIntSetKeyNotMatch) {
+  // Test: selector type NOT_IN_SET, key doesn't match & values match.
   ResourceTopologyNodeDescriptor rtnd;
   CreateResourceWithLabels(&rtnd, "Machine1", "1", "One");
   // Checking resource label.
@@ -226,8 +226,8 @@ TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE6) {
   CHECK_EQ(ret, true);
 }
 
-TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE7) {
-  // Case7: selector type EXISTS_KEY, key exists
+TEST_F(LabelUtilsTest, SatisfiesLabelSelectorExistsKey) {
+  // Test: selector type EXISTS_KEY, key exists
   ResourceTopologyNodeDescriptor rtnd;
   CreateResourceWithLabels(&rtnd, "Machine1", "1", "One");
   // Checking resource label.
@@ -251,8 +251,8 @@ TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE7) {
   CHECK_EQ(ret, true);
 }
 
-TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE8) {
-  // Case8: selector type EXISTS_KEY, key doesn't exists
+TEST_F(LabelUtilsTest, SatisfiesLabelSelectorExistsKeyNoKey) {
+  // Test: selector type EXISTS_KEY, key doesn't exists
   ResourceTopologyNodeDescriptor rtnd;
   CreateResourceWithLabels(&rtnd, "Machine1", "1", "One");
   // Checking resource label.
@@ -276,8 +276,8 @@ TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE8) {
   CHECK_EQ(ret, false);
 }
 
-TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE9) {
-  // Case9: selector type NOT_EXISTS_KEY, key exists
+TEST_F(LabelUtilsTest, SatisfiesLabelSelectorNotExistsKeyKeyExists) {
+  // Test: selector type NOT_EXISTS_KEY, key exists
   ResourceTopologyNodeDescriptor rtnd;
   CreateResourceWithLabels(&rtnd, "Machine1", "1", "One");
   // Checking resource label.
@@ -301,8 +301,8 @@ TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE9) {
   CHECK_EQ(ret, false);
 }
 
-TEST_F(LabelUtilsTest, SatisfiesLabelSelector_CASE10) {
-  // Case10: selector type NOT_EXISTS_KEY, key doesn't exists
+TEST_F(LabelUtilsTest, SatisfiesLabelSelectorNotExistsKeyNoKey) {
+  // Test: selector type NOT_EXISTS_KEY, key doesn't exists
   ResourceTopologyNodeDescriptor rtnd;
   CreateResourceWithLabels(&rtnd, "Machine1", "1", "One");
   // Checking resource label.
