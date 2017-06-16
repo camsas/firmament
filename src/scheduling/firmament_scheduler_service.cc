@@ -421,14 +421,13 @@ class FirmamentSchedulerServiceImpl final :
   Status AddNodeStats(ServerContext* context,
                       const ResourceStats* resource_stats,
                       ResourceStatsResponse* reply) override {
-    ResourceID_t res_id =
-      ResourceIDFromString(resource_stats->resource_uid().resource_uid());
+    ResourceID_t res_id = ResourceIDFromString(resource_stats->resource_id());
     ResourceStatus* rs_ptr = FindPtrOrNull(*resource_map_, res_id);
     if (rs_ptr == NULL || rs_ptr->mutable_descriptor() == NULL) {
       reply->set_type(NodeReplyType::NODE_NOT_FOUND);
       return Status::OK;
     }
-    kb_populator_->PopulateNodeStats(res_id, resource_stats);
+    knowledge_base_->AddMachineSample(*resource_stats);
     return Status::OK;
   }
 

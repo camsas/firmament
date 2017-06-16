@@ -21,8 +21,8 @@ message EventDescriptor {
   uint64 machine_id = 2;
   uint64 task_index = 3;
   uint64 job_id = 4;
-  float requested_cpu_cores = 5;
-  uint64 requested_ram = 6; // in MB
+  float requested_cpu_cores = 5; // in millicores
+  uint64 requested_ram = 6; // in KB
   uint32 priority = 7;
   uint32 scheduling_class = 8;
 }

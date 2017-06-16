@@ -60,7 +60,7 @@ void KnowledgeBaseSimulator::AddMachineSample(
     uint64_t current_simulation_time,
     ResourceDescriptor* rd_ptr,
     const unordered_map<TaskID_t, ResourceDescriptor*>& task_id_to_rd) {
-  MachinePerfStatisticsSample machine_stats;
+  ResourceStats machine_stats;
   machine_stats.set_resource_id(rd_ptr->uuid());
   machine_stats.set_timestamp(current_simulation_time);
   uint64_t mem_usage = 0;
@@ -95,15 +95,14 @@ void KnowledgeBaseSimulator::AddMachineSample(
     cpus_usage[core_id] -= task_stat->avg_mean_cpu_usage_;
   }
   // RAM stats
-  machine_stats.set_total_ram(rd_ptr->resource_capacity().ram_cap() *
-                              MB_TO_BYTES);
-  machine_stats.set_free_ram(
-      (rd_ptr->resource_capacity().ram_cap() - mem_usage) * MB_TO_BYTES);
+  machine_stats.set_mem_capacity(rd_ptr->resource_capacity().ram_cap());
+  machine_stats.set_mem_utilization(mem_usage);
   // CPU stats
   for (auto& usage : cpus_usage) {
-    CpuUsage* cpu_usage = machine_stats.add_cpus_usage();
-    // Transform to percentage.
-    cpu_usage->set_idle(usage * 100.0);
+    CpuStats* cpu_stats = machine_stats.add_cpus_stats();
+    // Capacity is 1000 millicores
+    cpu_cores->set_cpu_capacity(1000);
+    cpu_stats->set_cpu_utilization(1.0 - usage);
     // We don't have information to fill in the other fields.
   }
   // Disk stats

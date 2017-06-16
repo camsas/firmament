@@ -1,0 +1,33 @@
+// The Firmament project
+// Copyright (c) The Firmament Authors.
+
+syntax = "proto3";
+
+package firmament;
+
+message ResourceStats {
+  string resource_id = 1;
+  uint64 timestamp = 2;
+  // The first entry is the cpu usage of cpu0 and so on.
+  repeated CpuStats cpus_stats = 3;
+  // Memory stats (in KB).
+  int64 mem_allocatable = 4;
+  int64 mem_capacity = 5;
+  // Memory stats (fraction of total).
+  double mem_reservation = 6;
+  double mem_utilization = 7;
+  // Disk stats in KB
+  int64 disk_bw = 8;
+  // Network stats in KB
+  int64 net_rx_bw = 9;
+  int64 net_tx_bw = 10;
+}
+
+message CpuStats {
+  // CPU stats in millicores.
+  int64 cpu_allocatable = 1;
+  int64 cpu_capacity = 2;
+  // CPU stats (fraction of total).
+  double cpu_reservation = 3;
+  double cpu_utilization = 4;
+}
