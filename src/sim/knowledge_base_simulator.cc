@@ -101,7 +101,7 @@ void KnowledgeBaseSimulator::AddMachineSample(
   for (auto& usage : cpus_usage) {
     CpuStats* cpu_stats = machine_stats.add_cpus_stats();
     // Capacity is 1000 millicores
-    cpu_cores->set_cpu_capacity(1000);
+    cpu_stats->set_cpu_capacity(1000);
     cpu_stats->set_cpu_utilization(1.0 - usage);
     // We don't have information to fill in the other fields.
   }
