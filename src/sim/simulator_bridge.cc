@@ -510,12 +510,30 @@ void SimulatorBridge::OnTaskMigration(TaskDescriptor* td_ptr,
 void SimulatorBridge::OnTaskPlacement(TaskDescriptor* td_ptr,
                                       ResourceDescriptor* rd_ptr) {
   vector<TaskEndRuntimes> tasks_end_time;
-  task_interference_model_->OnTaskPlacement(
-      simulated_time_->GetCurrentTimestamp(),
-      td_ptr,
-      ResourceIDFromString(rd_ptr->uuid()),
-      &tasks_end_time);
-  UpdateTaskEndEvents(tasks_end_time);
+  TraceTaskIdentifier* ti_ptr = FindOrNull(task_id_to_identifier_, td_ptr->uid());
+  CHECK_NOTNULL(ti_ptr);
+  if (ti_ptr->job_id == 0 && ti_ptr->task_index == 0) {
+    // The task with job_id 0 and task_index 0 is a synthetic task that we
+    // submit to trigger a second round of scheduling after the first one
+    // completes. The purpose of this round is to push flow through the
+    // running arcs to make sure that future runs will not take a long time.
+    // However, we also do not advance the time when scheduler is running for
+    // the first two runs. Thus, this tasks may end up with a start_time
+    // smaller than submit_time. Here, we make sure that's not the case.
+    task_interference_model_->OnTaskPlacement(
+        td_ptr->submit_time(),
+        td_ptr,
+        ResourceIDFromString(rd_ptr->uuid()),
+        &tasks_end_time);
+    UpdateTaskEndEvents(tasks_end_time);
+  } else {
+    task_interference_model_->OnTaskPlacement(
+        simulated_time_->GetCurrentTimestamp(),
+        td_ptr,
+        ResourceIDFromString(rd_ptr->uuid()),
+        &tasks_end_time);
+    UpdateTaskEndEvents(tasks_end_time);
+  }
 }
 
 JobDescriptor* SimulatorBridge::PopulateJob(uint64_t trace_job_id) {
