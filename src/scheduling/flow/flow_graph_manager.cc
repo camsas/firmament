@@ -187,11 +187,11 @@ void FlowGraphManager::AddResourceTopologyDFS(
       NodeForResourceID(ResourceIDFromString(rtnd_ptr->parent_id()));
     CHECK_NOTNULL(parent_node);
     CHECK(InsertIfNotPresent(&node_to_parent_node_map_, res_node, parent_node));
-    ArcCostCap arc_cost_cap =
+    ArcDescriptor arc_descriptor =
       cost_model_->ResourceNodeToResourceNode(*parent_node->rd_ptr_, *rd_ptr);
     graph_change_manager_->AddArc(
-        parent_node, res_node, arc_cost_cap.min_flow_,
-        arc_cost_cap.capacity_, arc_cost_cap.cost_,
+        parent_node, res_node, arc_descriptor.min_flow_,
+        arc_descriptor.capacity_, arc_descriptor.cost_,
         OTHER, ADD_ARC_BETWEEN_RES, "AddResourceTopologyDFS");
   }
 }
@@ -405,7 +405,7 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
       // This preference arc connects the same nodes as the running arc. Hence,
       // we just transform it into the running arc.
       added_running_arc = true;
-      ArcCostCap arc_cost_cap =
+      ArcDescriptor arc_descriptor =
         cost_model_->TaskContinuation(task_node->td_ptr_->uid());
       arc->type_ = RUNNING;
       // TODO(ionel): Task pinning should be handled from cost models. They
@@ -419,8 +419,8 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
         low_bound_capacity = 0;
       }
       graph_change_manager_->ChangeArc(
-          arc, low_bound_capacity, 1, arc_cost_cap.cost_, CHG_ARC_RUNNING_TASK,
-          "PinTaskToNode: transform to running arc");
+          arc, low_bound_capacity, 1, arc_descriptor.cost_,
+          CHG_ARC_RUNNING_TASK, "PinTaskToNode: transform to running arc");
       CHECK(InsertIfNotPresent(&task_to_running_arc_,
                                task_node->td_ptr_->uid(), arc));
     } else {
@@ -435,7 +435,7 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
   if (!added_running_arc) {
     // TODO(ionel): Task pinning should be handled from cost models. They
     // should return min_flow_ = 1
-    ArcCostCap arc_cost_cap =
+    ArcDescriptor arc_descriptor =
       cost_model_->TaskContinuation(task_node->td_ptr_->uid());
     uint64_t low_bound_capacity = 1;
     if (FLAGS_flow_scheduling_solver == "custom") {
@@ -447,7 +447,7 @@ void FlowGraphManager::PinTaskToNode(FlowGraphNode* task_node,
     }
     // Add a single arc from the task to the resource node
     FlowGraphArc* new_arc = graph_change_manager_->AddArc(
-        task_node, res_node, low_bound_capacity, 1, arc_cost_cap.cost_,
+        task_node, res_node, low_bound_capacity, 1, arc_descriptor.cost_,
         RUNNING, ADD_ARC_RUNNING_TASK, "PinTaskToNode: add running arc");
     CHECK(InsertIfNotPresent(&task_to_running_arc_,
                              task_node->td_ptr_->uid(), new_arc));
@@ -719,7 +719,7 @@ void FlowGraphManager::UpdateArcsForScheduledTask(FlowGraphNode* task_node,
   if (FLAGS_preemption) {
     // We do not remove any old arcs. We only add/change a running arc to
     // the resource.
-    ArcCostCap arc_cost_cap =
+    ArcDescriptor arc_descriptor =
       cost_model_->TaskContinuation(task_node->td_ptr_->uid());
     FlowGraphArc* running_arc =
       FindPtrOrNull(task_to_running_arc_, task_node->td_ptr_->uid());
@@ -729,14 +729,14 @@ void FlowGraphManager::UpdateArcsForScheduledTask(FlowGraphNode* task_node,
       // support multi-arcs.
       running_arc->type_ = RUNNING;
       graph_change_manager_->ChangeArc(
-          running_arc, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-          arc_cost_cap.cost_, CHG_ARC_RUNNING_TASK,
+          running_arc, arc_descriptor.min_flow_, arc_descriptor.capacity_,
+          arc_descriptor.cost_, CHG_ARC_RUNNING_TASK,
           "UpdateArcsForScheduledTask: transform to running arc");
     } else {
       running_arc = graph_change_manager_->AddArc(
-          task_node, res_node, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-          arc_cost_cap.cost_, RUNNING, ADD_ARC_RUNNING_TASK,
-          "UpdateArcsForScheduledTask: add running arc");
+          task_node, res_node, arc_descriptor.min_flow_,
+          arc_descriptor.capacity_, arc_descriptor.cost_, RUNNING,
+          ADD_ARC_RUNNING_TASK, "UpdateArcsForScheduledTask: add running arc");
       CHECK(InsertIfNotPresent(&task_to_running_arc_, task_node->td_ptr_->uid(),
                                running_arc));
     }
@@ -808,20 +808,20 @@ void FlowGraphManager::UpdateEquivToEquivArcs(
       if (!pref_ec_node) {
         pref_ec_node = AddEquivClassNode(pref_ec_id);
       }
-      ArcCostCap arc_cost_cap =
+      ArcDescriptor arc_descriptor =
         cost_model_->EquivClassToEquivClass(ec_node->ec_id_, pref_ec_id);
       FlowGraphArc* pref_ec_arc =
         graph_change_manager_->mutable_flow_graph()->GetArc(ec_node,
                                                             pref_ec_node);
       if (!pref_ec_arc) {
         graph_change_manager_->AddArc(
-            ec_node, pref_ec_node, arc_cost_cap.min_flow_,
-            arc_cost_cap.capacity_, arc_cost_cap.cost_, OTHER,
+            ec_node, pref_ec_node, arc_descriptor.min_flow_,
+            arc_descriptor.capacity_, arc_descriptor.cost_, OTHER,
             ADD_ARC_BETWEEN_EQUIV_CLASS, "UpdateEquivClassNode");
       } else {
         graph_change_manager_->ChangeArc(
-            pref_ec_arc, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-            arc_cost_cap.cost_, CHG_ARC_BETWEEN_EQUIV_CLASS,
+            pref_ec_arc, arc_descriptor.min_flow_, arc_descriptor.capacity_,
+            arc_descriptor.cost_, CHG_ARC_BETWEEN_EQUIV_CLASS,
             "UpdateEquivClassNode");
       }
       if (marked_nodes->find(pref_ec_node->id_) == marked_nodes->end()) {
@@ -854,21 +854,21 @@ void FlowGraphManager::UpdateEquivToResArcs(
       // The resource node should already exist because the cost models cannot
       // prefer a resource before it is added to the graph.
       CHECK_NOTNULL(pref_res_node);
-      ArcCostCap arc_cost_cap =
+      ArcDescriptor arc_descriptor =
         cost_model_->EquivClassToResourceNode(ec_node->ec_id_, pref_res_id);
       FlowGraphArc* pref_res_arc =
         graph_change_manager_->mutable_flow_graph()->GetArc(ec_node,
                                                             pref_res_node);
       if (!pref_res_arc) {
         graph_change_manager_->AddArc(
-            ec_node, pref_res_node, arc_cost_cap.min_flow_,
-            arc_cost_cap.capacity_, arc_cost_cap.cost_,
+            ec_node, pref_res_node, arc_descriptor.min_flow_,
+            arc_descriptor.capacity_, arc_descriptor.cost_,
             OTHER, ADD_ARC_EQUIV_CLASS_TO_RES, "UpdateEquivToResArcs");
 
       } else {
         graph_change_manager_->ChangeArc(
-            pref_res_arc, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-            arc_cost_cap.cost_, CHG_ARC_EQUIV_CLASS_TO_RES,
+            pref_res_arc, arc_descriptor.min_flow_, arc_descriptor.capacity_,
+            arc_descriptor.cost_, CHG_ARC_EQUIV_CLASS_TO_RES,
             "UpdateEquivToResArcs");
       }
       if (marked_nodes->find(pref_res_node->id_) == marked_nodes->end()) {
@@ -1040,12 +1040,12 @@ void FlowGraphManager::UpdateResOutgoingArcs(
     FlowGraphArc* arc = it->second;
     ++it;
     if (!arc->dst_node_->resource_id_.is_nil()) {
-      ArcCostCap arc_cost_cap =
+      ArcDescriptor arc_descriptor =
         cost_model_->ResourceNodeToResourceNode(*res_node->rd_ptr_,
                                                 *arc->dst_node_->rd_ptr_);
       graph_change_manager_->ChangeArc(
-          arc, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-          arc_cost_cap.cost_, CHG_ARC_BETWEEN_RES,
+          arc, arc_descriptor.min_flow_, arc_descriptor.capacity_,
+          arc_descriptor.cost_, CHG_ARC_BETWEEN_RES,
           "UpdateResOutgoingArcs");
       if (marked_nodes->find(arc->dst_node_->id_) == marked_nodes->end()) {
         // Add the dst node to the queue if it hasn't been marked yet.
@@ -1064,17 +1064,18 @@ void FlowGraphManager::UpdateResToSinkArc(FlowGraphNode* res_node) {
     CHECK_NOTNULL(sink_node_);
     FlowGraphArc* res_arc_sink =
       graph_change_manager_->mutable_flow_graph()->GetArc(res_node, sink_node_);
-    ArcCostCap arc_cost_cap =
+    ArcDescriptor arc_descriptor =
       cost_model_->LeafResourceNodeToSink(res_node->resource_id_);
     if (!res_arc_sink) {
       graph_change_manager_->AddArc(
-          res_node, sink_node_, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-          arc_cost_cap.cost_, OTHER, ADD_ARC_RES_TO_SINK, "UpdateResToSinkArc");
+          res_node, sink_node_, arc_descriptor.min_flow_,
+          arc_descriptor.capacity_, arc_descriptor.cost_, OTHER,
+          ADD_ARC_RES_TO_SINK, "UpdateResToSinkArc");
 
     } else {
       graph_change_manager_->ChangeArc(
-          res_arc_sink, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-          arc_cost_cap.cost_, CHG_ARC_RES_TO_SINK, "UpdateResToSinkArc");
+          res_arc_sink, arc_descriptor.min_flow_, arc_descriptor.capacity_,
+          arc_descriptor.cost_, CHG_ARC_RES_TO_SINK, "UpdateResToSinkArc");
     }
   } else {
     LOG(FATAL) << "Updating an arc from a non-PU to the sink";
@@ -1090,11 +1091,11 @@ void FlowGraphManager::UpdateRunningTaskNode(
   FlowGraphArc* running_arc = FindPtrOrNull(task_to_running_arc_,
                                             task_node->td_ptr_->uid());
   CHECK_NOTNULL(running_arc);
-  ArcCostCap arc_cost_cap =
+  ArcDescriptor arc_descriptor =
     cost_model_->TaskContinuation(task_node->td_ptr_->uid());
   graph_change_manager_->ChangeArc(
-      running_arc, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-      arc_cost_cap.cost_, CHG_ARC_TASK_TO_RES,
+      running_arc, arc_descriptor.min_flow_, arc_descriptor.capacity_,
+      arc_descriptor.cost_, CHG_ARC_TASK_TO_RES,
       "UpdateRunningTaskNode: continuation cost");
   if (FLAGS_preemption) {
     UpdateRunningTaskToUnscheduledAggArc(task_node);
@@ -1117,11 +1118,11 @@ void FlowGraphManager::UpdateRunningTaskToUnscheduledAggArc(
     graph_change_manager_->mutable_flow_graph()->GetArc(task_node,
                                                         unsched_agg_node);
   CHECK_NOTNULL(unsched_arc);
-  ArcCostCap arc_cost_cap =
+  ArcDescriptor arc_descriptor =
     cost_model_->TaskPreemption(task_node->td_ptr_->uid());
   graph_change_manager_->ChangeArc(
-      unsched_arc, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-      arc_cost_cap.cost_, CHG_ARC_TO_UNSCHED,
+      unsched_arc, arc_descriptor.min_flow_, arc_descriptor.capacity_,
+      arc_descriptor.cost_, CHG_ARC_TO_UNSCHED,
       "UpdateRunningTaskToUnscheduledAggArc");
 }
 
@@ -1154,7 +1155,7 @@ void FlowGraphManager::UpdateTaskToEquivArcs(
       if (!pref_ec_node) {
         pref_ec_node = AddEquivClassNode(pref_ec_id);
       }
-      ArcCostCap arc_cost_cap =
+      ArcDescriptor arc_descriptor =
         cost_model_->TaskToEquivClassAggregator(task_node->td_ptr_->uid(),
                                                 pref_ec_id);
       FlowGraphArc* pref_ec_arc =
@@ -1162,14 +1163,14 @@ void FlowGraphManager::UpdateTaskToEquivArcs(
                                                             pref_ec_node);
       if (!pref_ec_arc) {
         graph_change_manager_->AddArc(
-            task_node, pref_ec_node, arc_cost_cap.min_flow_,
-            arc_cost_cap.capacity_, arc_cost_cap.cost_, OTHER,
+            task_node, pref_ec_node, arc_descriptor.min_flow_,
+            arc_descriptor.capacity_, arc_descriptor.cost_, OTHER,
             ADD_ARC_TASK_TO_EQUIV_CLASS, "UpdateTaskToEquivArcs");
 
       } else {
         graph_change_manager_->ChangeArc(
-            pref_ec_arc, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-            arc_cost_cap.cost_, CHG_ARC_TASK_TO_EQUIV_CLASS,
+            pref_ec_arc, arc_descriptor.min_flow_, arc_descriptor.capacity_,
+            arc_descriptor.cost_, CHG_ARC_TASK_TO_EQUIV_CLASS,
             "UpdateTaskToEquivArcs");
       }
       if (marked_nodes->find(pref_ec_node->id_) == marked_nodes->end()) {
@@ -1203,21 +1204,21 @@ void FlowGraphManager::UpdateTaskToResArcs(
       // The resource node should already exist because the cost models cannot
       // prefer a resource before it is added to the graph.
       CHECK_NOTNULL(pref_res_node);
-      ArcCostCap arc_cost_cap =
+      ArcDescriptor arc_descriptor =
         cost_model_->TaskToResourceNode(task_node->td_ptr_->uid(), pref_res_id);
       FlowGraphArc* pref_res_arc =
         graph_change_manager_->mutable_flow_graph()->GetArc(task_node,
                                                             pref_res_node);
       if (!pref_res_arc) {
         graph_change_manager_->AddArc(
-            task_node, pref_res_node, arc_cost_cap.min_flow_,
-            arc_cost_cap.capacity_, arc_cost_cap.cost_, OTHER,
+            task_node, pref_res_node, arc_descriptor.min_flow_,
+            arc_descriptor.capacity_, arc_descriptor.cost_, OTHER,
             ADD_ARC_TASK_TO_RES, "UpdateTaskToResArcs");
       } else if (pref_res_arc->type_ != FlowGraphArcType::RUNNING) {
         // We don't change the cost of the arc if it's a running arc because
         // the arc is updated somewhere else. Moreover, the cost of running
         // arcs is returned by TaskContinuation.
-        graph_change_manager_->ChangeArcCost(pref_res_arc, arc_cost_cap.cost_,
+        graph_change_manager_->ChangeArcCost(pref_res_arc, arc_descriptor.cost_,
                                              CHG_ARC_TASK_TO_RES,
                                              "UpdateTaskToResArcs");
       }
@@ -1243,20 +1244,20 @@ FlowGraphNode* FlowGraphManager::UpdateTaskToUnscheduledAggArc(
   if (!unsched_agg_node) {
     unsched_agg_node = AddUnscheduledAggNode(task_node->job_id_);
   }
-  ArcCostCap arc_cost_cap =
+  ArcDescriptor arc_descriptor =
     cost_model_->TaskToUnscheduledAgg(task_node->td_ptr_->uid());
   FlowGraphArc* to_unsched_arc =
     graph_change_manager_->mutable_flow_graph()->GetArc(task_node,
                                                         unsched_agg_node);
   if (!to_unsched_arc) {
     graph_change_manager_->AddArc(
-        task_node, unsched_agg_node, arc_cost_cap.min_flow_,
-        arc_cost_cap.capacity_, arc_cost_cap.cost_, OTHER,
+        task_node, unsched_agg_node, arc_descriptor.min_flow_,
+        arc_descriptor.capacity_, arc_descriptor.cost_, OTHER,
         ADD_ARC_TO_UNSCHED, "UpdateTaskToUnscheduledAggArc");
   } else {
     graph_change_manager_->ChangeArc(
-        to_unsched_arc, arc_cost_cap.min_flow_, arc_cost_cap.capacity_,
-        arc_cost_cap.cost_, CHG_ARC_TO_UNSCHED,
+        to_unsched_arc, arc_descriptor.min_flow_, arc_descriptor.capacity_,
+        arc_descriptor.cost_, CHG_ARC_TO_UNSCHED,
         "UpdateTaskToUnscheduledAggArc");
   }
   return unsched_agg_node;
@@ -1273,22 +1274,22 @@ void FlowGraphManager::UpdateUnscheduledAggNode(
   FlowGraphArc* unsched_agg_sink_arc =
     graph_change_manager_->mutable_flow_graph()->GetArc(unsched_agg_node,
                                                         sink_node_);
-  ArcCostCap arc_cost_cap =
+  ArcDescriptor arc_descriptor =
     cost_model_->UnscheduledAggToSink(unsched_agg_node->job_id_);
   // TODO(ionel): Compute cap_delta and new_capacity in the cost_models.
   if (!unsched_agg_sink_arc) {
     CHECK_GE(cap_delta, 1);
     graph_change_manager_->AddArc(
-        unsched_agg_node, sink_node_, arc_cost_cap.min_flow_,
-        static_cast<uint64_t>(cap_delta), arc_cost_cap.cost_, OTHER,
+        unsched_agg_node, sink_node_, arc_descriptor.min_flow_,
+        static_cast<uint64_t>(cap_delta), arc_descriptor.cost_, OTHER,
         ADD_ARC_FROM_UNSCHED, "UpdateUnscheduledAggNode");
   } else {
     int64_t cap_upper_bound =
       static_cast<int64_t>(unsched_agg_sink_arc->cap_upper_bound_);
     uint64_t new_capacity = static_cast<uint64_t>(cap_upper_bound + cap_delta);
     graph_change_manager_->ChangeArc(
-        unsched_agg_sink_arc, arc_cost_cap.min_flow_,
-        new_capacity, arc_cost_cap.cost_, CHG_ARC_FROM_UNSCHED,
+        unsched_agg_sink_arc, arc_descriptor.min_flow_,
+        new_capacity, arc_descriptor.cost_, CHG_ARC_FROM_UNSCHED,
         "UpdateUnscheduledAggNode");
   }
 }

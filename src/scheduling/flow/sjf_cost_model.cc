@@ -63,7 +63,7 @@ const TaskDescriptor& SJFCostModel::GetTask(TaskID_t task_id) {
 
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
-ArcCostCap SJFCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
+ArcDescriptor SJFCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
   uint64_t now = time_manager_->GetCurrentTimestamp();
   uint64_t time_since_submit = now - td.submit_time();
@@ -77,8 +77,8 @@ ArcCostCap SJFCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
   Cost_t avg_runtime = static_cast<Cost_t>(
       knowledge_base_->GetAvgRuntimeForTEC(equiv_classes->front()));
   delete equiv_classes;
-  return ArcCostCap(max(static_cast<Cost_t>(WAIT_TIME_MULTIPLIER *
-                                            wait_time_centamillis),
+  return ArcDescriptor(max(static_cast<Cost_t>(WAIT_TIME_MULTIPLIER *
+                                               wait_time_centamillis),
                         avg_runtime * 100),
                     1ULL, 0ULL);
 }
@@ -87,8 +87,8 @@ ArcCostCap SJFCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
 // than zero affects all the unscheduled tasks. It is better to affect the cost
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
-ArcCostCap SJFCostModel::UnscheduledAggToSink(JobID_t job_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor SJFCostModel::UnscheduledAggToSink(JobID_t job_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
 // The cost from the task to the cluster aggregator models how expensive is a
@@ -104,51 +104,51 @@ Cost_t SJFCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   return avg_runtime * 100;
 }
 
-ArcCostCap SJFCostModel::TaskToResourceNode(TaskID_t task_id,
+ArcDescriptor SJFCostModel::TaskToResourceNode(TaskID_t task_id,
                                             ResourceID_t resource_id) {
-  return ArcCostCap(TaskToClusterAggCost(task_id), 1ULL, 0ULL);
+  return ArcDescriptor(TaskToClusterAggCost(task_id), 1ULL, 0ULL);
 }
 
-ArcCostCap SJFCostModel::ResourceNodeToResourceNode(
+ArcDescriptor SJFCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
-  return ArcCostCap(0LL, CapacityFromResNodeToParent(destination), 0ULL);
+  return ArcDescriptor(0LL, CapacityFromResNodeToParent(destination), 0ULL);
 }
 
 // The cost from the resource leaf to the sink is 0.
-ArcCostCap SJFCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
-  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
+ArcDescriptor SJFCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
+  return ArcDescriptor(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-ArcCostCap SJFCostModel::TaskContinuation(TaskID_t task_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor SJFCostModel::TaskContinuation(TaskID_t task_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap SJFCostModel::TaskPreemption(TaskID_t task_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor SJFCostModel::TaskPreemption(TaskID_t task_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap SJFCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                    EquivClass_t ec) {
+ArcDescriptor SJFCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                       EquivClass_t ec) {
   if (ec == cluster_aggregator_ec_)
-    return ArcCostCap(TaskToClusterAggCost(task_id) + 1, 1ULL, 0ULL);
+    return ArcDescriptor(TaskToClusterAggCost(task_id) + 1, 1ULL, 0ULL);
   else
-    return ArcCostCap(0LL, 1ULL, 0ULL);
+    return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap SJFCostModel::EquivClassToResourceNode(
+ArcDescriptor SJFCostModel::EquivClassToResourceNode(
     EquivClass_t tec,
     ResourceID_t res_id) {
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs);
   uint64_t num_free_slots = rs->descriptor().num_slots_below() -
     rs->descriptor().num_running_tasks_below();
-  return ArcCostCap(0LL, num_free_slots, 0ULL);
+  return ArcDescriptor(0LL, num_free_slots, 0ULL);
 }
 
-ArcCostCap SJFCostModel::EquivClassToEquivClass(EquivClass_t tec1,
-                                                EquivClass_t tec2) {
-  return ArcCostCap(0LL, 0ULL, 0ULL);
+ArcDescriptor SJFCostModel::EquivClassToEquivClass(EquivClass_t tec1,
+                                                   EquivClass_t tec2) {
+  return ArcDescriptor(0LL, 0ULL, 0ULL);
 }
 
 vector<EquivClass_t>* SJFCostModel::GetTaskEquivClasses(TaskID_t task_id) {

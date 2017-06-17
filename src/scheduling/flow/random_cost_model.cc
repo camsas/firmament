@@ -47,9 +47,9 @@ RandomCostModel::RandomCostModel(
 
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
-ArcCostCap RandomCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
+ArcDescriptor RandomCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
   int64_t half_max_arc_cost = FLAGS_flow_max_arc_cost / 2;
-  return ArcCostCap(
+  return ArcDescriptor(
        half_max_arc_cost + rand_r(&rand_seed_) % half_max_arc_cost + 1,
        1ULL, 0ULL);
 }
@@ -58,51 +58,51 @@ ArcCostCap RandomCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
 // than zero affects all the unscheduled tasks. It is better to affect the cost
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
-ArcCostCap RandomCostModel::UnscheduledAggToSink(JobID_t job_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor RandomCostModel::UnscheduledAggToSink(JobID_t job_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap RandomCostModel::TaskToResourceNode(TaskID_t task_id,
-                                               ResourceID_t resource_id) {
-  return ArcCostCap(rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 3) + 1,
-                    1ULL, 0ULL);
+ArcDescriptor RandomCostModel::TaskToResourceNode(TaskID_t task_id,
+                                                  ResourceID_t resource_id) {
+  return ArcDescriptor(rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 3) + 1,
+                       1ULL, 0ULL);
 }
 
-ArcCostCap RandomCostModel::ResourceNodeToResourceNode(
+ArcDescriptor RandomCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
-  return ArcCostCap(rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 4) + 1,
-                    CapacityFromResNodeToParent(destination), 0ULL);
+  return ArcDescriptor(rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 4) + 1,
+                       CapacityFromResNodeToParent(destination), 0ULL);
 }
 
 // The cost from the resource leaf to the sink is 0.
-ArcCostCap RandomCostModel::LeafResourceNodeToSink(
+ArcDescriptor RandomCostModel::LeafResourceNodeToSink(
     ResourceID_t resource_id) {
-  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
+  return ArcDescriptor(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-ArcCostCap RandomCostModel::TaskContinuation(TaskID_t task_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor RandomCostModel::TaskContinuation(TaskID_t task_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap RandomCostModel::TaskPreemption(TaskID_t task_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor RandomCostModel::TaskPreemption(TaskID_t task_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                       EquivClass_t ec) {
+ArcDescriptor RandomCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                          EquivClass_t ec) {
   // The cost of scheduling via the cluster aggregator; always slightly
   // less than the cost of leaving the task unscheduled
   if (ec == cluster_aggregator_ec_)
-    return ArcCostCap(
+    return ArcDescriptor(
         rand_r(&rand_seed_) % TaskToUnscheduledAgg(task_id).cost_ - 1,
         1ULL, 0ULL);
   else
     // XXX(malte): Implement other EC's costs!
-    return ArcCostCap(0LL, 1ULL, 0ULL);
+    return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap RandomCostModel::EquivClassToResourceNode(
+ArcDescriptor RandomCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
@@ -110,13 +110,13 @@ ArcCostCap RandomCostModel::EquivClassToResourceNode(
   uint64_t num_free_slots = rs->descriptor().num_slots_below() -
     rs->descriptor().num_running_tasks_below();
   Cost_t cost = rand_r(&rand_seed_) % (FLAGS_flow_max_arc_cost / 2) + 1;
-  return ArcCostCap(cost, num_free_slots, 0ULL);
+  return ArcDescriptor(cost, num_free_slots, 0ULL);
 }
 
-ArcCostCap RandomCostModel::EquivClassToEquivClass(
+ArcDescriptor RandomCostModel::EquivClassToEquivClass(
     EquivClass_t ec1,
     EquivClass_t ec2) {
-  return ArcCostCap(0LL, 0ULL, 0ULL);
+  return ArcDescriptor(0LL, 0ULL, 0ULL);
 }
 
 vector<EquivClass_t>* RandomCostModel::GetTaskEquivClasses(

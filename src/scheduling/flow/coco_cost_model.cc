@@ -502,7 +502,7 @@ vector<EquivClass_t>* CocoCostModel::GetEquivClassToEquivClassesArcs(
 
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
-ArcCostCap CocoCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
+ArcDescriptor CocoCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
   // Baseline value (based on resource request)
   CostVector_t cost_vector;
@@ -539,15 +539,15 @@ ArcCostCap CocoCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
     VLOG(2) << "  Wait time component: " << wait_time_cost;
     VLOG(2) << "  TOTAL: " << (wait_time_cost + base_cost);
   }
-  return ArcCostCap(wait_time_cost + base_cost, 1ULL, 0ULL);
+  return ArcDescriptor(wait_time_cost + base_cost, 1ULL, 0ULL);
 }
 
 // The cost from the unscheduled to the sink is 0. Setting it to a value greater
 // than zero affects all the unscheduled tasks. It is better to affect the cost
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
-ArcCostCap CocoCostModel::UnscheduledAggToSink(JobID_t job_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor CocoCostModel::UnscheduledAggToSink(JobID_t job_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
 // The cost from the task to the cluster aggregator models how expensive is a
@@ -558,15 +558,15 @@ Cost_t CocoCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   return infinity_;
 }
 
-ArcCostCap CocoCostModel::TaskToResourceNode(TaskID_t task_id,
-                                             ResourceID_t resource_id) {
+ArcDescriptor CocoCostModel::TaskToResourceNode(TaskID_t task_id,
+                                                ResourceID_t resource_id) {
   // Not used in CoCo, as we don't have direct arcs from tasks to resources;
   // we only connect via TECs.
   LOG(ERROR) << "Arcs from tasks to resource nodes should not be present";
-  return ArcCostCap(0LL, 0ULL, 0ULL);
+  return ArcDescriptor(0LL, 0ULL, 0ULL);
 }
 
-ArcCostCap CocoCostModel::ResourceNodeToResourceNode(
+ArcDescriptor CocoCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
   // Get the RD for the machine corresponding to this resource
@@ -617,32 +617,33 @@ ArcCostCap CocoCostModel::ResourceNodeToResourceNode(
     VLOG(2) << "  Flattened: " << flat_cost;
   }
   // Return the flattened vector
-  return ArcCostCap(flat_cost, CapacityFromResNodeToParent(destination), 0ULL);
+  return ArcDescriptor(flat_cost, CapacityFromResNodeToParent(destination),
+                       0ULL);
 }
 
 // The cost from the resource leaf to the sink is 0.
-ArcCostCap CocoCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
-  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
+ArcDescriptor CocoCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
+  return ArcDescriptor(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-ArcCostCap CocoCostModel::TaskContinuation(TaskID_t task_id) {
+ArcDescriptor CocoCostModel::TaskContinuation(TaskID_t task_id) {
   // TODO(malte): Implement!
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap CocoCostModel::TaskPreemption(TaskID_t task_id) {
+ArcDescriptor CocoCostModel::TaskPreemption(TaskID_t task_id) {
   // TODO(malte): Implement!
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                     EquivClass_t tec) {
+ArcDescriptor CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                        EquivClass_t tec) {
   // Set cost from task to TA proportional to its resource requirements
   const TaskDescriptor& td = GetTask(task_id);
   if (!td.has_resource_request()) {
     LOG(ERROR) << "Task " << task_id << " does not have a resource "
                << "specification!";
-    return ArcCostCap(0LL, 0ULL, 0ULL);
+    return ArcDescriptor(0LL, 0ULL, 0ULL);
   }
   // Compute resource request dimensions (normalized by largest machine)
   CostVector_t cost_vector;
@@ -666,10 +667,10 @@ ArcCostCap CocoCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
     VLOG(2) << "  Flattened: " << FlattenCostVector(cost_vector);
   }
   // Return the flattened vector
-  return ArcCostCap(FlattenCostVector(cost_vector), 1ULL, 0ULL);
+  return ArcDescriptor(FlattenCostVector(cost_vector), 1ULL, 0ULL);
 }
 
-ArcCostCap CocoCostModel::EquivClassToResourceNode(
+ArcDescriptor CocoCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
   if (ContainsKey(task_aggs_, ec)) {
@@ -705,20 +706,20 @@ ArcCostCap CocoCostModel::EquivClassToResourceNode(
     }
     VLOG(2) << num_tasks_that_fit << " tasks of TEC " << ec << " fit under "
             << res_id << ", at interference score of " << score;
-    return ArcCostCap(score, num_tasks_that_fit, 0ULL);
+    return ArcDescriptor(score, num_tasks_that_fit, 0ULL);
   } else {
     LOG(WARNING) << "Unknown EC " << ec << " is not a TEC, so returning "
                  << "zero cost!";
     // No cost; no capacity
-    return ArcCostCap(0LL, 0ULL, 0ULL);
+    return ArcDescriptor(0LL, 0ULL, 0ULL);
   }
 }
 
-ArcCostCap CocoCostModel::EquivClassToEquivClass(
+ArcDescriptor CocoCostModel::EquivClassToEquivClass(
     EquivClass_t tec1,
     EquivClass_t tec2) {
   LOG(ERROR) << "Arcs from equiv class to equiv class should not be present";
-  return ArcCostCap(0LL, 0ULL, 0ULL);
+  return ArcDescriptor(0LL, 0ULL, 0ULL);
 }
 
 ResourceID_t CocoCostModel::MachineResIDForResource(ResourceID_t res_id) {

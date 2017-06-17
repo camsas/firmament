@@ -43,52 +43,52 @@ NetCostModel::NetCostModel(shared_ptr<ResourceMap_t> resource_map,
     knowledge_base_(knowledge_base) {
 }
 
-ArcCostCap NetCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
-  return ArcCostCap(2560000, 1ULL, 0ULL);
+ArcDescriptor NetCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
+  return ArcDescriptor(2560000, 1ULL, 0ULL);
 }
 
-ArcCostCap NetCostModel::UnscheduledAggToSink(JobID_t job_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor NetCostModel::UnscheduledAggToSink(JobID_t job_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap NetCostModel::TaskToResourceNode(TaskID_t task_id,
-                                            ResourceID_t resource_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor NetCostModel::TaskToResourceNode(TaskID_t task_id,
+                                               ResourceID_t resource_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap NetCostModel::ResourceNodeToResourceNode(
+ArcDescriptor NetCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
-  return ArcCostCap(0LL, CapacityFromResNodeToParent(destination), 0ULL);
+  return ArcDescriptor(0LL, CapacityFromResNodeToParent(destination), 0ULL);
 }
 
-ArcCostCap NetCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
-  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
+ArcDescriptor NetCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
+  return ArcDescriptor(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-ArcCostCap NetCostModel::TaskContinuation(TaskID_t task_id) {
+ArcDescriptor NetCostModel::TaskContinuation(TaskID_t task_id) {
   // TODO(ionel): Implement before running with preemption enabled.
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap NetCostModel::TaskPreemption(TaskID_t task_id) {
+ArcDescriptor NetCostModel::TaskPreemption(TaskID_t task_id) {
   // TODO(ionel): Implement before running with preemption enabled.
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap NetCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                    EquivClass_t ec) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor NetCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                       EquivClass_t ec) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap NetCostModel::EquivClassToResourceNode(
+ArcDescriptor NetCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
   // The arcs between ECs an machine can only carry unit flow.
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap NetCostModel::EquivClassToEquivClass(
+ArcDescriptor NetCostModel::EquivClassToEquivClass(
     EquivClass_t ec1,
     EquivClass_t ec2) {
   uint64_t* required_net_rx_bw = FindOrNull(ec_rx_bw_requirement_, ec1);
@@ -104,12 +104,12 @@ ArcCostCap NetCostModel::EquivClassToEquivClass(
   CHECK_NOTNULL(index);
   uint64_t ec_index = *index + 1;
   if (available_net_rx_bw < *required_net_rx_bw * ec_index) {
-    return ArcCostCap(0LL, 0ULL, 0ULL);
+    return ArcDescriptor(0LL, 0ULL, 0ULL);
   }
-  return ArcCostCap(static_cast<int64_t>(ec_index) *
-                    static_cast<int64_t>(*required_net_rx_bw) -
-                    static_cast<int64_t>(available_net_rx_bw) + 1280000,
-                    1ULL, 0ULL);
+  return ArcDescriptor(static_cast<int64_t>(ec_index) *
+                       static_cast<int64_t>(*required_net_rx_bw) -
+                       static_cast<int64_t>(available_net_rx_bw) + 1280000,
+                       1ULL, 0ULL);
 }
 
 vector<EquivClass_t>* NetCostModel::GetTaskEquivClasses(

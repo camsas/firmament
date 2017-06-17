@@ -39,64 +39,64 @@ VoidCostModel::VoidCostModel(shared_ptr<ResourceMap_t> resource_map,
     : resource_map_(resource_map), task_map_(task_map) {
 }
 
-ArcCostCap VoidCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor VoidCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap VoidCostModel::UnscheduledAggToSink(JobID_t job_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor VoidCostModel::UnscheduledAggToSink(JobID_t job_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
 Cost_t VoidCostModel::TaskToClusterAggCost(TaskID_t task_id) {
   return 0LL;
 }
 
-ArcCostCap VoidCostModel::TaskToResourceNode(TaskID_t task_id,
-                                             ResourceID_t resource_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor VoidCostModel::TaskToResourceNode(TaskID_t task_id,
+                                                ResourceID_t resource_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
 Cost_t VoidCostModel::ClusterAggToResourceNodeCost(ResourceID_t target) {
   return 0LL;
 }
 
-ArcCostCap VoidCostModel::ResourceNodeToResourceNode(
+ArcDescriptor VoidCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
-  return ArcCostCap(0LL, CapacityFromResNodeToParent(destination), 0ULL);
+  return ArcDescriptor(0LL, CapacityFromResNodeToParent(destination), 0ULL);
 }
 
-ArcCostCap VoidCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
-  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
+ArcDescriptor VoidCostModel::LeafResourceNodeToSink(ResourceID_t resource_id) {
+  return ArcDescriptor(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-ArcCostCap VoidCostModel::TaskContinuation(TaskID_t task_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor VoidCostModel::TaskContinuation(TaskID_t task_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap VoidCostModel::TaskPreemption(TaskID_t task_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor VoidCostModel::TaskPreemption(TaskID_t task_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap VoidCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                     EquivClass_t tec) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor VoidCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                        EquivClass_t tec) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap VoidCostModel::EquivClassToResourceNode(
+ArcDescriptor VoidCostModel::EquivClassToResourceNode(
     EquivClass_t tec,
     ResourceID_t res_id) {
   ResourceStatus* rs = FindPtrOrNull(*resource_map_, res_id);
   CHECK_NOTNULL(rs);
   uint64_t num_free_slots = rs->descriptor().num_slots_below() -
     rs->descriptor().num_running_tasks_below();
-  return ArcCostCap(0LL, num_free_slots, 0ULL);
+  return ArcDescriptor(0LL, num_free_slots, 0ULL);
 }
 
-ArcCostCap VoidCostModel::EquivClassToEquivClass(
+ArcDescriptor VoidCostModel::EquivClassToEquivClass(
     EquivClass_t tec1,
     EquivClass_t tec2) {
-  return ArcCostCap(0LL, 0ULL, 0ULL);
+  return ArcDescriptor(0LL, 0ULL, 0ULL);
 }
 
 vector<EquivClass_t>* VoidCostModel::GetTaskEquivClasses(TaskID_t task_id) {

@@ -29,22 +29,22 @@ namespace firmament {
 
 class MockCostModel : public CostModelInterface {
  public:
-  MOCK_METHOD1(TaskToUnscheduledAgg, ArcCostCap(TaskID_t task_id));
-  MOCK_METHOD1(UnscheduledAggToSink, ArcCostCap(JobID_t job_id));
+  MOCK_METHOD1(TaskToUnscheduledAgg, ArcDescriptor(TaskID_t task_id));
+  MOCK_METHOD1(UnscheduledAggToSink, ArcDescriptor(JobID_t job_id));
   MOCK_METHOD2(TaskToResourceNode,
-               ArcCostCap(TaskID_t task_id, ResourceID_t res_id));
+               ArcDescriptor(TaskID_t task_id, ResourceID_t res_id));
   MOCK_METHOD2(ResourceNodeToResourceNode,
-               ArcCostCap(const ResourceDescriptor& src,
+               ArcDescriptor(const ResourceDescriptor& src,
                           const ResourceDescriptor& dst));
-  MOCK_METHOD1(LeafResourceNodeToSink, ArcCostCap(ResourceID_t res_id));
-  MOCK_METHOD1(TaskContinuation, ArcCostCap(TaskID_t task_id));
-  MOCK_METHOD1(TaskPreemption, ArcCostCap(TaskID_t task_id));
+  MOCK_METHOD1(LeafResourceNodeToSink, ArcDescriptor(ResourceID_t res_id));
+  MOCK_METHOD1(TaskContinuation, ArcDescriptor(TaskID_t task_id));
+  MOCK_METHOD1(TaskPreemption, ArcDescriptor(TaskID_t task_id));
   MOCK_METHOD2(TaskToEquivClassAggregator,
-               ArcCostCap(TaskID_t task_id, EquivClass_t ec));
+               ArcDescriptor(TaskID_t task_id, EquivClass_t ec));
   MOCK_METHOD2(EquivClassToResourceNode,
-               ArcCostCap(EquivClass_t ec, ResourceID_t res_id));
+               ArcDescriptor(EquivClass_t ec, ResourceID_t res_id));
   MOCK_METHOD2(EquivClassToEquivClass,
-               ArcCostCap(EquivClass_t ec1, EquivClass_t ec2));
+               ArcDescriptor(EquivClass_t ec1, EquivClass_t ec2));
   MOCK_METHOD1(GetTaskEquivClasses, vector<EquivClass_t>*(TaskID_t task_id));
   MOCK_METHOD1(GetOutgoingEquivClassPrefArcs,
                vector<ResourceID_t>*(EquivClass_t ec));

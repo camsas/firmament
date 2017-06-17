@@ -50,13 +50,14 @@ enum CostModelType {
   COST_MODEL_NET = 8,
 };
 
-struct ArcCostCap {
-  ArcCostCap(Cost_t cost, uint64_t capacity, uint64_t min_flow) : cost_(cost),
-    capacity_(capacity), min_flow_(min_flow) {
+struct ArcDescriptor {
+  ArcDescriptor(Cost_t cost, uint64_t capacity, uint64_t min_flow) :
+    cost_(cost), capacity_(capacity), min_flow_(min_flow), gain_(1.0) {
   }
   Cost_t cost_;
   uint64_t capacity_;
   uint64_t min_flow_;
+  double gain_;
 };
 
 // Forward declarations to avoid cyclic dependencies
@@ -73,25 +74,25 @@ class CostModelInterface {
    * calls. It is used to adjust the cost of leaving a task unscheduled after
    * each iteration.
    */
-  virtual ArcCostCap TaskToUnscheduledAgg(TaskID_t task_id) = 0;
+  virtual ArcDescriptor TaskToUnscheduledAgg(TaskID_t task_id) = 0;
   // TODO(ionel): The returned capacity is ignored because the cost models
   // do not set it correctly.
-  virtual ArcCostCap UnscheduledAggToSink(JobID_t job_id) = 0;
+  virtual ArcDescriptor UnscheduledAggToSink(JobID_t job_id) = 0;
 
   /**
    * Get the cost, the capacity and the minimum flow of a preference arc from a
    * task node to a resource node.
    * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual ArcCostCap TaskToResourceNode(TaskID_t task_id,
-                                        ResourceID_t resource_id) = 0;
+  virtual ArcDescriptor TaskToResourceNode(TaskID_t task_id,
+                                           ResourceID_t resource_id) = 0;
 
   /**
    * Get the cost, the capacity and the minimum flow of an arc between two
    * resource nodes.
    * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual ArcCostCap ResourceNodeToResourceNode(
+  virtual ArcDescriptor ResourceNodeToResourceNode(
       const ResourceDescriptor& source,
       const ResourceDescriptor& destination) = 0;
 
@@ -100,13 +101,13 @@ class CostModelInterface {
    * to the sink.
    * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual ArcCostCap LeafResourceNodeToSink(ResourceID_t resource_id) = 0;
+  virtual ArcDescriptor LeafResourceNodeToSink(ResourceID_t resource_id) = 0;
 
   // Costs pertaining to preemption (i.e. already running tasks)
   // TODO(ionel): TaskContinuation should return min_flow_requirement = 1 when
   // task can not be preempted.
-  virtual ArcCostCap TaskContinuation(TaskID_t task_id) = 0;
-  virtual ArcCostCap TaskPreemption(TaskID_t task_id) = 0;
+  virtual ArcDescriptor TaskContinuation(TaskID_t task_id) = 0;
+  virtual ArcDescriptor TaskPreemption(TaskID_t task_id) = 0;
 
   /**
    * Get the cost, the capacity and the minimum flow of an arc from a task node
@@ -115,8 +116,8 @@ class CostModelInterface {
    * @param tec the destination equivalence class
    * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual ArcCostCap TaskToEquivClassAggregator(TaskID_t task_id,
-                                                EquivClass_t tec) = 0;
+  virtual ArcDescriptor TaskToEquivClassAggregator(TaskID_t task_id,
+                                                   EquivClass_t tec) = 0;
 
   /**
    * Get the cost, the capacity and the minimum flow of an arc from an
@@ -125,8 +126,8 @@ class CostModelInterface {
    * @param res_id the destination resource
    * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual ArcCostCap EquivClassToResourceNode(EquivClass_t tec,
-                                              ResourceID_t res_id) = 0;
+  virtual ArcDescriptor EquivClassToResourceNode(EquivClass_t tec,
+                                                 ResourceID_t res_id) = 0;
 
   /**
    * Get the cost, the capacity and the minimum flow of an arc from an
@@ -135,8 +136,8 @@ class CostModelInterface {
    * @param tec2 the destination equivalence class
    * @return the cost, min flow requirement and max capacity of the arc
    */
-  virtual ArcCostCap EquivClassToEquivClass(EquivClass_t tec1,
-                                            EquivClass_t tec2) = 0;
+  virtual ArcDescriptor EquivClassToEquivClass(EquivClass_t tec1,
+                                               EquivClass_t tec2) = 0;
 
   /**
    * Get the equivalence classes of a task.

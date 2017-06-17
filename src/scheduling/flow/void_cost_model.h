@@ -38,23 +38,23 @@ class VoidCostModel : public CostModelInterface {
   explicit VoidCostModel(shared_ptr<ResourceMap_t> resource_map,
                          shared_ptr<TaskMap_t> task_map);
   // Costs pertaining to leaving tasks unscheduled
-  ArcCostCap TaskToUnscheduledAgg(TaskID_t task_id);
-  ArcCostCap UnscheduledAggToSink(JobID_t job_id);
+  ArcDescriptor TaskToUnscheduledAgg(TaskID_t task_id);
+  ArcDescriptor UnscheduledAggToSink(JobID_t job_id);
   // Per-task costs (into the resource topology)
-  ArcCostCap TaskToResourceNode(TaskID_t task_id, ResourceID_t resource_id);
+  ArcDescriptor TaskToResourceNode(TaskID_t task_id, ResourceID_t resource_id);
   // Costs within the resource topology
   Cost_t ClusterAggToResourceNodeCost(ResourceID_t target);
-  ArcCostCap ResourceNodeToResourceNode(
+  ArcDescriptor ResourceNodeToResourceNode(
       const ResourceDescriptor& source,
       const ResourceDescriptor& destination);
-  ArcCostCap LeafResourceNodeToSink(ResourceID_t resource_id);
+  ArcDescriptor LeafResourceNodeToSink(ResourceID_t resource_id);
   // Costs pertaining to preemption (i.e. already running tasks)
-  ArcCostCap TaskContinuation(TaskID_t task_id);
-  ArcCostCap TaskPreemption(TaskID_t task_id);
+  ArcDescriptor TaskContinuation(TaskID_t task_id);
+  ArcDescriptor TaskPreemption(TaskID_t task_id);
   // Costs to equivalence class aggregators
-  ArcCostCap TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
-  ArcCostCap EquivClassToResourceNode(EquivClass_t tec, ResourceID_t res_id);
-  ArcCostCap EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
+  ArcDescriptor TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
+  ArcDescriptor EquivClassToResourceNode(EquivClass_t tec, ResourceID_t res_id);
+  ArcDescriptor EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
   // Get the type of equiv class.
   vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
   vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(EquivClass_t tec);

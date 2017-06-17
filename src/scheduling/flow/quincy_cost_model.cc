@@ -85,7 +85,7 @@ QuincyCostModel::~QuincyCostModel() {
 
 // The cost of leaving a task unscheduled should be higher than the cost of
 // scheduling it.
-ArcCostCap QuincyCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
+ArcDescriptor QuincyCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
   int64_t no_delay_offset = 0;
   if (FLAGS_quincy_no_scheduling_delay) {
@@ -98,8 +98,9 @@ ArcCostCap QuincyCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
   if (td.priority() == 1000) {
     // XXX(ionel): HACK! This forces synthetic tasks to be scheduled while
     // replaying a Google trace.
-    return ArcCostCap(100 + FLAGS_quincy_positive_cost_offset + no_delay_offset,
-                      1ULL, 0ULL);
+    return ArcDescriptor(
+        100 + FLAGS_quincy_positive_cost_offset + no_delay_offset,
+        1ULL, 0ULL);
   }
   int64_t total_unscheduled_time =
     static_cast<int64_t>(td.total_unscheduled_time());
@@ -109,7 +110,7 @@ ArcCostCap QuincyCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
       static_cast<int64_t>(time_manager_->GetCurrentTimestamp()) -
       static_cast<int64_t>(td.submit_time());
   }
-  return ArcCostCap(
+  return ArcDescriptor(
       static_cast<Cost_t>(total_unscheduled_time *
                           FLAGS_quincy_wait_time_factor /
                           static_cast<int64_t>(MICROSECONDS_IN_SECOND) +
@@ -121,27 +122,29 @@ ArcCostCap QuincyCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
 // than zero affects all the unscheduled tasks. It is better to affect the cost
 // of not running a task through the cost from the task to the unscheduled
 // aggregator.
-ArcCostCap QuincyCostModel::UnscheduledAggToSink(JobID_t job_id) {
-  return ArcCostCap(0LL, 1ULL, 0ULL);
+ArcDescriptor QuincyCostModel::UnscheduledAggToSink(JobID_t job_id) {
+  return ArcDescriptor(0LL, 1ULL, 0ULL);
 }
 
-ArcCostCap QuincyCostModel::TaskToResourceNode(TaskID_t task_id,
-                                               ResourceID_t resource_id) {
+ArcDescriptor QuincyCostModel::TaskToResourceNode(TaskID_t task_id,
+                                                  ResourceID_t resource_id) {
   auto machines_data = FindOrNull(task_preferred_machines_, task_id);
   if (machines_data) {
     Cost_t* transfer_cost = FindOrNull(*machines_data, resource_id);
     if (transfer_cost) {
-      return ArcCostCap(*transfer_cost + FLAGS_quincy_positive_cost_offset,
-                        1ULL, 0ULL);
+      return ArcDescriptor(*transfer_cost + FLAGS_quincy_positive_cost_offset,
+                           1ULL, 0ULL);
     } else {
       // The machine is not a preferred one.
-      return ArcCostCap(GetTransferCostToNotPreferredRes(task_id, resource_id) +
-                        FLAGS_quincy_positive_cost_offset, 1ULL, 0ULL);
+      return ArcDescriptor(
+          GetTransferCostToNotPreferredRes(task_id, resource_id) +
+          FLAGS_quincy_positive_cost_offset, 1ULL, 0ULL);
     }
   } else {
     // The task doesn't have any preferred machines.
-    return ArcCostCap(GetTransferCostToNotPreferredRes(task_id, resource_id) +
-                      FLAGS_quincy_positive_cost_offset, 1ULL, 0ULL);
+    return ArcDescriptor(
+        GetTransferCostToNotPreferredRes(task_id, resource_id) +
+        FLAGS_quincy_positive_cost_offset, 1ULL, 0ULL);
   }
 }
 
@@ -173,25 +176,25 @@ Cost_t QuincyCostModel::GetTransferCostToNotPreferredRes(
   }
 }
 
-ArcCostCap QuincyCostModel::ResourceNodeToResourceNode(
+ArcDescriptor QuincyCostModel::ResourceNodeToResourceNode(
     const ResourceDescriptor& source,
     const ResourceDescriptor& destination) {
   // Cost between resource nodes is always 0.
-  return ArcCostCap(0LL, CapacityFromResNodeToParent(destination), 0ULL);
+  return ArcDescriptor(0LL, CapacityFromResNodeToParent(destination), 0ULL);
 }
 
-ArcCostCap QuincyCostModel::LeafResourceNodeToSink(
+ArcDescriptor QuincyCostModel::LeafResourceNodeToSink(
     ResourceID_t resource_id) {
   // The cost from the resource leaf to the sink is 0.
-  return ArcCostCap(0LL, FLAGS_max_tasks_per_pu, 0ULL);
+  return ArcDescriptor(0LL, FLAGS_max_tasks_per_pu, 0ULL);
 }
 
-ArcCostCap QuincyCostModel::TaskContinuation(TaskID_t task_id) {
+ArcDescriptor QuincyCostModel::TaskContinuation(TaskID_t task_id) {
   const TaskDescriptor& td = GetTask(task_id);
   ResourceID_t pu_res_id = ResourceIDFromString(td.scheduled_to_resource());
   ResourceID_t machine_res_id =
     MachineResIDForResource(resource_map_, pu_res_id);
-  ArcCostCap arc_cost_cap = TaskToResourceNode(task_id, machine_res_id);
+  ArcDescriptor arc_cost_cap = TaskToResourceNode(task_id, machine_res_id);
   // NOTE: total_run_time only includes the time of previous runs. We need
   // to include the current run time as well in order for the continuation
   // cost to be correct.
@@ -204,36 +207,37 @@ ArcCostCap QuincyCostModel::TaskContinuation(TaskID_t task_id) {
   // to p* in the Quincy paper.
   // NOTE: We don't have to offset the cost because the arc_cost_cap.cost_ is
   // already offsetted.
-  return ArcCostCap(arc_cost_cap.cost_ - static_cast<Cost_t>(task_executed_for),
-                    1ULL, 0ULL);
+  return ArcDescriptor(arc_cost_cap.cost_ -
+                       static_cast<Cost_t>(task_executed_for),
+                       1ULL, 0ULL);
 }
 
-ArcCostCap QuincyCostModel::TaskPreemption(TaskID_t task_id) {
+ArcDescriptor QuincyCostModel::TaskPreemption(TaskID_t task_id) {
   // NOTE: We don't have to offset the cost because TaskToUnscheduledAgg
   // already does it.
-  return ArcCostCap(TaskToUnscheduledAgg(task_id).cost_, 1ULL, 0ULL);
+  return ArcDescriptor(TaskToUnscheduledAgg(task_id).cost_, 1ULL, 0ULL);
 }
 
-ArcCostCap QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
-                                                       EquivClass_t ec) {
+ArcDescriptor QuincyCostModel::TaskToEquivClassAggregator(TaskID_t task_id,
+                                                          EquivClass_t ec) {
   auto ec_costs = FindOrNull(task_preferred_ecs_, task_id);
   CHECK_NOTNULL(ec_costs);
   Cost_t* transfer_cost = FindOrNull(*ec_costs, ec);
   CHECK_NOTNULL(transfer_cost);
-  return ArcCostCap(*transfer_cost + FLAGS_quincy_positive_cost_offset,
-                    1ULL, 0ULL);
+  return ArcDescriptor(*transfer_cost + FLAGS_quincy_positive_cost_offset,
+                       1ULL, 0ULL);
 }
 
-ArcCostCap QuincyCostModel::EquivClassToResourceNode(
+ArcDescriptor QuincyCostModel::EquivClassToResourceNode(
     EquivClass_t ec,
     ResourceID_t res_id) {
   CHECK_NE(ec, cluster_aggregator_ec_);
   uint64_t capacity = GetNumSchedulableSlots(res_id);
   // Cost of arcs from rack aggregators are always zero.
-  return ArcCostCap(0LL, capacity, 0ULL);
+  return ArcDescriptor(0LL, capacity, 0ULL);
 }
 
-ArcCostCap QuincyCostModel::EquivClassToEquivClass(
+ArcDescriptor QuincyCostModel::EquivClassToEquivClass(
     EquivClass_t ec1,
     EquivClass_t ec2) {
   if (ec1 == cluster_aggregator_ec_) {
@@ -243,7 +247,7 @@ ArcCostCap QuincyCostModel::EquivClassToEquivClass(
     for (const auto& machine_res_id : machines_res_id) {
       capacity += GetNumSchedulableSlots(machine_res_id);
     }
-    return ArcCostCap(0LL, capacity, 0ULL);
+    return ArcDescriptor(0LL, capacity, 0ULL);
   } else {
     LOG(FATAL) << "We only have arcs between cluster agg EC and rack ECs";
   }
