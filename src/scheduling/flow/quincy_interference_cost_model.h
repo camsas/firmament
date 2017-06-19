@@ -1,0 +1,109 @@
+/*
+ * Firmament
+ * Copyright (c) The Firmament Authors.
+ * All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT
+ * LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR
+ * A PARTICULAR PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT.
+ *
+ * See the Apache Version 2.0 License for specific language governing
+ * permissions and limitations under the License.
+ */
+#ifndef FIRMAMENT_SCHEDULING_QUINCY_INTERFERENCE_COST_MODEL_H
+#define FIRMAMENT_SCHEDULING_QUINCY_INTERFERENCE_COST_MODEL_H
+
+#include <map>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "base/common.h"
+#include "base/types.h"
+#include "misc/map-util.h"
+#include "misc/time_interface.h"
+#include "misc/trace_generator.h"
+#include "misc/utils.h"
+#include "scheduling/common.h"
+#include "scheduling/flow/cost_model_interface.h"
+#include "scheduling/knowledge_base.h"
+
+DECLARE_bool(preemption);
+
+namespace firmament {
+
+class QuincyInterferenceCostModel : public CostModelInterface {
+ public:
+  QuincyInterferenceCostModel(shared_ptr<ResourceMap_t> resource_map,
+                              shared_ptr<JobMap_t> job_map,
+                              shared_ptr<TaskMap_t> task_map,
+                              shared_ptr<KnowledgeBase> knowledge_base,
+                              TraceGenerator* trace_generator,
+                              TimeInterface* time_manager);
+  ~QuincyInterferenceCostModel();
+
+  // Costs pertaining to leaving tasks unscheduled
+  ArcDescriptor TaskToUnscheduledAgg(TaskID_t task_id);
+  ArcDescriptor UnscheduledAggToSink(JobID_t job_id);
+  // Per-task costs (into the resource topology)
+  ArcDescriptor TaskToResourceNode(TaskID_t task_id, ResourceID_t resource_id);
+  // Costs within the resource topology
+  ArcDescriptor ResourceNodeToResourceNode(
+      const ResourceDescriptor& source,
+      const ResourceDescriptor& destination);
+  ArcDescriptor LeafResourceNodeToSink(ResourceID_t resource_id);
+  // Costs pertaining to preemption (i.e. already running tasks)
+  ArcDescriptor TaskContinuation(TaskID_t task_id);
+  ArcDescriptor TaskPreemption(TaskID_t task_id);
+  // Costs to equivalence class aggregators
+  ArcDescriptor TaskToEquivClassAggregator(TaskID_t task_id, EquivClass_t tec);
+  ArcDescriptor EquivClassToResourceNode(EquivClass_t tec, ResourceID_t res_id);
+  ArcDescriptor EquivClassToEquivClass(EquivClass_t tec1, EquivClass_t tec2);
+  // Get the type of equiv class.
+  vector<EquivClass_t>* GetEquivClassToEquivClassesArcs(EquivClass_t tec);
+  vector<ResourceID_t>* GetOutgoingEquivClassPrefArcs(EquivClass_t tec);
+  vector<EquivClass_t>* GetTaskEquivClasses(TaskID_t task_id);
+  vector<ResourceID_t>* GetTaskPreferenceArcs(TaskID_t task_id);
+  void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
+  void AddTask(TaskID_t task_id);
+  void RemoveMachine(ResourceID_t res_id);
+  void RemoveTask(TaskID_t task_id);
+  FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
+  void PrepareStats(FlowGraphNode* accumulator);
+  FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
+
+ private:
+  // Lookup maps for various resources from the scheduler.
+  shared_ptr<ResourceMap_t> resource_map_;
+  // Information regarding jobs and tasks.
+  shared_ptr<JobMap_t> job_map_;
+  shared_ptr<TaskMap_t> task_map_;
+  // A knowledge base instance that we will refer to for job runtime statistics.
+  shared_ptr<KnowledgeBase> knowledge_base_;
+  // EC corresponding to the cluster aggregator node.
+  EquivClass_t cluster_aggregator_ec_;
+  // Map storing the EC preference list for each task.
+  unordered_map<TaskID_t, unordered_map<EquivClass_t, Cost_t>>
+    task_preferred_ecs_;
+  // Map storing the machine preference list for each task.
+  unordered_map<TaskID_t,
+    unordered_map<ResourceID_t, Cost_t, boost::hash<ResourceID_t>>>
+    task_preferred_machines_;
+  // Map storing the data transfer cost and the resource for each running task.
+  unordered_map<TaskID_t, pair<ResourceID_t, Cost_t>> task_running_arcs_;
+  TraceGenerator* trace_generator_;
+  TimeInterface* time_manager_;
+  DataLayerManagerInterface* data_layer_manager_;
+};
+
+}  // namespace firmament
+
+#endif  // FIRMAMENT_SCHEDULING_QUINCY_INTERFERENCE_COST_MODEL_H

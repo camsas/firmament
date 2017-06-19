@@ -47,7 +47,8 @@
 DEFINE_int32(flow_scheduling_cost_model, 0,
              "Flow scheduler cost model to use. "
              "Values: 0 = TRIVIAL, 1 = RANDOM, 2 = SJF, 3 = QUINCY, "
-             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, 8 = NET");
+             "4 = WHARE, 5 = COCO, 6 = OCTOPUS, 7 = VOID, 8 = NET, "
+             "9 = QUINCY_INTERFERENCE");
 DEFINE_uint64(max_solver_runtime, 100000000,
               "Maximum runtime of the solver in u-sec");
 DEFINE_int64(time_dependent_cost_update_frequency, 10000000ULL,
@@ -126,7 +127,8 @@ FlowScheduler::FlowScheduler(
       break;
     case CostModelType::COST_MODEL_QUINCY:
       cost_model_ = new QuincyCostModel(resource_map, job_map, task_map,
-                                        knowledge_base_, trace_generator_, time_manager_);
+                                        knowledge_base_, trace_generator_,
+                                        time_manager_);
       VLOG(1) << "Using the Quincy cost model";
       break;
     case CostModelType::COST_MODEL_WHARE:
@@ -145,6 +147,13 @@ FlowScheduler::FlowScheduler(
     case CostModelType::COST_MODEL_NET:
       cost_model_ = new NetCostModel(resource_map, task_map, knowledge_base);
       VLOG(1) << "Using the net cost model";
+      break;
+    case CostModelType::COST_MODEL_QUINCY_INTERFERENCE:
+      cost_model_ =
+        new QuincyInterferenceCostModel(resource_map, job_map, task_map,
+                                        knowledge_base_, trace_generator_,
+                                        time_manager_);
+      VLOG(1) << "Using the Quincy interference cost model";
       break;
     default:
       LOG(FATAL) << "Unknown flow scheduling cost model specificed "

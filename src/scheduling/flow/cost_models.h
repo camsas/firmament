@@ -30,6 +30,7 @@
 #include "scheduling/flow/net_cost_model.h"
 #include "scheduling/flow/octopus_cost_model.h"
 #include "scheduling/flow/quincy_cost_model.h"
+#include "scheduling/flow/quincy_interference_cost_model.h"
 #include "scheduling/flow/random_cost_model.h"
 #include "scheduling/flow/sjf_cost_model.h"
 #include "scheduling/flow/trivial_cost_model.h"

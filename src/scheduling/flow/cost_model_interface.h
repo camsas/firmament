@@ -48,6 +48,7 @@ enum CostModelType {
   COST_MODEL_OCTOPUS = 6,
   COST_MODEL_VOID = 7,
   COST_MODEL_NET = 8,
+  COST_MODEL_QUINCY_INTERFERENCE = 9,
 };
 
 struct ArcDescriptor {

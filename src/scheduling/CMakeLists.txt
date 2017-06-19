@@ -23,6 +23,7 @@ set(SCHEDULING_SRC
   scheduling/flow/net_cost_model.cc
   scheduling/flow/octopus_cost_model.cc
   scheduling/flow/quincy_cost_model.cc
+  scheduling/flow/quincy_interference_cost_model.cc
   scheduling/flow/random_cost_model.cc
   scheduling/flow/sjf_cost_model.cc
   scheduling/flow/solver_dispatcher.cc
