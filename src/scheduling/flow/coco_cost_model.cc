@@ -40,6 +40,33 @@
 #include "scheduling/flow/cost_model_utils.h"
 #include "scheduling/flow/flow_graph_manager.h"
 
+DEFINE_int64(penalty_turtle_any, 50,
+             "Turtle penalty when co-located with others");
+DEFINE_int64(penalty_sheep_turtle, 10,
+             "Sheep penalty when co-located with turtle");
+DEFINE_int64(penalty_sheep_sheep, 50,
+             "Sheep penalty when co-located with sheep");
+DEFINE_int64(penalty_sheep_rabbit, 100,
+             "Sheep penalty when co-located with rabbit");
+DEFINE_int64(penalty_sheep_devil, 200,
+             "Sheep penalty when co-located with devil");
+DEFINE_int64(penalty_rabbit_turtle, 10,
+             "Rabbit penalty when co-located with turtle");
+DEFINE_int64(penalty_rabbit_sheep, 50,
+             "Rabbit penalty when co-located with sheep");
+DEFINE_int64(penalty_rabbit_rabbit, 200,
+             "Rabbit penalty when co-located with rabbit");
+DEFINE_int64(penalty_rabbit_devil, 1000,
+             "Rabbit penalty when co-located with devil");
+DEFINE_int64(penalty_devil_turtle, 10,
+             "Devil penalty when co-located with turtle");
+DEFINE_int64(penalty_devil_sheep, 200,
+             "Devil penalty when co-located with sheep");
+DEFINE_int64(penalty_devil_rabbit, 1000,
+             "Devil penalty when co-located with rabbit");
+DEFINE_int64(penalty_devil_devil, 200,
+             "Devil penalty when co-located with devil");
+
 DECLARE_bool(preemption);
 DECLARE_uint64(max_tasks_per_pu);
 
@@ -350,47 +377,47 @@ void CocoCostModel::GetInterferenceScoreForTask(
     // Turtles don't care about devils, or indeed anything else
     // TOTAL: 20
     interference_vector->set_turtle_penalty(
-        interference_vector->turtle_penalty() + 50);
+        interference_vector->turtle_penalty() + FLAGS_penalty_turtle_any);
     interference_vector->set_sheep_penalty(
-        interference_vector->sheep_penalty() + 50);
+        interference_vector->sheep_penalty() + FLAGS_penalty_turtle_any);
     interference_vector->set_rabbit_penalty(
-        interference_vector->rabbit_penalty() + 50);
+        interference_vector->rabbit_penalty() + FLAGS_penalty_turtle_any);
     interference_vector->set_devil_penalty(
-        interference_vector->devil_penalty() + 50);
+        interference_vector->devil_penalty() + FLAGS_penalty_turtle_any);
   } else if (td.task_type() == TaskDescriptor::SHEEP) {
     // Sheep love turtles and rabbits, but dislike devils
     // TOTAL: 36
     interference_vector->set_turtle_penalty(
-        interference_vector->turtle_penalty() + 10);
+        interference_vector->turtle_penalty() + FLAGS_penalty_sheep_turtle);
     interference_vector->set_sheep_penalty(
-        interference_vector->sheep_penalty() + 50);
+        interference_vector->sheep_penalty() + FLAGS_penalty_sheep_sheep);
     interference_vector->set_rabbit_penalty(
-        interference_vector->rabbit_penalty() + 100);
+        interference_vector->rabbit_penalty() + FLAGS_penalty_sheep_rabbit);
     interference_vector->set_devil_penalty(
-        interference_vector->devil_penalty() + 200);
+        interference_vector->devil_penalty() + FLAGS_penalty_sheep_devil);
   } else if (td.task_type() == TaskDescriptor::RABBIT) {
     // Rabbits love turtles and sheep, but hate devils and dislike other
     // rabbits
     // TOTAL: 126
     interference_vector->set_turtle_penalty(
-        interference_vector->turtle_penalty() + 10);
+        interference_vector->turtle_penalty() + FLAGS_penalty_rabbit_turtle);
     interference_vector->set_sheep_penalty(
-        interference_vector->sheep_penalty() + 50);
+        interference_vector->sheep_penalty() + FLAGS_penalty_rabbit_sheep);
     interference_vector->set_rabbit_penalty(
-        interference_vector->rabbit_penalty() + 200);
+        interference_vector->rabbit_penalty() + FLAGS_penalty_rabbit_rabbit);
     interference_vector->set_devil_penalty(
-        interference_vector->devil_penalty() + 1000);
+        interference_vector->devil_penalty() + FLAGS_penalty_rabbit_devil);
   } else if (td.task_type() == TaskDescriptor::DEVIL) {
     // Devils like turtles, hate rabbits, dislike sheep and other devils
     // TOTAL: 140
     interference_vector->set_turtle_penalty(
-        interference_vector->turtle_penalty() + 10);
+        interference_vector->turtle_penalty() + FLAGS_penalty_devil_turtle);
     interference_vector->set_sheep_penalty(
-        interference_vector->sheep_penalty() + 200);
+        interference_vector->sheep_penalty() + FLAGS_penalty_devil_sheep);
     interference_vector->set_rabbit_penalty(
-        interference_vector->rabbit_penalty() + 1000);
+        interference_vector->rabbit_penalty() + FLAGS_penalty_devil_rabbit);
     interference_vector->set_devil_penalty(
-        interference_vector->devil_penalty() + 200);
+        interference_vector->devil_penalty() + FLAGS_penalty_devil_devil);
   }
 }
 
