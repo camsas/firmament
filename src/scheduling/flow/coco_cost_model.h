@@ -89,7 +89,6 @@ class CocoCostModel : public CostModelInterface {
   vector<EquivClass_t>* GetEquivClassToEquivClassesArcs(EquivClass_t tec);
   void AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr);
   void AddTask(TaskID_t task_id);
-  void PrintCostVector(CostVector_t cv);
   void RemoveMachine(ResourceID_t res_id);
   void RemoveTask(TaskID_t task_id);
   FlowGraphNode* GatherStats(FlowGraphNode* accumulator, FlowGraphNode* other);
@@ -100,7 +99,6 @@ class CocoCostModel : public CostModelInterface {
   // Fixed value for OMEGA, the normalization ceiling for each dimension's cost
   // value
   const Cost_t omega_ = 1000;
-  const Cost_t WAIT_TIME_MULTIPLIER = 1;
   const int64_t MAX_PRIORITY_VALUE = 10LL;
 
   // Resource vector comparison type and enum
@@ -141,6 +139,7 @@ class CocoCostModel : public CostModelInterface {
   ResourceID_t MachineResIDForResource(ResourceID_t res_id);
   // Bring cost into the range (0, omega_)
   Cost_t NormalizeCost(double raw_cost, double max_cost);
+  void PrintCostVector(CostVector_t cv);
   // Get a delimited string representing a resource vector
   string ResourceVectorToString(const ResourceVector& rv,
                                 const string& delimiter) const;

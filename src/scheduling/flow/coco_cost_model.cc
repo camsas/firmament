@@ -40,6 +40,8 @@
 #include "scheduling/flow/cost_model_utils.h"
 #include "scheduling/flow/flow_graph_manager.h"
 
+DEFINE_int64(coco_wait_time_multiplier, 1,
+             "CoCo wait time multiplier factor");
 DEFINE_int64(penalty_turtle_any, 50,
              "Turtle penalty when co-located with others");
 DEFINE_int64(penalty_sheep_turtle, 10,
@@ -557,7 +559,8 @@ ArcDescriptor CocoCostModel::TaskToUnscheduledAgg(TaskID_t task_id) {
     time_manager_->GetCurrentTimestamp() - td.submit_time();
   // timestamps are in microseconds, but we scale to tenths of a second here in
   // order to keep the costs small
-  int64_t wait_time_cost = WAIT_TIME_MULTIPLIER * (time_since_submit / 100000);
+  int64_t wait_time_cost = FLAGS_coco_wait_time_multiplier *
+    (time_since_submit / 100000);
   if (VLOG_IS_ON(2)) {
     VLOG(2) << "Task " << task_id << "'s cost to unscheduled aggregator:";
     VLOG(2) << "  Baseline vector: ";
