@@ -104,15 +104,10 @@ void CocoCostModel::AccumulateResourceStats(ResourceDescriptor* accumulator,
   // CPU core capacity is additive, while all other properties are machine-level
   // properties that only get added once we get beyond the machine level.
   acc_avail->set_cpu_cores(acc_avail->cpu_cores() + other_avail->cpu_cores());
-  // XXX(malte): the current version of the CoCo model does not support
-  // aggregators above the machine level (e.g., rack aggregators), so this does
-  // not consider the additive case for RAM/net/disk resources yet.
-  acc_avail->set_ram_cap(max(acc_avail->ram_cap(), other_avail->ram_cap()));
-  acc_avail->set_net_tx_bw(max(acc_avail->net_tx_bw(),
-                               other_avail->net_tx_bw()));
-  acc_avail->set_net_rx_bw(max(acc_avail->net_rx_bw(),
-                               other_avail->net_rx_bw()));
-  acc_avail->set_disk_bw(max(acc_avail->disk_bw(), other_avail->disk_bw()));
+  acc_avail->set_ram_cap(acc_avail->ram_cap() + other_avail->ram_cap());
+  acc_avail->set_net_tx_bw(acc_avail->net_tx_bw() + other_avail->net_tx_bw());
+  acc_avail->set_net_rx_bw(acc_avail->net_rx_bw() + other_avail->net_rx_bw());
+  acc_avail->set_disk_bw(acc_avail->disk_bw() + other_avail->disk_bw());
   // Track the maximum resources available in any dimensions at resources below
   // the accumulator node
   ResourceVector* acc_max =
