@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "20aca2c8_d48860f5",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-21T14:41:46Z",
+      "side": 1,
+      "message": "This insert is problematic. If two tasks have the same bandwidth requirement then they will be connected to the same EC, but in the ec_to_task we\u0027ll only store a mapping between the first task for which the GetTaskEquivClasses got called and the EC.",
+      "revId": "1eb7cea357998bab2ffdb7b36ee69fba8d24c05c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7984230b_1b290a5d",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-21T14:41:46Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(task_id);\nIf you add this check you\u0027ll see that the cost model will crash because several tasks can be connected to an EC.",
+      "revId": "1eb7cea357998bab2ffdb7b36ee69fba8d24c05c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fcc66f23_935dc2cb",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-21T14:41:46Z",
+      "side": 1,
+      "message": "This restricts the number of machines to which the tasks with a given bandwidth requirement can be placed on. It affects even the tasks that have to label selectors.\n\nTo address this issue create an equivalence class node per (task bandwidth requirement, node selector), rather than one per task bandwidth requirement.",
+      "range": {
+        "startLine": 157,
+        "startChar": 0,
+        "endLine": 158,
+        "endChar": 17
+      },
+      "revId": "1eb7cea357998bab2ffdb7b36ee69fba8d24c05c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
