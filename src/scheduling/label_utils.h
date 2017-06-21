@@ -41,8 +41,9 @@ bool SatisfiesLabelSelector(const unordered_map<string, string>& rd_labels,
 bool SatisfiesLabelSelector(const unordered_map<string, string>& rd_labels,
                             const unordered_set<string>& selector_values,
                             const LabelSelector& selector);
-
+size_t CreateNetBWLabelHash(const uint64_t input,
+                            const RepeatedPtrField<LabelSelector>& selectors);
 }  // namespace scheduler
 }  // namespace firmament
 
-#endif // FIRMAMENT_SCHEDULING_LABEL_UTILS_H
+#endif  // FIRMAMENT_SCHEDULING_LABEL_UTILS_H

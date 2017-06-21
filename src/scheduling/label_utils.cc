@@ -18,9 +18,10 @@
  * permissions and limitations under the License.
  */
 
-#include "scheduling/label_utils.h"
-
+#include <boost/functional/hash.hpp>
 #include "misc/map-util.h"
+#include "misc/utils.h"
+#include "scheduling/label_utils.h"
 
 namespace firmament {
 namespace scheduler {
@@ -89,6 +90,19 @@ bool SatisfiesLabelSelector(const unordered_map<string, string>& rd_labels,
       LOG(FATAL) << "Unsupported selector type: " << selector.type();
   }
   return false;
+}
+
+size_t CreateNetBWLabelHash(const uint64_t net_rx_bw,
+                            const RepeatedPtrField<LabelSelector>& selectors) {
+  size_t seed = 0;
+  boost::hash_combine(seed, net_rx_bw);
+  for (auto label_selector : selectors) {
+    boost::hash_combine(seed, HashString(label_selector.key()));
+    for (auto value : label_selector.values()) {
+      boost::hash_combine(seed, HashString(value));
+    }
+  }
+  return seed;
 }
 
 }  // namespace scheduler
