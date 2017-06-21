@@ -26,6 +26,7 @@
 #include "misc/utils.h"
 #include "misc/map-util.h"
 #include "scheduling/knowledge_base.h"
+#include "scheduling/label_utils.h"
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/cost_model_utils.h"
 #include "scheduling/flow/flow_graph_manager.h"
@@ -122,6 +123,7 @@ vector<EquivClass_t>* NetCostModel::GetTaskEquivClasses(
     static_cast<EquivClass_t>(HashInt(*task_required_rx_bw));
   ecs->push_back(rx_bw_ec);
   InsertIfNotPresent(&ec_rx_bw_requirement_, rx_bw_ec, *task_required_rx_bw);
+  InsertIfNotPresent(&ec_to_task, rx_bw_ec, task_id);
   return ecs;
 }
 
@@ -145,11 +147,15 @@ vector<EquivClass_t>* NetCostModel::GetEquivClassToEquivClassesArcs(
   vector<EquivClass_t>* pref_ecs = new vector<EquivClass_t>();
   uint64_t* required_net_rx_bw = FindOrNull(ec_rx_bw_requirement_, ec);
   if (required_net_rx_bw) {
+    TaskID_t* task_id = FindOrNull(ec_to_task, ec);
+    TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, *task_id);
     // if EC is a rx bw EC then connect it to machine ECs.
     for (auto& ec_machines : ecs_for_machines_) {
       ResourceStatus* rs = FindPtrOrNull(*resource_map_, ec_machines.first);
       CHECK_NOTNULL(rs);
       const ResourceDescriptor& rd = rs->topology_node().resource_desc();
+      if (!(scheduler::SatisfiesLabelSelectors(rd, td_ptr->label_selectors())))
+        continue;
       uint64_t available_net_rx_bw =
         rd.max_available_resources_below().net_rx_bw();
       ResourceID_t res_id = ResourceIDFromString(rd.uuid());
