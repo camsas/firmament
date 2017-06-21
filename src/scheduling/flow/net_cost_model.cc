@@ -26,6 +26,7 @@
 #include "misc/utils.h"
 #include "misc/map-util.h"
 #include "scheduling/knowledge_base.h"
+#include "scheduling/label_utils.h"
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/cost_model_utils.h"
 #include "scheduling/flow/flow_graph_manager.h"
@@ -112,16 +113,20 @@ ArcDescriptor NetCostModel::EquivClassToEquivClass(
                        1ULL, 0ULL);
 }
 
-vector<EquivClass_t>* NetCostModel::GetTaskEquivClasses(
-    TaskID_t task_id) {
+vector<EquivClass_t>* NetCostModel::GetTaskEquivClasses(TaskID_t task_id) {
   vector<EquivClass_t>* ecs = new vector<EquivClass_t>();
-  // Get the equivalence class for the task's required rx bw.
+  TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, task_id);
+  CHECK_NOTNULL(td_ptr);
+  // Get the equivalence class for the task's required rx bw and label selectors.
   uint64_t* task_required_rx_bw = FindOrNull(task_rx_bw_requirement_, task_id);
   CHECK_NOTNULL(task_required_rx_bw);
-  EquivClass_t rx_bw_ec =
-    static_cast<EquivClass_t>(HashInt(*task_required_rx_bw));
-  ecs->push_back(rx_bw_ec);
-  InsertIfNotPresent(&ec_rx_bw_requirement_, rx_bw_ec, *task_required_rx_bw);
+  size_t rx_bw_selectors_hash = scheduler::HashSelectors(td_ptr->label_selectors());
+  boost::hash_combine(rx_bw_selectors_hash, *task_required_rx_bw);
+  EquivClass_t rx_bw_selectors_ec = static_cast<EquivClass_t>(rx_bw_selectors_hash);
+  ecs->push_back(rx_bw_selectors_ec);
+  InsertIfNotPresent(&ec_rx_bw_requirement_, rx_bw_selectors_ec, *task_required_rx_bw);
+  InsertIfNotPresent(&ec_to_label_selectors, rx_bw_selectors_ec,
+                     td_ptr->label_selectors());
   return ecs;
 }
 
@@ -145,11 +150,16 @@ vector<EquivClass_t>* NetCostModel::GetEquivClassToEquivClassesArcs(
   vector<EquivClass_t>* pref_ecs = new vector<EquivClass_t>();
   uint64_t* required_net_rx_bw = FindOrNull(ec_rx_bw_requirement_, ec);
   if (required_net_rx_bw) {
+    const RepeatedPtrField<LabelSelector>* label_selectors =
+      FindOrNull(ec_to_label_selectors, ec);
+    CHECK_NOTNULL(label_selectors);
     // if EC is a rx bw EC then connect it to machine ECs.
     for (auto& ec_machines : ecs_for_machines_) {
       ResourceStatus* rs = FindPtrOrNull(*resource_map_, ec_machines.first);
       CHECK_NOTNULL(rs);
       const ResourceDescriptor& rd = rs->topology_node().resource_desc();
+      if (!scheduler::SatisfiesLabelSelectors(rd, *label_selectors))
+        continue;
       uint64_t available_net_rx_bw =
         rd.max_available_resources_below().net_rx_bw();
       ResourceID_t res_id = ResourceIDFromString(rd.uuid());

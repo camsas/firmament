@@ -89,6 +89,8 @@ class NetCostModel : public CostModelInterface {
     ecs_for_machines_;
   unordered_map<EquivClass_t, ResourceID_t> ec_to_machine_;
   unordered_map<EquivClass_t, uint64_t> ec_to_index_;
+  unordered_map<EquivClass_t, const RepeatedPtrField<LabelSelector>>
+    ec_to_label_selectors;
 };
 
 }  // namespace firmament
