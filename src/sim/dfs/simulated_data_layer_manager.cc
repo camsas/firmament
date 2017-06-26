@@ -23,6 +23,7 @@
 #include "base/units.h"
 #include "misc/map-util.h"
 #include "sim/dfs/google_block_distribution.h"
+#include "sim/dfs/uniform_block_distribution.h"
 #include "sim/dfs/simulated_bounded_dfs.h"
 #include "sim/dfs/simulated_hdfs.h"
 #include "sim/dfs/simulated_skewed_dfs.h"
@@ -44,14 +45,23 @@ DEFINE_uint64(simulated_dfs_replication_factor, 3,
               "The number of times each block should be replicated.");
 DEFINE_string(simulated_dfs_type, "bounded", "The type of DFS to simulated. "
               "Options: uniform | bounded | hdfs | skewed");
-
+DEFINE_string(simulated_block_dist, "google", "Input size distribution to   "
+              "be simulated. Options: google | uniform");
 
 namespace firmament {
 namespace sim {
 
 SimulatedDataLayerManager::SimulatedDataLayerManager(
     TraceGenerator* trace_generator) {
-  input_block_dist_ = new GoogleBlockDistribution();
+
+  if (FLAGS_simulated_block_dist.compare("google")) {
+    input_block_dist_ = new GoogleBlockDistribution();
+  } else if (FLAGS_simulated_block_dist.compare("uniform")) {
+    input_block_dist_ = new UniformBlockDistribution();
+  } else {
+    LOG(FATAL) << "Unexpected input size distribution " << FLAGS_simulated_block_dist;
+  }
+
   runtime_dist_ =
     new GoogleRuntimeDistribution(FLAGS_simulated_quincy_runtime_factor,
                                   FLAGS_simulated_quincy_runtime_power);
