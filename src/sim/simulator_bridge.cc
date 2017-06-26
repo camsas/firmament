@@ -62,7 +62,9 @@ SimulatorBridge::SimulatorBridge(EventManager* event_manager,
     resource_map_(new ResourceMap_t), task_map_(new TaskMap_t),
     num_duplicate_task_ids_(0) {
   trace_generator_ = new TraceGenerator(simulated_time_);
-  if (FLAGS_flow_scheduling_cost_model == COST_MODEL_QUINCY) {
+
+  if ((FLAGS_flow_scheduling_cost_model == COST_MODEL_QUINCY) ||
+      (FLAGS_flow_scheduling_cost_model == COST_MODEL_QUINCY_INTERFERENCE)) {
     // We're running Quincy => simulate the DFS.
     data_layer_manager_ = new SimulatedDataLayerManager(trace_generator_);
   } else {
