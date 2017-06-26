@@ -23,6 +23,7 @@
 
 #include "sim/interference/task_interference_interface.h"
 
+#include "scheduling/data_layer_manager_interface.h"
 #include "scheduling/scheduler_interface.h"
 
 namespace firmament {
@@ -35,7 +36,8 @@ class QuincyTaskInterference : public TaskInterferenceInterface {
       multimap<ResourceID_t, ResourceDescriptor*>* machine_res_id_pus,
       shared_ptr<ResourceMap_t> resource_map,
       shared_ptr<TaskMap_t> task_map,
-      unordered_map<TaskID_t, uint64_t>* task_runtime);
+      unordered_map<TaskID_t, uint64_t>* task_runtime,
+      DataLayerManagerInterface* data_layer_manager);
   ~QuincyTaskInterference();
 
   void OnTaskCompletion(uint64_t current_time_us,
@@ -66,20 +68,28 @@ class QuincyTaskInterference : public TaskInterferenceInterface {
   void GetColocatedTasks(ResourceID_t pu_res_id,
                          vector<TaskID_t>* colocated_on_pu,
                          vector<TaskID_t>* colocated_on_machine);
-
+  uint64_t GetTaskInputPercentageOnMachine(TaskDescriptor* td_ptr,
+                                           ResourceID_t res_id);
   uint64_t TimeWithInterferenceToTraceTime(uint64_t time,
                                            uint64_t num_tasks_colocated);
   uint64_t TraceTimeToTimeWithInterference(uint64_t time,
                                            uint64_t num_tasks_colocated);
+  uint64_t TraceTimeToTimeWithLocality(uint64_t trace_time,
+                                       uint64_t local_input_percentage);
+  uint64_t TimeWithLocalityToTraceTime(uint64_t time,
+                                       uint64_t local_input_percentage);
   TaskEndRuntimes UpdateEndTimeForPlacedTask(TaskDescriptor* td_ptr,
                                              uint64_t current_time_us,
-                                             uint64_t num_tasks_colocated);
+                                             uint64_t num_tasks_colocated,
+                                             uint64_t local_input_percentage);
   TaskEndRuntimes UpdateEndTimeForRunningTask(TaskDescriptor* td_ptr,
                                               uint64_t previous_end_time,
                                               uint64_t current_time_us,
                                               uint64_t prev_num_tasks_colocated,
-                                              uint64_t cur_num_tasks_colocated);
-  void UpdateOtherTasksOnMachine(uint64_t current_time_us,
+                                              uint64_t cur_num_tasks_colocated,
+                                              uint64_t local_input_percentage);
+  void UpdateOtherTasksOnMachine(ResourceID_t res_id,
+                                 uint64_t current_time_us,
                                  uint64_t prev_num_tasks_colocated,
                                  uint64_t cur_num_tasks_colocated,
                                  const vector<TaskID_t>& colocated_on_pu,
@@ -96,6 +106,7 @@ class QuincyTaskInterference : public TaskInterferenceInterface {
   shared_ptr<TaskMap_t> task_map_;
   // Map holding the per-task runtime information
   unordered_map<TaskID_t, uint64_t>* task_runtime_;
+  DataLayerManagerInterface* data_layer_manager_;
 };
 
 }  // namespace sim

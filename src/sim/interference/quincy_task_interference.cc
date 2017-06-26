@@ -39,12 +39,14 @@ QuincyTaskInterference::QuincyTaskInterference(
     multimap<ResourceID_t, ResourceDescriptor*>* machine_res_id_pus,
     shared_ptr<ResourceMap_t> resource_map,
     shared_ptr<TaskMap_t> task_map,
-    unordered_map<TaskID_t, uint64_t>* task_runtime)
+    unordered_map<TaskID_t, uint64_t>* task_runtime,
+    DataLayerManagerInterface* data_layer_manager)
   : scheduler_(scheduler),
     machine_res_id_pus_(machine_res_id_pus),
     resource_map_(resource_map),
     task_map_(task_map),
-    task_runtime_(task_runtime) {
+    task_runtime_(task_runtime),
+    data_layer_manager_(data_layer_manager) {
 }
 
 QuincyTaskInterference::~QuincyTaskInterference() {
@@ -63,7 +65,7 @@ void QuincyTaskInterference::OnTaskCompletion(
   GetColocatedTasks(res_id, &colocated_on_pu, &colocated_on_machine);
   uint64_t num_tasks_colocated =
     colocated_on_pu.size() + colocated_on_machine.size();
-  UpdateOtherTasksOnMachine(current_time_us, num_tasks_colocated + 1,
+  UpdateOtherTasksOnMachine(res_id, current_time_us, num_tasks_colocated + 1,
                             num_tasks_colocated, colocated_on_pu,
                             colocated_on_machine, tasks_end_time);
 }
@@ -80,7 +82,7 @@ void QuincyTaskInterference::OnTaskEviction(
   GetColocatedTasks(res_id, &colocated_on_pu, &colocated_on_machine);
   uint64_t num_tasks_colocated =
     colocated_on_pu.size() + colocated_on_machine.size();
-  UpdateOtherTasksOnMachine(current_time_us, num_tasks_colocated + 1,
+  UpdateOtherTasksOnMachine(res_id, current_time_us, num_tasks_colocated + 1,
                             num_tasks_colocated, colocated_on_pu,
                             colocated_on_machine, tasks_end_time);
   // Update the evicted task.
@@ -93,8 +95,12 @@ void QuincyTaskInterference::OnTaskEviction(
     // NOTE: We assume that the work conducted by a task until eviction is
     // saved. Hence, we update the time the task has left to run.
     uint64_t task_executed_for = current_time_us - td_ptr->start_time();
+    uint64_t local_input_percentage =
+      GetTaskInputPercentageOnMachine(td_ptr, res_id);
+    uint64_t task_executed_without_locality =
+      TimeWithLocalityToTraceTime(task_executed_for, local_input_percentage);
     uint64_t real_executed_for =
-      TimeWithInterferenceToTraceTime(task_executed_for,
+      TimeWithInterferenceToTraceTime(task_executed_without_locality,
                                       num_tasks_colocated + 1);
     InsertOrUpdate(task_runtime_, task_id, *runtime_ptr - real_executed_for);
   } else {
@@ -125,7 +131,7 @@ void QuincyTaskInterference::OnTaskMigration(
     colocated_on_pu.size() + colocated_on_machine.size() + 1;
   if (old_machine_res_id != new_machine_res_id) {
     // co-located_on_machine does not include the migrated task.
-    UpdateOtherTasksOnMachine(current_time_us,
+    UpdateOtherTasksOnMachine(old_res_id, current_time_us,
                               num_tasks_colocated_on_old_machine,
                               num_tasks_colocated_on_old_machine - 1,
                               colocated_on_pu, colocated_on_machine,
@@ -145,7 +151,7 @@ void QuincyTaskInterference::OnTaskMigration(
   uint64_t num_tasks_colocated_on_new_machine =
     colocated_on_pu.size() + colocated_on_machine.size();
   if (old_machine_res_id != new_machine_res_id) {
-    UpdateOtherTasksOnMachine(current_time_us,
+    UpdateOtherTasksOnMachine(res_id, current_time_us,
                               num_tasks_colocated_on_new_machine,
                               num_tasks_colocated_on_new_machine + 1,
                               colocated_on_pu, colocated_on_machine,
@@ -159,13 +165,21 @@ void QuincyTaskInterference::OnTaskMigration(
     // NOTE: We assume that the work conducted by a task until migration is
     // saved. Hence, we update the time the task has left to run.
     uint64_t task_executed_for = current_time_us - td_ptr->start_time();
+    uint64_t local_input_percentage =
+      GetTaskInputPercentageOnMachine(td_ptr, old_res_id);
+    uint64_t task_executed_without_locality =
+      TimeWithLocalityToTraceTime(task_executed_for, local_input_percentage);
     uint64_t real_executed_for =
-      TimeWithInterferenceToTraceTime(task_executed_for,
+      TimeWithInterferenceToTraceTime(task_executed_without_locality,
                                       num_tasks_colocated_on_old_machine);
     uint64_t real_time_left = *runtime_ptr - real_executed_for;
     InsertOrUpdate(task_runtime_, task_id, real_time_left);
+    local_input_percentage =
+      GetTaskInputPercentageOnMachine(td_ptr, res_id);
+    uint64_t local_input_runtime =
+      TraceTimeToTimeWithLocality(real_time_left, local_input_percentage);
     uint64_t task_end_time = current_time_us +
-      TraceTimeToTimeWithInterference(real_time_left,
+      TraceTimeToTimeWithInterference(local_input_runtime,
                                       num_tasks_colocated_on_new_machine + 1);
     task_end_runtimes.set_current_end_time(task_end_time);
     td_ptr->set_finish_time(task_end_time);
@@ -175,6 +189,35 @@ void QuincyTaskInterference::OnTaskMigration(
   }
   td_ptr->set_submit_time(current_time_us);
   td_ptr->set_start_time(current_time_us);
+}
+
+uint64_t QuincyTaskInterference::GetTaskInputPercentageOnMachine(
+    TaskDescriptor* td_ptr,
+    ResourceID_t res_id) {
+  uint64_t input_size = 0;
+  uint64_t local_input_size = 0;
+  for (RepeatedPtrField<ReferenceDescriptor>::pointer_iterator
+         dependency_it = td_ptr->mutable_dependencies()->pointer_begin();
+       dependency_it != td_ptr->mutable_dependencies()->pointer_end();
+       ++dependency_it) {
+    auto& dependency = *dependency_it;
+    string location = dependency->location();
+    list<DataLocation> locations;
+    data_layer_manager_->GetFileLocations(location, &locations);
+    for (auto& location : locations) {
+      if (location.machine_res_id_ == res_id) {
+        local_input_size += location.size_bytes_;
+      }
+      input_size += location.size_bytes_;
+    }
+  }
+  if (input_size == 0) {
+    return 100;
+  } else {
+    // XXX(ionel): This is an estimation because it assumes that each DFS block
+    // is replicated on distinct machines.
+    return local_input_size * 100 / input_size;
+  }
 }
 
 void QuincyTaskInterference::OnTaskPlacement(
@@ -193,13 +236,16 @@ void QuincyTaskInterference::OnTaskPlacement(
   colocated_on_pu.erase(task_it);
   uint64_t num_tasks_colocated =
     colocated_on_pu.size() + colocated_on_machine.size();
-  UpdateOtherTasksOnMachine(current_time_us, num_tasks_colocated,
+  UpdateOtherTasksOnMachine(res_id, current_time_us, num_tasks_colocated,
                             num_tasks_colocated + 1, colocated_on_pu,
                             colocated_on_machine, tasks_end_time);
+  uint64_t local_input_percentage =
+    GetTaskInputPercentageOnMachine(td_ptr, res_id);
   // And end time for newly placed task.
   tasks_end_time->push_back(
       UpdateEndTimeForPlacedTask(td_ptr, current_time_us,
-                                 num_tasks_colocated + 1));
+                                 num_tasks_colocated + 1,
+                                 local_input_percentage));
 }
 
 void QuincyTaskInterference::GetColocatedTasks(
@@ -247,10 +293,25 @@ uint64_t QuincyTaskInterference::TraceTimeToTimeWithInterference(
       (1 + FLAGS_quincy_interference_runtime_increase * num_tasks_colocated)));
 }
 
+uint64_t QuincyTaskInterference::TraceTimeToTimeWithLocality(
+    uint64_t trace_time,
+    uint64_t local_input_percentage) {
+  return static_cast<uint64_t>(
+      round(trace_time * (150.0 - local_input_percentage) / 100.0));
+}
+
+uint64_t QuincyTaskInterference::TimeWithLocalityToTraceTime(
+    uint64_t time,
+    uint64_t local_input_percentage) {
+  return static_cast<uint64_t>(
+      round(time * 100.0 / (150.0 - local_input_percentage)));
+}
+
 TaskEndRuntimes QuincyTaskInterference::UpdateEndTimeForPlacedTask(
     TaskDescriptor* td_ptr,
     uint64_t current_time_us,
-    uint64_t num_tasks_colocated) {
+    uint64_t num_tasks_colocated,
+    uint64_t local_input_percentage) {
   TaskID_t task_id = td_ptr->uid();
   TaskEndRuntimes task_end_runtimes(task_id);
   td_ptr->set_start_time(current_time_us);
@@ -260,8 +321,10 @@ TaskEndRuntimes QuincyTaskInterference::UpdateEndTimeForPlacedTask(
     // This assumes that task runtime increases by
     // quincy_interference_runtime_increase * 100 percent * num_tasks_colocated
     // when the task is colocated with num_tasks_colocated.
+    uint64_t local_input_runtime =
+      TraceTimeToTimeWithLocality(*runtime_ptr, local_input_percentage);
     uint64_t task_end_time = current_time_us +
-      TraceTimeToTimeWithInterference(*runtime_ptr, num_tasks_colocated);
+      TraceTimeToTimeWithInterference(local_input_runtime, num_tasks_colocated);
     task_end_runtimes.set_current_end_time(task_end_time);
     td_ptr->set_finish_time(task_end_time);
   } else {
@@ -279,24 +342,29 @@ TaskEndRuntimes QuincyTaskInterference::UpdateEndTimeForRunningTask(
     uint64_t sim_task_runtime,
     uint64_t current_time_us,
     uint64_t prev_num_tasks_colocated,
-    uint64_t cur_num_tasks_colocated) {
+    uint64_t cur_num_tasks_colocated,
+    uint64_t local_input_percentage) {
   TaskID_t task_id = td_ptr->uid();
   TaskEndRuntimes task_end_runtimes(task_id);
   task_end_runtimes.set_previous_end_time(td_ptr->finish_time());
   td_ptr->set_total_run_time(ComputeTaskTotalRunTime(current_time_us, *td_ptr));
   uint64_t task_executed_for = current_time_us - td_ptr->start_time();
+  uint64_t task_executed_without_locality =
+    TimeWithLocalityToTraceTime(task_executed_for, local_input_percentage);
   // Transform the time task executed for under co-location interference
   // to the time tasks would have executed for in the simulation without
   // co-location interference.
   uint64_t real_executed_for =
-    TimeWithInterferenceToTraceTime(task_executed_for,
+    TimeWithInterferenceToTraceTime(task_executed_without_locality,
                                     prev_num_tasks_colocated);
   // Update task_runtime_ to contain how much the task has left to execute if
   // it were to execute without interference.
   uint64_t time_left_to_execute = sim_task_runtime - real_executed_for;
   InsertOrUpdate(task_runtime_, task_id, time_left_to_execute);
+  uint64_t local_input_runtime =
+    TraceTimeToTimeWithLocality(time_left_to_execute, local_input_percentage);
   uint64_t task_end_time = current_time_us +
-    TraceTimeToTimeWithInterference(time_left_to_execute,
+    TraceTimeToTimeWithInterference(local_input_runtime,
                                     cur_num_tasks_colocated);
   td_ptr->set_start_time(current_time_us);
   task_end_runtimes.set_current_end_time(task_end_time);
@@ -305,6 +373,7 @@ TaskEndRuntimes QuincyTaskInterference::UpdateEndTimeForRunningTask(
 }
 
 void QuincyTaskInterference::UpdateOtherTasksOnMachine(
+    ResourceID_t res_id,
     uint64_t current_time_us,
     uint64_t prev_num_tasks_colocated,
     uint64_t cur_num_tasks_colocated,
@@ -316,12 +385,15 @@ void QuincyTaskInterference::UpdateOtherTasksOnMachine(
     if (runtime_ptr != NULL) {
       TaskDescriptor* cur_td_ptr = FindPtrOrNull(*task_map_, task_id);
       CHECK_NOTNULL(cur_td_ptr);
+      uint64_t local_input_percentage =
+        GetTaskInputPercentageOnMachine(cur_td_ptr, res_id);
       tasks_end_time->push_back(
           UpdateEndTimeForRunningTask(cur_td_ptr,
                                       *runtime_ptr,
                                       current_time_us,
                                       prev_num_tasks_colocated,
-                                      cur_num_tasks_colocated));
+                                      cur_num_tasks_colocated,
+                                      local_input_percentage));
     }
   }
   for (auto& task_id : colocated_on_machine) {
@@ -329,12 +401,15 @@ void QuincyTaskInterference::UpdateOtherTasksOnMachine(
     if (runtime_ptr != NULL) {
       TaskDescriptor* cur_td_ptr = FindPtrOrNull(*task_map_, task_id);
       CHECK_NOTNULL(cur_td_ptr);
+      uint64_t local_input_percentage =
+        GetTaskInputPercentageOnMachine(cur_td_ptr, res_id);
       tasks_end_time->push_back(
           UpdateEndTimeForRunningTask(cur_td_ptr,
                                       *runtime_ptr,
                                       current_time_us,
                                       prev_num_tasks_colocated,
-                                      cur_num_tasks_colocated));
+                                      cur_num_tasks_colocated,
+                                      local_input_percentage));
     }
   }
 }
