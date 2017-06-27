@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "26db2399_a5d4892c",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-27T09:15:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20aca2c8_d48860f5",
+      "revId": "1eb7cea357998bab2ffdb7b36ee69fba8d24c05c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7984230b_1b290a5d",
         "filename": "src/scheduling/flow/net_cost_model.cc",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "b6bac56d_6aec355c",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-27T09:15:01Z",
+      "side": 1,
+      "message": "Done. Created new map EC to label_selectors instead of EC to task.",
+      "parentUuid": "7984230b_1b290a5d",
+      "revId": "1eb7cea357998bab2ffdb7b36ee69fba8d24c05c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fcc66f23_935dc2cb",
         "filename": "src/scheduling/flow/net_cost_model.cc",
         "patchSetId": 1
@@ -47,6 +83,30 @@
       "writtenOn": "2017-06-21T14:41:46Z",
       "side": 1,
       "message": "This restricts the number of machines to which the tasks with a given bandwidth requirement can be placed on. It affects even the tasks that have to label selectors.\n\nTo address this issue create an equivalence class node per (task bandwidth requirement, node selector), rather than one per task bandwidth requirement.",
+      "range": {
+        "startLine": 157,
+        "startChar": 0,
+        "endLine": 158,
+        "endChar": 17
+      },
+      "revId": "1eb7cea357998bab2ffdb7b36ee69fba8d24c05c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4fa35f95_00d8697b",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2017-06-27T09:15:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fcc66f23_935dc2cb",
       "range": {
         "startLine": 157,
         "startChar": 0,
