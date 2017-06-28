@@ -1,0 +1,140 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "69ba93c2_22ad8ec1",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-28T09:57:24Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(td_ptr);",
+      "revId": "9b00018e050b218b50139f8980a20786fb5e783c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7f83c274_7d85d3b1",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-28T09:57:24Z",
+      "side": 1,
+      "message": "please rename rx_bw_ec to rx_bw_selectors_ec",
+      "revId": "9b00018e050b218b50139f8980a20786fb5e783c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c14adaae_ae18a544",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-28T09:57:24Z",
+      "side": 1,
+      "message": "CHECK_NOTNULL(label_selectors);",
+      "revId": "9b00018e050b218b50139f8980a20786fb5e783c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa528f2_38039d35",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-28T09:57:24Z",
+      "side": 1,
+      "message": "no need for the extra () around scheduler::Satistifies.... Can you also please put the continue statement on a new line?",
+      "revId": "9b00018e050b218b50139f8980a20786fb5e783c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5dfeb8cf_07e02638",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-28T09:57:24Z",
+      "side": 1,
+      "message": "Please do not double indent.",
+      "revId": "9b00018e050b218b50139f8980a20786fb5e783c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e0fc7a98_d7f1359b",
+        "filename": "src/scheduling/flow/net_cost_model.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-28T09:57:24Z",
+      "side": 1,
+      "message": "Please do not double indent.",
+      "revId": "9b00018e050b218b50139f8980a20786fb5e783c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ee1881cd_2ca3d837",
+        "filename": "src/scheduling/flow/net_cost_model.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-28T09:57:24Z",
+      "side": 1,
+      "message": "Please do not double indent.",
+      "revId": "9b00018e050b218b50139f8980a20786fb5e783c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "06162c00_5067c649",
+        "filename": "src/scheduling/label_utils.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2017-06-28T09:57:24Z",
+      "side": 1,
+      "message": "The method uses net_cost_model specific info (i.e., net_rx_bw), but is included in label_utils which should only contain methods related to labels.\nCan you please change the method to make it cost model agnostic? It the method should be called HashSelectors, should receive the repeatedPtrField of selectors and should return their hash.\nWe can then combine this hash with the net_rx_bw in the net_cost_model.",
+      "revId": "9b00018e050b218b50139f8980a20786fb5e783c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
