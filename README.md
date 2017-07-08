@@ -19,7 +19,7 @@ $ docker pull camsas/firmament:dev
 Once the image has downloaded, you can start Firmament as follows:
 
 ```console
-$ docker run camsas/firmament:dev /firmament/src/coordinator --scheduler flow --flow_scheduling_cost_model 6 --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/build/src
+$ docker run camsas/firmament:dev /firmament/build/src/coordinator --scheduler flow --flow_scheduling_cost_model 6 --listen_uri tcp:<host>:<port> --task_lib_dir=$(pwd)/build/src
 ```
 
 # Building from source
@@ -152,7 +152,7 @@ The easiest way to get Firmament scheduler service up and running is to use our 
 Once the image has downloaded, you can start the Firmament scheduler service as follows:
 
 ```
-$ docker run camsas/firmament:dev /firmament/src/firmament_scheduler --flagfile=/firmament/default.conf
+$ docker run camsas/firmament:dev /firmament/build/src/firmament_scheduler --flagfile=/firmament/default.conf
 ```
 
 You can now deploy our Firmament integration with Kubernetes to schedule Kubernetes pods.
