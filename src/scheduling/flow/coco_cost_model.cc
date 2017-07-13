@@ -606,7 +606,9 @@ ArcDescriptor CocoCostModel::ResourceNodeToResourceNode(
   cost_vector.priority_ = 0;
   if (destination.type() == ResourceDescriptor::RESOURCE_PU) {
     cost_vector.cpu_cores_ =
-        NormalizeCost(1.0 - destination.available_resources().cpu_cores(), 1.0);
+        NormalizeCost(machine_rd.resource_capacity().cpu_cores() -
+                      destination.available_resources().cpu_cores(),
+                      machine_rd.resource_capacity().cpu_cores());
   } else if (destination.type() == ResourceDescriptor::RESOURCE_MACHINE) {
     cost_vector.ram_cap_ =
         NormalizeCost(machine_rd.resource_capacity().ram_cap() -
@@ -906,12 +908,15 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
       if (idx != string::npos) {
         string core_id_substr = label.substr(idx + 4, label.size() - idx - 4);
         uint32_t core_id = strtoul(core_id_substr.c_str(), 0, 10);
+        float available_cpu_cores =
+          latest_stats.cpus_stats(core_id).cpu_capacity() *
+          (1.0 - latest_stats.cpus_stats(core_id).cpu_utilization());
         rd_ptr->mutable_available_resources()->set_cpu_cores(
-            1.0 - latest_stats.cpus_stats(core_id).cpu_utilization());
+            available_cpu_cores);
         rd_ptr->mutable_max_available_resources_below()->set_cpu_cores(
-            1.0 - latest_stats.cpus_stats(core_id).cpu_utilization());
+            available_cpu_cores);
         rd_ptr->mutable_min_available_resources_below()->set_cpu_cores(
-            1.0 - latest_stats.cpus_stats(core_id).cpu_utilization());
+            available_cpu_cores);
       }
       // The CPU utilization gets added up automaticaly, so we only set the
       // per-machine properties here
