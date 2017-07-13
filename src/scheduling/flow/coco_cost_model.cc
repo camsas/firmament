@@ -443,7 +443,7 @@ vector<ResourceID_t>* CocoCostModel::GetOutgoingEquivClassPrefArcs(
   // TODO(ionel): This method may end up adding many preference arcs.
   // Limit the number of preference arcs it adds.
   vector<ResourceID_t>* prefered_res = new vector<ResourceID_t>();
-  if (task_aggs_.find(ec) != task_aggs_.end()) {
+  if (ContainsKey(task_aggs_, ec)) {
     ResourceStatus* root_rs =
       FindPtrOrNull(*resource_map_,
                     ResourceIDFromString(
@@ -923,6 +923,7 @@ FlowGraphNode* CocoCostModel::GatherStats(FlowGraphNode* accumulator,
           latest_stats.mem_capacity() * (1.0 - latest_stats.mem_utilization()));
       // Running/idle task count
       rd_ptr->set_num_running_tasks_below(rd_ptr->current_running_tasks_size());
+      rd_ptr->set_num_slots_below(FLAGS_max_tasks_per_pu);
       // Interference score vectors and resource reservations are accumulated if
       // we have a running task here.
       RepeatedField<uint64_t> running_tasks = rd_ptr->current_running_tasks();
