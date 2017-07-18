@@ -199,24 +199,24 @@ TEST_F(DIMACSExporterTest, LargeGraph) {
                                   flow_graph_manager.leaf_node_ids().end());
   uint32_t seed = static_cast<uint32_t>(time(NULL));
   for (uint64_t i = 0; i < j; ++i) {
-    JobDescriptor jd;
-    jd.set_uuid(to_string(GenerateJobID()));
-    TaskDescriptor* rt = jd.mutable_root_task();
+    JobDescriptor* jd = new JobDescriptor;
+    jd->set_uuid(to_string(GenerateJobID()));
+    TaskDescriptor* rt = jd->mutable_root_task();
     string bin;
     spf(&bin, "%jd", rand_r(&seed));
     rt->set_binary(bin);
-    rt->set_uid(GenerateRootTaskID(jd));
-    rt->set_job_id(jd.uuid());
+    rt->set_uid(GenerateRootTaskID(*jd));
+    rt->set_job_id(jd->uuid());
     CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
     for (uint64_t k = 1; k < t; ++k) {
       TaskDescriptor* ct = rt->add_spawned();
       ct->set_uid(GenerateTaskID(*rt));
       ct->set_state(TaskDescriptor::RUNNABLE);
-      ct->set_job_id(jd.uuid());
+      ct->set_job_id(jd->uuid());
       CHECK(InsertIfNotPresent(task_map.get(), ct->uid(), ct));
     }
     vector<JobDescriptor*> jd_ptr_vect;
-    jd_ptr_vect.push_back(&jd);
+    jd_ptr_vect.push_back(jd);
     flow_graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
   }
   VLOG(1) << "Added " << j*t << " tasks in " << j << " jobs (" << t
@@ -280,24 +280,24 @@ TEST_F(DIMACSExporterTest, ScalabilityTestGraphs) {
                                     flow_graph_manager.leaf_node_ids().end());
     uint32_t seed = static_cast<uint32_t>(time(NULL));
     for (uint64_t i = 0; i < j; ++i) {
-      JobDescriptor jd;
-      jd.set_uuid(to_string(GenerateJobID()));
-      TaskDescriptor* rt = jd.mutable_root_task();
+      JobDescriptor* jd = new JobDescriptor;
+      jd->set_uuid(to_string(GenerateJobID()));
+      TaskDescriptor* rt = jd->mutable_root_task();
       string bin;
       spf(&bin, "%jd", rand_r(&seed));
       rt->set_binary(bin);
-      rt->set_uid(GenerateRootTaskID(jd));
-      rt->set_job_id(jd.uuid());
+      rt->set_uid(GenerateRootTaskID(*jd));
+      rt->set_job_id(jd->uuid());
       CHECK(InsertIfNotPresent(task_map.get(), rt->uid(), rt));
       for (uint64_t k = 1; k < t; ++k) {
         TaskDescriptor* ct = rt->add_spawned();
         ct->set_uid(GenerateTaskID(*rt));
         ct->set_state(TaskDescriptor::RUNNABLE);
-        ct->set_job_id(jd.uuid());
+        ct->set_job_id(jd->uuid());
         CHECK(InsertIfNotPresent(task_map.get(), ct->uid(), ct));
       }
       vector<JobDescriptor*> jd_ptr_vect;
-      jd_ptr_vect.push_back(&jd);
+      jd_ptr_vect.push_back(jd);
       flow_graph_manager.AddOrUpdateJobNodes(jd_ptr_vect);
     }
     // Export
