@@ -109,7 +109,8 @@ SimulatorBridge::SimulatorBridge(EventManager* event_manager,
     if (FLAGS_flow_scheduling_cost_model == COST_MODEL_QUINCY) {
       task_interference_model_ =
         new QuincyTaskInterference(scheduler_, &machine_res_id_pus_,
-                                   resource_map_, task_map_, &task_runtime_);
+                                   resource_map_, task_map_, &task_runtime_,
+                                   data_layer_manager_);
     } else {
       LOG(FATAL) << "--enable_task_interference set, but cost model doesn't "
                  << "have interference model";
