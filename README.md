@@ -183,7 +183,7 @@ request on GitHub and we will import it for review on GerritHub.
 
 ### Code style
 
-We follow the [Google C++ style guide](https://google-styleguide.googlecode.com/svn/trunk/cppguide.html)
+We follow the [Google C++ style guide](https://google.github.io/styleguide/cppguide.html)
 in the Firmament code base. A subset of the style guide's rules can be verified
 using the `make lint` target, which runs the C++ linting script on your
 checkout.
