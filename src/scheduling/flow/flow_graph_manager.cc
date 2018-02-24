@@ -602,10 +602,11 @@ uint64_t FlowGraphManager::RemoveTaskNode(FlowGraphNode* task_node) {
 
 void FlowGraphManager::RemoveUnscheduledAggNode(JobID_t job_id) {
   FlowGraphNode* unsched_agg_node = UnschedAggNodeForJobID(job_id);
-  CHECK_NOTNULL(unsched_agg_node);
-  CHECK_EQ(job_unsched_to_node_.erase(job_id), 1);
-  graph_change_manager_->DeleteNode(unsched_agg_node, DEL_UNSCHED_JOB_NODE,
+  if (unsched_agg_node) {
+    CHECK_EQ(job_unsched_to_node_.erase(job_id), 1);
+    graph_change_manager_->DeleteNode(unsched_agg_node, DEL_UNSCHED_JOB_NODE,
                                     "RemoveUnscheduledAggNode");
+  }
 }
 
 uint64_t FlowGraphManager::TaskCompleted(TaskID_t task_id) {
