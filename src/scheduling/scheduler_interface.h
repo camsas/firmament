@@ -66,6 +66,10 @@ struct SchedulerStats {
 
 class SchedulerInterface : public PrintableInterface {
  public:
+  // A lock indicating if the scheduler is currently
+  // in the process of making scheduling decisions.
+  boost::recursive_mutex scheduling_lock_;
+
   SchedulerInterface(shared_ptr<JobMap_t> job_map,
                      shared_ptr<KnowledgeBase> knowledge_base,
                      shared_ptr<ResourceMap_t> resource_map,

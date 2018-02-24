@@ -148,6 +148,10 @@ FlowScheduler::FlowScheduler(
       cost_model_ = new NetCostModel(resource_map, task_map, knowledge_base);
       VLOG(1) << "Using the net cost model";
       break;
+    case CostModelType::COST_MODEL_CPU_MEM:
+      cost_model_ = new CpuMemCostModel(resource_map, task_map, knowledge_base);
+      VLOG(1) << "Using the cpu cost model";
+      break;
     case CostModelType::COST_MODEL_QUINCY_INTERFERENCE:
       cost_model_ =
         new QuincyInterferenceCostModel(resource_map, job_map, task_map,
