@@ -474,6 +474,10 @@ void EventDrivenScheduler::HandleTaskRemoval(TaskDescriptor* td_ptr) {
     was_running = true;
     KillRunningTask(td_ptr->uid(), TaskKillMessage::USER_ABORT);
   } else {
+    if (td_ptr->state() == TaskDescriptor::RUNNABLE) {
+      JobID_t job_id = JobIDFromString(td_ptr->job_id());
+      runnable_tasks_[job_id].erase(td_ptr->uid());
+    }
     td_ptr->set_state(TaskDescriptor::ABORTED);
   }
   trace_generator_->TaskRemoved(td_ptr->uid(), was_running);
