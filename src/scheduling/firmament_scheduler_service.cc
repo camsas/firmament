@@ -197,6 +197,7 @@ class FirmamentSchedulerServiceImpl final :
   Status TaskRemoved(ServerContext* context,
                      const TaskUID* tid_ptr,
                      TaskRemovedResponse* reply) override {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduler_->scheduling_lock_);
     TaskDescriptor* td_ptr = FindPtrOrNull(*task_map_, tid_ptr->task_uid());
     if (td_ptr == NULL) {
       reply->set_type(TaskReplyType::TASK_NOT_FOUND);
@@ -234,6 +235,7 @@ class FirmamentSchedulerServiceImpl final :
   Status TaskSubmitted(ServerContext* context,
                        const TaskDescription* task_desc_ptr,
                        TaskSubmittedResponse* reply) override {
+    boost::lock_guard<boost::recursive_mutex> lock(scheduler_->scheduling_lock_);
     TaskID_t task_id = task_desc_ptr->task_descriptor().uid();
     if (FindPtrOrNull(*task_map_, task_id)) {
       reply->set_type(TaskReplyType::TASK_ALREADY_SUBMITTED);

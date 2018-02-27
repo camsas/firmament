@@ -168,9 +168,6 @@ class EventDrivenScheduler : public SchedulerInterface {
   // Pointer to messaging adapter to use for communication with remote
   // resources.
   MessagingAdapterInterface<BaseMessage>* m_adapter_ptr_;
-  // A lock indicating if the scheduler is currently
-  // in the process of making scheduling decisions.
-  boost::recursive_mutex scheduling_lock_;
   // Map of reference subscriptions
   map<DataObjectID_t, unordered_set<TaskDescriptor*>> reference_subscriptions_;
   // The current resource to task bindings managed by this scheduler.
