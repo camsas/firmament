@@ -27,6 +27,7 @@
 #include "scheduling/flow/cost_model_interface.h"
 // Concrete cost models
 #include "scheduling/flow/coco_cost_model.h"
+#include "scheduling/flow/cpu_mem_cost_model.h"
 #include "scheduling/flow/net_cost_model.h"
 #include "scheduling/flow/octopus_cost_model.h"
 #include "scheduling/flow/quincy_cost_model.h"
