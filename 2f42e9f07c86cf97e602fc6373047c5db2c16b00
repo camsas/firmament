@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "df21b46d_83f53771",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2018-02-28T05:23:38Z",
+      "side": 1,
+      "message": "This takes the scheduler lock from outside the scheduler class, which changes the way that lock is used. Previously, we would only take it from within methods on EventDrivenScheduler. Moreover, the calls on scheduler_ below this line should already be taking the lock.\n\nWhat\u0027s the purpose of taking the lock here? What critical section is being protected?",
+      "revId": "2f42e9f07c86cf97e602fc6373047c5db2c16b00",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4a380195_8e8442de",
+        "filename": "src/scheduling/scheduler_interface.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1004901
+      },
+      "writtenOn": "2018-02-28T05:23:38Z",
+      "side": 1,
+      "message": "Why did you have to move the lock to the interface? If it\u0027s necessary, this might be fine, but it\u0027s not totally clear to me why it can\u0027t be in EventDrivenScheduler.",
+      "revId": "2f42e9f07c86cf97e602fc6373047c5db2c16b00",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
