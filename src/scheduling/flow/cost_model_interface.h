@@ -49,6 +49,7 @@ enum CostModelType {
   COST_MODEL_VOID = 7,
   COST_MODEL_NET = 8,
   COST_MODEL_QUINCY_INTERFERENCE = 9,
+  COST_MODEL_CPU_MEM = 10,
 };
 
 struct ArcDescriptor {
