@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "dac69822_864a5183",
+        "filename": "src/scheduling/firmament_scheduler_service.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2018-02-28T13:23:42Z",
+      "side": 1,
+      "message": "For TaskSubmitted:\nTaskSubmitted gRPC call is multithreaded so we get multiple task submit request simultaneously. Assume a scenario where we get two task submit belonging to the same job. In below lines of code we check if it is a new job it inserts the new job descriptor into the job_map, else it adds a spawned task to the the existing job. Suppose we get two task submit request belonging to the same job in two different thread then there is a possibility that both the task may satisfy the condition \"if (jd_ptr \u003d\u003d NULL)\" which will be a race condition. And both the task will try to insert the job to job_map_.\nWe tried to use the same \"scheduling_lock_\" which was used in EventDrivenScheduler. May be we can keep the scheduling_lock_ same as it was before in EventDrivenScheduler and use a new lock for our case of race condition. \nPlease suggest if that would be the right way to do it.\n\nFor TaskRemoved:\nWe added lock in TaskRemoved assuming that we may face race condition here too but it seems this lock in TaskRemoved is not needed now as we did not face any issue on this function.",
+      "parentUuid": "df21b46d_83f53771",
+      "revId": "2f42e9f07c86cf97e602fc6373047c5db2c16b00",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4a380195_8e8442de",
         "filename": "src/scheduling/scheduler_interface.h",
         "patchSetId": 1
