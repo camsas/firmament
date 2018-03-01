@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e39cbbf1_7312ffe5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-01T01:50:28Z",
+      "side": 1,
+      "message": "Please update commit message to reflect the change.",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 39
+      },
+      "revId": "5059acdbbed28d75241790eaa2a407644c9a5d47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5432faed_f87643ad",
+        "filename": "src/scheduling/flow/flow_graph_manager.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 608,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-01T01:50:28Z",
+      "side": 1,
+      "message": "Please indent line correctly.",
+      "revId": "5059acdbbed28d75241790eaa2a407644c9a5d47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
