@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e315265_c26760cd",
+        "filename": "contrib/docker-build.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-01T01:48:16Z",
+      "side": 1,
+      "message": "Why is the --network\u003dhost required here? I\u0027m not sure we want to enforce it in the image build.",
+      "range": {
+        "startLine": 5,
+        "startChar": 40,
+        "endLine": 5,
+        "endChar": 54
+      },
+      "revId": "9da69489bd24c189fc63198becae9fdfc3e5e19e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

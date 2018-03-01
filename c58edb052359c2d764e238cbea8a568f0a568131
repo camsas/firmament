@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "189b6907_26279887",
+        "filename": "contrib/docker/Dockerfile",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-01T01:48:16Z",
+      "side": 0,
+      "message": "Are you sure that this works without sudo?",
+      "range": {
+        "startLine": 6,
+        "startChar": 63,
+        "endLine": 6,
+        "endChar": 68
+      },
+      "revId": "c58edb052359c2d764e238cbea8a568f0a568131",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
