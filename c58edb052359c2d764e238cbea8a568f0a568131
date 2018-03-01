@@ -22,6 +22,30 @@
       "revId": "c58edb052359c2d764e238cbea8a568f0a568131",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f094b8c1_35ae0bf8",
+        "filename": "contrib/docker/Dockerfile",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1013588
+      },
+      "writtenOn": "2018-03-01T09:28:49Z",
+      "side": 0,
+      "message": "With \u0027sudo\u0027 it was working fine for ubuntu 14.04. But got below error when I changed base to ubuntu 16.04.\n\nbash: sudo: command not found\nThe command \u0027/bin/sh -c bash -c \u0027source /firmament/include/pkglist.Ubuntu-16.04 \u0026\u0026 sudo apt-get -y install ${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${MISC_PKGS} ${HDFS_PKGS} ${PION_PKGS}\u0027\u0027 returned a non-zero code: 127\n\n\nSo I have removed \u0027sudo\u0027. And I am able to build image successfully many times.",
+      "parentUuid": "189b6907_26279887",
+      "range": {
+        "startLine": 6,
+        "startChar": 63,
+        "endLine": 6,
+        "endChar": 68
+      },
+      "revId": "c58edb052359c2d764e238cbea8a568f0a568131",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }

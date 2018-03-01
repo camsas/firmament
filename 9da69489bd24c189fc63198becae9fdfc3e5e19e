@@ -22,6 +22,30 @@
       "revId": "9da69489bd24c189fc63198becae9fdfc3e5e19e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "41f823fd_f3c5b644",
+        "filename": "contrib/docker-build.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1013588
+      },
+      "writtenOn": "2018-03-01T09:28:49Z",
+      "side": 1,
+      "message": "When I try to build without \u0027--network\u003dhost\u0027, build was getting hanged at some point shown below, not proceeding at all even for hours.\n\n-- Generating done\n-- Build files have been written to: /firmament/build/third_party/grpc/src/grpc\n[ 18%] Performing build step for \u0027grpc\u0027\n-- grpc build command succeeded.  See also /firmament/build/third_party/grpc/src/grpc-stamp/grpc-build-*.log\n\n[ 18%] No install step for \u0027grpc\u0027\n[ 18%] Completed \u0027grpc\u0027\n[ 18%] Built target grpc\n// hangs here\n\n\nI guessed it would be network issue. When I tried with \u0027--network\u003dhost\u0027, it proceeds and builds image. This issue I have seen for base ubuntu 14.04 as well as ubuntu 16.04.\n\nI will try finding exact issue.",
+      "parentUuid": "0e315265_c26760cd",
+      "range": {
+        "startLine": 5,
+        "startChar": 40,
+        "endLine": 5,
+        "endChar": 54
+      },
+      "revId": "9da69489bd24c189fc63198becae9fdfc3e5e19e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
