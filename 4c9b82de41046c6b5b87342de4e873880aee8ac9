@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e279fe3e_f0993b9d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-01T01:43:45Z",
+      "side": 1,
+      "message": "Please update commit message to better reflect the change. For example, \"Clean runnable task state upon non-executed task removal.\"",
+      "revId": "4c9b82de41046c6b5b87342de4e873880aee8ac9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a3e2bd5c_9af28dd9",
+        "filename": "src/scheduling/event_driven_scheduler.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 480,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-01T01:43:45Z",
+      "side": 1,
+      "message": "Please delete trailing whitespaces.",
+      "revId": "4c9b82de41046c6b5b87342de4e873880aee8ac9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
