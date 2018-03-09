@@ -46,6 +46,30 @@
       "revId": "9da69489bd24c189fc63198becae9fdfc3e5e19e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5da503d7_56b7ffa6",
+        "filename": "contrib/docker-build.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-09T06:34:16Z",
+      "side": 1,
+      "message": "Hmm, ~ how long did you wait? It wouldn\u0027t hang because lack of network connectivity, but rather fail.\n\nBuilding grpc is slow, which may have caused you to think that the build hang.",
+      "parentUuid": "41f823fd_f3c5b644",
+      "range": {
+        "startLine": 5,
+        "startChar": 40,
+        "endLine": 5,
+        "endChar": 54
+      },
+      "revId": "9da69489bd24c189fc63198becae9fdfc3e5e19e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
