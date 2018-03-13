@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7379c08_49f23da3",
+        "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-13T05:05:41Z",
+      "side": 1,
+      "message": "Shouldn\u0027t the cost to leave the task unscheduled depend at least on the type of task (e.g., service vs. batch)?",
+      "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c16b8afd_143dc00f",
+        "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-13T05:05:41Z",
+      "side": 1,
+      "message": "Please change the TODO to reflect your name. I also think it\u0027s probably a good idea to do LOG(FATAL) here until we implement the functionality.",
+      "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "850b1388_4bbf335e",
+        "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-13T05:05:41Z",
+      "side": 1,
+      "message": "As above.",
+      "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3d465f08_c743953a",
+        "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-13T05:05:41Z",
+      "side": 1,
+      "message": "This is dangerous. You\u0027re casting from a float to a uint32_t. I think you may want to transform the float to millicores.",
+      "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f0fb8ec2_1bafea1b",
+        "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1005213
+      },
+      "writtenOn": "2018-03-13T05:05:41Z",
+      "side": 1,
+      "message": "Please change ram_cap to uint64_t so that you don\u0027t have to the static_cast.",
+      "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
