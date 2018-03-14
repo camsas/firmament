@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a0c93da1_3ee3093c",
+        "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2018-03-14T12:04:48Z",
+      "side": 1,
+      "message": "Do you think we need to give preference to service tasks by assigning more cost compared to batch tasks. ?\n\nCould you please explain intention behind making this cost depend on type of task(service vs batch).",
+      "parentUuid": "e7379c08_49f23da3",
+      "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c16b8afd_143dc00f",
         "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2018-03-13T05:05:41Z",
       "side": 1,
       "message": "Please change the TODO to reflect your name. I also think it\u0027s probably a good idea to do LOG(FATAL) here until we implement the functionality.",
+      "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "507da26c_14ee32b6",
+        "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2018-03-14T12:04:48Z",
+      "side": 1,
+      "message": "Yes. I have changed to my name.",
+      "parentUuid": "c16b8afd_143dc00f",
       "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "98992370_5939a1b1",
+        "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2018-03-14T12:04:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "850b1388_4bbf335e",
+      "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3d465f08_c743953a",
         "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
         "patchSetId": 1
@@ -70,6 +124,24 @@
     },
     {
       "key": {
+        "uuid": "85bfab0e_1ee7ac2f",
+        "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2018-03-14T12:04:48Z",
+      "side": 1,
+      "message": "While testing I observed cpu_cores stats received from heapster is already in millicores. So I think we can convert cpu_cores into int64_t to do comparison and cost calculation.\nPlease share your inputs on this.",
+      "parentUuid": "3d465f08_c743953a",
+      "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f0fb8ec2_1bafea1b",
         "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
         "patchSetId": 1
@@ -81,6 +153,24 @@
       "writtenOn": "2018-03-13T05:05:41Z",
       "side": 1,
       "message": "Please change ram_cap to uint64_t so that you don\u0027t have to the static_cast.",
+      "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fba8a5d2_5b079d45",
+        "filename": "src/scheduling/flow/cpu_mem_cost_model.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1009621
+      },
+      "writtenOn": "2018-03-14T12:04:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f0fb8ec2_1bafea1b",
       "revId": "93b13d59cdbe8ae8380769d2fa1855d664135cb2",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
