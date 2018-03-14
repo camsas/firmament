@@ -18,6 +18,7 @@
  * permissions and limitations under the License.
  */
 
+#include "scheduling/flow/cpu_mem_cost_model.h"
 #include "base/common.h"
 #include "base/types.h"
 #include "base/units.h"
@@ -25,7 +26,6 @@
 #include "misc/utils.h"
 #include "scheduling/flow/cost_model_interface.h"
 #include "scheduling/flow/cost_model_utils.h"
-#include "scheduling/flow/cpu_mem_cost_model.h"
 #include "scheduling/flow/flow_graph_manager.h"
 #include "scheduling/knowledge_base.h"
 #include "scheduling/label_utils.h"
@@ -153,7 +153,7 @@ vector<EquivClass_t>* CpuMemCostModel::GetTaskEquivClasses(TaskID_t task_id) {
       scheduler::HashSelectors(td_ptr->label_selectors());
   boost::hash_combine(resource_req_selectors_hash,
                       to_string(task_resource_request->cpu_cores_) + "cpumem" +
-                      to_string(task_resource_request->ram_cap_));
+                          to_string(task_resource_request->ram_cap_));
   EquivClass_t resource_request_ec =
       static_cast<EquivClass_t>(resource_req_selectors_hash);
   ecs->push_back(resource_request_ec);
@@ -215,6 +215,56 @@ vector<EquivClass_t>* CpuMemCostModel::GetEquivClassToEquivClassesArcs(
     }
   }
   return pref_ecs;
+}
+
+MachineECs_t* CpuMemCostModel::GetEquivClassToEquivClassesArcsSoftAffinity(
+    EquivClass_t ec) {
+  // For soft affinity contraint, seperated lists of preferred and non-preferred
+  // machine ECs combined in a struct and returned.
+  vector<EquivClass_t>* machine_ecs = nullptr;
+  MachineECs_t* machine_ecs_struct = new MachineECs_t();
+  machine_ecs_struct->pref_ecs = new vector<EquivClass_t>();
+  machine_ecs_struct->not_pref_ecs = new vector<EquivClass_t>();
+  CpuMemCostVector_t* task_resource_request =
+      FindOrNull(ec_resource_requirement_, ec);
+  if (task_resource_request) {
+    const RepeatedPtrField<LabelSelector>* label_selectors =
+        FindOrNull(ec_to_label_selectors, ec);
+    CHECK_NOTNULL(label_selectors);
+    for (auto& ec_machines : ecs_for_machines_) {
+      ResourceStatus* rs = FindPtrOrNull(*resource_map_, ec_machines.first);
+      CHECK_NOTNULL(rs);
+      const ResourceDescriptor& rd = rs->topology_node().resource_desc();
+      CpuMemCostVector_t available_resources;
+      available_resources.cpu_cores_ =
+          static_cast<uint32_t>(rd.available_resources().cpu_cores());
+      available_resources.ram_cap_ =
+          static_cast<uint32_t>(rd.available_resources().ram_cap());
+      ResourceID_t res_id = ResourceIDFromString(rd.uuid());
+      vector<EquivClass_t>* ecs_for_machine =
+          FindOrNull(ecs_for_machines_, res_id);
+      CHECK_NOTNULL(ecs_for_machine);
+      // If a machine satisfies affinity constraint
+      // then add it to preferred machine ECs,
+      // else add it to non-preferred machine ECs.
+      if (scheduler::SatisfiesLabelSelectors(rd, *label_selectors)) {
+        machine_ecs = machine_ecs_struct->pref_ecs;
+      } else {
+        machine_ecs = machine_ecs_struct->not_pref_ecs;
+      }
+      uint64_t index = 0;
+      CpuMemCostVector_t cur_resource;
+      for (cur_resource = *task_resource_request;
+           cur_resource.cpu_cores_ <= available_resources.cpu_cores_ &&
+           cur_resource.ram_cap_ <= available_resources.ram_cap_ &&
+           index < ecs_for_machine->size();
+           cur_resource.cpu_cores_ += task_resource_request->cpu_cores_,
+          cur_resource.ram_cap_ += task_resource_request->ram_cap_, index++) {
+        machine_ecs->push_back(ec_machines.second[index]);
+      }
+    }
+  }
+  return machine_ecs_struct;
 }
 
 void CpuMemCostModel::AddMachine(ResourceTopologyNodeDescriptor* rtnd_ptr) {

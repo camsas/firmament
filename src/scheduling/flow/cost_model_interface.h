@@ -53,13 +53,20 @@ enum CostModelType {
 };
 
 struct ArcDescriptor {
-  ArcDescriptor(Cost_t cost, uint64_t capacity, uint64_t min_flow) :
-    cost_(cost), capacity_(capacity), min_flow_(min_flow), gain_(1.0) {
-  }
+  ArcDescriptor(Cost_t cost, uint64_t capacity, uint64_t min_flow)
+      : cost_(cost), capacity_(capacity), min_flow_(min_flow), gain_(1.0) {}
   Cost_t cost_;
   uint64_t capacity_;
   uint64_t min_flow_;
   double gain_;
+};
+
+// Needed this type for soft affinity constraint implementation in cpu mem cost
+// model. TODO(shivramsrivastava): Come up with generic type which helps for
+// all.
+struct MachineECs_t {
+  vector<EquivClass_t>* pref_ecs;
+  vector<EquivClass_t>* not_pref_ecs;
 };
 
 // Forward declarations to avoid cyclic dependencies
@@ -168,6 +175,19 @@ class CostModelInterface {
    */
   virtual vector<EquivClass_t>* GetEquivClassToEquivClassesArcs(
       EquivClass_t tec) = 0;
+
+  /**
+   * Get struct which has seperated lists of preferred ECs and not prefeered ECs
+   * for cpu mem cost model. Not making this new func as pure virtual function
+   * as its not relevent to other cost models.
+   * TODO(shivramsrivastava): Need to move this function to cpu mem cost model.
+   * @return a struct of two vectors, one being vector of preferred ECs and
+   * other being vector being vector of not preferred ECs.
+   */
+  virtual MachineECs_t* GetEquivClassToEquivClassesArcsSoftAffinity(
+      EquivClass_t ec) {
+    return NULL;
+  }
 
   /**
    * Called by the flow_graph when a machine is added.
