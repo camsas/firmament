@@ -49,6 +49,7 @@ set(SCHEDULING_SERVICE_PROTOBUFS
   )
 
 set(SCHEDULING_TESTS
+  scheduling/flow/cpu_mem_cost_model_test.cc
   scheduling/flow/dimacs_exporter_test.cc
   scheduling/flow/flow_graph_change_manager_test.cc
   scheduling/flow/flow_graph_manager_test.cc

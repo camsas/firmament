@@ -76,6 +76,16 @@ class CpuMemCostModel : public CostModelInterface {
   FlowGraphNode* UpdateStats(FlowGraphNode* accumulator, FlowGraphNode* other);
 
  private:
+  FRIEND_TEST(CpuMemCostModelTest, AccumulateResourceStats);
+  FRIEND_TEST(CpuMemCostModelTest, AddMachine);
+  FRIEND_TEST(CpuMemCostModelTest, AddTask);
+  FRIEND_TEST(CpuMemCostModelTest, EquivClassToEquivClass);
+  FRIEND_TEST(CpuMemCostModelTest, GetEquivClassToEquivClassesArcs);
+  FRIEND_TEST(CpuMemCostModelTest, GatherStats);
+  FRIEND_TEST(CpuMemCostModelTest, GetOutgoingEquivClassPrefArcs);
+  FRIEND_TEST(CpuMemCostModelTest, GetTaskEquivClasses);
+  FRIEND_TEST(CpuMemCostModelTest, MachineResIDForResource);
+
   // Fixed value for OMEGA, the normalization ceiling for each dimension's cost
   // value
   const Cost_t omega_ = 1000;
