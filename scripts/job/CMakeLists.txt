@@ -1,4 +1,6 @@
 set(JOB_SUBMIT_PROTOBUFS
+  ${Firmament_SOURCE_DIR}/base/label.proto
+  ${Firmament_SOURCE_DIR}/base/label_selector.proto
   ${Firmament_SOURCE_DIR}/base/job_desc.proto
   ${Firmament_SOURCE_DIR}/base/label.proto
   ${Firmament_SOURCE_DIR}/base/label_selector.proto
