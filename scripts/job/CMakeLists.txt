@@ -1,5 +1,7 @@
 set(JOB_SUBMIT_PROTOBUFS
   ${Firmament_SOURCE_DIR}/base/job_desc.proto
+  ${Firmament_SOURCE_DIR}/base/label.proto
+  ${Firmament_SOURCE_DIR}/base/label_selector.proto
   ${Firmament_SOURCE_DIR}/base/task_desc.proto
   ${Firmament_SOURCE_DIR}/base/reference_desc.proto
   ${Firmament_SOURCE_DIR}/base/resource_vector.proto
