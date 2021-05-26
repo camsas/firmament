@@ -23,7 +23,11 @@ $ docker run camsas/firmament:dev /firmament/build/src/coordinator --scheduler f
 ```
 
 # Building from source
-
+## Package depends
+firmament depends on following packages:
+- [boost](https://www.boost.org/): provides free peer-reviewed portable C++ source libraries.
+- [ctemplate](https://github.com/OlafvdSpek/ctemplate): provides an easy to use and lightning fast text templating system to use with C++ programs.
+- [openssl](https://www.openssl.org/):  is a robust, commercial-grade, and full-featured toolkit for the Transport Layer Security (TLS) and Secure Sockets Layer (SSL) protocols.
 ## System requirements
 
 Firmament is currently known to work on Ubuntu LTS releases 12.04 (precise) and
